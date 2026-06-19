@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Under360 Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#F4F4F0;color:#1A1A1A;-webkit-font-smoothing:antialiased}
+button,select,input{font-family:'Sarabun',sans-serif}
+/* Scrollbar */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:#F0F0EC}
+::-webkit-scrollbar-thumb{background:#D1D5DB;border-radius:4px}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useMemo, useEffect, useCallback } = React;
+
+/* ══════════════════════════════════════════════════════
+   ⚙️ CONFIG
+   เปลี่ยน USE_SUPABASE เป็น true และใส่ credentials
+   เพื่อเชื่อมกับ database จริง
+══════════════════════════════════════════════════════ */
+const USE_SUPABASE = true; // ← true เมื่อมี Supabase แล้ว
+const SUPABASE_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+
+/* ══════════════════════════════════════════════════════
+   🗄️ MOCK DATA
+══════════════════════════════════════════════════════ */
+const MOCK = [
+  { id:'hp01', code:'HP01', name:'ไก่ย่างซีอิ๊วหวาน',          cat:'meal_hp',      price:99,  kcal:480, protein:35, online:true,  sort_order:1  },
+  { id:'hp02', code:'HP02', name:'หมูสันในย่างพริกไทยดำ',        cat:'meal_hp',      price:99,  kcal:460, protein:33, online:true,  sort_order:2  },
+  { id:'hp03', code:'HP03', name:'ปลาแซลมอนย่างซอสเลมอน',        cat:'meal_hp',      price:129, kcal:520, protein:38, online:false, sort_order:3  },
+  { id:'lc01', code:'LC01', name:'ไก่ย่างซีอิ๊วหวาน',          cat:'meal_lc',      price:89,  kcal:360, protein:30, online:true,  sort_order:4  },
+  { id:'lc02', code:'LC02', name:'หมูสันในย่าง',                cat:'meal_lc',      price:89,  kcal:340, protein:28, online:true,  sort_order:5  },
+  { id:'lc03', code:'LC03', name:'กุ้งผัดพริกขี้หนู',           cat:'meal_lc',      price:109, kcal:320, protein:28, online:false, sort_order:6  },
+  { id:'no01', code:'NO01', name:'ข้าวไก่ผัดกะเพรา',            cat:'no_regular',   price:79,  kcal:420, protein:22, online:true,  sort_order:7  },
+  { id:'no02', code:'NO02', name:'ข้าวหมูพริกไทยดำ',            cat:'no_regular',   price:79,  kcal:430, protein:20, online:true,  sort_order:8  },
+  { id:'a01',  code:'A01',  name:'ไก่ย่างซีอิ๊วหวาน (แพค 120g)',cat:'pack_regular', price:59,  kcal:220, protein:22, online:true,  sort_order:9  },
+  { id:'s01',  code:'S01',  name:'บ๊ะจ่าง HP (สัปดาห์นี้)',      cat:'no_special',   price:89,  kcal:450, protein:25, online:true,  sort_order:10 },
+];
+
+const CAT = {
+  meal_hp:      { label:'🥩 HP Plan',    short:'HP Plan',    color:'#1F4D3A', bg:'#E8F0EC' },
+  meal_lc:      { label:'🥗 LC Plan',    short:'LC Plan',    color:'#0F766E', bg:'#CCFBF1' },
+  no_regular:   { label:'🍱 ข้าวกล่อง',  short:'ข้าวกล่อง',  color:'#6D28D9', bg:'#EDE9FE' },
+  no_special:   { label:'⭐ สัปดาห์นี้', short:'สัปดาห์นี้', color:'#B45309', bg:'#FEF3C7' },
+  pack_regular: { label:'📦 แพคกับข้าว', short:'แพคกับข้าว', color:'#1D4ED8', bg:'#DBEAFE' },
+};
+
+/* ══════════════════ TOGGLE ══════════════════ */
+function Toggle({ on, onChange }) {
+  return (
+    <button onClick={onChange} style={{
+      width:48, height:26, borderRadius:13, padding:3, border:'none',
+      background: on ? '#1F4D3A' : '#D1D5DB',
+      display:'flex', alignItems:'center', cursor:'pointer',
+      transition:'background .2s', flexShrink:0,
+      boxShadow: on ? '0 0 0 3px rgba(31,77,58,.15)' : 'none',
+    }}>
+      <div style={{
+        width:20, height:20, borderRadius:'50%', background:'#fff',
+        transform: on ? 'translateX(22px)' : 'translateX(0)',
+        transition:'transform .2s', boxShadow:'0 1px 4px rgba(0,0,0,.25)',
+      }}/>
+    </button>
+  );
+}
+
+/* ══════════════════ ADMIN ROW ══════════════════ */
+function AdminRow({ item, idx, total, onToggle, onMove }) {
+  const [flash, setFlash] = useState(false);
+  const cfg = CAT[item.cat] || { label:item.cat, short:item.cat, color:'#6B7280', bg:'#F3F4F6' };
+
+  const handleToggle = () => {
+    setFlash(true);
+    setTimeout(() => setFlash(false), 500);
+    onToggle(item.id);
+  };
+
+  return (
+    <tr style={{
+      background: flash ? '#FFFBEB' : (item.online ? '#fff' : '#FAFAF8'),
+      transition:'background .35s',
+      borderBottom:'1px solid #F0F0EC',
+    }}>
+      {/* Sort */}
+      <td style={{ padding:'10px 8px 10px 16px', width:36 }}>
+        <div style={{ display:'flex', flexDirection:'column', gap:2, alignItems:'center' }}>
+          <button onClick={()=>onMove(idx,-1)} disabled={idx===0}
+            style={{ background:'none', border:'none', cursor:idx===0?'default':'pointer',
+              color:idx===0?'#E5E7EB':'#6B7280', fontSize:13, lineHeight:1, padding:2 }}>▲</button>
+          <button onClick={()=>onMove(idx,1)} disabled={idx===total-1}
+            style={{ background:'none', border:'none', cursor:idx===total-1?'default':'pointer',
+              color:idx===total-1?'#E5E7EB':'#6B7280', fontSize:13, lineHeight:1, padding:2 }}>▼</button>
+        </div>
+      </td>
+
+      {/* Toggle */}
+      <td style={{ padding:'10px 8px' }}>
+        <Toggle on={item.online} onChange={handleToggle} />
+      </td>
+
+      {/* Status */}
+      <td style={{ padding:'10px 8px', width:80 }}>
+        <span style={{
+          fontSize:11, fontWeight:700, padding:'3px 9px', borderRadius:20,
+          background: item.online?'#D1FAE5':'#FEE2E2',
+          color: item.online?'#065F46':'#991B1B',
+        }}>
+          {item.online ? '● Online' : '○ Offline'}
+        </span>
+      </td>
+
+      {/* Code */}
+      <td style={{ padding:'10px 8px', width:44, fontFamily:'monospace', fontWeight:800, fontSize:11, color:'#9CA3AF' }}>
+        {item.code}
+      </td>
+
+      {/* Name + Category */}
+      <td style={{ padding:'10px 8px' }}>
+        <div style={{
+          fontSize:14, fontWeight:600,
+          color: item.online ? '#1A1A1A' : '#9CA3AF',
+          textDecoration: item.online ? 'none' : 'line-through',
+          marginBottom:4,
+        }}>{item.name}</div>
+        <span style={{
+          fontSize:11, fontWeight:700, padding:'2px 8px', borderRadius:20,
+          background:cfg.bg, color:cfg.color, display:'inline-block',
+        }}>{cfg.label}</span>
+      </td>
+
+      {/* Nutrition */}
+      <td style={{ padding:'10px 8px', textAlign:'center', width:80 }}>
+        <div style={{ fontSize:12, color:'#6B7280' }}>{item.kcal} kcal</div>
+        <div style={{ fontSize:11, color:'#9CA3AF' }}>P {item.protein}g</div>
+      </td>
+
+      {/* Price */}
+      <td style={{ padding:'10px 16px 10px 8px', textAlign:'right', width:64 }}>
+        <span style={{ fontSize:16, fontWeight:800, color: item.online?'#C9573F':'#D1D5DB' }}>
+          ฿{item.price}
+        </span>
+      </td>
+    </tr>
+  );
+}
+
+/* ══════════════════ PHONE PREVIEW ══════════════════ */
+function PhonePreview({ items }) {
+  const [activeCat, setActiveCat] = useState(null);
+  const [cartN, setCartN] = useState(0);
+
+  const online = items.filter(i => i.online);
+  const catOrder = ['meal_hp','meal_lc','no_regular','no_special','pack_regular'];
+  const cats = catOrder.filter(c => online.some(i => i.cat===c));
+  const cur = (activeCat && cats.includes(activeCat)) ? activeCat : cats[0];
+  const visible = online.filter(i => i.cat===cur);
+
+  return (
+    <div style={{ flexShrink:0, display:'flex', flexDirection:'column', alignItems:'center', gap:10 }}>
+      {/* Live badge */}
+      <div style={{
+        display:'flex', alignItems:'center', gap:6, fontSize:11, fontWeight:700,
+        letterSpacing:.06, textTransform:'uppercase',
+        background:'#E8F0EC', color:'#1F4D3A', padding:'5px 14px', borderRadius:20,
+      }}>
+        <div style={{ width:8, height:8, borderRadius:'50%', background:'#10B981',
+          animation:'pulse 1.5s ease infinite' }}/>
+        LIVE PREVIEW
+      </div>
+
+      {/* Phone */}
+      <div style={{
+        width:266, height:544, borderRadius:40, border:'10px solid #111',
+        overflow:'hidden', background:'#F4F4F0', display:'flex', flexDirection:'column',
+        boxShadow:'0 28px 60px rgba(0,0,0,.42), 0 0 0 1px rgba(255,255,255,.05)',
+        position:'relative',
+      }}>
+        {/* Notch */}
+        <div style={{
+          position:'absolute', top:0, left:'50%', transform:'translateX(-50%)',
+          width:90, height:22, background:'#111',
+          borderRadius:'0 0 18px 18px', zIndex:10,
+        }}/>
+
+        {/* LIFF Header */}
+        <div style={{
+          background:'#1F4D3A', padding:'20px 14px 10px',
+          display:'flex', alignItems:'center', flexShrink:0,
+        }}>
+          <div style={{ flex:1, fontSize:16, fontWeight:800, color:'#fff', letterSpacing:-.5 }}>
+            UNDER<span style={{ opacity:.4, fontWeight:300 }}>360</span>
+          </div>
+          <div style={{ position:'relative' }}>
+            <div style={{
+              width:34, height:34, borderRadius:'50%',
+              background:'rgba(255,255,255,.12)',
+              display:'flex', alignItems:'center', justifyContent:'center', fontSize:17, cursor:'pointer',
+            }} onClick={() => setCartN(0)}>🛒</div>
+            {cartN > 0 && (
+              <div style={{
+                position:'absolute', top:0, right:0, width:16, height:16,
+                borderRadius:'50%', background:'#C9573F',
+                fontSize:10, fontWeight:700, color:'#fff',
+                display:'flex', alignItems:'center', justifyContent:'center',
+                border:'1.5px solid #1F4D3A',
+              }}>{cartN}</div>
+            )}
+          </div>
+        </div>
+
+        {/* Category tabs */}
+        <div style={{
+          background:'#fff', display:'flex', overflowX:'auto', flexShrink:0,
+          borderBottom:'1px solid #E5E5E1', scrollbarWidth:'none',
+        }}>
+          {cats.length === 0
+            ? <div style={{ padding:'10px 14px', fontSize:12, color:'#9CA3AF', width:'100%', textAlign:'center' }}>
+                ยังไม่มีเมนูออนไลน์
+              </div>
+            : cats.map(c => {
+                const cfg = CAT[c] || {};
+                const isOn = c===cur;
+                return (
+                  <button key={c} onClick={() => setActiveCat(c)} style={{
+                    padding:'9px 10px', border:'none', background:'none', cursor:'pointer',
+                    fontSize:11, fontWeight: isOn?700:500,
+                    color: isOn?cfg.color:'#9CA3AF',
+                    borderBottom: isOn?`2.5px solid ${cfg.color}`:'2.5px solid transparent',
+                    whiteSpace:'nowrap', flexShrink:0,
+                  }}>{cfg.label}</button>
+                );
+              })
+          }
+        </div>
+
+        {/* Menu list */}
+        <div style={{ flex:1, overflowY:'auto' }}>
+          {visible.length === 0
+            ? <div style={{ textAlign:'center', padding:28, color:'#9CA3AF', fontSize:12 }}>ไม่มีเมนู</div>
+            : visible.map(item => (
+              <div key={item.id} style={{
+                background:'#fff', display:'flex', alignItems:'center',
+                padding:'10px 12px', borderBottom:'1px solid #F0F0EC', gap:8,
+              }}>
+                <div style={{ flex:1, minWidth:0 }}>
+                  <div style={{ fontSize:13, fontWeight:700, color:'#1A1A1A', lineHeight:1.3 }}>{item.name}</div>
+                  <div style={{ fontSize:11, color:'#9CA3AF', marginTop:2 }}>
+                    {item.kcal} kcal · โปรตีน {item.protein}g
+                  </div>
+                </div>
+                <div style={{ textAlign:'right', flexShrink:0 }}>
+                  <div style={{ fontSize:14, fontWeight:800, color:'#C9573F' }}>฿{item.price}</div>
+                  <button onClick={() => setCartN(n => n+1)} style={{
+                    marginTop:4, width:28, height:28, borderRadius:'50%',
+                    background:'#1F4D3A', color:'#fff', border:'none', cursor:'pointer',
+                    fontSize:20, display:'flex', alignItems:'center', justifyContent:'center',
+                  }}>+</button>
+                </div>
+              </div>
+            ))
+          }
+        </div>
+
+        {/* Bottom bar */}
+        <div style={{
+          background:'#fff', padding:'7px 12px', borderTop:'1px solid #E5E5E1',
+          display:'flex', justifyContent:'space-between', flexShrink:0,
+        }}>
+          <span style={{ fontSize:10, color:'#9CA3AF' }}>{online.length} เมนูออนไลน์</span>
+          <span style={{ fontSize:10, color:'#9CA3AF' }}>Under360 LIFF</span>
+        </div>
+      </div>
+
+      <div style={{ fontSize:11, color:'#9CA3AF', textAlign:'center' }}>
+        กด + เพื่อทดลองเพิ่มตะกร้า
+      </div>
+    </div>
+  );
+}
+
+/* ══════════════════ MAIN APP ══════════════════ */
+function App() {
+  const [items, setItems] = useState(MOCK);
+  const [search, setSearch] = useState('');
+  const [filterCat, setFilterCat] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [saveStatus, setSaveStatus] = useState(''); // 'saving' | 'saved' | ''
+  const [note, setNote] = useState(true);
+
+  const onToggle = useCallback(async (id) => {
+    const newItems = items.map(i => i.id===id ? {...i, online:!i.online} : i);
+    setItems(newItems);
+
+    if (USE_SUPABASE) {
+      setSaveStatus('saving');
+      const item = newItems.find(i => i.id===id);
+      try {
+        const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        await sb.from('menu_items').update({ is_available: item.online }).eq('id', id);
+        setSaveStatus('saved');
+        setTimeout(() => setSaveStatus(''), 2000);
+      } catch(e) {
+        setSaveStatus('error');
+        setTimeout(() => setSaveStatus(''), 3000);
+      }
+    }
+  }, [items]);
+
+  const onMove = useCallback((idx, dir) => {
+    setItems(prev => {
+      const a = [...prev];
+      const ni = idx + dir;
+      if (ni < 0 || ni >= a.length) return prev;
+      [a[idx], a[ni]] = [a[ni], a[idx]];
+      return a;
+    });
+  }, []);
+
+  const toggleAll = (val) => setItems(p => p.map(i => ({...i, online:val})));
+
+  const onlineN  = items.filter(i => i.online).length;
+  const offlineN = items.length - onlineN;
+  const allCats  = [...new Set(items.map(i => i.cat))];
+
+  const filtered = useMemo(() => items.filter(i => {
+    const s = search.toLowerCase();
+    const mS = !search || i.name.toLowerCase().includes(s) || i.code.toLowerCase().includes(s);
+    const mC = filterCat==='all' || i.cat===filterCat;
+    const mO = filterStatus==='all' || (filterStatus==='online'?i.online:!i.online);
+    return mS && mC && mO;
+  }), [items, search, filterCat, filterStatus]);
+
+  return (
+    <div style={{ fontFamily:"'Sarabun',sans-serif", minHeight:'100vh', background:'#F4F4F0', color:'#1A1A1A' }}>
+      <style>{`@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.35} }`}</style>
+
+      {/* HEADER */}
+      <div style={{
+        background:'#1F4D3A', color:'#fff', padding:'14px 20px',
+        display:'flex', alignItems:'center', gap:16, flexWrap:'wrap',
+        boxShadow:'0 2px 12px rgba(0,0,0,.2)',
+      }}>
+        <div>
+          <div style={{ fontSize:20, fontWeight:800, letterSpacing:-.5 }}>
+            UNDER<span style={{ opacity:.4, fontWeight:300 }}>360</span>
+          </div>
+          <div style={{ fontSize:12, opacity:.65, marginTop:1 }}>Admin — จัดการสินค้า</div>
+        </div>
+        {/* Stats */}
+        <div style={{ marginLeft:'auto', display:'flex', gap:8 }}>
+          {[['Online', onlineN, '#6EE7B7'], ['Offline', offlineN, '#FCA5A5'], ['ทั้งหมด', items.length, '#fff']].map(([l,v,c]) => (
+            <div key={l} style={{ background:'rgba(255,255,255,.1)', borderRadius:10, padding:'7px 14px', textAlign:'center' }}>
+              <div style={{ fontSize:20, fontWeight:800, color:c }}>{v}</div>
+              <div style={{ fontSize:11, opacity:.7 }}>{l}</div>
+            </div>
+          ))}
+        </div>
+        {/* Save indicator */}
+        {saveStatus && (
+          <div style={{
+            fontSize:12, fontWeight:600,
+            color: saveStatus==='saved'?'#6EE7B7':saveStatus==='error'?'#FCA5A5':'#FCD34D',
+            background:'rgba(0,0,0,.2)', padding:'5px 12px', borderRadius:20,
+          }}>
+            {saveStatus==='saving'?'💾 บันทึก...' : saveStatus==='saved'?'✓ บันทึกแล้ว' : '⚠ บันทึกไม่ได้'}
+          </div>
+        )}
+      </div>
+
+      {/* BANNER */}
+      {note && (
+        <div style={{
+          background: USE_SUPABASE ? '#D1FAE5' : '#FEF3C7',
+          borderBottom:`1px solid ${USE_SUPABASE ? '#6EE7B7' : '#FCD34D'}`,
+          padding:'9px 20px', display:'flex', alignItems:'center', gap:10, fontSize:13,
+          color: USE_SUPABASE ? '#065F46' : '#92400E',
+        }}>
+          <span>{USE_SUPABASE ? '🟢' : '💡'}</span>
+          <span>
+            {USE_SUPABASE
+              ? 'เชื่อม Supabase แล้ว — การเปลี่ยนแปลงจะบันทึกทันที'
+              : 'Demo Mode — ข้อมูลยังไม่บันทึก เปลี่ยน USE_SUPABASE = true เพื่อเชื่อม database จริง · ลองกด toggle แล้วดู Phone Preview ทางขวา'}
+          </span>
+          <button onClick={() => setNote(false)} style={{ marginLeft:'auto', background:'none', border:'none', cursor:'pointer', fontSize:16 }}>✕</button>
+        </div>
+      )}
+
+      {/* MAIN */}
+      <div style={{
+        display:'flex', gap:16, padding:16, alignItems:'flex-start',
+        flexWrap:'wrap', maxWidth:1280, margin:'0 auto',
+      }}>
+
+        {/* ADMIN TABLE */}
+        <div style={{
+          flex:1, minWidth:340, background:'#fff', borderRadius:14, overflow:'hidden',
+          boxShadow:'0 1px 6px rgba(0,0,0,.08)', border:'1px solid #E5E5E1',
+        }}>
+          {/* Filters */}
+          <div style={{
+            padding:'12px 16px', borderBottom:'1px solid #F0F0EC',
+            display:'flex', gap:8, flexWrap:'wrap', background:'#FAFAF8',
+          }}>
+            <input value={search} onChange={e=>setSearch(e.target.value)}
+              placeholder="🔍 ค้นหาชื่อหรือรหัสเมนู..."
+              style={{ flex:1, minWidth:140, padding:'8px 12px', border:'2px solid #E5E5E1',
+                borderRadius:8, fontSize:14, outline:'none', fontFamily:'inherit', background:'#fff' }}
+            />
+            <select value={filterCat} onChange={e=>setFilterCat(e.target.value)}
+              style={{ padding:'8px 10px', border:'2px solid #E5E5E1', borderRadius:8, fontSize:13, background:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+              <option value="all">ทุกหมวด</option>
+              {allCats.map(c => <option key={c} value={c}>{CAT[c]?.short||c}</option>)}
+            </select>
+            <select value={filterStatus} onChange={e=>setFilterStatus(e.target.value)}
+              style={{ padding:'8px 10px', border:'2px solid #E5E5E1', borderRadius:8, fontSize:13, background:'#fff', cursor:'pointer', fontFamily:'inherit' }}>
+              <option value="all">ทั้งหมด</option>
+              <option value="online">● Online</option>
+              <option value="offline">○ Offline</option>
+            </select>
+          </div>
+
+          {/* Table */}
+          <div style={{ overflowX:'auto' }}>
+            <table style={{ width:'100%', borderCollapse:'collapse' }}>
+              <thead>
+                <tr style={{ background:'#F9FAFB', borderBottom:'1px solid #F0F0EC' }}>
+                  {['ลำดับ','เปิด/ปิด','สถานะ','โค้ด','ชื่อเมนู · หมวดหมู่','โภชนาการ','ราคา'].map((h,i) => (
+                    <th key={i} style={{ padding:'9px 8px', fontSize:11, fontWeight:700, color:'#9CA3AF',
+                      letterSpacing:.04, textAlign:i>=5?'right':'left',
+                      paddingLeft:i===0?16:8, paddingRight:i===6?16:8 }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {filtered.length === 0
+                  ? <tr><td colSpan={7} style={{ textAlign:'center', padding:40, color:'#9CA3AF', fontSize:14 }}>ไม่พบเมนู</td></tr>
+                  : filtered.map(item => (
+                    <AdminRow key={item.id} item={item}
+                      idx={items.indexOf(item)} total={items.length}
+                      onToggle={onToggle} onMove={onMove} />
+                  ))
+                }
+              </tbody>
+            </table>
+          </div>
+
+          {/* Bulk actions + footer */}
+          <div style={{
+            padding:'10px 16px', background:'#F9FAFB', borderTop:'1px solid #F0F0EC',
+            display:'flex', gap:8, alignItems:'center', flexWrap:'wrap',
+          }}>
+            <span style={{ fontSize:13, color:'#6B7280' }}>จัดการทั้งหมด:</span>
+            <button onClick={() => toggleAll(true)} style={{
+              padding:'5px 14px', background:'#1F4D3A', color:'#fff', border:'none',
+              borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:700,
+            }}>● เปิดทั้งหมด</button>
+            <button onClick={() => toggleAll(false)} style={{
+              padding:'5px 14px', background:'#FEE2E2', color:'#991B1B', border:'none',
+              borderRadius:7, cursor:'pointer', fontSize:12, fontWeight:700,
+            }}>○ ปิดทั้งหมด</button>
+            <span style={{ marginLeft:'auto', fontSize:12, color:'#9CA3AF' }}>
+              {filtered.length}/{items.length} รายการ
+            </span>
+          </div>
+        </div>
+
+        {/* PHONE PREVIEW */}
+        <PhonePreview items={items} />
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

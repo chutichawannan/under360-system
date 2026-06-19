@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<meta name="theme-color" content="#1F4D3A">
+<title>Under360 — สั่งอาหาร</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ═══════════ RESET + ROOT ═══════════ */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:'Sarabun',sans-serif;background:#F4F4F0;color:#1A1A1A;min-height:100vh;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;-webkit-tap-highlight-color:transparent}
+input,textarea{font-family:inherit}
+:root{
+  --g:#1F4D3A; --gd:#163524; --gl:#E8F0EC; --g2:#2D6B53;
+  --r:#C9573F; --rl:#FDF0ED;
+  --am:#D98C2B;
+  --bg:#F4F4F0; --w:#FFFFFF;
+  --ink:#1A1A1A; --soft:#6B7280; --faint:#B8BCC8; --line:#E5E5E1;
+  --ok:#10B981; --warn:#F59E0B;
+  --nav:64px; --hdr:56px;
+  --r8:8px; --r12:12px; --r14:14px; --r16:16px;
+}
+
+/* ═══════════ SCREENS ═══════════ */
+.scr{display:none;flex-direction:column;min-height:100vh;position:relative}
+.scr.on{display:flex}
+
+/* ═══════════ LOADING ═══════════ */
+#s-load{align-items:center;justify-content:center;background:var(--g);color:#fff;gap:20px}
+.load-logo{font-size:34px;font-weight:800;letter-spacing:-1px;line-height:1}
+.load-logo em{opacity:.45;font-style:normal;font-weight:300}
+.load-sub{font-size:14px;opacity:.6;font-weight:400}
+.spin{width:28px;height:28px;border:3px solid rgba(255,255,255,.2);border-top-color:#fff;border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.load-err{font-size:15px;opacity:.8;text-align:center;line-height:1.6;max-width:260px}
+
+/* ═══════════ HEADER ═══════════ */
+.hdr{position:sticky;top:0;z-index:200;height:var(--hdr);background:var(--g);display:flex;align-items:center;padding:0 14px;gap:10px;color:#fff;box-shadow:0 1px 8px rgba(0,0,0,.15)}
+.hdr-back{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.1);font-size:20px}
+.hdr-title{font-size:17px;font-weight:700;flex:1;letter-spacing:-.2px}
+.hdr-logo{font-size:19px;font-weight:800;flex:1;letter-spacing:-.5px}
+.hdr-logo em{opacity:.5;font-style:normal;font-weight:300}
+.hdr-icon{width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:rgba(255,255,255,.1);font-size:20px;position:relative;flex-shrink:0}
+.badge{position:absolute;top:1px;right:1px;width:17px;height:17px;border-radius:50%;background:var(--r);font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;color:#fff;border:1.5px solid var(--g)}
+
+/* ═══════════ BOTTOM NAV ═══════════ */
+.bnav{position:fixed;bottom:0;left:0;right:0;z-index:200;height:var(--nav);background:#fff;border-top:1px solid var(--line);display:flex}
+.bni{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:var(--soft);font-size:11px;font-weight:500;transition:color .12s}
+.bni svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.bni.on{color:var(--g)}
+
+/* ═══════════ SCROLL ═══════════ */
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.pb-nav{padding-bottom:calc(var(--nav) + 16px)}
+.pb-btn{padding-bottom:80px}
+
+/* ═══════════ CAT TABS ═══════════ */
+.ctabs{position:sticky;top:var(--hdr);z-index:100;background:#fff;display:flex;overflow-x:auto;border-bottom:1px solid var(--line);scrollbar-width:none}
+.ctabs::-webkit-scrollbar{display:none}
+.ctab{flex-shrink:0;padding:12px 15px;font-size:14px;font-weight:500;color:var(--soft);border-bottom:2.5px solid transparent;white-space:nowrap;transition:all .15s}
+.ctab.on{color:var(--g);border-color:var(--g);font-weight:700}
+
+/* ═══════════ MENU LIST ═══════════ */
+.mlist{display:flex;flex-direction:column}
+.mi{background:#fff;display:flex;align-items:center;padding:14px 14px;gap:12px;border-bottom:1px solid var(--line)}
+.mi:last-child{border-bottom:none}
+.mi-inf{flex:1;min-width:0}
+.mi-code{font-size:11px;color:var(--soft);font-weight:600;letter-spacing:.04em;margin-bottom:2px}
+.mi-name{font-size:15px;font-weight:600;color:var(--ink);line-height:1.3}
+.mi-tags{display:flex;gap:6px;margin-top:5px;flex-wrap:wrap}
+.tag{font-size:11px;font-weight:600;padding:2px 9px;border-radius:20px}
+.tag-g{background:var(--gl);color:var(--g)}
+.tag-am{background:#FEF3C7;color:#92400E}
+.mi-r{display:flex;flex-direction:column;align-items:flex-end;gap:8px;flex-shrink:0}
+.mi-price{font-size:16px;font-weight:800;color:var(--r)}
+.add-btn{width:36px;height:36px;border-radius:50%;background:var(--g);color:#fff;font-size:24px;line-height:1;display:flex;align-items:center;justify-content:center;transition:transform .1s}
+.add-btn:active{transform:scale(.88)}
+.qc{display:flex;align-items:center;gap:7px}
+.qb{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:700;border:1.5px solid var(--line);color:var(--ink)}
+.qb.plus{background:var(--g);border-color:var(--g);color:#fff}
+.qn{font-size:16px;font-weight:700;min-width:18px;text-align:center}
+
+/* ═══════════ FLOAT CART ═══════════ */
+.fcart{position:fixed;bottom:calc(var(--nav) + 10px);left:14px;right:14px;z-index:150;background:var(--r);color:#fff;border-radius:var(--r14);padding:13px 18px;display:flex;align-items:center;box-shadow:0 5px 20px rgba(201,87,63,.45);transition:transform .25s,opacity .25s;cursor:pointer}
+.fcart.hide{transform:translateY(110px);opacity:0;pointer-events:none}
+.fcart-l{flex:1}
+.fcart-cnt{font-size:12px;opacity:.8;margin-bottom:1px}
+.fcart-tot{font-size:18px;font-weight:800}
+.fcart-r{font-size:14px;font-weight:700;opacity:.9}
+
+/* ═══════════ CART SCREEN ═══════════ */
+.csec{margin:10px 0}
+.csec-t{font-size:12px;font-weight:700;color:var(--soft);padding:0 14px 8px;letter-spacing:.05em;text-transform:uppercase}
+.citem{background:#fff;display:flex;align-items:center;padding:13px 14px;gap:10px;border-bottom:1px solid var(--line)}
+.citem:last-child{border-bottom:none}
+.citem-name{font-size:14px;font-weight:600;flex:1}
+.citem-sub{font-size:12px;color:var(--soft);margin-top:2px}
+.citem-tot{font-size:15px;font-weight:800;color:var(--r);text-align:right;min-width:64px}
+.cart-total-row{background:var(--gl);padding:14px;display:flex;justify-content:space-between;align-items:center}
+.cart-total-l{font-size:15px;font-weight:600;color:var(--g)}
+.cart-total-v{font-size:20px;font-weight:800;color:var(--r)}
+
+/* ═══════════ DATE / TIME ═══════════ */
+.dscroll{display:flex;gap:8px;padding:10px 14px;overflow-x:auto;scrollbar-width:none}
+.dscroll::-webkit-scrollbar{display:none}
+.dchip{flex-shrink:0;text-align:center;background:#fff;border:2px solid var(--line);border-radius:var(--r12);padding:8px 12px;cursor:pointer;transition:all .12s;min-width:58px}
+.dchip.on{border-color:var(--g);background:var(--gl)}
+.dchip .dd{font-size:11px;color:var(--soft);font-weight:600}
+.dchip .dn{font-size:22px;font-weight:800;color:var(--ink);line-height:1}
+.dchip .dm{font-size:11px;color:var(--soft)}
+.dchip.on .dd,.dchip.on .dn,.dchip.on .dm{color:var(--g)}
+.tgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:6px 14px 14px}
+.tchip{background:#fff;border:2px solid var(--line);border-radius:var(--r12);padding:12px 10px;text-align:center;cursor:pointer;transition:all .12s}
+.tchip.on{border-color:var(--g);background:var(--gl)}
+.tchip-l{font-size:16px;font-weight:700;color:var(--ink)}
+.tchip-t{font-size:12px;color:var(--soft);margin-top:2px}
+.tchip.on .tchip-l,.tchip.on .tchip-t{color:var(--g)}
+
+/* ═══════════ INPUTS ═══════════ */
+.igrp{padding:0 14px 14px;display:flex;flex-direction:column;gap:6px}
+.ilbl{font-size:13px;font-weight:700;color:var(--soft)}
+.ifield{width:100%;padding:13px 14px;border:2px solid var(--line);border-radius:var(--r12);font-size:16px;color:var(--ink);background:#fff;outline:none;transition:border-color .15s;resize:none}
+.ifield:focus{border-color:var(--g)}
+
+/* ═══════════ BUTTONS ═══════════ */
+.fixbot{position:sticky;bottom:0;background:#fff;padding:12px 14px;border-top:1px solid var(--line);z-index:50}
+.fixbot.nonav{padding-bottom:12px}
+.btn-p{background:var(--r);color:#fff;padding:15px;border-radius:var(--r14);font-size:17px;font-weight:700;width:100%;transition:opacity .12s;letter-spacing:.2px}
+.btn-p:active{opacity:.84}
+.btn-p:disabled{background:var(--soft);cursor:not-allowed}
+.btn-s{background:var(--gl);color:var(--g);padding:13px;border-radius:var(--r14);font-size:16px;font-weight:700;width:100%;margin-top:8px}
+
+/* ═══════════ CONFIRM ═══════════ */
+.srow{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);gap:12px}
+.slbl{font-size:14px;color:var(--soft)}
+.sval{font-size:14px;font-weight:600;text-align:right;flex:1}
+.stot{display:flex;justify-content:space-between;align-items:center;padding:14px;background:var(--gl)}
+.stot-l{font-size:16px;font-weight:700;color:var(--g)}
+.stot-v{font-size:22px;font-weight:800;color:var(--r)}
+
+/* ═══════════ SUCCESS ═══════════ */
+#s-ok{align-items:center;justify-content:center;background:var(--bg)}
+.ok-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;gap:14px;max-width:320px;margin:0 auto}
+.ok-icon{width:80px;height:80px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:42px}
+.ok-h{font-size:24px;font-weight:800;color:var(--g)}
+.ok-sub{font-size:15px;color:var(--soft);line-height:1.6}
+.ok-box{background:#fff;border:2px solid var(--line);border-radius:var(--r16);padding:16px 28px;text-align:center;width:100%}
+.ok-lbl{font-size:11px;font-weight:700;color:var(--soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
+.ok-num{font-size:20px;font-weight:800;color:var(--g);letter-spacing:1px}
+.ok-detail{font-size:13px;color:var(--soft);margin-top:6px;line-height:1.7}
+
+/* ═══════════ ORDER HISTORY ═══════════ */
+.ocard{background:#fff;border-radius:var(--r12);margin:8px 14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.ocard-h{background:var(--gl);padding:11px 14px;display:flex;align-items:center;justify-content:space-between}
+.ocard-n{font-size:13px;font-weight:700;color:var(--g)}
+.sbadge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px}
+.s-conf{background:#DBEAFE;color:#1D4ED8}
+.s-prep{background:#FEF3C7;color:#B45309}
+.s-rdy{background:#D1FAE5;color:#065F46}
+.s-dlv{background:#F3F4F6;color:#4B5563}
+.s-cnc{background:#FEE2E2;color:#991B1B}
+.ocard-b{padding:12px 14px}
+.oline{font-size:13px;padding:4px 0;border-bottom:1px dashed var(--line);display:flex;justify-content:space-between;color:var(--ink)}
+.oline:last-child{border:none}
+.oline-s{color:var(--soft)}
+.ocard-f{background:#FAFAF8;padding:9px 14px;display:flex;gap:12px;font-size:12px;color:var(--soft);flex-wrap:wrap}
+
+/* ═══════════ EMPTY / MISC ═══════════ */
+.empty{text-align:center;padding:48px 24px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty-ico{font-size:44px;opacity:.25}
+.empty-txt{font-size:15px;color:var(--soft)}
+.divider{height:8px;background:var(--bg)}
+.card-wrap{background:#fff}
+.sec-head{font-size:13px;font-weight:700;color:var(--soft);padding:14px 14px 6px;letter-spacing:.04em}
+
+/* ═══════════ TOAST ═══════════ */
+.toast{position:fixed;top:70px;left:14px;right:14px;z-index:999;background:#1A1A1A;color:#fff;padding:13px 16px;border-radius:var(--r12);font-size:14px;font-weight:500;text-align:center;transform:translateY(-110px);opacity:0;transition:all .28s cubic-bezier(.34,1.56,.64,1);pointer-events:none}
+.toast.on{transform:translateY(0);opacity:1}
+</style>
+</head>
+<body>
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: LOADING
+══════════════════════════════════════ -->
+<div class="scr on" id="s-load">
+  <div class="load-logo">UNDER<em>360</em></div>
+  <div class="load-sub">อาหารเพื่อสุขภาพ ส่งถึงบ้าน</div>
+  <div class="spin" id="load-spin"></div>
+  <div class="load-err" id="load-err" style="display:none"></div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: MENU
+══════════════════════════════════════ -->
+<div class="scr" id="s-menu">
+  <div class="hdr">
+    <div class="hdr-logo">UNDER<em>360</em></div>
+    <button class="hdr-icon" id="cart-hdr-btn" onclick="goCart()">
+      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+      <span class="badge" id="cart-badge" style="display:none">0</span>
+    </button>
+    <button class="hdr-icon" onclick="goOrders()">
+      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+    </button>
+  </div>
+  <div class="ctabs" id="ctabs"></div>
+  <div class="scroll pb-nav">
+    <div class="mlist" id="mlist"></div>
+  </div>
+  <!-- floating cart button -->
+  <div class="fcart hide" id="fcart" onclick="goCart()">
+    <div class="fcart-l">
+      <div class="fcart-cnt" id="fcart-cnt">0 รายการ</div>
+      <div class="fcart-tot" id="fcart-tot">฿0</div>
+    </div>
+    <div class="fcart-r">ดูตะกร้า →</div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: CART + DELIVERY SELECTION
+══════════════════════════════════════ -->
+<div class="scr" id="s-cart">
+  <div class="hdr">
+    <button class="hdr-back" onclick="goMenu()">←</button>
+    <div class="hdr-title">ตะกร้าสินค้า</div>
+  </div>
+  <div class="scroll pb-btn">
+    <!-- cart items -->
+    <div class="card-wrap" id="clist"></div>
+    <div class="divider"></div>
+    <!-- date picker -->
+    <div class="sec-head">📅 เลือกวันจัดส่ง</div>
+    <div class="dscroll" id="dpick"></div>
+    <div class="divider"></div>
+    <!-- time slot -->
+    <div class="sec-head">⏰ เลือกช่วงเวลา</div>
+    <div class="tgrid" id="tpick"></div>
+    <div class="divider"></div>
+    <!-- address -->
+    <div class="sec-head">📍 ที่อยู่จัดส่ง</div>
+    <div class="igrp">
+      <textarea id="addr-input" class="ifield" rows="3" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด"></textarea>
+    </div>
+    <div class="sec-head">📝 หมายเหตุ (ถ้ามี)</div>
+    <div class="igrp">
+      <input id="notes-input" class="ifield" type="text" placeholder="เช่น ไม่เผ็ด, วางหน้าบ้านได้เลย">
+    </div>
+  </div>
+  <div class="fixbot nonav">
+    <button class="btn-p" onclick="goConfirm()">ต่อไป — ยืนยันออเดอร์ →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: CONFIRM ORDER
+══════════════════════════════════════ -->
+<div class="scr" id="s-confirm">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showScr('s-cart')">←</button>
+    <div class="hdr-title">ยืนยันออเดอร์</div>
+  </div>
+  <div class="scroll pb-btn">
+    <div class="sec-head">🍱 รายการที่สั่ง</div>
+    <div class="card-wrap" id="conf-items"></div>
+    <div class="stot">
+      <div class="stot-l">รวมทั้งหมด</div>
+      <div class="stot-v" id="conf-total">฿0</div>
+    </div>
+    <div class="divider"></div>
+    <div class="card-wrap">
+      <div class="srow"><span class="slbl">📅 วันจัดส่ง</span><span class="sval" id="conf-date">-</span></div>
+      <div class="srow"><span class="slbl">⏰ ช่วงเวลา</span><span class="sval" id="conf-slot">-</span></div>
+      <div class="srow"><span class="slbl">📍 ที่อยู่</span><span class="sval" id="conf-addr">-</span></div>
+      <div class="srow" id="conf-notes-row"><span class="slbl">📝 หมายเหตุ</span><span class="sval" id="conf-notes">-</span></div>
+    </div>
+  </div>
+  <div class="fixbot nonav">
+    <button class="btn-p" id="sub-btn" onclick="submitOrder()">✅ ยืนยันและส่งออเดอร์</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: SUCCESS
+══════════════════════════════════════ -->
+<div class="scr" id="s-ok">
+  <div class="ok-wrap">
+    <div class="ok-icon">✅</div>
+    <div class="ok-h">ส่งออเดอร์แล้ว!</div>
+    <div class="ok-sub">ทีมงานรับทราบออเดอร์แล้ว<br>เราจะเตรียมอาหารให้คุณ 🍱</div>
+    <div class="ok-box">
+      <div class="ok-lbl">เลขออเดอร์</div>
+      <div class="ok-num" id="ok-num">U360-00000000-0000</div>
+      <div class="ok-detail" id="ok-detail"></div>
+    </div>
+    <button class="btn-p" onclick="backToMenu()" style="margin-top:8px">สั่งเพิ่มอีกครั้ง</button>
+    <button class="btn-s" onclick="goOrders()">ดูออเดอร์ทั้งหมด</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: MY ORDERS
+══════════════════════════════════════ -->
+<div class="scr" id="s-orders">
+  <div class="hdr">
+    <button class="hdr-back" onclick="goMenu()">←</button>
+    <div class="hdr-title">ออเดอร์ของฉัน</div>
+  </div>
+  <div class="scroll pb-nav" id="olist">
+    <div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">กำลังโหลด...</div></div>
+  </div>
+</div>
+
+<script>
+// ══════════════════════════════════════
+// ⚙️ CONFIG — ต้องใส่ค่านี้ก่อนใช้งาน
+// ══════════════════════════════════════
+const CFG = {
+  SUPABASE_URL:  'https://zdartbvhbvqlwzwyyiia.supabase.co',        // https://xxxxx.supabase.co
+  SUPABASE_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8',   // eyJ...
+  LIFF_ID:       '2010442513-NI3JGTkb',             // 1234567890-xxxxxxxx
+  DEV_MODE:      false,                      // true = ใช้ test user แทน Line login
+  DEV_PROFILE: { userId:'dev_001', displayName:'Test User', pictureUrl:'' }
+};
+
+// ══════════════════════════════════════
+// 📦 STATE
+// ══════════════════════════════════════
+let sb, lineProfile, customer;
+let menuItems = [], cats = [];
+let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
+let selDate = null, selSlot = null;
+let activeCat = null;
+
+const SLOTS = [
+  { key:'morning',   label:'เช้า',   time:'8:00 – 11:00' },
+  { key:'noon',      label:'เที่ยง', time:'11:00 – 13:00' },
+  { key:'afternoon', label:'บ่าย',   time:'13:00 – 17:00' },
+  { key:'evening',   label:'เย็น',   time:'17:00 – 20:00' },
+];
+
+const CAT_LABELS = {
+  meal_hp:      '🥩 HP Plan',
+  meal_lc:      '🥗 LC Plan',
+  no_regular:   '🍱 ข้าวกล่อง',
+  no_special:   '⭐ สัปดาห์นี้',
+  pack_regular: '📦 แพคกับข้าว',
+  pack_special: '📦 แพคพิเศษ',
+  trend:        '🌟 เทรนด์',
+};
+
+const STATUS = {
+  confirmed: { t:'ยืนยันแล้ว',   c:'s-conf' },
+  preparing: { t:'กำลังเตรียม',  c:'s-prep' },
+  ready:     { t:'พร้อมส่ง',     c:'s-rdy'  },
+  delivered: { t:'ส่งแล้ว',      c:'s-dlv'  },
+  cancelled: { t:'ยกเลิก',       c:'s-cnc'  },
+};
+
+// ══════════════════════════════════════
+// 🚀 INIT
+// ══════════════════════════════════════
+async function init() {
+  // Init Supabase
+  try {
+    sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
+  } catch(e) { showErr('ไม่สามารถเชื่อมต่อ database ได้'); return; }
+
+  // Init LIFF
+  try {
+    if (CFG.DEV_MODE) {
+      lineProfile = CFG.DEV_PROFILE;
+    } else {
+      await liff.init({ liffId: CFG.LIFF_ID });
+      if (!liff.isLoggedIn()) { liff.login(); return; }
+      lineProfile = await liff.getProfile();
+    }
+  } catch(e) {
+    if (CFG.DEV_MODE) { lineProfile = CFG.DEV_PROFILE; }
+    else { showErr('กรุณาเปิดผ่าน Line เท่านั้น'); return; }
+  }
+
+  // Upsert customer
+  try {
+    const { data } = await sb.from('customers')
+      .upsert({ line_uid: lineProfile.userId, display_name: lineProfile.displayName, picture_url: lineProfile.pictureUrl },
+               { onConflict: 'line_uid' })
+      .select().single();
+    customer = data;
+    // restore saved address
+    if (customer?.default_address) {
+      document.getElementById('addr-input').value = customer.default_address;
+    }
+  } catch(e) { console.warn('Customer upsert failed', e); }
+
+  // Load menu
+  try {
+    const { data } = await sb.from('menu_items').select('*').eq('is_available', true).order('sort_order');
+    menuItems = data || [];
+    // extract unique cats in display order
+    const catOrder = ['meal_hp','meal_lc','no_regular','no_special','pack_regular','pack_special','trend'];
+    const found = [...new Set(menuItems.map(m => m.category))];
+    cats = catOrder.filter(c => found.includes(c));
+    activeCat = cats[0] || 'meal_hp';
+  } catch(e) { console.warn('Menu load failed', e); menuItems = []; cats = []; }
+
+  // Render and show
+  renderCatTabs();
+  renderMenu();
+  updateCartUI();
+  showScr('s-menu');
+}
+
+function showErr(msg) {
+  document.getElementById('load-spin').style.display = 'none';
+  const e = document.getElementById('load-err');
+  e.style.display = 'block';
+  e.textContent = msg;
+}
+
+// ══════════════════════════════════════
+// 📱 SCREEN NAVIGATION
+// ══════════════════════════════════════
+function showScr(id) {
+  document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
+  document.getElementById(id).classList.add('on');
+  window.scrollTo(0,0);
+}
+
+function goMenu()    { showScr('s-menu'); }
+function goCart()    { renderCart(); renderDatePick(); renderTimePick(); showScr('s-cart'); }
+function goOrders()  { showScr('s-orders'); loadOrders(); }
+
+function goConfirm() {
+  if (!cart.length)        { toast('กรุณาเลือกสินค้าก่อน'); return; }
+  if (!selDate)            { toast('กรุณาเลือกวันจัดส่ง'); return; }
+  if (!selSlot)            { toast('กรุณาเลือกช่วงเวลา'); return; }
+  const addr = document.getElementById('addr-input').value.trim();
+  if (!addr)               { toast('กรุณาใส่ที่อยู่จัดส่ง'); return; }
+  renderConfirm(addr);
+  showScr('s-confirm');
+}
+
+function backToMenu() {
+  cart = []; saveCart(); updateCartUI();
+  selDate = null; selSlot = null;
+  showScr('s-menu');
+}
+
+// ══════════════════════════════════════
+// 🏷️ CATEGORY TABS
+// ══════════════════════════════════════
+function renderCatTabs() {
+  const el = document.getElementById('ctabs');
+  el.innerHTML = cats.map(c => `
+    <button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${CAT_LABELS[c]||c}</button>
+  `).join('');
+}
+
+function selectCat(c) {
+  activeCat = c;
+  renderCatTabs();
+  renderMenu();
+}
+
+// ══════════════════════════════════════
+// 🍽️ MENU RENDER
+// ══════════════════════════════════════
+function renderMenu() {
+  const el = document.getElementById('mlist');
+  const items = menuItems.filter(m => m.category === activeCat);
+  if (!items.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🍽️</div><div class="empty-txt">ยังไม่มีเมนูในหมวดนี้</div></div>';
+    return;
+  }
+  el.innerHTML = items.map(item => {
+    const inCart = cart.find(c => c.id === item.id);
+    const qty = inCart ? inCart.qty : 0;
+    return `<div class="mi">
+      <div class="mi-inf">
+        ${item.code ? `<div class="mi-code">${h(item.code)}</div>` : ''}
+        <div class="mi-name">${h(item.name)}</div>
+        <div class="mi-tags">
+          ${item.kcal   ? `<span class="tag tag-am">${item.kcal} kcal</span>` : ''}
+          ${item.protein? `<span class="tag tag-g">โปรตีน ${item.protein}g</span>` : ''}
+        </div>
+      </div>
+      <div class="mi-r">
+        <div class="mi-price">฿${item.price}</div>
+        ${qty===0
+          ? `<button class="add-btn" onclick="addItem('${item.id}')">+</button>`
+          : `<div class="qc">
+               <button class="qb" onclick="chgQty('${item.id}',-1)">−</button>
+               <span class="qn">${qty}</span>
+               <button class="qb plus" onclick="chgQty('${item.id}',1)">+</button>
+             </div>`}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// 🛒 CART LOGIC
+// ══════════════════════════════════════
+function addItem(id) {
+  const item = menuItems.find(m => m.id===id);
+  if (!item) return;
+  const ex = cart.find(c => c.id===id);
+  if (ex) ex.qty++;
+  else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
+  saveCart(); renderMenu(); updateCartUI();
+}
+
+function chgQty(id, delta) {
+  const idx = cart.findIndex(c => c.id===id);
+  if (idx===-1) return;
+  cart[idx].qty += delta;
+  if (cart[idx].qty <= 0) cart.splice(idx,1);
+  saveCart(); renderMenu(); updateCartUI();
+  // re-render if cart screen is visible
+  if (document.getElementById('s-cart').classList.contains('on')) renderCart();
+}
+
+function saveCart() { localStorage.setItem('u360_cart', JSON.stringify(cart)); }
+
+function cartTotal()  { return cart.reduce((s,c) => s + c.price*c.qty, 0); }
+function cartCount()  { return cart.reduce((s,c) => s + c.qty, 0); }
+
+function updateCartUI() {
+  const cnt = cartCount(), tot = cartTotal();
+  // badge
+  const badge = document.getElementById('cart-badge');
+  if (cnt > 0) { badge.style.display='flex'; badge.textContent=cnt; }
+  else         { badge.style.display='none'; }
+  // floating cart
+  const fc = document.getElementById('fcart');
+  if (cnt > 0) {
+    fc.classList.remove('hide');
+    document.getElementById('fcart-cnt').textContent = cnt + ' รายการ';
+    document.getElementById('fcart-tot').textContent = '฿' + tot.toLocaleString();
+  } else { fc.classList.add('hide'); }
+}
+
+function renderCart() {
+  const el = document.getElementById('clist');
+  if (!cart.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🛒</div><div class="empty-txt">ตะกร้าว่างเปล่า<br><small>กลับไปเลือกเมนูก่อนนะ</small></div></div>';
+    return;
+  }
+  const rows = cart.map(c => `
+    <div class="citem">
+      <div style="flex:1">
+        <div class="citem-name">${h(c.name)}</div>
+        <div class="citem-sub">฿${c.price} × ${c.qty}</div>
+      </div>
+      <div class="qc" style="margin:0 8px">
+        <button class="qb" onclick="chgQty('${c.id}',-1)">−</button>
+        <span class="qn">${c.qty}</span>
+        <button class="qb plus" onclick="chgQty('${c.id}',1)">+</button>
+      </div>
+      <div class="citem-tot">฿${(c.price*c.qty).toLocaleString()}</div>
+    </div>
+  `).join('');
+  el.innerHTML = rows + `
+    <div class="cart-total-row">
+      <div class="cart-total-l">ยอดรวมสินค้า</div>
+      <div class="cart-total-v">฿${cartTotal().toLocaleString()}</div>
+    </div>`;
+}
+
+// ══════════════════════════════════════
+// 📅 DATE PICKER
+// ══════════════════════════════════════
+// ── ระบบตัดรอบออเดอร์ ──
+// เปลี่ยน CUTOFF_HOUR ได้เลย เช่น 16=บ่าย4, 18=6โมงเย็น
+const CUTOFF_HOUR = 18;
+
+function renderDatePick() {
+  const el = document.getElementById('dpick');
+  const now = new Date();
+  const DAYS   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // ถ้าเลย cutoff → วันแรกที่สั่งได้เป็นมะรืน (offset=2)
+  const isPastCutoff = now.getHours() >= CUTOFF_HOUR;
+  const startOffset  = isPastCutoff ? 2 : 1;
+  let html = '';
+  if(isPastCutoff){
+    html += `<div style="padding:8px 14px 4px;font-size:12px;color:#92400E;
+      background:#FEF3C7;border-radius:8px;margin:0 14px 6px;line-height:1.5;">
+      ⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`;
+  }
+  for(let i = startOffset; i <= startOffset + 6; i++){
+    const d = new Date(now); d.setDate(now.getDate() + i);
+    const key  = d.toISOString().split('T')[0];
+    const isOn = selDate===key ? 'on' : '';
+    html += `<div class="dchip ${isOn}" onclick="pickDate('${key}')">
+      <div class="dd">${DAYS[d.getDay()]}</div>
+      <div class="dn">${d.getDate()}</div>
+      <div class="dm">${MONTHS[d.getMonth()]}</div>
+    </div>`;
+  }
+  el.innerHTML = html;
+}
+
+function pickDate(key) { selDate=key; renderDatePick(); }
+
+// ══════════════════════════════════════
+// ⏰ TIME PICKER
+// ══════════════════════════════════════
+function renderTimePick() {
+  const el = document.getElementById('tpick');
+  el.innerHTML = SLOTS.map(s => `
+    <div class="tchip${selSlot===s.key?' on':''}" onclick="pickSlot('${s.key}')">
+      <div class="tchip-l">${s.label}</div>
+      <div class="tchip-t">${s.time}</div>
+    </div>
+  `).join('');
+}
+
+function pickSlot(key) { selSlot=key; renderTimePick(); }
+
+// ══════════════════════════════════════
+// 📋 CONFIRM RENDER
+// ══════════════════════════════════════
+function renderConfirm(addr) {
+  const slot = SLOTS.find(s => s.key===selSlot);
+  const tot  = cartTotal();
+
+  document.getElementById('conf-items').innerHTML =
+    cart.map(c => `<div class="srow"><span class="slbl">${h(c.name)} × ${c.qty}</span><span class="sval">฿${(c.price*c.qty).toLocaleString()}</span></div>`).join('');
+
+  document.getElementById('conf-total').textContent = '฿' + tot.toLocaleString();
+  document.getElementById('conf-date').textContent  = fmtDate(selDate);
+  document.getElementById('conf-slot').textContent  = slot ? `${slot.label} (${slot.time})` : '-';
+  document.getElementById('conf-addr').textContent  = addr;
+  const notes = document.getElementById('notes-input').value.trim();
+  document.getElementById('conf-notes').textContent = notes || '—';
+}
+
+// ══════════════════════════════════════
+// 📤 SUBMIT ORDER
+// ══════════════════════════════════════
+async function submitOrder() {
+  const btn = document.getElementById('sub-btn');
+  btn.disabled = true;
+  btn.textContent = 'กำลังส่งออเดอร์...';
+
+  const addr  = document.getElementById('addr-input').value.trim();
+  const notes = document.getElementById('notes-input').value.trim();
+  const slot  = SLOTS.find(s => s.key===selSlot);
+  const tot   = cartTotal();
+  const dateStr = selDate.replace(/-/g,'');
+  const rand    = Math.floor(1000 + Math.random()*9000);
+  const orderNum = `U360-${dateStr}-${rand}`;
+
+  try {
+    // 1. Create order
+    const { data: ord, error: oErr } = await sb.from('orders').insert({
+      order_number:    orderNum,
+      customer_id:     customer?.id || null,
+      line_uid:        lineProfile.userId,
+      customer_name:   lineProfile.displayName,
+      delivery_date:   selDate,
+      time_slot:       selSlot,
+      time_slot_label: slot?.time || '',
+      delivery_address: addr,
+      delivery_fee:    0,
+      subtotal:        tot,
+      total:           tot,
+      notes:           notes,
+      status:          'confirmed'
+    }).select().single();
+    if (oErr) throw oErr;
+
+    // 2. Create order items
+    const items = cart.map(c => ({
+      order_id:     ord.id,
+      menu_item_id: c.id,
+      menu_name:    c.name,
+      menu_code:    c.code,
+      quantity:     c.qty,
+      unit_price:   c.price,
+      subtotal:     c.price * c.qty,
+      notes:        ''
+    }));
+    const { error: iErr } = await sb.from('order_items').insert(items);
+    if (iErr) throw iErr;
+
+    // 3. Save default address for next time
+    if (customer?.id) {
+      await sb.from('customers').update({ default_address: addr }).eq('id', customer.id);
+    }
+
+    // 4. Show success
+    document.getElementById('ok-num').textContent = orderNum;
+    document.getElementById('ok-detail').innerHTML =
+      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}`;
+    showScr('s-ok');
+
+  } catch(e) {
+    console.error(e);
+    toast('เกิดข้อผิดพลาด กรุณาลองใหม่ หรือโทรหาร้าน');
+    btn.disabled = false;
+    btn.textContent = '✅ ยืนยันและส่งออเดอร์';
+  }
+}
+
+// ══════════════════════════════════════
+// 📦 MY ORDERS
+// ══════════════════════════════════════
+async function loadOrders() {
+  const el = document.getElementById('olist');
+  el.innerHTML = '<div class="empty"><div class="spin"></div></div>';
+  try {
+    const { data } = await sb.from('orders')
+      .select('*, order_items(*)')
+      .eq('line_uid', lineProfile.userId)
+      .order('created_at', { ascending:false })
+      .limit(30);
+    renderOrders(data || []);
+  } catch(e) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">⚠️</div><div class="empty-txt">ไม่สามารถโหลดออเดอร์ได้</div></div>';
+  }
+}
+
+function renderOrders(orders) {
+  const el = document.getElementById('olist');
+  if (!orders.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">ยังไม่มีออเดอร์<br><small>สั่งอาหารครั้งแรกได้เลย!</small></div></div>';
+    return;
+  }
+  el.innerHTML = orders.map(o => {
+    const st = STATUS[o.status] || { t:o.status, c:'' };
+    const items = o.order_items || [];
+    return `<div class="ocard">
+      <div class="ocard-h">
+        <span class="ocard-n">${h(o.order_number)}</span>
+        <span class="sbadge ${st.c}">${st.t}</span>
+      </div>
+      <div class="ocard-b">
+        ${items.map(i=>`<div class="oline">${h(i.menu_name)} × ${i.quantity}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`).join('')}
+      </div>
+      <div class="ocard-f">
+        <span>📅 ${fmtDate(o.delivery_date)}</span>
+        <span>⏰ ${o.time_slot_label || o.time_slot}</span>
+        <span style="margin-left:auto;font-weight:700;color:var(--r)">฿${Number(o.total).toLocaleString()}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════
+// 🛠 HELPERS
+// ══════════════════════════════════════
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtDate(ds) {
+  if (!ds) return '-';
+  const d = new Date(ds+'T12:00:00');
+  const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  return `${DAYS[d.getDay()]}ที่ ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+}
+
+let toastTimer;
+function toast(msg, ms=2800) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => t.classList.remove('on'), ms);
+}
+
+// ══════════════════════════════════════
+// ▶️ START
+// ══════════════════════════════════════
+window.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

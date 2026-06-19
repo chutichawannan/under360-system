@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Under360 — ครัว</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Sarabun',sans-serif;background:#111;color:#eee;min-height:100vh;-webkit-font-smoothing:antialiased}
+button{cursor:pointer;border:none;font-family:inherit;-webkit-tap-highlight-color:transparent}
+:root{
+  --g:#1F4D3A; --gl:#E8F0EC; --g2:#2D6B53;
+  --r:#C9573F; --am:#D98C2B;
+  --ok:#10B981; --warn:#F59E0B;
+  --bg:#111; --card:#1C1C1E; --line:#2C2C2E;
+  --txt:#F5F5F5; --soft:#8E8E93; --faint:#48484A;
+}
+
+/* ═══════════ SCREENS ═══════════ */
+.scr{display:none;min-height:100vh;flex-direction:column}
+.scr.on{display:flex}
+
+/* ═══════════ PIN SCREEN ═══════════ */
+#s-pin{align-items:center;justify-content:center;background:var(--g)}
+.pin-wrap{display:flex;flex-direction:column;align-items:center;gap:20px;padding:32px 24px;text-align:center;max-width:300px}
+.pin-logo{font-size:28px;font-weight:800;color:#fff;letter-spacing:-1px}
+.pin-logo em{opacity:.4;font-style:normal;font-weight:300}
+.pin-sub{font-size:15px;color:rgba(255,255,255,.6)}
+.pin-field{
+  width:100%;text-align:center;letter-spacing:8px;
+  background:rgba(255,255,255,.12);border:2px solid rgba(255,255,255,.2);
+  border-radius:12px;color:#fff;font-size:28px;font-weight:700;
+  padding:14px;outline:none;transition:border-color .15s;
+}
+.pin-field:focus{border-color:rgba(255,255,255,.6)}
+.pin-btn{
+  width:100%;padding:14px;border-radius:12px;
+  background:#fff;color:var(--g);font-size:17px;font-weight:800;
+  transition:opacity .12s;
+}
+.pin-btn:active{opacity:.85}
+.pin-err{font-size:13px;color:#FCA5A5;min-height:18px}
+
+/* ═══════════ TOP BAR ═══════════ */
+.topbar{
+  position:sticky;top:0;z-index:100;
+  background:#1C1C1E;border-bottom:1px solid var(--line);
+  padding:12px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;
+}
+.topbar-logo{font-size:16px;font-weight:800;color:var(--txt);letter-spacing:-.3px}
+.topbar-logo span{opacity:.4;font-weight:300}
+.date-nav{display:flex;align-items:center;gap:6px;margin-left:auto}
+.date-btn{
+  padding:7px 10px;border-radius:8px;background:var(--faint);color:var(--txt);
+  font-size:13px;font-weight:600;transition:background .12s;
+}
+.date-btn:hover{background:#3A3A3C}
+.date-btn.on{background:var(--g);color:#fff}
+.date-label{font-size:14px;font-weight:700;color:var(--txt);padding:0 4px}
+.refresh-btn{
+  padding:7px 12px;border-radius:8px;background:var(--faint);color:var(--txt);
+  font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;
+}
+.live-dot{width:8px;height:8px;border-radius:50%;background:var(--ok);animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.stats{display:flex;gap:8px;font-size:12px;color:var(--soft);flex-wrap:wrap;align-items:center}
+.stat{background:var(--card);padding:4px 10px;border-radius:6px;font-weight:600;white-space:nowrap}
+.stat span{margin-right:4px}
+
+/* ═══════════ GRID ═══════════ */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:12px;padding:12px 16px;align-items:start}
+
+/* ═══════════ SLOT COLUMN ═══════════ */
+.slot-col{display:flex;flex-direction:column;gap:8px}
+.slot-head{
+  background:var(--card);border-radius:10px;padding:10px 14px;
+  display:flex;align-items:center;justify-content:space-between;
+  border-left:3px solid var(--g);position:sticky;top:66px;z-index:90;
+}
+.slot-lbl{font-size:14px;font-weight:800;color:var(--txt)}
+.slot-time{font-size:12px;color:var(--soft)}
+.slot-cnt{font-size:12px;font-weight:700;background:var(--faint);padding:3px 9px;border-radius:20px;color:var(--txt)}
+
+/* ═══════════ ORDER CARD ═══════════ */
+.ocard{
+  background:var(--card);border-radius:10px;overflow:hidden;
+  border:1px solid var(--line);transition:border-color .15s;
+}
+.ocard.urgent{border-color:var(--r);box-shadow:0 0 0 1px var(--r)}
+.ocard-h{
+  padding:10px 12px;display:flex;align-items:center;justify-content:space-between;gap:8px;
+  border-bottom:1px solid var(--line);
+}
+.onum{font-size:12px;font-weight:800;color:var(--g2);letter-spacing:.3px}
+.oname{font-size:13px;font-weight:700;color:var(--txt)}
+.otime{font-size:11px;color:var(--soft)}
+.sbadge{
+  font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;white-space:nowrap;
+}
+.s-conf{background:#1E3A5F;color:#60A5FA}
+.s-prep{background:#4C3D00;color:#FCD34D}
+.s-rdy{background:#064E3B;color:#6EE7B7}
+.s-dlv{background:#2C2C2E;color:#8E8E93}
+.s-cnc{background:#450A0A;color:#FCA5A5}
+.ocard-b{padding:10px 12px}
+.oline{
+  display:flex;justify-content:space-between;align-items:baseline;
+  font-size:13px;padding:5px 0;border-bottom:1px dashed var(--faint);
+}
+.oline:last-child{border:none}
+.oln{color:var(--txt);font-weight:500}
+.olq{font-size:12px;background:var(--g);color:#fff;padding:1px 7px;border-radius:12px;font-weight:700;white-space:nowrap}
+.onote{font-size:11px;color:var(--am);font-style:italic;display:block;margin-top:2px}
+.ocard-f{padding:8px 12px;border-top:1px solid var(--line);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.oaddr{font-size:11px;color:var(--soft);flex:1;line-height:1.4;min-width:100px}
+.ocust{font-size:11px;color:var(--soft);white-space:nowrap}
+.ocard-actions{padding:8px 12px;display:flex;gap:6px;border-top:1px solid var(--line)}
+.act-btn{
+  flex:1;padding:8px 6px;border-radius:8px;
+  font-size:13px;font-weight:700;transition:opacity .12s;text-align:center;
+}
+.act-btn:active{opacity:.75}
+.act-prep{background:#4C3D00;color:#FCD34D}
+.act-rdy{background:#064E3B;color:#6EE7B7}
+.act-dlv{background:#1C1C1E;color:#8E8E93;border:1px solid var(--faint)}
+.act-cnc{background:#450A0A;color:#FCA5A5}
+
+/* ═══════════ MISC ═══════════ */
+.empty{text-align:center;padding:32px 16px;color:var(--soft);font-size:14px}
+.loading{text-align:center;padding:40px;color:var(--soft)}
+.spin{display:inline-block;width:24px;height:24px;border:3px solid var(--faint);border-top-color:var(--g2);border-radius:50%;animation:sp .7s linear infinite;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+.toast{
+  position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(60px);
+  background:#1C1C1E;color:#fff;padding:12px 20px;border-radius:12px;
+  font-size:14px;font-weight:600;border:1px solid var(--line);z-index:999;
+  transition:transform .25s cubic-bezier(.34,1.56,.64,1),opacity .25s;opacity:0;
+  white-space:nowrap;
+}
+.toast.on{transform:translateX(-50%) translateY(0);opacity:1}
+.total-badge{
+  background:var(--r);color:#fff;
+  font-size:13px;font-weight:800;
+  padding:5px 12px;border-radius:8px;white-space:nowrap;
+}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════════════════════
+     PIN SCREEN
+══════════════════════════════ -->
+<div class="scr on" id="s-pin">
+  <div class="pin-wrap">
+    <div class="pin-logo">UNDER<em>360</em></div>
+    <div class="pin-sub">ระบบครัว — ใส่รหัสเพื่อเข้าใช้งาน</div>
+    <input class="pin-field" id="pin-input" type="password" inputmode="numeric"
+      maxlength="6" placeholder="••••" onkeydown="if(event.key==='Enter')checkPin()">
+    <div class="pin-err" id="pin-err"></div>
+    <button class="pin-btn" onclick="checkPin()">เข้าสู่ระบบ →</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════
+     MAIN SCREEN
+══════════════════════════════ -->
+<div class="scr" id="s-main">
+  <!-- TOP BAR -->
+  <div class="topbar">
+    <div class="topbar-logo">UNDER<em>360</em> ครัว</div>
+    <div class="stats" id="stats-bar"></div>
+    <div class="date-nav">
+      <button class="date-btn on" id="btn-today" onclick="setDay(0)">วันนี้</button>
+      <button class="date-btn" id="btn-tom"   onclick="setDay(1)">พรุ่งนี้</button>
+      <button class="date-btn" id="btn-other" onclick="pickOther()">อื่นๆ</button>
+    </div>
+    <div class="date-label" id="date-label"></div>
+    <button class="refresh-btn" onclick="loadOrders()">
+      <div class="live-dot"></div> รีเฟรช
+    </button>
+  </div>
+
+  <!-- ORDER GRID -->
+  <div id="main-content" class="loading">
+    <div class="spin"></div>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════
+// ⚙️ CONFIG — ใส่ค่าเดียวกับ liff_customer.html
+// ════════════════════════════════════
+const CFG = {
+  SUPABASE_URL: 'https://zdartbvhbvqlwzwyyiia.supabase.co',
+  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8',
+};
+
+const SLOTS = [
+  { key:'morning',   label:'เช้า',   time:'8:00 – 11:00',  color:'#1E3A5F' },
+  { key:'noon',      label:'เที่ยง', time:'11:00 – 13:00', color:'#2D1B69' },
+  { key:'afternoon', label:'บ่าย',   time:'13:00 – 17:00', color:'#1F3A2D' },
+  { key:'evening',   label:'เย็น',   time:'17:00 – 20:00', color:'#3B1F00' },
+];
+
+const STATUS_NEXT = {
+  confirmed: 'preparing',
+  preparing: 'ready',
+  ready:     'delivered',
+};
+const STATUS_LABEL = {
+  confirmed: { t:'รอเตรียม',    c:'s-conf' },
+  preparing: { t:'กำลังเตรียม', c:'s-prep' },
+  ready:     { t:'พร้อมส่ง',    c:'s-rdy'  },
+  delivered: { t:'ส่งแล้ว',     c:'s-dlv'  },
+  cancelled: { t:'ยกเลิก',      c:'s-cnc'  },
+};
+
+const STATUS_BTN = {
+  confirmed: { label:'▶ เริ่มเตรียม',   cls:'act-prep' },
+  preparing: { label:'✅ พร้อมส่งแล้ว', cls:'act-rdy'  },
+  ready:     { label:'🚀 ส่งแล้ว',      cls:'act-dlv'  },
+};
+
+let sb, viewDate = new Date();
+let orders = [], realtimeCh = null;
+
+// ════════════════════════════════════
+// INIT
+// ════════════════════════════════════
+async function init() {
+  try {
+    sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
+  } catch(e) {
+    document.getElementById('pin-err').textContent = 'ไม่สามารถเชื่อมต่อ database ได้';
+  }
+}
+
+// ════════════════════════════════════
+// PIN CHECK
+// ════════════════════════════════════
+async function checkPin() {
+  const pin = document.getElementById('pin-input').value.trim();
+  if (!pin) return;
+  document.getElementById('pin-err').textContent = 'กำลังตรวจสอบ...';
+  try {
+    const { data } = await sb.from('kitchen_config').select('value').eq('key','kitchen_pin').single();
+    if (data && data.value === pin) {
+      sessionStorage.setItem('k_auth','1');
+      enterKitchen();
+    } else {
+      document.getElementById('pin-err').textContent = '❌ รหัสไม่ถูกต้อง';
+      document.getElementById('pin-input').value = '';
+    }
+  } catch(e) {
+    document.getElementById('pin-err').textContent = 'เชื่อมต่อไม่ได้ ลองใหม่';
+  }
+}
+
+function enterKitchen() {
+  document.getElementById('s-pin').classList.remove('on');
+  document.getElementById('s-main').classList.add('on');
+  setDay(0);
+  startRealtime();
+}
+
+// ════════════════════════════════════
+// DATE NAVIGATION
+// ════════════════════════════════════
+function setDay(offset) {
+  const d = new Date();
+  d.setDate(d.getDate() + offset);
+  viewDate = d;
+
+  document.getElementById('btn-today').classList.toggle('on', offset===0);
+  document.getElementById('btn-tom').classList.toggle('on', offset===1);
+  document.getElementById('btn-other').classList.toggle('on', offset>1);
+
+  const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  document.getElementById('date-label').textContent =
+    `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+
+  loadOrders();
+}
+
+function pickOther() {
+  const input = prompt('ใส่วัน (YYYY-MM-DD):');
+  if (!input) return;
+  viewDate = new Date(input+'T12:00:00');
+  document.getElementById('btn-today').classList.remove('on');
+  document.getElementById('btn-tom').classList.remove('on');
+  document.getElementById('btn-other').classList.add('on');
+  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  document.getElementById('date-label').textContent =
+    `${viewDate.getDate()} ${MONTHS[viewDate.getMonth()]} ${viewDate.getFullYear()+543}`;
+  loadOrders();
+}
+
+// ════════════════════════════════════
+// LOAD ORDERS
+// ════════════════════════════════════
+async function loadOrders() {
+  const dateStr = viewDate.toISOString().split('T')[0];
+  document.getElementById('main-content').innerHTML = '<div class="loading"><div class="spin"></div></div>';
+  try {
+    const { data, error } = await sb
+      .from('orders')
+      .select('*, order_items(*)')
+      .eq('delivery_date', dateStr)
+      .neq('status','cancelled')
+      .order('created_at');
+    if (error) throw error;
+    orders = data || [];
+    renderAll();
+  } catch(e) {
+    document.getElementById('main-content').innerHTML = '<div class="loading" style="color:#FCA5A5">โหลดออเดอร์ไม่ได้ กรุณาตรวจสอบ Supabase URL/Key</div>';
+  }
+}
+
+// ════════════════════════════════════
+// RENDER
+// ════════════════════════════════════
+function renderAll() {
+  // Stats
+  const total     = orders.length;
+  const confirmed = orders.filter(o=>o.status==='confirmed').length;
+  const preparing = orders.filter(o=>o.status==='preparing').length;
+  const ready     = orders.filter(o=>o.status==='ready').length;
+  const delivered = orders.filter(o=>o.status==='delivered').length;
+  const revenue   = orders.reduce((s,o)=>s+Number(o.total||0),0);
+
+  document.getElementById('stats-bar').innerHTML = `
+    <div class="stat"><span>📋</span>${total} ออเดอร์</div>
+    ${confirmed ? `<div class="stat"><span style="color:#60A5FA">⏳</span>${confirmed} รอเตรียม</div>` : ''}
+    ${preparing ? `<div class="stat"><span style="color:#FCD34D">🍳</span>${preparing} กำลังทำ</div>` : ''}
+    ${ready     ? `<div class="stat"><span style="color:#6EE7B7">✅</span>${ready} พร้อมส่ง</div>` : ''}
+    ${delivered ? `<div class="stat"><span>📦</span>${delivered} ส่งแล้ว</div>` : ''}
+    <div class="total-badge">฿${revenue.toLocaleString()}</div>
+  `;
+
+  if (!orders.length) {
+    document.getElementById('main-content').innerHTML = '<div class="empty">ไม่มีออเดอร์วันนี้ 🎉</div>';
+    return;
+  }
+
+  // Build slot columns
+  const content = document.createElement('div');
+  content.className = 'grid';
+
+  SLOTS.forEach(slot => {
+    const slotOrders = orders.filter(o => o.time_slot === slot.key);
+    if (!slotOrders.length) return;
+
+    const col = document.createElement('div');
+    col.className = 'slot-col';
+    col.innerHTML = `
+      <div class="slot-head">
+        <div>
+          <div class="slot-lbl">${slot.label}</div>
+          <div class="slot-time">${slot.time}</div>
+        </div>
+        <div class="slot-cnt">${slotOrders.length} ออเดอร์</div>
+      </div>
+    `;
+
+    slotOrders.forEach(o => {
+      const card = buildOrderCard(o);
+      col.appendChild(card);
+    });
+
+    content.appendChild(col);
+  });
+
+  // Orders with no time slot (fallback)
+  const noSlot = orders.filter(o => !SLOTS.find(s=>s.key===o.time_slot));
+  if (noSlot.length) {
+    const col = document.createElement('div');
+    col.className = 'slot-col';
+    col.innerHTML = `<div class="slot-head"><div class="slot-lbl">⚠️ ไม่ระบุเวลา</div><div class="slot-cnt">${noSlot.length}</div></div>`;
+    noSlot.forEach(o => col.appendChild(buildOrderCard(o)));
+    content.appendChild(col);
+  }
+
+  document.getElementById('main-content').innerHTML = '';
+  document.getElementById('main-content').className = '';
+  document.getElementById('main-content').appendChild(content);
+}
+
+function buildOrderCard(o) {
+  const st = STATUS_LABEL[o.status] || { t:o.status, c:'' };
+  const items = o.order_items || [];
+  const isUrgent = o.status === 'ready';
+  const nextBtn = STATUS_BTN[o.status];
+
+  const div = document.createElement('div');
+  div.className = 'ocard' + (isUrgent ? ' urgent' : '');
+  div.id = 'card-' + o.id;
+
+  div.innerHTML = `
+    <div class="ocard-h">
+      <div>
+        <div class="onum">${h(o.order_number)}</div>
+        <div class="oname">${h(o.customer_name || '(ไม่มีชื่อ)')}</div>
+        <div class="otime">สั่ง ${fmtTime(o.created_at)}</div>
+      </div>
+      <span class="sbadge ${st.c}">${st.t}</span>
+    </div>
+
+    <div class="ocard-b">
+      ${items.map(i => `
+        <div class="oline">
+          <span class="oln">${h(i.menu_name)}</span>
+          <span class="olq">×${i.quantity}</span>
+        </div>
+        ${i.notes ? `<span class="onote">📌 ${h(i.notes)}</span>` : ''}
+      `).join('')}
+    </div>
+
+    <div class="ocard-f">
+      <div class="oaddr">📍 ${h(o.delivery_address||'ไม่มีที่อยู่')}</div>
+      <div class="ocust">💰 ฿${Number(o.total||0).toLocaleString()}</div>
+    </div>
+
+    <div class="ocard-actions">
+      ${nextBtn ? `<button class="act-btn ${nextBtn.cls}" onclick="updateStatus('${o.id}','${STATUS_NEXT[o.status]}')">${nextBtn.label}</button>` : ''}
+      ${o.status !== 'delivered' ? `<button class="act-btn act-cnc" style="flex:0;padding:8px 12px" onclick="cancelOrder('${o.id}')">✕</button>` : ''}
+    </div>
+  `;
+
+  return div;
+}
+
+// ════════════════════════════════════
+// STATUS UPDATE
+// ════════════════════════════════════
+async function updateStatus(id, newStatus) {
+  try {
+    const { error } = await sb.from('orders').update({ status: newStatus }).eq('id', id);
+    if (error) throw error;
+
+    // Update local state and re-render card
+    const order = orders.find(o => o.id === id);
+    if (order) order.status = newStatus;
+
+    // Replace card in DOM without full reload (smooth UX)
+    const oldCard = document.getElementById('card-' + id);
+    if (oldCard) {
+      const newCard = buildOrderCard(order);
+      oldCard.replaceWith(newCard);
+    }
+
+    // Update stats
+    const STATUS_TOAST = { preparing:'🍳 เริ่มเตรียมแล้ว', ready:'✅ พร้อมส่ง!', delivered:'📦 ส่งเรียบร้อย' };
+    toast(STATUS_TOAST[newStatus] || 'อัพเดทแล้ว');
+
+    // Update stats bar
+    const total     = orders.length;
+    const confirmed = orders.filter(o=>o.status==='confirmed').length;
+    const preparing = orders.filter(o=>o.status==='preparing').length;
+    const ready     = orders.filter(o=>o.status==='ready').length;
+    const delivered = orders.filter(o=>o.status==='delivered').length;
+    const revenue   = orders.reduce((s,o)=>s+Number(o.total||0),0);
+    document.getElementById('stats-bar').innerHTML = `
+      <div class="stat"><span>📋</span>${total} ออเดอร์</div>
+      ${confirmed ? `<div class="stat"><span style="color:#60A5FA">⏳</span>${confirmed} รอเตรียม</div>` : ''}
+      ${preparing ? `<div class="stat"><span style="color:#FCD34D">🍳</span>${preparing} กำลังทำ</div>` : ''}
+      ${ready     ? `<div class="stat"><span style="color:#6EE7B7">✅</span>${ready} พร้อมส่ง</div>` : ''}
+      ${delivered ? `<div class="stat"><span>📦</span>${delivered} ส่งแล้ว</div>` : ''}
+      <div class="total-badge">฿${revenue.toLocaleString()}</div>
+    `;
+  } catch(e) {
+    toast('อัพเดทไม่ได้ กรุณาลองใหม่');
+  }
+}
+
+async function cancelOrder(id) {
+  const order = orders.find(o=>o.id===id);
+  if (!confirm(`ยกเลิกออเดอร์ ${order?.order_number || id} ?`)) return;
+  await updateStatus(id, 'cancelled');
+  // remove from list after cancel
+  setTimeout(() => loadOrders(), 1000);
+}
+
+// ════════════════════════════════════
+// REALTIME SUBSCRIPTION
+// ════════════════════════════════════
+function startRealtime() {
+  if (realtimeCh) supabase.removeChannel(realtimeCh);
+  realtimeCh = sb.channel('kitchen-orders')
+    .on('postgres_changes', { event:'INSERT', schema:'public', table:'orders' }, (payload) => {
+      toast('🔔 ออเดอร์ใหม่เข้ามา!', 4000);
+      loadOrders();
+    })
+    .subscribe();
+}
+
+// ════════════════════════════════════
+// HELPERS
+// ════════════════════════════════════
+function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function fmtTime(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  return d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+}
+
+let toastTimer;
+function toast(msg, ms=2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('on'), ms);
+}
+
+// ════════════════════════════════════
+// START
+// ════════════════════════════════════
+window.addEventListener('DOMContentLoaded', () => {
+  init();
+  // Auto-enter if session still valid
+  if (sessionStorage.getItem('k_auth')==='1') enterKitchen();
+  // Auto-refresh every 5 minutes
+  setInterval(() => {
+    if (sessionStorage.getItem('k_auth')==='1') loadOrders();
+  }, 300000);
+});
+</script>
+</body>
+</html>
