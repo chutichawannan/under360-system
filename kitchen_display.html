@@ -248,7 +248,7 @@ async function checkPin() {
   if (!pin) return;
   document.getElementById('pin-err').textContent = 'กำลังตรวจสอบ...';
   try {
-    const { data } = await sb.from('kitchen_config').select('value').eq('key','kitchen_pin').single();
+    const { data } = await sb.from('app_config').select('value').eq('key','kitchen_pin').single();
     if (data && data.value === pin) {
       sessionStorage.setItem('k_auth','1');
       enterKitchen();
