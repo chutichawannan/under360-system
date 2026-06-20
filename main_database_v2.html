@@ -158,7 +158,7 @@ select.filt{padding:10px 10px;border:1px solid var(--line);border-radius:8px;fon
 .cat-picker{position:relative;display:inline-block;}
 .cat-picker-btn{padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;font-family:inherit;color:var(--ink);cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
 .cat-picker-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px;min-width:250px;max-height:280px;overflow-y:auto;z-index:30;}
-.cat-picker-panel label{display:flex;align-items:center;gap:8px;padding:7px 6px;font-size:13.5px;cursor:pointer;border-radius:6px;}
+.cat-picker-panel label{display:flex;align-items:center;gap:8px;padding:9px 10px;font-size:13.5px;cursor:pointer;border-radius:6px;user-select:none;}
 .cat-picker-panel label:hover{background:var(--surface-2);}
 .cat-picker-panel input[type=checkbox]{width:auto;margin:0;}
 .cat-picker-add{display:flex;gap:6px;margin-top:6px;padding-top:8px;border-top:1px solid var(--line);}
@@ -2418,12 +2418,12 @@ function renderRecipesTab(){
   html += `<div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" placeholder="ค้นหาชื่อเมนูหรือโค้ด..." value="${escapeHtml(state.search)}"></div>
     ${renderCategoryPicker(state.categoryFilter, 'filter')}
-    <select class="filt" id="sortModeSelect">
-      <option value="category" ${state.sortMode==='category'?'selected':''}>เรียงตามหมวด (ค่าเริ่มต้น)</option>
-      <option value="code_asc" ${state.sortMode==='code_asc'?'selected':''}>เรียงตามโค้ด (A→Z)</option>
-      <option value="name_asc" ${state.sortMode==='name_asc'?'selected':''}>เรียงตามชื่อ (ก→ฮ)</option>
-      <option value="stock_asc" ${state.sortMode==='stock_asc'?'selected':''}>เรียงตามสต็อก (น้อย→มาก)</option>
-      <option value="stock_desc" ${state.sortMode==='stock_desc'?'selected':''}>เรียงตามสต็อก (มาก→น้อย)</option>
+    <select class="filt" id="sortModeSelect" style="font-size:12px;padding:6px 8px;max-width:150px;">
+      <option value="category" ${state.sortMode==='category'?'selected':''}>หมวดหมู่</option>
+      <option value="code_asc" ${state.sortMode==='code_asc'?'selected':''}>โค้ด A→Z</option>
+      <option value="name_asc" ${state.sortMode==='name_asc'?'selected':''}>ชื่อ ก→ฮ</option>
+      <option value="stock_asc" ${state.sortMode==='stock_asc'?'selected':''}>สต็อก น้อย→มาก</option>
+      <option value="stock_desc" ${state.sortMode==='stock_desc'?'selected':''}>สต็อก มาก→น้อย</option>
     </select>
     <div class="rating-filter-wrap"><span>คะแนนขั้นต่ำ</span>${renderRatingDots3(state.ratingFilter, 'filter')}</div>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);">
@@ -2441,7 +2441,12 @@ function renderRecipesTab(){
   });
 
   if(filtered.length===0){
-    html += `<div class="empty">ไม่พบเมนูที่ตรงกับเงื่อนไข ลองล้างคำค้นหรือกด “+ เมนูใหม่” เพื่อเริ่มเพิ่มเมนู</div>`;
+    let otherHint = '';
+    if(q && state.categoryFilter.length){
+      const inOther = state.recipes.filter(r=>(r.status==='active'||!r.status)&&(r.name.toLowerCase().includes(q)||(r.code||'').toLowerCase().includes(q)));
+      if(inOther.length) otherHint = ` <span style="font-size:12px;color:var(--forest);cursor:pointer;text-decoration:underline;" onclick="state.categoryFilter=[];render()">💡 พบ ${inOther.length} เมนูในหมวดอื่น — คลิกเพื่อดู</span>`;
+    }
+    html += `<div class="empty">ไม่พบเมนูที่ตรงกับเงื่อนไข ลองล้างคำค้นหรือกด "+ เมนูใหม่"${otherHint}</div>`;
     return html;
   }
 
@@ -3156,6 +3161,9 @@ function attachHandlers(){
         else state.recipePickerOpen = !state.recipePickerOpen;
         render();
       };
+      // กัน panel ปิดเมื่อคลิกข้างใน
+      const panel_ = picker.querySelector('.cat-picker-panel');
+      if(panel_) panel_.onclick = e => e.stopPropagation();
       picker.querySelectorAll('.cat-check').forEach(chk=>{
         chk.onclick = e=>e.stopPropagation();
         chk.onchange = ()=>{
@@ -3234,6 +3242,22 @@ function attachHandlers(){
           r.parts[pIdx].lines = r.parts[pIdx].lines||[];
           r.parts[pIdx].lines.push({name:'',qty:'',unit:'g'});
           render();
+          // Focus ช่อง name ใหม่
+          setTimeout(()=>{
+            const lines = document.querySelectorAll(`[data-part-idx="${pIdx}"] .ln-name`);
+            if(lines.length) lines[lines.length-1].focus();
+          },50);
+        };
+      });
+      // Enter ในช่อง name → เพิ่มแถวใหม่
+      panel.querySelectorAll('.ln-name').forEach(inp=>{
+        inp.onkeydown = (e)=>{
+          if(e.key==='Enter'){
+            e.preventDefault();
+            const pIdx = inp.closest('.ing-line').dataset.partIdx;
+            const btn = panel.querySelector(`.addLine[data-part-idx="${pIdx}"]`);
+            if(btn) btn.click();
+          }
         };
       });
       panel.querySelectorAll('.rmLine').forEach(btn=>btn.onclick=()=>{
