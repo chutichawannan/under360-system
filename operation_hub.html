@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — Operation Hub</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --forest:#1F4D3A; --forest-mid:#2D6B52; --forest-soft:#EBF3EF;
+  --gold:#C9973F; --gold-soft:#FDF5E8;
+  --ink:#1A1A1A; --ink-soft:#6B7280; --ink-xsoft:#D1D5DB;
+  --red:#DC2626; --red-soft:#FEF2F2;
+  --blue:#3B82F6; --yellow:#F59E0B; --green:#22C55E; --purple:#8B5CF6;
+  --bg:#F7F8F6; --white:#FFFFFF; --radius:12px;
+  --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans Thai',sans-serif;
+  --sidebar-w:220px; --sidebar-mini:56px;
+}
+html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--ink);overflow:hidden}
+.app{display:flex;height:100vh}
+
+/* ── SIDEBAR ── */
+.sidebar{
+  width:var(--sidebar-w);flex-shrink:0;
+  background:var(--forest);
+  display:flex;flex-direction:column;
+  transition:width .2s ease;
+  overflow:hidden;z-index:10;
+}
+.sidebar.mini{width:var(--sidebar-mini)}
+.sb-header{
+  padding:16px 14px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.1);min-height:60px;
+}
+.sb-logo-icon{font-family:var(--mono);font-size:13px;font-weight:700;color:#fff;
+  background:rgba(255,255,255,.15);border-radius:8px;padding:5px 7px;flex-shrink:0;white-space:nowrap}
+.sb-logo-text{font-size:11px;color:rgba(255,255,255,.6);letter-spacing:1.5px;text-transform:uppercase;white-space:nowrap;overflow:hidden}
+.sb-nav{flex:1;padding:10px 0;overflow-y:auto}
+.sb-item{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;cursor:pointer;
+  color:rgba(255,255,255,.65);font-size:13px;font-weight:500;
+  transition:.15s;text-decoration:none;white-space:nowrap;overflow:hidden;
+  border-left:3px solid transparent;
+}
+.sb-item:hover{color:#fff;background:rgba(255,255,255,.08);border-left-color:rgba(255,255,255,.3)}
+.sb-item.active{color:#fff;background:rgba(255,255,255,.12);border-left-color:#fff}
+.sb-item.wip{opacity:.55;cursor:default}
+.sb-icon{font-size:18px;flex-shrink:0;width:24px;text-align:center}
+.sb-badge{
+  margin-left:auto;background:var(--red);color:#fff;
+  font-family:var(--mono);font-size:10px;font-weight:700;
+  padding:2px 7px;border-radius:20px;flex-shrink:0;
+  display:none;
+}
+.sb-badge.show{display:block}
+.sb-divider{height:1px;background:rgba(255,255,255,.1);margin:8px 14px}
+.sb-footer{padding:10px 0;border-top:1px solid rgba(255,255,255,.1)}
+.sb-toggle{
+  display:flex;align-items:center;gap:10px;
+  padding:9px 14px;cursor:pointer;color:rgba(255,255,255,.4);font-size:12px;
+  background:none;border:none;width:100%;
+}
+.sb-toggle:hover{color:rgba(255,255,255,.8)}
+
+/* ── MAIN ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
+.topbar{
+  background:var(--white);border-bottom:1px solid var(--ink-xsoft);
+  padding:0 24px;height:60px;
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.topbar-title{font-size:15px;font-weight:600}
+.topbar-right{display:flex;align-items:center;gap:12px}
+.live-dot{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.last-upd{font-size:11px;color:var(--ink-soft)}
+.date-tabs{display:flex;gap:4px}
+.dtab{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:500;border:1px solid var(--ink-xsoft);background:var(--white);cursor:pointer;color:var(--ink-soft)}
+.dtab.active{background:var(--forest);color:#fff;border-color:var(--forest)}
+
+/* ── TABS ── */
+.tab-bar{
+  display:flex;gap:0;border-bottom:1px solid var(--ink-xsoft);
+  background:var(--white);flex-shrink:0;padding:0 24px;overflow-x:auto;
+}
+.tab{
+  padding:12px 18px;font-size:13px;font-weight:500;cursor:pointer;
+  color:var(--ink-soft);border-bottom:2px solid transparent;white-space:nowrap;
+  transition:.15s;
+}
+.tab:hover{color:var(--ink)}
+.tab.active{color:var(--forest);border-bottom-color:var(--forest)}
+
+/* ── CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:24px}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+
+/* ── SECTION HEADER ── */
+.sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.sec-title{font-size:14px;font-weight:600}
+.sec-actions{display:flex;gap:8px}
+.btn{padding:7px 14px;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;border:1px solid var(--ink-xsoft);background:var(--white)}
+.btn:hover{background:var(--bg)}
+.btn-primary{background:var(--forest);color:#fff;border-color:var(--forest)}
+.btn-primary:hover{background:var(--forest-mid)}
+
+/* ── TAB 1: ONLINE MENUS ── */
+.toggle-img-btn{display:flex;align-items:center;gap:6px;font-size:12px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.menu-card{
+  background:var(--white);border-radius:var(--radius);
+  border:1px solid var(--ink-xsoft);overflow:hidden;
+  cursor:grab;transition:.2s;
+}
+.menu-card:hover{box-shadow:0 4px 12px rgba(0,0,0,.1);transform:translateY(-1px)}
+.menu-card.dragging{opacity:.4}
+.menu-card-img{
+  width:100%;aspect-ratio:4/3;object-fit:cover;
+  background:var(--forest-soft);display:flex;align-items:center;justify-content:center;
+  font-size:28px;color:var(--ink-soft);
+}
+.menu-card-img.hide-img{display:none}
+.menu-card-body{padding:10px}
+.menu-code{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--forest);margin-bottom:3px}
+.menu-name{font-size:12px;font-weight:500;line-height:1.4;margin-bottom:6px}
+.menu-stock{
+  display:flex;align-items:center;gap:6px;font-size:11px;
+  color:var(--ink-soft);margin-bottom:6px;
+}
+.stock-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
+.stock-dot.low{background:var(--yellow)}
+.stock-dot.out{background:var(--red)}
+.menu-note{
+  width:100%;font-size:11px;border:none;outline:none;
+  background:var(--bg);border-radius:6px;padding:4px 6px;resize:none;
+  font-family:var(--sans);color:var(--ink-soft);
+}
+.menu-note:focus{background:var(--forest-soft)}
+
+/* ── TAB 2: MEAL PLAN ── */
+.plan-table-wrap{overflow-x:auto}
+.plan-table{width:100%;border-collapse:collapse;font-size:12px}
+.plan-table th{
+  background:var(--forest);color:#fff;padding:10px 14px;
+  text-align:left;font-weight:600;white-space:nowrap;
+}
+.plan-table td{
+  padding:8px 14px;border-bottom:1px solid var(--ink-xsoft);
+  vertical-align:middle;
+}
+.plan-table tr:hover td{background:var(--forest-soft)}
+.customer-tag{
+  display:inline-block;padding:2px 8px;border-radius:20px;
+  font-size:11px;font-weight:600;
+}
+.tag-lc{background:#D1FAE5;color:#065F46}
+.tag-hp{background:#DBEAFE;color:#1E40AF}
+.menu-tag{
+  display:inline-block;padding:2px 7px;border-radius:6px;
+  font-size:11px;background:var(--forest-soft);color:var(--forest);
+  margin:1px;
+}
+
+/* ── TAB 3: MESSENGER ── */
+.messenger-list{display:flex;flex-direction:column;gap:10px}
+.msg-card{
+  background:var(--white);border-radius:var(--radius);
+  border:1px solid var(--ink-xsoft);padding:16px;
+  display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
+}
+.msg-order{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+.msg-customer{font-size:14px;font-weight:500}
+.msg-addr{font-size:12px;color:var(--ink-soft)}
+.driver-select{
+  font-size:12px;border:1px solid var(--ink-xsoft);border-radius:8px;
+  padding:5px 10px;background:var(--white);cursor:pointer;
+}
+.driver-select.assigned{background:var(--forest-soft);border-color:var(--forest);color:var(--forest);font-weight:500}
+
+/* ── TAB 4: ORDER COUNTS ── */
+.count-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+.count-card{
+  background:var(--white);border-radius:var(--radius);padding:24px;
+  border:1px solid var(--ink-xsoft);text-align:center;
+}
+.count-label{font-size:12px;color:var(--ink-soft);margin-bottom:8px;font-weight:500}
+.count-num{font-family:var(--mono);font-size:48px;font-weight:700;line-height:1}
+.count-sub{font-size:11px;color:var(--ink-soft);margin-top:8px}
+.count-card.today .count-num{color:var(--forest)}
+.count-card.tomorrow .count-num{color:var(--blue)}
+.count-card.advance .count-num{color:var(--purple)}
+.orders-mini{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);overflow:hidden}
+.orders-mini-row{
+  display:grid;grid-template-columns:1fr auto auto auto;
+  padding:10px 16px;border-bottom:1px solid var(--ink-xsoft);align-items:center;gap:12px;
+  font-size:13px;
+}
+.orders-mini-row:last-child{border-bottom:none}
+.orders-mini-head{background:var(--bg);font-size:11px;font-weight:600;color:var(--ink-soft)}
+.pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
+.p-wait{background:#FEF3C7;color:#92400E}
+.p-cook{background:#DBEAFE;color:#1E40AF}
+.p-ready{background:#D1FAE5;color:#065F46}
+.p-done{background:#F3F4F6;color:#6B7280}
+
+.menu-chip{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:grab;transition:.15s;user-select:none;margin-bottom:5px;border:1.5px solid transparent;}
+.menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
+.menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
+.menu-chip:active{cursor:grabbing;opacity:.7;}
+.menu-chip.dragging{opacity:.4;}
+.assign-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;font-size:11px;margin:2px;line-height:1.3;cursor:default;}
+.assign-chip.lc{background:#D1FAE5;color:#065F46;}
+.assign-chip.hp{background:#DBEAFE;color:#1E40AF;}
+.assign-chip.req{background:#FEF3C7;color:#92400E;border:1px dashed #D97706;}
+.assign-chip .rm-chip{cursor:pointer;opacity:.5;font-size:12px;margin-left:2px;}
+.assign-chip .rm-chip:hover{opacity:1;}
+.pref-tag{font-size:10px;color:var(--red);background:var(--red-soft);padding:1px 5px;border-radius:4px;white-space:nowrap;display:inline-block;margin-top:2px;}
+.drop-zone{min-height:36px;padding:4px;border-radius:8px;border:1.5px dashed var(--ink-xsoft);transition:.15s;}
+.drop-zone.over{border-color:var(--forest);background:var(--forest-soft);}
+
+.cust-row:hover td{background:#F9FAFB;}
+.cust-row.selected td{background:#EBF3EF;}
+.cust-row.selected{outline:2px solid #1F4D3A;}
+.menu-chip{display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:7px;font-size:11px;font-weight:600;margin-bottom:4px;border:1.5px solid transparent;transition:.1s;}
+.menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
+.menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
+.menu-chip.clickable{cursor:pointer;border-style:dashed;}
+.menu-chip.clickable:hover{opacity:.75;transform:scale(.98);}
+.menu-count-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);flex-shrink:0;}
+.assign-chip-full{display:flex;align-items:center;gap:4px;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:2px;font-size:11px;flex-wrap:wrap;}
+.assign-chip-full.lc{background:#D1FAE5;}
+.assign-chip-full.hp{background:#DBEAFE;}
+.rm-chip{cursor:pointer;color:#DC2626;font-weight:700;font-size:12px;padding:0 2px;}
+.rm-chip:hover{opacity:.6;}
+.qty-badge{background:rgba(0,0,0,.12);border-radius:8px;padding:1px 5px;font-family:var(--mono);font-size:10px;}
+.note-btn{cursor:pointer;color:#6B7280;font-size:13px;padding:0 3px;letter-spacing:1px;}
+.note-btn:hover{color:#1F4D3A;}
+.note-inline{border:1px solid #D1FAE5;border-radius:5px;padding:3px 7px;font-size:11px;font-family:inherit;width:130px;margin-top:3px;}
+#selectHint{transition:opacity .5s;opacity:0;background:#FEF3C7;color:#92400E;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:500;text-align:center;margin-bottom:8px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- SIDEBAR -->
+<div class="sidebar" id="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo-icon">U360</div>
+    <div class="sb-logo-text">Operation Hub</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="sb-item active" onclick="openTab('orders',this)">
+      <span class="sb-icon">📋</span><span>ออเดอร์</span>
+      <span class="sb-badge" id="nb-orders"></span>
+    </div>
+    <div class="sb-item" onclick="openTab('menu',this)">
+      <span class="sb-icon">🛒</span><span>เมนูออนไลน์</span>
+    </div>
+    <div class="sb-item" onclick="openTab('plan',this)">
+      <span class="sb-icon">📅</span><span>แพลนเมนู</span>
+    </div>
+    <div class="sb-item" onclick="openTab('messenger',this)">
+      <span class="sb-icon">🛵</span><span>แมสเซนเจอร์</span>
+      <span class="sb-badge" id="nb-msg"></span>
+    </div>
+    <div class="sb-divider"></div>
+    <a class="sb-item" href="kitchen_display.html" target="_blank">
+      <span class="sb-icon">🍳</span><span>หน้าครัว ↗</span>
+    </a>
+    <a class="sb-item wip" href="#" onclick="return false">
+      <span class="sb-icon">👥</span><span>ข้อมูลลูกค้า</span>
+    </a>
+    <a class="sb-item" href="main_database_v2.html" target="_blank">
+      <span class="sb-icon">🗄️</span><span>หลังบ้าน ↗</span>
+    </a>
+    <a class="sb-item wip" href="#" onclick="return false">
+      <span class="sb-icon">📊</span><span>รายงาน</span>
+    </a>
+    <a class="sb-item wip" href="#" onclick="return false">
+      <span class="sb-icon">⚙️</span><span>ตั้งค่า</span>
+    </a>
+  </nav>
+  <div class="sb-footer">
+    <button class="sb-toggle" onclick="toggleSidebar()">
+      <span class="sb-icon">◀</span><span id="toggleLabel">ย่อแถบ</span>
+    </button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-title" id="topTitle">📋 ออเดอร์</div>
+    <div class="topbar-right">
+      <div class="date-tabs">
+        <button class="dtab active" id="dt-today" onclick="setDate('today')">วันนี้</button>
+        <button class="dtab" id="dt-tom" onclick="setDate('tomorrow')">พรุ่งนี้</button>
+        <button class="dtab" id="dt-all" onclick="setDate('all')">ทั้งหมด</button>
+      </div>
+      <div class="live-dot"></div>
+      <span class="last-upd" id="lastUpd">—</span>
+    </div>
+  </div>
+
+  <!-- CONTENT AREA -->
+  <div class="content">
+
+    <!-- TAB: ORDERS (default/home) -->
+    <div class="tab-panel active" id="panel-orders">
+      <div class="count-grid">
+        <div class="count-card today">
+          <div class="count-label">ออเดอร์วันนี้</div>
+          <div class="count-num" id="cnt-today">—</div>
+          <div class="count-sub" id="rev-today">฿ 0</div>
+        </div>
+        <div class="count-card tomorrow">
+          <div class="count-label">ออเดอร์พรุ่งนี้</div>
+          <div class="count-num" id="cnt-tom">—</div>
+          <div class="count-sub" id="rev-tom">฿ 0</div>
+        </div>
+        <div class="count-card advance">
+          <div class="count-label">ออเดอร์ล่วงหน้า</div>
+          <div class="count-num" id="cnt-adv">—</div>
+          <div class="count-sub">มะรืนขึ้นไป</div>
+        </div>
+      </div>
+      <div class="sec-header">
+        <div class="sec-title" id="orderListTitle">รายการออเดอร์</div>
+        <button class="btn" onclick="loadAll()">🔄 รีเฟรช</button>
+      </div>
+      <div class="orders-mini" id="ordersList">
+        <div class="orders-mini-row orders-mini-head">
+          <span>ออเดอร์</span><span>ยอด</span><span>เวลา</span><span>สถานะ</span>
+        </div>
+        <div style="padding:24px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
+      </div>
+    </div>
+
+    <!-- TAB: ONLINE MENUS -->
+    <div class="tab-panel" id="panel-menu">
+      <div class="sec-header">
+        <div class="sec-title">เมนูที่เปิดให้สั่งอยู่ตอนนี้</div>
+        <div class="sec-actions">
+          <button class="btn toggle-img-btn" id="toggleImgBtn" onclick="toggleImages()">🖼️ ซ่อนรูป</button>
+          <button class="btn" onclick="loadMenus()">🔄 รีเฟรช</button>
+        </div>
+      </div>
+      <div class="menu-grid" id="menuGrid">
+        <div style="padding:40px;text-align:center;color:var(--ink-soft);grid-column:1/-1">กำลังโหลดเมนู...</div>
+      </div>
+    </div>
+
+    <!-- TAB: MEAL PLAN -->
+    <div class="tab-panel" id="panel-plan">
+      <div class="sec-header" style="margin-bottom:12px;">
+        <div>
+          <div class="sec-title">แพลนเมนูผลิต + assign ลูกค้า</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">ลากเมนูจากซ้ายไปใส่ในช่องลูกค้า · คลิก × เพื่อเอาออก</div>
+        </div>
+        <div style="display:flex;gap:6px;align-items:center;">
+          <a class="btn" href="main_database_v2.html" target="_blank" style="font-size:12px;">🗄️ DB ↗</a>
+          <div style="display:flex;gap:4px;align-items:center;background:#F3F4F6;border-radius:8px;padding:3px;">
+            <button id="vFull" class="btn active" onclick="setPlanView('Full')" style="padding:4px 8px;font-size:11px;border:none;">Full</button>
+            <button id="vCode" class="btn" onclick="setPlanView('Code')" style="padding:4px 8px;font-size:11px;border:none;">Code</button>
+            <button id="vCompact" class="btn" onclick="setPlanView('Compact')" style="padding:4px 8px;font-size:11px;border:none;">จำนวน</button>
+          </div>
+          <div class="date-tabs" style="margin:0;">
+            <button class="dtab active" id="pd1" onclick="setPlanDays(1,this)">วันนี้</button>
+            <button class="dtab" id="pd3" onclick="setPlanDays(3,this)">3 วัน</button>
+            <button class="dtab" id="pd5" onclick="setPlanDays(5,this)">5 วัน</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2-col layout: menu list + table -->
+      <div style="display:flex;gap:14px;align-items:flex-start;">
+
+        <!-- LEFT: Menu List -->
+        <div style="width:150px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:10px;position:sticky;top:0;">
+          <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูวันนี้</div>
+          <div id="selectHint">👆 คลิกชื่อลูกค้าก่อน</div>
+          <div id="menuListDrag"></div>
+          <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
+            <select id="addMenuSel2" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-bottom:6px;">
+              <option value="">+ เพิ่มเมนู...</option>
+            </select>
+            <button class="btn btn-primary" onclick="addToProdPlan()" style="width:100%;font-size:11px;padding:5px;">เพิ่ม</button>
+          </div>
+          <div id="menuSummary" style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
+          </div>
+        </div>
+
+        <!-- RIGHT: Customer Table -->
+        <div style="flex:1;overflow-x:auto;border-radius:var(--radius);border:1px solid var(--ink-xsoft);">
+          <table class="plan-table" id="planTable" style="min-width:500px;">
+            <thead><tr id="planHead"></tr></thead>
+            <tbody id="planBody"></tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB: MESSENGER -->
+    <div class="tab-panel" id="panel-messenger">
+      <div class="sec-header">
+        <div class="sec-title">งานส่งทั้งหมด</div>
+        <button class="btn" onclick="loadMessenger()">🔄 รีเฟรช</button>
+      </div>
+      <div class="messenger-list" id="messengerList">
+        <div style="padding:40px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+</div><!-- /app -->
+
+
+<script>
+
+// ── SUPABASE: daily_menu_assignments ─────────────────────────────────────
+async function loadAssignments(dateStr){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var res=await sb_.from("daily_menu_assignments").select("*").eq("plan_date",dateStr||today2());
+    if(res.error) throw res.error;
+    // rebuild customerAssign from DB
+    customerAssign={};
+    (res.data||[]).forEach(function(row){
+      if(!customerAssign[row.customer_id]) customerAssign[row.customer_id]=[];
+      var existing=customerAssign[row.customer_id].find(function(e){return e.code===row.menu_code;});
+      if(existing){existing.qty=row.qty;existing.note=row.note;}
+      else customerAssign[row.customer_id].push({code:row.menu_code,qty:row.qty||1,note:row.note||""});
+    });
+    console.log("✅ loaded assignments from Supabase");
+  }catch(e){console.error("loadAssignments:",e);}
+}
+
+async function saveAssignment(cid,code,qty,note,dateStr){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    await sb_.from("daily_menu_assignments").upsert({
+      plan_date:dateStr||today2(),
+      customer_id:cid,
+      menu_code:code,
+      qty:qty||1,
+      note:note||"",
+      updated_at:new Date().toISOString()
+    },{onConflict:"plan_date,customer_id,menu_code"});
+  }catch(e){console.error("saveAssignment:",e);}
+}
+
+async function deleteAssignment(cid,code,dateStr){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    await sb_.from("daily_menu_assignments").delete()
+      .eq("plan_date",dateStr||today2())
+      .eq("customer_id",cid)
+      .eq("menu_code",code);
+  }catch(e){console.error("deleteAssignment:",e);}
+}
+
+function subscribeRealtime(){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    sb_.channel("dma-changes")
+      .on("postgres_changes",{event:"*",schema:"public",table:"daily_menu_assignments"},function(payload){
+        console.log("🔄 realtime update:",payload.eventType);
+        loadAssignments(today2()).then(function(){
+          var panel=document.getElementById("panel-plan");
+          if(panel&&panel.classList.contains("active")) buildPlan();
+        });
+      })
+      .subscribe();
+    console.log("✅ Realtime subscribed");
+  }catch(e){console.error("subscribeRealtime:",e);}
+}
+
+const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+let sb=null;
+function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+
+let dateMode="today",showImages=true,sidebarMini=false,refreshTimer=null;
+let planDays=1,planView="full";
+// customerAssign: {cid: [{code, qty, note}]}
+let customerAssign={};
+let selectedCid=null;
+
+function toISO(d){return d.toISOString().split("T")[0];}
+function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
+function today2(){return toISO(new Date());}
+function tomorrow2(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
+function dayAfter2(){var d=new Date();d.setDate(d.getDate()+2);return toISO(d);}
+function fmtD(d){return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+function getDateCols(){var c=[];for(var i=0;i<planDays;i++){var d=new Date();d.setDate(d.getDate()+i);c.push(d);}return c;}
+
+function toggleSidebar(){
+  sidebarMini=!sidebarMini;
+  document.getElementById("sidebar").classList.toggle("mini",sidebarMini);
+  document.getElementById("toggleLabel").textContent=sidebarMini?"ขยาย":"ย่อแถบ";
+}
+
+var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์"};
+function openTab(name,el){
+  document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
+  document.querySelectorAll(".sb-item").forEach(function(i){i.classList.remove("active");});
+  document.getElementById("panel-"+name).classList.add("active");
+  if(el)el.classList.add("active");
+  document.getElementById("topTitle").textContent=TAB_TITLES[name]||name;
+  if(name==="orders")loadAll();
+  if(name==="menu")loadMenus();
+  if(name==="plan")buildPlan();
+  if(name==="messenger")loadMessenger();
+}
+function setDate(m){
+  dateMode=m;
+  ["today","tom","all"].forEach(function(k){document.getElementById("dt-"+k).classList.remove("active");});
+  document.getElementById("dt-"+(m==="tomorrow"?"tom":m)).classList.add("active");
+  loadAll();
+}
+
+// ── ORDERS ───────────────────────────────────────────────
+async function loadAll(){
+  var sb_=getSB();
+  var listEl=document.getElementById("ordersList");
+  if(!sb_){
+    document.getElementById("lastUpd").textContent="offline";
+    ["cnt-today","cnt-tom","cnt-adv"].forEach(function(id){var el=document.getElementById(id);if(el)el.textContent="—";});
+    if(listEl)listEl.innerHTML="<div style='padding:24px;text-align:center;color:#6B7280'>Offline — เปิดบน Vercel เพื่อโหลดข้อมูล</div>";
+    return;
+  }
+  try{
+    var todayStr=today2(),tomStr=tomorrow2(),dayStr=dayAfter2();
+    var q=sb_.from("orders").select("*").order("created_at",{ascending:false});
+    if(dateMode==="today")q=q.eq("delivery_date",todayStr);
+    else if(dateMode==="tomorrow")q=q.eq("delivery_date",tomStr);
+    var res=await q; if(res.error)throw res.error;
+    var orders=res.data||[];
+    var todayO=orders.filter(function(o){return o.delivery_date===todayStr;});
+    var tomO=orders.filter(function(o){return o.delivery_date===tomStr;});
+    var advO=orders.filter(function(o){return o.delivery_date>=dayStr;});
+    function setTxt(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
+    setTxt("cnt-today",todayO.length); setTxt("cnt-tom",tomO.length); setTxt("cnt-adv",advO.length);
+    setTxt("rev-today",fmtB(todayO.reduce(function(s,o){return s+(o.total||0);},0)));
+    setTxt("rev-tom",fmtB(tomO.reduce(function(s,o){return s+(o.total||0);},0)));
+    var pending=orders.filter(function(o){return o.status==="confirmed"||o.status==="preparing";}).length;
+    var nb=document.getElementById("nb-orders"); if(nb){nb.textContent=pending;nb.classList.toggle("show",pending>0);}
+    renderOrders(dateMode==="today"?todayO:dateMode==="tomorrow"?tomO:orders);
+    setTxt("lastUpd","อัพเดท "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+  }catch(e){console.error(e);}
+}
+var ST={confirmed:{t:"รอครัว",cls:"p-wait"},preparing:{t:"ทำอยู่",cls:"p-cook"},ready:{t:"พร้อมส่ง",cls:"p-ready"},delivered:{t:"ส่งแล้ว",cls:"p-done"}};
+function renderOrders(orders){
+  var el=document.getElementById("ordersList"); if(!el)return;
+  if(!orders||!orders.length){el.innerHTML="<div style='padding:32px;text-align:center;color:#6B7280'>ยังไม่มีออเดอร์</div>";return;}
+  var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ยอด</span><span>วันส่ง</span><span>สถานะ</span></div>";
+  orders.slice(0,20).forEach(function(o){
+    var st=ST[o.status]||{t:o.status,cls:"p-done"};
+    h+="<div class='orders-mini-row'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
+    h+="<div style='font-size:13px;font-weight:500'>"+(o.customer_name||"ลูกค้า")+"</div>";
+    h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
+    h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
+    h+="<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
+    h+="<span class='pill "+st.cls+"'>"+st.t+"</span></div>";
+  });
+  el.innerHTML=h;
+}
+
+// ── MENUS ──────────────────────────────────────────────
+async function loadMenus(){
+  var grid=document.getElementById("menuGrid"); if(!grid)return;
+  grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>กำลังโหลด...</div>";
+  var sb_=getSB();
+  if(!sb_){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>Offline</div>";return;}
+  try{
+    var res=await sb_.from("menu_items").select("*").eq("is_available",true).order("sort_order");
+    if(res.error)throw res.error; var data=res.data||[];
+    if(!data.length){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>ยังไม่มีเมนูออนไลน์</div>";return;}
+    var h="";
+    data.forEach(function(m){
+      h+="<div class='menu-card'><div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
+      h+="<div class='menu-card-body'><div class='menu-code'>"+(m.code||"—")+"</div>";
+      h+="<div class='menu-name'>"+m.name+"</div>";
+      h+="<div class='menu-stock'><div class='stock-dot"+(m.stock_reserved>0?" low":"")+"'></div>";
+      h+="<span>"+(m.stock_reserved>0?"จอง "+m.stock_reserved:"พร้อม")+"</span>";
+      h+="<span style='margin-left:auto;font-family:var(--mono);font-weight:600;color:#1F4D3A'>฿"+(m.price||0)+"</span></div>";
+      h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...'></textarea></div></div>";
+    });
+    grid.innerHTML=h;
+  }catch(e){console.error(e);}
+}
+function toggleImages(){
+  showImages=!showImages;
+  var btn=document.getElementById("toggleImgBtn"); if(btn)btn.textContent=showImages?"🖼️ ซ่อนรูป":"🖼️ แสดงรูป";
+  document.querySelectorAll(".menu-card-img").forEach(function(el){el.classList.toggle("hide-img",!showImages);});
+}
+
+// ── MEAL PLAN DATA ──────────────────────────────────────
+var MENU_POOL=[
+  {code:"LC01",name:"อกไก่ย่างสมุนไพร+มันหวาน",type:"lc"},
+  {code:"HP01",name:"อกไก่ย่างสมุนไพร+มันหวาน",type:"hp"},
+  {code:"LC02",name:"แซลมอนย่างเกลือ+ข้าวกล้อง",type:"lc"},
+  {code:"HP02",name:"แซลมอนย่างเกลือ+ข้าวกล้อง",type:"hp"},
+  {code:"LC04",name:"สันในหมูย่างโรสแมรี่",type:"lc"},
+  {code:"HP04",name:"สันในหมูย่างโรสแมรี่",type:"hp"},
+  {code:"LC05",name:"หมูย่างน้ำจิ้มแจ่ว",type:"lc"},
+  {code:"HP05",name:"หมูย่างน้ำจิ้มแจ่ว",type:"hp"},
+  {code:"LC07",name:"ลาบแซลมอน+ข้าวไรซ์เบอร์รี่",type:"lc"},
+  {code:"HP07",name:"ลาบแซลมอน+ข้าวไรซ์เบอร์รี่",type:"hp"},
+  {code:"LC09",name:"หมูสันในหวานไร้มัน+ไข่ฝอย",type:"lc"},
+  {code:"HP09",name:"หมูสันในหวานไร้มัน+ไข่ฝอย",type:"hp"},
+  {code:"LC15",name:"กุ้งผัดซอสกระเทียมพริกไทยดำ",type:"lc"},
+  {code:"HP15",name:"กุ้งผัดซอสกระเทียมพริกไทยดำ",type:"hp"},
+  {code:"LC25",name:"สเต็กปลากระพงเพสโต้+ผักย่าง",type:"lc"},
+  {code:"HP25",name:"สเต็กปลากระพงเพสโต้+ผักย่าง",type:"hp"}
+];
+var todayPlan=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
+var MOCK_CUSTOMERS=[
+  {id:"c1",name:"Boom",course:"HP Monthly รอบ9",boxes:7,type:"hp",pref:"ไม่ทานเนื้อ ไม่ชอบเกาหลี"},
+  {id:"c2",name:"Pete",course:"HP Weekly รอบ2",boxes:7,type:"hp",pref:""},
+  {id:"c3",name:"Frederik",course:"HP รายสัปดาห์",boxes:7,type:"hp",pref:""},
+  {id:"c4",name:"คุณธัญภา",course:"HP Weekly รอบ1",boxes:7,type:"hp",pref:""},
+  {id:"c5",name:"ชมพิสุทธิ์",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
+  {id:"c6",name:"ขวัญชนก",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:"ขาวไม่เอาข้าวกล้อง"},
+  {id:"c7",name:"พรรณพิไล",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
+  {id:"c8",name:"คุณYok",course:"LC รายเดือน รอบ2",boxes:6,type:"lc",pref:""}
+];
+
+function initAssign(){
+  MOCK_CUSTOMERS.forEach(function(c){
+    if(!customerAssign[c.id]){
+      var pool=todayPlan.filter(function(code){return code.startsWith(c.type.toUpperCase());});
+      customerAssign[c.id]=pool.slice(0,5).map(function(code){return {code:code,qty:1,note:""};});
+    }
+  });
+}
+function getEntry(cid,code){return (customerAssign[cid]||[]).find(function(e){return e.code===code;});}
+function totalQty(cid){return (customerAssign[cid]||[]).reduce(function(s,e){return s+e.qty;},0);}
+
+// ── CLICK INTERACTION ────────────────────────────────────
+function selectCustomer(cid){
+  selectedCid=(selectedCid===cid)?null:cid;
+  document.querySelectorAll(".cust-row").forEach(function(r){
+    r.classList.toggle("selected", r.dataset.cid===selectedCid);
+  });
+  renderLeftPanel();
+}
+function clickMenu(code){
+  if(!selectedCid){
+    // ถ้าไม่ได้เลือกลูกค้า ให้ flash แจ้งเตือน
+    var hint=document.getElementById("selectHint");
+    if(hint){hint.style.opacity="1";setTimeout(function(){hint.style.opacity="0";},1500);}
+    return;
+  }
+  var arr=customerAssign[selectedCid]||[];
+  var entry=arr.find(function(e){return e.code===code;});
+  if(entry){
+    if(totalQty(selectedCid)>=7){return;} // max 7
+    entry.qty++;
+  } else {
+    if(totalQty(selectedCid)>=7){return;}
+    arr.push({code:code,qty:1,note:""});
+    customerAssign[selectedCid]=arr;
+  }
+  renderCustomerCell(selectedCid);
+  renderLeftPanel();
+}
+function removeMenuEntry(cid,code){
+  customerAssign[cid]=(customerAssign[cid]||[]).filter(function(e){return e.code!==code;});
+  renderCustomerCell(cid);
+  renderLeftPanel();
+}
+function toggleNote(cid,code){
+  var id="note-"+cid+"-"+code;
+  var el=document.getElementById(id);
+  if(!el)return;
+  el.style.display=el.style.display==="none"?"block":"none";
+  if(el.style.display==="block")el.focus();
+}
+function saveNote(cid,code,val){
+  var entry=getEntry(cid,code);
+  if(entry){
+    entry.note=val;
+    saveAssignment(cid,code,entry.qty,val);
+  }
+}
+
+// ── RENDER ─────────────────────────────────────────────
+function setPlanDays(n,btn){
+  planDays=n;
+  document.querySelectorAll("#pd1,#pd3,#pd5").forEach(function(b){b.classList.remove("active");});
+  btn.classList.add("active");
+  buildPlan();
+}
+function setPlanView(v){
+  planView=v;
+  ["vFull","vCode","vCompact"].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el)el.classList.toggle("active",id==="v"+v.charAt(0).toUpperCase()+v.slice(1));
+  });
+  document.querySelectorAll(".cust-row").forEach(function(r){
+    renderCustomerCell(r.dataset.cid);
+  });
+}
+function addToProdPlan(){
+  var sel=document.getElementById("addMenuSel2");
+  if(sel&&sel.value){todayPlan.push(sel.value);sel.value="";buildPlan();}
+}
+
+function countMenu(code){
+  var total=0;
+  MOCK_CUSTOMERS.forEach(function(c){
+    var entry=getEntry(c.id,code);
+    if(entry)total+=entry.qty;
+  });
+  return total;
+}
+
+function renderLeftPanel(){
+  var el=document.getElementById("menuListDrag"); if(!el)return;
+  var h="";
+  todayPlan.forEach(function(code){
+    var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
+    var cnt=countMenu(code);
+    var active=selectedCid&&!getEntry(selectedCid,code)&&totalQty(selectedCid)<7;
+    h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
+    h+="<span style='font-family:var(--mono);font-size:10px;font-weight:700'>"+code+"</span>";
+    h+=" <span style='font-size:10px;opacity:.8;flex:1'>"+m.name.slice(0,16)+"</span>";
+    if(cnt>0)h+=" <span class='menu-count-badge'>×"+cnt+"</span>";
+    h+="</div>";
+  });
+  el.innerHTML=h;
+
+  var sel=document.getElementById("addMenuSel2");
+  if(sel){
+    var opts="<option value=''>+ เพิ่มเมนู...</option>";
+    MENU_POOL.forEach(function(m){
+      if(todayPlan.indexOf(m.code)<0)opts+="<option value='"+m.code+"'>"+m.code+" — "+m.name.slice(0,20)+"</option>";
+    });
+    sel.innerHTML=opts;
+  }
+}
+
+function renderCustomerCell(cid){
+  var td=document.querySelector(".assign-cell[data-cid='"+cid+"']"); if(!td)return;
+  var arr=customerAssign[cid]||[];
+  var total=totalQty(cid);
+
+  if(planView==="Compact"){
+    td.innerHTML="<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/7 กล่อง</span>";
+    return;
+  }
+  if(planView==="Code"){
+    var h="";
+    arr.forEach(function(e){
+      var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc"};
+      h+="<span class='assign-chip "+m.type+"' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='คลิกเพื่อลบ'>"+e.code+(e.qty>1?" ×"+e.qty:"")+"</span>";
+    });
+    h+="<span style='font-size:10px;color:#D1D5DB;padding:2px'>"+total+"/7</span>";
+    td.innerHTML=h;
+    return;
+  }
+  // Full view
+  var h="";
+  arr.forEach(function(e){
+    var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:""};
+    h+="<div class='assign-chip-full "+m.type+"'>";
+    h+="<span class='rm-chip' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='ลบ'>×</span>";
+    h+=" <b>"+e.code+"</b>";
+    h+=" <span style='font-size:10px;opacity:.8'>"+m.name.slice(0,14)+"</span>";
+    if(e.qty>1)h+=" <span class='qty-badge'>×"+e.qty+"</span>";
+    h+=" <span class='note-btn' onclick='toggleNote(\""+cid+"\",\""+e.code+"\")'>···</span>";
+    if(e.note)h+=" <span style='font-size:10px;color:#F59E0B'>📌"+e.note+"</span>";
+    h+="<input id='note-"+cid+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+e.note+"'";
+    h+=" onchange='saveNote(\""+cid+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+cid+"\",\""+e.code+"\")'>";
+    h+="</div>";
+  });
+  if(total<7)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/7</span>";
+  else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/7</span>";
+  td.innerHTML=h;
+}
+
+function buildPlan(){
+  // โหลดจาก Supabase ถ้ายังไม่เคยโหลด
+  var sb_=getSB();
+  if(sb_&&Object.keys(customerAssign).length===0){
+    loadAssignments(today2()).then(function(){
+      initAssign();
+      renderLeftPanel();
+      _buildPlanTable();
+    });
+    return;
+  }
+  initAssign();
+  renderLeftPanel();
+  _buildPlanTable();
+}
+function _buildPlanTable(){
+  var cols=getDateCols();
+  var head=document.getElementById("planHead");
+  var body=document.getElementById("planBody");
+  if(!head||!body)return;
+  var hh="<th style='width:110px'>ลูกค้า</th><th style='width:44px;text-align:center'>คอร์ส</th>";
+  cols.forEach(function(d,i){hh+="<th>"+fmtD(d)+(i===0?" (วันนี้)":"")+"</th>";});
+  head.innerHTML=hh;
+  var rows="";
+  MOCK_CUSTOMERS.forEach(function(c){
+    var chip="<span class='customer-tag "+(c.type==="lc"?"tag-lc":"tag-hp")+"' title='"+c.course+"' style='cursor:default;font-size:11px'>"+c.type.toUpperCase()+"</span>";
+    var otherCols="";
+    for(var i=1;i<cols.length;i++)otherCols+="<td style='color:#D1D5DB;font-size:11px;text-align:center'>—</td>";
+    var isSel=selectedCid===c.id;
+    rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='selectCustomer(\""+c.id+"\")' style='cursor:pointer'>";
+    rows+="<td style='white-space:nowrap;vertical-align:top;padding-top:10px'>";
+    rows+="<div style='font-weight:600;font-size:12px"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
+    rows+="<div style='font-size:10px;color:#6B7280'>"+c.boxes+" กล่อง</div>";
+    if(c.pref)rows+="<span class='pref-tag'>"+c.pref+"</span>";
+    rows+="</td><td style='text-align:center;vertical-align:top;padding-top:10px'>"+chip+"</td>";
+    rows+="<td class='assign-cell' data-cid='"+c.id+"'></td>";
+    rows+=otherCols+"</tr>";
+  });
+  body.innerHTML=rows;
+  MOCK_CUSTOMERS.forEach(function(c){renderCustomerCell(c.id);});
+}
+
+// ── MESSENGER ─────────────────────────────────────────
+async function loadMessenger(){
+  var el=document.getElementById("messengerList"); if(!el)return;
+  var sb_=getSB();
+  if(!sb_){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>Offline</div>";return;}
+  try{
+    var res=await sb_.from("orders").select("*").in("status",["ready","delivered"]).eq("delivery_date",today2()).order("created_at",{ascending:false});
+    if(res.error)throw res.error; var data=res.data||[];
+    if(!data.length){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>ไม่มีงานส่งวันนี้</div>";return;}
+    var h="";
+    data.forEach(function(o){
+      h+="<div class='msg-card'><div><div class='msg-order'>"+(o.order_number||"—")+"</div>";
+      h+="<div style='font-size:11px;color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
+      h+="<div><div class='msg-customer'>"+(o.customer_name||"ลูกค้า")+"</div>";
+      h+="<div class='msg-addr'>📍 "+(o.delivery_address||"—")+"</div>";
+      h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:4px'>"+fmtB(o.total)+"</div></div>";
+      h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+      h+="<select class='driver-select'><option value=''>เลือกผู้ส่ง...</option><option value='store'>🛵 แมสร้าน</option><option value='lalamove'>🟠 Lalamove</option><option value='grab'>🟢 Grab</option></select>";
+      h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+(o.status==="delivered"?"ส่งแล้ว":"พร้อมส่ง")+"</span></div></div>";
+    });
+    el.innerHTML=h;
+    el.querySelectorAll(".driver-select").forEach(function(sel){
+      sel.addEventListener("change",function(){sel.classList.toggle("assigned",sel.value!=="");});
+    });
+  }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้</div>";}
+}
+
+loadAll();
+refreshTimer=setInterval(loadAll,30000);
+subscribeRealtime();
+
+</script>
+</body>
+</html>
