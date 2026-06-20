@@ -709,7 +709,7 @@ async function submitOrder() {
 
   } catch(e) {
     console.error(e);
-    toast('เกิดข้อผิดพลาด กรุณาลองใหม่ หรือโทรหาร้าน');
+    toast('Error: ' + (e?.message || e?.code || JSON.stringify(e) || 'unknown'));
     btn.disabled = false;
     btn.textContent = '✅ ยืนยันและส่งออเดอร์';
   }
