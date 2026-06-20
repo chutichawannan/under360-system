@@ -42,9 +42,11 @@ main{max-width:1120px;margin:0 auto;padding:10px 14px 80px;}
 .stat-card .num{font-size:20px;font-weight:700;font-family:'IBM Plex Mono',monospace;color:var(--forest);}
 .stat-card .lbl{font-size:11.5px;color:var(--ink-soft);margin-top:2px;}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:8px;}
-.search-box{flex:1;min-width:180px;position:relative;}
+.search-box{flex:1 1 140px;min-width:120px;position:relative;}
 .search-box input{width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:14px;font-family:inherit;background:#fff;}
 select.filt{padding:10px 10px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;font-family:inherit;color:var(--ink);}
+select.sort-sel{padding:5px 8px;border:1.5px solid var(--ink-soft);border-radius:6px;font-size:12px;background:var(--surface-2);font-family:inherit;color:var(--ink);cursor:pointer;max-width:110px;}
+select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .btn{appearance:none;border:none;border-radius:8px;padding:10px 16px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
 .btn-primary{background:var(--forest);color:#fff;}
 .btn-primary:hover{background:#163b2b;}
@@ -155,8 +157,8 @@ select.filt{padding:10px 10px;border:1px solid var(--line);border-radius:8px;fon
 .plan-missing-tag{font-size:10px;color:var(--coral);}
 .plan-enough-tag{color:var(--forest);font-weight:600;}
 .cat-dot{width:7px;height:7px;border-radius:50%;display:inline-block;flex-shrink:0;}
-.cat-picker{position:relative;display:inline-block;}
-.cat-picker-btn{padding:10px 12px;border:1px solid var(--line);border-radius:8px;font-size:13px;background:#fff;font-family:inherit;color:var(--ink);cursor:pointer;max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;}
+.cat-picker{position:relative;flex:2 1 200px;min-width:180px;max-width:60%;}
+.cat-picker-btn{padding:10px 14px;border:1px solid var(--forest);border-radius:8px;font-size:13px;background:var(--forest-soft);font-family:inherit;color:var(--forest);cursor:pointer;min-width:200px;flex:0 0 auto;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;text-align:left;font-weight:500;}
 .cat-picker-panel{position:absolute;top:calc(100% + 4px);left:0;background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:0 8px 24px rgba(0,0,0,.14);padding:8px;min-width:250px;max-height:280px;overflow-y:auto;z-index:30;}
 .cat-picker-panel label{display:flex;align-items:center;gap:8px;padding:9px 10px;font-size:13.5px;cursor:pointer;border-radius:6px;user-select:none;}
 .cat-picker-panel label:hover{background:var(--surface-2);}
@@ -2418,13 +2420,16 @@ function renderRecipesTab(){
   html += `<div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" placeholder="ค้นหาชื่อเมนูหรือโค้ด..." value="${escapeHtml(state.search)}"></div>
     ${renderCategoryPicker(state.categoryFilter, 'filter')}
-    <select class="filt" id="sortModeSelect" style="font-size:12px;padding:6px 8px;max-width:150px;">
-      <option value="category" ${state.sortMode==='category'?'selected':''}>หมวดหมู่</option>
-      <option value="code_asc" ${state.sortMode==='code_asc'?'selected':''}>โค้ด A→Z</option>
-      <option value="name_asc" ${state.sortMode==='name_asc'?'selected':''}>ชื่อ ก→ฮ</option>
-      <option value="stock_asc" ${state.sortMode==='stock_asc'?'selected':''}>สต็อก น้อย→มาก</option>
-      <option value="stock_desc" ${state.sortMode==='stock_desc'?'selected':''}>สต็อก มาก→น้อย</option>
-    </select>
+    <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
+      <span style="font-size:11px;font-weight:600;color:var(--ink-soft);white-space:nowrap;letter-spacing:.5px;text-transform:uppercase;">จัดเรียง</span>
+      <select class="sort-sel" id="sortModeSelect">
+        <option value="category" ${state.sortMode==='category'?'selected':''}>หมวดหมู่</option>
+        <option value="code_asc" ${state.sortMode==='code_asc'?'selected':''}>โค้ด A→Z</option>
+        <option value="name_asc" ${state.sortMode==='name_asc'?'selected':''}>ชื่อ ก→ฮ</option>
+        <option value="stock_asc" ${state.sortMode==='stock_asc'?'selected':''}>สต็อก ↑</option>
+        <option value="stock_desc" ${state.sortMode==='stock_desc'?'selected':''}>สต็อก ↓</option>
+      </select>
+    </div>
     <div class="rating-filter-wrap"><span>คะแนนขั้นต่ำ</span>${renderRatingDots3(state.ratingFilter, 'filter')}</div>
     <label style="display:flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-soft);">
       <input type="checkbox" id="showRetired" ${state.showRetired?'checked':''}> แสดงเมนูที่เลิกขาย
