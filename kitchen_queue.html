@@ -407,7 +407,22 @@ async function markPacked(id){
 async function markPicked(id){
   var sb_=getSB();
   if(sb_){
+    // อัพ order status
     await sb_.from("orders").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
+    // บวก points ให้ลูกค้า (points = total ที่จ่าย)
+    try{
+      var o=allOrders.find(function(x){return x.id===id;});
+      if(o&&o.line_uid&&o.total){
+        // ดึง points ปัจจุบัน
+        var custRes=await sb_.from("customers").select("points,tier").eq("line_uid",o.line_uid).single();
+        if(!custRes.error&&custRes.data){
+          var newPts=(custRes.data.points||0)+(o.total||0);
+          // คำนวณ tier ใหม่
+          var newTier=newPts>=25000?4:newPts>=10000?3:newPts>=3000?2:1;
+          await sb_.from("customers").update({points:newPts,tier:newTier}).eq("line_uid",o.line_uid);
+        }
+      }
+    }catch(e){console.error("points update:",e);}
   }
   allOrders=allOrders.filter(function(o){return o.id!==id;});
   renderAll();

@@ -300,7 +300,7 @@ input,textarea{font-family:inherit}
     <div class="ok-sub">ทีมงานรับทราบออเดอร์แล้ว<br>เราจะเตรียมอาหารให้คุณ 🍱</div>
     <div class="ok-box">
       <div class="ok-lbl">เลขออเดอร์</div>
-      <div class="ok-num" id="ok-num">U360-00000000-0000</div>
+      <div class="ok-num" id="ok-num">U-MMDD-NNN</div>
       <div class="ok-detail" id="ok-detail"></div>
     </div>
     <button class="btn-p" onclick="backToMenu()" style="margin-top:8px">สั่งเพิ่มอีกครั้ง</button>
@@ -659,9 +659,17 @@ async function submitOrder() {
   const notes = document.getElementById('notes-input').value.trim();
   const slot  = SLOTS.find(s => s.key===selSlot);
   const tot   = cartTotal();
-  const dateStr = selDate.replace(/-/g,'');
-  const rand    = Math.floor(1000 + Math.random()*9000);
-  const orderNum = `U360-${dateStr}-${rand}`;
+  // ── สร้าง order number format U-MMDD-NNN ──────────────────
+  const mmdd = selDate.slice(5,7) + selDate.slice(8,10);
+  let nextNum = 1;
+  try{
+    const cntRes = await sb.from('orders')
+      .select('id', {count:'exact',head:true})
+      .like('order_number', 'U-' + mmdd + '-%');
+    nextNum = (cntRes.count || 0) + 1;
+  }catch(e){ nextNum = Math.floor(1 + Math.random()*99); }
+  const orderNum = 'U-' + mmdd + '-' + String(nextNum).padStart(3,'0');
+  // ───────────────────────────────────────────────────────────
 
   try {
     // 1. Create order

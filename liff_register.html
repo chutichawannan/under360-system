@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>Under360 — สมัครสมาชิก</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--red:#DC2626;--bg:#F7F8F6;--white:#fff;--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;}
+
+.box{width:100%;max-width:360px;}
+.logo-area{text-align:center;margin-bottom:28px;}
+.logo{font-size:24px;font-weight:700;color:var(--forest);letter-spacing:-0.5px;}
+.logo-sub{font-size:13px;color:var(--ink-soft);margin-top:4px;}
+
+/* LINE card */
+.line-card{background:var(--white);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:20px;border:1px solid var(--ink-xsoft);}
+.line-avatar{width:46px;height:46px;border-radius:50%;background:var(--forest-soft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden;}
+.line-avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.line-info{flex:1;}
+.line-name{font-size:15px;font-weight:700;}
+.line-verified{font-size:11px;color:#22C55E;font-weight:600;}
+
+/* Form */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;display:block;}
+.form-input{width:100%;padding:13px 14px;border:1.5px solid var(--ink-xsoft);border-radius:11px;font-size:15px;font-family:var(--sans);background:var(--white);transition:.15s;}
+.form-input:focus{outline:none;border-color:var(--forest);}
+.form-input.err{border-color:var(--red);}
+.form-err{font-size:11px;color:var(--red);margin-top:4px;}
+.err-msg{background:#FEF2F2;border-radius:8px;padding:8px 12px;font-size:12px;color:var(--red);margin-bottom:12px;display:none;}
+
+/* OTP area */
+.otp-area{display:none;margin-top:10px;}
+.otp-hint{font-size:12px;color:var(--ink-soft);margin-bottom:10px;}
+.otp-row{display:flex;gap:8px;margin-bottom:8px;}
+.otp-in{flex:1;height:50px;border:2px solid var(--ink-xsoft);border-radius:10px;font-size:22px;font-weight:700;text-align:center;font-family:var(--sans);}
+.otp-in:focus{outline:none;border-color:var(--forest);}
+.otp-in.err{border-color:var(--red);}
+.resend{font-size:12px;color:var(--ink-soft);text-align:right;}
+.resend-btn{color:var(--forest);font-weight:700;background:none;border:none;font-family:var(--sans);font-size:12px;cursor:pointer;}
+
+/* Buttons */
+.btn{width:100%;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);transition:.15s;margin-top:4px;}
+.btn-primary{background:var(--forest);color:#fff;}
+.btn-primary:disabled{background:var(--ink-xsoft);cursor:default;}
+.btn-primary:active{opacity:.85;}
+
+.already{text-align:center;font-size:13px;color:var(--ink-soft);margin-top:16px;}
+.already a{color:var(--forest);font-weight:700;text-decoration:none;}
+
+/* Success */
+.success{display:none;text-align:center;padding:20px 0;}
+.success-icon{font-size:56px;margin-bottom:12px;}
+.success-title{font-size:20px;font-weight:700;color:var(--forest);margin-bottom:8px;}
+.success-sub{font-size:14px;color:var(--ink-soft);line-height:1.6;margin-bottom:24px;}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo-area">
+    <div class="logo">UNDER360</div>
+    <div class="logo-sub">สมัครสมาชิกครั้งเดียว สั่งได้ตลอด</div>
+  </div>
+
+  <div id="formArea">
+    <!-- LINE Profile (auto) -->
+    <div class="line-card">
+      <div class="line-avatar"><img id="lineAvatar" src="" alt=""><span id="lineAvatarEmoji" style="display:none">👤</span></div>
+      <div class="line-info">
+        <div class="line-name" id="lineName">กำลังโหลด...</div>
+        <div class="line-verified">✓ ยืนยันผ่าน LINE แล้ว</div>
+      </div>
+    </div>
+
+    <div class="err-msg" id="errMsg"></div>
+
+    <!-- ชื่อ -->
+    <div class="form-group">
+      <label class="form-label">ชื่อที่ต้องการให้เรียก</label>
+      <input class="form-input" id="fName" placeholder="เช่น แนน, คุณนุ่น" type="text" autocomplete="name">
+      <div class="form-err" id="errName"></div>
+    </div>
+
+    <!-- เบอร์โทร -->
+    <div class="form-group">
+      <label class="form-label">เบอร์โทรศัพท์</label>
+      <div style="display:flex;gap:8px">
+        <input class="form-input" id="fPhone" placeholder="0812345678" type="tel" maxlength="10" inputmode="numeric" style="flex:1">
+        <button onclick="sendOtp()" id="otpBtn" style="background:var(--forest);color:#fff;border:none;border-radius:11px;padding:0 16px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);white-space:nowrap">รับ OTP</button>
+      </div>
+      <div class="form-err" id="errPhone"></div>
+
+      <!-- OTP inline -->
+      <div class="otp-area" id="otpArea">
+        <div class="otp-hint" id="otpHint">กรอก OTP 6 หลักที่ส่งไปยังเบอร์ของคุณ</div>
+        <div class="otp-row">
+          <input class="otp-in" id="o0" maxlength="1" inputmode="numeric" oninput="onOtp(this,0)">
+          <input class="otp-in" id="o1" maxlength="1" inputmode="numeric" oninput="onOtp(this,1)">
+          <input class="otp-in" id="o2" maxlength="1" inputmode="numeric" oninput="onOtp(this,2)">
+          <input class="otp-in" id="o3" maxlength="1" inputmode="numeric" oninput="onOtp(this,3)">
+          <input class="otp-in" id="o4" maxlength="1" inputmode="numeric" oninput="onOtp(this,4)">
+          <input class="otp-in" id="o5" maxlength="1" inputmode="numeric" oninput="onOtp(this,5)">
+        </div>
+        <div class="form-err" id="errOtp"></div>
+        <div class="resend">ไม่ได้รับ? <button class="resend-btn" id="resendBtn" disabled onclick="sendOtp()">ส่งใหม่ใน <span id="cd">60</span>s</button></div>
+      </div>
+    </div>
+
+    <button class="btn btn-primary" id="submitBtn" onclick="submit()">สมัครสมาชิก</button>
+    <div class="already">มีบัญชีอยู่แล้ว? <a href="liff_customer.html">สั่งอาหารเลย</a></div>
+  </div>
+
+  <!-- Success -->
+  <div class="success" id="successArea">
+    <div class="success-icon">🎉</div>
+    <div class="success-title">ยินดีต้อนรับ!</div>
+    <div class="success-sub">สมัครสำเร็จแล้ว<br>ตอนนี้สามารถสั่งอาหารได้เลย</div>
+    <button class="btn btn-primary" onclick="window.location.href='liff_customer.html'">🛒 สั่งอาหารเลย</button>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+const LIFF_ID="2010442513-NI3JGTkb";
+const DEV_MODE=true;
+
+let sb=null, lineProfile=null, otpCode=null, otpVerified=false, cdTimer=null;
+function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+
+async function init(){
+  if(DEV_MODE){
+    lineProfile={userId:"dev_001",displayName:"Test User",pictureUrl:""};
+  } else {
+    try{
+      await liff.init({liffId:LIFF_ID});
+      if(!liff.isLoggedIn()){liff.login();return;}
+      lineProfile=await liff.getProfile();
+    }catch(e){}
+  }
+  if(lineProfile){
+    document.getElementById("lineName").textContent=lineProfile.displayName;
+    if(lineProfile.pictureUrl){
+      document.getElementById("lineAvatar").src=lineProfile.pictureUrl;
+    } else {
+      document.getElementById("lineAvatarEmoji").style.display="block";
+    }
+    // Pre-fill name from LINE
+    document.getElementById("fName").value=lineProfile.displayName;
+  }
+}
+
+function sendOtp(){
+  const phone=document.getElementById("fPhone").value.trim();
+  if(!/^0[0-9]{9}$/.test(phone)){
+    document.getElementById("errPhone").textContent="กรุณากรอกเบอร์โทร 10 หลักให้ถูกต้อง"; return;
+  }
+  document.getElementById("errPhone").textContent="";
+  otpCode=DEV_MODE?"123456":Math.floor(100000+Math.random()*900000).toString();
+  if(DEV_MODE) alert("DEV: OTP = "+otpCode);
+  document.getElementById("otpArea").style.display="block";
+  document.getElementById("otpHint").textContent="กรอก OTP 6 หลักที่ส่งไปยัง "+phone;
+  document.getElementById("o0").focus();
+  startCd();
+}
+
+function onOtp(el,idx){
+  el.value=el.value.replace(/\D/g,"");
+  if(el.value&&idx<5) document.getElementById("o"+(idx+1)).focus();
+  if(idx===5){
+    const entered=[0,1,2,3,4,5].map(i=>document.getElementById("o"+i).value).join("");
+    if(entered.length===6){
+      if(entered===otpCode){
+        otpVerified=true;
+        document.getElementById("errOtp").textContent="";
+        document.getElementById("otpArea").style.backgroundColor="#F0FDF4";
+        [0,1,2,3,4,5].forEach(i=>document.getElementById("o"+i).style.borderColor="#22C55E");
+      } else {
+        document.getElementById("errOtp").textContent="OTP ไม่ถูกต้อง";
+        [0,1,2,3,4,5].forEach(i=>{document.getElementById("o"+i).classList.add("err");setTimeout(()=>document.getElementById("o"+i).classList.remove("err"),1000);});
+      }
+    }
+  }
+}
+
+function startCd(){
+  let s=60;
+  const btn=document.getElementById("resendBtn");
+  const cd=document.getElementById("cd");
+  btn.disabled=true; btn.textContent="ส่งใหม่ใน "+s+"s";
+  cd.textContent=s;
+  if(cdTimer)clearInterval(cdTimer);
+  cdTimer=setInterval(()=>{
+    s--; cd.textContent=s; btn.textContent="ส่งใหม่ใน "+s+"s";
+    if(s<=0){clearInterval(cdTimer);btn.textContent="ส่ง OTP ใหม่";btn.disabled=false;}
+  },1000);
+}
+
+async function submit(){
+  const name=document.getElementById("fName").value.trim();
+  const phone=document.getElementById("fPhone").value.trim();
+  let ok=true;
+  document.getElementById("errName").textContent=!name?"กรุณากรอกชื่อ":""; if(!name)ok=false;
+  document.getElementById("errPhone").textContent=!/^0[0-9]{9}$/.test(phone)?"กรุณากรอกเบอร์โทรให้ถูกต้อง":""; if(!/^0[0-9]{9}$/.test(phone))ok=false;
+  if(!otpVerified){showErr("กรุณายืนยัน OTP ก่อนสมัคร");return;}
+  if(!ok)return;
+  const btn=document.getElementById("submitBtn");
+  btn.disabled=true; btn.textContent="⏳ กำลังบันทึก...";
+  try{
+    const sb_=getSB();
+    if(sb_) await sb_.from("customers").upsert({line_uid:lineProfile.userId,name,phone,line_display_name:lineProfile.displayName,line_picture_url:lineProfile.pictureUrl,points:0,tier:1},{onConflict:"line_uid"});
+    document.getElementById("formArea").style.display="none";
+    document.getElementById("successArea").style.display="block";
+  }catch(e){showErr("เกิดข้อผิดพลาด กรุณาลองใหม่");btn.disabled=false;btn.textContent="สมัครสมาชิก";}
+}
+
+function showErr(msg){const el=document.getElementById("errMsg");el.textContent=msg;el.style.display="block";setTimeout(()=>el.style.display="none",3000);}
+init();
+</script>
+</body>
+</html>
