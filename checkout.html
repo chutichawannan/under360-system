@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — Checkout</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--gold:#C9973F;--red:#DC2626;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);}
+.header{background:var(--forest);padding:14px 20px;display:flex;align-items:center;gap:14px;}
+.back-btn{color:rgba(255,255,255,.7);font-size:20px;text-decoration:none;}
+.hdr-title{font-size:16px;font-weight:700;color:#fff;}
+.steps{display:flex;background:var(--white);border-bottom:1px solid var(--ink-xsoft);}
+.step{flex:1;text-align:center;padding:12px 4px;font-size:11px;font-weight:600;color:var(--ink-xsoft);border-bottom:2px solid transparent;}
+.step.active{color:var(--forest);border-bottom-color:var(--forest);}
+.step.done{color:var(--ink-soft);}
+.main{padding:16px;max-width:600px;margin:0 auto;}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);margin-bottom:14px;overflow:hidden;}
+.card-header{padding:12px 16px;border-bottom:1px solid var(--ink-xsoft);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.card-body{padding:14px 16px;}
+.form-group{margin-bottom:12px;}
+.form-label{font-size:12px;font-weight:600;color:var(--ink-soft);margin-bottom:5px;display:block;}
+.form-input{width:100%;padding:10px 12px;border:1px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:var(--sans);background:var(--white);}
+.form-input:focus{outline:none;border-color:var(--forest);}
+#map{height:200px;border-radius:10px;margin-bottom:12px;z-index:1;}
+.dist-box{background:var(--forest-soft);border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+.dist-num{font-family:var(--mono);font-size:24px;font-weight:700;color:var(--forest);}
+.dist-label{font-size:12px;color:var(--ink-soft);}
+.fee-table{width:100%;border-collapse:collapse;font-size:12px;margin-bottom:12px;}
+.fee-table th{background:var(--bg);padding:8px 10px;text-align:left;font-weight:600;color:var(--ink-soft);}
+.fee-table td{padding:8px 10px;border-top:1px solid var(--ink-xsoft);}
+.fee-table tr.active-tier td{background:var(--forest-soft);font-weight:700;color:var(--forest);}
+.summary-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--ink-xsoft);}
+.summary-row:last-child{border-bottom:none;}
+.summary-total{display:flex;justify-content:space-between;padding:12px 0 0;font-size:16px;font-weight:700;}
+.total-num{font-family:var(--mono);font-size:22px;color:var(--forest);}
+.btn-next{width:100%;background:var(--forest);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);margin-top:8px;}
+.btn-next:active{opacity:.85;}
+.notice{background:#FEF3C7;border-radius:8px;padding:10px 12px;font-size:12px;color:#92400E;margin-bottom:12px;}
+</style>
+</head>
+<body>
+<div class="header">
+  <a class="back-btn" href="liff_customer.html">←</a>
+  <div class="hdr-title">สรุปและจัดส่ง</div>
+</div>
+<div class="steps">
+  <div class="step done">1 เลือกเมนู</div>
+  <div class="step active">2 ที่อยู่ & ชำระ</div>
+  <div class="step">3 ยืนยัน</div>
+</div>
+
+<div class="main">
+  <!-- Address -->
+  <div class="card">
+    <div class="card-header">📍 ที่อยู่จัดส่ง</div>
+    <div class="card-body">
+      <div class="form-group">
+        <label class="form-label">ค้นหาที่อยู่</label>
+        <div style="display:flex;gap:8px;">
+          <input class="form-input" id="addrInput" placeholder="พิมพ์ที่อยู่หรือชื่อสถานที่..." style="flex:1">
+          <button onclick="searchAddr()" style="background:var(--forest);color:#fff;border:none;border-radius:8px;padding:10px 14px;font-size:13px;cursor:pointer;white-space:nowrap">ค้นหา</button>
+        </div>
+      </div>
+      <div id="map"></div>
+      <div class="dist-box">
+        <div>
+          <div class="dist-num" id="distNum">— กม.</div>
+          <div class="dist-label">จากครัว Under360 (สุขุมวิท 71)</div>
+        </div>
+        <div style="margin-left:auto;text-align:right">
+          <div style="font-size:12px;color:var(--ink-soft)">ค่าจัดส่ง</div>
+          <div style="font-family:var(--mono);font-size:20px;font-weight:700;color:var(--forest)" id="feeNum">฿ —</div>
+        </div>
+      </div>
+      <div class="notice">📦 Meal Plan ส่งฟรี · ออเดอร์ทั่วไปคิดตามระยะทาง</div>
+      <table class="fee-table">
+        <thead><tr><th>ระยะทาง</th><th>อัตรา</th><th>ตัวอย่าง</th></tr></thead>
+        <tbody>
+          <tr id="t0"><td>0 – 5 กม.</td><td>฿10/กม.</td><td>4 กม. = ฿40</td></tr>
+          <tr id="t1"><td>5 – 10 กม.</td><td>฿12/กม.</td><td>8 กม. = ฿96</td></tr>
+          <tr id="t2"><td>10 – 20 กม.</td><td>฿15/กม.</td><td>15 กม. = ฿225</td></tr>
+          <tr id="t3"><td>20 กม. ขึ้นไป</td><td>฿18/กม.</td><td>25 กม. = ฿450</td></tr>
+        </tbody>
+      </table>
+      <div class="form-group" style="margin-bottom:0">
+        <label class="form-label">รายละเอียดเพิ่มเติม (อาคาร/ห้อง/จุดสังเกต)</label>
+        <input class="form-input" id="addrDetail" placeholder="เช่น ตึก A ชั้น 12 ห้อง 1201">
+      </div>
+    </div>
+  </div>
+
+  <!-- Order Summary -->
+  <div class="card">
+    <div class="card-header">🧾 สรุปคำสั่งซื้อ</div>
+    <div class="card-body">
+      <div class="summary-row"><span>HP01 อกไก่ย่างสมุนไพร × 2</span><span>฿330</span></div>
+      <div class="summary-row"><span>HP04 สันในหมูย่าง × 1</span><span>฿165</span></div>
+      <div class="summary-row"><span style="color:var(--ink-soft)">ค่าจัดส่ง</span><span id="feeSummary" style="color:var(--ink-soft)">— กำลังคำนวณ</span></div>
+      <div class="summary-total"><span>รวมทั้งหมด</span><span class="total-num" id="totalSummary">฿495 + ค่าส่ง</span></div>
+      <button class="btn-next" onclick="goPayment()">ถัดไป — ชำระเงิน →</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+let sb=null;
+function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+const KITCHEN_LAT=13.7205, KITCHEN_LNG=100.5855; // สุขุมวิท 71
+let map, customerMarker, dist=null;
+
+// Init map
+window.addEventListener("load",function(){
+  map=L.map("map").setView([KITCHEN_LAT, KITCHEN_LNG],13);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM"}).addTo(map);
+  L.marker([KITCHEN_LAT, KITCHEN_LNG],{icon:L.divIcon({html:"🍳",className:"",iconSize:[30,30]})}).addTo(map).bindPopup("ครัว Under360");
+  map.on("click",function(e){setCustomerPin(e.latlng.lat,e.latlng.lng);});
+});
+
+function haversine(lat1,lng1,lat2,lng2){
+  const R=6371;
+  const dLat=(lat2-lat1)*Math.PI/180;
+  const dLng=(lng2-lng1)*Math.PI/180;
+  const a=Math.sin(dLat/2)**2+Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return R*2*Math.atan2(Math.sqrt(a),Math.sqrt(1-a));
+}
+
+function calcFee(km){
+  if(km<=5) return Math.round(km*10);
+  if(km<=10) return Math.round(5*10+(km-5)*12);
+  if(km<=20) return Math.round(5*10+5*12+(km-10)*15);
+  return Math.round(5*10+5*12+10*15+(km-20)*18);
+}
+
+function setCustomerPin(lat,lng){
+  if(customerMarker) map.removeLayer(customerMarker);
+  customerMarker=L.marker([lat,lng],{icon:L.divIcon({html:"📍",className:"",iconSize:[30,30]})}).addTo(map).bindPopup("ที่อยู่ของคุณ").openPopup();
+  dist=haversine(KITCHEN_LAT,KITCHEN_LNG,lat,lng);
+  const fee=calcFee(dist);
+  document.getElementById("distNum").textContent=dist.toFixed(1)+" กม.";
+  document.getElementById("feeNum").textContent="฿"+fee;
+  document.getElementById("feeSummary").textContent="฿"+fee;
+  document.getElementById("totalSummary").textContent="฿"+(495+fee).toLocaleString();
+  // Highlight tier
+  const tiers=["t0","t1","t2","t3"];
+  tiers.forEach(t=>document.getElementById(t).classList.remove("active-tier"));
+  if(dist<=5) document.getElementById("t0").classList.add("active-tier");
+  else if(dist<=10) document.getElementById("t1").classList.add("active-tier");
+  else if(dist<=20) document.getElementById("t2").classList.add("active-tier");
+  else document.getElementById("t3").classList.add("active-tier");
+}
+
+async function searchAddr(){
+  const q=document.getElementById("addrInput").value.trim();
+  if(!q) return;
+  try{
+    const res=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q+", Bangkok, Thailand")+"&limit=1");
+    const data=await res.json();
+    if(data&&data[0]){
+      const lat=parseFloat(data[0].lat), lng=parseFloat(data[0].lon);
+      map.setView([lat,lng],15);
+      setCustomerPin(lat,lng);
+    } else { alert("ไม่พบที่อยู่ ลองพิมพ์ใหม่หรือคลิกบนแผนที่"); }
+  }catch(e){ alert("ไม่สามารถค้นหาได้ กรุณาคลิกบนแผนที่แทน"); }
+}
+
+async function goPayment(){
+  if(!dist){ alert("กรุณาระบุที่อยู่จัดส่งก่อน"); return; }
+  const btn=document.querySelector(".btn-next");
+  btn.textContent="⏳ กำลังสร้างออเดอร์..."; btn.disabled=true;
+  try{
+    const sb_=getSB();
+    const fee=calcFee(dist);
+    const addr=document.getElementById("addrInput").value+" "+document.getElementById("addrDetail").value;
+    // ดึง order number ถัดไป
+    const today=new Date().toISOString().split("T")[0];
+    const mmdd=today.slice(5,7)+today.slice(8,10);
+    var nextNum=1;
+    if(sb_){
+      const cntRes=await sb_.from("orders").select("id",{count:"exact"}).like("order_number","U-"+mmdd+"-%");
+      nextNum=(cntRes.count||0)+1;
+    }
+    const orderNum="U-"+mmdd+"-"+String(nextNum).padStart(3,"0");
+    // สร้าง order
+    const lineUid=localStorage.getItem("line_uid")||"guest";
+    var orderId=null;
+    if(sb_){
+      const res=await sb_.from("orders").insert({
+        order_number:orderNum,
+        line_uid:lineUid,
+        customer_name:localStorage.getItem("customer_name")||"ลูกค้า",
+        delivery_date:today,
+        delivery_address:addr,
+        delivery_fee:fee,
+        total:495+fee, // TODO: ดึงจาก cart จริง
+        status:"pending_payment",
+        source:"liff"
+      }).select().single();
+      if(res.data) orderId=res.data.id;
+      if(orderId) localStorage.setItem("last_order_id",orderId);
+    }
+    window.location.href="payment.html"+(orderId?"?order_id="+orderId:"");
+  }catch(e){
+    console.error(e);
+    btn.textContent="ถัดไป — ชำระเงิน →"; btn.disabled=false;
+    alert("เกิดข้อผิดพลาด กรุณาลองใหม่");
+  }
+}
+</script>
+</body>
+</html>

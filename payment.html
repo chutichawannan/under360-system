@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — ชำระเงิน</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">loadOrder();
+</script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--gold:#C9973F;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--green:#22C55E;--red:#DC2626;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);}
+.header{background:var(--forest);padding:14px 24px;display:flex;align-items:center;justify-content:space-between;}
+.hdr-title{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;}
+.back-btn{color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(255,255,255,.1);border-radius:8px;}
+.main{padding:20px;max-width:600px;margin:0 auto;}
+.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);margin-bottom:14px;overflow:hidden;}
+.card-header{padding:14px 18px;border-bottom:1px solid var(--ink-xsoft);font-size:14px;font-weight:700;display:flex;align-items:center;gap:8px;}
+.card-body{padding:16px 18px;}
+.order-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--ink-xsoft);font-size:13px;}
+.order-row:last-child{border-bottom:none;}
+.total-row{display:flex;justify-content:space-between;align-items:center;padding:12px 0 0;font-size:16px;font-weight:700;}
+.total-amt{font-family:var(--mono);font-size:22px;color:var(--forest);}
+.qr-box{background:var(--forest-soft);border-radius:12px;padding:20px;text-align:center;margin-bottom:14px;}
+.qr-placeholder{width:180px;height:180px;background:var(--white);border-radius:10px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;font-size:60px;border:2px dashed var(--ink-xsoft);}
+.qr-name{font-size:16px;font-weight:700;margin-bottom:4px;}
+.qr-acct{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--forest);margin-bottom:4px;}
+.qr-amt{font-size:24px;font-weight:700;color:var(--red);}
+.bank-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--ink-xsoft);}
+.bank-icon{width:40px;height:40px;border-radius:10px;background:var(--ink-xsoft);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;}
+.bank-name{font-weight:600;font-size:13px;}
+.bank-acct{font-family:var(--mono);font-size:12px;color:var(--ink-soft);}
+.bank-holder{font-size:11px;color:var(--ink-soft);}
+.copy-btn{margin-left:auto;background:var(--forest-soft);color:var(--forest);border:none;border-radius:7px;padding:5px 10px;font-size:11px;cursor:pointer;font-weight:600;}
+.upload-area{border:2px dashed var(--ink-xsoft);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:.15s;margin-bottom:12px;}
+.upload-area:hover{border-color:var(--forest);background:var(--forest-soft);}
+.upload-icon{font-size:32px;margin-bottom:8px;}
+.upload-text{font-size:13px;color:var(--ink-soft);}
+.btn-confirm{width:100%;background:var(--forest);color:#fff;border:none;border-radius:10px;padding:14px;font-size:16px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+.btn-confirm:active{opacity:.85;}
+.status-badge{display:inline-flex;align-items:center;gap:6px;padding:6px 14px;border-radius:20px;font-size:13px;font-weight:600;}
+.s-pending{background:#FEF3C7;color:#92400E;}
+.s-verified{background:#D1FAE5;color:#065F46;}
+.timeline{display:flex;flex-direction:column;gap:0;}
+.tl-item{display:flex;gap:12px;padding-bottom:16px;position:relative;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-dot{width:28px;height:28px;border-radius:50%;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid var(--ink-xsoft);background:var(--white);}
+.tl-dot.done{background:var(--forest);border-color:var(--forest);}
+.tl-dot.current{background:var(--gold);border-color:var(--gold);}
+.tl-content{flex:1;padding-top:4px;}
+.tl-title{font-size:13px;font-weight:600;}
+.tl-sub{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+.tl-line{position:absolute;left:14px;top:28px;bottom:0;width:2px;background:var(--ink-xsoft);}
+.tl-item:last-child .tl-line{display:none;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div><div class="hdr-title">💳 ชำระเงิน</div></div>
+  <a class="back-btn" href="liff_customer.html">← กลับ</a>
+</div>
+
+<div class="main">
+  <!-- Order Summary -->
+  <div class="card">
+    <div class="card-header">🧾 สรุปออเดอร์ <span style="font-family:var(--mono);font-size:12px;color:var(--ink-soft);margin-left:auto">U360-20260620-031</span></div>
+    <div class="card-body">
+      <div class="order-row"><span>HP01 อกไก่ย่างสมุนไพร × 2</span><span>฿330</span></div>
+      <div class="order-row"><span>HP04 สันในหมูย่าง × 1</span><span>฿165</span></div>
+      <div class="order-row"><span style="color:var(--ink-soft)">ค่าจัดส่ง (5.2 กม.)</span><span style="color:var(--ink-soft)">฿26</span></div>
+      <div class="total-row"><span>รวมทั้งหมด</span><span class="total-amt">฿521</span></div>
+    </div>
+  </div>
+
+  <!-- Payment Method -->
+  <div class="card">
+    <div class="card-header">💳 วิธีชำระเงิน</div>
+    <div class="card-body">
+      <!-- PromptPay QR -->
+      <div class="qr-box">
+        <div class="qr-placeholder">📱</div>
+        <div class="qr-name">บริษัท อันเดอร์360 จำกัด</div>
+        <div class="qr-acct">PromptPay: 092-756-8826</div>
+        <div class="qr-amt">฿521</div>
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:8px">สแกน QR ด้วยแอปธนาคาร</div>
+      </div>
+
+      <!-- Bank Transfer -->
+      <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px">หรือโอนผ่านธนาคาร</div>
+      <div class="bank-row">
+        <div class="bank-icon">🏦</div>
+        <div><div class="bank-name">ธนาคารกสิกรไทย</div><div class="bank-acct">xxx-x-x1234-x</div><div class="bank-holder">บริษัท อันเดอร์360 จำกัด</div></div>
+        <button class="copy-btn" onclick="this.textContent='✓ copied!';setTimeout(()=>this.textContent='คัดลอก',1500)">คัดลอก</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Slip Upload -->
+  <div class="card">
+    <div class="card-header">📎 แนบสลิปโอนเงิน</div>
+    <div class="card-body">
+      <div class="upload-area" onclick="document.getElementById('slipInput').click()">
+        <div class="upload-icon">📷</div>
+        <div class="upload-text">แตะเพื่อถ่ายรูปหรืออัพโหลดสลิป</div>
+        <div style="font-size:11px;color:var(--ink-xsoft);margin-top:4px">รองรับ JPG, PNG ขนาดไม่เกิน 5MB</div>
+      </div>
+      <input type="file" id="slipInput" accept="image/*" style="display:none" onchange="previewSlip(this)">
+      <img id="slipPreview" style="display:none;width:100%;border-radius:8px;margin-bottom:10px">
+      <button class="btn-confirm" id="confirmBtn" onclick="submitPayment()">✅ ยืนยันการชำระเงิน</button>
+    </div>
+  </div>
+
+  <!-- Status Timeline -->
+  <div class="card">
+    <div class="card-header">📋 สถานะออเดอร์</div>
+    <div class="card-body">
+      <div class="timeline">
+        <div class="tl-item"><div class="tl-dot done">✓</div><div class="tl-line"></div><div class="tl-content"><div class="tl-title">สั่งออเดอร์สำเร็จ</div><div class="tl-sub">20 มิ.ย. 2569 · 09:15</div></div></div>
+        <div class="tl-item"><div class="tl-dot current">💳</div><div class="tl-line"></div><div class="tl-content"><div class="tl-title">รอชำระเงิน</div><div class="tl-sub">รอการตรวจสอบสลิป</div></div></div>
+        <div class="tl-item"><div class="tl-dot">🍳</div><div class="tl-line"></div><div class="tl-content"><div class="tl-title">ครัวกำลังเตรียม</div><div class="tl-sub">—</div></div></div>
+        <div class="tl-item"><div class="tl-dot">🛵</div><div class="tl-line"></div><div class="tl-content"><div class="tl-title">กำลังจัดส่ง</div><div class="tl-sub">—</div></div></div>
+        <div class="tl-item"><div class="tl-dot">✅</div><div class="tl-content"><div class="tl-title">ส่งถึงมือแล้ว</div><div class="tl-sub">—</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+let sb=null, currentOrder=null;
+function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+
+// Load order from URL param ?order_id=xxx or localStorage
+async function loadOrder(){
+  const params=new URLSearchParams(window.location.search);
+  const orderId=params.get("order_id")||localStorage.getItem("last_order_id");
+  if(!orderId) return;
+  const sb_=getSB(); if(!sb_) return;
+  try{
+    const res=await sb_.from("orders").select("*, order_items(quantity, menu_item_id, menu_items(code,name,price))").eq("id",orderId).single();
+    if(res.error||!res.data) return;
+    currentOrder=res.data;
+    renderOrderSummary(res.data);
+  }catch(e){console.error(e);}
+}
+
+function renderOrderSummary(o){
+  const items=o.order_items||[];
+  let itemsHtml="", subtotal=0;
+  items.forEach(i=>{
+    const m=i.menu_items||{code:"—",name:"ไม่ระบุ",price:0};
+    const line=(m.price||0)*(i.quantity||1);
+    subtotal+=line;
+    itemsHtml+=`<div class="order-row"><span>${m.code} ${m.name} × ${i.quantity}</span><span>฿${line.toLocaleString()}</span></div>`;
+  });
+  const fee=o.delivery_fee||0;
+  const total=o.total||subtotal+fee;
+  document.querySelector(".card-header span").textContent=o.order_number||"—";
+  document.querySelector(".card-body").innerHTML=itemsHtml+
+    `<div class="order-row"><span style="color:var(--ink-soft)">ค่าจัดส่ง</span><span style="color:var(--ink-soft)">฿${fee}</span></div>`+
+    `<div class="total-row"><span>รวมทั้งหมด</span><span class="total-amt">฿${total.toLocaleString()}</span></div>`;
+  document.querySelector(".qr-amt").textContent="฿"+total.toLocaleString();
+}
+
+function previewSlip(input){
+  const file=input.files[0]; if(!file)return;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const img=document.getElementById("slipPreview");
+    img.src=e.target.result; img.style.display="block";
+  };
+  reader.readAsDataURL(file);
+}
+async function submitPayment(){
+  const btn=document.getElementById("confirmBtn");
+  btn.textContent="⏳ กำลังส่ง..."; btn.disabled=true;
+  const sb_=getSB();
+  if(sb_&&currentOrder){
+    await sb_.from("orders").update({status:"pending_payment",updated_at:new Date().toISOString()}).eq("id",currentOrder.id);
+  }
+  btn.textContent="✅ ส่งสำเร็จ! รอแอดมินตรวจสอบ";
+  btn.style.background="#6B7280";
+}
+loadOrder();
+</script>
+</body>
+</html>
