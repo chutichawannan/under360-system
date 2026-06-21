@@ -4,7 +4,42 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
 <title>Under360 — โปรไฟล์</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+let reorderData = null;
+async function showReorder(orderNum, items){
+  reorderData = {orderNum, items};
+  const sb_ = getSB();
+  let availableMenus = [];
+  if(sb_){
+    const codes = items.map(i=>i.code).filter(Boolean);
+    const res = await sb_.from('menu_items').select('code,name,is_available,stock_quantity').in('code', codes);
+    availableMenus = res.data || [];
+  }
+  let hasUnavail = false;
+  const html = items.map(i=>{
+    const m = availableMenus.find(x=>x.code===i.code);
+    const avail = !m || m.is_available !== false;
+    if(!avail) hasUnavail = true;
+    return `<div class="ro-item">
+      <span>${i.code} ${i.name||""}</span>
+      ${avail ? '<span class="ro-avail">✓ มีสินค้า</span>' : '<span class="ro-unavail">✗ ไม่มีในขณะนี้</span>'}
+    </div>`;
+  }).join('');
+  document.getElementById('reorderItems').innerHTML = html;
+  document.getElementById('reorderWarning').style.display = hasUnavail ? 'block' : 'none';
+  document.getElementById('reorderPopup').style.display = 'flex';
+}
+function confirmReorder(){
+  // เก็บ cart ใน localStorage แล้วไป liff_customer
+  if(reorderData){
+    const cart = {};
+    reorderData.items.forEach(i=>{ if(i.menuItemId) cart[i.menuItemId] = i.qty||1; });
+    localStorage.setItem('pending_cart', JSON.stringify(cart));
+  }
+  window.location.href = 'liff_customer.html';
+}
+
+</script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--gold:#C9973F;--gold-soft:#FDF5E8;--red:#DC2626;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans Thai',sans-serif;}
@@ -67,6 +102,17 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;padding-botto
 .o-total{font-family:var(--mono);font-weight:700;color:var(--forest);}
 .btn-primary{width:100%;background:var(--forest);color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);}
 .btn-outline{width:100%;background:var(--white);color:var(--red);border:2px solid var(--red);border-radius:11px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-top:8px;}
+
+.reorder-popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;}
+.reorder-box{background:#fff;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;margin:0 auto;}
+.ro-title{font-size:15px;font-weight:700;margin-bottom:12px;}
+.ro-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3F4F6;font-size:13px;}
+.ro-item:last-child{border-bottom:none;}
+.ro-unavail{color:#DC2626;font-size:11px;}
+.ro-avail{color:#065F46;font-size:11px;}
+.ro-btns{display:flex;gap:8px;margin-top:16px;}
+.ro-btn-ok{flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.ro-btn-cancel{padding:12px 16px;background:#F3F4F6;border:none;border-radius:10px;cursor:pointer;font-family:inherit;}
 </style>
 </head>
 <body>
@@ -140,7 +186,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;padding-botto
   <div class="card">
     <div class="card-hdr">🧾 ออเดอร์ล่าสุด</div>
     <div class="card-body" id="histBody">
-      <div class="order-row"><div class="o-num">U-0620-003</div><div class="o-desc">HP01×2, HP04×1</div><div class="o-total">฿495</div></div>
+      <div class="order-row"><div class="o-num">U-0620-003</div><div class="o-desc">HP01×2, HP04×1</div><div class="o-total">฿495</div><button onclick="showReorder('U-0620-003',[{code:'HP01',name:'อกไก่ย่าง',qty:2},{code:'HP04',name:'หมูย่าง',qty:1}])" style="background:none;border:1px solid #1F4D3A;color:#1F4D3A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">สั่งซ้ำ</button></div>
       <div class="order-row"><div class="o-num">U-0618-007</div><div class="o-desc">HP02×2, HP07×1</div><div class="o-total">฿495</div></div>
       <div class="order-row"><div class="o-num">U-0615-012</div><div class="o-desc">HP01×1, HP09×2</div><div class="o-total">฿495</div></div>
       <div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)">ดูทั้งหมด →</button></div>
@@ -216,7 +262,7 @@ async function loadProfile(){
   if(orders.length){
     document.getElementById("histBody").innerHTML=
       orders.slice(0,3).map(o=>
-        `<div class="order-row"><div class="o-num">${o.order_number||"—"}</div><div class="o-desc">${o.delivery_date||""}</div><div class="o-total">฿${(o.total||0).toLocaleString()}</div></div>`
+        `<div class="order-row"><div class="o-num">${o.order_number||"—"}</div><div class="o-desc">${o.delivery_date||""}</div><div class="o-total">฿${(o.total||0).toLocaleString()}</div><button onclick="showReorder('${o.order_number}',[])" style="background:none;border:1px solid #1F4D3A;color:#1F4D3A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;margin-left:6px;font-family:inherit">สั่งซ้ำ</button></div>`
       ).join("")+
       `<div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)">ดูทั้งหมด →</button></div>`;
   }
@@ -233,6 +279,56 @@ async function saveProfile(){
 }
 
 loadProfile();
+
+let reorderData = null;
+async function showReorder(orderNum, items){
+  reorderData = {orderNum, items};
+  const sb_ = getSB();
+  let availableMenus = [];
+  if(sb_){
+    const codes = items.map(i=>i.code).filter(Boolean);
+    const res = await sb_.from('menu_items').select('code,name,is_available,stock_quantity').in('code', codes);
+    availableMenus = res.data || [];
+  }
+  let hasUnavail = false;
+  const html = items.map(i=>{
+    const m = availableMenus.find(x=>x.code===i.code);
+    const avail = !m || m.is_available !== false;
+    if(!avail) hasUnavail = true;
+    return `<div class="ro-item">
+      <span>${i.code} ${i.name||""}</span>
+      ${avail ? '<span class="ro-avail">✓ มีสินค้า</span>' : '<span class="ro-unavail">✗ ไม่มีในขณะนี้</span>'}
+    </div>`;
+  }).join('');
+  document.getElementById('reorderItems').innerHTML = html;
+  document.getElementById('reorderWarning').style.display = hasUnavail ? 'block' : 'none';
+  document.getElementById('reorderPopup').style.display = 'flex';
+}
+function confirmReorder(){
+  // เก็บ cart ใน localStorage แล้วไป liff_customer
+  if(reorderData){
+    const cart = {};
+    reorderData.items.forEach(i=>{ if(i.menuItemId) cart[i.menuItemId] = i.qty||1; });
+    localStorage.setItem('pending_cart', JSON.stringify(cart));
+  }
+  window.location.href = 'liff_customer.html';
+}
+
 </script>
+
+<div id="reorderPopup" style="display:none" class="reorder-popup">
+  <div class="reorder-box">
+    <div class="ro-title">🔁 สั่งซ้ำออเดอร์นี้</div>
+    <div id="reorderItems"></div>
+    <div id="reorderWarning" style="background:#FEF3C7;border-radius:8px;padding:8px 10px;font-size:12px;color:#92400E;margin-top:10px;display:none">
+      ⚠️ บางเมนูในออเดอร์นี้ไม่มีจำหน่ายในขณะนี้ ระบบจะนำเฉพาะเมนูที่มีเข้าตะกร้า
+    </div>
+    <div class="ro-btns">
+      <button class="ro-btn-cancel" onclick="document.getElementById('reorderPopup').style.display='none'">ยกเลิก</button>
+      <button class="ro-btn-ok" onclick="confirmReorder()">✅ นำเข้าตะกร้า</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — สั่งอาหารสุขภาพ</title>
+<meta property="og:title" content="Under360 — อาหารสุขภาพ Delivery">
+<meta property="og:description" content="สั่งอาหาร Low Carb / High Protein ส่งถึงบ้าน ทำสดทุกวัน">
+<meta property="og:image" content="https://under360-system.vercel.app/og-image.jpg">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--forest:#1F4D3A;--gold:#C9973F;--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:#F7F8F6;min-height:100vh;}
+.hero{background:linear-gradient(135deg,var(--forest) 0%,#2D6B52 100%);padding:40px 24px;text-align:center;}
+.logo{font-size:28px;font-weight:700;color:#fff;letter-spacing:-0.5px;margin-bottom:6px;}
+.tagline{font-size:14px;color:rgba(255,255,255,.7);margin-bottom:20px;}
+.hero-img{width:100%;max-width:320px;border-radius:16px;margin:0 auto 20px;display:block;background:rgba(255,255,255,.1);height:180px;display:flex;align-items:center;justify-content:center;font-size:60px;}
+.hero-title{font-size:22px;font-weight:700;color:#fff;margin-bottom:8px;line-height:1.3;}
+.hero-sub{font-size:14px;color:rgba(255,255,255,.75);line-height:1.6;}
+
+.main{padding:20px;max-width:420px;margin:0 auto;}
+
+/* CTA LINE - primary */
+.btn-line{display:flex;align-items:center;justify-content:center;gap:10px;background:#06C755;color:#fff;border:none;border-radius:14px;padding:16px;font-size:16px;font-weight:700;cursor:pointer;text-decoration:none;width:100%;font-family:var(--sans);margin-bottom:12px;}
+.btn-line:hover{background:#00B341;}
+
+/* Products */
+.products{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px;}
+.product-card{background:#fff;border-radius:12px;padding:14px;border:1px solid #E5E7EB;}
+.pc-type{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.7px;color:var(--forest);margin-bottom:6px;}
+.pc-name{font-size:13px;font-weight:700;margin-bottom:4px;}
+.pc-price{font-size:20px;font-weight:700;color:var(--forest);}
+.pc-sub{font-size:10px;color:#6B7280;}
+.pc-badge{display:inline-block;background:#D1FAE5;color:#065F46;font-size:10px;font-weight:700;padding:2px 7px;border-radius:10px;margin-top:6px;}
+
+/* Social proof */
+.reviews{background:#fff;border-radius:12px;padding:14px;margin-bottom:16px;border:1px solid #E5E7EB;}
+.review-title{font-size:12px;font-weight:700;color:#6B7280;text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
+.review-row{display:flex;gap:8px;align-items:flex-start;margin-bottom:8px;}
+.review-avatar{width:32px;height:32px;border-radius:50%;background:#E5E7EB;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;}
+.review-text{font-size:12px;color:#374151;line-height:1.5;}
+.stars{color:#F59E0B;font-size:11px;}
+
+/* Social channels */
+.channels{text-align:center;font-size:12px;color:#6B7280;margin-bottom:8px;}
+.social-row{display:flex;gap:8px;justify-content:center;}
+.social-btn{display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:20px;font-size:12px;font-weight:600;text-decoration:none;border:1px solid #E5E7EB;background:#fff;}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="logo">UNDER360</div>
+  <div class="tagline">อาหารสุขภาพ · ทำสดทุกวัน · ส่งถึงบ้าน</div>
+  <div class="hero-img">🥗</div>
+  <div class="hero-title">กินดี สุขภาพดี<br>ไม่ต้องเสียเวลาทำเอง</div>
+  <div class="hero-sub">Low Carb · High Protein · Made Fresh Daily<br>ส่งทุกวันจันทร์ พุธ ศุกร์</div>
+</div>
+
+<div class="main">
+
+  <!-- Primary CTA -->
+  <div style="margin:20px 0">
+    <a class="btn-line" href="https://line.me/R/ti/p/@under360" id="lineBtn">
+      <span style="font-size:22px">💬</span> สั่งผ่าน LINE — ฟรีค่าส่งรอบแรก
+    </a>
+    <div style="text-align:center;font-size:12px;color:#6B7280">หรือ <a href="liff_customer.html" style="color:var(--forest);font-weight:700">เปิดหน้าเมนูเลย →</a></div>
+  </div>
+
+  <!-- Products -->
+  <div class="products">
+    <div class="product-card">
+      <div class="pc-type">Low Carb</div>
+      <div class="pc-name">เซ็ตทดลอง 7 กล่อง</div>
+      <div class="pc-price">฿1,399</div>
+      <div class="pc-sub">ส่งครั้งเดียว</div>
+      <div class="pc-badge">เริ่มต้นง่าย</div>
+    </div>
+    <div class="product-card">
+      <div class="pc-type">High Protein</div>
+      <div class="pc-name">Weekly 21 กล่อง</div>
+      <div class="pc-price">฿4,190</div>
+      <div class="pc-sub">ส่ง จ/พ/ศ 3 ครั้ง</div>
+      <div class="pc-badge">ยอดนิยม</div>
+    </div>
+  </div>
+
+  <!-- Reviews -->
+  <div class="reviews">
+    <div class="review-title">⭐ รีวิวจากลูกค้า</div>
+    <div class="review-row">
+      <div class="review-avatar">😊</div>
+      <div><div class="stars">★★★★★</div><div class="review-text">"อร่อยมาก ไม่รู้สึกว่ากินอาหารคุม! ลดได้ 3 กิโลใน 1 เดือน"</div></div>
+    </div>
+    <div class="review-row">
+      <div class="review-avatar">💪</div>
+      <div><div class="stars">★★★★★</div><div class="review-text">"High Protein เหมาะมากสำหรับคนออกกำลังกาย โปรตีนเยอะจริง"</div></div>
+    </div>
+  </div>
+
+  <!-- Social -->
+  <div class="channels">ติดตามเราได้ที่</div>
+  <div class="social-row">
+    <a class="social-btn" href="https://line.me/R/ti/p/@under360">💬 LINE</a>
+    <a class="social-btn" href="https://facebook.com/under360">📘 Facebook</a>
+    <a class="social-btn" href="https://instagram.com/under360">📸 IG</a>
+  </div>
+
+</div>
+
+<script>
+// UTM tracking - รู้ว่ามาจากช่องทางไหน
+const params=new URLSearchParams(window.location.search);
+const src=params.get("utm_source")||params.get("src")||"direct";
+// บันทึก source ก่อนส่งไป LINE
+document.getElementById("lineBtn").addEventListener("click",()=>{
+  localStorage.setItem("traffic_source",src);
+});
+// ถ้า dev mode เปิดตรงไปหน้าสั่ง
+if(params.get("go")==="order") window.location.href="liff_customer.html";
+</script>
+</body>
+</html>

@@ -112,7 +112,7 @@ html,body{min-height:100vh;font-family:var(--sans);background:var(--bg);color:va
 <body>
 
 <!-- PIN Screen -->
-<div id="pinScreen">
+<div id="pinScreen" style="display:none">
   <div class="pin-title">🍳 KITCHEN QUEUE</div>
   <div class="pin-dots" id="pinDots">
     <div class="pin-dot" id="d0"></div>
@@ -138,7 +138,7 @@ html,body{min-height:100vh;font-family:var(--sans);background:var(--bg);color:va
 </div>
 
 <!-- Header -->
-<div class="header" id="appHeader" style="display:none">
+<div class="header" id="appHeader">
   <div class="hdr-left">
     <div>
       <div class="hdr-title">KQ — KITCHEN QUEUE</div>
@@ -148,20 +148,21 @@ html,body{min-height:100vh;font-family:var(--sans);background:var(--bg);color:va
   <div style="display:flex;align-items:center;gap:10px;">
     <div class="live-dot"></div>
     <span class="last-upd" id="lastUpd">—</span>
-    <button class="refresh-btn" onclick="loadOrders()">🔄</button>
+    <a href="main_database_v2.html" target="_blank" class="refresh-btn" style="text-decoration:none">📖 สูตร</a><button class="refresh-btn" onclick="loadOrders()">🔄</button>
   </div>
 </div>
 
 <!-- Date Tabs -->
-<div class="date-bar" id="dateBar" style="display:none">
+<div class="date-bar" id="dateBar">
   <span style="font-size:12px;color:var(--ink-soft);flex-shrink:0">แสดง:</span>
   <button class="date-tab active" id="dtToday" onclick="setDateView('today',this)">วันนี้</button>
+  <input type="date" id="calPicker" class="date-tab" style="cursor:pointer;padding:5px 10px" onchange="setDateView('custom',this)">
   <button class="date-tab" id="dtTom" onclick="setDateView('tomorrow',this)">พรุ่งนี้</button>
   <button class="date-tab" id="dtAll" onclick="setDateView('all',this)">ทั้งหมด</button>
 </div>
 
 <!-- Main Content -->
-<div class="main" id="appMain" style="display:none">
+<div class="main" id="appMain">
 
   <!-- Zone A + C -->
   <div class="zones">
@@ -251,8 +252,10 @@ function setDateView(v,btn){
   dateView=v;
   document.querySelectorAll(".date-tab").forEach(function(b){b.classList.remove("active");});
   btn.classList.add("active");
+  if(v==='custom') customDate=btn.value;
   loadOrders();
 }
+var customDate=null;
 
 // ── LOAD ─────────────────────────────────────────────────
 let allOrders=[], allItems=[], allMenus=[];
