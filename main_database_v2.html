@@ -373,44 +373,62 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
   main{padding:6px 6px 80px;}
   header.top{padding:10px 12px;}
   header.top h1{font-size:14px;}
-  .tabs{top:50px;padding:0 8px;}
-  .tab-btn{padding:10px 10px;font-size:13px;}
+  .tabs{top:50px;padding:0 6px;overflow-x:auto;}
+  .tab-btn{padding:10px 8px;font-size:12px;white-space:nowrap;}
   .online-export-bar{padding:6px 10px;gap:6px;font-size:12px;}
-  .toolbar{gap:6px;padding:6px 8px;}
-  .search-box input{padding:8px 10px;font-size:13px;}
-
-  /* Card row: compact flex */
-  .row{padding:8px 10px;gap:6px;align-items:flex-start;flex-wrap:nowrap;}
-  .row-toggles{flex-direction:column;gap:4px;align-items:flex-start;flex-shrink:0;}
-  .row-toggle-lbl{font-size:11px;}
-
-  /* Name: single line, no wrap */
-  .name-wrap{flex:1;min-width:0;}
-  .name-line{flex-wrap:nowrap;align-items:center;}
-  .row .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 220px);}
+  .toolbar{gap:5px;padding:4px 8px;flex-wrap:wrap;}
+  .search-box{width:100%;min-width:unset;}
+  .search-box input{padding:8px 10px;font-size:13px;width:100%;}
+  .cat-picker{flex:unset;min-width:unset;width:100%;}
+  .cat-picker-btn{min-width:unset;width:100%;}
+  .rating-filter-wrap{display:none;}
   
-  /* Hide less important on mobile */
-  .quick-row{display:none;}
+  /* ── Card: 2-row grid layout ── */
+  .recipe-row{
+    display:grid!important;
+    grid-template-columns:auto 1fr auto;
+    grid-template-rows:auto auto;
+    grid-template-areas:"toggles toggles stock" "code name online";
+    padding:8px 10px;
+    gap:4px 8px;
+    align-items:center;
+  }
+  .row-toggles{grid-area:toggles;display:flex;align-items:center;gap:6px;}
+  .code-col{grid-area:code;flex-shrink:0;}
+  .name-wrap{grid-area:name;min-width:0;overflow:hidden;}
+  .stock-ctrl{grid-area:stock;margin-left:0;}
+  .online-toggle-btn{grid-area:online;font-size:10px;padding:3px 8px;}
+  .meta{display:none!important;}
+  
+  /* Name: 1 line truncate */
+  .name-line{flex-wrap:nowrap;}
+  .row .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;}
   .chip-row{display:none;}
-  .meta{display:none;}
-  .subcode-input{width:60px;font-size:10px;}
-
-  /* Stock control: smaller */
-  .stock-ctrl{flex-direction:column;align-items:center;gap:1px;flex-shrink:0;}
+  .quick-row{display:none;}
+  .subcode-input{width:55px;font-size:10px;}
+  
+  /* Stock compact */
+  .stock-ctrl{flex-direction:column;align-items:center;gap:1px;}
   .stock-ctrl button{width:22px;height:22px;font-size:13px;}
-  .stock-ctrl input{width:40px;font-size:12px;padding:2px;}
+  .stock-ctrl input{width:38px;font-size:12px;padding:2px;}
   .stock-lbl{font-size:9px;}
-
-  /* Online btn: compact */
-  .online-toggle-btn{font-size:10px;padding:2px 7px;border-radius:12px;}
-
+  
   /* Code badge */
   .code-badge{font-size:11px;padding:2px 6px;}
-
-  /* Card groups */
+  .row-toggle-lbl{font-size:11.5px;}
+  
+  /* Groups */
   .line-group h2{font-size:13px;padding:8px 10px 4px;}
-  .card{margin-bottom:4px;}
+  .card{margin-bottom:3px;}
   .ptt-group .card{margin-bottom:6px;}
+  
+  /* Edit panel: full width, comfortable */
+  .panel{padding:12px;}
+  .grid2{grid-template-columns:1fr!important;}
+  .field label{font-size:12.5px;}
+  .field input,.field textarea,.field select{font-size:14px;}
+  .panel-actions{flex-wrap:wrap;gap:6px;}
+  .panel-actions button{flex:1;min-width:120px;}
 }
 
 </style>
@@ -2818,7 +2836,7 @@ function renderRecipeCard(r, tot, pinInfo){
   let row = `<div class="card${isPinned?' is-pinned':''}" data-id="${r.id}"${isDraggable?` draggable="true"`:''}>
     <div class="row recipe-row${!isSelling?' not-selling':''}" data-id="${r.id}">
       <div class="row-toggles">${toggles}</div>
-      <div style="display:flex;flex-direction:column;align-items:flex-start;gap:3px;flex-shrink:0;">
+      <div class="code-col">
         <span class="code-badge">${escapeHtml(r.code||'-')}</span>
         ${isPinned && state.pinModeEnabled
           ? `<input type="text" class="subcode-input" data-id="${r.id}" value="${escapeHtml(r.pinSubCode||'')}" placeholder="sub code..." maxlength="12" title="Sub code — เช่น s1, s095">`
