@@ -382,53 +382,62 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
   .cat-picker{flex:unset;min-width:unset;width:100%;}
   .cat-picker-btn{min-width:unset;width:100%;}
   .rating-filter-wrap{display:none;}
-  
-  /* ── Card: 2-row grid layout ── */
+
+  /* ── Card: 3-row flex ──
+     Row 1: pin drag เปิดขาย | code | subcode ──── [●dot]
+     Row 2: ชื่อเมนู (full width)
+     Row 3:                              [− N สต็อก +]
+  ── */
   .recipe-row{
-    display:grid!important;
-    grid-template-columns:auto 1fr auto;
-    grid-template-rows:auto auto;
-    grid-template-areas:"toggles toggles stock" "code name online";
+    display:flex!important;
+    flex-wrap:wrap;
     padding:8px 10px;
-    gap:4px 8px;
+    gap:3px 6px;
     align-items:center;
   }
-  .row-toggles{grid-area:toggles;display:flex;align-items:center;gap:6px;}
-  .code-col{grid-area:code;flex-shrink:0;}
-  .name-wrap{grid-area:name;min-width:0;overflow:hidden;}
-  .stock-ctrl{grid-area:stock;margin-left:0;}
-  .online-toggle-btn{grid-area:online;font-size:10px;padding:3px 8px;}
-  .meta{display:none!important;}
-  
-  /* Name: 1 line truncate */
+  /* Row 1 left: toggles */
+  .row-toggles{order:1;flex-shrink:0;display:flex;align-items:center;gap:5px;}
+  /* Row 1 middle: code + subcode */
+  .code-col{order:2;flex-shrink:0;display:flex;align-items:center;gap:4px;}
+  /* Row 1 right: online dot (margin-left:auto pushes right) */
+  .online-toggle-btn{
+    order:3;margin-left:auto;flex-shrink:0;
+    width:14px;height:14px;border-radius:50%;
+    border:none;padding:0;font-size:0;cursor:pointer;
+    background:#D1D5DB;transition:background .2s;
+  }
+  .online-toggle-btn.online-on{background:#34D399;}
+
+  /* Row 2: name — width:100% forces new row */
+  .name-wrap{order:10;width:100%;min-width:100%;overflow:hidden;}
   .name-line{flex-wrap:nowrap;}
-  .row .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;max-width:100%;}
+  .row .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;display:block;}
   .chip-row{display:none;}
   .quick-row{display:none;}
-  .subcode-input{width:55px;font-size:10px;}
-  
-  /* Stock compact */
-  .stock-ctrl{flex-direction:column;align-items:center;gap:1px;}
-  .stock-ctrl button{width:22px;height:22px;font-size:13px;}
-  .stock-ctrl input{width:38px;font-size:12px;padding:2px;}
+
+  /* Row 3: stock — margin-left:auto right-aligns, forces new row after name */
+  .stock-ctrl{
+    order:20;margin-left:auto;flex-shrink:0;
+    flex-direction:row!important;align-items:center;gap:4px;
+  }
+  .stock-ctrl button{width:26px;height:26px;font-size:16px;}
+  .stock-ctrl input{width:38px;font-size:13px;padding:3px;text-align:center;}
+  .stock-ctrl>div{display:flex;flex-direction:column;align-items:center;}
   .stock-lbl{font-size:9px;}
-  
-  /* Code badge */
-  .code-badge{font-size:11px;padding:2px 6px;}
-  .row-toggle-lbl{font-size:11.5px;}
-  
-  /* Groups */
+
+  .meta{display:none!important;}
+  .subcode-input{width:50px;font-size:10px;padding:2px 4px;}
+  .code-badge{font-size:11px;padding:2px 5px;}
+  .row-toggle-lbl{font-size:11px;}
   .line-group h2{font-size:13px;padding:8px 10px 4px;}
   .card{margin-bottom:3px;}
-  .ptt-group .card{margin-bottom:6px;}
-  
-  /* Edit panel: full width, comfortable */
+  .ptt-group .card{margin-bottom:5px;}
+
+  /* Edit panel */
   .panel{padding:12px;}
   .grid2{grid-template-columns:1fr!important;}
-  .field label{font-size:12.5px;}
-  .field input,.field textarea,.field select{font-size:14px;}
   .panel-actions{flex-wrap:wrap;gap:6px;}
-  .panel-actions button{flex:1;min-width:120px;}
+  .panel-actions button{flex:1;min-width:110px;}
 }
 
 </style>
