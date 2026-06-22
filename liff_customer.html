@@ -265,6 +265,11 @@ input,textarea{font-family:inherit}
 .ot-row .ot-l{color:var(--soft)}
 .ot-row .ot-v{font-weight:700}
 
+
+.map-dropdown{position:absolute;left:14px;right:14px;background:#fff;border:1px solid var(--line);border-radius:var(--r12);z-index:9999;box-shadow:0 4px 20px rgba(0,0,0,.15);max-height:200px;overflow-y:auto;}
+.map-dd-item{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer;color:var(--ink);}
+.map-dd-item:last-child{border-bottom:none;}
+.map-dd-item:hover{background:var(--gl);}
 </style>
 </head>
 <body>
@@ -347,9 +352,12 @@ input,textarea{font-family:inherit}
 
     <!-- ═══ MAP ═══ -->
     <div class="sec-head">🗺️ ปักหมุดที่อยู่จัดส่ง</div>
-    <div class="map-bar">
+    <div style="position:relative;padding:0 14px 10px">
+      <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
+      <div style="display:flex;gap:8px">
       <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
       <button onclick="searchMapAddr()">ค้นหา</button>
+      </div>
     </div>
     <div id="customer-map"></div>
     <div id="fee-row" class="fee-row" style="display:none;margin-top:8px">
@@ -424,7 +432,7 @@ input,textarea{font-family:inherit}
     </div>
   </div>
   <div class="fixbot nonav">
-    <button class="btn-p" id="sub-btn" onclick="submitOrder()">✅ ยืนยันและส่งออเดอร์</button>
+    <button class="btn-p" id="sub-btn-confirm" onclick="submitOrder()">✅ ยืนยันและส่งออเดอร์</button>
   </div>
 </div>
 
@@ -820,11 +828,17 @@ function renderConfirm(addr) {
 // 📤 SUBMIT ORDER
 // ══════════════════════════════════════
 async function submitOrder() {
-  const btn = document.getElementById('sub-btn');
-  btn.disabled = true;
-  btn.textContent = 'กำลังส่งออเดอร์...';
+  // Validate before proceeding
+  if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
+  if (!selDate)      { toast('กรุณาเลือกวันจัดส่ง'); return; }
+  if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
+  const addr = (document.getElementById('addr-input').value || document.getElementById('addr-search').value || '').trim();
+  if (!addr)         { toast('กรุณาใส่หรือค้นหาที่อยู่จัดส่ง'); return; }
 
-  const addr  = document.getElementById('addr-input').value.trim();
+  const btn = document.getElementById('sub-btn');
+  if (btn) { btn.disabled = true; btn.textContent = 'กำลังส่งออเดอร์...'; }
+
+  const addrFinal = addr;
   const notes = document.getElementById('notes-input').value.trim();
   const slot  = SLOTS.find(s => s.key===selSlot);
   const tot   = cartTotal();
@@ -852,13 +866,13 @@ async function submitOrder() {
       delivery_date:   selDate,
       time_slot:       selSlot,
       time_slot_label: slot?.time || '',
-      delivery_address: addr,
+      delivery_address: addrFinal,
       delivery_fee:    deliveryFee,
       subtotal:        tot,
       total:           grandTotal,
-      payment_method:  payMethod,
       status:          'confirmed'
     }).select().single();
+    // payment_method stored locally only (add column via SQL if needed: ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT)
     if (oErr) throw oErr;
 
     // 2. Create order items
@@ -947,14 +961,20 @@ async function searchMapAddr(){
   const q=(document.getElementById('addr-search')||{}).value||'';
   if(!q.trim()){toast('กรุณาพิมพ์ที่อยู่ก่อน');return;}
   try{
-    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q+', Bangkok')+'&limit=1');
+    // Try with Thai countrycodes first, broader search
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q)+'&countrycodes=th&accept-language=th&limit=5');
     const d=await r.json();
-    if(d&&d[0]){
-      const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
-      if(cusMap){cusMap.setView([lat,lng],15);setCusPin(lat,lng);}
-      const ai=document.getElementById('addr-input');
-      if(ai&&!ai.value)ai.value=q;
-    }else{toast('ไม่พบที่อยู่ กรุณากดบนแผนที่แทน');}
+    if(d&&d.length>0){
+      // Show dropdown if multiple results
+      if(d.length===1){
+        const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+        if(cusMap){cusMap.setView([lat,lng],15);setCusPin(lat,lng);}
+        const ai=document.getElementById('addr-input');
+        if(ai)ai.value=d[0].display_name.split(',').slice(0,3).join(',');
+      } else {
+        showMapDropdown(d);
+      }
+    }else{toast('ไม่พบที่อยู่ — ลองพิมพ์ภาษาอังกฤษ หรือกดบนแผนที่ได้เลย');}
   }catch(e){toast('ค้นหาไม่ได้');}
 }
 
