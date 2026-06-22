@@ -26,35 +26,41 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .date-bar{background:var(--white);border-bottom:1px solid var(--xsoft);padding:8px 14px;display:flex;align-items:center;gap:8px;overflow-x:auto;}
 .dtab{flex-shrink:0;padding:5px 14px;border-radius:20px;border:1px solid var(--xsoft);font-size:13px;font-weight:500;cursor:pointer;background:var(--white);color:var(--soft);}
 .dtab.active{background:var(--g);color:#fff;border-color:var(--g);}
-.dtab.urgent{border-color:var(--r);color:var(--r);}
-.dtab.urgent.active{background:var(--r);color:#fff;}
 .date-sel{flex-shrink:0;padding:5px 10px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--white);font-family:var(--sans);color:var(--soft);}
 
 /* MAIN */
 .main{padding:14px;max-width:900px;margin:0 auto;}
 
-/* ─── TAB 1: PRODUCTION ─────────────────────────── */
-.prod-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-@media(max-width:500px){.prod-grid{grid-template-columns:1fr;}}
-.menu-prod-card{background:var(--white);border-radius:var(--radius);border:1px solid var(--xsoft);overflow:hidden;}
-.mpc-head{padding:10px 14px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--xsoft);}
-.mpc-code{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--g);}
-.mpc-name{font-size:13px;font-weight:600;flex:1;margin:0 8px;}
-.mpc-body{padding:10px 14px;}
-.stock-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-size:12px;}
-.stock-label{color:var(--soft);}
-.stock-nums{display:flex;gap:10px;}
-.stock-system{font-family:var(--mono);font-weight:700;color:var(--g);}
-.stock-physical{font-family:var(--mono);font-weight:700;color:var(--gold);}
-.stock-mismatch{color:var(--r);font-size:11px;font-weight:600;}
-.btn-done{width:100%;background:var(--g);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
-.btn-done:active{opacity:.8;}
-.btn-adjust{width:100%;background:var(--rs);color:var(--r);border:1px solid var(--r);border-radius:8px;padding:7px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-top:5px;}
-.reserve-card{background:var(--gold-soft,#FDF5E8);border:1px solid var(--gold);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;}
-.reserve-title{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:6px;}
-.reserve-item{font-size:12px;color:var(--ink);padding:3px 0;}
+/* ─── TAB 1: PRODUCTION TABLE ─── */
+.prod-section{background:var(--white);border-radius:var(--radius);border:1px solid var(--xsoft);overflow:hidden;margin-bottom:14px;}
+.pt-hdr{display:grid;grid-template-columns:1fr 46px 54px 54px 68px;gap:4px;padding:7px 12px;background:var(--gs);border-bottom:2px solid var(--xsoft);}
+.pt-hdr span{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+.pt-hdr span:first-child{text-align:left;}
+.pt-row{display:grid;grid-template-columns:1fr 46px 54px 54px 68px;gap:4px;padding:8px 12px;border-bottom:1px solid var(--xsoft);align-items:center;}
+.pt-row:last-child{border-bottom:none;}
+.pt-row.row-warn{background:#FFFBEB;}
+.pt-row.row-danger{background:#FFF1F1;}
+.pr-name-cell{display:flex;align-items:center;gap:5px;min-width:0;}
+.pr-code-tag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);background:var(--gs);padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.pr-name-text{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pr-n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;}
+.pr-sys-n{color:var(--soft);}
+.pr-ord-n{color:var(--gold);}
+.pr-rem-cell{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;padding:2px 6px;border-radius:6px;background:var(--gs);color:var(--g);}
+.pr-rem-cell.neg{background:var(--rs);color:var(--r);}
+.pr-rem-cell.zero{background:#FFF7ED;color:var(--gold);}
+.pr-act-input{width:100%;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);border:1.5px solid var(--xsoft);border-radius:7px;padding:4px 2px;text-align:center;background:var(--white);}
+.pr-act-input:focus{outline:none;border-color:var(--g);background:var(--gs);}
 
-/* ─── TAB 2: QUEUE ──────────────────────────────── */
+.reserve-card{background:#FDF5E8;border:1px solid var(--gold);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;}
+.reserve-title{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:5px;}
+.reserve-item{font-size:12px;color:var(--ink);padding:2px 0;}
+
+/* ─── TAB 2: QUEUE ─── */
+.ready-banner{background:var(--gs);border:2px solid var(--g);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
+.rb-num{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--g);line-height:1;}
+.rb-label{font-size:14px;color:var(--g);font-weight:700;}
+.rb-sub{font-size:11px;color:var(--soft);margin-top:2px;}
 .zones{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 @media(max-width:600px){.zones{grid-template-columns:1fr;}}
 .zone{background:var(--white);border-radius:var(--radius);border:1px solid var(--xsoft);overflow:hidden;}
@@ -105,13 +111,11 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
   <button class="hdr-btn" onclick="loadAll()">🔄</button>
 </div>
 
-<!-- Tab bar -->
 <div class="tab-bar">
   <button class="tab-btn active" id="tab1" onclick="switchTab(1)">🍳 ผลิต</button>
   <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 จัดกล่อง & ส่ง</button>
 </div>
 
-<!-- Date bar -->
 <div class="date-bar">
   <button class="dtab active" id="dtToday" onclick="setDateView('today',this)">วันนี้</button>
   <button class="dtab" id="dtTom" onclick="setDateView('tomorrow',this)">พรุ่งนี้</button>
@@ -122,9 +126,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <!-- TAB 1: PRODUCTION -->
 <div class="main" id="tabContent1">
   <div id="reserveSection"></div>
-  <div class="prod-grid" id="prodGrid">
-    <div style="text-align:center;color:var(--soft);padding:32px;grid-column:1/-1">กำลังโหลด...</div>
-  </div>
+  <div id="prodGrid"><div style="text-align:center;color:var(--soft);padding:32px">กำลังโหลด...</div></div>
   <div style="margin-top:14px;text-align:center">
     <button onclick="switchTab(2)" style="background:var(--g);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);">ผลิตครบแล้ว → ไปจัดกล่อง 📦</button>
   </div>
@@ -132,6 +134,10 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 
 <!-- TAB 2: QUEUE -->
 <div class="main" id="tabContent2" style="display:none">
+  <div class="ready-banner" id="readyBanner">
+    <span class="rb-num">0</span>
+    <div><div class="rb-label">ออเดอร์ พร้อมส่งในตู้เย็น 🧊</div><div class="rb-sub">กด "จัดกล่องเสร็จ" เพื่อเพิ่มเข้าตู้เย็น</div></div>
+  </div>
   <div class="zones">
     <div class="zone zone-a">
       <div class="zone-hdr"><span class="zone-title">📦 ยังไม่จัด</span><span class="zone-count" id="cntA">0</span></div>
@@ -157,13 +163,21 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <script>
 const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
-let sb=null,dateView="today",currentTab=1,customDate=null;
-let allOrders=[],allItems=[],allMenus=[];
+var sb=null,dateView="today",currentTab=1,customDate=null;
+var allOrders=[],allItems=[],allMenus=[];
+var saveTimers={};
+
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function toISO(d){return d.toISOString().split("T")[0];}
 function today(){return toISO(new Date());}
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+function getTargetDate(){
+  if(dateView==="today")return today();
+  if(dateView==="tomorrow")return tomorrow();
+  if(dateView==="custom"&&customDate)return customDate;
+  return null;
+}
 
 // ── Tabs ─────────────────────────────────────────────────
 function switchTab(n){
@@ -180,95 +194,136 @@ function setDateView(v,btn){
   document.querySelectorAll(".dtab").forEach(function(b){b.classList.remove("active");});
   if(btn&&btn.classList)btn.classList.add("active");
   if(v==="custom")customDate=btn.value;
-  loadAll();
+  renderProd(allMenus);
+  renderQueue(allOrders);
 }
 
 // ── Load ─────────────────────────────────────────────────
 async function loadAll(){
   var sb_=getSB();
-  if(!sb_){renderProd(MOCK_MENUS);renderQueue(MOCK_ORDERS);return;}
+  if(!sb_){
+    allMenus=MOCK_MENUS;allOrders=MOCK_ORDERS;allItems=MOCK_ITEMS;
+    renderProd(allMenus);renderQueue(allOrders);return;
+  }
   try{
-    var todayStr=today(),tomStr=tomorrow();
-    var q=sb_.from("orders").select("*").neq("status","delivered").order("delivery_date").order("time_slot");
-    if(dateView==="today")q=q.eq("delivery_date",todayStr);
-    else if(dateView==="tomorrow")q=q.eq("delivery_date",tomStr);
-    else if(dateView==="custom"&&customDate)q=q.eq("delivery_date",customDate);
-    var [rO,rI,rM]=await Promise.all([q,sb_.from("order_items").select("*"),sb_.from("menu_items").select("id,code,name,price,stock_quantity,stock_physical")]);
+    var [rO,rI,rM]=await Promise.all([
+      sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
+      sb_.from("order_items").select("*"),
+      sb_.from("menu_items").select("id,code,name,price,stock_quantity,actual_stock,is_available")
+    ]);
     allOrders=rO.data||[];allItems=rI.data||[];allMenus=rM.data||[];
     renderProd(allMenus);renderQueue(allOrders);
-  }catch(e){renderProd(MOCK_MENUS);renderQueue(MOCK_ORDERS);}
+  }catch(e){
+    allMenus=MOCK_MENUS;allOrders=MOCK_ORDERS;allItems=MOCK_ITEMS;
+    renderProd(MOCK_MENUS);renderQueue(MOCK_ORDERS);
+  }
 }
 
 // ── TAB 1: Production ────────────────────────────────────
-function getStockPhysical(menuId,code){
-  // เริ่มต้น physical = system (ปรับได้ทีหลัง)
-  var m=allMenus.find(function(x){return x.id===menuId||x.code===code;});
-  return m?(m.stock_physical!=null?m.stock_physical:m.stock_quantity||0):0;
-}
 function renderProd(menus){
-  var todayStr=today();
-  // สรุปเมนูที่มีออเดอร์วันนี้
-  var todayOrders=allOrders.filter(function(o){return o.delivery_date===todayStr&&o.status!=="delivered";});
-  var menuCount={};
-  todayOrders.forEach(function(o){
-    (allItems.filter(function(i){return i.order_id===o.id;})||[]).forEach(function(i){
-      menuCount[i.menu_item_id]=(menuCount[i.menu_item_id]||0)+(i.quantity||1);
+  var tgt=getTargetDate();
+  var tomStr=tomorrow();
+
+  // Count pending orders per menu for selected date
+  var pendingForDate=allOrders.filter(function(o){
+    if(o.status==="delivered")return false;
+    return !tgt||(o.delivery_date===tgt);
+  });
+  var menuOrdCount={};
+  pendingForDate.forEach(function(o){
+    allItems.filter(function(i){return i.order_id===o.id;}).forEach(function(i){
+      menuOrdCount[i.menu_item_id]=(menuOrdCount[i.menu_item_id]||0)+(i.quantity||1);
     });
   });
-  // Mock ถ้าไม่มีข้อมูลจริง
-  if(!Object.keys(menuCount).length){
-    menuCount={"m1":5,"m2":3,"m3":4,"m4":2};
-  }
-  // Reserve section
-  var reserved=allOrders.filter(function(o){return o.delivery_date>tomorrow()&&o.status==="confirmed";});
+
+  // Reserve section — advance orders beyond tomorrow
+  var reserved=allOrders.filter(function(o){
+    return o.delivery_date>tomStr&&(o.status==="confirmed"||o.status==="preparing");
+  });
   var resEl=document.getElementById("reserveSection");
   resEl.innerHTML=reserved.length?
-    "<div class='reserve-card'><div class='reserve-title'>⚠️ จองล่วงหน้า — ต้องผลิตเก็บไว้</div>"+
-    reserved.slice(0,3).map(function(o){return "<div class='reserve-item'>📅 ส่ง "+fmtDate(o.delivery_date)+" · "+(o.customer_name||"ลูกค้า")+"</div>";}).join("")+
-    "</div>":""
+    "<div class='reserve-card'><div class='reserve-title'>⚠️ จองล่วงหน้า "+reserved.length+" ออเดอร์ — ต้องผลิตเก็บไว้</div>"
+    +reserved.slice(0,5).map(function(o){return "<div class='reserve-item'>📅 ส่ง "+fmtDate(o.delivery_date)+" · "+(o.customer_name||"ลูกค้า")+"</div>";}).join("")
+    +(reserved.length>5?"<div class='reserve-item' style='color:var(--soft)'>...และอีก "+(reserved.length-5)+" ออเดอร์</div>":"")
+    +"</div>":""
   ;
-  var grid=document.getElementById("prodGrid");
-  var cards=menus.filter(function(m){return m.is_available!==false;}).slice(0,12);
-  if(!cards.length)cards=MOCK_MENUS;
-  grid.innerHTML=cards.map(function(m){
-    var need=menuCount[m.id]||Math.floor(Math.random()*5)+1;
-    var sys=m.stock_quantity||need;
-    var phy=m.stock_physical!=null?m.stock_physical:sys;
-    var mismatch=sys!==phy;
-    return "<div class='menu-prod-card'>"
-      +"<div class='mpc-head'><span class='mpc-code'>"+(m.code||"—")+"</span><span class='mpc-name'>"+(m.name||"เมนู")+"</span></div>"
-      +"<div class='mpc-body'>"
-      +"<div class='stock-row'><span class='stock-label'>ออเดอร์วันนี้</span><span style='font-family:var(--mono);font-weight:700;color:var(--g)'>"+need+" กล่อง</span></div>"
-      +"<div class='stock-row'><span class='stock-label'>สต็อกระบบ</span><span class='stock-system'>"+sys+"</span></div>"
-      +"<div class='stock-row'><span class='stock-label'>สต็อกจริง</span><span class='stock-physical'>"+phy+"</span></div>"
-      +(mismatch?"<div class='stock-mismatch'>⚠️ สต็อกไม่ตรง</div>":"")
-      +"<button class='btn-done' onclick='markMenuDone(\""+m.id+"\","+need+")'>✅ จัดเสร็จ "+need+" กล่อง</button>"
-      +(mismatch?"<button class='btn-adjust' onclick='adjustStock(\""+m.id+"\")'>🔧 Adjust สต็อก</button>":"")
-      +"</div></div>";
+
+  // Build table
+  var onlineMenus=menus.filter(function(m){return m.is_available!==false;});
+  if(!onlineMenus.length)onlineMenus=MOCK_MENUS;
+
+  var rows=onlineMenus.map(function(m){
+    var ordered=menuOrdCount[m.id]||0;
+    var sys=m.stock_quantity!=null?m.stock_quantity:0;
+    var actual=m.actual_stock!=null?m.actual_stock:sys;
+    var remain=actual-ordered;
+    var rowCls=remain<0?" row-danger":ordered>0&&remain===0?" row-warn":"";
+    var remCls=remain<0?" neg":ordered>0&&remain===0?" zero":"";
+    return "<div class='pt-row"+rowCls+"'>"
+      +"<div class='pr-name-cell'><span class='pr-code-tag'>"+(m.code||"—")+"</span><span class='pr-name-text'>"+(m.name||"เมนู")+"</span></div>"
+      +"<div class='pr-n pr-sys-n'>"+sys+"</div>"
+      +"<div class='pr-n pr-ord-n'>"+ordered+"</div>"
+      +"<div class='pr-rem-cell"+remCls+"' id='rem-"+m.id+"'>"+remain+"</div>"
+      +"<input class='pr-act-input' id='act-"+m.id+"' type='number' min='0' value='"+actual+"' oninput='saveActual(\""+m.id+"\",this)'>"
+      +"</div>";
   }).join("");
+
+  document.getElementById("prodGrid").innerHTML=
+    "<div class='prod-section'>"
+    +"<div class='pt-hdr'><span>เมนู</span><span>ระบบ</span><span>ออเดอร์</span><span>คงเหลือ</span><span>จริง ✏️</span></div>"
+    +rows
+    +"</div>";
 }
-async function markMenuDone(menuId,qty){
-  var sb_=getSB();
-  if(sb_){
-    await sb_.from("menu_items").update({stock_physical:0}).eq("id",menuId);
+
+function saveActual(menuId,input){
+  var val=parseInt(input.value);
+  if(isNaN(val)||val<0)return;
+  // Update in memory
+  var m=allMenus.find(function(x){return x.id===menuId;});
+  if(m)m.actual_stock=val;
+  // Update คงเหลือ cell only (no full re-render = preserve typing focus)
+  var tgt=getTargetDate();
+  var ordered=0;
+  allOrders.filter(function(o){
+    if(o.status==="delivered")return false;
+    return !tgt||(o.delivery_date===tgt);
+  }).forEach(function(o){
+    allItems.filter(function(i){return i.order_id===o.id&&i.menu_item_id===menuId;})
+      .forEach(function(i){ordered+=(i.quantity||1);});
+  });
+  var remain=val-ordered;
+  var remEl=document.getElementById("rem-"+menuId);
+  if(remEl){
+    remEl.textContent=remain;
+    remEl.className="pr-rem-cell"+(remain<0?" neg":ordered>0&&remain===0?" zero":"");
   }
-  // Switch to queue tab
-  switchTab(2);
+  // Debounce DB save 600ms
+  clearTimeout(saveTimers[menuId]);
+  saveTimers[menuId]=setTimeout(async function(){
+    var sb_=getSB();
+    if(sb_)await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId);
+  },600);
 }
-async function adjustStock(menuId){
-  var n=prompt("กรอกจำนวนสต็อกจริงที่มี:");
-  if(n===null)return;
-  var num=parseInt(n);
-  if(isNaN(num))return;
+
+// ── Helper: adjust actual_stock (+1 restore / -1 decrement) ──
+async function adjustActualStock(orderItems,delta){
   var sb_=getSB();
-  if(sb_)await sb_.from("menu_items").update({stock_physical:num}).eq("id",menuId);
-  loadAll();
+  for(var i=0;i<orderItems.length;i++){
+    var it=orderItems[i];
+    var m=allMenus.find(function(x){return x.id===it.menu_item_id;});
+    if(m){
+      var cur=m.actual_stock!=null?m.actual_stock:(m.stock_quantity||0);
+      var nv=Math.max(0,cur+(delta*(it.quantity||1)));
+      m.actual_stock=nv;
+      if(sb_)await sb_.from("menu_items").update({actual_stock:nv}).eq("id",it.menu_item_id);
+    }
+  }
 }
 
 // ── TAB 2: Queue ─────────────────────────────────────────
 function getOrderItems(orderId){
   return allItems.filter(function(i){return i.order_id===orderId;}).map(function(i){
-    var m=allMenus.find(function(m){return m.id===i.menu_item_id;})||{code:"—",name:"—"};
+    var m=allMenus.find(function(x){return x.id===i.menu_item_id;})||{code:"—",name:"—"};
     return {code:m.code,name:m.name,qty:i.quantity||1};
   });
 }
@@ -283,11 +338,11 @@ function renderCard(o,zone){
   var isUrgent=o.delivery_date===today()&&zone==="A";
   var itemsHtml=items.length?items.map(function(i){
     return "<div class='item-chip'><span class='item-code'>"+i.code+"</span> "+i.name.slice(0,14)+" ×"+i.qty+"</div>";
-  }).join(""):("<div style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</div>");
+  }).join(""):"<div style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</div>";
   var noteHtml=o.notes?"<div class='oc-note'>📌 "+o.notes+"</div>":"";
   var actionsHtml="";
   if(zone==="A"){
-    actionsHtml="<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดแล้ว</button></div>";
+    actionsHtml="<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ พร้อมส่ง</button></div>";
   } else if(zone==="C"){
     actionsHtml="<div class='oc-actions'><button class='btn-pick' onclick='markPicked(\""+o.id+"\")'>🛵 Messenger หยิบแล้ว</button><button class='btn-back' onclick='markUnpack(\""+o.id+"\")'>↩</button></div>";
   } else if(zone==="D"){
@@ -303,35 +358,52 @@ function renderCard(o,zone){
     +"<div class='oc-items'>"+itemsHtml+"</div>"
     +noteHtml+actionsHtml+"</div>";
 }
+
 function renderQueue(orders){
-  var todayStr=today(),tomStr=tomorrow();
-  var tgt=dateView==="today"?todayStr:dateView==="tomorrow"?tomStr:dateView==="custom"&&customDate?customDate:null;
+  var tgt=getTargetDate();
+  var tomStr=tomorrow();
   var zA=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&(o.status==="confirmed"||o.status==="preparing");});
   var zC=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&o.status==="ready";});
   var zD=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&o.status==="delivered";});
   var zB=orders.filter(function(o){return o.delivery_date>tomStr&&(o.status==="confirmed"||o.status==="preparing");});
-  function render(ids,el){document.getElementById(el).innerHTML=ids.length?ids.map(function(o){return renderCard(o,el==="zoneA"?"A":el==="zoneC"?"C":"D");}).join(""):"<div class='empty-zone'>"+(el==="zoneA"?"✅ จัดครบแล้ว":"📭 ยังไม่มี")+"</div>";}
+
+  // Ready banner — total across ALL dates
+  var totalReady=orders.filter(function(o){return o.status==="ready";}).length;
+  document.getElementById("readyBanner").innerHTML=
+    "<span class='rb-num'>"+totalReady+"</span>"
+    +"<div><div class='rb-label'>ออเดอร์ พร้อมส่งในตู้เย็น 🧊</div><div class='rb-sub'>จัดเสร็จรอ Messenger มาหยิบ</div></div>";
+
   document.getElementById("cntA").textContent=zA.length;
   document.getElementById("cntC").textContent=zC.length;
   document.getElementById("cntD").textContent=zD.length;
   document.getElementById("zoneA").innerHTML=zA.length?zA.map(function(o){return renderCard(o,"A");}).join(""):"<div class='empty-zone'>✅ จัดครบแล้ว</div>";
   document.getElementById("zoneC").innerHTML=zC.length?zC.map(function(o){return renderCard(o,"C");}).join(""):"<div class='empty-zone'>📭 ยังไม่มี</div>";
   document.getElementById("zoneD").innerHTML=zD.length?zD.map(function(o){return renderCard(o,"D");}).join(""):"<div class='empty-zone'>📭 ยังไม่มี</div>";
+
   var bSec=document.getElementById("zoneB"),bCon=document.getElementById("zoneBContent");
   if(zB.length&&dateView!=="tomorrow"){
     bSec.style.display="block";
-    var byDate={};zB.forEach(function(o){if(!byDate[o.delivery_date])byDate[o.delivery_date]=[];byDate[o.delivery_date].push(o);});
+    var byDate={};
+    zB.forEach(function(o){if(!byDate[o.delivery_date])byDate[o.delivery_date]=[];byDate[o.delivery_date].push(o);});
     bCon.innerHTML=Object.keys(byDate).sort().map(function(iso){
       return "<div class='adv-zone'><div class='adv-hdr'><span class='adv-date'>📅 ส่ง "+fmtDate(iso)+"</span><span style='background:var(--gold);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px'>"+byDate[iso].length+" ออเดอร์</span></div>"
         +"<div style='padding:8px'>"+byDate[iso].map(function(o){return renderCard(o,"A");}).join("")+"</div></div>";
     }).join("");
-  } else { bSec.style.display="none"; }
+  }else{bSec.style.display="none";}
 }
+
+// markPacked: จัดกล่องเสร็จ → หัก actual_stock + status=ready
 async function markPacked(id){
-  var sb_=getSB();if(sb_)await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});if(o){o.status="ready";o.updated_at=new Date().toISOString();}
-  renderQueue(allOrders);
+  var orderItems=allItems.filter(function(i){return i.order_id===id;});
+  await adjustActualStock(orderItems,-1);
+  var sb_=getSB();
+  if(sb_)await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
+  var o=allOrders.find(function(x){return x.id===id;});
+  if(o){o.status="ready";o.updated_at=new Date().toISOString();}
+  renderProd(allMenus);renderQueue(allOrders);
 }
+
+// markPicked: Messenger หยิบแล้ว → status=delivered + loyalty points
 async function markPicked(id){
   var sb_=getSB();
   if(sb_){
@@ -340,36 +412,62 @@ async function markPicked(id){
       var o=allOrders.find(function(x){return x.id===id;});
       if(o&&o.line_uid&&o.total){
         var cr=await sb_.from("customers").select("points,tier").eq("line_uid",o.line_uid).single();
-        if(!cr.error&&cr.data){var np=(cr.data.points||0)+o.total;var nt=np>=25000?4:np>=10000?3:np>=3000?2:1;await sb_.from("customers").update({points:np,tier:nt}).eq("line_uid",o.line_uid);}
+        if(!cr.error&&cr.data){
+          var np=(cr.data.points||0)+o.total;
+          var nt=np>=25000?4:np>=10000?3:np>=3000?2:1;
+          await sb_.from("customers").update({points:np,tier:nt}).eq("line_uid",o.line_uid);
+        }
       }
     }catch(e){}
   }
-  allOrders=allOrders.filter(function(o){return o.id!==id;});
-  renderQueue(allOrders);
+  var o2=allOrders.find(function(x){return x.id===id;});
+  if(o2)o2.status="delivered";
+  renderProd(allMenus);renderQueue(allOrders);
 }
+
+// markUnpack: ↩ ยกเลิกจัด → คืน actual_stock + status=confirmed
 async function markUnpack(id){
-  var sb_=getSB();if(sb_)await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});if(o)o.status="confirmed";
-  renderQueue(allOrders);
+  var orderItems=allItems.filter(function(i){return i.order_id===id;});
+  await adjustActualStock(orderItems,+1);
+  var sb_=getSB();
+  if(sb_)await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
+  var o=allOrders.find(function(x){return x.id===id;});
+  if(o)o.status="confirmed";
+  renderProd(allMenus);renderQueue(allOrders);
 }
+
+// markRecall: ดึงออเดอร์กลับจาก delivered
 async function markRecall(id,st){
-  var sb_=getSB();if(sb_)await sb_.from("orders").update({status:st,updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});if(o)o.status=st;
-  renderQueue(allOrders);
+  if(st==="confirmed"){
+    // กลับ "ไม่จัด" → คืน actual_stock
+    var orderItems=allItems.filter(function(i){return i.order_id===id;});
+    await adjustActualStock(orderItems,+1);
+  }
+  // st==="ready" → กลับ "จัดแล้ว" → actual_stock ไม่เปลี่ยน (ยังอยู่ในตู้เย็น)
+  var sb_=getSB();
+  if(sb_)await sb_.from("orders").update({status:st,updated_at:new Date().toISOString()}).eq("id",id);
+  var o=allOrders.find(function(x){return x.id===id;});
+  if(o)o.status=st;
+  renderProd(allMenus);renderQueue(allOrders);
 }
 
 // ── Init date dropdown ────────────────────────────────────
 (function(){
   var sel=document.getElementById("calPicker");
-  for(var i=1;i<=30;i++){var d=new Date();d.setDate(d.getDate()-i);var iso=d.toISOString().split("T")[0];var label=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});var opt=document.createElement("option");opt.value=iso;opt.textContent=label;sel.appendChild(opt);}
+  for(var i=1;i<=30;i++){
+    var d=new Date();d.setDate(d.getDate()-i);
+    var iso=d.toISOString().split("T")[0];
+    var label=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    var opt=document.createElement("option");opt.value=iso;opt.textContent=label;sel.appendChild(opt);
+  }
 })();
 
 // ── Mock data ─────────────────────────────────────────────
 var MOCK_MENUS=[
-  {id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",stock_quantity:8,stock_physical:8},
-  {id:"m2",code:"HP02",name:"แซลมอนย่างเกลือ",stock_quantity:5,stock_physical:4},
-  {id:"m3",code:"LC01",name:"อกไก่ย่าง LC",stock_quantity:6,stock_physical:6},
-  {id:"m4",code:"LC04",name:"หมูย่างโรสแมรี่",stock_quantity:4,stock_physical:4},
+  {id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",stock_quantity:8,actual_stock:10,is_available:true},
+  {id:"m2",code:"HP02",name:"แซลมอนย่างเกลือ",stock_quantity:5,actual_stock:5,is_available:true},
+  {id:"m3",code:"LC01",name:"อกไก่ย่าง LC",stock_quantity:6,actual_stock:8,is_available:true},
+  {id:"m4",code:"LC04",name:"หมูย่างโรสแมรี่",stock_quantity:4,actual_stock:4,is_available:true},
 ];
 var MOCK_ORDERS=[
   {id:"o1",order_number:"U-0620-001",customer_name:"Boom",status:"confirmed",delivery_date:today(),time_slot:"morning",time_slot_label:"เช้า 8-11",delivery_address:"สุขุมวิท 39",notes:"ไม่เอาผักชี",updated_at:null,line_uid:"c1",total:330},
@@ -381,7 +479,8 @@ var MOCK_ITEMS=[
   {id:"i1",order_id:"o1",menu_item_id:"m1",quantity:2},
   {id:"i2",order_id:"o1",menu_item_id:"m2",quantity:1},
   {id:"i3",order_id:"o2",menu_item_id:"m1",quantity:1},
-  {id:"i4",order_id:"o3",menu_item_id:"m3",quantity:2},{id:"i5",order_id:"o3",menu_item_id:"m4",quantity:1},
+  {id:"i4",order_id:"o3",menu_item_id:"m3",quantity:2},
+  {id:"i5",order_id:"o3",menu_item_id:"m4",quantity:1},
   {id:"i6",order_id:"o4",menu_item_id:"m1",quantity:1},
 ];
 
