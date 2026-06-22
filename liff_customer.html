@@ -568,7 +568,12 @@ function renderMenu() {
 function addItem(id) {
   const item = menuItems.find(m => m.id===id);
   if (!item) return;
+  // Check stock limit
+  const stock = item.stock_quantity != null ? item.stock_quantity : 999;
   const ex = cart.find(c => c.id===id);
+  const curQty = ex ? ex.qty : 0;
+  if (stock <= 0) { toast('สินค้าหมดแล้ว'); return; }
+  if (curQty >= stock) { toast('ใส่ตะกร้าครบจำนวนที่มีในสต็อกแล้ว (' + stock + ')'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
   saveCart(); renderMenu(); updateCartUI();
@@ -577,6 +582,11 @@ function addItem(id) {
 function chgQty(id, delta) {
   const idx = cart.findIndex(c => c.id===id);
   if (idx===-1) return;
+  if (delta > 0) {
+    const item = menuItems.find(m => m.id===id);
+    const stock = item?.stock_quantity != null ? item.stock_quantity : 999;
+    if (cart[idx].qty >= stock) { toast('สต็อกมีแค่ ' + stock + ' ชิ้น'); return; }
+  }
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) cart.splice(idx,1);
   saveCart(); renderMenu(); updateCartUI();
@@ -762,10 +772,12 @@ async function submitOrder() {
       await sb.from('customers').update({ default_address: addr }).eq('id', customer.id);
     }
 
-    // 4. Show success
+    // 4. Show success + reset cart
     document.getElementById('ok-num').textContent = orderNum;
     document.getElementById('ok-detail').innerHTML =
       `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}`;
+    cart = []; saveCart(); updateCartUI();
+    selDate = null; selSlot = null;
     showScr('s-ok');
 
   } catch(e) {
