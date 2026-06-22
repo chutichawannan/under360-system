@@ -367,6 +367,52 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .mp-rm{cursor:pointer;color:#DC2626;font-weight:700;padding:0 2px;}
 .mp-rm:hover{opacity:.6;}
 .mp-qty-badge{background:rgba(0,0,0,.12);border-radius:8px;padding:1px 4px;font-family:var(--mono);font-size:10px;}
+
+/* ═══ MOBILE COMPACT (≤520px) ═══ */
+@media (max-width:520px){
+  main{padding:6px 6px 80px;}
+  header.top{padding:10px 12px;}
+  header.top h1{font-size:14px;}
+  .tabs{top:50px;padding:0 8px;}
+  .tab-btn{padding:10px 10px;font-size:13px;}
+  .online-export-bar{padding:6px 10px;gap:6px;font-size:12px;}
+  .toolbar{gap:6px;padding:6px 8px;}
+  .search-box input{padding:8px 10px;font-size:13px;}
+
+  /* Card row: compact flex */
+  .row{padding:8px 10px;gap:6px;align-items:flex-start;flex-wrap:nowrap;}
+  .row-toggles{flex-direction:column;gap:4px;align-items:flex-start;flex-shrink:0;}
+  .row-toggle-lbl{font-size:11px;}
+
+  /* Name: single line, no wrap */
+  .name-wrap{flex:1;min-width:0;}
+  .name-line{flex-wrap:nowrap;align-items:center;}
+  .row .name{font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:calc(100vw - 220px);}
+  
+  /* Hide less important on mobile */
+  .quick-row{display:none;}
+  .chip-row{display:none;}
+  .meta{display:none;}
+  .subcode-input{width:60px;font-size:10px;}
+
+  /* Stock control: smaller */
+  .stock-ctrl{flex-direction:column;align-items:center;gap:1px;flex-shrink:0;}
+  .stock-ctrl button{width:22px;height:22px;font-size:13px;}
+  .stock-ctrl input{width:40px;font-size:12px;padding:2px;}
+  .stock-lbl{font-size:9px;}
+
+  /* Online btn: compact */
+  .online-toggle-btn{font-size:10px;padding:2px 7px;border-radius:12px;}
+
+  /* Code badge */
+  .code-badge{font-size:11px;padding:2px 6px;}
+
+  /* Card groups */
+  .line-group h2{font-size:13px;padding:8px 10px 4px;}
+  .card{margin-bottom:4px;}
+  .ptt-group .card{margin-bottom:6px;}
+}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- ── Supabase Config ── ใส่ credentials ที่นี่ -->
@@ -1037,7 +1083,7 @@ const SKU_SEED = [{"sku":"S181","name":"ข้าวปลากระพงน�
 
 
 
-let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, pinModeEnabled:false, sortMode:'category', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
+let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, pinModeEnabled:false, sortMode:'online_first', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
   mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpCustAssign:{}, mpSelectedCid:null };
 
@@ -2137,6 +2183,7 @@ async function init(){
     if(r.pinSubCode===undefined) r.pinSubCode = null;
     if(r.stock===undefined || r.stock===null) r.stock = 0;
     if(r.available_online===undefined) r.available_online = false;
+    if(r.he_group===undefined) r.he_group = '';
     if(r.selling_price===undefined) r.selling_price = 0;
     if(!r.parts){
       r.parts = [{ label:'', instructions: r.instructions||'', lines: r.lines||[] }];
@@ -2333,7 +2380,7 @@ async function migrateNoCodeRecipes(){
       notes: 'นำเข้าจาก All Menu Excel',
       quickNote: '', rating: 0,
       pinned: false, pinOrder: 9999, pinSubCode: null,
-      stock: 0, available_online: false,
+      stock: 0, available_online: false, he_group: '',
       selling_price: price,
       updated_by: state.currentUser||'migration',
       updated_at: new Date().toISOString(),
@@ -2588,13 +2635,9 @@ function renderRecipesTab(){
   const seedMatches = state.recipes.filter(r=>INGREDIENT_SEED&&INGREDIENT_SEED[r.code]).length;
   html += `<div class="online-export-bar">
     <span class="cnt">${onlineCnt}</span>
-    <span style="color:var(--forest);">เมนูเปิดให้สั่งออนไลน์ผ่าน LIFF</span>
-    <div style="margin-left:auto;display:flex;gap:8px;align-items:center;">
-      ${seedMatches>0?`<button class="btn btn-export btn-sm" id="importIngrBtn" style="background:#1F4D3A;color:#fff;border:none;">📥 Import วัตถุดิบ (${seedMatches} สูตร)</button>`:''}
-      <button class="btn btn-export btn-sm" id="migrateBtn" style="background:#0369A1;color:#fff;border:none;">🔧 ตั้งราคา + จัดหมวดเจ</button>
-      <button class="btn btn-export btn-sm" id="migrateToSbBtn" style="background:#6D28D9;color:#fff;border:none;">🚀 Migrate → Supabase</button>
-      <button class="btn btn-export btn-sm" id="importNoCodeBtn" style="background:#7C3AED;color:#fff;border:none;">📥 📋 เพิ่มสูตรใหม่ (460 รายการ)</button>
-      <button class="btn btn-export btn-sm" id="exportOnlineBtn">📤 Sync เมนูไป LIFF ▶</button>
+    <span style="color:var(--forest);">ออนไลน์</span>
+    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
     </div>
   </div>`;
   html += `<div class="toolbar">
@@ -2609,6 +2652,7 @@ function renderRecipesTab(){
     <div style="display:flex;align-items:center;gap:5px;flex-shrink:0;">
       <span style="font-size:11px;font-weight:600;color:var(--ink-soft);white-space:nowrap;letter-spacing:.5px;text-transform:uppercase;">จัดเรียง</span>
       <select class="sort-sel" id="sortModeSelect">
+        <option value="online_first" ${state.sortMode==='online_first'?'selected':''}>🛒 ออนไลน์ก่อน</option>
         <option value="category" ${state.sortMode==='category'?'selected':''}>หมวดหมู่</option>
         <option value="code_asc" ${state.sortMode==='code_asc'?'selected':''}>โค้ด A→Z</option>
         <option value="name_asc" ${state.sortMode==='name_asc'?'selected':''}>ชื่อ ก→ฮ</option>
@@ -2679,6 +2723,30 @@ function renderRecipesTab(){
 
   if(state.sortMode && state.sortMode!=='category'){
     let sorted = [...restItems];
+    if(state.sortMode==='online_first'){
+      // PTT already shown above; within rest: online → offline active → retired
+      // also hide duplicates (same name) that are already in PTT
+      const pttNames = new Set(pinnedItems.map(r=>(r.name||'').trim().toLowerCase()));
+      const onlineItems   = sorted.filter(r=>r.available_online && r.status==='active' && !pttNames.has((r.name||'').trim().toLowerCase()));
+      const offlineItems  = sorted.filter(r=>!r.available_online && r.status==='active' && !pttNames.has((r.name||'').trim().toLowerCase()));
+      const retiredItems  = sorted.filter(r=>r.status!=='active');
+      if(onlineItems.length){
+        html += `<div class="line-group"><h2><span class="dot" style="background:var(--forest)"></span>🛒 ออนไลน์ (${onlineItems.length})</h2>`;
+        onlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `</div>`;
+      }
+      if(offlineItems.length){
+        html += `<div class="line-group"><h2><span class="dot" style="background:var(--ink-soft)"></span>○ ออฟไลน์ (${offlineItems.length})</h2>`;
+        offlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `</div>`;
+      }
+      if(retiredItems.length && state.showRetired){
+        html += `<div class="line-group"><h2><span class="dot" style="background:#ccc"></span>เลิกผลิต (${retiredItems.length})</h2>`;
+        retiredItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `</div>`;
+      }
+      return html;
+    }
     if(state.sortMode==='code_asc') sorted.sort((a,b)=>(a.code||'').localeCompare(b.code||''));
     else if(state.sortMode==='name_asc') sorted.sort((a,b)=>(a.name||'').localeCompare(b.name||'','th'));
     else if(state.sortMode==='stock_asc') sorted.sort((a,b)=>(a.stock||0)-(b.stock||0));
@@ -2844,7 +2912,17 @@ function renderEditPanel(r){
       </div>
       <button type="button" class="btn btn-ghost btn-sm addPart">+ เพิ่มพาร์ท</button>
     </div>
-    <div class="field"><label>หมายเหตุ (สารก่อภูมิแพ้ / ของที่ใช้แทนได้ ฯลฯ)</label><textarea class="f-notes" placeholder="">${escapeHtml(r.notes||'')}</textarea></div>
+    <div class="grid2" style="margin-bottom:0">
+      <div class="field">
+        <label>HE Group — กลุ่มสำหรับ Home Editor</label>
+        <input type="text" class="f-he-group" value="${escapeHtml(r.he_group||'')}" placeholder="เช่น group_hp, group_lc, promo_weekend">
+        <div style="font-size:11px;color:var(--ink-soft);margin-top:3px;">ใส่ชื่อ group เดียวกันกับหลายเมนูเพื่อให้ HE ดึงเป็นกลุ่มได้</div>
+      </div>
+      <div class="field">
+        <label>หมายเหตุ (สารก่อภูมิแพ้ / ของที่ใช้แทนได้ ฯลฯ)</label>
+        <textarea class="f-notes" placeholder="" style="height:80px">${escapeHtml(r.notes||'')}</textarea>
+      </div>
+    </div>
     ${renderTotalsLive(r)}
     <div class="panel-actions">
       <button class="btn btn-primary saveRecipe" data-id="${r.id}">บันทึก</button>
@@ -3038,6 +3116,8 @@ function getRecipeFromPanel(panelEl, id){
   if(spEl) r.selling_price = parseFloat(spEl.value)||0;
   const aoEl = panelEl.querySelector('.f-available-online');
   if(aoEl) r.available_online = aoEl.checked;
+  const hgEl = panelEl.querySelector('.f-he-group');
+  if(hgEl) r.he_group = hgEl.value.trim();
   const parts = [];
   panelEl.querySelectorAll('.part-block').forEach(partEl=>{
     const label = partEl.querySelector('.part-label').value.trim();
