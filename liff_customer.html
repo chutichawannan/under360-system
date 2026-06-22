@@ -580,7 +580,7 @@ async function init() {
   // Upsert customer — เฉพาะ column ที่มีในตาราง (line_uid)
   try {
     const { data } = await sb.from('customers')
-      .upsert({ line_uid: lineProfile.userId }, { onConflict: 'line_uid' })
+      .upsert({ line_uid: lineProfile.userId },
       .select().single();
     customer = data;
     // restore saved address
@@ -1129,7 +1129,7 @@ async function loadHomeLayout() {
   try {
     var sb_ = getSB ? getSB() : sb;
     if (!sb_) { homeLayout = DEFAULT_HOME; renderHomeGrid(); return; }
-    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('sort_order');
+    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('name');
     homeLayout = (r.data && r.data.length) ? r.data : DEFAULT_HOME;
   } catch(e) { homeLayout = DEFAULT_HOME; }
   renderHomeGrid();
