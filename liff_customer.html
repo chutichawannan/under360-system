@@ -294,6 +294,21 @@ input,textarea{font-family:inherit}
 .hg-ic-add{width:26px;height:26px;border-radius:50%;background:var(--g);color:#fff;font-size:18px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:3px auto 0;}
 .hg-ic-out{font-size:9px;color:var(--soft);margin-top:4px;}
 
+
+/* ═══════════ PRODUCT DETAIL ═══════════ */
+#s-product{background:var(--w);}
+.pd-img{width:100%;height:220px;object-fit:cover;background:var(--bg);}
+.pd-img-ph{height:220px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:72px;}
+.pd-body{padding:16px;}
+.pd-code{font-size:11px;color:var(--soft);font-weight:700;letter-spacing:.06em;margin-bottom:4px;}
+.pd-name{font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;margin-bottom:10px;}
+.pd-meta{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
+.pd-price{font-size:22px;font-weight:800;color:var(--r);}
+.pd-cal{font-size:14px;color:var(--soft);display:flex;align-items:center;gap:4px;}
+.pd-desc{font-size:14px;color:var(--soft);line-height:1.75;}
+.pd-cart-wrap{display:flex;align-items:center;gap:12px;}
+.pd-out{font-size:14px;color:var(--soft);text-align:center;padding:12px;}
+
 </style>
 </head>
 <body>
@@ -681,11 +696,11 @@ function renderMenu() {
     const inCart = cart.find(c => c.id === item.id);
     const qty = inCart ? inCart.qty : 0;
     return `<div class="mi">
-      <div class="mi-inf">
+      <div class="mi-inf" onclick="openProduct('${item.id}')" style="cursor:pointer">
         ${item.code ? `<div class="mi-code">${h(item.code)}</div>` : ''}
         <div class="mi-name">${h(item.name)}</div>
         <div class="mi-tags">
-          ${item.kcal   ? `<span class="tag tag-am">${item.kcal} kcal</span>` : ''}
+          ${item.calories ? `<span class="tag tag-am">${item.calories} kcal</span>` : item.kcal ? `<span class="tag tag-am">${item.kcal} kcal</span>` : ''}
           ${item.protein? `<span class="tag tag-g">โปรตีน ${item.protein}g</span>` : ''}
         </div>
       </div>
@@ -1038,15 +1053,76 @@ function updateCartTotals(){
 }
 
 
+
+// ══════════════════════════════════════
+// 🔍 PRODUCT DETAIL
+// ══════════════════════════════════════
+var prodFromScreen = 's-menu';
+
+function openProduct(id) {
+  var item = menuItems.find(function(m){ return m.id === id; });
+  if (!item) return;
+  prodFromScreen = document.querySelector('.scr.on')?.id || 's-menu';
+
+  document.getElementById('prod-back-btn').onclick = function(){ showScr(prodFromScreen); };
+  document.getElementById('prod-name-hdr').textContent = item.name;
+  document.getElementById('pd-code').textContent = item.code || '';
+  document.getElementById('pd-name').textContent = item.name;
+  document.getElementById('pd-price').textContent = '฿' + item.price;
+
+  if (item.calories) {
+    var calEl = document.getElementById('pd-cal');
+    calEl.innerHTML = '🔥 ' + item.calories + ' kcal';
+    calEl.style.display = '';
+  } else {
+    document.getElementById('pd-cal').style.display = 'none';
+  }
+  document.getElementById('pd-desc').textContent = item.description || '';
+
+  if (item.image_url) {
+    document.getElementById('pd-img').src = item.image_url;
+    document.getElementById('pd-img').style.display = 'block';
+    document.getElementById('pd-img-ph').style.display = 'none';
+  } else {
+    document.getElementById('pd-img').style.display = 'none';
+    document.getElementById('pd-img-ph').style.display = 'flex';
+  }
+  renderProdCart(id);
+  showScr('s-product');
+}
+
+function renderProdCart(id) {
+  var item = menuItems.find(function(m){ return m.id === id; });
+  if (!item) return;
+  var area = document.getElementById('pd-cart-area');
+  if (!area) return;
+  var stock = item.stock_quantity != null ? item.stock_quantity : 999;
+  var inCart = cart.find(function(c){ return c.id === id; });
+  var badgeEl = document.getElementById('prod-badge');
+  var cartBadge = document.getElementById('cart-badge');
+  if (badgeEl) { badgeEl.textContent = inCart ? inCart.qty : ''; badgeEl.style.display = inCart ? 'flex' : 'none'; }
+  if (stock === 0) {
+    area.innerHTML = '<div class="pd-out">สินค้าหมดแล้ว</div>';
+  } else if (inCart) {
+    area.innerHTML = '<div class="pd-cart-wrap" style="justify-content:center;gap:16px">'
+      + '<button class="qb" style="width:44px;height:44px;font-size:22px" onclick="chgQty(\'' + id + '\',-1);renderProdCart(\'' + id + '\')">−</button>'
+      + '<span class="qn" style="font-size:20px;min-width:28px;text-align:center">' + inCart.qty + '</span>'
+      + '<button class="qb plus" style="width:44px;height:44px;font-size:22px" onclick="chgQty(\'' + id + '\',1);renderProdCart(\'' + id + '\')">+</button>'
+      + '</div>';
+  } else {
+    area.innerHTML = '<button class="btn-p" onclick="addItem(\'' + id + '\');renderProdCart(\'' + id + '\')">+ เพิ่มลงตะกร้า ฿' + item.price + '</button>';
+  }
+}
+
 // ══════════════════════════════════════
 // 🏠 HOME LAYOUT GRID
 // ══════════════════════════════════════
 var homeLayout = [];
 const DEFAULT_HOME = [
-  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{category:'meal_hp'}},
-  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{category:'meal_lc'}},
+  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{he_group:'group_hp'}},
+  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{he_group:'group_lc'}},
   {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{category:'no_special'}},
-  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein วันนี้',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{category:'meal_hp',limit:8}},
+  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein วันนี้',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{he_group:'group_hp',limit:16}},
 ];
 
 async function loadHomeLayout() {
@@ -1068,13 +1144,13 @@ function renderHomeGrid() {
     var f = s.item_filter || {};
     var style = 'grid-column:'+s.col_start+'/span '+s.col_span+';grid-row:'+s.row_start+'/span '+s.row_span+';background:'+s.bg_color+';color:'+s.text_color+';';
     if (s.section_type === 'item_grid') {
-      var items = menuItems.filter(function(m){ return m.is_available && (!f.category || m.category === f.category); }).slice(0, f.limit||8);
+      var items = menuItems.filter(function(m){ if(!m.is_available) return false; if(f.he_group) return m.he_group === f.he_group; if(f.category) return m.category === f.category; return false; }).slice(0, f.limit||8);
       var iHtml = items.map(function(m){
         var inCart = cart.find(function(c){return c.id===m.id;});
         var addBtn = m.stock_quantity===0
           ? '<div class="hg-ic-out">หมด</div>'
           : '<button class="hg-ic-add" onclick="addItem(''+m.id+'')">+</button>';
-        return '<div class="hg-icard"><div class="hg-ic-code">'+(m.code||'')+'</div><div class="hg-ic-name">'+(m.name||'')+'</div><div class="hg-ic-px">฿'+m.price+'</div>'+addBtn+'</div>';
+        return '<div class="hg-icard" onclick="openProduct(\''+m.id+'\')"><div class="hg-ic-code">'+(m.code||'')+'</div><div class="hg-ic-name">'+(m.name||'')+'</div><div class="hg-ic-px">฿'+m.price+'</div>'+addBtn+'</div>';
       }).join('');
       html += '<div class="hg-sec hg-ig" style="'+style+'"><div class="hg-ig-hdr"><span class="hg-ig-tit">'+s.title+'</span><span class="hg-ig-all" onclick="jumpCat(''+f.category+'')">ดูทั้งหมด →</span></div><div class="hg-ig-scroll">'+iHtml+'</div></div>';
     } else if (s.section_type === 'meal_plan') {

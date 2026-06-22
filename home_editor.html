@@ -82,7 +82,7 @@ body{font-family:var(--sans);background:var(--bg);height:100vh;display:flex;flex
 .ep-input,.ep-select{width:100%;padding:7px 9px;border:1.5px solid var(--xsoft);border-radius:8px;font-size:13px;font-family:var(--sans);outline:none;background:var(--w);}
 .ep-input:focus,.ep-select:focus{border-color:var(--g);}
 .ep-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.size-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
 .size-btn{padding:6px 4px;border:1.5px solid var(--xsoft);border-radius:7px;font-size:10px;font-weight:700;text-align:center;cursor:pointer;font-family:var(--mono);color:var(--soft);}
 .size-btn.on{border-color:var(--g);background:var(--gs);color:var(--g);}
 .color-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
@@ -146,13 +146,13 @@ let sb=null,layout=[],selectedKey=null,dragKey=null;
 function getSB(){if(!sb)sb=supabase.createClient(SB_URL,SB_KEY);return sb;}
 
 const DEFAULTS=[
-  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{category:'meal_hp'},sort_order:10,is_active:true},
-  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{category:'meal_lc'},sort_order:20,is_active:true},
-  {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{category:'no_special'},sort_order:30,is_active:true},
-  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{category:'meal_hp',limit:8},sort_order:40,is_active:true},
+  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{he_group:'group_hp',limit:8},sort_order:10,is_active:true},
+  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{he_group:'group_lc',limit:4},sort_order:20,is_active:true},
+  {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{he_group:'group_special',limit:4},sort_order:30,is_active:true},
+  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{he_group:'group_hp',limit:16},sort_order:40,is_active:true},
 ];
 
-const SIZES=[{k:'1×1',w:1,h:1},{k:'2×1',w:2,h:1},{k:'1×2',w:1,h:2},{k:'2×2',w:2,h:2},{k:'4×1',w:4,h:1},{k:'4×2',w:4,h:2}];
+const SIZES=[{k:'1×1',w:1,h:1},{k:'2×1',w:2,h:1},{k:'1×2',w:1,h:2},{k:'2×2',w:2,h:2},{k:'4×1',w:4,h:1},{k:'4×2',w:4,h:2},{k:'4×3',w:4,h:3},{k:'4×4',w:4,h:4}];
 const PALETTE=['#1F4D3A','#2D6B53','#C9973F','#DC2626','#3B82F6','#7C3AED','#ffffff','#F7F8F6','#1A1A1A'];
 const CATS=['meal_hp','meal_lc','no_regular','no_special','pack_regular','trend'];
 const TYPE_OPTS=[{v:'meal_plan',l:'Meal Plan Banner'},{v:'item_grid',l:'Item Grid (หลายเมนู)'},{v:'promo',l:'Promo Banner'}];
@@ -248,15 +248,34 @@ function renderPanel(){
   </div>
   <hr class="ep-hr">
   <div class="ep-group">
-    <div class="ep-label">Category (item filter)</div>
+    <div class="ep-label">🔗 HE Group (ลิงค์กลุ่มสินค้า)</div>
+    <input class="ep-input" value="${f.he_group||''}" onchange="upFilter('he_group',this.value)" placeholder="group_a, group_hp, ...">
+    <div style="font-size:10px;color:var(--soft);margin-top:3px">ตรงกับ he_group ใน menu_items · มีสิทธิ์ก่อน category</div>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">หรือ Category (fallback)</div>
     <select class="ep-select" onchange="upFilter('category',this.value)">
-      <option value="">— ทั้งหมด —</option>
+      <option value="">— ไม่ใช้ category —</option>
       ${CATS.map(c=>`<option value="${c}"${f.category===c?' selected':''}>${c}</option>`).join('')}
     </select>
   </div>
   <div class="ep-group">
-    <div class="ep-label">จำนวนสูงสุด (item_grid)</div>
-    <input class="ep-input" type="number" min="1" max="20" value="${f.limit||8}" onchange="upFilter('limit',+this.value)">
+    <div class="ep-label">จำนวนสูงสุด</div>
+    <input class="ep-input" type="number" min="1" max="32" value="${f.limit||8}" onchange="upFilter('limit',+this.value)">
+    <div style="font-size:10px;color:var(--soft);margin-top:2px">4×2=8 · 4×3=12 · 4×4=16 items</div>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">ช่องว่างที่เหลือ (filler)</div>
+    <select class="ep-select" onchange="up('filler_type',this.value)">
+      <option value="empty"${s.filler_type==='empty'||!s.filler_type?' selected':''}>ว่างเปล่า</option>
+      <option value="text"${s.filler_type==='text'?' selected':''}>ข้อความ custom</option>
+      <option value="image"${s.filler_type==='image'?' selected':''}>รูปภาพ (URL)</option>
+    </select>
+    ${s.filler_type==='text'?
+      `<input class="ep-input" value="${s.filler_text||''}" onchange="up('filler_text',this.value)" placeholder="เช่น เมนูใหม่เร็วๆนี้ 🍳" style="margin-top:5px">`:
+     s.filler_type==='image'?
+      `<input class="ep-input" value="${s.filler_image||''}" onchange="up('filler_image',this.value)" placeholder="https://... URL รูปภาพ" style="margin-top:5px">`:''
+    }
   </div>
   <div class="ep-group">
     <div class="ep-label">Sort order</div>
