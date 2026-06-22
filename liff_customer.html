@@ -516,7 +516,7 @@ const CFG = {
   SUPABASE_URL:  'https://zdartbvhbvqlwzwyyiia.supabase.co',        // https://xxxxx.supabase.co
   SUPABASE_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8',   // eyJ...
   LIFF_ID:       '2010442513-NI3JGTkb',             // 1234567890-xxxxxxxx
-  DEV_MODE:      true,                     // true = ใช้ test user แทน Line login
+  DEV_MODE:      false,                     // true = ใช้ test user แทน Line login
   DEV_PROFILE: { userId:'dev_001', displayName:'Test User', pictureUrl:'' }
 };
 
@@ -580,7 +580,7 @@ async function init() {
   // Upsert customer — เฉพาะ column ที่มีในตาราง (line_uid)
   try {
     const { data } = await sb.from('customers')
-      .upsert({ line_uid: lineProfile.userId },
+      .upsert({ line_uid: lineProfile.userId }, { onConflict: 'line_uid' })
       .select().single();
     customer = data;
     // restore saved address
@@ -1129,7 +1129,7 @@ async function loadHomeLayout() {
   try {
     var sb_ = getSB ? getSB() : sb;
     if (!sb_) { homeLayout = DEFAULT_HOME; renderHomeGrid(); return; }
-    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('name');
+    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('sort_order');
     homeLayout = (r.data && r.data.length) ? r.data : DEFAULT_HOME;
   } catch(e) { homeLayout = DEFAULT_HOME; }
   renderHomeGrid();
@@ -1149,15 +1149,15 @@ function renderHomeGrid() {
         var inCart = cart.find(function(c){return c.id===m.id;});
         var addBtn = m.stock_quantity===0
           ? '<div class="hg-ic-out">หมด</div>'
-          : '<button class="hg-ic-add" onclick="addItem(''+m.id+'')">+</button>';
+          : '<button class="hg-ic-add" onclick="event.stopPropagation();addItem(\''+m.id+'\')">+</button>';
         return '<div class="hg-icard" onclick="openProduct(\''+m.id+'\')"><div class="hg-ic-code">'+(m.code||'')+'</div><div class="hg-ic-name">'+(m.name||'')+'</div><div class="hg-ic-px">฿'+m.price+'</div>'+addBtn+'</div>';
       }).join('');
-      html += '<div class="hg-sec hg-ig" style="'+style+'"><div class="hg-ig-hdr"><span class="hg-ig-tit">'+s.title+'</span><span class="hg-ig-all" onclick="jumpCat(''+f.category+'')">ดูทั้งหมด →</span></div><div class="hg-ig-scroll">'+iHtml+'</div></div>';
+      html += '<div class="hg-sec hg-ig" style="'+style+'"><div class="hg-ig-hdr"><span class="hg-ig-tit">'+s.title+'</span><span class="hg-ig-all" onclick="jumpCat(\''+f.category+'\')">ดูทั้งหมด →</span></div><div class="hg-ig-scroll">'+iHtml+'</div></div>';
     } else if (s.section_type === 'meal_plan') {
       var isLg = s.col_span >= 4;
-      html += '<div class="hg-sec hg-meal" style="'+style+'" onclick="jumpCat(''+f.category+'')" ><div class="hg-t'+(isLg?'':' sm')+'">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div>'+(isLg?'<span class="hg-cta">ดูเมนู →</span>':'')+'</div>';
+      html += '<div class="hg-sec hg-meal" style="'+style+'" onclick="jumpCat(\''+f.category+'\')" ><div class="hg-t'+(isLg?'':' sm')+'">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div>'+(isLg?'<span class="hg-cta">ดูเมนู →</span>':'')+'</div>';
     } else {
-      html += '<div class="hg-sec hg-promo" style="'+style+'" onclick="jumpCat(''+f.category+'')"><div class="hg-t sm">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div></div>';
+      html += '<div class="hg-sec hg-promo" style="'+style+'" onclick="jumpCat(\''+f.category+'\')"><div class="hg-t sm">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div></div>';
     }
   });
   el.innerHTML = html;
