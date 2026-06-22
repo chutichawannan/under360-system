@@ -6,6 +6,8 @@
 <meta name="theme-color" content="#1F4D3A">
 <title>Under360 — สั่งอาหาร</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js">
 let stockPopupItemId = null;
@@ -234,6 +236,35 @@ input,textarea{font-family:inherit}
 .stock-btn-confirm{flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 .stock-btn-cancel{flex:1;background:#F3F4F6;color:#6B7280;border:none;border-radius:10px;padding:12px;font-size:14px;cursor:pointer;font-family:inherit;}
 .preorder-badge{display:inline-block;background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;}
+
+/* ═══════════ MAP + CHECKOUT ═══════════ */
+.map-bar{display:flex;gap:8px;padding:0 14px 10px;align-items:center}
+.map-bar input{flex:1}
+.map-bar button{flex-shrink:0;background:var(--g);color:#fff;border:none;border-radius:var(--r12);padding:12px 14px;font-size:14px;font-weight:700;cursor:pointer}
+#customer-map{height:200px;margin:0 14px 4px;border-radius:var(--r12);overflow:hidden;border:2px solid var(--line)}
+.fee-row{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--gl);margin:0 14px;border-radius:8px;font-size:14px}
+.fee-row .fee-km{color:var(--soft)}
+.fee-row .fee-baht{font-weight:800;color:var(--r);font-size:16px}
+.pay-methods{display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:0 14px 10px}
+.pay-m{border:2px solid var(--line);border-radius:var(--r12);padding:12px;text-align:center;cursor:pointer;transition:all .15s}
+.pay-m.on{border-color:var(--g);background:var(--gl)}
+.pm-ico{font-size:26px;margin-bottom:4px}
+.pm-l{font-size:12px;font-weight:700;color:var(--ink)}
+.qr-box{margin:0 14px 12px;background:var(--gl);border-radius:var(--r12);padding:16px;text-align:center;display:none}
+.qr-box.on{display:block}
+.qr-placeholder{width:150px;height:150px;background:#fff;border-radius:10px;margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:48px;border:2px dashed #ddd}
+.qr-amount{font-size:22px;font-weight:800;color:var(--r);margin-bottom:4px}
+.qr-sub{font-size:12px;color:var(--soft)}
+.transfer-box{margin:0 14px 12px;background:var(--gl);border-radius:var(--r12);padding:16px;display:none}
+.transfer-box.on{display:block}
+.bank-row{display:flex;align-items:center;gap:10px;margin-bottom:6px}
+.bank-ico{font-size:28px}
+.bank-acct{font-size:17px;font-weight:800;font-family:monospace;color:var(--g);letter-spacing:1px}
+.order-total{background:#fff}
+.ot-row{display:flex;justify-content:space-between;align-items:center;padding:11px 14px;border-bottom:1px solid var(--line);font-size:14px}
+.ot-row .ot-l{color:var(--soft)}
+.ot-row .ot-v{font-weight:700}
+
 </style>
 </head>
 <body>
@@ -312,9 +343,60 @@ input,textarea{font-family:inherit}
     <div class="igrp">
       <input id="notes-input" class="ifield" type="text" placeholder="เช่น ไม่เผ็ด, วางหน้าบ้านได้เลย">
     </div>
+    <div class="divider"></div>
+
+    <!-- ═══ MAP ═══ -->
+    <div class="sec-head">🗺️ ปักหมุดที่อยู่จัดส่ง</div>
+    <div class="map-bar">
+      <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
+      <button onclick="searchMapAddr()">ค้นหา</button>
+    </div>
+    <div id="customer-map"></div>
+    <div id="fee-row" class="fee-row" style="display:none;margin-top:8px">
+      <span class="fee-km" id="fee-dist">—</span>
+      <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
+    </div>
+    <div class="divider" style="margin-top:10px"></div>
+
+    <!-- ═══ PAYMENT ═══ -->
+    <div class="sec-head">💳 วิธีชำระเงิน</div>
+    <div class="pay-methods">
+      <div class="pay-m on" id="pm-qr" onclick="selectPay('qr')">
+        <div class="pm-ico">📱</div>
+        <div class="pm-l">QR / PromptPay</div>
+      </div>
+      <div class="pay-m" id="pm-transfer" onclick="selectPay('transfer')">
+        <div class="pm-ico">🏦</div>
+        <div class="pm-l">โอนเงิน</div>
+      </div>
+    </div>
+    <div class="qr-box on" id="pp-qr">
+      <div class="qr-placeholder">📱</div>
+      <div style="font-size:12px;color:var(--soft);margin-bottom:6px">สแกน QR ชำระ PromptPay</div>
+      <div class="qr-amount" id="qr-amount">฿0</div>
+      <div class="qr-sub">พร้อมเพย์: ใส่เบอร์/เลขบัญชีของนัท</div>
+    </div>
+    <div class="transfer-box" id="pp-transfer">
+      <div class="bank-row">
+        <span class="bank-ico">🟢</span>
+        <div>
+          <div style="font-size:13px;font-weight:700">กสิกรไทย</div>
+          <div class="bank-acct">XXX-X-XXXXX-X</div>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--soft)">ชื่อบัญชี: ใส่ชื่อบัญชีจริง</div>
+    </div>
+    <div class="divider"></div>
+
+    <!-- ═══ ORDER TOTAL ═══ -->
+    <div class="order-total">
+      <div class="ot-row"><span class="ot-l">ยอดสินค้า</span><span class="ot-v" id="cart-sub">฿0</span></div>
+      <div class="ot-row"><span class="ot-l">ค่าจัดส่ง</span><span class="ot-v" id="cart-fee">—</span></div>
+      <div class="stot"><div class="stot-l">รวมทั้งหมด</div><div class="stot-v" id="cart-total-display">฿0</div></div>
+    </div>
   </div>
   <div class="fixbot nonav">
-    <button class="btn-p" onclick="goConfirm()">ต่อไป — ยืนยันออเดอร์ →</button>
+    <button class="btn-p" id="sub-btn" onclick="submitOrder()">✅ ยืนยันและสั่งอาหาร</button>
   </div>
 </div>
 
@@ -511,7 +593,11 @@ function goProfile() {
   const uid = lineProfile?.userId || '';
   window.location.href = 'liff_profile.html' + (uid ? '?uid=' + encodeURIComponent(uid) : '');
 }
-function goCart()    { renderCart(); renderDatePick(); renderTimePick(); showScr('s-cart'); }
+function goCart() {
+  renderCart(); renderDatePick(); renderTimePick(); showScr('s-cart');
+  updateCartTotals();
+  setTimeout(initCusMap, 150);
+}
 function goOrders()  { showScr('s-orders'); loadOrders(); }
 
 function goConfirm() {
@@ -756,6 +842,8 @@ async function submitOrder() {
 
   try {
     // 1. Create order
+    const deliveryFee = calcDeliveryFee(distKm || 0);
+    const grandTotal = tot + deliveryFee;
     const { data: ord, error: oErr } = await sb.from('orders').insert({
       order_number:    orderNum,
       customer_id:     customer?.id || null,
@@ -765,10 +853,10 @@ async function submitOrder() {
       time_slot:       selSlot,
       time_slot_label: slot?.time || '',
       delivery_address: addr,
-      delivery_fee:    0,
+      delivery_fee:    deliveryFee,
       subtotal:        tot,
-      total:           tot,
-      notes:           notes,
+      total:           grandTotal,
+      payment_method:  payMethod,
       status:          'confirmed'
     }).select().single();
     if (oErr) throw oErr;
@@ -795,9 +883,9 @@ async function submitOrder() {
     // 4. Show success + reset cart
     document.getElementById('ok-num').textContent = orderNum;
     document.getElementById('ok-detail').innerHTML =
-      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}`;
+      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}`;
     cart = []; saveCart(); updateCartUI();
-    selDate = null; selSlot = null;
+    selDate = null; selSlot = null; distKm = null;
     showScr('s-ok');
 
   } catch(e) {
@@ -806,6 +894,100 @@ async function submitOrder() {
     btn.disabled = false;
     btn.textContent = '✅ ยืนยันและส่งออเดอร์';
   }
+}
+
+
+// ══════════════════════════════════════
+// 🗺️ MAP + DELIVERY FEE
+// ══════════════════════════════════════
+let cusMap=null, cusPin=null, distKm=null, payMethod='qr';
+const KITCHEN=[13.7205,100.5855]; // สุขุมวิท 71
+
+function haversineKm(a,b,c,d){
+  const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180;
+  const x=Math.sin(dL/2)**2+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dG/2)**2;
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+
+function calcDeliveryFee(km){
+  if(!km||km<=0)return 0;
+  const tiers=[{max:5,rate:3},{max:10,rate:4},{max:15,rate:5},{max:20,rate:6},{max:25,rate:7}];
+  let fee=0,prev=0;
+  for(const t of tiers){if(km<=prev)break;fee+=Math.min(km-prev,t.max-prev)*t.rate;prev=t.max;}
+  return Math.ceil(fee);
+}
+
+function initCusMap(){
+  if(cusMap){cusMap.invalidateSize();return;}
+  try{
+    cusMap=L.map('customer-map').setView(KITCHEN,12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'© OSM'}).addTo(cusMap);
+    L.marker(KITCHEN,{icon:L.divIcon({html:'🍳',className:'',iconSize:[28,28]})}).addTo(cusMap).bindPopup('ครัว Under360');
+    cusMap.on('click',e=>setCusPin(e.latlng.lat,e.latlng.lng));
+  }catch(e){console.warn('Map init failed',e);}
+}
+
+function setCusPin(lat,lng){
+  if(!cusMap)return;
+  if(cusPin)cusMap.removeLayer(cusPin);
+  cusPin=L.marker([lat,lng],{draggable:true,icon:L.divIcon({html:'📍',className:'',iconSize:[28,28]})}).addTo(cusMap);
+  cusPin.on('dragend',e=>{const ll=e.target.getLatLng();setCusPin(ll.lat,ll.lng);});
+  distKm=haversineKm(KITCHEN[0],KITCHEN[1],lat,lng);
+  const fee=calcDeliveryFee(distKm);
+  const fRow=document.getElementById('fee-row');
+  if(fRow)fRow.style.display='flex';
+  const fDist=document.getElementById('fee-dist');
+  if(fDist)fDist.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว';
+  const fAmt=document.getElementById('fee-amt');
+  if(fAmt)fAmt.textContent='฿'+fee;
+  updateCartTotals();
+}
+
+async function searchMapAddr(){
+  const q=(document.getElementById('addr-search')||{}).value||'';
+  if(!q.trim()){toast('กรุณาพิมพ์ที่อยู่ก่อน');return;}
+  try{
+    const r=await fetch('https://nominatim.openstreetmap.org/search?format=json&q='+encodeURIComponent(q+', Bangkok')+'&limit=1');
+    const d=await r.json();
+    if(d&&d[0]){
+      const lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      if(cusMap){cusMap.setView([lat,lng],15);setCusPin(lat,lng);}
+      const ai=document.getElementById('addr-input');
+      if(ai&&!ai.value)ai.value=q;
+    }else{toast('ไม่พบที่อยู่ กรุณากดบนแผนที่แทน');}
+  }catch(e){toast('ค้นหาไม่ได้');}
+}
+
+function selectPay(m){
+  payMethod=m;
+  ['qr','transfer'].forEach(x=>{
+    const btn=document.getElementById('pm-'+x);
+    const panel=document.getElementById('pp-'+x);
+    if(btn)btn.classList.toggle('on',x===m);
+    if(panel)panel.classList.toggle('on',x===m);
+  });
+  if(m==='qr')updateQRAmount();
+}
+
+function updateQRAmount(){
+  const tot=cartTotal()+calcDeliveryFee(distKm||0);
+  const el=document.getElementById('qr-amount');
+  if(el)el.textContent='฿'+tot.toLocaleString();
+}
+
+function updateCartTotals(){
+  const sub=cartTotal();
+  const fee=calcDeliveryFee(distKm||0);
+  const total=sub+fee;
+  const subEl=document.getElementById('cart-sub');
+  const feeEl=document.getElementById('cart-fee');
+  const totEl=document.getElementById('cart-total-display');
+  const subBtn=document.getElementById('sub-btn');
+  if(subEl)subEl.textContent='฿'+sub.toLocaleString();
+  if(feeEl)feeEl.textContent=distKm?'฿'+fee:'ยังไม่ได้ปักหมุด';
+  if(totEl)totEl.textContent='฿'+total.toLocaleString();
+  if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+total.toLocaleString()+')';
+  updateQRAmount();
 }
 
 // ══════════════════════════════════════
