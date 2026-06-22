@@ -415,15 +415,15 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
   .chip-row{display:none;}
   .quick-row{display:none;}
 
-  /* Row 3: stock — margin-left:auto right-aligns, forces new row after name */
+  /* Row 1 right: stock — pushed right with margin-left:auto */
   .stock-ctrl{
-    order:20;margin-left:auto;flex-shrink:0;
-    flex-direction:row!important;align-items:center;gap:4px;
+    order:3;margin-left:auto;flex-shrink:0;
+    flex-direction:row!important;align-items:center;gap:3px;
   }
-  .stock-ctrl button{width:26px;height:26px;font-size:16px;}
-  .stock-ctrl input{width:38px;font-size:13px;padding:3px;text-align:center;}
+  .stock-ctrl button{width:22px;height:22px;font-size:15px;border-radius:5px;}
+  .stock-ctrl input{width:32px;height:22px;font-size:12px;padding:1px 2px;text-align:center;}
   .stock-ctrl>div{display:flex;flex-direction:column;align-items:center;}
-  .stock-lbl{font-size:9px;}
+  .stock-lbl{display:none;}
 
   .meta{display:none!important;}
   .subcode-input{width:50px;font-size:10px;padding:2px 4px;}
@@ -2757,19 +2757,22 @@ function renderRecipesTab(){
       const onlineItems   = sorted.filter(r=>r.available_online && r.status==='active' && !pttNames.has((r.name||'').trim().toLowerCase()));
       const offlineItems  = sorted.filter(r=>!r.available_online && r.status==='active' && !pttNames.has((r.name||'').trim().toLowerCase()));
       const retiredItems  = sorted.filter(r=>r.status!=='active');
+      const _collOnline  = !q && state.collapsedCats['_online']  !== false;
+      const _collOffline = !q && state.collapsedCats['_offline'] !== false;
+      const _collRetired = !q && state.collapsedCats['_retired'] !== false;
       if(onlineItems.length){
-        html += `<div class="line-group"><h2><span class="dot" style="background:var(--forest)"></span>🛒 ออนไลน์ (${onlineItems.length})</h2>`;
-        onlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `<div class="line-group"><h2 onclick="toggleCatCollapse('_online')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;"><span style="font-size:12px;color:#666;display:inline-block;transform:${_collOnline?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span><span class="dot" style="background:var(--forest)"></span>🛒 ออนไลน์ (${onlineItems.length})</h2>`;
+        if(!_collOnline) onlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
         html += `</div>`;
       }
       if(offlineItems.length){
-        html += `<div class="line-group"><h2><span class="dot" style="background:var(--ink-soft)"></span>○ ออฟไลน์ (${offlineItems.length})</h2>`;
-        offlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `<div class="line-group"><h2 onclick="toggleCatCollapse('_offline')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;"><span style="font-size:12px;color:#666;display:inline-block;transform:${_collOffline?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span><span class="dot" style="background:var(--ink-soft)"></span>○ ออฟไลน์ (${offlineItems.length})</h2>`;
+        if(!_collOffline) offlineItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
         html += `</div>`;
       }
       if(retiredItems.length && state.showRetired){
-        html += `<div class="line-group"><h2><span class="dot" style="background:#ccc"></span>เลิกผลิต (${retiredItems.length})</h2>`;
-        retiredItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
+        html += `<div class="line-group"><h2 onclick="toggleCatCollapse('_retired')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;"><span style="font-size:12px;color:#666;display:inline-block;transform:${_collRetired?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span><span class="dot" style="background:#ccc"></span>เลิกผลิต (${retiredItems.length})</h2>`;
+        if(!_collRetired) retiredItems.forEach(r=>{ html += renderRecipeCard(r, computeTotals(r)); });
         html += `</div>`;
       }
       return html;
@@ -2795,7 +2798,8 @@ function renderRecipesTab(){
     const items = grouped[key];
     if(!items || items.length===0) return;
     const cat = key==='_none' ? {label:'ไม่ระบุหมวด', color:'#999'} : getCategory(key);
-    const _isColl = !!state.collapsedCats[key];
+    // default collapsed; false=expanded, true/undefined=collapsed; if searching→always show
+    const _isColl = !q && state.collapsedCats[key] !== false;
     html += `<div class="line-group">
       <h2 onclick="toggleCatCollapse('${escapeHtml(key)}')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;">
         <span style="font-size:12px;color:#666;display:inline-block;transform:${_isColl?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span>
@@ -2815,7 +2819,8 @@ function renderRecipesTab(){
 
 
 function toggleCatCollapse(key){
-  state.collapsedCats[key] = !state.collapsedCats[key];
+  // undefined/true=collapsed → set false (expand); false=expanded → set true (collapse)
+  state.collapsedCats[key] = state.collapsedCats[key] === false ? true : false;
   render();
 }
 function renderRecipeCard(r, tot, pinInfo){
