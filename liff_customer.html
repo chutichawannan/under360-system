@@ -8,47 +8,423 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js">
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
+
+
+// ── STOCK LIMIT ──────────────────────────────────────────
+var _stockPendingId=null;
+function showStockPopup(id,name,stock){
+  _stockPendingId=id;
+  document.getElementById("stockMsg").innerHTML=
+    "<b>"+name+"</b> วันนี้เหลือ <b>"+stock+" ชิ้น</b><br>"+
+    "หากต้องการเพิ่ม ครัวจะผลิตให้ภายใน 2 วัน<br>"+
+    "กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ";
+  document.getElementById("stockPopup").style.display="flex";
 }
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
 function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
+  if(!_stockPendingId)return;
+  if(!window._preorderItems)window._preorderItems={};
+  window._preorderItems[_stockPendingId]=true;
+  cart[_stockPendingId]=(cart[_stockPendingId]||0)+1;
+  document.getElementById("stockPopup").style.display="none";
+  renderCart&&renderCart();
+  _stockPendingId=null;
 }
+// ─────────────────────────────────────────────────────────
+
+
+// ── CART MAP & DELIVERY FEE ───────────────────────────────────────────────
+var _cartMap=null,_cartPin=null,_deliveryFee=0,_deliveryDist=0;
+var _KITCHEN=[13.7205,100.5855];
+var _promoDiscount=0,_promoCode="";
+
+function haversineCart(a,b,c,d){
+  var R=6371,dl=(c-a)*Math.PI/180,dg=(d-b)*Math.PI/180;
+  var x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dg/2)*Math.sin(dg/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcDeliveryFee(km){ return Math.round(km*3); } // ฿3/กม.
+
+function initCartMap(){
+  if(_cartMap)return;
+  if(!document.getElementById("cartMap"))return;
+  _cartMap=L.map("cartMap").setView(_KITCHEN,12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM"}).addTo(_cartMap);
+  L.marker(_KITCHEN,{icon:L.divIcon({html:"🍳",className:"",iconSize:[26,26]})}).addTo(_cartMap).bindPopup("ครัว Under360");
+  _cartMap.on("click",function(e){setCartPin(e.latlng.lat,e.latlng.lng);});
+}
+
+function setCartPin(lat,lng){
+  if(_cartPin)_cartMap.removeLayer(_cartPin);
+  _cartPin=L.marker([lat,lng],{
+    draggable:true,
+    icon:L.divIcon({html:"📍",className:"",iconSize:[26,26]})
+  }).addTo(_cartMap);
+  _cartPin.on("dragend",function(e){
+    var ll=e.target.getLatLng();
+    updateCartFee(ll.lat,ll.lng);
+  });
+  updateCartFee(lat,lng);
+}
+
+function updateCartFee(lat,lng){
+  _deliveryDist=haversineCart(_KITCHEN[0],_KITCHEN[1],lat,lng);
+  _deliveryFee=calcDeliveryFee(_deliveryDist);
+  document.getElementById("cartDistLabel").textContent="📏 "+_deliveryDist.toFixed(1)+" กม.";
+  document.getElementById("cartFeeLabel").textContent="ค่าส่ง: ฿"+_deliveryFee;
+  updateCartTotal&&updateCartTotal();
+}
+
+async function searchCartMap(){
+  var q=document.getElementById("addr-input").value.trim();if(!q)return;
+  try{
+    var res=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q+", Bangkok")+"&limit=1");
+    var d=await res.json();
+    if(d&&d[0]){
+      var lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      _cartMap.setView([lat,lng],15);
+      setCartPin(lat,lng);
+    } else { alert("ไม่พบที่อยู่ ลองคลิกบนแผนที่"); }
+  }catch(e){alert("ค้นหาไม่ได้");}
+}
+
+// Promo code
+async function applyPromo(){
+  var code=document.getElementById("promoInput").value.trim().toUpperCase();
+  if(!code)return;
+  var res=document.getElementById("promoResult");
+  res.textContent="⏳ กำลังตรวจสอบ...";res.style.color="#6B7280";
+  try{
+    var sb_=getSB();
+    if(sb_){
+      var r=await sb_.from("promo_codes").select("*").eq("code",code).eq("is_active",true).single();
+      if(r.error||!r.data){
+        res.textContent="❌ โค้ดไม่ถูกต้องหรือหมดอายุแล้ว";res.style.color="#DC2626";
+        _promoDiscount=0;_promoCode="";
+        return;
+      }
+      var promo=r.data;
+      // check min order
+      if(promo.min_order&&cartTotal()<promo.min_order){
+        res.textContent="⚠️ ยอดสั่งซื้อขั้นต่ำ ฿"+promo.min_order;res.style.color="#F59E0B";
+        _promoDiscount=0;return;
+      }
+      _promoCode=code;
+      if(promo.discount_type==="fixed"){_promoDiscount=promo.discount_value;}
+      else if(promo.discount_type==="percent"){_promoDiscount=Math.round(cartTotal()*promo.discount_value/100);}
+      else if(promo.discount_type==="free_shipping"){_promoDiscount=_deliveryFee;}
+      res.textContent="✅ "+promo.description+" (ลด ฿"+_promoDiscount+")";
+      res.style.color="#065F46";
+    } else {
+      // DEV mock
+      if(code==="UNDER50"){_promoDiscount=50;_promoCode=code;res.textContent="✅ ส่วนลด ฿50 (DEV mock)";res.style.color="#065F46";}
+      else{res.textContent="❌ โค้ดไม่ถูกต้อง";res.style.color="#DC2626";}
+    }
+    updateCartTotal&&updateCartTotal();
+  }catch(e){res.textContent="❌ ไม่สามารถตรวจสอบได้";res.style.color="#DC2626";}
+}
+
+// Init map when cart screen shows
+var _origShowScr=typeof showScr==="function"?showScr:null;
+setTimeout(function(){
+  var origFn=window.showScr;
+  window.showScr=function(id){
+    if(origFn)origFn(id);
+    if(id==="s-cart")setTimeout(initCartMap,100);
+  };
+},500);
+// ─────────────────────────────────────────────────────────────────────────
+
+
+// ── PROFILE PANEL ────────────────────────────────────────
+var ppCustomList=[];
+const PP_TIERS=[
+  {min:0,max:2999,label:"🥈 เทียร์ 1",disc:1},
+  {min:3000,max:9999,label:"🥇 เทียร์ 2",disc:3},
+  {min:10000,max:24999,label:"💎 เทียร์ 3",disc:5},
+  {min:25000,max:Infinity,label:"👑 VIP",disc:10}
+];
+async function openProfile(){
+  document.getElementById("profileOverlay").style.display="block";
+  document.getElementById("profilePanel").style.display="block";
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var sb_=getSB();
+  var p=null;
+  if(sb_){
+    try{
+      var r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total)").eq("line_uid",lineUid).single();
+      if(!r.error)p=r.data;
+    }catch(e){}
+  }
+  if(!p)p={name:lineProfile?.displayName||"—",phone:"—",birth_date:"—",points:0,orders:[]};
+  document.getElementById("ppName").textContent=p.name||"—";
+  document.getElementById("ppPhone").textContent=p.phone||"—";
+  document.getElementById("ppDob").textContent=p.birth_date||"—";
+  // Tier
+  var pts=p.points||0;
+  var t=PP_TIERS.find(function(x){return pts>=x.min&&pts<=x.max;})||PP_TIERS[0];
+  var next=PP_TIERS.find(function(x){return x.min>t.min;});
+  document.getElementById("ppPts").textContent=pts.toLocaleString();
+  document.getElementById("ppTierBadge").textContent=t.label;
+  var pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
+  document.getElementById("ppFill").style.width=pct+"%";
+  document.getElementById("ppProgCur").textContent=pts.toLocaleString()+" แต้ม";
+  document.getElementById("ppProgNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString():"ระดับสูงสุด 👑";
+  // Orders
+  var orders=p.orders||[];
+  var el=document.getElementById("ppOrders");
+  if(!orders.length){el.innerHTML="<div style='text-align:center;color:#6B7280;font-size:13px;padding:12px'>ยังไม่มีประวัติออเดอร์</div>";return;}
+  el.innerHTML=orders.slice(0,5).map(function(o){
+    return "<div class='pp-order-row'><span class='pp-onum'>"+(o.order_number||"—")+"</span><span style='flex:1;color:#6B7280'>"+(o.delivery_date||"")+"</span><span style='font-family:monospace;font-weight:700;color:#1F4D3A'>฿"+(o.total||0).toLocaleString()+"</span><button class='pp-rebuy' onclick='ppReorder(""+o.id+"")'>สั่งซ้ำ</button></div>";
+  }).join("");
+}
+function closeProfile(){
+  document.getElementById("profileOverlay").style.display="none";
+  document.getElementById("profilePanel").style.display="none";
+}
+function ppAddPref(){
+  var inp=document.getElementById("ppPrefInput");
+  var v=inp.value.trim();if(!v)return;
+  ppCustomList.push(v);inp.value="";
+  var el=document.getElementById("ppCustomPrefs");
+  el.innerHTML=ppCustomList.map(function(p,i){
+    return "<span style='background:#F3F4F6;border-radius:20px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px'>"+p+" <span onclick='ppCustomList.splice("+i+",1);ppAddPref()' style='cursor:pointer;color:#DC2626;font-weight:700;margin-left:2px'>×</span></span>";
+  }).join("");
+}
+async function ppSave(){
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var prefs=[];
+  document.querySelectorAll(".pp-tog.on").forEach(function(t){prefs.push(t.dataset.pref);});
+  prefs=prefs.concat(ppCustomList);
+  var sb_=getSB();
+  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
+  var btn=document.querySelector(".pp-save-btn");
+  btn.textContent="✅ บันทึกแล้ว";
+  setTimeout(function(){btn.textContent="💾 บันทึกความชอบ";},2000);
+}
+async function ppReorder(orderId){
+  var sb_=getSB();if(!sb_)return;
+  try{
+    var r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
+    var items=(r.data||[]).map(function(i){return Object.assign({},i.menu_items,{qty:i.quantity});});
+    var newCart={};
+    items.filter(function(i){return i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);}).forEach(function(i){newCart[i.id]=i.qty;});
+    cart=newCart;
+    localStorage.setItem("cart",JSON.stringify(cart));
+    closeProfile();
+    showScr("s-cart");
+  }catch(e){alert("ไม่สามารถโหลดออเดอร์ได้");}
+}
+// ─────────────────────────────────────────────────────────
 
 </script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
+
+
+// ── STOCK LIMIT ──────────────────────────────────────────
+var _stockPendingId=null;
+function showStockPopup(id,name,stock){
+  _stockPendingId=id;
+  document.getElementById("stockMsg").innerHTML=
+    "<b>"+name+"</b> วันนี้เหลือ <b>"+stock+" ชิ้น</b><br>"+
+    "หากต้องการเพิ่ม ครัวจะผลิตให้ภายใน 2 วัน<br>"+
+    "กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ";
+  document.getElementById("stockPopup").style.display="flex";
 }
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
 function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
+  if(!_stockPendingId)return;
+  if(!window._preorderItems)window._preorderItems={};
+  window._preorderItems[_stockPendingId]=true;
+  cart[_stockPendingId]=(cart[_stockPendingId]||0)+1;
+  document.getElementById("stockPopup").style.display="none";
+  renderCart&&renderCart();
+  _stockPendingId=null;
 }
+// ─────────────────────────────────────────────────────────
+
+
+// ── CART MAP & DELIVERY FEE ───────────────────────────────────────────────
+var _cartMap=null,_cartPin=null,_deliveryFee=0,_deliveryDist=0;
+var _KITCHEN=[13.7205,100.5855];
+var _promoDiscount=0,_promoCode="";
+
+function haversineCart(a,b,c,d){
+  var R=6371,dl=(c-a)*Math.PI/180,dg=(d-b)*Math.PI/180;
+  var x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dg/2)*Math.sin(dg/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcDeliveryFee(km){ return Math.round(km*3); } // ฿3/กม.
+
+function initCartMap(){
+  if(_cartMap)return;
+  if(!document.getElementById("cartMap"))return;
+  _cartMap=L.map("cartMap").setView(_KITCHEN,12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM"}).addTo(_cartMap);
+  L.marker(_KITCHEN,{icon:L.divIcon({html:"🍳",className:"",iconSize:[26,26]})}).addTo(_cartMap).bindPopup("ครัว Under360");
+  _cartMap.on("click",function(e){setCartPin(e.latlng.lat,e.latlng.lng);});
+}
+
+function setCartPin(lat,lng){
+  if(_cartPin)_cartMap.removeLayer(_cartPin);
+  _cartPin=L.marker([lat,lng],{
+    draggable:true,
+    icon:L.divIcon({html:"📍",className:"",iconSize:[26,26]})
+  }).addTo(_cartMap);
+  _cartPin.on("dragend",function(e){
+    var ll=e.target.getLatLng();
+    updateCartFee(ll.lat,ll.lng);
+  });
+  updateCartFee(lat,lng);
+}
+
+function updateCartFee(lat,lng){
+  _deliveryDist=haversineCart(_KITCHEN[0],_KITCHEN[1],lat,lng);
+  _deliveryFee=calcDeliveryFee(_deliveryDist);
+  document.getElementById("cartDistLabel").textContent="📏 "+_deliveryDist.toFixed(1)+" กม.";
+  document.getElementById("cartFeeLabel").textContent="ค่าส่ง: ฿"+_deliveryFee;
+  updateCartTotal&&updateCartTotal();
+}
+
+async function searchCartMap(){
+  var q=document.getElementById("addr-input").value.trim();if(!q)return;
+  try{
+    var res=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q+", Bangkok")+"&limit=1");
+    var d=await res.json();
+    if(d&&d[0]){
+      var lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      _cartMap.setView([lat,lng],15);
+      setCartPin(lat,lng);
+    } else { alert("ไม่พบที่อยู่ ลองคลิกบนแผนที่"); }
+  }catch(e){alert("ค้นหาไม่ได้");}
+}
+
+// Promo code
+async function applyPromo(){
+  var code=document.getElementById("promoInput").value.trim().toUpperCase();
+  if(!code)return;
+  var res=document.getElementById("promoResult");
+  res.textContent="⏳ กำลังตรวจสอบ...";res.style.color="#6B7280";
+  try{
+    var sb_=getSB();
+    if(sb_){
+      var r=await sb_.from("promo_codes").select("*").eq("code",code).eq("is_active",true).single();
+      if(r.error||!r.data){
+        res.textContent="❌ โค้ดไม่ถูกต้องหรือหมดอายุแล้ว";res.style.color="#DC2626";
+        _promoDiscount=0;_promoCode="";
+        return;
+      }
+      var promo=r.data;
+      // check min order
+      if(promo.min_order&&cartTotal()<promo.min_order){
+        res.textContent="⚠️ ยอดสั่งซื้อขั้นต่ำ ฿"+promo.min_order;res.style.color="#F59E0B";
+        _promoDiscount=0;return;
+      }
+      _promoCode=code;
+      if(promo.discount_type==="fixed"){_promoDiscount=promo.discount_value;}
+      else if(promo.discount_type==="percent"){_promoDiscount=Math.round(cartTotal()*promo.discount_value/100);}
+      else if(promo.discount_type==="free_shipping"){_promoDiscount=_deliveryFee;}
+      res.textContent="✅ "+promo.description+" (ลด ฿"+_promoDiscount+")";
+      res.style.color="#065F46";
+    } else {
+      // DEV mock
+      if(code==="UNDER50"){_promoDiscount=50;_promoCode=code;res.textContent="✅ ส่วนลด ฿50 (DEV mock)";res.style.color="#065F46";}
+      else{res.textContent="❌ โค้ดไม่ถูกต้อง";res.style.color="#DC2626";}
+    }
+    updateCartTotal&&updateCartTotal();
+  }catch(e){res.textContent="❌ ไม่สามารถตรวจสอบได้";res.style.color="#DC2626";}
+}
+
+// Init map when cart screen shows
+var _origShowScr=typeof showScr==="function"?showScr:null;
+setTimeout(function(){
+  var origFn=window.showScr;
+  window.showScr=function(id){
+    if(origFn)origFn(id);
+    if(id==="s-cart")setTimeout(initCartMap,100);
+  };
+},500);
+// ─────────────────────────────────────────────────────────────────────────
+
+
+// ── PROFILE PANEL ────────────────────────────────────────
+var ppCustomList=[];
+const PP_TIERS=[
+  {min:0,max:2999,label:"🥈 เทียร์ 1",disc:1},
+  {min:3000,max:9999,label:"🥇 เทียร์ 2",disc:3},
+  {min:10000,max:24999,label:"💎 เทียร์ 3",disc:5},
+  {min:25000,max:Infinity,label:"👑 VIP",disc:10}
+];
+async function openProfile(){
+  document.getElementById("profileOverlay").style.display="block";
+  document.getElementById("profilePanel").style.display="block";
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var sb_=getSB();
+  var p=null;
+  if(sb_){
+    try{
+      var r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total)").eq("line_uid",lineUid).single();
+      if(!r.error)p=r.data;
+    }catch(e){}
+  }
+  if(!p)p={name:lineProfile?.displayName||"—",phone:"—",birth_date:"—",points:0,orders:[]};
+  document.getElementById("ppName").textContent=p.name||"—";
+  document.getElementById("ppPhone").textContent=p.phone||"—";
+  document.getElementById("ppDob").textContent=p.birth_date||"—";
+  // Tier
+  var pts=p.points||0;
+  var t=PP_TIERS.find(function(x){return pts>=x.min&&pts<=x.max;})||PP_TIERS[0];
+  var next=PP_TIERS.find(function(x){return x.min>t.min;});
+  document.getElementById("ppPts").textContent=pts.toLocaleString();
+  document.getElementById("ppTierBadge").textContent=t.label;
+  var pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
+  document.getElementById("ppFill").style.width=pct+"%";
+  document.getElementById("ppProgCur").textContent=pts.toLocaleString()+" แต้ม";
+  document.getElementById("ppProgNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString():"ระดับสูงสุด 👑";
+  // Orders
+  var orders=p.orders||[];
+  var el=document.getElementById("ppOrders");
+  if(!orders.length){el.innerHTML="<div style='text-align:center;color:#6B7280;font-size:13px;padding:12px'>ยังไม่มีประวัติออเดอร์</div>";return;}
+  el.innerHTML=orders.slice(0,5).map(function(o){
+    return "<div class='pp-order-row'><span class='pp-onum'>"+(o.order_number||"—")+"</span><span style='flex:1;color:#6B7280'>"+(o.delivery_date||"")+"</span><span style='font-family:monospace;font-weight:700;color:#1F4D3A'>฿"+(o.total||0).toLocaleString()+"</span><button class='pp-rebuy' onclick='ppReorder(""+o.id+"")'>สั่งซ้ำ</button></div>";
+  }).join("");
+}
+function closeProfile(){
+  document.getElementById("profileOverlay").style.display="none";
+  document.getElementById("profilePanel").style.display="none";
+}
+function ppAddPref(){
+  var inp=document.getElementById("ppPrefInput");
+  var v=inp.value.trim();if(!v)return;
+  ppCustomList.push(v);inp.value="";
+  var el=document.getElementById("ppCustomPrefs");
+  el.innerHTML=ppCustomList.map(function(p,i){
+    return "<span style='background:#F3F4F6;border-radius:20px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px'>"+p+" <span onclick='ppCustomList.splice("+i+",1);ppAddPref()' style='cursor:pointer;color:#DC2626;font-weight:700;margin-left:2px'>×</span></span>";
+  }).join("");
+}
+async function ppSave(){
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var prefs=[];
+  document.querySelectorAll(".pp-tog.on").forEach(function(t){prefs.push(t.dataset.pref);});
+  prefs=prefs.concat(ppCustomList);
+  var sb_=getSB();
+  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
+  var btn=document.querySelector(".pp-save-btn");
+  btn.textContent="✅ บันทึกแล้ว";
+  setTimeout(function(){btn.textContent="💾 บันทึกความชอบ";},2000);
+}
+async function ppReorder(orderId){
+  var sb_=getSB();if(!sb_)return;
+  try{
+    var r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
+    var items=(r.data||[]).map(function(i){return Object.assign({},i.menu_items,{qty:i.quantity});});
+    var newCart={};
+    items.filter(function(i){return i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);}).forEach(function(i){newCart[i.id]=i.qty;});
+    cart=newCart;
+    localStorage.setItem("cart",JSON.stringify(cart));
+    closeProfile();
+    showScr("s-cart");
+  }catch(e){alert("ไม่สามารถโหลดออเดอร์ได้");}
+}
+// ─────────────────────────────────────────────────────────
 
 </script>
 <style>
@@ -234,7 +610,235 @@ input,textarea{font-family:inherit}
 .stock-btn-confirm{flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
 .stock-btn-cancel{flex:1;background:#F3F4F6;color:#6B7280;border:none;border-radius:10px;padding:12px;font-size:14px;cursor:pointer;font-family:inherit;}
 .preorder-badge{display:inline-block;background:#FEF3C7;color:#92400E;font-size:10px;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:4px;}
+
+.stock-popup-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;display:flex;align-items:flex-end;}
+.stock-popup-box{background:#fff;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;margin:0 auto;}
+.stock-popup-title{font-size:15px;font-weight:700;margin-bottom:8px;}
+.stock-popup-msg{font-size:13px;color:#6B7280;margin-bottom:16px;line-height:1.6;}
+.stock-popup-btns{display:flex;gap:8px;}
+.sp-ok{flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
+.sp-cancel{flex:1;background:#F3F4F6;border:none;border-radius:10px;padding:12px;cursor:pointer;font-family:inherit;}
+
+/* Profile slide-up panel */
+.profile-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;display:none;}
+.profile-panel{position:fixed;bottom:0;left:0;right:0;max-height:85vh;background:#F7F8F6;border-radius:20px 20px 0 0;z-index:501;overflow-y:auto;display:none;animation:slideUp .25s;}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.pp-header{background:#1F4D3A;padding:14px 18px;display:flex;align-items:center;gap:12px;border-radius:20px 20px 0 0;}
+.pp-close{color:rgba(255,255,255,.7);font-size:22px;background:none;border:none;cursor:pointer;}
+.pp-title{font-size:15px;font-weight:700;color:#fff;flex:1;}
+.pp-body{padding:14px;}
+.pp-card{background:#fff;border-radius:12px;border:1px solid #E5E7EB;margin-bottom:10px;overflow:hidden;}
+.pp-ch{padding:10px 14px;border-bottom:1px solid #F3F4F6;font-size:13px;font-weight:700;}
+.pp-cb{padding:12px 14px;}
+.pp-row{display:flex;padding:6px 0;border-bottom:1px solid #F9FAFB;font-size:13px;}
+.pp-row:last-child{border-bottom:none;}
+.pp-key{color:#6B7280;width:80px;flex-shrink:0;font-size:12px;}
+.pp-val{flex:1;font-weight:500;}
+.pp-tier-bar{background:linear-gradient(135deg,#1F4D3A,#2D6B52);border-radius:12px;padding:14px;color:#fff;}
+.pp-pts{font-size:24px;font-weight:700;font-family:monospace;}
+.pp-prog{height:5px;background:rgba(255,255,255,.2);border-radius:3px;margin:8px 0 5px;}
+.pp-fill{height:100%;background:#fff;border-radius:3px;}
+.pp-lbl{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.6);}
+.pp-tog-row{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid #F9FAFB;}
+.pp-tog-row:last-child{border-bottom:none;}
+.pp-tog-label{flex:1;font-size:13px;}
+.pp-tog{width:38px;height:22px;border-radius:11px;background:#D1D5DB;cursor:pointer;position:relative;transition:.2s;border:none;flex-shrink:0;}
+.pp-tog.on{background:#1F4D3A;}
+.pp-tog::after{content:"";position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;}
+.pp-tog.on::after{left:19px;}
+.pp-order-row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid #F9FAFB;font-size:12px;}
+.pp-order-row:last-child{border-bottom:none;}
+.pp-onum{font-family:monospace;font-size:11px;color:#6B7280;width:85px;}
+.pp-rebuy{background:none;border:1px solid #1F4D3A;color:#1F4D3A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;margin-left:auto;font-family:inherit;}
+.pp-save-btn{width:100%;background:#1F4D3A;color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;margin-top:4px;}
 </style>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
+// ── CART MAP & DELIVERY FEE ───────────────────────────────────────────────
+var _cartMap=null,_cartPin=null,_deliveryFee=0,_deliveryDist=0;
+var _KITCHEN=[13.7205,100.5855];
+var _promoDiscount=0,_promoCode="";
+
+function haversineCart(a,b,c,d){
+  var R=6371,dl=(c-a)*Math.PI/180,dg=(d-b)*Math.PI/180;
+  var x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dg/2)*Math.sin(dg/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcDeliveryFee(km){ return Math.round(km*3); } // ฿3/กม.
+
+function initCartMap(){
+  if(_cartMap)return;
+  if(!document.getElementById("cartMap"))return;
+  _cartMap=L.map("cartMap").setView(_KITCHEN,12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM"}).addTo(_cartMap);
+  L.marker(_KITCHEN,{icon:L.divIcon({html:"🍳",className:"",iconSize:[26,26]})}).addTo(_cartMap).bindPopup("ครัว Under360");
+  _cartMap.on("click",function(e){setCartPin(e.latlng.lat,e.latlng.lng);});
+}
+
+function setCartPin(lat,lng){
+  if(_cartPin)_cartMap.removeLayer(_cartPin);
+  _cartPin=L.marker([lat,lng],{
+    draggable:true,
+    icon:L.divIcon({html:"📍",className:"",iconSize:[26,26]})
+  }).addTo(_cartMap);
+  _cartPin.on("dragend",function(e){
+    var ll=e.target.getLatLng();
+    updateCartFee(ll.lat,ll.lng);
+  });
+  updateCartFee(lat,lng);
+}
+
+function updateCartFee(lat,lng){
+  _deliveryDist=haversineCart(_KITCHEN[0],_KITCHEN[1],lat,lng);
+  _deliveryFee=calcDeliveryFee(_deliveryDist);
+  document.getElementById("cartDistLabel").textContent="📏 "+_deliveryDist.toFixed(1)+" กม.";
+  document.getElementById("cartFeeLabel").textContent="ค่าส่ง: ฿"+_deliveryFee;
+  updateCartTotal&&updateCartTotal();
+}
+
+async function searchCartMap(){
+  var q=document.getElementById("addr-input").value.trim();if(!q)return;
+  try{
+    var res=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q+", Bangkok")+"&limit=1");
+    var d=await res.json();
+    if(d&&d[0]){
+      var lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      _cartMap.setView([lat,lng],15);
+      setCartPin(lat,lng);
+    } else { alert("ไม่พบที่อยู่ ลองคลิกบนแผนที่"); }
+  }catch(e){alert("ค้นหาไม่ได้");}
+}
+
+// Promo code
+async function applyPromo(){
+  var code=document.getElementById("promoInput").value.trim().toUpperCase();
+  if(!code)return;
+  var res=document.getElementById("promoResult");
+  res.textContent="⏳ กำลังตรวจสอบ...";res.style.color="#6B7280";
+  try{
+    var sb_=getSB();
+    if(sb_){
+      var r=await sb_.from("promo_codes").select("*").eq("code",code).eq("is_active",true).single();
+      if(r.error||!r.data){
+        res.textContent="❌ โค้ดไม่ถูกต้องหรือหมดอายุแล้ว";res.style.color="#DC2626";
+        _promoDiscount=0;_promoCode="";
+        return;
+      }
+      var promo=r.data;
+      // check min order
+      if(promo.min_order&&cartTotal()<promo.min_order){
+        res.textContent="⚠️ ยอดสั่งซื้อขั้นต่ำ ฿"+promo.min_order;res.style.color="#F59E0B";
+        _promoDiscount=0;return;
+      }
+      _promoCode=code;
+      if(promo.discount_type==="fixed"){_promoDiscount=promo.discount_value;}
+      else if(promo.discount_type==="percent"){_promoDiscount=Math.round(cartTotal()*promo.discount_value/100);}
+      else if(promo.discount_type==="free_shipping"){_promoDiscount=_deliveryFee;}
+      res.textContent="✅ "+promo.description+" (ลด ฿"+_promoDiscount+")";
+      res.style.color="#065F46";
+    } else {
+      // DEV mock
+      if(code==="UNDER50"){_promoDiscount=50;_promoCode=code;res.textContent="✅ ส่วนลด ฿50 (DEV mock)";res.style.color="#065F46";}
+      else{res.textContent="❌ โค้ดไม่ถูกต้อง";res.style.color="#DC2626";}
+    }
+    updateCartTotal&&updateCartTotal();
+  }catch(e){res.textContent="❌ ไม่สามารถตรวจสอบได้";res.style.color="#DC2626";}
+}
+
+// Init map when cart screen shows
+var _origShowScr=typeof showScr==="function"?showScr:null;
+setTimeout(function(){
+  var origFn=window.showScr;
+  window.showScr=function(id){
+    if(origFn)origFn(id);
+    if(id==="s-cart")setTimeout(initCartMap,100);
+  };
+},500);
+// ─────────────────────────────────────────────────────────────────────────
+
+
+// ── PROFILE PANEL ────────────────────────────────────────
+var ppCustomList=[];
+const PP_TIERS=[
+  {min:0,max:2999,label:"🥈 เทียร์ 1",disc:1},
+  {min:3000,max:9999,label:"🥇 เทียร์ 2",disc:3},
+  {min:10000,max:24999,label:"💎 เทียร์ 3",disc:5},
+  {min:25000,max:Infinity,label:"👑 VIP",disc:10}
+];
+async function openProfile(){
+  document.getElementById("profileOverlay").style.display="block";
+  document.getElementById("profilePanel").style.display="block";
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var sb_=getSB();
+  var p=null;
+  if(sb_){
+    try{
+      var r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total)").eq("line_uid",lineUid).single();
+      if(!r.error)p=r.data;
+    }catch(e){}
+  }
+  if(!p)p={name:lineProfile?.displayName||"—",phone:"—",birth_date:"—",points:0,orders:[]};
+  document.getElementById("ppName").textContent=p.name||"—";
+  document.getElementById("ppPhone").textContent=p.phone||"—";
+  document.getElementById("ppDob").textContent=p.birth_date||"—";
+  // Tier
+  var pts=p.points||0;
+  var t=PP_TIERS.find(function(x){return pts>=x.min&&pts<=x.max;})||PP_TIERS[0];
+  var next=PP_TIERS.find(function(x){return x.min>t.min;});
+  document.getElementById("ppPts").textContent=pts.toLocaleString();
+  document.getElementById("ppTierBadge").textContent=t.label;
+  var pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
+  document.getElementById("ppFill").style.width=pct+"%";
+  document.getElementById("ppProgCur").textContent=pts.toLocaleString()+" แต้ม";
+  document.getElementById("ppProgNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString():"ระดับสูงสุด 👑";
+  // Orders
+  var orders=p.orders||[];
+  var el=document.getElementById("ppOrders");
+  if(!orders.length){el.innerHTML="<div style='text-align:center;color:#6B7280;font-size:13px;padding:12px'>ยังไม่มีประวัติออเดอร์</div>";return;}
+  el.innerHTML=orders.slice(0,5).map(function(o){
+    return "<div class='pp-order-row'><span class='pp-onum'>"+(o.order_number||"—")+"</span><span style='flex:1;color:#6B7280'>"+(o.delivery_date||"")+"</span><span style='font-family:monospace;font-weight:700;color:#1F4D3A'>฿"+(o.total||0).toLocaleString()+"</span><button class='pp-rebuy' onclick='ppReorder(""+o.id+"")'>สั่งซ้ำ</button></div>";
+  }).join("");
+}
+function closeProfile(){
+  document.getElementById("profileOverlay").style.display="none";
+  document.getElementById("profilePanel").style.display="none";
+}
+function ppAddPref(){
+  var inp=document.getElementById("ppPrefInput");
+  var v=inp.value.trim();if(!v)return;
+  ppCustomList.push(v);inp.value="";
+  var el=document.getElementById("ppCustomPrefs");
+  el.innerHTML=ppCustomList.map(function(p,i){
+    return "<span style='background:#F3F4F6;border-radius:20px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px'>"+p+" <span onclick='ppCustomList.splice("+i+",1);ppAddPref()' style='cursor:pointer;color:#DC2626;font-weight:700;margin-left:2px'>×</span></span>";
+  }).join("");
+}
+async function ppSave(){
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var prefs=[];
+  document.querySelectorAll(".pp-tog.on").forEach(function(t){prefs.push(t.dataset.pref);});
+  prefs=prefs.concat(ppCustomList);
+  var sb_=getSB();
+  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
+  var btn=document.querySelector(".pp-save-btn");
+  btn.textContent="✅ บันทึกแล้ว";
+  setTimeout(function(){btn.textContent="💾 บันทึกความชอบ";},2000);
+}
+async function ppReorder(orderId){
+  var sb_=getSB();if(!sb_)return;
+  try{
+    var r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
+    var items=(r.data||[]).map(function(i){return Object.assign({},i.menu_items,{qty:i.quantity});});
+    var newCart={};
+    items.filter(function(i){return i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);}).forEach(function(i){newCart[i.id]=i.qty;});
+    cart=newCart;
+    localStorage.setItem("cart",JSON.stringify(cart));
+    closeProfile();
+    showScr("s-cart");
+  }catch(e){alert("ไม่สามารถโหลดออเดอร์ได้");}
+}
+// ─────────────────────────────────────────────────────────
+
+</script>
 </head>
 <body>
 
@@ -299,12 +903,29 @@ input,textarea{font-family:inherit}
     <div class="sec-head">⏰ เลือกช่วงเวลา</div>
     <div class="tgrid" id="tpick"></div>
     <div class="divider"></div>
-    <!-- address -->
+    <!-- address + map -->
     <div class="sec-head">📍 ที่อยู่จัดส่ง</div>
     <div class="igrp">
-      <textarea id="addr-input" class="ifield" rows="3" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด"></textarea>
+      <div style="display:flex;gap:6px;margin-bottom:8px">
+        <input id="addr-input" class="ifield" type="text" placeholder="ค้นหาที่อยู่หรือคลิกบนแผนที่..." style="flex:1;padding:10px">
+        <button onclick="searchCartMap()" style="background:#1F4D3A;color:#fff;border:none;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap;font-family:inherit">ค้นหา</button>
+      </div>
+      <div id="cartMap" style="height:180px;border-radius:10px;border:1.5px solid #D1D5DB;margin-bottom:8px"></div>
+      <div id="cartFeeBox" style="background:#EBF3EF;border-radius:9px;padding:10px 13px;display:flex;justify-content:space-between;align-items:center;font-size:13px">
+        <span id="cartDistLabel" style="color:#6B7280">📍 คลิกแผนที่เพื่อระบุตำแหน่ง</span>
+        <span id="cartFeeLabel" style="font-weight:700;color:#1F4D3A">ค่าส่ง: —</span>
+      </div>
     </div>
-    <div class="sec-head">📝 หมายเหตุ (ถ้ามี)</div>
+    <!-- promo code -->
+    <div class="sec-head">🎁 รหัสส่วนลด (ถ้ามี)</div>
+    <div class="igrp">
+      <div style="display:flex;gap:6px">
+        <input id="promoInput" class="ifield" type="text" placeholder="กรอกโค้ดส่วนลด..." style="flex:1;text-transform:uppercase">
+        <button onclick="applyPromo()" style="background:#1F4D3A;color:#fff;border:none;border-radius:9px;padding:10px 12px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit">ใช้โค้ด</button>
+      </div>
+      <div id="promoResult" style="font-size:12px;margin-top:5px"></div>
+    </div>
+    <div class="sec-head">📝 หมายเหตุ</div>
     <div class="igrp">
       <input id="notes-input" class="ifield" type="text" placeholder="เช่น ไม่เผ็ด, วางหน้าบ้านได้เลย">
     </div>
@@ -845,25 +1466,213 @@ function toast(msg, ms=2800) {
 // ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', init);
 
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
+
+
+// ── STOCK LIMIT ──────────────────────────────────────────
+var _stockPendingId=null;
+function showStockPopup(id,name,stock){
+  _stockPendingId=id;
+  document.getElementById("stockMsg").innerHTML=
+    "<b>"+name+"</b> วันนี้เหลือ <b>"+stock+" ชิ้น</b><br>"+
+    "หากต้องการเพิ่ม ครัวจะผลิตให้ภายใน 2 วัน<br>"+
+    "กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ";
+  document.getElementById("stockPopup").style.display="flex";
 }
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
 function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
+  if(!_stockPendingId)return;
+  if(!window._preorderItems)window._preorderItems={};
+  window._preorderItems[_stockPendingId]=true;
+  cart[_stockPendingId]=(cart[_stockPendingId]||0)+1;
+  document.getElementById("stockPopup").style.display="none";
+  renderCart&&renderCart();
+  _stockPendingId=null;
 }
+// ─────────────────────────────────────────────────────────
+
+
+// ── CART MAP & DELIVERY FEE ───────────────────────────────────────────────
+var _cartMap=null,_cartPin=null,_deliveryFee=0,_deliveryDist=0;
+var _KITCHEN=[13.7205,100.5855];
+var _promoDiscount=0,_promoCode="";
+
+function haversineCart(a,b,c,d){
+  var R=6371,dl=(c-a)*Math.PI/180,dg=(d-b)*Math.PI/180;
+  var x=Math.sin(dl/2)*Math.sin(dl/2)+Math.cos(a*Math.PI/180)*Math.cos(c*Math.PI/180)*Math.sin(dg/2)*Math.sin(dg/2);
+  return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
+}
+function calcDeliveryFee(km){ return Math.round(km*3); } // ฿3/กม.
+
+function initCartMap(){
+  if(_cartMap)return;
+  if(!document.getElementById("cartMap"))return;
+  _cartMap=L.map("cartMap").setView(_KITCHEN,12);
+  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{attribution:"© OSM"}).addTo(_cartMap);
+  L.marker(_KITCHEN,{icon:L.divIcon({html:"🍳",className:"",iconSize:[26,26]})}).addTo(_cartMap).bindPopup("ครัว Under360");
+  _cartMap.on("click",function(e){setCartPin(e.latlng.lat,e.latlng.lng);});
+}
+
+function setCartPin(lat,lng){
+  if(_cartPin)_cartMap.removeLayer(_cartPin);
+  _cartPin=L.marker([lat,lng],{
+    draggable:true,
+    icon:L.divIcon({html:"📍",className:"",iconSize:[26,26]})
+  }).addTo(_cartMap);
+  _cartPin.on("dragend",function(e){
+    var ll=e.target.getLatLng();
+    updateCartFee(ll.lat,ll.lng);
+  });
+  updateCartFee(lat,lng);
+}
+
+function updateCartFee(lat,lng){
+  _deliveryDist=haversineCart(_KITCHEN[0],_KITCHEN[1],lat,lng);
+  _deliveryFee=calcDeliveryFee(_deliveryDist);
+  document.getElementById("cartDistLabel").textContent="📏 "+_deliveryDist.toFixed(1)+" กม.";
+  document.getElementById("cartFeeLabel").textContent="ค่าส่ง: ฿"+_deliveryFee;
+  updateCartTotal&&updateCartTotal();
+}
+
+async function searchCartMap(){
+  var q=document.getElementById("addr-input").value.trim();if(!q)return;
+  try{
+    var res=await fetch("https://nominatim.openstreetmap.org/search?format=json&q="+encodeURIComponent(q+", Bangkok")+"&limit=1");
+    var d=await res.json();
+    if(d&&d[0]){
+      var lat=parseFloat(d[0].lat),lng=parseFloat(d[0].lon);
+      _cartMap.setView([lat,lng],15);
+      setCartPin(lat,lng);
+    } else { alert("ไม่พบที่อยู่ ลองคลิกบนแผนที่"); }
+  }catch(e){alert("ค้นหาไม่ได้");}
+}
+
+// Promo code
+async function applyPromo(){
+  var code=document.getElementById("promoInput").value.trim().toUpperCase();
+  if(!code)return;
+  var res=document.getElementById("promoResult");
+  res.textContent="⏳ กำลังตรวจสอบ...";res.style.color="#6B7280";
+  try{
+    var sb_=getSB();
+    if(sb_){
+      var r=await sb_.from("promo_codes").select("*").eq("code",code).eq("is_active",true).single();
+      if(r.error||!r.data){
+        res.textContent="❌ โค้ดไม่ถูกต้องหรือหมดอายุแล้ว";res.style.color="#DC2626";
+        _promoDiscount=0;_promoCode="";
+        return;
+      }
+      var promo=r.data;
+      // check min order
+      if(promo.min_order&&cartTotal()<promo.min_order){
+        res.textContent="⚠️ ยอดสั่งซื้อขั้นต่ำ ฿"+promo.min_order;res.style.color="#F59E0B";
+        _promoDiscount=0;return;
+      }
+      _promoCode=code;
+      if(promo.discount_type==="fixed"){_promoDiscount=promo.discount_value;}
+      else if(promo.discount_type==="percent"){_promoDiscount=Math.round(cartTotal()*promo.discount_value/100);}
+      else if(promo.discount_type==="free_shipping"){_promoDiscount=_deliveryFee;}
+      res.textContent="✅ "+promo.description+" (ลด ฿"+_promoDiscount+")";
+      res.style.color="#065F46";
+    } else {
+      // DEV mock
+      if(code==="UNDER50"){_promoDiscount=50;_promoCode=code;res.textContent="✅ ส่วนลด ฿50 (DEV mock)";res.style.color="#065F46";}
+      else{res.textContent="❌ โค้ดไม่ถูกต้อง";res.style.color="#DC2626";}
+    }
+    updateCartTotal&&updateCartTotal();
+  }catch(e){res.textContent="❌ ไม่สามารถตรวจสอบได้";res.style.color="#DC2626";}
+}
+
+// Init map when cart screen shows
+var _origShowScr=typeof showScr==="function"?showScr:null;
+setTimeout(function(){
+  var origFn=window.showScr;
+  window.showScr=function(id){
+    if(origFn)origFn(id);
+    if(id==="s-cart")setTimeout(initCartMap,100);
+  };
+},500);
+// ─────────────────────────────────────────────────────────────────────────
+
+
+// ── PROFILE PANEL ────────────────────────────────────────
+var ppCustomList=[];
+const PP_TIERS=[
+  {min:0,max:2999,label:"🥈 เทียร์ 1",disc:1},
+  {min:3000,max:9999,label:"🥇 เทียร์ 2",disc:3},
+  {min:10000,max:24999,label:"💎 เทียร์ 3",disc:5},
+  {min:25000,max:Infinity,label:"👑 VIP",disc:10}
+];
+async function openProfile(){
+  document.getElementById("profileOverlay").style.display="block";
+  document.getElementById("profilePanel").style.display="block";
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var sb_=getSB();
+  var p=null;
+  if(sb_){
+    try{
+      var r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total)").eq("line_uid",lineUid).single();
+      if(!r.error)p=r.data;
+    }catch(e){}
+  }
+  if(!p)p={name:lineProfile?.displayName||"—",phone:"—",birth_date:"—",points:0,orders:[]};
+  document.getElementById("ppName").textContent=p.name||"—";
+  document.getElementById("ppPhone").textContent=p.phone||"—";
+  document.getElementById("ppDob").textContent=p.birth_date||"—";
+  // Tier
+  var pts=p.points||0;
+  var t=PP_TIERS.find(function(x){return pts>=x.min&&pts<=x.max;})||PP_TIERS[0];
+  var next=PP_TIERS.find(function(x){return x.min>t.min;});
+  document.getElementById("ppPts").textContent=pts.toLocaleString();
+  document.getElementById("ppTierBadge").textContent=t.label;
+  var pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
+  document.getElementById("ppFill").style.width=pct+"%";
+  document.getElementById("ppProgCur").textContent=pts.toLocaleString()+" แต้ม";
+  document.getElementById("ppProgNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString():"ระดับสูงสุด 👑";
+  // Orders
+  var orders=p.orders||[];
+  var el=document.getElementById("ppOrders");
+  if(!orders.length){el.innerHTML="<div style='text-align:center;color:#6B7280;font-size:13px;padding:12px'>ยังไม่มีประวัติออเดอร์</div>";return;}
+  el.innerHTML=orders.slice(0,5).map(function(o){
+    return "<div class='pp-order-row'><span class='pp-onum'>"+(o.order_number||"—")+"</span><span style='flex:1;color:#6B7280'>"+(o.delivery_date||"")+"</span><span style='font-family:monospace;font-weight:700;color:#1F4D3A'>฿"+(o.total||0).toLocaleString()+"</span><button class='pp-rebuy' onclick='ppReorder(""+o.id+"")'>สั่งซ้ำ</button></div>";
+  }).join("");
+}
+function closeProfile(){
+  document.getElementById("profileOverlay").style.display="none";
+  document.getElementById("profilePanel").style.display="none";
+}
+function ppAddPref(){
+  var inp=document.getElementById("ppPrefInput");
+  var v=inp.value.trim();if(!v)return;
+  ppCustomList.push(v);inp.value="";
+  var el=document.getElementById("ppCustomPrefs");
+  el.innerHTML=ppCustomList.map(function(p,i){
+    return "<span style='background:#F3F4F6;border-radius:20px;padding:3px 10px;font-size:12px;display:inline-flex;align-items:center;gap:4px'>"+p+" <span onclick='ppCustomList.splice("+i+",1);ppAddPref()' style='cursor:pointer;color:#DC2626;font-weight:700;margin-left:2px'>×</span></span>";
+  }).join("");
+}
+async function ppSave(){
+  var lineUid=localStorage.getItem("line_uid")||"dev_001";
+  var prefs=[];
+  document.querySelectorAll(".pp-tog.on").forEach(function(t){prefs.push(t.dataset.pref);});
+  prefs=prefs.concat(ppCustomList);
+  var sb_=getSB();
+  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
+  var btn=document.querySelector(".pp-save-btn");
+  btn.textContent="✅ บันทึกแล้ว";
+  setTimeout(function(){btn.textContent="💾 บันทึกความชอบ";},2000);
+}
+async function ppReorder(orderId){
+  var sb_=getSB();if(!sb_)return;
+  try{
+    var r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
+    var items=(r.data||[]).map(function(i){return Object.assign({},i.menu_items,{qty:i.quantity});});
+    var newCart={};
+    items.filter(function(i){return i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);}).forEach(function(i){newCart[i.id]=i.qty;});
+    cart=newCart;
+    localStorage.setItem("cart",JSON.stringify(cart));
+    closeProfile();
+    showScr("s-cart");
+  }catch(e){alert("ไม่สามารถโหลดออเดอร์ได้");}
+}
+// ─────────────────────────────────────────────────────────
 
 </script>
 
@@ -875,6 +1684,59 @@ function confirmPreorder(){
       <button class="stock-btn-cancel" onclick="closeStockPopup()">ยกเลิก</button>
       <button class="stock-btn-confirm" id="stockConfirmBtn" onclick="confirmPreorder()">✅ ยืนยัน — สั่งผลิตพิเศษ</button>
     </div>
+  </div>
+</div>
+
+
+<!-- Profile overlay + panel -->
+<div class="profile-overlay" id="profileOverlay" onclick="closeProfile()"></div>
+<div class="profile-panel" id="profilePanel">
+  <div class="pp-header">
+    <button class="pp-close" onclick="closeProfile()">×</button>
+    <div class="pp-title" id="ppTitle">โปรไฟล์ของฉัน</div>
+  </div>
+  <div class="pp-body">
+    <!-- Tier -->
+    <div class="pp-tier-bar" style="margin-bottom:10px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div><div class="pp-pts" id="ppPts">0</div><div style="font-size:11px;opacity:.7">แต้มสะสม</div></div>
+        <span id="ppTierBadge" style="background:rgba(255,255,255,.2);padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700">เทียร์ 1</span>
+      </div>
+      <div class="pp-prog"><div class="pp-fill" id="ppFill" style="width:0%"></div></div>
+      <div class="pp-lbl"><span id="ppProgCur">0</span><span id="ppProgNxt">ถัดไป: 3,000</span></div>
+    </div>
+    <!-- Info -->
+    <div class="pp-card">
+      <div class="pp-ch">👤 ข้อมูล</div>
+      <div class="pp-cb">
+        <div class="pp-row"><span class="pp-key">ชื่อ</span><span class="pp-val" id="ppName">—</span></div>
+        <div class="pp-row"><span class="pp-key">เบอร์</span><span class="pp-val" id="ppPhone">—</span></div>
+        <div class="pp-row"><span class="pp-key">วันเกิด</span><span class="pp-val" id="ppDob">—</span></div>
+      </div>
+    </div>
+    <!-- Preferences -->
+    <div class="pp-card">
+      <div class="pp-ch">🥗 ข้อจำกัดอาหาร</div>
+      <div class="pp-cb">
+        <div class="pp-tog-row"><span class="pp-tog-label">🐷 ไม่ทานเนื้อหมู</span><button class="pp-tog" data-pref="ไม่ทานเนื้อหมู" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pp-tog-row"><span class="pp-tog-label">🐄 ไม่ทานเนื้อวัว</span><button class="pp-tog" data-pref="ไม่ทานเนื้อวัว" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pp-tog-row"><span class="pp-tog-label">🦐 แพ้กุ้ง / อาหารทะเล</span><button class="pp-tog" data-pref="แพ้กุ้ง" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pp-tog-row"><span class="pp-tog-label">🌿 มังสวิรัติ / เจ</span><button class="pp-tog" data-pref="เจ" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pp-tog-row"><span class="pp-tog-label">🌶 ไม่ชอบเผ็ด</span><button class="pp-tog" data-pref="ไม่เผ็ด" onclick="this.classList.toggle('on')"></button></div>
+        <div class="pp-tog-row"><span class="pp-tog-label">🥜 แพ้ถั่ว</span><button class="pp-tog" data-pref="แพ้ถั่ว" onclick="this.classList.toggle('on')"></button></div>
+        <div style="margin-top:8px;display:flex;gap:6px">
+          <input id="ppPrefInput" placeholder="เพิ่มเอง เช่น ไม่ผักชี..." style="flex:1;padding:8px 10px;border:1.5px solid #D1D5DB;border-radius:8px;font-size:13px;font-family:inherit">
+          <button onclick="ppAddPref()" style="background:#1F4D3A;color:#fff;border:none;border-radius:8px;padding:8px 12px;font-size:16px;cursor:pointer">+</button>
+        </div>
+        <div id="ppCustomPrefs" style="display:flex;flex-wrap:wrap;gap:5px;margin-top:6px"></div>
+      </div>
+    </div>
+    <!-- Orders -->
+    <div class="pp-card">
+      <div class="pp-ch">🧾 ประวัติออเดอร์</div>
+      <div class="pp-cb" id="ppOrders"><div style="text-align:center;color:#6B7280;padding:16px">กำลังโหลด...</div></div>
+    </div>
+    <button class="pp-save-btn" onclick="ppSave()">💾 บันทึกความชอบ</button>
   </div>
 </div>
 

@@ -5,330 +5,306 @@
 <title>Under360 — โปรไฟล์</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-let reorderData = null;
-async function showReorder(orderNum, items){
-  reorderData = {orderNum, items};
-  const sb_ = getSB();
-  let availableMenus = [];
-  if(sb_){
-    const codes = items.map(i=>i.code).filter(Boolean);
-    const res = await sb_.from('menu_items').select('code,name,is_available,stock_quantity').in('code', codes);
-    availableMenus = res.data || [];
-  }
-  let hasUnavail = false;
-  const html = items.map(i=>{
-    const m = availableMenus.find(x=>x.code===i.code);
-    const avail = !m || m.is_available !== false;
-    if(!avail) hasUnavail = true;
-    return `<div class="ro-item">
-      <span>${i.code} ${i.name||""}</span>
-      ${avail ? '<span class="ro-avail">✓ มีสินค้า</span>' : '<span class="ro-unavail">✗ ไม่มีในขณะนี้</span>'}
-    </div>`;
-  }).join('');
-  document.getElementById('reorderItems').innerHTML = html;
-  document.getElementById('reorderWarning').style.display = hasUnavail ? 'block' : 'none';
-  document.getElementById('reorderPopup').style.display = 'flex';
+var customPrefList = [];
+function addCustomPref(){
+  const inp=document.getElementById("prefInput");
+  const val=inp.value.trim();
+  if(!val)return;
+  customPrefList.push(val);
+  renderCustomPrefs();
+  inp.value="";inp.focus();
 }
-function confirmReorder(){
-  // เก็บ cart ใน localStorage แล้วไป liff_customer
-  if(reorderData){
-    const cart = {};
-    reorderData.items.forEach(i=>{ if(i.menuItemId) cart[i.menuItemId] = i.qty||1; });
-    localStorage.setItem('pending_cart', JSON.stringify(cart));
-  }
-  window.location.href = 'liff_customer.html';
+function removeCustomPref(i){
+  customPrefList.splice(i,1);renderCustomPrefs();
 }
+function renderCustomPrefs(){
+  document.getElementById("customPrefs").innerHTML=customPrefList.map((p,i)=>
+    `<span style="background:#F3F4F6;border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px">
+      ${p} <span onclick="removeCustomPref(${i})" style="cursor:pointer;color:#DC2626;font-weight:700">×</span>
+    </span>`
+  ).join("");
+}
+// Enter key on pref input
+document.addEventListener("DOMContentLoaded",()=>{
+  const inp=document.getElementById("prefInput");
+  if(inp)inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCustomPref();}});
+});
 
 </script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--gold:#C9973F;--gold-soft:#FDF5E8;--red:#DC2626;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans Thai',sans-serif;}
-body{font-family:var(--sans);background:var(--bg);min-height:100vh;padding-bottom:24px;}
-
+:root{--forest:#1F4D3A;--forest-soft:#EBF3EF;--gold:#C9973F;--red:#DC2626;--ink:#1A1A1A;--ink-soft:#6B7280;--ink-xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:var(--bg);padding-bottom:24px;}
 .header{background:var(--forest);padding:14px 18px;display:flex;align-items:center;gap:12px;}
-.back-a{color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;}
+.back{color:rgba(255,255,255,.7);font-size:22px;text-decoration:none;}
 .hdr-t{font-size:16px;font-weight:700;color:#fff;flex:1;}
-.save-btn{background:rgba(255,255,255,.2);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-
 /* Hero */
-.hero{background:linear-gradient(135deg,var(--forest) 0%,#2D6B52 100%);padding:22px 18px 28px;}
-.hero-top{display:flex;align-items:center;gap:14px;margin-bottom:18px;}
-.avatar{width:64px;height:64px;border-radius:50%;border:3px solid rgba(255,255,255,.35);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;flex-shrink:0;}
-.avatar img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
-.hero-name{font-size:19px;font-weight:700;color:#fff;margin-bottom:3px;}
-.hero-phone{font-size:12px;color:rgba(255,255,255,.6);}
-
-/* Tier Card */
-.tier-card{background:rgba(255,255,255,.12);border-radius:14px;padding:14px 16px;backdrop-filter:blur(4px);}
-.tier-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;}
-.tier-badge{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:13px;font-weight:700;}
-.tier-1{background:#E5E7EB;color:#374151;}
-.tier-2{background:#FEF3C7;color:#92400E;}
-.tier-3{background:#D1FAE5;color:#065F46;}
-.tier-vip{background:linear-gradient(135deg,#C9973F,#F59E0B);color:#fff;}
-.pts-num{font-family:var(--mono);font-size:22px;font-weight:700;color:#fff;}
-.pts-label{font-size:11px;color:rgba(255,255,255,.6);}
-.progress-bar{height:6px;background:rgba(255,255,255,.2);border-radius:3px;margin-bottom:6px;overflow:hidden;}
-.progress-fill{height:100%;background:#fff;border-radius:3px;transition:.4s;}
-.progress-label{font-size:11px;color:rgba(255,255,255,.6);display:flex;justify-content:space-between;}
-
-/* Tier Table */
-.tier-table{width:100%;border-collapse:collapse;margin-top:6px;font-size:12px;}
-.tier-table td{padding:5px 8px;border-bottom:1px solid rgba(255,255,255,.1);color:rgba(255,255,255,.8);}
-.tier-table tr.current-tier td{color:#fff;font-weight:700;background:rgba(255,255,255,.1);border-radius:6px;}
-.tier-table td:last-child{text-align:right;}
-
-/* Body */
+.hero{background:linear-gradient(135deg,var(--forest),#2D6B52);padding:22px 18px 26px;text-align:center;}
+.av{width:72px;height:72px;border-radius:50%;border:3px solid rgba(255,255,255,.35);margin:0 auto 10px;overflow:hidden;background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:30px;}
+.av img{width:100%;height:100%;object-fit:cover;border-radius:50%;}
+.h-name{font-size:19px;font-weight:700;color:#fff;}
+.h-line{font-size:12px;color:rgba(255,255,255,.6);}
+.tier-card{background:rgba(255,255,255,.12);border-radius:14px;padding:14px;margin-top:14px;}
+.tier-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+.tier-badge{padding:5px 12px;border-radius:20px;font-size:12px;font-weight:700;}
+.t1{background:#E5E7EB;color:#374151;} .t2{background:#FEF3C7;color:#92400E;}
+.t3{background:#D1FAE5;color:#065F46;} .t4{background:linear-gradient(135deg,#C9973F,#F59E0B);color:#fff;}
+.pts{font-family:var(--mono);font-size:22px;font-weight:700;color:#fff;}
+.pts-l{font-size:11px;color:rgba(255,255,255,.6);}
+.prog-bar{height:5px;background:rgba(255,255,255,.2);border-radius:3px;margin-bottom:5px;}
+.prog-fill{height:100%;background:#fff;border-radius:3px;transition:.4s;}
+.prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.6);}
+/* Cards */
 .main{padding:14px;max-width:480px;margin:0 auto;}
-.card{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);margin-bottom:12px;overflow:hidden;}
-.card-hdr{padding:11px 15px;border-bottom:1px solid var(--ink-xsoft);font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;}
-.card-body{padding:13px 15px;}
-.fg{margin-bottom:12px;}
-.fg:last-child{margin-bottom:0;}
-.fl{font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:5px;display:block;text-transform:uppercase;letter-spacing:.5px;}
-.fi{width:100%;padding:11px 12px;border:1.5px solid var(--ink-xsoft);border-radius:9px;font-size:14px;font-family:var(--sans);background:var(--white);}
-.fi:focus{outline:none;border-color:var(--forest);}
-.toggle-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--ink-xsoft);}
-.toggle-row:last-child{border-bottom:none;}
-.toggle-label{flex:1;font-size:13px;}
+.card{background:#fff;border-radius:var(--radius);border:1px solid var(--ink-xsoft);margin-bottom:12px;overflow:hidden;}
+.ch{padding:12px 15px;border-bottom:1px solid var(--ink-xsoft);font-size:13px;font-weight:700;}
+.cb{padding:13px 15px;}
+/* Info rows */
+.info-row{display:flex;align-items:center;padding:7px 0;border-bottom:1px solid var(--ink-xsoft);font-size:13px;}
+.info-row:last-child{border-bottom:none;}
+.info-key{color:var(--ink-soft);width:90px;flex-shrink:0;font-size:12px;}
+.info-val{flex:1;font-weight:500;}
+/* Preferences */
+.tog-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--ink-xsoft);}
+.tog-row:last-child{border-bottom:none;}
+.tog-label{flex:1;font-size:13px;}
 .tog{width:40px;height:23px;border-radius:12px;background:var(--ink-xsoft);cursor:pointer;position:relative;transition:.2s;border:none;flex-shrink:0;}
 .tog.on{background:var(--forest);}
 .tog::after{content:"";position:absolute;width:17px;height:17px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.2s;}
 .tog.on::after{left:20px;}
-.order-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--ink-xsoft);font-size:12px;}
+.fi{width:100%;padding:10px 12px;border:1.5px solid var(--ink-xsoft);border-radius:9px;font-size:13px;font-family:var(--sans);}
+.fi:focus{outline:none;border-color:var(--forest);}
+/* Order history */
+.order-row{display:flex;align-items:center;gap:8px;padding:10px 0;border-bottom:1px solid var(--ink-xsoft);font-size:12px;}
 .order-row:last-child{border-bottom:none;}
-.o-num{font-family:var(--mono);font-size:11px;color:var(--ink-soft);min-width:90px;}
+.o-num{font-family:var(--mono);font-size:11px;color:var(--ink-soft);width:90px;}
 .o-desc{flex:1;color:var(--ink-soft);}
 .o-total{font-family:var(--mono);font-weight:700;color:var(--forest);}
-.btn-primary{width:100%;background:var(--forest);color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);}
-.btn-outline{width:100%;background:var(--white);color:var(--red);border:2px solid var(--red);border-radius:11px;padding:11px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);margin-top:8px;}
-
-.reorder-popup{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;}
-.reorder-box{background:#fff;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;margin:0 auto;}
-.ro-title{font-size:15px;font-weight:700;margin-bottom:12px;}
-.ro-item{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid #F3F4F6;font-size:13px;}
-.ro-item:last-child{border-bottom:none;}
-.ro-unavail{color:#DC2626;font-size:11px;}
-.ro-avail{color:#065F46;font-size:11px;}
-.ro-btns{display:flex;gap:8px;margin-top:16px;}
-.ro-btn-ok{flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;}
-.ro-btn-cancel{padding:12px 16px;background:#F3F4F6;border:none;border-radius:10px;cursor:pointer;font-family:inherit;}
+.o-rebuy{background:none;border:1px solid var(--forest);color:var(--forest);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
+/* Reorder popup */
+.popup-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;}
+.popup-box{background:#fff;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;margin:0 auto;}
+.pop-title{font-size:15px;font-weight:700;margin-bottom:12px;}
+.pop-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--ink-xsoft);font-size:13px;}
+.pop-item:last-child{border-bottom:none;}
+.pop-avail{color:#22C55E;font-size:11px;font-weight:600;}
+.pop-unavail{color:var(--red);font-size:11px;}
+.warn-box{background:#FEF3C7;border-radius:8px;padding:8px 10px;font-size:12px;color:#92400E;margin-top:10px;display:none;}
+.pop-btns{display:flex;gap:8px;margin-top:14px;}
+.pop-ok{flex:1;background:var(--forest);color:#fff;border:none;border-radius:10px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+.pop-cancel{padding:12px 16px;background:#F3F4F6;border:none;border-radius:10px;cursor:pointer;font-family:var(--sans);}
+.btn-save{width:100%;background:var(--forest);color:#fff;border:none;border-radius:11px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;font-family:var(--sans);}
 </style>
 </head>
 <body>
-
 <div class="header">
-  <a class="back-a" href="liff_customer.html">←</a>
-  <div class="hdr-t">โปรไฟล์</div>
-  <button class="save-btn" onclick="saveProfile()">💾 บันทึก</button>
+  <a class="back" href="liff_customer.html">←</a>
+  <div class="hdr-t">โปรไฟล์ของฉัน</div>
 </div>
 
-<!-- Hero: Avatar + Tier -->
+<!-- Hero -->
 <div class="hero">
-  <div class="hero-top">
-    <div class="avatar"><img id="hAvatar" src="" alt=""><span id="hEmoji" style="display:none">👤</span></div>
-    <div>
-      <div class="hero-name" id="hName">ชื่อของคุณ</div>
-      <div class="hero-phone" id="hPhone">—</div>
-    </div>
-  </div>
-
-  <!-- Points & Tier -->
+  <div class="av"><img id="hAv" src="" onerror="this.style.display='none'"><span id="hEmoji">👤</span></div>
+  <div class="h-name" id="hName">—</div>
+  <div class="h-line" id="hLine">—</div>
   <div class="tier-card">
     <div class="tier-row">
-      <div>
-        <div class="pts-num" id="ptsNum">0</div>
-        <div class="pts-label">แต้มสะสม</div>
-      </div>
-      <span class="tier-badge tier-1" id="tierBadge">เทียร์ 1</span>
+      <div><div class="pts" id="ptsNum">0</div><div class="pts-l">แต้มสะสม</div></div>
+      <span class="tier-badge t1" id="tierBadge">เทียร์ 1</span>
     </div>
-    <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
-    <div class="progress-label"><span id="progCurrent">0 แต้ม</span><span id="progNext">ถัดไป: 3,000 แต้ม</span></div>
-
-    <!-- Tier table -->
-    <table class="tier-table" style="margin-top:14px;">
-      <tr id="tr1"><td>🥈 เทียร์ 1</td><td>0 – 2,999 บาท</td><td>ส่วนลด 1%</td></tr>
-      <tr id="tr2"><td>🥇 เทียร์ 2</td><td>3,000 – 9,999 บาท</td><td>ส่วนลด 3%</td></tr>
-      <tr id="tr3"><td>💎 เทียร์ 3</td><td>10,000 – 24,999 บาท</td><td>ส่วนลด 5%</td></tr>
-      <tr id="tr4"><td>👑 VIP</td><td>25,000+ บาท</td><td>ส่วนลด 10%</td></tr>
-    </table>
+    <div class="prog-bar"><div class="prog-fill" id="pFill" style="width:0%"></div></div>
+    <div class="prog-lbl"><span id="pCur">0</span><span id="pNxt">ถัดไป: 3,000</span></div>
   </div>
 </div>
 
 <div class="main">
 
-  <!-- Info -->
+  <!-- Info (read-only) -->
   <div class="card">
-    <div class="card-hdr">👤 ข้อมูลส่วนตัว</div>
-    <div class="card-body">
-      <div class="fg"><label class="fl">ชื่อที่ต้องการให้เรียก</label><input class="fi" id="fName" placeholder="ชื่อ"></div>
-      <div class="fg"><label class="fl">เบอร์โทร</label><input class="fi" id="fPhone" placeholder="0812345678" type="tel"></div>
-      <div class="fg"><label class="fl">วันเกิด (ไว้รับสิทธิ์วันเกิด 🎂)</label><input class="fi" id="fDob" type="date"></div>
-      <div class="fg"><label class="fl">LINE (แก้ไขไม่ได้)</label><input class="fi" id="fLine" readonly style="color:var(--ink-soft);background:var(--bg)"></div>
+    <div class="ch">📋 ข้อมูลส่วนตัว</div>
+    <div class="cb">
+      <div class="info-row"><span class="info-key">ชื่อ</span><span class="info-val" id="infoName">—</span></div>
+      <div class="info-row"><span class="info-key">เบอร์โทร</span><span class="info-val" id="infoPhone">—</span></div>
+      <div class="info-row"><span class="info-key">วันเกิด</span><span class="info-val" id="infoDob">—</span></div>
+      <div class="info-row"><span class="info-key">LINE</span><span class="info-val" id="infoLine" style="color:var(--ink-soft)">—</span></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--ink-soft)">แก้ไขข้อมูลได้ที่ <a href="liff_register.html" style="color:var(--forest);font-weight:600">สมัครสมาชิก / แก้ข้อมูล →</a></div>
     </div>
   </div>
 
   <!-- Preferences -->
   <div class="card">
-    <div class="card-hdr">🥗 อาหารที่ไม่ชอบ / แพ้</div>
-    <div class="card-body">
-      <div class="toggle-row"><span class="toggle-label">ไม่ทานเนื้อแดง</span><button class="tog" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">ไม่ชอบเผ็ด</span><button class="tog" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">ไม่ชอบผักชี</span><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">แพ้กุ้ง / อาหารทะเล</span><button class="tog" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">ขอข้าวขาว (ไม่เอาข้าวกล้อง)</span><button class="tog on" onclick="this.classList.toggle('on')"></button></div>
-      <div class="toggle-row"><span class="toggle-label">ทานมังสวิรัติ / เจ</span><button class="tog" onclick="this.classList.toggle('on')"></button></div>
-      <div class="fg" style="margin-top:10px;margin-bottom:0"><label class="fl">อื่นๆ</label><input class="fi" id="fPref" placeholder="เช่น ไม่ชอบเกาหลี ไม่เค็มมาก..."></div>
+    <div class="ch">🥗 ข้อจำกัดอาหาร</div>
+    <div class="cb">
+      <!-- 6 อันฮิตที่สุดในไทย -->
+      <div class="tog-row"><span class="tog-label">🐷 ไม่ทานเนื้อหมู</span><button class="tog pref-tog" data-pref="ไม่ทานเนื้อหมู" onclick="this.classList.toggle('on')"></button></div>
+      <div class="tog-row"><span class="tog-label">🐄 ไม่ทานเนื้อวัว / เนื้อแดง</span><button class="tog pref-tog" data-pref="ไม่ทานเนื้อวัว" onclick="this.classList.toggle('on')"></button></div>
+      <div class="tog-row"><span class="tog-label">🦐 แพ้กุ้ง / อาหารทะเล</span><button class="tog pref-tog" data-pref="แพ้กุ้ง/อาหารทะเล" onclick="this.classList.toggle('on')"></button></div>
+      <div class="tog-row"><span class="tog-label">🌿 ทานมังสวิรัติ / เจ</span><button class="tog pref-tog" data-pref="มังสวิรัติ/เจ" onclick="this.classList.toggle('on')"></button></div>
+      <div class="tog-row"><span class="tog-label">🌶 ไม่ชอบเผ็ด</span><button class="tog pref-tog" data-pref="ไม่เผ็ด" onclick="this.classList.toggle('on')"></button></div>
+      <div class="tog-row"><span class="tog-label">🥜 แพ้ถั่ว</span><button class="tog pref-tog" data-pref="แพ้ถั่ว" onclick="this.classList.toggle('on')"></button></div>
+      <!-- custom -->
+      <div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--ink-soft);margin-bottom:5px">เพิ่มเองเช่น "ไม่ผักชี", "ไม่ข้าวกล้อง", "ไม่ชอบเกาหลี"</div>
+        <div id="customPrefs" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="prefInput" placeholder="พิมพ์แล้วกด +" style="flex:1;padding:8px 10px;font-size:13px">
+          <button onclick="addCustomPref()" style="background:var(--forest);color:#fff;border:none;border-radius:9px;padding:8px 12px;font-size:16px;cursor:pointer">+</button>
+        </div>
+      </div>
     </div>
   </div>
 
-  <!-- History -->
+  <!-- Order History -->
   <div class="card">
-    <div class="card-hdr">🧾 ออเดอร์ล่าสุด</div>
-    <div class="card-body" id="histBody">
-      <div class="order-row"><div class="o-num">U-0620-003</div><div class="o-desc">HP01×2, HP04×1</div><div class="o-total">฿495</div><button onclick="showReorder('U-0620-003',[{code:'HP01',name:'อกไก่ย่าง',qty:2},{code:'HP04',name:'หมูย่าง',qty:1}])" style="background:none;border:1px solid #1F4D3A;color:#1F4D3A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:inherit">สั่งซ้ำ</button></div>
-      <div class="order-row"><div class="o-num">U-0618-007</div><div class="o-desc">HP02×2, HP07×1</div><div class="o-total">฿495</div></div>
-      <div class="order-row"><div class="o-num">U-0615-012</div><div class="o-desc">HP01×1, HP09×2</div><div class="o-total">฿495</div></div>
-      <div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)">ดูทั้งหมด →</button></div>
+    <div class="ch">🧾 ประวัติออเดอร์</div>
+    <div class="cb" id="histBody">
+      <div style="text-align:center;color:var(--ink-soft);padding:20px;font-size:13px">กำลังโหลด...</div>
     </div>
   </div>
 
-  <button class="btn-primary" onclick="saveProfile()">💾 บันทึกข้อมูล</button>
-  <button class="btn-outline" onclick="if(confirm('ออกจากระบบ?'))window.location.href='liff_register.html'">ออกจากระบบ</button>
+  <button class="btn-save" onclick="savePref()">💾 บันทึกความชอบ</button>
+</div>
+
+<!-- Reorder Popup -->
+<div id="rePop" class="popup-bg" style="display:none">
+  <div class="popup-box">
+    <div class="pop-title">🔁 สั่งซ้ำออเดอร์นี้</div>
+    <div id="reItems"></div>
+    <div class="warn-box" id="reWarn">⚠️ บางเมนูไม่มีในขณะนี้ จะนำเฉพาะที่มีเข้าตะกร้า</div>
+    <div class="pop-btns">
+      <button class="pop-cancel" onclick="document.getElementById('rePop').style.display='none'">ยกเลิก</button>
+      <button class="pop-ok" onclick="confirmReorder()">✅ นำเข้าตะกร้า</button>
+    </div>
+  </div>
 </div>
 
 <script>
 const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
-let sb=null;
+let sb=null,reorderCart=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
-
-// Tier config (ยอดจ่ายสะสม)
-const TIERS=[
-  {id:1,label:"🥈 เทียร์ 1",cls:"tier-1",min:0,max:2999,disc:1,trId:"tr1"},
-  {id:2,label:"🥇 เทียร์ 2",cls:"tier-2",min:3000,max:9999,disc:3,trId:"tr2"},
-  {id:3,label:"💎 เทียร์ 3",cls:"tier-3",min:10000,max:24999,disc:5,trId:"tr3"},
-  {id:4,label:"👑 VIP",cls:"tier-vip",min:25000,max:Infinity,disc:10,trId:"tr4"},
-];
-
-function getTier(pts){return TIERS.find(t=>pts>=t.min&&pts<=t.max)||TIERS[0];}
+function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
+const TIERS=[{id:1,label:"🥈 เทียร์ 1",cls:"t1",min:0,max:2999,disc:1},{id:2,label:"🥇 เทียร์ 2",cls:"t2",min:3000,max:9999,disc:3},{id:3,label:"💎 เทียร์ 3",cls:"t3",min:10000,max:24999,disc:5},{id:4,label:"👑 VIP",cls:"t4",min:25000,max:Infinity,disc:10}];
 
 function renderTier(pts){
-  const t=getTier(pts);
+  const t=TIERS.find(x=>pts>=x.min&&pts<=x.max)||TIERS[0];
   const next=TIERS.find(x=>x.min>t.min);
   document.getElementById("ptsNum").textContent=pts.toLocaleString();
-  const badge=document.getElementById("tierBadge");
-  badge.textContent=t.label; badge.className="tier-badge "+t.cls;
+  const b=document.getElementById("tierBadge");b.textContent=t.label;b.className="tier-badge "+t.cls;
   const pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
-  document.getElementById("progressFill").style.width=pct+"%";
-  document.getElementById("progCurrent").textContent=pts.toLocaleString()+" แต้ม";
-  document.getElementById("progNext").textContent=next?"ถัดไป: "+next.min.toLocaleString()+" แต้ม":"ระดับสูงสุด 👑";
-  // Highlight table row
-  TIERS.forEach(x=>{const el=document.getElementById(x.trId);if(el)el.className=x.id===t.id?"current-tier":""});
+  document.getElementById("pFill").style.width=pct+"%";
+  document.getElementById("pCur").textContent=pts.toLocaleString()+" แต้ม";
+  document.getElementById("pNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString()+" แต้ม":"ระดับสูงสุด 👑";
 }
 
 async function loadProfile(){
-  const sb_=getSB();
   const lineUid=localStorage.getItem("line_uid")||"dev_001";
-  let profile=null;
+  const sb_=getSB();
+  let p=null;
   if(sb_){
     try{
-      const res=await sb_.from("customers")
-        .select("*, orders(total,delivery_date,order_number,status)")
-        .eq("line_uid",lineUid).single();
-      if(!res.error&&res.data) profile=res.data;
+      const r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total,status)").eq("line_uid",lineUid).single();
+      if(!r.error)p=r.data;
     }catch(e){}
   }
-  // Fallback mock
-  if(!profile) profile={name:"Boom",phone:"081-234-5678",birth_date:"1992-05-15",
-    line_display_name:"Boom",line_picture_url:"",points:4200,orders:[]};
-
-  document.getElementById("hName").textContent=profile.name||profile.line_display_name||"—";
-  document.getElementById("hPhone").textContent=profile.phone||"—";
-  if(profile.line_picture_url) document.getElementById("hAvatar").src=profile.line_picture_url;
-  else document.getElementById("hEmoji").style.display="block";
-  document.getElementById("fName").value=profile.name||"";
-  document.getElementById("fPhone").value=profile.phone||"";
-  document.getElementById("fDob").value=profile.birth_date||"";
-  document.getElementById("fLine").value="@"+(profile.line_display_name||"");
-
-  // คำนวณ points จาก orders ที่ delivered (ถ้า Supabase)
-  const orders=profile.orders||[];
-  const totalSpend=orders.filter(o=>o.status==="delivered").reduce((s,o)=>s+(o.total||0),0);
-  const pts=profile.points||totalSpend||0;
-  renderTier(pts);
-
-  // ประวัติออเดอร์
-  if(orders.length){
-    document.getElementById("histBody").innerHTML=
-      orders.slice(0,3).map(o=>
-        `<div class="order-row"><div class="o-num">${o.order_number||"—"}</div><div class="o-desc">${o.delivery_date||""}</div><div class="o-total">฿${(o.total||0).toLocaleString()}</div><button onclick="showReorder('${o.order_number}',[])" style="background:none;border:1px solid #1F4D3A;color:#1F4D3A;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;margin-left:6px;font-family:inherit">สั่งซ้ำ</button></div>`
-      ).join("")+
-      `<div style="text-align:center;margin-top:8px"><button style="background:none;border:none;color:var(--forest);font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans)">ดูทั้งหมด →</button></div>`;
-  }
+  // fallback mock
+  if(!p)p={name:"Test User",phone:"081-234-5678",birth_date:"1992-05-15",line_display_name:"Test User",line_picture_url:"",points:4200,orders:[
+    {id:"o1",order_number:"U-0620-003",delivery_date:"2026-06-20",total:495,status:"delivered"},
+    {id:"o2",order_number:"U-0618-007",delivery_date:"2026-06-18",total:330,status:"delivered"},
+  ]};
+  // render info
+  document.getElementById("hName").textContent=p.name||p.line_display_name||"—";
+  document.getElementById("hLine").textContent="@"+(p.line_display_name||"—");
+  document.getElementById("infoName").textContent=p.name||"—";
+  document.getElementById("infoPhone").textContent=p.phone||"—";
+  document.getElementById("infoDob").textContent=p.birth_date||"—";
+  document.getElementById("infoLine").textContent=p.line_display_name||"—";
+  if(p.line_picture_url){document.getElementById("hAv").src=p.line_picture_url;document.getElementById("hEmoji").style.display="none";}
+  renderTier(p.points||0);
+  // history
+  const orders=p.orders||[];
+  if(!orders.length){document.getElementById("histBody").innerHTML='<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:16px">ยังไม่มีประวัติออเดอร์</div>';return;}
+  document.getElementById("histBody").innerHTML=orders.slice(0,5).map(o=>
+    `<div class="order-row">
+      <span class="o-num">${o.order_number||"—"}</span>
+      <span class="o-desc">${o.delivery_date||""}</span>
+      <span class="o-total">${fmtB(o.total)}</span>
+      <button class="o-rebuy" onclick="showReorder('${o.id}','${o.order_number}')">สั่งซ้ำ</button>
+    </div>`
+  ).join("")+`<div style="text-align:center;margin-top:10px"><a href="#" style="color:var(--forest);font-size:12px;font-weight:700">ดูทั้งหมด →</a></div>`;
 }
 
-async function saveProfile(){
-  const data={name:document.getElementById("fName").value,phone:document.getElementById("fPhone").value,birth_date:document.getElementById("fDob").value};
+async function showReorder(orderId,orderNum){
   const sb_=getSB();
-  if(sb_) await sb_.from("customers").update(data).eq("line_uid","dev_001");
-  const btn=document.querySelector(".save-btn");
-  const orig=btn.textContent;
-  btn.textContent="✓ บันทึกแล้ว";
-  setTimeout(()=>btn.textContent=orig,2000);
+  let items=[];
+  if(sb_){
+    try{
+      const r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
+      items=(r.data||[]).map(i=>({...i.menu_items,qty:i.quantity}));
+    }catch(e){}
+  }
+  if(!items.length)items=[{id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",is_available:true,stock_quantity:5,qty:2},{id:"m2",code:"HP04",name:"สันในหมูย่าง",is_available:false,stock_quantity:0,qty:1}];
+  reorderCart=items;
+  const hasUnavail=items.some(i=>!i.is_available||i.stock_quantity===0);
+  document.getElementById("reWarn").style.display=hasUnavail?"block":"none";
+  document.getElementById("reItems").innerHTML=items.map(i=>{
+    const avail=i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);
+    return `<div class="pop-item"><span>${i.code} ${i.name} ×${i.qty}</span><span class="${avail?"pop-avail":"pop-unavail"}">${avail?"✓ มีสินค้า":"✗ ไม่มีในขณะนี้"}</span></div>`;
+  }).join("");
+  document.getElementById("rePop").style.display="flex";
+}
+
+function confirmReorder(){
+  if(!reorderCart)return;
+  const cart={};
+  reorderCart.filter(i=>i.is_available&&(i.stock_quantity===null||i.stock_quantity>0))
+    .forEach(i=>{cart[i.id]=i.qty;});
+  localStorage.setItem("cart",JSON.stringify(cart));
+  location.href="liff_customer.html";
+}
+
+async function savePref(){
+  const btn=document.querySelector(".btn-save");
+  btn.textContent="⏳ กำลังบันทึก...";btn.disabled=true;
+  const lineUid=localStorage.getItem("line_uid")||"dev_001";
+  const prefs=[];
+  document.querySelectorAll(".pref-tog.on").forEach(t=>prefs.push(t.dataset.pref));
+  prefs.push(...customPrefList);
+  const other=document.getElementById("prefOther").value;
+  if(other)prefs.push(other);
+  const sb_=getSB();
+  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
+  btn.textContent="✅ บันทึกแล้ว";
+  setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},2000);
 }
 
 loadProfile();
 
-let reorderData = null;
-async function showReorder(orderNum, items){
-  reorderData = {orderNum, items};
-  const sb_ = getSB();
-  let availableMenus = [];
-  if(sb_){
-    const codes = items.map(i=>i.code).filter(Boolean);
-    const res = await sb_.from('menu_items').select('code,name,is_available,stock_quantity').in('code', codes);
-    availableMenus = res.data || [];
-  }
-  let hasUnavail = false;
-  const html = items.map(i=>{
-    const m = availableMenus.find(x=>x.code===i.code);
-    const avail = !m || m.is_available !== false;
-    if(!avail) hasUnavail = true;
-    return `<div class="ro-item">
-      <span>${i.code} ${i.name||""}</span>
-      ${avail ? '<span class="ro-avail">✓ มีสินค้า</span>' : '<span class="ro-unavail">✗ ไม่มีในขณะนี้</span>'}
-    </div>`;
-  }).join('');
-  document.getElementById('reorderItems').innerHTML = html;
-  document.getElementById('reorderWarning').style.display = hasUnavail ? 'block' : 'none';
-  document.getElementById('reorderPopup').style.display = 'flex';
+var customPrefList = [];
+function addCustomPref(){
+  const inp=document.getElementById("prefInput");
+  const val=inp.value.trim();
+  if(!val)return;
+  customPrefList.push(val);
+  renderCustomPrefs();
+  inp.value="";inp.focus();
 }
-function confirmReorder(){
-  // เก็บ cart ใน localStorage แล้วไป liff_customer
-  if(reorderData){
-    const cart = {};
-    reorderData.items.forEach(i=>{ if(i.menuItemId) cart[i.menuItemId] = i.qty||1; });
-    localStorage.setItem('pending_cart', JSON.stringify(cart));
-  }
-  window.location.href = 'liff_customer.html';
+function removeCustomPref(i){
+  customPrefList.splice(i,1);renderCustomPrefs();
 }
+function renderCustomPrefs(){
+  document.getElementById("customPrefs").innerHTML=customPrefList.map((p,i)=>
+    `<span style="background:#F3F4F6;border-radius:20px;padding:4px 10px;font-size:12px;display:flex;align-items:center;gap:4px">
+      ${p} <span onclick="removeCustomPref(${i})" style="cursor:pointer;color:#DC2626;font-weight:700">×</span>
+    </span>`
+  ).join("");
+}
+// Enter key on pref input
+document.addEventListener("DOMContentLoaded",()=>{
+  const inp=document.getElementById("prefInput");
+  if(inp)inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();addCustomPref();}});
+});
 
 </script>
-
-<div id="reorderPopup" style="display:none" class="reorder-popup">
-  <div class="reorder-box">
-    <div class="ro-title">🔁 สั่งซ้ำออเดอร์นี้</div>
-    <div id="reorderItems"></div>
-    <div id="reorderWarning" style="background:#FEF3C7;border-radius:8px;padding:8px 10px;font-size:12px;color:#92400E;margin-top:10px;display:none">
-      ⚠️ บางเมนูในออเดอร์นี้ไม่มีจำหน่ายในขณะนี้ ระบบจะนำเฉพาะเมนูที่มีเข้าตะกร้า
-    </div>
-    <div class="ro-btns">
-      <button class="ro-btn-cancel" onclick="document.getElementById('reorderPopup').style.display='none'">ยกเลิก</button>
-      <button class="ro-btn-ok" onclick="confirmReorder()">✅ นำเข้าตะกร้า</button>
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
