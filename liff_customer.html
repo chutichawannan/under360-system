@@ -270,6 +270,30 @@ input,textarea{font-family:inherit}
 .map-dd-item{padding:11px 14px;border-bottom:1px solid var(--line);font-size:13px;cursor:pointer;color:var(--ink);}
 .map-dd-item:last-child{border-bottom:none;}
 .map-dd-item:hover{background:var(--gl);}
+
+/* ═══════════ HOME GRID ═══════════ */
+.home-grid{display:grid;grid-template-columns:repeat(4,1fr);grid-auto-rows:80px;gap:7px;padding:10px 10px 0;}
+.hg-sec{border-radius:var(--r12);overflow:hidden;cursor:pointer;position:relative;display:flex;flex-direction:column;justify-content:center;}
+.hg-sec:active{opacity:.88;}
+.hg-meal{padding:12px 14px;}
+.hg-t{font-weight:800;line-height:1.25;font-size:15px;}
+.hg-t.sm{font-size:13px;}
+.hg-sub{font-size:11px;opacity:.7;margin-top:3px;}
+.hg-cta{display:inline-block;margin-top:8px;padding:5px 14px;border-radius:20px;font-size:11px;font-weight:700;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.4);}
+.hg-promo{padding:10px 12px;}
+.hg-ig{flex-direction:column;background:#fff;justify-content:flex-start;}
+.hg-ig-hdr{display:flex;justify-content:space-between;align-items:center;padding:9px 12px 4px;flex-shrink:0;}
+.hg-ig-tit{font-size:12px;font-weight:700;color:var(--ink);}
+.hg-ig-all{font-size:11px;color:var(--g);font-weight:600;}
+.hg-ig-scroll{display:flex;gap:7px;overflow-x:auto;padding:0 10px 10px;scrollbar-width:none;}
+.hg-ig-scroll::-webkit-scrollbar{display:none;}
+.hg-icard{flex-shrink:0;width:72px;background:var(--bg);border-radius:9px;padding:7px 6px;text-align:center;}
+.hg-ic-code{font-size:9px;color:var(--soft);font-weight:700;margin-bottom:2px;}
+.hg-ic-name{font-size:10px;font-weight:700;color:var(--ink);line-height:1.25;height:26px;overflow:hidden;}
+.hg-ic-px{font-size:11px;font-weight:800;color:var(--r);margin-top:3px;}
+.hg-ic-add{width:26px;height:26px;border-radius:50%;background:var(--g);color:#fff;font-size:18px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:3px auto 0;}
+.hg-ic-out{font-size:9px;color:var(--soft);margin-top:4px;}
+
 </style>
 </head>
 <body>
@@ -305,8 +329,10 @@ input,textarea{font-family:inherit}
       <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
     </button>
   </div>
-  <div class="ctabs" id="ctabs"></div>
   <div class="scroll pb-nav">
+    <div class="home-grid" id="homeGrid"></div>
+    <div class="divider" style="margin:8px 0 0"></div>
+    <div class="ctabs" id="ctabsInner"></div>
     <div class="mlist" id="mlist"></div>
   </div>
   <!-- floating cart button -->
@@ -575,6 +601,7 @@ async function init() {
     renderCatTabs();
     renderMenu();
     updateCartUI();
+    loadHomeLayout();
   } catch(e) { console.warn('Render error', e); }
   showScr('s-menu');
 }
@@ -628,7 +655,7 @@ function backToMenu() {
 // 🏷️ CATEGORY TABS
 // ══════════════════════════════════════
 function renderCatTabs() {
-  const el = document.getElementById('ctabs');
+  const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
   el.innerHTML = cats.map(c => `
     <button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${CAT_LABELS[c]||c}</button>
   `).join('');
@@ -1008,6 +1035,63 @@ function updateCartTotals(){
   if(totEl)totEl.textContent='฿'+total.toLocaleString();
   if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+total.toLocaleString()+')';
   updateQRAmount();
+}
+
+
+// ══════════════════════════════════════
+// 🏠 HOME LAYOUT GRID
+// ══════════════════════════════════════
+var homeLayout = [];
+const DEFAULT_HOME = [
+  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{category:'meal_hp'}},
+  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{category:'meal_lc'}},
+  {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{category:'no_special'}},
+  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein วันนี้',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{category:'meal_hp',limit:8}},
+];
+
+async function loadHomeLayout() {
+  try {
+    var sb_ = getSB ? getSB() : sb;
+    if (!sb_) { homeLayout = DEFAULT_HOME; renderHomeGrid(); return; }
+    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('sort_order');
+    homeLayout = (r.data && r.data.length) ? r.data : DEFAULT_HOME;
+  } catch(e) { homeLayout = DEFAULT_HOME; }
+  renderHomeGrid();
+}
+
+function renderHomeGrid() {
+  var el = document.getElementById('homeGrid');
+  if (!el) return;
+  if (!homeLayout.length) { el.innerHTML = ''; return; }
+  var html = '';
+  homeLayout.forEach(function(s) {
+    var f = s.item_filter || {};
+    var style = 'grid-column:'+s.col_start+'/span '+s.col_span+';grid-row:'+s.row_start+'/span '+s.row_span+';background:'+s.bg_color+';color:'+s.text_color+';';
+    if (s.section_type === 'item_grid') {
+      var items = menuItems.filter(function(m){ return m.is_available && (!f.category || m.category === f.category); }).slice(0, f.limit||8);
+      var iHtml = items.map(function(m){
+        var inCart = cart.find(function(c){return c.id===m.id;});
+        var addBtn = m.stock_quantity===0
+          ? '<div class="hg-ic-out">หมด</div>'
+          : '<button class="hg-ic-add" onclick="addItem(''+m.id+'')">+</button>';
+        return '<div class="hg-icard"><div class="hg-ic-code">'+(m.code||'')+'</div><div class="hg-ic-name">'+(m.name||'')+'</div><div class="hg-ic-px">฿'+m.price+'</div>'+addBtn+'</div>';
+      }).join('');
+      html += '<div class="hg-sec hg-ig" style="'+style+'"><div class="hg-ig-hdr"><span class="hg-ig-tit">'+s.title+'</span><span class="hg-ig-all" onclick="jumpCat(''+f.category+'')">ดูทั้งหมด →</span></div><div class="hg-ig-scroll">'+iHtml+'</div></div>';
+    } else if (s.section_type === 'meal_plan') {
+      var isLg = s.col_span >= 4;
+      html += '<div class="hg-sec hg-meal" style="'+style+'" onclick="jumpCat(''+f.category+'')" ><div class="hg-t'+(isLg?'':' sm')+'">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div>'+(isLg?'<span class="hg-cta">ดูเมนู →</span>':'')+'</div>';
+    } else {
+      html += '<div class="hg-sec hg-promo" style="'+style+'" onclick="jumpCat(''+f.category+'')"><div class="hg-t sm">'+s.title+'</div><div class="hg-sub">'+(s.subtitle||'')+'</div></div>';
+    }
+  });
+  el.innerHTML = html;
+}
+
+function jumpCat(cat) {
+  if (!cat) return;
+  selectCat(cat);
+  var el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
+  if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ══════════════════════════════════════

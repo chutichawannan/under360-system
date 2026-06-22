@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — Home Editor</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--r:#DC2626;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;}
+body{font-family:var(--sans);background:var(--bg);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
+
+/* ── HEADER ── */
+.eh{height:52px;background:var(--g);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;}
+.eh-logo{color:#fff;font-weight:700;font-size:15px;flex:1;}
+.eh-hint{font-size:11px;color:rgba(255,255,255,.5);margin-right:4px;}
+.eh-btn{border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.eh-preview{background:rgba(255,255,255,.15);color:#fff;}
+.eh-save{background:var(--gold);color:#fff;}
+
+/* ── LAYOUT ── */
+.em{display:flex;flex:1;overflow:hidden;}
+
+/* ── GRID AREA ── */
+.eg{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
+.eg-info{font-size:12px;color:var(--soft);background:var(--w);padding:8px 12px;border-radius:8px;border:1px solid var(--xsoft);display:flex;align-items:center;gap:10px;}
+.add-types{display:flex;gap:6px;flex-wrap:wrap;}
+.add-type-btn{padding:6px 12px;border:1.5px solid var(--xsoft);border-radius:20px;font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);}
+.add-type-btn:hover{border-color:var(--g);background:var(--gs);color:var(--g);}
+
+/* ── GRID CANVAS ── */
+.gc{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  grid-auto-rows:88px;
+  gap:7px;
+  padding:8px;
+  border-radius:12px;
+  border:1px solid var(--xsoft);
+  background:var(--w);
+  position:relative;
+  min-height:520px;
+}
+.gc-bg{
+  position:absolute;inset:8px;
+  background:
+    linear-gradient(#f0f0f0 1px,transparent 1px),
+    linear-gradient(90deg,#f0f0f0 1px,transparent 1px);
+  background-size:calc(25% + 1.75px) 96px, calc(25% + 1.75px) 96px;
+  border-radius:8px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── DROP ZONES ── */
+.dz{border-radius:8px;border:2px dashed transparent;transition:all .1s;z-index:1;}
+.dz.hover{border-color:var(--g)!important;background:rgba(31,77,58,.07)!important;}
+
+/* ── SECTION TILES ── */
+.st{
+  border-radius:10px;cursor:pointer;position:relative;
+  display:flex;flex-direction:column;justify-content:center;
+  padding:10px 12px;transition:box-shadow .15s;z-index:2;
+  -webkit-user-select:none;user-select:none;
+}
+.st:hover{box-shadow:0 4px 18px rgba(0,0,0,.18);}
+.st.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--g),0 6px 24px rgba(0,0,0,.2);}
+.st.drag{opacity:.45;z-index:1;pointer-events:none;}
+.st-size-tag{position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;background:rgba(0,0,0,.25);color:#fff;padding:2px 6px;border-radius:4px;font-family:var(--mono);}
+.st-type-tag{font-size:9px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.st-title{font-size:13px;font-weight:700;line-height:1.3;}
+.st-sub{font-size:10px;opacity:.7;margin-top:2px;}
+.st-inactive{opacity:.4;}
+
+/* ── PANEL ── */
+.ep{width:264px;border-left:1px solid var(--xsoft);background:var(--w);overflow-y:auto;display:flex;flex-direction:column;flex-shrink:0;}
+.ep-hdr{padding:12px 14px;border-bottom:1px solid var(--xsoft);font-size:13px;font-weight:700;background:var(--gs);color:var(--g);}
+.ep-body{padding:14px;display:flex;flex-direction:column;gap:11px;flex:1;}
+.ep-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--xsoft);font-size:12px;padding:20px;text-align:center;line-height:1.6;}
+.ep-group{display:flex;flex-direction:column;gap:5px;}
+.ep-label{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px;}
+.ep-input,.ep-select{width:100%;padding:7px 9px;border:1.5px solid var(--xsoft);border-radius:8px;font-size:13px;font-family:var(--sans);outline:none;background:var(--w);}
+.ep-input:focus,.ep-select:focus{border-color:var(--g);}
+.ep-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
+.size-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;}
+.size-btn{padding:6px 4px;border:1.5px solid var(--xsoft);border-radius:7px;font-size:10px;font-weight:700;text-align:center;cursor:pointer;font-family:var(--mono);color:var(--soft);}
+.size-btn.on{border-color:var(--g);background:var(--gs);color:var(--g);}
+.color-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.cp{width:24px;height:24px;border-radius:6px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
+.cp.on{border-color:var(--g);transform:scale(1.2);}
+.ep-toggle{display:flex;align-items:center;justify-content:space-between;}
+.toggle-sw{position:relative;width:36px;height:20px;cursor:pointer;}
+.toggle-sw input{opacity:0;width:0;height:0;}
+.toggle-sl{position:absolute;inset:0;background:var(--xsoft);border-radius:10px;transition:.2s;}
+.toggle-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
+.toggle-sw input:checked+.toggle-sl{background:var(--g);}
+.toggle-sw input:checked+.toggle-sl:before{transform:translateX(16px);}
+.ep-btn{width:100%;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid;font-family:var(--sans);}
+.ep-btn-del{color:var(--r);border-color:var(--r);background:var(--w);}
+.ep-btn-del:hover{background:#FEF2F2;}
+.ep-btn-dupe{color:var(--soft);border-color:var(--xsoft);background:var(--w);}
+.ep-btn-dupe:hover{background:var(--bg);}
+hr.ep-hr{border:none;border-top:1px solid var(--xsoft);margin:2px 0;}
+</style>
+</head>
+<body>
+
+<div class="eh">
+  <div class="eh-logo">🎨 Home Editor — Under360</div>
+  <span class="eh-hint" id="saveStatus"></span>
+  <button class="eh-btn eh-preview" onclick="previewHome()">👁 Preview</button>
+  <button class="eh-btn eh-save" onclick="saveLayout()">💾 บันทึก layout</button>
+</div>
+
+<div class="em">
+
+  <!-- GRID AREA -->
+  <div class="eg">
+    <div class="eg-info">
+      <span>🖱 ลากเพื่อย้าย · คลิกเพื่อแก้ไข · 4 columns</span>
+      <div class="add-types">
+        <span style="font-size:11px;color:var(--soft)">+ เพิ่ม:</span>
+        <button class="add-type-btn" onclick="addSection('meal_plan')">Meal Plan</button>
+        <button class="add-type-btn" onclick="addSection('item_grid')">Item Grid</button>
+        <button class="add-type-btn" onclick="addSection('promo')">Promo</button>
+      </div>
+    </div>
+    <div class="gc" id="gc">
+      <div class="gc-bg"></div>
+    </div>
+  </div>
+
+  <!-- PROPERTIES PANEL -->
+  <div class="ep" id="panel">
+    <div class="ep-hdr">Properties</div>
+    <div class="ep-empty">← คลิก section<br>เพื่อแก้ไข</div>
+  </div>
+
+</div>
+
+<script>
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+let sb=null,layout=[],selectedKey=null,dragKey=null;
+
+function getSB(){if(!sb)sb=supabase.createClient(SB_URL,SB_KEY);return sb;}
+
+const DEFAULTS=[
+  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{category:'meal_hp'},sort_order:10,is_active:true},
+  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{category:'meal_lc'},sort_order:20,is_active:true},
+  {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{category:'no_special'},sort_order:30,is_active:true},
+  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{category:'meal_hp',limit:8},sort_order:40,is_active:true},
+];
+
+const SIZES=[{k:'1×1',w:1,h:1},{k:'2×1',w:2,h:1},{k:'1×2',w:1,h:2},{k:'2×2',w:2,h:2},{k:'4×1',w:4,h:1},{k:'4×2',w:4,h:2}];
+const PALETTE=['#1F4D3A','#2D6B53','#C9973F','#DC2626','#3B82F6','#7C3AED','#ffffff','#F7F8F6','#1A1A1A'];
+const CATS=['meal_hp','meal_lc','no_regular','no_special','pack_regular','trend'];
+const TYPE_OPTS=[{v:'meal_plan',l:'Meal Plan Banner'},{v:'item_grid',l:'Item Grid (หลายเมนู)'},{v:'promo',l:'Promo Banner'}];
+
+async function loadLayout(){
+  try{
+    const {data}=await getSB().from('home_layout').select('*').order('sort_order');
+    layout=(data&&data.length)?data:DEFAULTS.map(d=>({...d}));
+  }catch(e){layout=DEFAULTS.map(d=>({...d}));}
+  render();
+}
+
+function render(){
+  const gc=document.getElementById('gc');
+  const maxRow=Math.max(8,...layout.map(s=>s.row_start+s.row_span-1))+2;
+
+  // Drop zones (background grid)
+  let html='<div class="gc-bg"></div>';
+  for(let r=1;r<=maxRow;r++){
+    for(let c=1;c<=4;c++){
+      html+=`<div class="dz" data-c="${c}" data-r="${r}" style="grid-column:${c}/span 1;grid-row:${r}/span 1"
+        ondragover="dzOv(event,this)" ondragleave="dzLv(this)" ondrop="dzDp(event,${c},${r})"></div>`;
+    }
+  }
+
+  // Section tiles
+  for(const s of layout){
+    const cls=['st',s.section_key===selectedKey?'sel':'',dragKey===s.section_key?'drag':'',!s.is_active?'st-inactive':''].filter(Boolean).join(' ');
+    const tMap={meal_plan:'Meal Plan',item_grid:'Item Grid',promo:'Promo'};
+    html+=`<div class="${cls}" id="tile_${s.section_key}"
+      draggable="true"
+      style="grid-column:${s.col_start}/span ${Math.min(s.col_span,5-s.col_start)};grid-row:${s.row_start}/span ${s.row_span};background:${s.bg_color};color:${s.text_color};"
+      ondragstart="dStart(event,'${s.section_key}')" ondragend="dEnd(event,'${s.section_key}')"
+      onclick="select('${s.section_key}')">
+      <div class="st-size-tag">${s.col_span}×${s.row_span}</div>
+      <div class="st-type-tag">${tMap[s.section_type]||s.section_type}</div>
+      <div class="st-title">${s.title||'—'}</div>
+      ${s.subtitle?`<div class="st-sub">${s.subtitle}</div>`:''}
+    </div>`;
+  }
+  gc.innerHTML=html;
+  renderPanel();
+}
+
+function select(key){selectedKey=key;render();}
+
+function renderPanel(){
+  const panel=document.getElementById('panel');
+  const s=layout.find(x=>x.section_key===selectedKey);
+  if(!s){panel.innerHTML='<div class="ep-hdr">Properties</div><div class="ep-empty">← คลิก section<br>เพื่อแก้ไข</div>';return;}
+  const f=s.item_filter||{};
+  panel.innerHTML=`
+<div class="ep-hdr">✏️ ${s.title||s.section_key}</div>
+<div class="ep-body">
+  <div class="ep-group">
+    <div class="ep-label">ประเภท</div>
+    <select class="ep-select" onchange="up('section_type',this.value)">
+      ${TYPE_OPTS.map(t=>`<option value="${t.v}"${s.section_type===t.v?' selected':''}>${t.l}</option>`).join('')}
+    </select>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">ขนาด</div>
+    <div class="size-grid">
+      ${SIZES.map(o=>`<div class="size-btn${s.col_span===o.w&&s.row_span===o.h?' on':''}" onclick="upSize(${o.w},${o.h})">${o.k}</div>`).join('')}
+    </div>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">ตำแหน่ง (col, row)</div>
+    <div class="ep-row">
+      <input class="ep-input" type="number" min="1" max="4" value="${s.col_start}" onchange="up('col_start',+this.value)" placeholder="col start">
+      <input class="ep-input" type="number" min="1" max="20" value="${s.row_start}" onchange="up('row_start',+this.value)" placeholder="row start">
+    </div>
+  </div>
+  <hr class="ep-hr">
+  <div class="ep-group">
+    <div class="ep-label">Title / Subtitle</div>
+    <input class="ep-input" value="${s.title||''}" onchange="up('title',this.value)" placeholder="Title" style="margin-bottom:5px">
+    <input class="ep-input" value="${s.subtitle||''}" onchange="up('subtitle',this.value)" placeholder="Subtitle">
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">Background Color</div>
+    <div class="color-row">
+      ${PALETTE.map(c=>`<div class="cp${s.bg_color===c?' on':''}" style="background:${c};${c==='#ffffff'||c==='#F7F8F6'?'border:1px solid #ddd':''}" onclick="up('bg_color','${c}')"></div>`).join('')}
+      <input type="color" value="${s.bg_color}" onchange="up('bg_color',this.value)" style="width:24px;height:24px;padding:0;border:none;border-radius:5px;cursor:pointer;">
+    </div>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">Text Color</div>
+    <div class="color-row">
+      ${['#ffffff','#EBF3EF','#1A1A1A','#1F4D3A','#C9973F'].map(c=>`<div class="cp${s.text_color===c?' on':''}" style="background:${c};border:1.5px solid #ddd" onclick="up('text_color','${c}')"></div>`).join('')}
+      <input type="color" value="${s.text_color}" onchange="up('text_color',this.value)" style="width:24px;height:24px;padding:0;border:none;border-radius:5px;cursor:pointer;">
+    </div>
+  </div>
+  <hr class="ep-hr">
+  <div class="ep-group">
+    <div class="ep-label">Category (item filter)</div>
+    <select class="ep-select" onchange="upFilter('category',this.value)">
+      <option value="">— ทั้งหมด —</option>
+      ${CATS.map(c=>`<option value="${c}"${f.category===c?' selected':''}>${c}</option>`).join('')}
+    </select>
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">จำนวนสูงสุด (item_grid)</div>
+    <input class="ep-input" type="number" min="1" max="20" value="${f.limit||8}" onchange="upFilter('limit',+this.value)">
+  </div>
+  <div class="ep-group">
+    <div class="ep-label">Sort order</div>
+    <input class="ep-input" type="number" value="${s.sort_order||0}" onchange="up('sort_order',+this.value)">
+  </div>
+  <hr class="ep-hr">
+  <div class="ep-toggle">
+    <span style="font-size:12px;font-weight:600">แสดงบนหน้าโฮม</span>
+    <label class="toggle-sw">
+      <input type="checkbox" ${s.is_active?'checked':''} onchange="up('is_active',this.checked)">
+      <span class="toggle-sl"></span>
+    </label>
+  </div>
+  <button class="ep-btn ep-btn-dupe" onclick="dupeSection()">⧉ Duplicate</button>
+  <button class="ep-btn ep-btn-del" onclick="delSection()">🗑 ลบ section นี้</button>
+</div>`;
+}
+
+function up(k,v){const s=layout.find(x=>x.section_key===selectedKey);if(s){s[k]=v;render();}}
+function upSize(w,h){const s=layout.find(x=>x.section_key===selectedKey);if(s){s.col_span=w;s.row_span=h;render();}}
+function upFilter(k,v){const s=layout.find(x=>x.section_key===selectedKey);if(s){s.item_filter={...s.item_filter,[k]:v};render();}}
+function delSection(){if(!selectedKey)return;layout=layout.filter(s=>s.section_key!==selectedKey);selectedKey=null;render();}
+function dupeSection(){
+  const s=layout.find(x=>x.section_key===selectedKey);if(!s)return;
+  const maxRow=Math.max(...layout.map(x=>x.row_start+x.row_span));
+  const newKey='sec_'+Date.now();
+  layout.push({...s,section_key:newKey,row_start:maxRow,sort_order:(s.sort_order||0)+1});
+  selectedKey=newKey;render();
+}
+
+function addSection(type){
+  const maxRow=layout.reduce((m,s)=>Math.max(m,s.row_start+s.row_span),1);
+  const key='sec_'+Date.now();
+  const colors={meal_plan:['#1F4D3A','#EBF3EF'],item_grid:['#ffffff','#1A1A1A'],promo:['#C9973F','#ffffff']};
+  const [bg,tc]=colors[type]||['#EBF3EF','#1F4D3A'];
+  layout.push({section_key:key,section_type:type,col_start:1,row_start:maxRow,col_span:2,row_span:2,title:'Section ใหม่',subtitle:'',bg_color:bg,text_color:tc,item_filter:{},sort_order:999,is_active:true});
+  selectedKey=key;render();
+  document.getElementById('gc').scrollTop=9999;
+}
+
+// ── DRAG & DROP ──────────────────────────────────────────
+function dStart(e,key){
+  dragKey=key;
+  e.dataTransfer.effectAllowed='move';
+  setTimeout(()=>{const t=document.getElementById('tile_'+key);if(t)t.classList.add('drag');},0);
+}
+function dEnd(e,key){
+  dragKey=null;
+  const t=document.getElementById('tile_'+key);if(t)t.classList.remove('drag');
+  document.querySelectorAll('.dz.hover').forEach(d=>d.classList.remove('hover'));
+}
+function dzOv(e,el){e.preventDefault();e.dataTransfer.dropEffect='move';el.classList.add('hover');}
+function dzLv(el){el.classList.remove('hover');}
+function dzDp(e,col,row){
+  e.preventDefault();
+  if(dragKey){
+    const s=layout.find(x=>x.section_key===dragKey);
+    if(s){s.col_start=Math.max(1,Math.min(col,5-s.col_span));s.row_start=Math.max(1,row);}
+    dragKey=null;
+  }
+  document.querySelectorAll('.dz.hover').forEach(d=>d.classList.remove('hover'));
+  render();
+}
+
+// ── SAVE ─────────────────────────────────────────────────
+async function saveLayout(){
+  const sb_=getSB();
+  const el=document.getElementById('saveStatus');
+  el.textContent='กำลังบันทึก...';
+  try{
+    for(let i=0;i<layout.length;i++){
+      const s=layout[i];
+      s.sort_order=s.sort_order||i*10;
+      await sb_.from('home_layout').upsert({...s,updated_at:new Date().toISOString()},{onConflict:'section_key'});
+    }
+    // Hide removed sections
+    const {data:all}=await sb_.from('home_layout').select('section_key');
+    if(all){
+      const active=new Set(layout.map(s=>s.section_key));
+      const gone=all.filter(r=>!active.has(r.section_key));
+      if(gone.length)await sb_.from('home_layout').update({is_active:false}).in('section_key',gone.map(r=>r.section_key));
+    }
+    el.textContent='✅ บันทึกแล้ว';
+    setTimeout(()=>el.textContent='',3000);
+  }catch(err){el.textContent='❌ '+err.message;console.error(err);}
+}
+function previewHome(){window.open('https://under360-system.vercel.app/liff_customer.html','_blank');}
+
+loadLayout();
+</script>
+</body>
+</html>
