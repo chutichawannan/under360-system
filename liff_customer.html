@@ -313,9 +313,9 @@ input,textarea{font-family:inherit}
 body{background:#fff!important}
 
 /* Category pills (replace underline tabs) */
-.ctabs{padding:10px 14px!important;gap:8px!important;border-bottom:none!important;background:#fff!important;box-shadow:0 1px 0 rgba(0,0,0,.06);}
-.ctab{padding:7px 16px!important;border-radius:20px!important;background:#F2F2F2!important;border-bottom:none!important;font-size:13px!important;color:var(--ink)!important;transition:all .15s!important;}
-.ctab.on{background:var(--g)!important;color:#fff!important;border-color:transparent!important;}
+.ctabs{padding:8px 14px!important;gap:8px!important;border-bottom:none!important;background:#fff!important;box-shadow:none!important;border-top:0.5px solid rgba(0,0,0,.06);}
+.ctab{padding:8px 18px!important;border-radius:24px!important;background:#F0F0F0!important;border-bottom:none!important;font-size:14px!important;font-weight:600!important;color:#555!important;transition:all .2s!important;white-space:nowrap!important;}
+.ctab.on{background:var(--g)!important;color:#fff!important;border-color:transparent!important;box-shadow:0 2px 8px rgba(31,77,58,.25)!important;}
 
 /* Item cards: shadow, rounded, no divider */
 .mlist{padding:10px 12px!important;gap:10px!important;}
@@ -358,6 +358,9 @@ body{background:#fff!important}
 
 
 /* ═══ REDESIGN v0.4 — Reference Design ═══ */
+/* Override old grid system — home-grid is now a plain block container */
+#homeGrid,.home-grid{display:block!important;grid-template-columns:unset!important;grid-auto-rows:unset!important;padding:0!important;gap:0!important;}
+
 
 /* Header redesign */
 .hdr{background:#fff!important;border-bottom:0.5px solid rgba(0,0,0,.06);}
@@ -807,9 +810,12 @@ function backToMenu() {
 // ══════════════════════════════════════
 function renderCatTabs() {
   const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
-  el.innerHTML = cats.map(c => `
-    <button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${CAT_LABELS[c]||c}</button>
-  `).join('');
+  const catCounts = {};
+  cats.forEach(c => { catCounts[c] = menuItems.filter(m => m.category === c).length; });
+  el.innerHTML = cats.map(c => {
+    const label = CAT_LABELS[c] || c;
+    return `<button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${label}</button>`;
+  }).join('');
 }
 
 function selectCat(c) {
