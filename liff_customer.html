@@ -430,7 +430,7 @@ body{background:#fff!important}
 .col-scroll::-webkit-scrollbar{display:none;}
 /* Group = viewport - 56px ให้ card ถัดไปโผล่ ~30px (peek effect) */
 #homeGrid .col-scroll{padding-left:0!important;padding-right:0!important;}
-.col-group:first-child{margin-left:16px!important;}   /* reliable left gap on all browsers */
+/* left gap handled via JS inline style on first group */
 .col-group:last-child{margin-right:20px!important;}   /* trailing gap to show next card peek */
 .sec-title-row{padding:16px 16px 8px!important;}
 .col-group{display:flex;flex-shrink:0;scroll-snap-align:start;
@@ -1435,7 +1435,9 @@ function renderHomeGrid() {
     for (var i = 0; i < colCards.length || i === 0; i += 3) {
       var g = colCards.slice(i, i + 3);
       if (!g.length) break;
-      html += '<div class="col-group">';
+      // inline margin-left on first group — CSS :first-child ไม่ reliable บน mobile scroll
+      var groupStyle = (i===0) ? ' style="margin-left:16px"' : '';
+      html += '<div class="col-group"'+groupStyle+'>';
 
       // First card = large
       var c0 = g[0], f0 = c0.item_filter||{};
