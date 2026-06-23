@@ -1430,14 +1430,13 @@ function renderHomeGrid() {
   if (colCards.length) {
     html += '<div class="sec-title-row"><span class="sec-title">'+(window._homeSectionTitle||'Meal Plans')+'</span></div>';
     html += '<div class="col-scroll" id="colScroll">';
+    html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // ← left spacer
 
     // Group into sets of 3 (1 large + 2 small) per swipe page
     for (var i = 0; i < colCards.length || i === 0; i += 3) {
       var g = colCards.slice(i, i + 3);
       if (!g.length) break;
-      // inline margin-left on first group — CSS :first-child ไม่ reliable บน mobile scroll
-      var groupStyle = (i===0) ? ' style="margin-left:16px"' : '';
-      html += '<div class="col-group"'+groupStyle+'>';
+      html += '<div class="col-group">';
 
       // First card = large
       var c0 = g[0], f0 = c0.item_filter||{};
@@ -1460,6 +1459,8 @@ function renderHomeGrid() {
     }
     html += '</div>';
   }
+  html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // right spacer
+  html += '</div>'; // close col-scroll
 
   // ── Item Grid Sections ──
   itemGrids.forEach(function(s) {
