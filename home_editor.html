@@ -45,18 +45,19 @@ input,select,textarea{font-family:inherit;}
 .speed-sel{padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff;}
 
 /* Continuous strip preview */
-.strip-wrap{background:#f0f0f0;border-radius:14px;margin:4px 12px;overflow:hidden;}
+.strip-wrap{background:#f0f0f0;border-radius:14px;margin:4px 12px;overflow-x:auto;overflow-y:hidden;}
 .strip-hint{font-size:11px;color:#aaa;text-align:center;padding:3px;}</p>
 
-.col-scroll-he{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:8px 12px 10px;scrollbar-width:none;cursor:grab;}
+.col-scroll-he{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;flex-direction:row;flex-wrap:nowrap;align-items:flex-start;gap:10px;padding:8px 12px 10px;scrollbar-width:none;cursor:grab;width:max-content;min-width:100%;}
 .col-scroll-he::-webkit-scrollbar{display:none;}
 .col-scroll-he.dragging{cursor:grabbing;user-select:none;}
 /* continuous — ไม่ paginate, กว้างคงที่ให้การ์ดถัดไปโผล่ */
-.col-group-he{display:flex;flex-shrink:0;height:200px;gap:6px;width:304px;}
+.col-group-he{display:flex;flex-direction:row;flex-shrink:0;flex-grow:0;
+  height:200px;gap:6px;width:304px;min-width:304px;max-width:304px;align-items:stretch;}
 .col-card-he{border-radius:14px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
 .col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.col-card-he.lg{flex:3;}
-.col-col-he{flex:2;display:flex;flex-direction:column;gap:6px;}
+.col-card-he.lg{flex:0 0 182px;width:182px;}
+.col-col-he{flex:0 0 116px;width:116px;display:flex;flex-direction:column;gap:6px;}
 .col-card-he.sm{flex:1;}
 .col-card-he.active{border-color:var(--g);}
 .col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
@@ -221,7 +222,7 @@ input,select,textarea{font-family:inherit;}
 const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const COLORS=['#1F4D3A','#2D6B53','#3D8B6E','#5B4E2E','#7C3D1E','#2563EB','#6D28D9','#BE185D'];
-const CAT_LABELS_STORED = JSON.parse(localStorage.getItem('u360_cat_labels')||'{}');
+const CAT_LABELS_STORED = {}; // loaded from Supabase on init
 
 let sb, cards=[], menuItems=[], activeCat=null, activeCardIdx=null;
 let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
@@ -264,7 +265,7 @@ async function loadMenuItems(){
   // Load custom labels from Supabase
   try{
     const {data:ld} = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
-    if(ld?.value){ Object.assign(CAT_LABELS_STORED, ld.value); localStorage.setItem('u360_cat_labels',JSON.stringify(CAT_LABELS_STORED)); }
+    if(ld?.value){ Object.assign(CAT_LABELS_STORED, ld.value); }
   }catch(e){}
   renderCatSection();
 }
@@ -599,7 +600,7 @@ function startAutoScroll(){
   function smoothTick(ts){
     if(!autoScrollOn){ return; }
     if(ts-lastScrollTime > (1000/60)){
-      const el=document.getElementById('colScroll');
+      const el=document.getElementById('colScroll')?.parentElement; // scroll strip-wrap
       if(el){
         el.scrollLeft += SCROLL_PX * (90/autoScrollSpeed);
         if(el.scrollLeft >= el.scrollWidth - el.clientWidth - 5){ el.scrollLeft=0; }
@@ -624,7 +625,7 @@ function updateSpeed(){
 
 // Mouse drag scroll
 function setupDragScroll(){
-  const el=document.getElementById('colScroll');
+  const el=document.getElementById('colScroll')?.parentElement||document.getElementById('colScroll');
   let dragging=false, startX=0, startSL=0;
   el.addEventListener('mousedown',e=>{dragging=true;startX=e.pageX;startSL=el.scrollLeft;el.classList.add('dragging');stopAutoScroll();});
   document.addEventListener('mousemove',e=>{if(!dragging)return;el.scrollLeft=startSL-(e.pageX-startX);});
@@ -679,7 +680,6 @@ const CAT_LABELS={
 let renameSaveTimer=null;
 function renameCat(key,newName){
   CAT_LABELS_STORED[key]=newName;
-  localStorage.setItem('u360_cat_labels',JSON.stringify(CAT_LABELS_STORED));
   // Debounced save to Supabase
   clearTimeout(renameSaveTimer);
   renameSaveTimer=setTimeout(async()=>{
