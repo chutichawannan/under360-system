@@ -60,6 +60,7 @@ input,select,textarea{font-family:inherit;}
 .col-col-he{flex:0 0 116px;width:116px;display:flex;flex-direction:column;gap:6px;}
 .col-card-he.sm{flex:1;}
 .col-card-he.active{border-color:var(--g);}
+.col-card-he.solo{flex:1!important;width:100%!important;} /* large card fills full group when alone */
 .col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
 .col-card-he.empty span{font-size:24px;}
 .col-ov-he{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.04),rgba(0,0,0,.56));}
@@ -169,11 +170,20 @@ input,select,textarea{font-family:inherit;}
 <!-- ═══ SEC 0: COLLAGE ═══ -->
 <div class="sec on" id="sec0">
   <!-- Preview controls -->
-  <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:8px">
+  <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <label style="font-size:12px;font-weight:700;color:var(--ink2);white-space:nowrap">Section Title:</label>
-    <input id="sectionTitle" value="Meal Plans" style="flex:1;border:1px solid var(--brd);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700"
-      placeholder="เช่น Meal Plans, Featured, โปรโมชั่น..."
-      oninput="saveSectionTitle()">
+    <input id="sectionTitle" value="Meal Plans" style="flex:1;min-width:120px;border:1px solid var(--brd);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700"
+      placeholder="เช่น Meal Plans, Featured..." oninput="saveSectionTitle()">
+    <button class="toggle-btn" id="titleScrollBtn" onclick="toggleTitleScroll()"
+      style="white-space:nowrap;font-size:12px;padding:5px 12px;border-radius:14px;border:1.5px solid var(--brd);background:#fff;font-weight:700;color:var(--ink2);">
+      ⏸ Scroll ชื่อ
+    </button>
+    <select id="titleSpeedSel" style="padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff"
+      onchange="updateTitleSpeed()">
+      <option value="20">ช้า</option>
+      <option value="12" selected>ปกติ</option>
+      <option value="6">เร็ว</option>
+    </select>
   </div>
   <div class="preview-label">
     <span>Preview (scroll ←→)</span>
@@ -290,9 +300,10 @@ function renderPreview(){
 
   el.innerHTML = groups.map((g,gi)=>{
     const main=g[0];
+    const alone = g.length===1; // large card with no small cards
     let html='<div class="col-group-he">';
-    html+=renderPrevCard(main, cards.indexOf(main));
-    if(g.length>1){
+    html+=renderPrevCard(main, cards.indexOf(main), alone?'solo':'');
+    if(!alone && g.length>1){
       html+='<div class="col-col-he">';
       g.slice(1).forEach(c=>{ html+=renderPrevCard(c, cards.indexOf(c)); });
       html+='</div>';
@@ -304,12 +315,12 @@ function renderPreview(){
   
 }
 
-function renderPrevCard(c,idx){
+function renderPrevCard(c,idx,extraClass){
   const isLg=c.size==='large';
   const bg=`background:${c.bg_color}`;
   const img=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:'';
   const active=activeCardIdx===idx?' active':'';
-  return `<div class="col-card-he ${isLg?'lg':'sm'}${active}" style="${bg}" onclick="selectCard(${idx})">
+  return `<div class="col-card-he ${isLg?'lg':'sm'}${active}${extraClass?' '+extraClass:''}" style="${bg}" onclick="selectCard(${idx})">
     ${img}
     <div class="col-ov-he"></div>
     <div class="col-body-he">
@@ -750,8 +761,9 @@ async function saveAll(){
       await sb.from('home_layout').upsert({
         section_key:c.id, section_type:c.size==='large'?'meal_plan':'promo',
         col_start:1,row_start:i+1, col_span:c.size==='large'?4:2, row_span:c.size==='large'?4:2,
-        title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image,
-        text_color:'#fff', item_filter:c.link_cat?{category:c.link_cat}:{},
+        title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image||'',
+        text_color:'#fff',
+        item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}),
         sort_order:i, is_active:true, updated_at:new Date().toISOString()
       },{onConflict:'section_key'});
     }

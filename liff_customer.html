@@ -1336,11 +1336,10 @@ const DEFAULT_HOME = [
 
 async function loadHomeLayout() {
   try {
-    var sb_ = getSB ? getSB() : sb;
-    if (!sb_) { homeLayout = DEFAULT_HOME; renderHomeGrid(); return; }
-    var r = await sb_.from('home_layout').select('*').eq('is_active',true).order('sort_order');
+    if (!sb) { homeLayout = DEFAULT_HOME; renderHomeGrid(); return; }
+    var r = await sb.from('home_layout').select('*').eq('is_active',true).order('sort_order');
     homeLayout = (r.data && r.data.length) ? r.data : DEFAULT_HOME;
-  } catch(e) { homeLayout = DEFAULT_HOME; }
+  } catch(e) { console.warn('loadHomeLayout failed',e); homeLayout = DEFAULT_HOME; }
   renderHomeGrid();
 }
 
