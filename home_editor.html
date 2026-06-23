@@ -44,18 +44,15 @@ input,select,textarea{font-family:inherit;}
 .toggle-btn.on{background:var(--g);color:#fff;border-color:var(--g);}
 .speed-sel{padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff;}
 
-/* Phone frame preview */
-.phone-frame{max-width:390px;margin:0 auto 0;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);border:2px solid #ddd;position:relative;}
-.phone-frame-wrap{padding:0 12px;}
-.preview-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 4px;}
-.prev-nav-btn{width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid var(--brd);font-size:16px;color:var(--ink2);display:flex;align-items:center;justify-content:center;}
-.prev-nav-btn:disabled{opacity:.3;}
-.prev-page-info{font-size:12px;color:var(--ink2);font-weight:600;min-width:40px;text-align:center;}
+/* Continuous strip preview */
+.strip-wrap{background:#f0f0f0;border-radius:14px;margin:4px 12px;overflow:hidden;}
+.strip-hint{font-size:11px;color:#aaa;text-align:center;padding:3px;}</p>
 
-.col-scroll-he{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:4px 12px 10px;scrollbar-width:none;cursor:grab;}
+.col-scroll-he{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:8px 12px 10px;scrollbar-width:none;cursor:grab;}
 .col-scroll-he::-webkit-scrollbar{display:none;}
 .col-scroll-he.dragging{cursor:grabbing;user-select:none;}
-.col-group-he{display:flex;min-width:calc(min(100vw, 390px) - 24px);width:calc(min(100vw, 390px) - 24px);height:210px;gap:6px;scroll-snap-align:start;flex-shrink:0;}
+/* continuous — ไม่ paginate, กว้างคงที่ให้การ์ดถัดไปโผล่ */
+.col-group-he{display:flex;flex-shrink:0;height:200px;gap:6px;width:304px;}
 .col-card-he{border-radius:14px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
 .col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .col-card-he.lg{flex:3;}
@@ -158,6 +155,7 @@ input,select,textarea{font-family:inherit;}
 <div class="hdr">
   <button class="btn-back" onclick="history.back()">←</button>
   <div class="hdr-title">🏠 Home Editor</div>
+  <a href="/liff_customer.html" target="_blank" style="padding:7px 12px;border-radius:16px;border:1.5px solid var(--g);color:var(--g);font-size:12px;font-weight:700;text-decoration:none;white-space:nowrap;">👁 Preview</a>
   <button class="btn-save" onclick="saveAll()">☁ บันทึก</button>
 </div>
 <div class="toast-bar" id="toast"></div>
@@ -170,6 +168,12 @@ input,select,textarea{font-family:inherit;}
 <!-- ═══ SEC 0: COLLAGE ═══ -->
 <div class="sec on" id="sec0">
   <!-- Preview controls -->
+  <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:8px">
+    <label style="font-size:12px;font-weight:700;color:var(--ink2);white-space:nowrap">Section Title:</label>
+    <input id="sectionTitle" value="Meal Plans" style="flex:1;border:1px solid var(--brd);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700"
+      placeholder="เช่น Meal Plans, Featured, โปรโมชั่น..."
+      oninput="saveSectionTitle()">
+  </div>
   <div class="preview-label">
     <span>Preview (scroll ←→)</span>
     <div class="auto-ctrl">
@@ -182,20 +186,12 @@ input,select,textarea{font-family:inherit;}
     </div>
   </div>
 
-  <!-- Phone frame -->
-  <div class="phone-frame-wrap">
-    <div class="phone-frame">
-      <div class="col-scroll-he" id="colScroll">
-        <div class="empty-txt"><div class="spin"></div></div>
-      </div>
+  <!-- Continuous strip -->
+  <div class="strip-wrap">
+    <div class="col-scroll-he" id="colScroll">
+      <div class="empty-txt"><div class="spin"></div></div>
     </div>
-  </div>
-
-  <!-- Nav buttons -->
-  <div class="preview-nav">
-    <button class="prev-nav-btn" id="prevBtn" onclick="navScroll(-1)" disabled>‹</button>
-    <span class="prev-page-info" id="pageInfo">— / —</span>
-    <button class="prev-nav-btn" id="nextBtn" onclick="navScroll(1)">›</button>
+    <div class="strip-hint">← เลื่อนดูทุก card →</div>
   </div>
 
   <!-- Card list -->
@@ -234,6 +230,7 @@ let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
   await Promise.all([loadCards(), loadMenuItems()]);
+  try{ const {data:td}=await sb.from('kitchen_data').select('value').eq('key','home_section_title').maybeSingle(); if(td?.value) document.getElementById('sectionTitle').value=td.value; }catch(e){}
   setupDragScroll();
   startAutoScroll();
 };
@@ -303,7 +300,7 @@ function renderPreview(){
     return html;
   }).join('');
 
-  updateNavBtns(groups.length);
+  
 }
 
 function renderPrevCard(c,idx){
@@ -317,7 +314,7 @@ function renderPrevCard(c,idx){
     <div class="col-body-he">
       <div class="col-title-he${isLg?'':' sm'}">${esc(c.title)}</div>
       <div class="col-sub-he">${esc(c.subtitle)}</div>
-      ${isLg?'<span class="col-cta-he">ดูเมนู →</span>':''}
+      ${isLg&&c.show_cta!==false?`<span class="col-cta-he">${esc(c.cta_text||'ดูเมนู →')}</span>`:''}
     </div>
     <div class="sel-indicator">✓</div>
   </div>`;
@@ -405,7 +402,11 @@ function renderEditor(){
           <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp" onchange="handleImageUpload(event)" onclick="event.stopPropagation()">
           <div class="img-upload-icon">📁</div>
           <div class="img-upload-txt">อัพโหลดรูป</div>
-          <div class="img-upload-hint">PNG/JPEG/WebP · แนะนำ: 1200×800px · ไม่เกิน 1MB<br>PNG โปร่งใสได้ (พื้นหลังจะเป็นสีที่เลือกด้านล่าง)</div>
+          <div class="img-upload-hint" id="uploadHint">
+            PNG/JPEG/WebP · ไม่เกิน 1MB · PNG โปร่งใสได้<br>
+            <b>Card ใหญ่:</b> แนะนำ 800×800px (1:1) หรือ 1000×900px<br>
+            <b>Card เล็ก:</b> แนะนำ 800×640px (5:4 แนวนอน)
+          </div>
         </div>
         <div class="upload-progress" id="uploadProg"><div class="bar" id="uploadBar" style="width:0"></div></div>
         <div class="img-preview-box" id="imgPrevBox" ${c.bg_image?'style="display:block"':''}>
@@ -427,6 +428,15 @@ function renderEditor(){
         </div>
       </div>
 
+      ${c.size==='large'?`
+      <div class="field">
+        <label>ปุ่ม CTA (การ์ดใหญ่)</label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer">
+          <input type="checkbox" id="c-show-cta" ${c.show_cta!==false?'checked':''} onchange="liveUpdate()">
+          <span style="font-size:14px">แสดงปุ่ม</span>
+        </label>
+        <input id="c-cta-text" value="${esc(c.cta_text||'ดูเมนู →')}" placeholder="ข้อความปุ่ม เช่น ดูเมนู →" oninput="liveUpdate()" style="${c.show_cta===false?'opacity:.4':''}">
+      </div>`:''}
       <div class="field">
         <label>ลิ้งไปที่</label>
         <select id="c-cat" onchange="liveUpdate()">
@@ -542,6 +552,10 @@ function liveUpdate(){
   c.link_cat=document.getElementById('c-cat').value;
   const url=(document.getElementById('c-img-url').value||'').trim();
   if(url) c.bg_image=url;
+  const ctaEl=document.getElementById('c-show-cta');
+  if(ctaEl) c.show_cta=ctaEl.checked;
+  const ctaTxtEl=document.getElementById('c-cta-text');
+  if(ctaTxtEl) c.cta_text=ctaTxtEl.value;
   renderAll();
 }
 
@@ -574,45 +588,29 @@ function moveCard(dir){
   renderAll(); renderEditor();
 }
 
-// ── NAVIGATION ──
-function navScroll(dir){
-  const el=document.getElementById('colScroll');
-  const group=el.querySelector('.col-group-he');
-  if(!group) return;
-  const gw=group.offsetWidth+10;
-  el.scrollBy({left:dir*gw,behavior:'smooth'});
-  setTimeout(()=>updateNavBtns(),400);
-}
-
-function updateNavBtns(totalGroups){
-  const el=document.getElementById('colScroll');
-  const group=el.querySelector('.col-group-he');
-  if(!group) return;
-  const gw=group.offsetWidth+10;
-  const page=Math.round(el.scrollLeft/gw);
-  const total=totalGroups||Math.ceil(cards.length/3)||1;
-  document.getElementById('pageInfo').textContent=`${page+1} / ${total}`;
-  document.getElementById('prevBtn').disabled=page===0;
-  document.getElementById('nextBtn').disabled=page>=total-1;
-  currentPage=page;
-}
+// Navigation handled by native scroll
 
 // Auto-scroll
 function startAutoScroll(){
   stopAutoScroll();
   if(!autoScrollOn) return;
-  autoTimer=setInterval(()=>{
-    const el=document.getElementById('colScroll');
-    const group=el.querySelector('.col-group-he');
-    if(!group) return;
-    const gw=group.offsetWidth+10;
-    const total=Math.ceil(cards.length/3)||1;
-    if(el.scrollLeft+gw*1.2 >= gw*total){ el.scrollTo({left:0,behavior:'smooth'}); }
-    else { el.scrollBy({left:gw,behavior:'smooth'}); }
-    setTimeout(updateNavBtns,400);
-  }, autoScrollSpeed*1000);
+  const SCROLL_PX = 1;
+  let lastScrollTime = 0;
+  function smoothTick(ts){
+    if(!autoScrollOn){ return; }
+    if(ts-lastScrollTime > (1000/60)){
+      const el=document.getElementById('colScroll');
+      if(el){
+        el.scrollLeft += SCROLL_PX * (90/autoScrollSpeed);
+        if(el.scrollLeft >= el.scrollWidth - el.clientWidth - 5){ el.scrollLeft=0; }
+      }
+      lastScrollTime=ts;
+    }
+    autoTimer=requestAnimationFrame(smoothTick);
+  }
+  autoTimer=requestAnimationFrame(smoothTick);
 }
-function stopAutoScroll(){ if(autoTimer){clearInterval(autoTimer);autoTimer=null;} }
+function stopAutoScroll(){ if(autoTimer){cancelAnimationFrame(autoTimer);autoTimer=null;} }
 function toggleAuto(){
   autoScrollOn=!autoScrollOn;
   document.getElementById('autoBtn').textContent=autoScrollOn?'⏸ หยุด':'▶ ออโต้';
@@ -636,8 +634,8 @@ function setupDragScroll(){
     setTimeout(updateNavBtns,100);
     if(autoScrollOn) startAutoScroll();
   });
-  el.addEventListener('scroll',()=>updateNavBtns());
-  el.addEventListener('touchend',()=>setTimeout(updateNavBtns,300));
+  
+  
 }
 
 // ── CATEGORY SECTION ──
@@ -737,6 +735,11 @@ function setupItemDrag(){
 }
 
 // ── SAVE ──
+async function saveSectionTitle(){
+  const title = document.getElementById('sectionTitle').value;
+  try{ await sb.from('kitchen_data').upsert({key:'home_section_title',value:title,updated_at:new Date().toISOString()},{onConflict:'key'}); }catch(e){}
+}
+
 async function saveAll(){
   showToast('กำลังบันทึก...','info');
   let ok=true;
