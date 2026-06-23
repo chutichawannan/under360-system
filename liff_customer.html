@@ -337,8 +337,7 @@ body{background:#fff!important}
 .hg-ic-name{font-size:11px!important;height:30px!important;}
 .hg-ic-add{width:28px!important;height:28px!important;font-size:18px!important;}
 
-/* s-menu background */
-#s-menu{background:#fff!important;}
+/* s-menu outer bg: light grey for gaps between sections */
 
 /* Section divider: subtle */
 .divider{background:#F8F8F8!important;height:6px!important;}
@@ -430,10 +429,12 @@ body{background:#fff!important}
 .col-scroll{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
 .col-scroll::-webkit-scrollbar{display:none;}
 /* Group = viewport - 56px ให้ card ถัดไปโผล่ ~30px (peek effect) */
-.col-scroll{padding-left:16px!important;padding-right:0!important;}
+#homeGrid .col-scroll{padding-left:16px!important;padding-right:0!important;}
+.sec-title-row{padding:16px 16px 8px!important;}
 .col-group{display:flex;flex-shrink:0;scroll-snap-align:start;
-  width:calc(min(100vw,390px) - 56px);
-  min-width:calc(min(100vw,390px) - 56px);
+  /* clamp: ไม่เล็กกว่า 300px, ไม่ใหญ่กว่า 334px */
+  width:clamp(300px,calc(100vw - 56px),334px);
+  min-width:clamp(300px,calc(100vw - 56px),334px);
   height:224px;gap:8px;}
 .col-card{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;}
 .col-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
@@ -481,6 +482,59 @@ body{background:#fff!important}
 .md-price-row{display:flex;align-items:center;justify-content:space-between;}
 .md-price{font-size:22px;font-weight:800;color:#C9573F;}
 .md-add-btn{background:var(--g);color:#fff;border:none;padding:12px 28px;border-radius:24px;font-size:15px;font-weight:700;}
+
+
+/* ── Bottom section: pure white, matching ref exactly ── */
+/* Grey background is only for gaps ABOVE the menu section */
+#ctabsInner,
+#mlist,
+.ctabs{background:#fff!important;}
+
+/* Remove card shadow/radius from menu list - straight rows like ref */
+.mlist-v2{
+  background:#fff!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  margin:0!important;
+  border-top:0.5px solid rgba(0,0,0,.06);
+}
+
+/* Each row: clean white, subtle separator */
+.mi-v2{
+  background:#fff!important;
+  border-bottom:0.5px solid rgba(0,0,0,.06)!important;
+  padding:14px 16px!important;
+}
+.mi-v2:last-child{border-bottom:none!important;}
+
+/* ig-wrap: full white flush section */
+.ig-wrap{
+  margin:0!important;
+  background:#fff;
+  padding:0;
+}
+.ig-hdr{
+  padding:18px 16px 10px!important;
+  background:#fff;
+}
+.ig-ttl{font-size:18px!important;font-weight:800!important;}
+
+/* Section between collage and menu: grey gap */
+#homeGrid ~ .divider{background:#F4F4F4!important;height:8px!important;margin:0!important;}
+/* Category tabs: white, sticky */
+.ctabs{
+  border-top:0.5px solid rgba(0,0,0,.06)!important;
+  border-bottom:0.5px solid rgba(0,0,0,.06)!important;
+  padding:10px 16px!important;
+}
+/* Food photo: slightly bigger, rounded square */
+.mi-v2-photo{width:66px!important;height:66px!important;border-radius:12px!important;}
+.mi-v2-ph{width:66px!important;height:66px!important;border-radius:12px!important;}
+/* Price: match ref (฿ orange-red, bold) */
+.mi-v2-price{font-size:16px!important;font-weight:800!important;color:#C9573F!important;}
+/* Tags: match ref exactly */
+.mi-v2-kcal{background:#F5F5F5!important;color:#666!important;font-size:11px!important;}
+.mi-v2-pro{background:#EEF7EE!important;color:#2D6B53!important;font-size:11px!important;}
 
 </style>
 </head>
@@ -719,9 +773,11 @@ const CAT_LABELS = {
   meal_lc:      '🥗 LC Plan',
   no_regular:   '🍱 ข้าวกล่อง',
   no_special:   '⭐ สัปดาห์นี้',
+  weekly:       '⭐ สัปดาห์นี้',
   pack_regular: '📦 แพคกับข้าว',
   pack_special: '📦 แพคพิเศษ',
   trend:        '🌟 เทรนด์',
+  uncategorized:'📋 อื่นๆ',
 };
 // Custom labels from HE (overrides CAT_LABELS when set)
 let customCatLabels = JSON.parse(localStorage.getItem('u360_cat_labels')||'{}');
@@ -775,10 +831,14 @@ async function init() {
     const { data } = await sb.from('menu_items').select('*').eq('is_available', true).order('name');
     menuItems = data || [];
     // extract unique cats in display order
-    const catOrder = ['meal_hp','meal_lc','no_regular','no_special','pack_regular','pack_special','trend'];
-    const found = [...new Set(menuItems.map(m => m.category))];
-    cats = catOrder.filter(c => found.includes(c));
-    activeCat = cats[0] || 'meal_hp';
+    // ใช้ทุก category ที่มีใน data — ไม่ hardcode
+    const found = [...new Set(menuItems.map(m => m.category).filter(Boolean))];
+    // เรียงตาม preferred order ก่อน แล้วต่อด้วยอันที่เหลือ
+    const preferred = ['meal_hp','meal_lc','no_regular','no_special','pack_regular','pack_special','trend'];
+    const ordered = preferred.filter(c => found.includes(c));
+    const extras = found.filter(c => !preferred.includes(c));
+    cats = [...ordered, ...extras];
+    activeCat = cats[0] || '';
   } catch(e) { console.warn('Menu load failed', e); menuItems = []; cats = []; }
   // Load custom category labels (from HE rename)
   // Load section title
@@ -874,10 +934,18 @@ function backToMenu() {
 // ══════════════════════════════════════
 function renderCatTabs() {
   const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
+  const catCounts = {};
+  cats.forEach(c => { catCounts[c] = menuItems.filter(m => m.category === c).length; });
   el.innerHTML = cats.map(c => {
     const label = getCatLabel(c);
+    const cnt = catCounts[c] || 0;
     return `<button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${label}</button>`;
   }).join('');
+  // scroll active tab into view
+  setTimeout(()=>{
+    const active = el.querySelector('.ctab.on');
+    if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }, 50);
 }
 
 function selectCat(c) {

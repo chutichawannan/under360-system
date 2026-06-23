@@ -64,6 +64,7 @@ input,select,textarea{font-family:inherit;}
 .col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
 .col-card-he.empty span{font-size:24px;}
 .col-ov-he{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.04),rgba(0,0,0,.56));}
+.col-ov-he.full-ov{background:rgba(0,0,0,.55)!important;}
 .col-body-he{position:absolute;bottom:0;left:0;right:0;padding:10px;}
 .col-title-he{font-size:14px;font-weight:800;color:#fff;line-height:1.2;}
 .col-title-he.sm{font-size:11px;}
@@ -259,7 +260,7 @@ async function loadCards(){
     }));
   }catch(e){
     cards=[
-      {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'large',link_cat:'meal_hp',sort_order:0},
+      {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'large',link_cat:'meal_hp',sort_order:0,overlay:'gradient'},
       {id:'meal_lc',title:'Low Carb',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'meal_lc',sort_order:1},
       {id:'weekly',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'small',link_cat:'__anchor__',sort_order:2}
     ];
@@ -450,6 +451,14 @@ function renderEditor(){
         <input id="c-cta-text" value="${esc(c.cta_text||'ดูเมนู →')}" placeholder="ข้อความปุ่ม เช่น ดูเมนู →" oninput="liveUpdate()" style="${c.show_cta===false?'opacity:.4':''}">
       </div>`:''}
       <div class="field">
+        <label>Overlay บนรูป</label>
+        <div class="size-btns">
+          <button class="size-btn${c.overlay!=='full'?' on':''}" onclick="setOverlay('gradient')">🌅 Gradient ด้านล่าง</button>
+          <button class="size-btn${c.overlay==='full'?' on':''}" onclick="setOverlay('full')">⬛ ทับรูปทั้งหมด</button>
+        </div>
+        <div class="field-hint">Gradient = เห็นรูปชัด · ทับทั้งหมด = อ่านตัวหนังสือง่าย</div>
+      </div>
+      <div class="field">
         <label>ลิ้งไปที่</label>
         <select id="c-cat" onchange="liveUpdate()">
           <option value="">— ไม่ลิ้งไปไหน —</option>
@@ -564,6 +573,7 @@ function liveUpdate(){
   c.link_cat=document.getElementById('c-cat').value;
   const url=(document.getElementById('c-img-url').value||'').trim();
   if(url) c.bg_image=url;
+  // overlay handled by setOverlay button
   const ctaEl=document.getElementById('c-show-cta');
   if(ctaEl) c.show_cta=ctaEl.checked;
   const ctaTxtEl=document.getElementById('c-cta-text');
@@ -572,6 +582,7 @@ function liveUpdate(){
 }
 
 function setSize(sz){ if(activeCardIdx===null)return; cards[activeCardIdx].size=sz; renderAll(); renderEditor(); }
+function setOverlay(type){ if(activeCardIdx===null)return; cards[activeCardIdx].overlay=type; renderAll(); renderEditor(); }
 function setColor(col){ if(activeCardIdx===null)return; cards[activeCardIdx].bg_color=col; document.getElementById('c-color').value=col; renderAll(); renderEditor(); }
 
 function addCard(){
@@ -763,7 +774,7 @@ async function saveAll(){
         col_start:1,row_start:i+1, col_span:c.size==='large'?4:2, row_span:c.size==='large'?4:2,
         title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image||'',
         text_color:'#fff',
-        item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}),
+        item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}, {overlay:c.overlay||'gradient'}),
         sort_order:i, is_active:true, updated_at:new Date().toISOString()
       },{onConflict:'section_key'});
     }
