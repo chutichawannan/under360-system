@@ -672,6 +672,9 @@ const CAT_LABELS = {
   pack_special: '📦 แพคพิเศษ',
   trend:        '🌟 เทรนด์',
 };
+// Custom labels from HE (overrides CAT_LABELS when set)
+let customCatLabels = JSON.parse(localStorage.getItem('u360_cat_labels')||'{}');
+function getCatLabel(cat){ return customCatLabels[cat] || CAT_LABELS[cat] || cat; }
 
 const STATUS = {
   confirmed: { t:'ยืนยันแล้ว',   c:'s-conf' },
@@ -726,6 +729,11 @@ async function init() {
     cats = catOrder.filter(c => found.includes(c));
     activeCat = cats[0] || 'meal_hp';
   } catch(e) { console.warn('Menu load failed', e); menuItems = []; cats = []; }
+  // Load custom category labels (from HE rename)
+  try {
+    const { data: ld } = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
+    if (ld?.value) { customCatLabels = {...ld.value}; localStorage.setItem('u360_cat_labels', JSON.stringify(customCatLabels)); }
+  } catch(e) {}
 
   // Update profile button
   if (lineProfile?.pictureUrl) {
@@ -810,10 +818,8 @@ function backToMenu() {
 // ══════════════════════════════════════
 function renderCatTabs() {
   const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
-  const catCounts = {};
-  cats.forEach(c => { catCounts[c] = menuItems.filter(m => m.category === c).length; });
   el.innerHTML = cats.map(c => {
-    const label = CAT_LABELS[c] || c;
+    const label = getCatLabel(c);
     return `<button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${label}</button>`;
   }).join('');
 }

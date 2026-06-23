@@ -8,430 +8,768 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{
-  --g:#1F4D3A; --gl:#EBF3EF; --ink:#1A1A1A; --ink2:#666; --bg:#F8F8F8;
-  --brd:rgba(0,0,0,.1); --r:14px; --shadow:0 2px 12px rgba(0,0,0,.08);
-}
+:root{--g:#1F4D3A;--gl:#EBF3EF;--ink:#1A1A1A;--ink2:#666;--bg:#F4F4F4;--brd:rgba(0,0,0,.1);--r:14px;--sh:0 2px 12px rgba(0,0,0,.08);}
 body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
-button{font-family:inherit;cursor:pointer;}
+button{font-family:inherit;cursor:pointer;border:none;}
+input,select,textarea{font-family:inherit;}
 
-/* ── Header ── */
-.hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:0.5px solid var(--brd);position:sticky;top:0;z-index:100;}
-.hdr-title{font-size:16px;font-weight:800;color:var(--g);flex:1;}
-.hdr-save{background:var(--g);color:#fff;border:none;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;}
-.hdr-back{width:36px;height:36px;border:none;background:none;font-size:20px;color:var(--ink2);display:flex;align-items:center;justify-content:center;}
-.status-bar{padding:6px 16px;font-size:12px;text-align:center;display:none;}
-.status-bar.show{display:block;}
-.status-bar.ok{background:#D1FAE5;color:#065F46;}
-.status-bar.err{background:#FEE2E2;color:#B91C1C;}
+/* Header */
+.hdr{display:flex;align-items:center;gap:10px;padding:12px 16px;background:#fff;border-bottom:0.5px solid var(--brd);position:sticky;top:0;z-index:200;}
+.hdr-title{font-size:15px;font-weight:800;color:var(--g);flex:1;}
+.btn-save{background:var(--g);color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:700;}
+.btn-back{width:34px;height:34px;background:none;font-size:18px;color:var(--ink2);}
 
-/* ── Section tabs ── */
-.sec-tabs{display:flex;background:#fff;border-bottom:0.5px solid var(--brd);}
-.sec-tab{flex:1;padding:12px 0;font-size:13px;font-weight:600;border:none;background:none;color:var(--ink2);border-bottom:2.5px solid transparent;}
+/* Status */
+.toast-bar{padding:8px 16px;font-size:13px;text-align:center;display:none;}
+.toast-bar.show{display:block;}
+.toast-bar.ok{background:#D1FAE5;color:#065F46;}
+.toast-bar.err{background:#FEE2E2;color:#B91C1C;}
+.toast-bar.info{background:#EFF6FF;color:#1E40AF;}
+
+/* Section tabs */
+.sec-tabs{display:flex;background:#fff;border-bottom:0.5px solid var(--brd);overflow-x:auto;scrollbar-width:none;}
+.sec-tabs::-webkit-scrollbar{display:none;}
+.sec-tab{flex:1;padding:11px 8px;font-size:13px;font-weight:600;background:none;color:var(--ink2);border-bottom:2.5px solid transparent;white-space:nowrap;min-width:0;}
 .sec-tab.on{color:var(--g);border-bottom-color:var(--g);}
 
-/* ══ SECTION 1: Collage Editor ══ */
-.sec{display:none;padding:0 0 80px;}
+/* Sections */
+.sec{display:none;padding-bottom:90px;}
 .sec.on{display:block;}
 
-/* Preview strip */
-.preview-label{padding:14px 16px 8px;font-size:13px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;}
-.col-preview{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
-.col-preview::-webkit-scrollbar{display:none;}
-.col-group-preview{display:flex;min-width:calc(100vw - 32px);height:220px;gap:8px;scroll-snap-align:start;flex-shrink:0;}
-.col-card-prev{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
-.col-card-prev.lg{flex:3;}
-.col-card-prev.sm{flex:1;}
-.col-card-prev.active{border-color:var(--g);}
-.col-card-prev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.col-ov-p{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.05),rgba(0,0,0,.58));}
-.col-body-p{position:absolute;bottom:0;left:0;right:0;padding:12px;}
-.col-title-p{font-size:15px;font-weight:800;color:#fff;}
-.col-title-p.sm{font-size:12px;}
-.col-sub-p{font-size:10px;color:rgba(255,255,255,.8);margin-top:1px;}
-.col-cta-p{display:inline-block;margin-top:6px;padding:4px 12px;border:1.5px solid rgba(255,255,255,.7);border-radius:20px;color:#fff;font-size:11px;font-weight:600;}
-.col-card-prev .add-card-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;background:#F2F2F2;color:#aaa;font-size:12px;}
-.col-card-prev .add-card-btn span{font-size:28px;}
+/* ─── COLLAGE SECTION ─── */
+.preview-label{display:flex;align-items:center;gap:8px;padding:12px 16px 8px;}
+.preview-label span{font-size:12px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;flex:1;}
+.auto-ctrl{display:flex;align-items:center;gap:6px;}
+.toggle-btn{padding:5px 12px;border-radius:14px;border:1.5px solid var(--brd);background:#fff;font-size:12px;font-weight:700;color:var(--ink2);}
+.toggle-btn.on{background:var(--g);color:#fff;border-color:var(--g);}
+.speed-sel{padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff;}
 
-/* Right column for preview */
-.col-col-prev{flex:2;display:flex;flex-direction:column;gap:8px;}
+/* Phone frame preview */
+.phone-frame{max-width:390px;margin:0 auto 0;background:#fff;border-radius:24px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,.18);border:2px solid #ddd;position:relative;}
+.phone-frame-wrap{padding:0 12px;}
+.preview-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:8px 0 4px;}
+.prev-nav-btn{width:32px;height:32px;border-radius:50%;background:#fff;border:1.5px solid var(--brd);font-size:16px;color:var(--ink2);display:flex;align-items:center;justify-content:center;}
+.prev-nav-btn:disabled{opacity:.3;}
+.prev-page-info{font-size:12px;color:var(--ink2);font-weight:600;min-width:40px;text-align:center;}
+
+.col-scroll-he{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:4px 12px 10px;scrollbar-width:none;cursor:grab;}
+.col-scroll-he::-webkit-scrollbar{display:none;}
+.col-scroll-he.dragging{cursor:grabbing;user-select:none;}
+.col-group-he{display:flex;min-width:calc(min(100vw, 390px) - 24px);width:calc(min(100vw, 390px) - 24px);height:210px;gap:6px;scroll-snap-align:start;flex-shrink:0;}
+.col-card-he{border-radius:14px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
+.col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.col-card-he.lg{flex:3;}
+.col-col-he{flex:2;display:flex;flex-direction:column;gap:6px;}
+.col-card-he.sm{flex:1;}
+.col-card-he.active{border-color:var(--g);}
+.col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
+.col-card-he.empty span{font-size:24px;}
+.col-ov-he{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.04),rgba(0,0,0,.56));}
+.col-body-he{position:absolute;bottom:0;left:0;right:0;padding:10px;}
+.col-title-he{font-size:14px;font-weight:800;color:#fff;line-height:1.2;}
+.col-title-he.sm{font-size:11px;}
+.col-sub-he{font-size:10px;color:rgba(255,255,255,.8);}
+.col-cta-he{display:inline-block;margin-top:5px;padding:4px 10px;border:1.5px solid rgba(255,255,255,.7);border-radius:16px;color:#fff;font-size:10px;font-weight:600;}
+.sel-indicator{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:var(--g);color:#fff;font-size:12px;display:none;align-items:center;justify-content:center;font-weight:800;}
+.col-card-he.active .sel-indicator{display:flex;}
+
+/* Card list (scroll to select) */
+.card-list{padding:10px 12px;display:flex;flex-direction:column;gap:6px;}
+.card-list-item{background:#fff;border-radius:10px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:1.5px solid transparent;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.card-list-item.active{border-color:var(--g);background:var(--gl);}
+.card-list-thumb{width:46px;height:34px;border-radius:7px;overflow:hidden;flex-shrink:0;}
+.card-list-thumb img{width:100%;height:100%;object-fit:cover;}
+.card-list-thumb .thumb-bg{width:100%;height:100%;}
+.card-list-info{flex:1;min-width:0;}
+.card-list-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.card-list-sz{font-size:11px;color:var(--ink2);margin-top:1px;}
+.card-drag{color:#ccc;font-size:18px;cursor:grab;}
+.card-del-btn{width:28px;height:28px;border-radius:50%;background:#FEE2E2;color:#B91C1C;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.add-card-btn{display:flex;align-items:center;justify-content:center;gap:8px;padding:12px;border:1.5px dashed var(--g);border-radius:10px;background:var(--gl);color:var(--g);font-size:13px;font-weight:700;width:100%;}
 
 /* Card editor panel */
-.card-editor{background:#fff;margin:12px 16px;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);}
-.card-editor-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
-.card-editor-del{width:32px;height:32px;border-radius:50%;background:#FEE2E2;color:#B91C1C;border:none;font-size:16px;display:flex;align-items:center;justify-content:center;}
-.field{margin-bottom:12px;}
-.field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;}
-.field input,.field select,.field textarea{width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
-.field input:focus,.field select:focus{outline:none;border-color:var(--g);}
+.card-edit-panel{background:#fff;margin:0 12px 8px;border-radius:14px;overflow:hidden;box-shadow:var(--sh);}
+.cep-hdr{padding:12px 14px;background:var(--gl);display:flex;align-items:center;gap:8px;font-size:14px;font-weight:700;color:var(--g);}
+.cep-body{padding:14px;}
+.field{margin-bottom:13px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:12px;font-weight:700;color:var(--ink2);margin-bottom:5px;text-transform:uppercase;letter-spacing:.04em;}
+.field input,.field select{width:100%;border:1px solid var(--brd);border-radius:9px;padding:10px 12px;font-size:14px;background:#fff;color:var(--ink);}
+.field input:focus,.field select:focus{outline:none;border-color:var(--g);box-shadow:0 0 0 3px rgba(31,77,58,.1);}
 .size-btns{display:flex;gap:8px;}
-.size-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--brd);background:#fff;font-size:13px;font-weight:600;color:var(--ink2);}
-.size-btn.on{background:var(--gl);border-color:var(--g);color:var(--g);}
-.img-preview{width:100%;height:80px;border-radius:8px;object-fit:cover;margin-top:6px;display:none;}
-.add-card-row{display:flex;justify-content:center;padding:12px 16px;}
-.add-card-btn-main{display:flex;align-items:center;gap:8px;background:var(--gl);color:var(--g);border:1.5px dashed var(--g);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;}
+.size-btn{flex:1;padding:10px;border-radius:9px;border:1.5px solid var(--brd);background:#fff;font-size:13px;font-weight:700;color:var(--ink2);text-align:center;}
+.size-btn.on{background:var(--g);border-color:var(--g);color:#fff;}
+.field-hint{font-size:11px;color:#888;margin-top:4px;}
 
-/* ══ SECTION 2: Category editor ══ */
-.cat-tab-bar{overflow-x:auto;display:flex;gap:6px;padding:12px 16px;scrollbar-width:none;background:#fff;border-bottom:0.5px solid var(--brd);}
-.cat-tab-bar::-webkit-scrollbar{display:none;}
-.cat-btn{padding:7px 16px;border-radius:20px;border:none;background:#F2F2F2;color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
-.cat-btn.on{background:var(--g);color:#fff;}
-.cat-count{font-size:11px;opacity:.8;margin-left:4px;}
+/* Image upload */
+.img-upload-area{border:1.5px dashed var(--brd);border-radius:10px;padding:14px;text-align:center;cursor:pointer;background:#FAFAFA;position:relative;overflow:hidden;transition:border-color .15s;}
+.img-upload-area:hover{border-color:var(--g);}
+.img-upload-area input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;font-size:0;}
+.img-upload-icon{font-size:28px;margin-bottom:4px;}
+.img-upload-txt{font-size:12px;color:var(--ink2);font-weight:600;}
+.img-upload-hint{font-size:11px;color:#aaa;margin-top:2px;}
+.img-preview-box{border-radius:10px;overflow:hidden;margin-top:8px;display:none;position:relative;}
+.img-preview-box img{width:100%;height:80px;object-fit:cover;display:block;}
+.img-clear-btn{position:absolute;top:4px;right:4px;width:24px;height:24px;border-radius:50%;background:rgba(0,0,0,.5);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;}
+.or-divider{display:flex;align-items:center;gap:8px;margin:10px 0;color:#bbb;font-size:12px;}
+.or-divider::before,.or-divider::after{content:'';flex:1;height:1px;background:var(--brd);}
 
-.item-list{padding:0 16px 80px;}
-.item-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px 12px;margin-top:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
-.item-drag{font-size:20px;color:#ccc;cursor:grab;flex-shrink:0;}
-.item-info{flex:1;min-width:0;}
-.item-code{font-size:10.5px;color:#999;font-weight:600;}
-.item-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.item-kcal{font-size:11px;color:#888;margin-top:2px;}
-.item-price{font-size:14px;font-weight:700;color:#C9573F;flex-shrink:0;}
-.item-toggle{width:36px;height:36px;border-radius:50%;border:none;font-size:16px;flex-shrink:0;}
-.item-toggle.on{background:var(--gl);color:var(--g);}
-.item-toggle.off{background:#F2F2F2;color:#999;}
-.item-order{width:24px;height:24px;border-radius:4px;border:1px solid var(--brd);background:#fff;font-size:11px;font-weight:700;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+/* Bg color */
+.color-row{display:flex;align-items:center;gap:8px;}
+.color-row input[type=color]{width:44px;height:44px;border-radius:8px;border:1px solid var(--brd);padding:2px;cursor:pointer;}
+.color-presets{display:flex;gap:6px;flex-wrap:wrap;}
+.color-dot{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent;}
+.color-dot.on{border-color:var(--ink);}
 
-/* FAB save */
-.fab-save{position:fixed;bottom:20px;right:16px;background:var(--g);color:#fff;border:none;border-radius:28px;padding:14px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 18px rgba(31,77,58,.4);display:flex;align-items:center;gap:8px;z-index:200;}
+/* Move up/down */
+.move-btns{display:flex;gap:8px;margin-top:4px;}
+.move-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;font-weight:600;color:var(--ink2);}
 
-/* Loading */
-.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--ink2);font-size:14px;gap:10px;}
-.spin{width:20px;height:20px;border:2px solid var(--brd);border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;}
+/* ─── CATEGORY SECTION ─── */
+.cat-scroll{overflow-x:auto;display:flex;align-items:center;gap:6px;padding:10px 14px;scrollbar-width:none;background:#fff;border-bottom:0.5px solid var(--brd);}
+.cat-scroll::-webkit-scrollbar{display:none;}
+.cat-btn-he{padding:7px 14px;border-radius:20px;background:#F0F0F0;color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;border:1px solid transparent;}
+.cat-btn-he.on{background:var(--g);color:#fff;}
+.cat-rename-input{font-size:13px;font-weight:600;border:none;background:transparent;color:inherit;min-width:60px;max-width:120px;outline:none;}
+
+.item-list-he{padding:10px 12px 0;}
+.item-row-he{display:flex;align-items:center;gap:8px;background:#fff;border-radius:10px;padding:9px 12px;margin-bottom:6px;box-shadow:0 1px 4px rgba(0,0,0,.05);}
+.item-drag-he{font-size:18px;color:#ccc;cursor:grab;flex-shrink:0;}
+.item-idx{min-width:24px;height:24px;border-radius:6px;background:#F0F0F0;font-size:11px;font-weight:700;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.item-info-he{flex:1;min-width:0;}
+.item-code-he{font-size:10px;color:#aaa;font-weight:700;}
+.item-name-he{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-kcal-he{font-size:11px;color:#888;}
+.item-price-he{font-size:13px;font-weight:700;color:#C9573F;flex-shrink:0;}
+.cat-key-hint{padding:6px 14px 10px;font-size:11px;color:#aaa;}
+
+/* FAB */
+.fab{position:fixed;bottom:20px;right:16px;background:var(--g);color:#fff;border-radius:28px;padding:13px 22px;font-size:14px;font-weight:700;box-shadow:0 4px 18px rgba(31,77,58,.4);display:flex;align-items:center;gap:8px;z-index:199;}
+
+/* Misc */
+.spin{width:18px;height:18px;border:2px solid var(--brd);border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;display:inline-block;}
 @keyframes sp{to{transform:rotate(360deg)}}
+.empty-txt{padding:30px;text-align:center;color:#aaa;font-size:14px;}
+.upload-progress{height:3px;background:var(--gl);margin-top:6px;border-radius:3px;display:none;}
+.upload-progress .bar{height:100%;background:var(--g);border-radius:3px;transition:width .3s;}
 </style>
 </head>
 <body>
-
 <div class="hdr">
-  <button class="hdr-back" onclick="history.back()">←</button>
-  <div class="hdr-title">Home Editor</div>
-  <button class="hdr-save" onclick="saveAll()">บันทึก</button>
+  <button class="btn-back" onclick="history.back()">←</button>
+  <div class="hdr-title">🏠 Home Editor</div>
+  <button class="btn-save" onclick="saveAll()">☁ บันทึก</button>
 </div>
-<div class="status-bar" id="statusBar"></div>
+<div class="toast-bar" id="toast"></div>
 
 <div class="sec-tabs">
-  <button class="sec-tab on" onclick="switchSec(0)">📸 Collage บนสุด</button>
+  <button class="sec-tab on" onclick="switchSec(0)">📸 Collage</button>
   <button class="sec-tab" onclick="switchSec(1)">📋 จัดลำดับเมนู</button>
 </div>
 
-<!-- ══ SEC 0: COLLAGE EDITOR ══ -->
+<!-- ═══ SEC 0: COLLAGE ═══ -->
 <div class="sec on" id="sec0">
-  <div class="preview-label">Preview (scroll เพื่อดูทุก card)</div>
-  <div class="col-preview" id="colPreview">
-    <div class="loading"><div class="spin"></div>กำลังโหลด...</div>
+  <!-- Preview controls -->
+  <div class="preview-label">
+    <span>Preview (scroll ←→)</span>
+    <div class="auto-ctrl">
+      <button class="toggle-btn" id="autoBtn" onclick="toggleAuto()">⏸ หยุด</button>
+      <select class="speed-sel" id="speedSel" onchange="updateSpeed()">
+        <option value="180">ช้ามาก</option>
+        <option value="90" selected>ปกติ</option>
+        <option value="45">เร็ว</option>
+      </select>
+    </div>
   </div>
-  <div id="cardEditorWrap"></div>
-  <div class="add-card-row">
-    <button class="add-card-btn-main" onclick="addCard()">
-      <span style="font-size:20px">＋</span> เพิ่ม Card ใหม่
-    </button>
+
+  <!-- Phone frame -->
+  <div class="phone-frame-wrap">
+    <div class="phone-frame">
+      <div class="col-scroll-he" id="colScroll">
+        <div class="empty-txt"><div class="spin"></div></div>
+      </div>
+    </div>
   </div>
+
+  <!-- Nav buttons -->
+  <div class="preview-nav">
+    <button class="prev-nav-btn" id="prevBtn" onclick="navScroll(-1)" disabled>‹</button>
+    <span class="prev-page-info" id="pageInfo">— / —</span>
+    <button class="prev-nav-btn" id="nextBtn" onclick="navScroll(1)">›</button>
+  </div>
+
+  <!-- Card list -->
+  <div class="card-list" id="cardList"></div>
+  <div style="padding:0 12px 8px">
+    <button class="add-card-btn" onclick="addCard()">＋ เพิ่ม Card ใหม่</button>
+  </div>
+
+  <!-- Editor panel -->
+  <div id="editorPanel"></div>
 </div>
 
-<!-- ══ SEC 1: CATEGORY ORDER ══ -->
+<!-- ═══ SEC 1: CATEGORY ORDER ═══ -->
 <div class="sec" id="sec1">
-  <div class="cat-tab-bar" id="catTabBar">
-    <div class="loading"><div class="spin"></div></div>
+  <div class="cat-scroll" id="catScroll">
+    <div class="spin"></div>
   </div>
-  <div class="item-list" id="itemList">
-    <div class="loading"><div class="spin"></div>กำลังโหลด...</div>
+  <div class="cat-key-hint" id="catKeyHint"></div>
+  <div class="item-list-he" id="itemListHe">
+    <div class="empty-txt"><div class="spin"></div></div>
   </div>
 </div>
 
-<button class="fab-save" onclick="saveAll()">☁ บันทึกทั้งหมด</button>
+<button class="fab" onclick="saveAll()">☁ บันทึกทั้งหมด</button>
 
 <script>
-const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const COLORS=['#1F4D3A','#2D6B53','#3D8B6E','#5B4E2E','#7C3D1E','#2563EB','#6D28D9','#BE185D'];
+const CAT_LABELS_STORED = JSON.parse(localStorage.getItem('u360_cat_labels')||'{}');
 
-let sb, cards = [], menuItems = [], activeCat = null, activeCardIdx = null;
-const CAT_LABELS = {meal_hp:'High Protein',meal_lc:'Low Carb',meal_s:'Special',meal_d:'Diet',meal_no:'No Carb'};
+let sb, cards=[], menuItems=[], activeCat=null, activeCardIdx=null;
+let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
 
-window.onload = async function() {
+// ── INIT ──
+window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
   await Promise.all([loadCards(), loadMenuItems()]);
+  setupDragScroll();
+  startAutoScroll();
 };
 
-// ══ DATA LOADING ══
-async function loadCards() {
-  try {
+// ── DATA ──
+async function loadCards(){
+  try{
     const {data} = await sb.from('home_layout').select('*').order('sort_order');
-    cards = (data||[]).map(function(r){ return {
-      id: r.section_key,
-      title: r.title||'',
-      subtitle: r.subtitle||'',
-      bg_color: r.bg_color||'#1F4D3A',
-      bg_image: r.bg_image||'',
-      size: (r.col_span||2) >= 3 ? 'large' : 'small',
-      link_cat: (r.item_filter||{}).category || (r.item_filter||{}).he_group || '',
-      sort_order: r.sort_order||0
-    };});
-  } catch(e) {
-    // Default cards
-    cards = [
+    cards = (data||[]).map(r=>({
+      id:r.section_key, title:r.title||'', subtitle:r.subtitle||'',
+      bg_color:r.bg_color||'#1F4D3A', bg_image:r.bg_image||'',
+      size:(r.col_span||2)>=3?'large':'small',
+      link_cat:(r.item_filter||{}).category||(r.item_filter||{}).he_group||'',
+      sort_order:r.sort_order||0
+    }));
+  }catch(e){
+    cards=[
       {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'large',link_cat:'meal_hp',sort_order:0},
       {id:'meal_lc',title:'Low Carb',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'meal_lc',sort_order:1},
-      {id:'meal_s',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'small',link_cat:'meal_s',sort_order:2}
+      {id:'weekly',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'small',link_cat:'__anchor__',sort_order:2}
     ];
   }
-  renderPreview();
+  renderAll();
 }
 
-async function loadMenuItems() {
-  try {
-    const {data} = await sb.from('menu_items').select('*').eq('is_available', true).order('sort_order');
+async function loadMenuItems(){
+  try{
+    const {data} = await sb.from('menu_items').select('id,name,code,price,calories,category,is_available,sort_order').eq('is_available',true).order('sort_order');
     menuItems = data||[];
-  } catch(e) { menuItems = []; }
-  renderCatTabs();
+  }catch(e){ menuItems=[]; }
+  // Load custom labels from Supabase
+  try{
+    const {data:ld} = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
+    if(ld?.value){ Object.assign(CAT_LABELS_STORED, ld.value); localStorage.setItem('u360_cat_labels',JSON.stringify(CAT_LABELS_STORED)); }
+  }catch(e){}
+  renderCatSection();
 }
 
-// ══ SEC 0: COLLAGE PREVIEW ══
-function renderPreview() {
-  var el = document.getElementById('colPreview');
-  if (!cards.length) { el.innerHTML = '<div style="padding:40px;text-align:center;color:#aaa">ยังไม่มี card — กด เพิ่ม Card ใหม่</div>'; return; }
+// ── RENDER COLLAGE ──
+function renderAll(){ renderPreview(); renderCardList(); }
 
-  // Group into pages of 3 (1 large + up to 2 small)
-  var groups = [], i = 0;
-  while (i < cards.length) {
-    var g = [];
-    if (cards[i].size === 'large') { g.push(cards[i]); i++; } else { g.push(cards[i]); i++; }
-    while (i < cards.length && cards[i].size === 'small' && g.length < 3) { g.push(cards[i]); i++; }
+function renderPreview(){
+  const el = document.getElementById('colScroll');
+  if(!cards.length){ el.innerHTML='<div class="empty-txt">ยังไม่มี card</div>'; return; }
+
+  // Group: consecutive [large, sm, sm] or [sm, sm] or [large] 
+  const groups=[];
+  let i=0;
+  while(i<cards.length){
+    const g=[];
+    g.push(cards[i]); i++;
+    // fill right column if first is large
+    while(i<cards.length && cards[i].size==='small' && g.length<3){ g.push(cards[i]); i++; }
     groups.push(g);
   }
 
-  var html = groups.map(function(g, gi) {
-    var mainCard = g[0];
-    var isLg = mainCard.size === 'large';
-    var cardHtml = renderPreviewCard(mainCard, cards.indexOf(mainCard));
-    var rightHtml = '';
-    if (g.length > 1) {
-      var smCards = g.slice(1).map(function(c){ return renderPreviewCard(c, cards.indexOf(c)); }).join('');
-      rightHtml = '<div class="col-col-prev">'+smCards+'</div>';
+  el.innerHTML = groups.map((g,gi)=>{
+    const main=g[0];
+    let html='<div class="col-group-he">';
+    html+=renderPrevCard(main, cards.indexOf(main));
+    if(g.length>1){
+      html+='<div class="col-col-he">';
+      g.slice(1).forEach(c=>{ html+=renderPrevCard(c, cards.indexOf(c)); });
+      html+='</div>';
     }
-    return '<div class="col-group-preview">'+cardHtml+rightHtml+'</div>';
+    html+='</div>';
+    return html;
   }).join('');
 
-  el.innerHTML = html;
+  updateNavBtns(groups.length);
 }
 
-function renderPreviewCard(c, idx) {
-  var isLg = c.size === 'large';
-  var imgHtml = c.bg_image ? '<img src="'+c.bg_image+'" onerror="this.style.display=\'none\'">' : '';
-  var bg = 'background:'+c.bg_color+';';
-  return '<div class="col-card-prev '+(isLg?'lg':'sm')+(activeCardIdx===idx?' active':'')+'" style="'+bg+'" onclick="selectCard('+idx+')">'
-    +imgHtml
-    +'<div class="col-ov-p"></div>'
-    +'<div class="col-body-p">'
-    +'<div class="col-title-p'+(isLg?'':' sm')+'">'+esc(c.title)+'</div>'
-    +'<div class="col-sub-p">'+esc(c.subtitle)+'</div>'
-    +(isLg?'<span class="col-cta-p">ดูเมนู →</span>':'')
-    +'</div>'
-    +'</div>';
+function renderPrevCard(c,idx){
+  const isLg=c.size==='large';
+  const bg=`background:${c.bg_color}`;
+  const img=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:'';
+  const active=activeCardIdx===idx?' active':'';
+  return `<div class="col-card-he ${isLg?'lg':'sm'}${active}" style="${bg}" onclick="selectCard(${idx})">
+    ${img}
+    <div class="col-ov-he"></div>
+    <div class="col-body-he">
+      <div class="col-title-he${isLg?'':' sm'}">${esc(c.title)}</div>
+      <div class="col-sub-he">${esc(c.subtitle)}</div>
+      ${isLg?'<span class="col-cta-he">ดูเมนู →</span>':''}
+    </div>
+    <div class="sel-indicator">✓</div>
+  </div>`;
 }
 
-function selectCard(idx) {
-  activeCardIdx = (activeCardIdx === idx) ? null : idx;
-  renderPreview();
-  renderCardEditor();
-}
-
-function renderCardEditor() {
-  var wrap = document.getElementById('cardEditorWrap');
-  if (activeCardIdx === null) { wrap.innerHTML = ''; return; }
-  var c = cards[activeCardIdx];
-  if (!c) { wrap.innerHTML = ''; return; }
-  wrap.innerHTML = '<div class="card-editor">'
-    +'<div class="card-editor-title"><span>✏️ แก้ไข Card #'+(activeCardIdx+1)+'</span>'
-    +'<button class="card-editor-del" onclick="deleteCard('+activeCardIdx+')" title="ลบ card นี้">🗑</button></div>'
-    +'<div class="field"><label>ขนาด Card</label>'
-    +'<div class="size-btns">'
-    +'<button class="size-btn'+(c.size==='large'?' on':'')+'" onclick="setCardSize(\'large\')">⬛ ใหญ่ (2/3)</button>'
-    +'<button class="size-btn'+(c.size==='small'?' on':'')+'" onclick="setCardSize(\'small\')">▪ เล็ก (1/3)</button>'
-    +'</div></div>'
-    +'<div class="field"><label>ชื่อ</label><input id="c-title" value="'+esc(c.title)+'" oninput="updateCard()"></div>'
-    +'<div class="field"><label>คำบรรยาย</label><input id="c-sub" value="'+esc(c.subtitle)+'" oninput="updateCard()"></div>'
-    +'<div class="field"><label>รูปพื้นหลัง (URL)</label>'
-    +'<input id="c-img" value="'+esc(c.bg_image)+'" placeholder="https://..." oninput="updateCard();previewImg()">'
-    +'<img id="c-img-prev" class="img-preview" src="'+c.bg_image+'" '+(c.bg_image?'style="display:block"':'')+'></div>'
-    +'<div class="field"><label>สีพื้นหลัง (ถ้าไม่มีรูป)</label>'
-    +'<input type="color" id="c-color" value="'+c.bg_color+'" style="height:44px;border-radius:8px;padding:4px;width:100%;" oninput="updateCard()"></div>'
-    +'<div class="field"><label>ลิ้งไปที่ (category หรือ __anchor__ เพื่อเลื่อนลงเมนู)</label>'
-    +'<input id="c-cat" value="'+esc(c.link_cat)+'" placeholder="เช่น meal_hp หรือ __anchor__" oninput="updateCard()"></div>'
-    +'<div style="display:flex;gap:8px;margin-top:4px">'
-    +(activeCardIdx > 0 ? '<button style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;" onclick="moveCard(-1)">↑ ขึ้น</button>' : '')
-    +(activeCardIdx < cards.length-1 ? '<button style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;" onclick="moveCard(1)">↓ ลง</button>' : '')
-    +'</div>'
-    +'</div>';
-}
-
-function updateCard() {
-  if (activeCardIdx === null) return;
-  var c = cards[activeCardIdx];
-  c.title = document.getElementById('c-title').value;
-  c.subtitle = document.getElementById('c-sub').value;
-  c.bg_image = document.getElementById('c-img').value;
-  c.bg_color = document.getElementById('c-color').value;
-  c.link_cat = document.getElementById('c-cat').value;
-  renderPreview();
-}
-
-function previewImg() {
-  var url = document.getElementById('c-img').value;
-  var prev = document.getElementById('c-img-prev');
-  if (url) { prev.src = url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
-}
-
-function setCardSize(sz) {
-  if (activeCardIdx === null) return;
-  cards[activeCardIdx].size = sz;
-  renderPreview();
-  renderCardEditor();
-}
-
-function deleteCard(idx) {
-  if (!confirm('ลบ card นี้?')) return;
-  cards.splice(idx, 1);
-  activeCardIdx = null;
-  renderPreview();
-  renderCardEditor();
-}
-
-function addCard() {
-  cards.push({id:'card_'+Date.now(),title:'ชื่อ Card ใหม่',subtitle:'',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'',sort_order:cards.length});
-  activeCardIdx = cards.length - 1;
-  renderPreview();
-  renderCardEditor();
-  // Scroll to end
-  setTimeout(function(){ var el=document.getElementById('colPreview'); if(el) el.scrollLeft=el.scrollWidth; }, 100);
-}
-
-function moveCard(dir) {
-  var i = activeCardIdx;
-  if (i + dir < 0 || i + dir >= cards.length) return;
-  var tmp = cards[i]; cards[i] = cards[i+dir]; cards[i+dir] = tmp;
-  activeCardIdx = i + dir;
-  renderPreview();
-  renderCardEditor();
-}
-
-// ══ SEC 1: CATEGORY ORDER ══
-function renderCatTabs() {
-  var bar = document.getElementById('catTabBar');
-  var cats = getCats();
-  if (!cats.length) { bar.innerHTML = '<div style="color:#aaa;padding:8px;font-size:13px">ยังไม่มีสินค้าออนไลน์</div>'; return; }
-  bar.innerHTML = cats.map(function(c) {
-    var cnt = menuItems.filter(function(m){ return m.category===c; }).length;
-    return '<button class="cat-btn'+(activeCat===c?' on':'')+'" onclick="selectCat(\''+c+'\')">'+(CAT_LABELS[c]||c)+'<span class="cat-count">'+cnt+'</span></button>';
+function renderCardList(){
+  const el = document.getElementById('cardList');
+  el.innerHTML = cards.map((c,i)=>{
+    const thumbBg=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:`<div class="thumb-bg" style="background:${c.bg_color};width:100%;height:100%"></div>`;
+    return `<div class="card-list-item${activeCardIdx===i?' active':''}" onclick="selectCard(${i})">
+      <span class="card-drag" onclick="event.stopPropagation()">⠿</span>
+      <div class="card-list-thumb">${thumbBg}</div>
+      <div class="card-list-info">
+        <div class="card-list-name">${esc(c.title)||'(ไม่มีชื่อ)'}</div>
+        <div class="card-list-sz">${c.size==='large'?'⬛ ใหญ่':'▪ เล็ก'} · #${i+1}</div>
+      </div>
+      <button class="card-del-btn" onclick="event.stopPropagation();deleteCard(${i})">🗑</button>
+    </div>`;
   }).join('');
-  if (!activeCat && cats.length) { activeCat = cats[0]; renderCatItems(); }
 }
 
-function getCats() {
-  var seen = {}, cats = [];
-  menuItems.forEach(function(m){ if(m.category && !seen[m.category]){ seen[m.category]=1; cats.push(m.category); }});
-  return cats;
+function selectCard(idx){
+  activeCardIdx = (activeCardIdx===idx) ? null : idx;
+  renderAll();
+  if(activeCardIdx!==null){
+    renderEditor();
+    document.getElementById('editorPanel').scrollIntoView({behavior:'smooth',block:'nearest'});
+  } else {
+    document.getElementById('editorPanel').innerHTML='';
+  }
+  // scroll preview to show the selected card group
+  scrollToCard(idx);
 }
 
-function selectCat(cat) {
-  activeCat = cat;
-  renderCatTabs();
+function scrollToCard(idx){
+  const el=document.getElementById('colScroll');
+  const group=el.querySelector('.col-group-he');
+  if(!group) return;
+  const gw=group.offsetWidth+10;
+  // Find which group the card belongs to
+  let gi=0, ci=0;
+  while(ci<idx && ci<cards.length){
+    const c=cards[ci];
+    if(c.size==='large'){ gi++; ci++; } else { ci++; }
+    if(ci<cards.length && cards[ci]?.size==='small'){ ci++; }
+  }
+  el.scrollTo({left:gi*gw, behavior:'smooth'});
+}
+
+// ── CARD EDITOR ──
+function renderEditor(){
+  if(activeCardIdx===null){ document.getElementById('editorPanel').innerHTML=''; return; }
+  const c=cards[activeCardIdx];
+  const i=activeCardIdx;
+
+  // Build link options
+  const cats=[...new Set(menuItems.map(m=>m.category).filter(Boolean))];
+  const catOptions=cats.map(cat=>`<option value="${cat}"${c.link_cat===cat?' selected':''}>${getCatLabel(cat)} (${cat})</option>`).join('');
+
+  document.getElementById('editorPanel').innerHTML=`
+  <div class="card-edit-panel">
+    <div class="cep-hdr">✏️ แก้ไข Card #${i+1} — "${esc(c.title)}"</div>
+    <div class="cep-body">
+      <div class="field">
+        <label>ขนาด Card</label>
+        <div class="size-btns">
+          <button class="size-btn${c.size==='large'?' on':''}" onclick="setSize('large')">⬛ ใหญ่ (2/3 จอ)</button>
+          <button class="size-btn${c.size==='small'?' on':''}" onclick="setSize('small')">▪ เล็ก (1/3 จอ)</button>
+        </div>
+        <div class="field-hint">ใหญ่ = 215×210px · เล็ก = 143×99px ที่หน้าจอ 390px</div>
+      </div>
+
+      <div class="field">
+        <label>ชื่อ Card</label>
+        <input id="c-title" value="${esc(c.title)}" oninput="liveUpdate()">
+      </div>
+      <div class="field">
+        <label>คำบรรยาย</label>
+        <input id="c-sub" value="${esc(c.subtitle)}" oninput="liveUpdate()">
+      </div>
+
+      <div class="field">
+        <label>รูปพื้นหลัง</label>
+        <div class="img-upload-area" id="uploadArea" onclick="triggerUpload()">
+          <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp" onchange="handleImageUpload(event)" onclick="event.stopPropagation()">
+          <div class="img-upload-icon">📁</div>
+          <div class="img-upload-txt">อัพโหลดรูป</div>
+          <div class="img-upload-hint">PNG/JPEG/WebP · แนะนำ: 1200×800px · ไม่เกิน 1MB<br>PNG โปร่งใสได้ (พื้นหลังจะเป็นสีที่เลือกด้านล่าง)</div>
+        </div>
+        <div class="upload-progress" id="uploadProg"><div class="bar" id="uploadBar" style="width:0"></div></div>
+        <div class="img-preview-box" id="imgPrevBox" ${c.bg_image?'style="display:block"':''}>
+          <img id="imgPrev" src="${c.bg_image||''}" onerror="clearImage()">
+          <button class="img-clear-btn" onclick="clearImage()">✕</button>
+        </div>
+        <div class="or-divider">หรือ</div>
+        <input id="c-img-url" placeholder="วาง URL รูปภาพ..." value="${esc(c.bg_image)}" oninput="onUrlInput()">
+        <div class="field-hint">ถ้ามีทั้งรูปและ URL จะใช้ URL</div>
+      </div>
+
+      <div class="field">
+        <label>สีพื้นหลัง (แสดงเมื่อไม่มีรูป หรือรูปโปร่งใส)</label>
+        <div class="color-row">
+          <input type="color" id="c-color" value="${c.bg_color}" oninput="liveUpdate()">
+          <div class="color-presets">
+            ${COLORS.map(col=>`<div class="color-dot${c.bg_color===col?' on':''}" style="background:${col}" onclick="setColor('${col}')"></div>`).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>ลิ้งไปที่</label>
+        <select id="c-cat" onchange="liveUpdate()">
+          <option value="">— ไม่ลิ้งไปไหน —</option>
+          <option value="__anchor__"${c.link_cat==='__anchor__'?' selected':''}>⬇ เลื่อนลงไปที่เมนู</option>
+          ${catOptions}
+        </select>
+      </div>
+
+      <div class="move-btns">
+        ${i>0?`<button class="move-btn" onclick="moveCard(-1)">↑ ขึ้น</button>`:''}
+        ${i<cards.length-1?`<button class="move-btn" onclick="moveCard(1)">↓ ลง</button>`:''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function triggerUpload(){ document.getElementById('imgFile').click(); }
+
+async function handleImageUpload(e){
+  const file=e.target.files[0];
+  if(!file) return;
+  if(file.size>2*1024*1024){ showToast('ไฟล์ใหญ่เกิน 2MB','err'); return; }
+
+  // Show progress
+  document.getElementById('uploadProg').style.display='block';
+  setProgress(20);
+
+  // Compress image
+  const compressed = await compressImage(file, 1200, 800, 0.85);
+  setProgress(50);
+
+  try{
+    const ext = file.name.split('.').pop().replace('jpeg','jpg');
+    const fname = `card_${Date.now()}.${ext}`;
+    const {data,error} = await sb.storage.from('card-images').upload(fname, compressed, {cacheControl:'86400',upsert:true});
+    setProgress(80);
+    if(error) throw error;
+    const {data:urlData} = sb.storage.from('card-images').getPublicUrl(fname);
+    cards[activeCardIdx].bg_image = urlData.publicUrl;
+    setProgress(100);
+    setTimeout(()=>{ document.getElementById('uploadProg').style.display='none'; },500);
+  }catch(err){
+    // Fallback: use local base64 preview
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      cards[activeCardIdx].bg_image=ev.target.result;
+      document.getElementById('uploadProg').style.display='none';
+      renderAll();
+      renderEditor();
+    };
+    reader.readAsDataURL(compressed);
+    showToast('Storage ไม่พร้อม — ใช้ base64 แทน (ชั่วคราว)','info');
+    return;
+  }
+  renderAll(); renderEditor();
+}
+
+function setProgress(pct){
+  document.getElementById('uploadBar').style.width=pct+'%';
+}
+
+function compressImage(file, maxW, maxH, q){
+  return new Promise(resolve=>{
+    const reader=new FileReader();
+    reader.onload=ev=>{
+      const img=new Image();
+      img.onload=()=>{
+        let w=img.width,h=img.height;
+        if(w>maxW){h=Math.round(h*maxW/w);w=maxW;}
+        if(h>maxH){w=Math.round(w*maxH/h);h=maxH;}
+        const cv=document.createElement('canvas');
+        cv.width=w; cv.height=h;
+        const ctx=cv.getContext('2d');
+        // White background for JPEGs
+        ctx.fillStyle='#ffffff';
+        ctx.fillRect(0,0,w,h);
+        ctx.drawImage(img,0,0,w,h);
+        cv.toBlob(blob=>resolve(blob),'image/jpeg',q);
+      };
+      img.src=ev.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function onUrlInput(){
+  const url=document.getElementById('c-img-url').value.trim();
+  if(activeCardIdx===null) return;
+  cards[activeCardIdx].bg_image=url;
+  const prev=document.getElementById('imgPrev');
+  const box=document.getElementById('imgPrevBox');
+  if(url){ prev.src=url; box.style.display='block'; } else { box.style.display='none'; }
+  renderAll();
+}
+
+function clearImage(){
+  if(activeCardIdx===null) return;
+  cards[activeCardIdx].bg_image='';
+  const box=document.getElementById('imgPrevBox');
+  if(box) box.style.display='none';
+  const url=document.getElementById('c-img-url');
+  if(url) url.value='';
+  renderAll();
+}
+
+function liveUpdate(){
+  if(activeCardIdx===null) return;
+  const c=cards[activeCardIdx];
+  c.title=document.getElementById('c-title').value;
+  c.subtitle=document.getElementById('c-sub').value;
+  c.bg_color=document.getElementById('c-color').value;
+  c.link_cat=document.getElementById('c-cat').value;
+  const url=(document.getElementById('c-img-url').value||'').trim();
+  if(url) c.bg_image=url;
+  renderAll();
+}
+
+function setSize(sz){ if(activeCardIdx===null)return; cards[activeCardIdx].size=sz; renderAll(); renderEditor(); }
+function setColor(col){ if(activeCardIdx===null)return; cards[activeCardIdx].bg_color=col; document.getElementById('c-color').value=col; renderAll(); renderEditor(); }
+
+function addCard(){
+  cards.push({id:'card_'+Date.now(),title:'Card ใหม่',subtitle:'',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'',sort_order:cards.length});
+  activeCardIdx=cards.length-1;
+  renderAll(); renderEditor();
+  setTimeout(()=>{
+    const sc=document.getElementById('colScroll');
+    sc.scrollTo({left:sc.scrollWidth,behavior:'smooth'});
+  },100);
+}
+
+function deleteCard(idx){
+  if(!confirm(`ลบ Card "${cards[idx].title}"?`)) return;
+  cards.splice(idx,1);
+  if(activeCardIdx>=cards.length) activeCardIdx=null;
+  renderAll();
+  document.getElementById('editorPanel').innerHTML='';
+}
+
+function moveCard(dir){
+  const i=activeCardIdx;
+  if(i+dir<0||i+dir>=cards.length) return;
+  [cards[i],cards[i+dir]]=[cards[i+dir],cards[i]];
+  activeCardIdx=i+dir;
+  renderAll(); renderEditor();
+}
+
+// ── NAVIGATION ──
+function navScroll(dir){
+  const el=document.getElementById('colScroll');
+  const group=el.querySelector('.col-group-he');
+  if(!group) return;
+  const gw=group.offsetWidth+10;
+  el.scrollBy({left:dir*gw,behavior:'smooth'});
+  setTimeout(()=>updateNavBtns(),400);
+}
+
+function updateNavBtns(totalGroups){
+  const el=document.getElementById('colScroll');
+  const group=el.querySelector('.col-group-he');
+  if(!group) return;
+  const gw=group.offsetWidth+10;
+  const page=Math.round(el.scrollLeft/gw);
+  const total=totalGroups||Math.ceil(cards.length/3)||1;
+  document.getElementById('pageInfo').textContent=`${page+1} / ${total}`;
+  document.getElementById('prevBtn').disabled=page===0;
+  document.getElementById('nextBtn').disabled=page>=total-1;
+  currentPage=page;
+}
+
+// Auto-scroll
+function startAutoScroll(){
+  stopAutoScroll();
+  if(!autoScrollOn) return;
+  autoTimer=setInterval(()=>{
+    const el=document.getElementById('colScroll');
+    const group=el.querySelector('.col-group-he');
+    if(!group) return;
+    const gw=group.offsetWidth+10;
+    const total=Math.ceil(cards.length/3)||1;
+    if(el.scrollLeft+gw*1.2 >= gw*total){ el.scrollTo({left:0,behavior:'smooth'}); }
+    else { el.scrollBy({left:gw,behavior:'smooth'}); }
+    setTimeout(updateNavBtns,400);
+  }, autoScrollSpeed*1000);
+}
+function stopAutoScroll(){ if(autoTimer){clearInterval(autoTimer);autoTimer=null;} }
+function toggleAuto(){
+  autoScrollOn=!autoScrollOn;
+  document.getElementById('autoBtn').textContent=autoScrollOn?'⏸ หยุด':'▶ ออโต้';
+  document.getElementById('autoBtn').classList.toggle('on',!autoScrollOn);
+  autoScrollOn?startAutoScroll():stopAutoScroll();
+}
+function updateSpeed(){
+  autoScrollSpeed=parseInt(document.getElementById('speedSel').value);
+  if(autoScrollOn){ startAutoScroll(); }
+}
+
+// Mouse drag scroll
+function setupDragScroll(){
+  const el=document.getElementById('colScroll');
+  let dragging=false, startX=0, startSL=0;
+  el.addEventListener('mousedown',e=>{dragging=true;startX=e.pageX;startSL=el.scrollLeft;el.classList.add('dragging');stopAutoScroll();});
+  document.addEventListener('mousemove',e=>{if(!dragging)return;el.scrollLeft=startSL-(e.pageX-startX);});
+  document.addEventListener('mouseup',()=>{
+    if(!dragging) return;
+    dragging=false;el.classList.remove('dragging');
+    setTimeout(updateNavBtns,100);
+    if(autoScrollOn) startAutoScroll();
+  });
+  el.addEventListener('scroll',()=>updateNavBtns());
+  el.addEventListener('touchend',()=>setTimeout(updateNavBtns,300));
+}
+
+// ── CATEGORY SECTION ──
+function renderCatSection(){
+  const cats=getCats();
+  const bar=document.getElementById('catScroll');
+  if(!cats.length){ bar.innerHTML='<span style="color:#aaa;font-size:13px">ไม่มีสินค้าออนไลน์</span>'; return; }
+  if(!activeCat) activeCat=cats[0];
+
+  bar.innerHTML=cats.map(cat=>{
+    const label=getCatLabel(cat);
+    const cnt=menuItems.filter(m=>m.category===cat).length;
+    return `<button class="cat-btn-he${activeCat===cat?' on':''}" title="key: ${cat}" onclick="selectCatHe('${cat}')">
+      <input class="cat-rename-input" value="${esc(label)}" title="key: ${cat}"
+        onclick="event.stopPropagation()"
+        onchange="renameCat('${cat}',this.value)"
+        onblur="renameCat('${cat}',this.value)"
+        style="color:inherit">
+      <span style="opacity:.7;font-size:11px;margin-left:3px">${cnt}</span>
+    </button>`;
+  }).join('');
+  document.getElementById('catKeyHint').textContent = `key จริง: "${activeCat}" · ดับเบิลคลิกชื่อเพื่อ rename`;
   renderCatItems();
 }
 
-function renderCatItems() {
-  var el = document.getElementById('itemList');
-  var items = menuItems.filter(function(m){ return m.category === activeCat; });
-  if (!items.length) { el.innerHTML = '<div class="loading">ไม่มีสินค้าในหมวดนี้</div>'; return; }
-  el.innerHTML = items.map(function(m, i) {
-    return '<div class="item-row" draggable="true" data-id="'+m.id+'" data-idx="'+i+'">'
-      +'<span class="item-drag">⠿</span>'
-      +'<div class="item-order">'+(m.sort_order||'-')+'</div>'
-      +'<div class="item-info"><div class="item-code">'+(m.code||'')+'</div><div class="item-name">'+esc(m.name)+'</div><div class="item-kcal">'+(m.calories||'')+(m.calories?' kcal':'')+'</div></div>'
-      +'<div class="item-price">฿'+m.price+'</div>'
-      +'</div>';
-  }).join('');
-  setupDrag();
+function getCats(){
+  const seen={},cats=[];
+  menuItems.forEach(m=>{ if(m.category&&!seen[m.category]){seen[m.category]=1;cats.push(m.category);} });
+  return cats;
 }
 
-// Simple drag-to-reorder
-var dragSrc = null;
-function setupDrag() {
-  var rows = document.querySelectorAll('.item-row');
-  rows.forEach(function(row) {
-    row.addEventListener('dragstart', function(e){ dragSrc = this; this.style.opacity='.4'; });
-    row.addEventListener('dragend', function(){ this.style.opacity='1'; });
-    row.addEventListener('dragover', function(e){ e.preventDefault(); this.style.background='var(--gl)'; });
-    row.addEventListener('dragleave', function(){ this.style.background=''; });
-    row.addEventListener('drop', function(e) {
-      e.preventDefault(); this.style.background='';
-      if (dragSrc === this) return;
-      var srcId = dragSrc.dataset.id;
-      var tgtId = this.dataset.id;
-      var srcIdx = menuItems.findIndex(function(m){ return m.id==srcId; });
-      var tgtIdx = menuItems.findIndex(function(m){ return m.id==tgtId; });
-      if (srcIdx<0||tgtIdx<0) return;
-      var tmp = menuItems[srcIdx]; menuItems[srcIdx] = menuItems[tgtIdx]; menuItems[tgtIdx] = tmp;
-      // Update sort_order values
-      menuItems.filter(function(m){ return m.category===activeCat; }).forEach(function(m,i){ m.sort_order = i+1; });
+function getCatLabel(cat){
+  return CAT_LABELS_STORED[cat] || CAT_LABELS[cat] || cat;
+}
+const CAT_LABELS={
+  meal_hp:'🥩 HP Plan',meal_lc:'🥗 LC Plan',
+  no_regular:'🍱 ข้าวกล่อง',no_special:'⭐ สัปดาห์นี้',
+  pack_regular:'📦 แพคกับข้าว',pack_special:'📦 แพคพิเศษ',trend:'🌟 เทรนด์'
+};
+
+let renameSaveTimer=null;
+function renameCat(key,newName){
+  CAT_LABELS_STORED[key]=newName;
+  localStorage.setItem('u360_cat_labels',JSON.stringify(CAT_LABELS_STORED));
+  // Debounced save to Supabase
+  clearTimeout(renameSaveTimer);
+  renameSaveTimer=setTimeout(async()=>{
+    try{
+      await sb.from('kitchen_data').upsert({key:'category_labels',value:{...CAT_LABELS_STORED},updated_at:new Date().toISOString()},{onConflict:'key'});
+      showToast('✅ บันทึกชื่อหมวดแล้ว','ok');
+    }catch(e){ showToast('⚠️ บันทึกไม่ได้','err'); }
+  },1200);
+}
+
+function selectCatHe(cat){
+  activeCat=cat;
+  renderCatSection();
+}
+
+function renderCatItems(){
+  const el=document.getElementById('itemListHe');
+  const items=menuItems.filter(m=>m.category===activeCat);
+  if(!items.length){ el.innerHTML='<div class="empty-txt">ไม่มีสินค้าในหมวดนี้</div>'; return; }
+  el.innerHTML=items.map((m,i)=>`
+    <div class="item-row-he" draggable="true" data-id="${m.id}">
+      <span class="item-drag-he">⠿</span>
+      <div class="item-idx">${i+1}</div>
+      <div class="item-info-he">
+        <div class="item-code-he">${m.code||''}</div>
+        <div class="item-name-he">${esc(m.name)}</div>
+        ${m.calories?`<div class="item-kcal-he">${m.calories} kcal</div>`:''}
+      </div>
+      <div class="item-price-he">฿${m.price}</div>
+    </div>`).join('');
+  setupItemDrag();
+}
+
+let dragSrc2=null;
+function setupItemDrag(){
+  const rows=document.querySelectorAll('.item-row-he');
+  rows.forEach(row=>{
+    row.addEventListener('dragstart',e=>{dragSrc2=row;row.style.opacity='.4';});
+    row.addEventListener('dragend',()=>{row.style.opacity='1';});
+    row.addEventListener('dragover',e=>{e.preventDefault();row.style.background='var(--gl)';});
+    row.addEventListener('dragleave',()=>{row.style.background='';});
+    row.addEventListener('drop',e=>{
+      e.preventDefault();row.style.background='';
+      if(dragSrc2===row) return;
+      const si=menuItems.findIndex(m=>m.id==dragSrc2.dataset.id);
+      const ti=menuItems.findIndex(m=>m.id==row.dataset.id);
+      if(si<0||ti<0) return;
+      [menuItems[si],menuItems[ti]]=[menuItems[ti],menuItems[si]];
+      menuItems.filter(m=>m.category===activeCat).forEach((m,j)=>{m.sort_order=j+1;});
       renderCatItems();
     });
   });
 }
 
-// ══ SAVE ══
-async function saveAll() {
-  showStatus('กำลังบันทึก...', '');
-  var ok = true;
-
-  // Save collage cards to home_layout
-  try {
-    for (var i=0; i<cards.length; i++) {
-      var c = cards[i];
-      var row = {
-        section_key: c.id,
-        section_type: c.size==='large' ? 'meal_plan' : 'promo',
-        col_start: 1, row_start: i+1,
-        col_span: c.size==='large' ? 4 : 2,
-        row_span: c.size==='large' ? 4 : 2,
-        title: c.title,
-        subtitle: c.subtitle,
-        bg_color: c.bg_color,
-        bg_image: c.bg_image,
-        text_color: '#fff',
-        item_filter: c.link_cat ? {category:c.link_cat} : {},
-        sort_order: i,
-        is_active: true
-      };
-      var {error} = await sb.from('home_layout').upsert(row, {onConflict:'section_key'});
-      if (error) { ok = false; console.error(error); }
+// ── SAVE ──
+async function saveAll(){
+  showToast('กำลังบันทึก...','info');
+  let ok=true;
+  try{
+    for(let i=0;i<cards.length;i++){
+      const c=cards[i];
+      await sb.from('home_layout').upsert({
+        section_key:c.id, section_type:c.size==='large'?'meal_plan':'promo',
+        col_start:1,row_start:i+1, col_span:c.size==='large'?4:2, row_span:c.size==='large'?4:2,
+        title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image,
+        text_color:'#fff', item_filter:c.link_cat?{category:c.link_cat}:{},
+        sort_order:i, is_active:true, updated_at:new Date().toISOString()
+      },{onConflict:'section_key'});
     }
-  } catch(e) { ok = false; }
-
-  // Save menu item sort orders
-  try {
-    var catItems = menuItems.filter(function(m){ return m.sort_order !== undefined; });
-    for (var j=0; j<catItems.length; j++) {
-      var m = catItems[j];
-      await sb.from('menu_items').update({sort_order: m.sort_order}).eq('id', m.id);
-    }
-  } catch(e) { /* sort_order save is best-effort */ }
-
-  showStatus(ok ? '✅ บันทึกสำเร็จ!' : '⚠️ บันทึกบางส่วนไม่สำเร็จ', ok ? 'ok' : 'err');
+  }catch(e){ ok=false; }
+  try{
+    const changed=menuItems.filter(m=>m.sort_order!==undefined);
+    for(const m of changed){ await sb.from('menu_items').update({sort_order:m.sort_order}).eq('id',m.id); }
+  }catch(e){}
+  showToast(ok?'✅ บันทึกสำเร็จ!':'⚠️ บางส่วนไม่สำเร็จ — ตรวจสอบ console',ok?'ok':'err');
 }
 
-function showStatus(msg, type) {
-  var el = document.getElementById('statusBar');
-  el.textContent = msg;
-  el.className = 'status-bar show' + (type ? ' '+type : '');
-  if (type) setTimeout(function(){ el.className='status-bar'; }, 3000);
+// ── UI HELPERS ──
+function switchSec(idx){
+  document.querySelectorAll('.sec').forEach((s,i)=>s.classList.toggle('on',i===idx));
+  document.querySelectorAll('.sec-tab').forEach((t,i)=>t.classList.toggle('on',i===idx));
 }
-
-function switchSec(idx) {
-  document.querySelectorAll('.sec').forEach(function(s,i){ s.classList.toggle('on', i===idx); });
-  document.querySelectorAll('.sec-tab').forEach(function(t,i){ t.classList.toggle('on', i===idx); });
+function showToast(msg,type){
+  const el=document.getElementById('toast');
+  el.textContent=msg; el.className='toast-bar show'+(type?' '+type:'');
+  if(type&&type!=='info') setTimeout(()=>{el.className='toast-bar';},3000);
 }
-
-function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>
