@@ -1,370 +1,437 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Under360 — Home Editor</title>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600&display=swap" rel="stylesheet">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>Home Editor — Under360</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--r:#DC2626;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;}
-body{font-family:var(--sans);background:var(--bg);height:100vh;display:flex;flex-direction:column;overflow:hidden;}
-
-/* ── HEADER ── */
-.eh{height:52px;background:var(--g);display:flex;align-items:center;padding:0 16px;gap:10px;flex-shrink:0;}
-.eh-logo{color:#fff;font-weight:700;font-size:15px;flex:1;}
-.eh-hint{font-size:11px;color:rgba(255,255,255,.5);margin-right:4px;}
-.eh-btn{border:none;border-radius:8px;padding:7px 14px;font-size:13px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-.eh-preview{background:rgba(255,255,255,.15);color:#fff;}
-.eh-save{background:var(--gold);color:#fff;}
-
-/* ── LAYOUT ── */
-.em{display:flex;flex:1;overflow:hidden;}
-
-/* ── GRID AREA ── */
-.eg{flex:1;overflow:auto;padding:16px;display:flex;flex-direction:column;gap:10px;}
-.eg-info{font-size:12px;color:var(--soft);background:var(--w);padding:8px 12px;border-radius:8px;border:1px solid var(--xsoft);display:flex;align-items:center;gap:10px;}
-.add-types{display:flex;gap:6px;flex-wrap:wrap;}
-.add-type-btn{padding:6px 12px;border:1.5px solid var(--xsoft);border-radius:20px;font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);}
-.add-type-btn:hover{border-color:var(--g);background:var(--gs);color:var(--g);}
-
-/* ── GRID CANVAS ── */
-.gc{
-  display:grid;
-  grid-template-columns:repeat(4,1fr);
-  grid-auto-rows:88px;
-  gap:7px;
-  padding:8px;
-  border-radius:12px;
-  border:1px solid var(--xsoft);
-  background:var(--w);
-  position:relative;
-  min-height:520px;
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --g:#1F4D3A; --gl:#EBF3EF; --ink:#1A1A1A; --ink2:#666; --bg:#F8F8F8;
+  --brd:rgba(0,0,0,.1); --r:14px; --shadow:0 2px 12px rgba(0,0,0,.08);
 }
-.gc-bg{
-  position:absolute;inset:8px;
-  background:
-    linear-gradient(#f0f0f0 1px,transparent 1px),
-    linear-gradient(90deg,#f0f0f0 1px,transparent 1px);
-  background-size:calc(25% + 1.75px) 96px, calc(25% + 1.75px) 96px;
-  border-radius:8px;
-  pointer-events:none;
-  z-index:0;
-}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);min-height:100vh;}
+button{font-family:inherit;cursor:pointer;}
 
-/* ── DROP ZONES ── */
-.dz{border-radius:8px;border:2px dashed transparent;transition:all .1s;z-index:1;}
-.dz.hover{border-color:var(--g)!important;background:rgba(31,77,58,.07)!important;}
+/* ── Header ── */
+.hdr{display:flex;align-items:center;gap:10px;padding:14px 16px;background:#fff;border-bottom:0.5px solid var(--brd);position:sticky;top:0;z-index:100;}
+.hdr-title{font-size:16px;font-weight:800;color:var(--g);flex:1;}
+.hdr-save{background:var(--g);color:#fff;border:none;padding:8px 18px;border-radius:20px;font-size:13px;font-weight:700;}
+.hdr-back{width:36px;height:36px;border:none;background:none;font-size:20px;color:var(--ink2);display:flex;align-items:center;justify-content:center;}
+.status-bar{padding:6px 16px;font-size:12px;text-align:center;display:none;}
+.status-bar.show{display:block;}
+.status-bar.ok{background:#D1FAE5;color:#065F46;}
+.status-bar.err{background:#FEE2E2;color:#B91C1C;}
 
-/* ── SECTION TILES ── */
-.st{
-  border-radius:10px;cursor:pointer;position:relative;
-  display:flex;flex-direction:column;justify-content:center;
-  padding:10px 12px;transition:box-shadow .15s;z-index:2;
-  -webkit-user-select:none;user-select:none;
-}
-.st:hover{box-shadow:0 4px 18px rgba(0,0,0,.18);}
-.st.sel{box-shadow:0 0 0 3px #fff,0 0 0 5px var(--g),0 6px 24px rgba(0,0,0,.2);}
-.st.drag{opacity:.45;z-index:1;pointer-events:none;}
-.st-size-tag{position:absolute;top:6px;right:8px;font-size:9px;font-weight:700;background:rgba(0,0,0,.25);color:#fff;padding:2px 6px;border-radius:4px;font-family:var(--mono);}
-.st-type-tag{font-size:9px;font-weight:700;opacity:.6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
-.st-title{font-size:13px;font-weight:700;line-height:1.3;}
-.st-sub{font-size:10px;opacity:.7;margin-top:2px;}
-.st-inactive{opacity:.4;}
+/* ── Section tabs ── */
+.sec-tabs{display:flex;background:#fff;border-bottom:0.5px solid var(--brd);}
+.sec-tab{flex:1;padding:12px 0;font-size:13px;font-weight:600;border:none;background:none;color:var(--ink2);border-bottom:2.5px solid transparent;}
+.sec-tab.on{color:var(--g);border-bottom-color:var(--g);}
 
-/* ── PANEL ── */
-.ep{width:264px;border-left:1px solid var(--xsoft);background:var(--w);overflow-y:auto;display:flex;flex-direction:column;flex-shrink:0;}
-.ep-hdr{padding:12px 14px;border-bottom:1px solid var(--xsoft);font-size:13px;font-weight:700;background:var(--gs);color:var(--g);}
-.ep-body{padding:14px;display:flex;flex-direction:column;gap:11px;flex:1;}
-.ep-empty{display:flex;align-items:center;justify-content:center;flex:1;color:var(--xsoft);font-size:12px;padding:20px;text-align:center;line-height:1.6;}
-.ep-group{display:flex;flex-direction:column;gap:5px;}
-.ep-label{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.5px;}
-.ep-input,.ep-select{width:100%;padding:7px 9px;border:1.5px solid var(--xsoft);border-radius:8px;font-size:13px;font-family:var(--sans);outline:none;background:var(--w);}
-.ep-input:focus,.ep-select:focus{border-color:var(--g);}
-.ep-row{display:grid;grid-template-columns:1fr 1fr;gap:7px;}
-.size-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;}
-.size-btn{padding:6px 4px;border:1.5px solid var(--xsoft);border-radius:7px;font-size:10px;font-weight:700;text-align:center;cursor:pointer;font-family:var(--mono);color:var(--soft);}
-.size-btn.on{border-color:var(--g);background:var(--gs);color:var(--g);}
-.color-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
-.cp{width:24px;height:24px;border-radius:6px;cursor:pointer;border:2px solid transparent;flex-shrink:0;}
-.cp.on{border-color:var(--g);transform:scale(1.2);}
-.ep-toggle{display:flex;align-items:center;justify-content:space-between;}
-.toggle-sw{position:relative;width:36px;height:20px;cursor:pointer;}
-.toggle-sw input{opacity:0;width:0;height:0;}
-.toggle-sl{position:absolute;inset:0;background:var(--xsoft);border-radius:10px;transition:.2s;}
-.toggle-sl:before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s;}
-.toggle-sw input:checked+.toggle-sl{background:var(--g);}
-.toggle-sw input:checked+.toggle-sl:before{transform:translateX(16px);}
-.ep-btn{width:100%;padding:8px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;border:1.5px solid;font-family:var(--sans);}
-.ep-btn-del{color:var(--r);border-color:var(--r);background:var(--w);}
-.ep-btn-del:hover{background:#FEF2F2;}
-.ep-btn-dupe{color:var(--soft);border-color:var(--xsoft);background:var(--w);}
-.ep-btn-dupe:hover{background:var(--bg);}
-hr.ep-hr{border:none;border-top:1px solid var(--xsoft);margin:2px 0;}
+/* ══ SECTION 1: Collage Editor ══ */
+.sec{display:none;padding:0 0 80px;}
+.sec.on{display:block;}
+
+/* Preview strip */
+.preview-label{padding:14px 16px 8px;font-size:13px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.06em;}
+.col-preview{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
+.col-preview::-webkit-scrollbar{display:none;}
+.col-group-preview{display:flex;min-width:calc(100vw - 32px);height:220px;gap:8px;scroll-snap-align:start;flex-shrink:0;}
+.col-card-prev{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
+.col-card-prev.lg{flex:3;}
+.col-card-prev.sm{flex:1;}
+.col-card-prev.active{border-color:var(--g);}
+.col-card-prev img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.col-ov-p{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.05),rgba(0,0,0,.58));}
+.col-body-p{position:absolute;bottom:0;left:0;right:0;padding:12px;}
+.col-title-p{font-size:15px;font-weight:800;color:#fff;}
+.col-title-p.sm{font-size:12px;}
+.col-sub-p{font-size:10px;color:rgba(255,255,255,.8);margin-top:1px;}
+.col-cta-p{display:inline-block;margin-top:6px;padding:4px 12px;border:1.5px solid rgba(255,255,255,.7);border-radius:20px;color:#fff;font-size:11px;font-weight:600;}
+.col-card-prev .add-card-btn{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;height:100%;background:#F2F2F2;color:#aaa;font-size:12px;}
+.col-card-prev .add-card-btn span{font-size:28px;}
+
+/* Right column for preview */
+.col-col-prev{flex:2;display:flex;flex-direction:column;gap:8px;}
+
+/* Card editor panel */
+.card-editor{background:#fff;margin:12px 16px;border-radius:var(--r);padding:16px;box-shadow:var(--shadow);}
+.card-editor-title{font-size:15px;font-weight:700;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+.card-editor-del{width:32px;height:32px;border-radius:50%;background:#FEE2E2;color:#B91C1C;border:none;font-size:16px;display:flex;align-items:center;justify-content:center;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:4px;}
+.field input,.field select,.field textarea{width:100%;border:1px solid var(--brd);border-radius:8px;padding:9px 12px;font-size:14px;font-family:inherit;background:#fff;color:var(--ink);}
+.field input:focus,.field select:focus{outline:none;border-color:var(--g);}
+.size-btns{display:flex;gap:8px;}
+.size-btn{flex:1;padding:10px;border-radius:8px;border:1.5px solid var(--brd);background:#fff;font-size:13px;font-weight:600;color:var(--ink2);}
+.size-btn.on{background:var(--gl);border-color:var(--g);color:var(--g);}
+.img-preview{width:100%;height:80px;border-radius:8px;object-fit:cover;margin-top:6px;display:none;}
+.add-card-row{display:flex;justify-content:center;padding:12px 16px;}
+.add-card-btn-main{display:flex;align-items:center;gap:8px;background:var(--gl);color:var(--g);border:1.5px dashed var(--g);border-radius:10px;padding:10px 20px;font-size:13px;font-weight:700;}
+
+/* ══ SECTION 2: Category editor ══ */
+.cat-tab-bar{overflow-x:auto;display:flex;gap:6px;padding:12px 16px;scrollbar-width:none;background:#fff;border-bottom:0.5px solid var(--brd);}
+.cat-tab-bar::-webkit-scrollbar{display:none;}
+.cat-btn{padding:7px 16px;border-radius:20px;border:none;background:#F2F2F2;color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;}
+.cat-btn.on{background:var(--g);color:#fff;}
+.cat-count{font-size:11px;opacity:.8;margin-left:4px;}
+
+.item-list{padding:0 16px 80px;}
+.item-row{display:flex;align-items:center;gap:10px;background:#fff;border-radius:10px;padding:10px 12px;margin-top:8px;box-shadow:0 1px 4px rgba(0,0,0,.06);}
+.item-drag{font-size:20px;color:#ccc;cursor:grab;flex-shrink:0;}
+.item-info{flex:1;min-width:0;}
+.item-code{font-size:10.5px;color:#999;font-weight:600;}
+.item-name{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.item-kcal{font-size:11px;color:#888;margin-top:2px;}
+.item-price{font-size:14px;font-weight:700;color:#C9573F;flex-shrink:0;}
+.item-toggle{width:36px;height:36px;border-radius:50%;border:none;font-size:16px;flex-shrink:0;}
+.item-toggle.on{background:var(--gl);color:var(--g);}
+.item-toggle.off{background:#F2F2F2;color:#999;}
+.item-order{width:24px;height:24px;border-radius:4px;border:1px solid var(--brd);background:#fff;font-size:11px;font-weight:700;color:var(--ink2);display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+
+/* FAB save */
+.fab-save{position:fixed;bottom:20px;right:16px;background:var(--g);color:#fff;border:none;border-radius:28px;padding:14px 24px;font-size:15px;font-weight:700;box-shadow:0 4px 18px rgba(31,77,58,.4);display:flex;align-items:center;gap:8px;z-index:200;}
+
+/* Loading */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--ink2);font-size:14px;gap:10px;}
+.spin{width:20px;height:20px;border:2px solid var(--brd);border-top-color:var(--g);border-radius:50%;animation:sp .7s linear infinite;}
+@keyframes sp{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 
-<div class="eh">
-  <div class="eh-logo">🎨 Home Editor — Under360</div>
-  <span class="eh-hint" id="saveStatus"></span>
-  <button class="eh-btn eh-preview" onclick="previewHome()">👁 Preview</button>
-  <button class="eh-btn eh-save" onclick="saveLayout()">💾 บันทึก layout</button>
+<div class="hdr">
+  <button class="hdr-back" onclick="history.back()">←</button>
+  <div class="hdr-title">Home Editor</div>
+  <button class="hdr-save" onclick="saveAll()">บันทึก</button>
+</div>
+<div class="status-bar" id="statusBar"></div>
+
+<div class="sec-tabs">
+  <button class="sec-tab on" onclick="switchSec(0)">📸 Collage บนสุด</button>
+  <button class="sec-tab" onclick="switchSec(1)">📋 จัดลำดับเมนู</button>
 </div>
 
-<div class="em">
-
-  <!-- GRID AREA -->
-  <div class="eg">
-    <div class="eg-info">
-      <span>🖱 ลากเพื่อย้าย · คลิกเพื่อแก้ไข · 4 columns</span>
-      <div class="add-types">
-        <span style="font-size:11px;color:var(--soft)">+ เพิ่ม:</span>
-        <button class="add-type-btn" onclick="addSection('meal_plan')">Meal Plan</button>
-        <button class="add-type-btn" onclick="addSection('item_grid')">Item Grid</button>
-        <button class="add-type-btn" onclick="addSection('promo')">Promo</button>
-      </div>
-    </div>
-    <div class="gc" id="gc">
-      <div class="gc-bg"></div>
-    </div>
+<!-- ══ SEC 0: COLLAGE EDITOR ══ -->
+<div class="sec on" id="sec0">
+  <div class="preview-label">Preview (scroll เพื่อดูทุก card)</div>
+  <div class="col-preview" id="colPreview">
+    <div class="loading"><div class="spin"></div>กำลังโหลด...</div>
   </div>
-
-  <!-- PROPERTIES PANEL -->
-  <div class="ep" id="panel">
-    <div class="ep-hdr">Properties</div>
-    <div class="ep-empty">← คลิก section<br>เพื่อแก้ไข</div>
+  <div id="cardEditorWrap"></div>
+  <div class="add-card-row">
+    <button class="add-card-btn-main" onclick="addCard()">
+      <span style="font-size:20px">＋</span> เพิ่ม Card ใหม่
+    </button>
   </div>
-
 </div>
+
+<!-- ══ SEC 1: CATEGORY ORDER ══ -->
+<div class="sec" id="sec1">
+  <div class="cat-tab-bar" id="catTabBar">
+    <div class="loading"><div class="spin"></div></div>
+  </div>
+  <div class="item-list" id="itemList">
+    <div class="loading"><div class="spin"></div>กำลังโหลด...</div>
+  </div>
+</div>
+
+<button class="fab-save" onclick="saveAll()">☁ บันทึกทั้งหมด</button>
 
 <script>
-const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
-const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
-let sb=null,layout=[],selectedKey=null,dragKey=null;
+const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 
-function getSB(){if(!sb)sb=supabase.createClient(SB_URL,SB_KEY);return sb;}
+let sb, cards = [], menuItems = [], activeCat = null, activeCardIdx = null;
+const CAT_LABELS = {meal_hp:'High Protein',meal_lc:'Low Carb',meal_s:'Special',meal_d:'Diet',meal_no:'No Carb'};
 
-const DEFAULTS=[
-  {section_key:'meal_hp',section_type:'meal_plan',col_start:1,row_start:1,col_span:4,row_span:2,title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',text_color:'#EBF3EF',item_filter:{he_group:'group_hp',limit:8},sort_order:10,is_active:true},
-  {section_key:'meal_lc',section_type:'meal_plan',col_start:1,row_start:3,col_span:2,row_span:2,title:'LC Plan',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',text_color:'#EBF3EF',item_filter:{he_group:'group_lc',limit:4},sort_order:20,is_active:true},
-  {section_key:'promo_w',section_type:'promo',col_start:3,row_start:3,col_span:2,row_span:2,title:'เมนูสัปดาห์',subtitle:'เปลี่ยนทุกสัปดาห์',bg_color:'#C9973F',text_color:'#ffffff',item_filter:{he_group:'group_special',limit:4},sort_order:30,is_active:true},
-  {section_key:'hp_grid',section_type:'item_grid',col_start:1,row_start:5,col_span:4,row_span:2,title:'เมนู High Protein',subtitle:'',bg_color:'#ffffff',text_color:'#1A1A1A',item_filter:{he_group:'group_hp',limit:16},sort_order:40,is_active:true},
-];
+window.onload = async function() {
+  sb = supabase.createClient(SB_URL, SB_KEY);
+  await Promise.all([loadCards(), loadMenuItems()]);
+};
 
-const SIZES=[{k:'1×1',w:1,h:1},{k:'2×1',w:2,h:1},{k:'1×2',w:1,h:2},{k:'2×2',w:2,h:2},{k:'4×1',w:4,h:1},{k:'4×2',w:4,h:2},{k:'4×3',w:4,h:3},{k:'4×4',w:4,h:4}];
-const PALETTE=['#1F4D3A','#2D6B53','#C9973F','#DC2626','#3B82F6','#7C3AED','#ffffff','#F7F8F6','#1A1A1A'];
-const CATS=['meal_hp','meal_lc','no_regular','no_special','pack_regular','trend'];
-const TYPE_OPTS=[{v:'meal_plan',l:'Meal Plan Banner'},{v:'item_grid',l:'Item Grid (หลายเมนู)'},{v:'promo',l:'Promo Banner'}];
-
-async function loadLayout(){
-  try{
-    const {data}=await getSB().from('home_layout').select('*').order('sort_order');
-    layout=(data&&data.length)?data:DEFAULTS.map(d=>({...d}));
-  }catch(e){layout=DEFAULTS.map(d=>({...d}));}
-  render();
+// ══ DATA LOADING ══
+async function loadCards() {
+  try {
+    const {data} = await sb.from('home_layout').select('*').order('sort_order');
+    cards = (data||[]).map(function(r){ return {
+      id: r.section_key,
+      title: r.title||'',
+      subtitle: r.subtitle||'',
+      bg_color: r.bg_color||'#1F4D3A',
+      bg_image: r.bg_image||'',
+      size: (r.col_span||2) >= 3 ? 'large' : 'small',
+      link_cat: (r.item_filter||{}).category || (r.item_filter||{}).he_group || '',
+      sort_order: r.sort_order||0
+    };});
+  } catch(e) {
+    // Default cards
+    cards = [
+      {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'large',link_cat:'meal_hp',sort_order:0},
+      {id:'meal_lc',title:'Low Carb',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'meal_lc',sort_order:1},
+      {id:'meal_s',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'small',link_cat:'meal_s',sort_order:2}
+    ];
+  }
+  renderPreview();
 }
 
-function render(){
-  const gc=document.getElementById('gc');
-  const maxRow=Math.max(8,...layout.map(s=>s.row_start+s.row_span-1))+2;
+async function loadMenuItems() {
+  try {
+    const {data} = await sb.from('menu_items').select('*').eq('is_available', true).order('sort_order');
+    menuItems = data||[];
+  } catch(e) { menuItems = []; }
+  renderCatTabs();
+}
 
-  // Drop zones (background grid)
-  let html='<div class="gc-bg"></div>';
-  for(let r=1;r<=maxRow;r++){
-    for(let c=1;c<=4;c++){
-      html+=`<div class="dz" data-c="${c}" data-r="${r}" style="grid-column:${c}/span 1;grid-row:${r}/span 1"
-        ondragover="dzOv(event,this)" ondragleave="dzLv(this)" ondrop="dzDp(event,${c},${r})"></div>`;
-    }
+// ══ SEC 0: COLLAGE PREVIEW ══
+function renderPreview() {
+  var el = document.getElementById('colPreview');
+  if (!cards.length) { el.innerHTML = '<div style="padding:40px;text-align:center;color:#aaa">ยังไม่มี card — กด เพิ่ม Card ใหม่</div>'; return; }
+
+  // Group into pages of 3 (1 large + up to 2 small)
+  var groups = [], i = 0;
+  while (i < cards.length) {
+    var g = [];
+    if (cards[i].size === 'large') { g.push(cards[i]); i++; } else { g.push(cards[i]); i++; }
+    while (i < cards.length && cards[i].size === 'small' && g.length < 3) { g.push(cards[i]); i++; }
+    groups.push(g);
   }
 
-  // Section tiles
-  for(const s of layout){
-    const cls=['st',s.section_key===selectedKey?'sel':'',dragKey===s.section_key?'drag':'',!s.is_active?'st-inactive':''].filter(Boolean).join(' ');
-    const tMap={meal_plan:'Meal Plan',item_grid:'Item Grid',promo:'Promo'};
-    html+=`<div class="${cls}" id="tile_${s.section_key}"
-      draggable="true"
-      style="grid-column:${s.col_start}/span ${Math.min(s.col_span,5-s.col_start)};grid-row:${s.row_start}/span ${s.row_span};background:${s.bg_color};color:${s.text_color};"
-      ondragstart="dStart(event,'${s.section_key}')" ondragend="dEnd(event,'${s.section_key}')"
-      onclick="select('${s.section_key}')">
-      <div class="st-size-tag">${s.col_span}×${s.row_span}</div>
-      <div class="st-type-tag">${tMap[s.section_type]||s.section_type}</div>
-      <div class="st-title">${s.title||'—'}</div>
-      ${s.subtitle?`<div class="st-sub">${s.subtitle}</div>`:''}
-    </div>`;
-  }
-  gc.innerHTML=html;
-  renderPanel();
-}
-
-function select(key){selectedKey=key;render();}
-
-function renderPanel(){
-  const panel=document.getElementById('panel');
-  const s=layout.find(x=>x.section_key===selectedKey);
-  if(!s){panel.innerHTML='<div class="ep-hdr">Properties</div><div class="ep-empty">← คลิก section<br>เพื่อแก้ไข</div>';return;}
-  const f=s.item_filter||{};
-  panel.innerHTML=`
-<div class="ep-hdr">✏️ ${s.title||s.section_key}</div>
-<div class="ep-body">
-  <div class="ep-group">
-    <div class="ep-label">ประเภท</div>
-    <select class="ep-select" onchange="up('section_type',this.value)">
-      ${TYPE_OPTS.map(t=>`<option value="${t.v}"${s.section_type===t.v?' selected':''}>${t.l}</option>`).join('')}
-    </select>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">ขนาด</div>
-    <div class="size-grid">
-      ${SIZES.map(o=>`<div class="size-btn${s.col_span===o.w&&s.row_span===o.h?' on':''}" onclick="upSize(${o.w},${o.h})">${o.k}</div>`).join('')}
-    </div>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">ตำแหน่ง (col, row)</div>
-    <div class="ep-row">
-      <input class="ep-input" type="number" min="1" max="4" value="${s.col_start}" onchange="up('col_start',+this.value)" placeholder="col start">
-      <input class="ep-input" type="number" min="1" max="20" value="${s.row_start}" onchange="up('row_start',+this.value)" placeholder="row start">
-    </div>
-  </div>
-  <hr class="ep-hr">
-  <div class="ep-group">
-    <div class="ep-label">Title / Subtitle</div>
-    <input class="ep-input" value="${s.title||''}" onchange="up('title',this.value)" placeholder="Title" style="margin-bottom:5px">
-    <input class="ep-input" value="${s.subtitle||''}" onchange="up('subtitle',this.value)" placeholder="Subtitle">
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">Background Color</div>
-    <div class="color-row">
-      ${PALETTE.map(c=>`<div class="cp${s.bg_color===c?' on':''}" style="background:${c};${c==='#ffffff'||c==='#F7F8F6'?'border:1px solid #ddd':''}" onclick="up('bg_color','${c}')"></div>`).join('')}
-      <input type="color" value="${s.bg_color}" onchange="up('bg_color',this.value)" style="width:24px;height:24px;padding:0;border:none;border-radius:5px;cursor:pointer;">
-    </div>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">Text Color</div>
-    <div class="color-row">
-      ${['#ffffff','#EBF3EF','#1A1A1A','#1F4D3A','#C9973F'].map(c=>`<div class="cp${s.text_color===c?' on':''}" style="background:${c};border:1.5px solid #ddd" onclick="up('text_color','${c}')"></div>`).join('')}
-      <input type="color" value="${s.text_color}" onchange="up('text_color',this.value)" style="width:24px;height:24px;padding:0;border:none;border-radius:5px;cursor:pointer;">
-    </div>
-  </div>
-  <hr class="ep-hr">
-  <div class="ep-group">
-    <div class="ep-label">🔗 HE Group (ลิงค์กลุ่มสินค้า)</div>
-    <input class="ep-input" value="${f.he_group||''}" onchange="upFilter('he_group',this.value)" placeholder="group_a, group_hp, ...">
-    <div style="font-size:10px;color:var(--soft);margin-top:3px">ตรงกับ he_group ใน menu_items · มีสิทธิ์ก่อน category</div>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">หรือ Category (fallback)</div>
-    <select class="ep-select" onchange="upFilter('category',this.value)">
-      <option value="">— ไม่ใช้ category —</option>
-      ${CATS.map(c=>`<option value="${c}"${f.category===c?' selected':''}>${c}</option>`).join('')}
-    </select>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">จำนวนสูงสุด</div>
-    <input class="ep-input" type="number" min="1" max="32" value="${f.limit||8}" onchange="upFilter('limit',+this.value)">
-    <div style="font-size:10px;color:var(--soft);margin-top:2px">4×2=8 · 4×3=12 · 4×4=16 items</div>
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">ช่องว่างที่เหลือ (filler)</div>
-    <select class="ep-select" onchange="up('filler_type',this.value)">
-      <option value="empty"${s.filler_type==='empty'||!s.filler_type?' selected':''}>ว่างเปล่า</option>
-      <option value="text"${s.filler_type==='text'?' selected':''}>ข้อความ custom</option>
-      <option value="image"${s.filler_type==='image'?' selected':''}>รูปภาพ (URL)</option>
-    </select>
-    ${s.filler_type==='text'?
-      `<input class="ep-input" value="${s.filler_text||''}" onchange="up('filler_text',this.value)" placeholder="เช่น เมนูใหม่เร็วๆนี้ 🍳" style="margin-top:5px">`:
-     s.filler_type==='image'?
-      `<input class="ep-input" value="${s.filler_image||''}" onchange="up('filler_image',this.value)" placeholder="https://... URL รูปภาพ" style="margin-top:5px">`:''
+  var html = groups.map(function(g, gi) {
+    var mainCard = g[0];
+    var isLg = mainCard.size === 'large';
+    var cardHtml = renderPreviewCard(mainCard, cards.indexOf(mainCard));
+    var rightHtml = '';
+    if (g.length > 1) {
+      var smCards = g.slice(1).map(function(c){ return renderPreviewCard(c, cards.indexOf(c)); }).join('');
+      rightHtml = '<div class="col-col-prev">'+smCards+'</div>';
     }
-  </div>
-  <div class="ep-group">
-    <div class="ep-label">Sort order</div>
-    <input class="ep-input" type="number" value="${s.sort_order||0}" onchange="up('sort_order',+this.value)">
-  </div>
-  <hr class="ep-hr">
-  <div class="ep-toggle">
-    <span style="font-size:12px;font-weight:600">แสดงบนหน้าโฮม</span>
-    <label class="toggle-sw">
-      <input type="checkbox" ${s.is_active?'checked':''} onchange="up('is_active',this.checked)">
-      <span class="toggle-sl"></span>
-    </label>
-  </div>
-  <button class="ep-btn ep-btn-dupe" onclick="dupeSection()">⧉ Duplicate</button>
-  <button class="ep-btn ep-btn-del" onclick="delSection()">🗑 ลบ section นี้</button>
-</div>`;
+    return '<div class="col-group-preview">'+cardHtml+rightHtml+'</div>';
+  }).join('');
+
+  el.innerHTML = html;
 }
 
-function up(k,v){const s=layout.find(x=>x.section_key===selectedKey);if(s){s[k]=v;render();}}
-function upSize(w,h){const s=layout.find(x=>x.section_key===selectedKey);if(s){s.col_span=w;s.row_span=h;render();}}
-function upFilter(k,v){const s=layout.find(x=>x.section_key===selectedKey);if(s){s.item_filter={...s.item_filter,[k]:v};render();}}
-function delSection(){if(!selectedKey)return;layout=layout.filter(s=>s.section_key!==selectedKey);selectedKey=null;render();}
-function dupeSection(){
-  const s=layout.find(x=>x.section_key===selectedKey);if(!s)return;
-  const maxRow=Math.max(...layout.map(x=>x.row_start+x.row_span));
-  const newKey='sec_'+Date.now();
-  layout.push({...s,section_key:newKey,row_start:maxRow,sort_order:(s.sort_order||0)+1});
-  selectedKey=newKey;render();
+function renderPreviewCard(c, idx) {
+  var isLg = c.size === 'large';
+  var imgHtml = c.bg_image ? '<img src="'+c.bg_image+'" onerror="this.style.display=\'none\'">' : '';
+  var bg = 'background:'+c.bg_color+';';
+  return '<div class="col-card-prev '+(isLg?'lg':'sm')+(activeCardIdx===idx?' active':'')+'" style="'+bg+'" onclick="selectCard('+idx+')">'
+    +imgHtml
+    +'<div class="col-ov-p"></div>'
+    +'<div class="col-body-p">'
+    +'<div class="col-title-p'+(isLg?'':' sm')+'">'+esc(c.title)+'</div>'
+    +'<div class="col-sub-p">'+esc(c.subtitle)+'</div>'
+    +(isLg?'<span class="col-cta-p">ดูเมนู →</span>':'')
+    +'</div>'
+    +'</div>';
 }
 
-function addSection(type){
-  const maxRow=layout.reduce((m,s)=>Math.max(m,s.row_start+s.row_span),1);
-  const key='sec_'+Date.now();
-  const colors={meal_plan:['#1F4D3A','#EBF3EF'],item_grid:['#ffffff','#1A1A1A'],promo:['#C9973F','#ffffff']};
-  const [bg,tc]=colors[type]||['#EBF3EF','#1F4D3A'];
-  layout.push({section_key:key,section_type:type,col_start:1,row_start:maxRow,col_span:2,row_span:2,title:'Section ใหม่',subtitle:'',bg_color:bg,text_color:tc,item_filter:{},sort_order:999,is_active:true});
-  selectedKey=key;render();
-  document.getElementById('gc').scrollTop=9999;
+function selectCard(idx) {
+  activeCardIdx = (activeCardIdx === idx) ? null : idx;
+  renderPreview();
+  renderCardEditor();
 }
 
-// ── DRAG & DROP ──────────────────────────────────────────
-function dStart(e,key){
-  dragKey=key;
-  e.dataTransfer.effectAllowed='move';
-  setTimeout(()=>{const t=document.getElementById('tile_'+key);if(t)t.classList.add('drag');},0);
-}
-function dEnd(e,key){
-  dragKey=null;
-  const t=document.getElementById('tile_'+key);if(t)t.classList.remove('drag');
-  document.querySelectorAll('.dz.hover').forEach(d=>d.classList.remove('hover'));
-}
-function dzOv(e,el){e.preventDefault();e.dataTransfer.dropEffect='move';el.classList.add('hover');}
-function dzLv(el){el.classList.remove('hover');}
-function dzDp(e,col,row){
-  e.preventDefault();
-  if(dragKey){
-    const s=layout.find(x=>x.section_key===dragKey);
-    if(s){s.col_start=Math.max(1,Math.min(col,5-s.col_span));s.row_start=Math.max(1,row);}
-    dragKey=null;
-  }
-  document.querySelectorAll('.dz.hover').forEach(d=>d.classList.remove('hover'));
-  render();
+function renderCardEditor() {
+  var wrap = document.getElementById('cardEditorWrap');
+  if (activeCardIdx === null) { wrap.innerHTML = ''; return; }
+  var c = cards[activeCardIdx];
+  if (!c) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = '<div class="card-editor">'
+    +'<div class="card-editor-title"><span>✏️ แก้ไข Card #'+(activeCardIdx+1)+'</span>'
+    +'<button class="card-editor-del" onclick="deleteCard('+activeCardIdx+')" title="ลบ card นี้">🗑</button></div>'
+    +'<div class="field"><label>ขนาด Card</label>'
+    +'<div class="size-btns">'
+    +'<button class="size-btn'+(c.size==='large'?' on':'')+'" onclick="setCardSize(\'large\')">⬛ ใหญ่ (2/3)</button>'
+    +'<button class="size-btn'+(c.size==='small'?' on':'')+'" onclick="setCardSize(\'small\')">▪ เล็ก (1/3)</button>'
+    +'</div></div>'
+    +'<div class="field"><label>ชื่อ</label><input id="c-title" value="'+esc(c.title)+'" oninput="updateCard()"></div>'
+    +'<div class="field"><label>คำบรรยาย</label><input id="c-sub" value="'+esc(c.subtitle)+'" oninput="updateCard()"></div>'
+    +'<div class="field"><label>รูปพื้นหลัง (URL)</label>'
+    +'<input id="c-img" value="'+esc(c.bg_image)+'" placeholder="https://..." oninput="updateCard();previewImg()">'
+    +'<img id="c-img-prev" class="img-preview" src="'+c.bg_image+'" '+(c.bg_image?'style="display:block"':'')+'></div>'
+    +'<div class="field"><label>สีพื้นหลัง (ถ้าไม่มีรูป)</label>'
+    +'<input type="color" id="c-color" value="'+c.bg_color+'" style="height:44px;border-radius:8px;padding:4px;width:100%;" oninput="updateCard()"></div>'
+    +'<div class="field"><label>ลิ้งไปที่ (category หรือ __anchor__ เพื่อเลื่อนลงเมนู)</label>'
+    +'<input id="c-cat" value="'+esc(c.link_cat)+'" placeholder="เช่น meal_hp หรือ __anchor__" oninput="updateCard()"></div>'
+    +'<div style="display:flex;gap:8px;margin-top:4px">'
+    +(activeCardIdx > 0 ? '<button style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;" onclick="moveCard(-1)">↑ ขึ้น</button>' : '')
+    +(activeCardIdx < cards.length-1 ? '<button style="flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;" onclick="moveCard(1)">↓ ลง</button>' : '')
+    +'</div>'
+    +'</div>';
 }
 
-// ── SAVE ─────────────────────────────────────────────────
-async function saveLayout(){
-  const sb_=getSB();
-  const el=document.getElementById('saveStatus');
-  el.textContent='กำลังบันทึก...';
-  try{
-    for(let i=0;i<layout.length;i++){
-      const s=layout[i];
-      s.sort_order=s.sort_order||i*10;
-      await sb_.from('home_layout').upsert({...s,updated_at:new Date().toISOString()},{onConflict:'section_key'});
+function updateCard() {
+  if (activeCardIdx === null) return;
+  var c = cards[activeCardIdx];
+  c.title = document.getElementById('c-title').value;
+  c.subtitle = document.getElementById('c-sub').value;
+  c.bg_image = document.getElementById('c-img').value;
+  c.bg_color = document.getElementById('c-color').value;
+  c.link_cat = document.getElementById('c-cat').value;
+  renderPreview();
+}
+
+function previewImg() {
+  var url = document.getElementById('c-img').value;
+  var prev = document.getElementById('c-img-prev');
+  if (url) { prev.src = url; prev.style.display = 'block'; } else { prev.style.display = 'none'; }
+}
+
+function setCardSize(sz) {
+  if (activeCardIdx === null) return;
+  cards[activeCardIdx].size = sz;
+  renderPreview();
+  renderCardEditor();
+}
+
+function deleteCard(idx) {
+  if (!confirm('ลบ card นี้?')) return;
+  cards.splice(idx, 1);
+  activeCardIdx = null;
+  renderPreview();
+  renderCardEditor();
+}
+
+function addCard() {
+  cards.push({id:'card_'+Date.now(),title:'ชื่อ Card ใหม่',subtitle:'',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'',sort_order:cards.length});
+  activeCardIdx = cards.length - 1;
+  renderPreview();
+  renderCardEditor();
+  // Scroll to end
+  setTimeout(function(){ var el=document.getElementById('colPreview'); if(el) el.scrollLeft=el.scrollWidth; }, 100);
+}
+
+function moveCard(dir) {
+  var i = activeCardIdx;
+  if (i + dir < 0 || i + dir >= cards.length) return;
+  var tmp = cards[i]; cards[i] = cards[i+dir]; cards[i+dir] = tmp;
+  activeCardIdx = i + dir;
+  renderPreview();
+  renderCardEditor();
+}
+
+// ══ SEC 1: CATEGORY ORDER ══
+function renderCatTabs() {
+  var bar = document.getElementById('catTabBar');
+  var cats = getCats();
+  if (!cats.length) { bar.innerHTML = '<div style="color:#aaa;padding:8px;font-size:13px">ยังไม่มีสินค้าออนไลน์</div>'; return; }
+  bar.innerHTML = cats.map(function(c) {
+    var cnt = menuItems.filter(function(m){ return m.category===c; }).length;
+    return '<button class="cat-btn'+(activeCat===c?' on':'')+'" onclick="selectCat(\''+c+'\')">'+(CAT_LABELS[c]||c)+'<span class="cat-count">'+cnt+'</span></button>';
+  }).join('');
+  if (!activeCat && cats.length) { activeCat = cats[0]; renderCatItems(); }
+}
+
+function getCats() {
+  var seen = {}, cats = [];
+  menuItems.forEach(function(m){ if(m.category && !seen[m.category]){ seen[m.category]=1; cats.push(m.category); }});
+  return cats;
+}
+
+function selectCat(cat) {
+  activeCat = cat;
+  renderCatTabs();
+  renderCatItems();
+}
+
+function renderCatItems() {
+  var el = document.getElementById('itemList');
+  var items = menuItems.filter(function(m){ return m.category === activeCat; });
+  if (!items.length) { el.innerHTML = '<div class="loading">ไม่มีสินค้าในหมวดนี้</div>'; return; }
+  el.innerHTML = items.map(function(m, i) {
+    return '<div class="item-row" draggable="true" data-id="'+m.id+'" data-idx="'+i+'">'
+      +'<span class="item-drag">⠿</span>'
+      +'<div class="item-order">'+(m.sort_order||'-')+'</div>'
+      +'<div class="item-info"><div class="item-code">'+(m.code||'')+'</div><div class="item-name">'+esc(m.name)+'</div><div class="item-kcal">'+(m.calories||'')+(m.calories?' kcal':'')+'</div></div>'
+      +'<div class="item-price">฿'+m.price+'</div>'
+      +'</div>';
+  }).join('');
+  setupDrag();
+}
+
+// Simple drag-to-reorder
+var dragSrc = null;
+function setupDrag() {
+  var rows = document.querySelectorAll('.item-row');
+  rows.forEach(function(row) {
+    row.addEventListener('dragstart', function(e){ dragSrc = this; this.style.opacity='.4'; });
+    row.addEventListener('dragend', function(){ this.style.opacity='1'; });
+    row.addEventListener('dragover', function(e){ e.preventDefault(); this.style.background='var(--gl)'; });
+    row.addEventListener('dragleave', function(){ this.style.background=''; });
+    row.addEventListener('drop', function(e) {
+      e.preventDefault(); this.style.background='';
+      if (dragSrc === this) return;
+      var srcId = dragSrc.dataset.id;
+      var tgtId = this.dataset.id;
+      var srcIdx = menuItems.findIndex(function(m){ return m.id==srcId; });
+      var tgtIdx = menuItems.findIndex(function(m){ return m.id==tgtId; });
+      if (srcIdx<0||tgtIdx<0) return;
+      var tmp = menuItems[srcIdx]; menuItems[srcIdx] = menuItems[tgtIdx]; menuItems[tgtIdx] = tmp;
+      // Update sort_order values
+      menuItems.filter(function(m){ return m.category===activeCat; }).forEach(function(m,i){ m.sort_order = i+1; });
+      renderCatItems();
+    });
+  });
+}
+
+// ══ SAVE ══
+async function saveAll() {
+  showStatus('กำลังบันทึก...', '');
+  var ok = true;
+
+  // Save collage cards to home_layout
+  try {
+    for (var i=0; i<cards.length; i++) {
+      var c = cards[i];
+      var row = {
+        section_key: c.id,
+        section_type: c.size==='large' ? 'meal_plan' : 'promo',
+        col_start: 1, row_start: i+1,
+        col_span: c.size==='large' ? 4 : 2,
+        row_span: c.size==='large' ? 4 : 2,
+        title: c.title,
+        subtitle: c.subtitle,
+        bg_color: c.bg_color,
+        bg_image: c.bg_image,
+        text_color: '#fff',
+        item_filter: c.link_cat ? {category:c.link_cat} : {},
+        sort_order: i,
+        is_active: true
+      };
+      var {error} = await sb.from('home_layout').upsert(row, {onConflict:'section_key'});
+      if (error) { ok = false; console.error(error); }
     }
-    // Hide removed sections
-    const {data:all}=await sb_.from('home_layout').select('section_key');
-    if(all){
-      const active=new Set(layout.map(s=>s.section_key));
-      const gone=all.filter(r=>!active.has(r.section_key));
-      if(gone.length)await sb_.from('home_layout').update({is_active:false}).in('section_key',gone.map(r=>r.section_key));
-    }
-    el.textContent='✅ บันทึกแล้ว';
-    setTimeout(()=>el.textContent='',3000);
-  }catch(err){el.textContent='❌ '+err.message;console.error(err);}
-}
-function previewHome(){window.open('https://under360-system.vercel.app/liff_customer.html','_blank');}
+  } catch(e) { ok = false; }
 
-loadLayout();
+  // Save menu item sort orders
+  try {
+    var catItems = menuItems.filter(function(m){ return m.sort_order !== undefined; });
+    for (var j=0; j<catItems.length; j++) {
+      var m = catItems[j];
+      await sb.from('menu_items').update({sort_order: m.sort_order}).eq('id', m.id);
+    }
+  } catch(e) { /* sort_order save is best-effort */ }
+
+  showStatus(ok ? '✅ บันทึกสำเร็จ!' : '⚠️ บันทึกบางส่วนไม่สำเร็จ', ok ? 'ok' : 'err');
+}
+
+function showStatus(msg, type) {
+  var el = document.getElementById('statusBar');
+  el.textContent = msg;
+  el.className = 'status-bar show' + (type ? ' '+type : '');
+  if (type) setTimeout(function(){ el.className='status-bar'; }, 3000);
+}
+
+function switchSec(idx) {
+  document.querySelectorAll('.sec').forEach(function(s,i){ s.classList.toggle('on', i===idx); });
+  document.querySelectorAll('.sec-tab').forEach(function(t,i){ t.classList.toggle('on', i===idx); });
+}
+
+function esc(s) { return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 </body>
 </html>

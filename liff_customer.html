@@ -415,6 +415,27 @@ body{background:#fff!important}
 .ig-ttl{font-size:17px;font-weight:800;color:var(--ink);}
 .ig-all{font-size:13px;color:var(--g);font-weight:600;}
 
+
+/* ── Collage swipeable strip ── */
+.col-scroll{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
+.col-scroll::-webkit-scrollbar{display:none;}
+.col-group{display:flex;min-width:calc(100vw - 32px);height:224px;gap:8px;scroll-snap-align:start;flex-shrink:0;}
+.col-card{border-radius:18px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;}
+.col-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
+.col-card.lg{flex:3;}
+.col-col{flex:2;display:flex;flex-direction:column;gap:8px;}
+.col-card.sm{flex:1;}
+.col-ov{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.58) 100%);}
+.col-body{position:absolute;bottom:0;left:0;right:0;padding:14px 14px 12px;}
+.col-title{font-size:16px;font-weight:800;color:#fff;line-height:1.2;}
+.col-title.sm{font-size:13px;}
+.col-sub{font-size:11px;color:rgba(255,255,255,.85);margin-top:2px;}
+.col-sub.sm{font-size:10px;}
+.col-cta{display:inline-block;margin-top:8px;padding:5px 14px;border:1.5px solid rgba(255,255,255,.7);border-radius:20px;color:#fff;font-size:12px;font-weight:600;}
+
+/* ── Header icon fix ── */
+.hdr-icon svg{width:22px;height:22px;display:block;}
+
 </style>
 </head>
 <body>
@@ -438,16 +459,16 @@ body{background:#fff!important}
 <div class="scr" id="s-menu">
   <div class="hdr">
     <div class="hdr-logo">UNDER<em>360</em></div>
-    <button class="hdr-icon" id="profile-btn" onclick="goProfile()" style="padding:0;overflow:hidden;">
-      <img id="profile-pic" src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none">
-      <span id="profile-init" style="font-size:14px;font-weight:700">👤</span>
+    <button class="hdr-icon" onclick="goOrders()" title="ประวัติออเดอร์" style="margin-left:auto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2"/><polyline points="9 7 11 7"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
     </button>
-    <button class="hdr-icon" id="cart-hdr-btn" onclick="goCart()">
-      <svg viewBox="0 0 24 24"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <button class="hdr-icon" id="cart-hdr-btn" onclick="goCart()" style="position:relative" title="ตะกร้า">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
       <span class="badge" id="cart-badge" style="display:none">0</span>
     </button>
-    <button class="hdr-icon" onclick="goOrders()">
-      <svg viewBox="0 0 24 24"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="9" y1="7" x2="15" y2="7"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="17" x2="12" y2="17"/></svg>
+    <button class="hdr-icon" id="profile-btn" onclick="goProfile()" style="padding:0;overflow:hidden;" title="โปรไฟล์">
+      <img id="profile-pic" src="" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:none">
+      <svg id="profile-init" viewBox="0 0 24 24" fill="none" stroke="var(--g)" stroke-width="1.8" stroke-linecap="round"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
     </button>
   </div>
   <div class="scroll pb-nav">
@@ -1267,34 +1288,38 @@ function renderHomeGrid() {
   var itemGrids = homeLayout.filter(function(s){ return s.section_type==='item_grid'; });
   var html = '';
 
-  // ── Strip 1: Meal Plans (R→L slow marquee) ──
-  if (mealSecs.length) {
+  // ── Collage (meal_plan cards) — static 1big+2small, swipeable ──
+  var colCards = mealSecs.concat(promoSecs);
+  if (colCards.length) {
     html += '<div class="sec-title-row"><span class="sec-title">Meal Plans</span></div>';
-    var cards1 = mealSecs.map(function(s){
-      var isLg = (s.col_span||2) >= 3;
-      var f = s.item_filter||{};
-      var bg = 'background:'+s.bg_color+';';
-      var imgEl = s.bg_image
-        ? '<img src="'+s.bg_image+'" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.remove()">'
-        : '<div class="mq-bg" style="'+bg+'width:100%;height:100%;"></div>';
-      var cat1 = f.category||f.he_group||'';
-      return '<div class="mq-card '+(isLg?'lg':'sm')+'" data-cat="'+cat1+'" onclick="jumpCat(this.dataset.cat)">'+imgEl+'<div class="mq-overlay"></div><div class="mq-body"><div class="mq-title">'+s.title+'</div><div class="mq-sub">'+(s.subtitle||'')+'</div>'+(isLg?'<span class="mq-cta">ดูเมนู →</span>':'')+'</div></div>';
-    }).join('');
-    html += '<div class="mq-wrap"><div class="mq-inner mq-rtl">'+cards1+cards1+'</div></div>';
-  }
+    html += '<div class="col-scroll" id="colScroll">';
 
-  // ── Strip 2: Promo (L→R slow marquee) ──
-  if (promoSecs.length) {
-    var cards2 = promoSecs.map(function(s){
-      var f = s.item_filter||{};
-      var bg = 'background:'+s.bg_color+';';
-      var imgEl = s.bg_image
-        ? '<img src="'+s.bg_image+'" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="this.remove()">'
-        : '<div class="mq-bg" style="'+bg+'width:100%;height:100%;"></div>';
-      var cat2 = f.category||f.he_group||'';
-      return '<div class="mq-card sm" data-cat="'+cat2+'" onclick="jumpCat(this.dataset.cat)">'+imgEl+'<div class="mq-overlay"></div><div class="mq-body"><div class="mq-title">'+s.title+'</div><div class="mq-sub">'+(s.subtitle||'')+'</div></div></div>';
-    }).join('');
-    html += '<div class="mq-wrap" style="margin-top:6px"><div class="mq-inner mq-ltr">'+cards2+cards2+'</div></div>';
+    // Group into sets of 3 (1 large + 2 small) per swipe page
+    for (var i = 0; i < colCards.length || i === 0; i += 3) {
+      var g = colCards.slice(i, i + 3);
+      if (!g.length) break;
+      html += '<div class="col-group">';
+
+      // First card = large
+      var c0 = g[0], f0 = c0.item_filter||{};
+      var cat0 = f0.category||f0.he_group||'';
+      var img0 = c0.bg_image ? '<img src="'+c0.bg_image+'" onerror="this.remove()">' : '';
+      html += '<div class="col-card lg" data-cat="'+cat0+'" onclick="colCardClick(this)" style="background:'+c0.bg_color+'">'+img0+'<div class="col-ov"></div><div class="col-body"><div class="col-title">'+c0.title+'</div><div class="col-sub">'+(c0.subtitle||'')+'</div><span class="col-cta">ดูเมนู →</span></div></div>';
+
+      // Second + third = small (right column)
+      if (g.length > 1) {
+        html += '<div class="col-col">';
+        for (var j = 1; j < Math.min(g.length, 3); j++) {
+          var cj = g[j], fj = cj.item_filter||{};
+          var catj = fj.category||fj.he_group||'';
+          var imgj = cj.bg_image ? '<img src="'+cj.bg_image+'" onerror="this.remove()">' : '';
+          html += '<div class="col-card sm" data-cat="'+catj+'" onclick="colCardClick(this)" style="background:'+cj.bg_color+'">'+imgj+'<div class="col-ov"></div><div class="col-body"><div class="col-title sm">'+cj.title+'</div><div class="col-sub sm">'+(cj.subtitle||'')+'</div></div></div>';
+        }
+        html += '</div>';
+      }
+      html += '</div>';
+    }
+    html += '</div>';
   }
 
   // ── Item Grid Sections ──
@@ -1320,14 +1345,30 @@ function renderHomeGrid() {
     }).join('');
     var allCat = f.category||f.he_group||'';
     var allLink = allCat ? '<span class="ig-all" data-cat="'+allCat+'" onclick="jumpCat(this.dataset.cat)">ดูทั้งหมด →</span>' : '';
-    html += '<div class="ig-wrap"><div class="ig-hdr"><span class="ig-ttl">'+s.title+'</span>'+allLink+'</div><div class="mlist-v2">'+iHtml+'</div></div>';
+    html += '<div class="ig-wrap" id="ig-'+s.section_key+'"><div class="ig-hdr"><span class="ig-ttl">'+s.title+'</span>'+allLink+'</div><div class="mlist-v2">'+iHtml+'</div></div>';
   });
 
   el.innerHTML = html;
 }
 
+function colCardClick(el) {
+  var cat = el.dataset.cat || '';
+  if (cat === '__anchor__') {
+    // anchor scroll to product list
+    var tgt = document.getElementById('ctabsInner');
+    if (tgt) tgt.scrollIntoView({behavior:'smooth'});
+  } else if (cat) {
+    jumpCat(cat);
+  }
+}
+
 function jumpCat(cat) {
   if (!cat) return;
+  if (cat === '__anchor__') {
+    var el = document.getElementById('ctabsInner');
+    if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
+    return;
+  }
   selectCat(cat);
   var el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
   if (el) el.scrollIntoView({behavior:'smooth',block:'start'});
