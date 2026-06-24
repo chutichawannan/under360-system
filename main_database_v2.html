@@ -2794,7 +2794,9 @@ function renderRecipesTab(){
     return html;
   }
 
-  const pinnedItems = state.pinModeEnabled ? filtered.filter(r=>r.pinned).sort((a,b)=>(a.pinOrder||0)-(b.pinOrder||0)) : [];
+  // PTT section แสดงเสมอเมื่ออยู่ใน PTT tab หรือเปิด pin mode
+  const showPTT = state.pinModeEnabled || state.activeCatTab === '__ptt__';
+  const pinnedItems = showPTT ? filtered.filter(r=>r.pinned).sort((a,b)=>(a.pinOrder||0)-(b.pinOrder||0)) : [];
   const pinnedIds = new Set(pinnedItems.map(r=>r.id));
   const restItems = filtered.filter(r=>!pinnedIds.has(r.id));
 
@@ -2966,9 +2968,9 @@ function renderRecipeCard(r, tot, pinInfo){
       <div class="row-toggles">${toggles}</div>
       <div class="code-col">
         <span class="code-badge">${escapeHtml(r.code||'-')}</span>
-        ${isPinned && state.pinModeEnabled
-          ? `<input type="text" class="subcode-input" data-id="${r.id}" value="${escapeHtml(r.pinSubCode||'')}" placeholder="sub code..." maxlength="12" title="Sub code — เช่น s1, s095">`
-          : `<input type="text" class="subcode-input" data-id="${r.id}" value="${escapeHtml(r.pinSubCode||'')}" placeholder="sub code..." maxlength="12" title="Sub code">`
+        ${isPinned
+          ? `<input type="text" class="subcode-input" data-id="${r.id}" value="${escapeHtml(r.pinSubCode||'')}" placeholder="sub code..." maxlength="12" title="Sub code">`
+          : ''  /* subcode เฉพาะรายการที่ pin เท่านั้น */
         }
       </div>
       <div class="name-wrap">
@@ -3340,11 +3342,17 @@ function attachHandlers(){
     state.recipes.unshift(newR);
     state.photoCache[id] = null;
     state.tab='recipes'; state.openId=id; state.recipePickerOpen=false;
-    // Switch to PTT tab เพื่อเห็นเมนูใหม่ทันที
+    // Switch to PTT tab + uncollapse _none + pinModeEnabled เพื่อเห็นเมนูใหม่ทันที
     state.activeCatTab = '__ptt__';
-    render();
-    const panel = document.querySelector(`[data-edit="${id}"]`);
-    if(panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
+    state.pinModeEnabled = true;      // เปิด pin mode ให้เห็น PTT section
+    state.collapsedCats['_ptt'] = false; // expand PTT
+    state.collapsedCats['_none'] = false; // expand uncategorized
+    persistAppConfig();
+    render(true); // immediate render
+    setTimeout(()=>{
+      const panel = document.querySelector('[data-edit="'+id+'"]');
+      if(panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
+    }, 100);
   };
 
   if(state.tab==='recipes'){
