@@ -8,50 +8,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U&libraries=places&language=th&region=TH"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js">
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
-}
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
-function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
-}
-
-</script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
-}
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
-function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
-}
-
-</script>
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 /* ═══════════ RESET + ROOT ═══════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -835,6 +793,39 @@ const STATUS = {
 };
 
 // ══════════════════════════════════════
+// 📦 STOCK POPUP (pre-order ขณะของหมด)
+// ══════════════════════════════════════
+let stockPopupItemId = null;
+function showStockPopup(id, itemObj, inCart, stock){
+  stockPopupItemId = id;
+  const el = document.getElementById('stockMsg');
+  if(el) el.innerHTML =
+    `สินค้า <b>${itemObj.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
+    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
+    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
+  const popup = document.getElementById('stockPopup');
+  if(popup) popup.style.display = 'flex';
+}
+function closeStockPopup(){
+  const popup = document.getElementById('stockPopup');
+  if(popup) popup.style.display = 'none';
+  stockPopupItemId = null;
+}
+function confirmPreorder(){
+  if(!stockPopupItemId) return;
+  const item = menuItems.find(m => m.id === stockPopupItemId);
+  if(!item){ closeStockPopup(); return; }
+  if(!window.preorderItems) window.preorderItems = {};
+  window.preorderItems[stockPopupItemId] = true;
+  const ex = cart.find(c => c.id === stockPopupItemId);
+  if(ex) ex.qty++;
+  else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1, preorder:true });
+  saveCart(); updateCartUI();
+  closeStockPopup();
+  toast('จองผลิตพิเศษแล้ว ✓');
+}
+
+// ══════════════════════════════════════
 // 🚀 INIT
 // ══════════════════════════════════════
 async function init() {
@@ -1274,7 +1265,10 @@ async function submitOrder() {
 // 🗺️ GOOGLE MAPS + DELIVERY FEE
 // ══════════════════════════════════════
 let cusMap=null, cusPin=null, cusAuto=null, distKm=null, payMethod='qr';
+let isOutOfProvince = false;  // ← fix: ต้อง declare ก่อนใช้ใน renderDatePick
 const KITCHEN_POS={lat:13.7205,lng:100.5855};
+// รัศมีส่งปกติ (km) — ถ้าเกินนี้ถือว่าต้องใช้ cold chain
+const METRO_RADIUS_KM = 50;
 
 function haversineKm(a,b,c,d){
   const R=6371,dL=(c-a)*Math.PI/180,dG=(d-b)*Math.PI/180;
@@ -1315,6 +1309,22 @@ function initCusMap(){
       });
     }
   }catch(e){console.warn('Map init failed',e);}
+}
+
+// ตรวจว่าอยู่ในพื้นที่ Greater Bangkok หรือต่างจังหวัด
+function detectZone(lat, lng, addr){
+  const dist = haversineKm(KITCHEN_POS.lat, KITCHEN_POS.lng, lat, lng);
+  const prevIsOut = isOutOfProvince;
+  isOutOfProvince = dist > METRO_RADIUS_KM;
+  // แสดง/ซ่อน zone notice
+  const bkk  = document.getElementById('zone-bkk');
+  const cold = document.getElementById('zone-cold');
+  if(bkk)  bkk.style.display  = isOutOfProvince ? 'none' : '';
+  if(cold) cold.style.display = isOutOfProvince ? '' : 'none';
+  // ถ้า zone เปลี่ยน → re-render date picker + update totals
+  if(prevIsOut !== isOutOfProvince){
+    renderDatePick(); updateCartTotals();
+  }
 }
 
 function setCusPin(lat,lng,addr){
@@ -1638,27 +1648,6 @@ function toast(msg, ms=2800) {
 // ▶️ START
 // ══════════════════════════════════════
 window.addEventListener('DOMContentLoaded', init);
-
-let stockPopupItemId = null;
-function showStockPopup(id, item, inCart, stock){
-  stockPopupItemId = id;
-  document.getElementById("stockMsg").innerHTML =
-    `สินค้า <b>${item.name}</b> คงเหลือวันนี้ <b>${stock} ชิ้น</b><br>` +
-    `หากต้องการเพิ่ม ครัวจะผลิตให้ใหม่ภายใน 2 วัน<br>` +
-    `กด <b>ยืนยัน</b> เพื่อจองผลิตพิเศษ`;
-  document.getElementById("stockPopup").style.display = "flex";
-}
-function closeStockPopup(){ document.getElementById("stockPopup").style.display = "none"; stockPopupItemId = null; }
-function confirmPreorder(){
-  if(!stockPopupItemId) return;
-  cart[stockPopupItemId] = (cart[stockPopupItemId]||0) + 1;
-  // mark เป็น preorder
-  if(!window.preorderItems) window.preorderItems = {};
-  window.preorderItems[stockPopupItemId] = true;
-  closeStockPopup();
-  renderCart();
-}
-
 
 // ══ LIGHTBOX ══
 function openLightbox(urls) {
