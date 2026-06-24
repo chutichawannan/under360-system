@@ -61,9 +61,12 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .sb-toggle{
   display:flex;align-items:center;gap:10px;
   padding:9px 14px;cursor:pointer;color:rgba(255,255,255,.4);font-size:12px;
-  background:none;border:none;width:100%;
+  background:none;border:none;width:100%;white-space:nowrap;overflow:hidden;
 }
 .sb-toggle:hover{color:rgba(255,255,255,.8)}
+/* mini mode: center the icon, hide label */
+.sidebar.mini .sb-toggle{justify-content:center;padding:9px 0;}
+.sidebar.mini .sb-toggle span:last-child{display:none}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;min-width:0}
@@ -292,7 +295,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   </nav>
   <div class="sb-footer">
     <button class="sb-toggle" onclick="toggleSidebar()">
-      <span class="sb-icon">◀</span><span id="toggleLabel">ย่อแถบ</span>
+      <span class="sb-icon" id="toggleIcon" style="font-size:20px;">◀</span>
+      <span id="toggleLabel">ย่อแถบ</span>
     </button>
   </div>
 </div>
@@ -577,6 +581,7 @@ function toggleSidebar(){
   sidebarMini=!sidebarMini;
   document.getElementById("sidebar").classList.toggle("mini",sidebarMini);
   document.getElementById("toggleLabel").textContent=sidebarMini?"ขยาย":"ย่อแถบ";
+  document.getElementById("toggleIcon").textContent=sidebarMini?"▶":"◀";
 }
 
 var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",he:"🏠 หน้าร้าน (HE)",app:"🔗"};
@@ -592,7 +597,7 @@ function openApp(url, label, el){
   sidebarMini=true;
   document.getElementById("sidebar").classList.add("mini");
   var lbl=document.getElementById("toggleLabel");
-  if(lbl) lbl.textContent="ขยาย";
+  if(lbl) lbl.textContent="ขยาย"; var ic=document.getElementById("toggleIcon"); if(ic) ic.textContent="▶";
   // load iframe
   var fr=document.getElementById("app-frame");
   fr.src = url;
@@ -617,7 +622,7 @@ function openTab(name,el){
     // collapse sidebar
     sidebarMini=true;
     sidebar.classList.add("mini");
-    if(lbl)lbl.textContent="ขยาย";
+    if(lbl)lbl.textContent="ขยาย"; var ic2=document.getElementById("toggleIcon"); if(ic2) ic2.textContent="▶";
     // lazy-load: set src only once
     var fr=document.getElementById("he-frame");
     if(!fr.src||!fr.src.includes("home_editor"))fr.src="home_editor.html";
