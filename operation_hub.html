@@ -579,7 +579,27 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           <input type="text" id="custSearch" class="p-ifield"
             placeholder="🔍 ค้นหาชื่อ LINE, เบอร์, รหัสสมาชิก..."
             oninput="filterCustomers()"
-            style="width:100%;margin-bottom:10px">
+            style="width:100%;margin-bottom:8px">
+          <!-- Sort + Tier filter -->
+          <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+            <select id="custSortSel" onchange="filterCustomers()"
+              style="flex:1;padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:12px;background:#fff;cursor:pointer">
+              <option value="name">เรียงตามชื่อ A-Z</option>
+              <option value="points_desc">แต้มสูงสุด</option>
+              <option value="orders_desc">ออเดอร์มากสุด</option>
+              <option value="spend_desc">ยอดซื้อสูงสุด</option>
+              <option value="newest">สมัครล่าสุด</option>
+              <option value="oldest">สมัครแรกสุด</option>
+              <option value="tier">เรียงตาม Tier</option>
+            </select>
+            <select id="custTierSel" onchange="filterCustomers()"
+              style="flex:1;padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:12px;background:#fff;cursor:pointer">
+              <option value="">ทุก Tier</option>
+              <option value="Healthy Habits">Healthy Habits</option>
+              <option value="Wellness Warriors">Wellness Warriors</option>
+              <option value="Fit&amp;Fabulous">Fit&Fabulous</option>
+            </select>
+          </div>
           <div id="custList"><div style="padding:20px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div></div>
         </div>
         <div class="cust-detail-panel" id="custDetail">
@@ -1090,6 +1110,7 @@ subscribeRealtime();
 var allCustomers=[], filteredCustomers=[], selectedCustId=null, custOrderCache={};
 
 function genMemberId(idx){ return "U360-"+(String(idx+1)).padStart(6,"0"); }
+function fmtPhone(p){ if(!p) return ""; var s=String(p).replace(/\D/g,""); return (s.length===9?"0":"")+s; }
 function fmtB2(n){ return "฿"+Number(n||0).toLocaleString(); }
 function esc2(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 function planTagOH(type){
@@ -1105,7 +1126,7 @@ async function loadCustomers(){
   var sb_=getSB();
   if(!sb_){ el.innerHTML="<div style='padding:20px;text-align:center;color:var(--ink-soft)'>Offline</div>"; return; }
   try{
-    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true});
+    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true}).limit(10000);
     if(res.error) throw res.error;
     allCustomers=(res.data||[]).map(function(c,i){ return Object.assign({},c,{member_id:c.member_id||genMemberId(i),_oc:0,_ot:0}); });
 
@@ -1123,7 +1144,7 @@ async function loadCustomers(){
 
     filteredCustomers=[].concat(allCustomers);
     updateCustStats();
-    renderCustList();
+    filterCustomers();
   }catch(e){
     console.error(e);
     el.innerHTML="<div style='padding:20px;text-align:center;color:#DC2626'>โหลดไม่ได้: "+e.message+"</div>";
@@ -1144,11 +1165,45 @@ function updateCustStats(){
 function filterCustomers(){
   var q=(document.getElementById("custSearch")||{}).value;
   q=(q||"").trim().toLowerCase();
-  filteredCustomers=q?allCustomers.filter(function(c){
-    var n=(c.name||c.display_name||c.line_display_name||"").toLowerCase();
-    return n.includes(q)||(c.phone||"").includes(q)||(c.member_id||"").toLowerCase().includes(q);
-  }):[].concat(allCustomers);
+  var tierSel=(document.getElementById("custTierSel")||{}).value||"";
+  var sortSel=(document.getElementById("custSortSel")||{}).value||"name";
+
+  filteredCustomers=allCustomers.filter(function(c){
+    if(q){
+      var n=(c.name||c.display_name||c.line_display_name||"").toLowerCase();
+      if(!n.includes(q)&&!(c.phone||"").includes(q)&&!(c.member_id||"").toLowerCase().includes(q)) return false;
+    }
+    if(tierSel && (c.tier||"")!==tierSel) return false;
+    return true;
+  });
+
+  // Sort
+  filteredCustomers.sort(function(a,b){
+    if(sortSel==="points_desc") return (b.loyalty_points||0)-(a.loyalty_points||0);
+    if(sortSel==="orders_desc") return (b._oc||0)-(a._oc||0);
+    if(sortSel==="spend_desc")  return (b._ot||0)-(a._ot||0);
+    if(sortSel==="newest")      return new Date(b.created_at||0)-new Date(a.created_at||0);
+    if(sortSel==="oldest")      return new Date(a.created_at||0)-new Date(b.created_at||0);
+    if(sortSel==="tier"){
+      var order={"Fit&Fabulous":0,"Wellness Warriors":1,"Healthy Habits":2};
+      var ta=order[a.tier||""]??3, tb=order[b.tier||""]??3;
+      if(ta!==tb) return ta-tb;
+    }
+    // default: name A-Z
+    var na=(a.name||a.display_name||a.line_display_name||"").toLowerCase();
+    var nb=(b.name||b.display_name||b.line_display_name||"").toLowerCase();
+    return na.localeCompare(nb,"th");
+  });
+
   renderCustList();
+}
+
+function tierBadge(tier){
+  if(!tier) return "";
+  var styles={"Fit&Fabulous":"background:#EDE9FE;color:#5B21B6","Wellness Warriors":"background:#DBEAFE;color:#1E40AF","Healthy Habits":"background:#D1FAE5;color:#065F46"};
+  var s=styles[tier]||"background:var(--bg);color:var(--ink-soft)";
+  var short={"Fit&Fabulous":"F&F","Wellness Warriors":"WW","Healthy Habits":"HH"}[tier]||tier.slice(0,3);
+  return "<span class='tag' style='"+s+"' title='"+tier+"'>"+short+"</span>";
 }
 
 function renderCustList(){
@@ -1167,9 +1222,9 @@ function renderCustList(){
       +"<div class='cust-info'>"
       +"<div class='cust-name'>"+esc2(name)+(loyal?" ⭐":"")+"</div>"
       +"<div class='cust-mid'>"+esc2(c.member_id||"")+"</div>"
-      +"<div class='cust-meta'>"+planTagOH(c.plan_type||c.type||"")
+      +"<div class='cust-meta'>"+planTagOH(c.plan_type||c.type||"")+tierBadge(c.tier||"")
       +(c._oc<=2?"<span class='tag tag-new'>ใหม่</span>":"")
-      +(c.phone?"<span>📞 "+esc2(c.phone)+"</span>":"")
+      +(c.phone?"<span>📞 "+fmtPhone(c.phone)+"</span>":"")
       +"<span>"+c._oc+" ออเดอร์</span></div></div>"
       +"<div class='cust-total-col'><div class='cust-total-num'>"+(c._ot>0?fmtB2(Math.round(c._ot)):"—")+"</div>"
       +"<div class='cust-orders-num'>"+(c.loyalty_points||0)+" แต้ม</div></div>"
@@ -1204,7 +1259,7 @@ async function selectCustomer(id){
     +(c.line_picture_url?"<div class='p-avatar'><img src='"+esc2(c.line_picture_url)+"' onerror=\"this.parentNode.innerHTML='👤'\"></div>":"<div class='p-avatar'>👤</div>")
     +"<div style='flex:1;min-width:0'>"
     +"<div class='p-name'>"+esc2(name)+"</div>"
-    +"<div class='p-meta-line'>"+(c.phone||"")+(c.plan_type?" · "+c.plan_type.toUpperCase():"")+"</div>"
+    +"<div class='p-meta-line'>"+(c.phone?fmtPhone(c.phone):"")+(c.plan_type?" · "+c.plan_type.toUpperCase():"")+"</div>"
     +"<div class='member-badge-ph'>🆔 "+(c.member_id||"—")+"</div>"
     +(c.line_uid?"<div class='uid-chip'>"+esc2(c.line_uid)+"</div>":"")
     +"</div>"
