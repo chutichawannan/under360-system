@@ -1108,6 +1108,7 @@ subscribeRealtime();
 
 // ── CUSTOMER MANAGEMENT (merged from customer.html) ───────
 var allCustomers=[], filteredCustomers=[], selectedCustId=null, custOrderCache={};
+var custPage=1, custPageSize=50;
 
 function genMemberId(idx){ return "U360-"+(String(idx+1)).padStart(6,"0"); }
 function fmtPhone(p){ if(!p) return ""; var s=String(p).replace(/\D/g,""); return (s.length===9?"0":"")+s; }
@@ -1195,6 +1196,7 @@ function filterCustomers(){
     return na.localeCompare(nb,"th");
   });
 
+  custPage=1;  // reset to first page on filter/sort change
   renderCustList();
 }
 
@@ -1208,10 +1210,17 @@ function tierBadge(tier){
 
 function renderCustList(){
   var el=document.getElementById("custList"); if(!el) return;
-  if(!filteredCustomers.length){
+  var total=filteredCustomers.length;
+  var totalPages=Math.max(1,Math.ceil(total/custPageSize));
+  if(custPage>totalPages) custPage=totalPages;
+  var start=(custPage-1)*custPageSize;
+  var pageItems=filteredCustomers.slice(start, start+custPageSize);
+
+  if(!pageItems.length){
     el.innerHTML="<div style='padding:20px;text-align:center;color:var(--ink-soft);font-size:13px'>ไม่พบลูกค้า</div>"; return;
   }
-  el.innerHTML=filteredCustomers.map(function(c){
+
+  var rows=pageItems.map(function(c){
     var name=c.name||c.display_name||c.line_display_name||"ไม่ระบุ";
     var loyal=c._oc>=10;
     var pic=c.line_picture_url
@@ -1230,6 +1239,25 @@ function renderCustList(){
       +"<div class='cust-orders-num'>"+(c.loyalty_points||0)+" แต้ม</div></div>"
       +"</div>";
   }).join("");
+
+  // Pagination bar
+  var pager="<div style='display:flex;align-items:center;justify-content:space-between;padding:8px 2px;margin-top:6px;border-top:1px solid var(--ink-xsoft);font-size:12px;'>"
+    +"<button onclick='custGoPage("+(custPage-1)+")' "+(custPage<=1?"disabled":"")+
+      " style='border:1px solid var(--ink-xsoft);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;'>‹ ก่อน</button>"
+    +"<span style='color:var(--ink-soft)'>"+(start+1)+"–"+Math.min(start+custPageSize,total)+" / "+total+"</span>"
+    +"<button onclick='custGoPage("+(custPage+1)+")' "+(custPage>=totalPages?"disabled":"")+
+      " style='border:1px solid var(--ink-xsoft);background:#fff;border-radius:6px;padding:4px 10px;cursor:pointer;font-size:12px;'>ถัด ›</button>"
+    +"</div>";
+
+  el.innerHTML=rows+pager;
+}
+
+function custGoPage(p){
+  var total=filteredCustomers.length;
+  var totalPages=Math.max(1,Math.ceil(total/custPageSize));
+  custPage=Math.max(1,Math.min(p,totalPages));
+  renderCustList();
+  document.getElementById("custList").scrollTop=0;
 }
 
 async function selectCustomer(id){
