@@ -481,6 +481,23 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .ptt-open-btn{font-size:11px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--brd);
   border-radius:6px;padding:3px 8px;cursor:pointer;flex-shrink:0;white-space:nowrap;}
 
+/* ── PTT card compact: ซ่อน quick-row + chip-row เมื่อยังไม่ expand (2 บรรทัด) ── */
+.ptt-group .card:not(.is-open) .quick-row { display:none !important; }
+.ptt-group .card:not(.is-open) .chip-row  { display:none !important; }
+/* ชื่อเมนูใน PTT: cursor pointer ชัดเจน + ไม่ตัดข้อความ */
+.ptt-group .card:not(.is-open) .name-line .name { cursor:pointer; white-space:normal; }
+/* PTT card กดที่ชื่อเพื่อ expand */
+.ptt-group .name-line { cursor:pointer; }
+/* ▼ expand button — always visible, clear tap target */
+.expand-btn{
+  appearance:none;border:none;background:none;
+  color:var(--ink-soft);font-size:14px;cursor:pointer;
+  padding:4px 6px;flex-shrink:0;line-height:1;
+  border-radius:6px;transition:background .1s;
+}
+.expand-btn:hover,.expand-btn:active{background:var(--surface-2);color:var(--ink);}
+.is-open .expand-btn{color:var(--forest);font-weight:700;}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- ── Supabase Config ── ใส่ credentials ที่นี่ -->
@@ -2855,7 +2872,7 @@ function renderRecipesTab(){
 
   if(pinnedItems.length){
     html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ลากเพื่อเรียงลำดับ</span></h2>`;
-    pinnedItems.forEach((r,idx)=>{ html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:true}); });
+    pinnedItems.forEach((r,idx)=>{ html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:false}); });
     html += `</div>`;
   }
 
@@ -3028,7 +3045,7 @@ function renderRecipeCard(r, tot, pinInfo){
   }
   toggles += `<label class="row-toggle-lbl" title="เปิดขายอยู่ตอนนี้"><input type="checkbox" class="selling-toggle" data-id="${r.id}" ${isSelling?'checked':''}>เปิดขาย</label>`;
 
-  let row = `<div class="card${isPinned?' is-pinned':''}" data-id="${r.id}"${isDraggable?` draggable="true"`:''}>
+  let row = `<div class="card${isPinned?' is-pinned':''}${isOpen?' is-open':''}" data-id="${r.id}">
     <div class="row recipe-row${!isSelling?' not-selling':''}" data-id="${r.id}">
       <div class="row-toggles">${toggles}</div>
       <div class="code-col">
@@ -3057,6 +3074,7 @@ function renderRecipeCard(r, tot, pinInfo){
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
       <span class="meta">${tot.cost>0?'฿'+fmtMoney(tot.cost):'—'}${r.selling_price?' · ขาย ฿'+r.selling_price:''}</span>
+      <button type="button" class="expand-btn" data-id="${r.id}" title="${isOpen?'ปิดแผงแก้ไข':'เปิดแผงแก้ไข'}">${isOpen?'▲':'▼'}</button>
     </div>`;
   if(isOpen) row += renderEditPanel(r);
   row += `</div>`;
@@ -3393,6 +3411,7 @@ function attachHandlers(){
 
   document.getElementById('fabNew').onclick = ()=>{
     const id = 'r'+Date.now();
+    if(!requireUser()) return;
     const defaultCats = state.categoryFilter.length ? [...state.categoryFilter] : [];
     // Auto-pin + ใส่ category จาก tab ที่กำลังดูอยู่
     const autoCat = (state.activeCatTab && state.activeCatTab !== '__all__' && state.activeCatTab !== '__ptt__')
@@ -3401,23 +3420,28 @@ function attachHandlers(){
       category: autoCat, // v0.4 category field
       status:'active', parts:[{label:'', instructions:'', lines:[{name:'',qty:'',unit:'g'}]}],
       notes:'', quickNote:'', rating:2,
-      pinned: true,  // ← auto-pin ทุกเมนูใหม่ หาง่ายไม่หาย
-      pinOrder:Date.now(), pinSubCode:null, stock:0, available_online:false,
+      pinned: true,
+      pinOrder: -(Date.now()),  // ← ค่าลบ = เล็กที่สุด = sort ขึ้นบนสุดเสมอ
+      pinSubCode:null, stock:0, available_online:false,
       description:'', image_urls:[], image_url:'', he_group:'', updated_at:null};
     state.recipes.unshift(newR);
     state.photoCache[id] = null;
     state.tab='recipes'; state.openId=id; state.recipePickerOpen=false;
-    // Switch to PTT tab + uncollapse _none + pinModeEnabled เพื่อเห็นเมนูใหม่ทันที
-    state.activeCatTab = '__ptt__';
-    state.pinModeEnabled = true;      // เปิด pin mode ให้เห็น PTT section
-    state.collapsedCats['_ptt'] = false; // expand PTT
-    state.collapsedCats['_none'] = false; // expand uncategorized
+    state.activeCatTab = '__all__';
+    state.pinModeEnabled = true;
+    state.collapsedCats['_ptt'] = false;
+    state.collapsedCats['_none'] = false;
     persistAppConfig();
-    render(true); // immediate render
+    render(true);
+    // Scroll to panel + focus ช่องชื่อเมนู
     setTimeout(()=>{
       const panel = document.querySelector('[data-edit="'+id+'"]');
-      if(panel) panel.scrollIntoView({behavior:'smooth', block:'center'});
-    }, 100);
+      if(panel){
+        panel.scrollIntoView({behavior:'smooth', block:'start'});
+        const nameInp = panel.querySelector('.f-name');
+        if(nameInp) setTimeout(()=>nameInp.focus(), 150);
+      }
+    }, 80);
   };
 
   if(state.tab==='recipes'){
@@ -3726,9 +3750,55 @@ function attachHandlers(){
         const wasOpen = state.openId===row.dataset.id;
         state.openId = wasOpen ? null : row.dataset.id;
         state.recipePickerOpen=false;
-        render(true);  // immediate — ไม่ defer เมื่อ keyboard ขึ้นบนมือถือ
-        if(!wasOpen) loadPhotoIfNeeded(row.dataset.id);
+        render(true);
+        if(!wasOpen){
+          loadPhotoIfNeeded(row.dataset.id);
+          setTimeout(()=>{
+            const panel = document.querySelector('[data-edit="'+row.dataset.id+'"]');
+            if(panel) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+          }, 60);
+        }
       };
+    });
+    // ▼ expand button — จุดกดชัดบนมือถือ
+    document.querySelectorAll('.expand-btn').forEach(btn=>{
+      btn.onclick = (e)=>{
+        e.stopPropagation();
+        const row = btn.closest('.recipe-row');
+        if(!row) return;
+        const wasOpen = state.openId === row.dataset.id;
+        state.openId = wasOpen ? null : row.dataset.id;
+        render(true);
+        if(!wasOpen){
+          loadPhotoIfNeeded(btn.dataset.id);
+          setTimeout(()=>{
+            const panel = document.querySelector('[data-edit="'+btn.dataset.id+'"]');
+            if(panel) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+          }, 60);
+        }
+      };
+    });
+    // Mobile fix: กดที่ชื่อเมนูโดยตรง (พื้นที่ไม่มี stopPropagation ชัดเจน)
+    document.querySelectorAll('.recipe-row .name-line').forEach(nl=>{
+      const doExpand = (e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const row = nl.closest('.recipe-row');
+        if(!row) return;
+        const wasOpen = state.openId === row.dataset.id;
+        state.openId = wasOpen ? null : row.dataset.id;
+        render(true);
+        if(!wasOpen){
+          loadPhotoIfNeeded(row.dataset.id);
+          // Scroll ไปที่ panel ที่เพิ่งเปิด
+          setTimeout(()=>{
+            const panel = document.querySelector('[data-edit="'+row.dataset.id+'"]');
+            if(panel) panel.scrollIntoView({behavior:'smooth', block:'nearest'});
+          }, 60);
+        }
+      };
+      nl.onclick = doExpand;
+      nl.ontouchend = doExpand;  // Explicit mobile tap handler
     });
 
     document.querySelectorAll('[data-edit]').forEach(panel=>{
