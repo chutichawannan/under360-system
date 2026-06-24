@@ -281,9 +281,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <a class="sb-item" href="main_database_v2.html" target="_blank">
       <span class="sb-icon">🗄️</span><span>หลังบ้าน (DB) ↗</span>
     </a>
-    <a class="sb-item" href="home_editor.html" target="_blank">
-      <span class="sb-icon">🏠</span><span>หน้าร้าน (HE) ↗</span>
-    </a>
+    <div class="sb-item" onclick="openTab('he',this)">
+      <span class="sb-icon">🏠</span><span>หน้าร้าน (HE)</span>
+    </div>
     <a class="sb-item wip" href="#" onclick="return false">
       <span class="sb-icon">⚙️</span><span>ตั้งค่า</span>
     </a>
@@ -475,6 +475,12 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       </div>
     </div>
 
+    <!-- TAB: HOME EDITOR (seamless iframe) -->
+    <div class="tab-panel" id="panel-he" style="height:calc(100vh - 56px);padding:0;overflow:hidden;">
+      <iframe id="he-frame" src="" style="width:100%;height:100%;border:none;display:block;"
+        title="Home Editor"></iframe>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -565,7 +571,7 @@ function toggleSidebar(){
   document.getElementById("toggleLabel").textContent=sidebarMini?"ขยาย":"ย่อแถบ";
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น"};
+var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",he:"🏠 หน้าร้าน (HE)"};
 function openTab(name,el){
   document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
   document.querySelectorAll(".sb-item").forEach(function(i){i.classList.remove("active");});
@@ -577,6 +583,11 @@ function openTab(name,el){
   if(name==="plan")buildPlan();
   if(name==="messenger")loadMessenger();
   if(name==="promo")loadPromos();
+  // HE: โหลด iframe ครั้งแรกเท่านั้น (lazy load)
+  if(name==="he"){
+    var fr=document.getElementById("he-frame");
+    if(!fr.src||fr.src==="about:blank"||fr.src==="")fr.src="home_editor.html";
+  }
 }
 function setDate(m){
   dateMode=m;
