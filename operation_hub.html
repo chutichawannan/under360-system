@@ -271,24 +271,24 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <span class="sb-badge" id="nb-msg"></span>
     </div>
     <div class="sb-divider"></div>
-    <a class="sb-item" href="kitchen_queue.html" target="_blank">
-      <span class="sb-icon">🍳</span><span>หน้าครัว (KQ) ↗</span>
-    </a>
-    <a class="sb-item" href="report.html" target="_blank">
-      <span class="sb-icon">📊</span><span>รายงาน ↗</span>
-    </a>
-    <a class="sb-item" href="customer.html" target="_blank">
-      <span class="sb-icon">👥</span><span>ข้อมูลลูกค้า ↗</span>
-    </a>
-    <a class="sb-item" href="main_database_v2.html" target="_blank">
-      <span class="sb-icon">🗄️</span><span>หลังบ้าน (DB) ↗</span>
-    </a>
+    <div class="sb-item" onclick="openApp('kitchen_queue.html','🍳 หน้าครัว (KQ)',this)">
+      <span class="sb-icon">🍳</span><span>หน้าครัว (KQ)</span>
+    </div>
+    <div class="sb-item" onclick="openApp('report.html','📊 รายงาน',this)">
+      <span class="sb-icon">📊</span><span>รายงาน</span>
+    </div>
+    <div class="sb-item" onclick="openApp('customer.html','👥 ข้อมูลลูกค้า',this)">
+      <span class="sb-icon">👥</span><span>ข้อมูลลูกค้า</span>
+    </div>
+    <div class="sb-item" onclick="openApp('main_database_v2.html','🗄️ หลังบ้าน (DB)',this)">
+      <span class="sb-icon">🗄️</span><span>หลังบ้าน (DB)</span>
+    </div>
     <div class="sb-item" onclick="openTab('he',this)">
       <span class="sb-icon">🏠</span><span>หน้าร้าน (HE)</span>
     </div>
-    <a class="sb-item wip" href="#" onclick="return false">
+    <div class="sb-item wip" onclick="return false" style="opacity:.45;cursor:default;">
       <span class="sb-icon">⚙️</span><span>ตั้งค่า</span>
-    </a>
+    </div>
   </nav>
   <div class="sb-footer">
     <button class="sb-toggle" onclick="toggleSidebar()">
@@ -301,6 +301,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 <div class="main">
   <!-- TOPBAR -->
   <div class="topbar">
+    <button onclick="toggleSidebar()" title="ย่อ/ขยาย sidebar"
+      style="appearance:none;border:none;background:none;cursor:pointer;font-size:18px;padding:4px 8px;border-radius:6px;color:var(--ink-soft);margin-right:4px;flex-shrink:0;"
+      >☰</button>
     <div class="topbar-title" id="topTitle">📋 ออเดอร์</div>
     <div class="topbar-right">
       <div class="date-tabs">
@@ -483,6 +486,12 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         title="Home Editor"></iframe>
     </div>
 
+    <!-- TAB: APP (shared iframe for KQ / Report / Customer / DB) -->
+    <div class="tab-panel" id="panel-app" style="padding:0;overflow:hidden;">
+      <iframe id="app-frame" src="" style="width:100%;height:calc(100vh - 56px);border:none;display:block;"
+        title="App"></iframe>
+    </div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 </div><!-- /app -->
@@ -573,7 +582,24 @@ function toggleSidebar(){
   document.getElementById("toggleLabel").textContent=sidebarMini?"ขยาย":"ย่อแถบ";
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",he:"🏠 หน้าร้าน (HE)"};
+var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",he:"🏠 หน้าร้าน (HE)",app:"🔗"};
+
+function openApp(url, label, el){
+  document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
+  document.querySelectorAll(".sb-item").forEach(function(i){i.classList.remove("active");});
+  document.getElementById("panel-app").classList.add("active");
+  if(el) el.classList.add("active");
+  document.getElementById("topTitle").textContent = label;
+  document.querySelector(".content").classList.add("he-mode");
+  // collapse sidebar
+  sidebarMini=true;
+  document.getElementById("sidebar").classList.add("mini");
+  var lbl=document.getElementById("toggleLabel");
+  if(lbl) lbl.textContent="ขยาย";
+  // load iframe
+  var fr=document.getElementById("app-frame");
+  fr.src = url;
+}
 function openTab(name,el){
   document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
   document.querySelectorAll(".sb-item").forEach(function(i){i.classList.remove("active");});
