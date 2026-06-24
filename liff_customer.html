@@ -429,7 +429,7 @@ body{background:#fff!important}
 .col-scroll{overflow-x:auto;scroll-snap-type:x mandatory;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
 .col-scroll::-webkit-scrollbar{display:none;}
 /* Group = viewport - 56px ให้ card ถัดไปโผล่ ~30px (peek effect) */
-#homeGrid .col-scroll{padding-left:0!important;padding-right:0!important;}
+#homeGrid .col-scroll{padding-right:0!important;} /* left padding set via inline style in JS */
 /* left gap handled via JS inline style on first group */
 .col-group:last-child{margin-right:20px!important;}   /* trailing gap to show next card peek */
 .sec-title-row{padding:16px 16px 8px!important;}
@@ -538,6 +538,27 @@ body{background:#fff!important}
 .mi-v2-kcal{background:#F5F5F5!important;color:#666!important;font-size:11px!important;}
 .mi-v2-pro{background:#EEF7EE!important;color:#2D6B53!important;font-size:11px!important;}
 
+
+/* ── Delivery zone notice ── */
+.zone-notice{border-radius:12px;padding:12px 14px;font-size:13px;line-height:1.6;margin:0 14px 8px;display:none;}
+.zone-notice.bkk{background:#EBF3EF;color:#1F4D3A;border:1px solid rgba(31,77,58,.2);}
+.zone-notice.cold{background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;}
+.zone-notice .zone-ico{font-size:18px;margin-right:6px;}
+.zone-badge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;
+  padding:3px 8px;border-radius:10px;margin-left:6px;}
+.zone-badge.bkk{background:#EBF3EF;color:#1F4D3A;}
+.zone-badge.cold{background:#FEF3C7;color:#92400E;}
+/* Map confirm popup */
+.map-confirm-overlay{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:500;
+  display:flex;align-items:center;justify-content:center;padding:24px;display:none;}
+.map-confirm-box{background:#fff;border-radius:20px;padding:24px;max-width:340px;width:100%;}
+.map-confirm-ico{font-size:40px;text-align:center;margin-bottom:12px;}
+.map-confirm-title{font-size:17px;font-weight:800;text-align:center;margin-bottom:8px;}
+.map-confirm-msg{font-size:14px;color:#666;text-align:center;line-height:1.6;margin-bottom:20px;}
+.map-confirm-btns{display:flex;flex-direction:column;gap:8px;}
+.map-confirm-btns .btn-pin{background:var(--g);color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
+.map-confirm-btns .btn-skip{background:#F5F5F5;color:#666;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
+
 </style>
 </head>
 <body>
@@ -642,6 +663,15 @@ body{background:#fff!important}
       <span class="fee-km" id="fee-dist">—</span>
       <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
     </div>
+    <!-- Zone notice -->
+    <div class="zone-notice bkk" id="zone-bkk">
+      <span class="zone-ico">🏍️</span>พื้นที่จัดส่งปกติ — ส่งด้วยรถมอเตอร์ไซค์ในวันที่เลือก
+    </div>
+    <div class="zone-notice cold" id="zone-cold">
+      <span class="zone-ico">❄️</span><strong>นอกพื้นที่จัดส่งทั่วไป</strong> — จะจัดส่งด้วย<strong>รถห้องเย็น</strong>
+      ซึ่งต้องโหลดสินค้าล่วงหน้า 1 วัน วันรับสินค้าจะถูกปรับให้อัตโนมัติ
+      <br><small>เช่น: สั่งวันจันทร์ → จัดส่งวันอังคาร → รับวันพุธ</small>
+    </div>
     <div class="divider" style="margin-top:10px"></div>
 
     <!-- ═══ PAYMENT ═══ -->
@@ -670,7 +700,18 @@ body{background:#fff!important}
           <div class="bank-acct">XXX-X-XXXXX-X</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--soft)">ชื่อบัญชี: ใส่ชื่อบัญชีจริง</div>
+      <div style="font-size:12px;color:var(--soft);margin-bottom:12px">ชื่อบัญชี: ใส่ชื่อบัญชีจริง</div>
+      <!-- Slip upload -->
+      <div class="slip-upload-wrap" onclick="document.getElementById('slip-file-input').click()"
+        style="border:2px dashed rgba(0,0,0,.15);border-radius:12px;padding:16px;text-align:center;cursor:pointer;background:#FAFAFA;">
+        <input type="file" id="slip-file-input" accept="image/*" capture="environment"
+          style="display:none" onchange="handleSlipUpload(event)">
+        <div style="font-size:24px;margin-bottom:4px">📷</div>
+        <div style="font-size:13px;font-weight:700;color:var(--ink2)">แนบสลิปการโอน</div>
+        <div style="font-size:11px;color:#aaa">แตะเพื่ออัพโหลด หรือถ่ายรูปสลิป</div>
+      </div>
+      <img id="slip-preview-img" style="width:100%;border-radius:10px;margin-top:10px;display:none">
+      <div id="slip-verify-status" style="padding:10px 14px;border-radius:10px;font-size:13px;font-weight:600;margin-top:8px;display:none"></div>
     </div>
     <div class="divider"></div>
 
@@ -839,8 +880,12 @@ async function init() {
     const preferred = ['meal_hp','meal_lc','no_regular','no_special','pack_regular','pack_special','trend'];
     const ordered = preferred.filter(c => found.includes(c));
     const extras = found.filter(c => !preferred.includes(c));
+    // items ที่ไม่มี category → ใส่ uncategorized
+    const hasUncategorized = menuItems.some(m => !m.category || m.category === 'uncategorized');
+    if (hasUncategorized && !extras.includes('uncategorized')) extras.push('uncategorized');
     cats = [...ordered, ...extras];
     activeCat = cats[0] || '';
+
   } catch(e) { console.warn('Menu load failed', e); menuItems = []; cats = []; }
   // Load custom category labels (from HE rename)
   // Load section title
@@ -1073,7 +1118,8 @@ function renderDatePick() {
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   // ถ้าเลย cutoff → วันแรกที่สั่งได้เป็นมะรืน (offset=2)
   const isPastCutoff = now.getHours() >= CUTOFF_HOUR;
-  const startOffset  = isPastCutoff ? 2 : 1;
+  const baseOffset   = isPastCutoff ? 2 : 1;
+  const startOffset  = isOutOfProvince ? baseOffset + 1 : baseOffset; // cold chain +1 วัน
   let html = '';
   if(isPastCutoff){
     html += `<div style="padding:8px 14px 4px;font-size:12px;color:#92400E;
@@ -1138,7 +1184,11 @@ async function submitOrder() {
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
   const addr = (document.getElementById('addr-input').value || document.getElementById('addr-search').value || '').trim();
   if (!addr)         { toast('กรุณาใส่หรือค้นหาที่อยู่จัดส่ง'); return; }
-  if (!distKm)       { toast('กรุณาปักหมุดที่อยู่บนแผนที่ก่อน 📍'); return; }
+  // Warn if no map pin
+  if (!distKm) {
+    const proceed = await showMapConfirm();
+    if (!proceed) return; // user chose to go back and pin
+  }
 
   const btn = document.getElementById('sub-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังส่งออเดอร์...'; }
@@ -1175,7 +1225,11 @@ async function submitOrder() {
       delivery_fee:    deliveryFee,
       subtotal:        tot,
       total:           grandTotal,
-      status:          'confirmed'
+      status:          'confirmed',
+      payment_method:  selectedPayMethod || 'qr',
+      delivery_type:   isOutOfProvince ? 'cold_chain' : 'messenger',
+      slip_image:      slipBase64 ? true : false,
+      notes:           (document.getElementById('notes-input').value || '').trim()
     }).select().single();
     // payment_method stored locally only (add column via SQL if needed: ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT)
     if (oErr) throw oErr;
@@ -1277,6 +1331,7 @@ function setCusPin(lat,lng,addr){
     const ai=document.getElementById('addr-input');if(ai&&!ai.value)ai.value=addr;
     const as=document.getElementById('addr-search');if(as)as.value=addr.split(',').slice(0,2).join(',');
   }
+  detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด
   updateCartTotals();
 }
 
@@ -1293,6 +1348,7 @@ function useMyLocation(){
           const a=res[0].formatted_address;
           const ai=document.getElementById('addr-input');if(ai)ai.value=a;
           const as=document.getElementById('addr-search');if(as)as.value=a.split(',').slice(0,2).join(',');
+          detectZone(lat,lng,a);
         }
       });
     }
@@ -1429,8 +1485,7 @@ function renderHomeGrid() {
   var colCards = mealSecs.concat(promoSecs);
   if (colCards.length) {
     html += '<div class="sec-title-row"><span class="sec-title">'+(window._homeSectionTitle||'Meal Plans')+'</span></div>';
-    html += '<div class="col-scroll" id="colScroll">';
-    html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // ← left spacer
+    html += '<div class="col-scroll" id="colScroll" style="padding-left:16px!important">';
 
     // Group into sets of 3 (1 large + 2 small) per swipe page
     for (var i = 0; i < colCards.length || i === 0; i += 3) {
@@ -1663,6 +1718,24 @@ function mdAddToCart() {
     <div class="stock-btns">
       <button class="stock-btn-cancel" onclick="closeStockPopup()">ยกเลิก</button>
       <button class="stock-btn-confirm" id="stockConfirmBtn" onclick="confirmPreorder()">✅ ยืนยัน — สั่งผลิตพิเศษ</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- Map confirmation popup -->
+<div class="map-confirm-overlay" id="mapConfirmOverlay">
+  <div class="map-confirm-box">
+    <div class="map-confirm-ico">📍</div>
+    <div class="map-confirm-title">ยังไม่ได้ยืนยันตำแหน่ง</div>
+    <div class="map-confirm-msg">
+      คุณยังไม่ได้ค้นหาหรือปักหมุดที่อยู่บนแผนที่<br>
+      อาจทำให้ทีมขนส่งหาที่อยู่ไม่พบได้<br><br>
+      <strong>แนะนำให้ค้นหาที่อยู่หรือกด 📍 ก่อนสั่ง</strong>
+    </div>
+    <div class="map-confirm-btns">
+      <button class="btn-pin" onclick="closeMapConfirm(false)">← กลับไปปักหมุด</button>
+      <button class="btn-skip" onclick="closeMapConfirm(true)">ดำเนินการต่อโดยไม่ปักหมุด</button>
     </div>
   </div>
 </div>
