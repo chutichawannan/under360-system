@@ -96,8 +96,10 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
 /* ── CONTENT ── */
 .content{flex:1;overflow-y:auto;padding:24px}
+.content.he-mode{padding:0;overflow:hidden}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
+.tab-panel#panel-he{height:100%}
 
 /* ── SECTION HEADER ── */
 .sec-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
@@ -476,8 +478,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     </div>
 
     <!-- TAB: HOME EDITOR (seamless iframe) -->
-    <div class="tab-panel" id="panel-he" style="height:calc(100vh - 56px);padding:0;overflow:hidden;">
-      <iframe id="he-frame" src="" style="width:100%;height:100%;border:none;display:block;"
+    <div class="tab-panel" id="panel-he" style="padding:0;overflow:hidden;">
+      <iframe id="he-frame" src="" style="width:100%;height:calc(100vh - 56px);border:none;display:block;"
         title="Home Editor"></iframe>
     </div>
 
@@ -583,10 +585,21 @@ function openTab(name,el){
   if(name==="plan")buildPlan();
   if(name==="messenger")loadMessenger();
   if(name==="promo")loadPromos();
-  // HE: โหลด iframe ครั้งแรกเท่านั้น (lazy load)
+  // HE: auto-collapse sidebar + remove content padding + lazy-load iframe
+  var content=document.querySelector(".content");
+  var sidebar=document.getElementById("sidebar");
+  var lbl=document.getElementById("toggleLabel");
   if(name==="he"){
+    content.classList.add("he-mode");
+    // collapse sidebar
+    sidebarMini=true;
+    sidebar.classList.add("mini");
+    if(lbl)lbl.textContent="ขยาย";
+    // lazy-load: set src only once
     var fr=document.getElementById("he-frame");
-    if(!fr.src||fr.src==="about:blank"||fr.src==="")fr.src="home_editor.html";
+    if(!fr.src||!fr.src.includes("home_editor"))fr.src="home_editor.html";
+  } else {
+    content.classList.remove("he-mode");
   }
 }
 function setDate(m){
