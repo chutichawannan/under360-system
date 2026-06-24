@@ -451,6 +451,32 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .cat-tab-db.on{background:var(--forest);color:#fff;border-color:var(--forest);}
 .cat-tab-db .cnt{font-size:10px;opacity:.75;margin-left:3px;}
 
+
+/* ── PTT Compact Row ── */
+.ptt-row{display:flex;align-items:center;gap:8px;padding:8px 12px;
+  border-bottom:0.5px solid var(--brd);background:#fff;min-height:44px;}
+.ptt-row:last-child{border-bottom:none;}
+.ptt-code{font-size:11px;font-weight:700;color:var(--forest);background:var(--gl);
+  padding:2px 7px;border-radius:6px;flex-shrink:0;font-family:'IBM Plex Mono',monospace;}
+.ptt-sub{font-size:10px;font-weight:700;color:var(--turmeric);background:var(--turmeric-soft);
+  padding:2px 6px;border-radius:6px;border:1px dashed var(--turmeric);flex-shrink:0;
+  font-family:'IBM Plex Mono',monospace;min-width:54px;text-align:center;}
+.ptt-name{flex:1;font-size:13px;font-weight:700;min-width:0;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;}
+.ptt-name:hover{color:var(--forest);}
+.ptt-stock-ctrl{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.ptt-stock-num{width:36px;height:28px;border:1px solid var(--brd);border-radius:6px;
+  text-align:center;font-size:13px;font-weight:700;}
+.ptt-qb{width:24px;height:28px;border-radius:6px;border:1px solid var(--brd);
+  background:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.ptt-qb.plus{background:var(--forest);color:#fff;border-color:var(--forest);}
+.ptt-online-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;}
+.ptt-online-dot.on{background:var(--forest);}
+.ptt-online-dot.off{background:#ccc;}
+.ptt-drag{font-size:16px;color:#ccc;cursor:grab;flex-shrink:0;}
+.ptt-open-btn{font-size:11px;color:var(--ink-soft);background:var(--bg);border:1px solid var(--brd);
+  border-radius:6px;padding:3px 8px;cursor:pointer;flex-shrink:0;white-space:nowrap;}
+
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <!-- ── Supabase Config ── ใส่ credentials ที่นี่ -->
@@ -2588,22 +2614,23 @@ function showToast(msg){
 // Debounced render — prevents re-render storm from rapid clicks
 let _renderTimer = null;
 function render(immediate){
-  if(immediate){ _doRender(); return; }
+  if(immediate){ _doRender(true); return; } // force=true bypasses keyboard check
   clearTimeout(_renderTimer);
-  _renderTimer = setTimeout(_doRender, 80);
+  _renderTimer = setTimeout(()=>_doRender(false), 80);
 }
-function _doRender(){
-  // ← ป้องกัน keyboard เด้ง: ถ้า user กำลังพิมพ์ใน input ให้ skip render
-  const active = document.activeElement;
-  if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')){
-    const safeIds = ['db-search','sortModeSelect','showRetired','showRetiredChk'];
-    if(!safeIds.includes(active.id)){
-      // defer render จนกว่า user blur จาก input
-      if(!_renderPending){
-        _renderPending = true;
-        active.addEventListener('blur', ()=>{ _renderPending=false; _doRender(); }, {once:true});
+function _doRender(force){
+  // ป้องกัน keyboard เด้ง: ถ้า user พิมพ์อยู่ + ไม่ใช่ force render → skip
+  if(!force){
+    const active = document.activeElement;
+    if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')){
+      const safeIds = ['db-search','sortModeSelect','showRetired','showRetiredChk'];
+      if(!safeIds.includes(active.id)){
+        if(!_renderPending){
+          _renderPending = true;
+          active.addEventListener('blur', ()=>{ _renderPending=false; _doRender(false); }, {once:true});
+        }
+        return;
       }
-      return;
     }
   }
   _renderPending = false;
@@ -2824,11 +2851,10 @@ function renderRecipesTab(){
 
   if(pinnedItems.length){
     // PTT section: เปิดไว้เสมอ (ไม่ collapsible)
-    html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ลากวางเพื่อเรียงลำดับ</span></h2>`;
-    pinnedItems.forEach((r,idx)=>{
-      html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:true});
-    });
-    html += `</div>`;
+    html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ⠿ ลากเรียง · แตะชื่อเพื่อแก้ไข</span></h2>`;
+    html += '<div style="border-radius:12px;overflow:hidden;border:1px solid var(--brd);margin:4px 0">';
+    pinnedItems.forEach((r,idx)=>{ html += renderPttCard(r); });
+    html += '</div></div>';
   }
 
   if(restItems.length===0) return html;
@@ -2939,6 +2965,43 @@ function toggleCatCollapse(key){
   if(content) content.style.display = isCollapsed ? 'none' : 'block';
   if(arrow)   arrow.style.transform  = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
+
+function renderPttCard(r){
+  const isOpen = state.openId === r.id;
+  const isOnline = r.available_online && r.status === 'active';
+  const subcode = r.pinSubCode || '';
+  return `<div class="ptt-row" draggable="true" data-id="${r.id}" data-ptt="1">
+    <span class="ptt-drag">⠿</span>
+    <div class="ptt-online-dot ${isOnline?'on':'off'}" title="${isOnline?'ออนไลน์':'ออฟไลน์'}"></div>
+    <span class="ptt-code">${escapeHtml(r.code||'-')}</span>
+    <input type="text" class="ptt-sub subcode-input" data-id="${r.id}" value="${escapeHtml(subcode)}"
+      placeholder="subcode" maxlength="12" style="width:64px">
+    <span class="ptt-name" onclick="state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
+      ${escapeHtml(r.name||'(ยังไม่มีชื่อ)')}
+    </span>
+    <div class="ptt-stock-ctrl">
+      <button class="ptt-qb" onclick="chgStockFast('${r.id}',-1)">−</button>
+      <input type="number" class="ptt-stock-num" data-stock-id="${r.id}"
+        value="${r.stock||0}" oninput="saveStockInline('${r.id}',this.value)">
+      <button class="ptt-qb plus" onclick="chgStockFast('${r.id}',1)">+</button>
+    </div>
+    <button class="ptt-open-btn" onclick="state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
+      ${isOpen?'▲':'แก้ไข'}
+    </button>
+  </div>
+  ${isOpen ? renderRecipeCard(r, computeTotals(r)) : ''}`;
+}
+
+function chgStockFast(id, delta){
+  const r = state.recipes.find(r=>r.id===id);
+  if(!r) return;
+  r.stock = Math.max(0, (r.stock||0) + delta);
+  // อัพเดท input ตรงๆ ไม่ re-render
+  const inp = document.querySelector('[data-stock-id="'+id+'"]');
+  if(inp) inp.value = r.stock;
+  persistRecipesDebounced();
+}
+
 function renderRecipeCard(r, tot, pinInfo){
   const isOpen = state.openId === r.id;
   const chips = (r.categories||[]).map(ck=>{
