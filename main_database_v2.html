@@ -4008,7 +4008,16 @@ function attachHandlers(){
       };
       const dupBox = panel.querySelector('.dup-warning');
       if(dupBox){
-        panel.querySelectorAll('.openOther').forEach(btn=>btn.onclick=()=>{ state.openId = btn.dataset.id; state.recipePickerOpen=false; render(); });
+        panel.querySelectorAll('.openOther').forEach(btn=>btn.onclick=(e)=>{
+          e.stopPropagation();
+          state.openId = btn.dataset.id;
+          state.recipePickerOpen=false;
+          render(true);  // immediate — ไม่ defer เมื่อ keyboard ขึ้น
+          setTimeout(()=>{
+            const p = document.querySelector('[data-edit="'+btn.dataset.id+'"]');
+            if(p) p.scrollIntoView({behavior:'smooth', block:'start'});
+          }, 60);
+        });
         const fs = panel.querySelector('.forceSave');
         if(fs) fs.onclick = ()=>{
           if(!requireUser()) return;
