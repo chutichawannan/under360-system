@@ -2593,6 +2593,20 @@ function render(immediate){
   _renderTimer = setTimeout(_doRender, 80);
 }
 function _doRender(){
+  // ← ป้องกัน keyboard เด้ง: ถ้า user กำลังพิมพ์ใน input ให้ skip render
+  const active = document.activeElement;
+  if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')){
+    const safeIds = ['db-search','sortModeSelect','showRetired','showRetiredChk'];
+    if(!safeIds.includes(active.id)){
+      // defer render จนกว่า user blur จาก input
+      if(!_renderPending){
+        _renderPending = true;
+        active.addEventListener('blur', ()=>{ _renderPending=false; _doRender(); }, {once:true});
+      }
+      return;
+    }
+  }
+  _renderPending = false;
   const app = document.getElementById('app');
   const who = document.getElementById('whoami');
   who.innerHTML = renderWhoami();
@@ -2873,21 +2887,34 @@ function renderRecipesTab(){
       return aOn - bOn;
     });
     const cat = key==='_none' ? {label:'ไม่ระบุหมวด', color:'#999'} : getCategory(key);
-    // default collapsed; false=expanded, true/undefined=collapsed; if searching→always show
     const _isColl = !q && state.collapsedCats[key] !== false;
+    const safeKey = escapeHtml(key);
+    const catContentId = 'cc-' + key.replace(/[^a-z0-9]/gi,'_');
+    // ใส่ ID บน arrow + content div → toggle ด้วย CSS ไม่ต้อง re-render
     html += `<div class="line-group">
-      <h2 onclick="toggleCatCollapse('${escapeHtml(key)}')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;">
-        <span style="font-size:12px;color:#666;display:inline-block;transform:${_isColl?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span>
+      <h2 onclick="toggleCatCollapse('${safeKey}')" style="cursor:pointer;user-select:none;display:flex;align-items:center;gap:7px;">
+        <span id="arr-${catContentId}" style="font-size:12px;color:#666;display:inline-block;transform:${_isColl?'rotate(-90deg)':'rotate(0deg)'};transition:transform .2s;">▼</span>
         <span class="dot" style="background:${cat.color};flex-shrink:0;"></span>
-        <span>${escapeHtml(cat.label)} (${items.length})</span>
-      </h2>`;
-    if(!_isColl){
-      items.forEach(r=>{
-        const tot = computeTotals(r);
-        html += renderRecipeCard(r, tot);
-      });
+        <span>${escapeHtml(cat.label)}</span>
+        <span style="font-size:12px;color:#999;margin-left:2px">(${items.length})</span>
+      </h2>
+      <div id="${catContentId}" style="display:${_isColl?'none':'block'}">`;
+    // Pagination สำหรับ uncategorized หรือ category ที่มีเยอะ
+    const pageKey = 'page_'+key;
+    const pageSize = 50;
+    const page = state.catPages && state.catPages[pageKey] ? state.catPages[pageKey] : 1;
+    const showItems = items.slice(0, page * pageSize);
+    showItems.forEach(r=>{
+      const tot = computeTotals(r);
+      html += renderRecipeCard(r, tot);
+    });
+    if(items.length > showItems.length){
+      html += `<div style="text-align:center;padding:12px"><button onclick="loadMoreCat('${safeKey}')" 
+        style="padding:8px 20px;border-radius:20px;border:1.5px solid var(--forest);color:var(--forest);background:#fff;font-size:13px;font-weight:700;cursor:pointer">
+        โหลดเพิ่ม ${Math.min(pageSize, items.length-showItems.length)} รายการ (เหลือ ${items.length-showItems.length})
+      </button></div>`;
     }
-    html += `</div>`;
+    html += `</div></div>`;
   });
   return html;
 }
@@ -2900,9 +2927,15 @@ function setCatTab(cat) {
 }
 
 function toggleCatCollapse(key){
-  // undefined/true=collapsed → set false (expand); false=expanded → set true (collapse)
+  // undefined/true=collapsed → false (expand); false=expanded → true (collapse)
   state.collapsedCats[key] = state.collapsedCats[key] === false ? true : false;
-  render();
+  const isCollapsed = state.collapsedCats[key] !== false;
+  // ← Direct DOM toggle: ไม่ต้อง re-render ทั้งหน้า
+  const cid = 'cc-' + key.replace(/[^a-z0-9]/gi,'_');
+  const content = document.getElementById(cid);
+  const arrow   = document.getElementById('arr-' + cid);
+  if(content) content.style.display = isCollapsed ? 'none' : 'block';
+  if(arrow)   arrow.style.transform  = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 function renderRecipeCard(r, tot, pinInfo){
   const isOpen = state.openId === r.id;
