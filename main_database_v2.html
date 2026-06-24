@@ -2609,6 +2609,9 @@ async function exportOnlineMenus(){
       fat:          Math.round(tot.fat*10)/10||null,
       is_available: true,
       sort_order:   0,
+      image_urls:   r.image_urls||[],           // ← รูปสำหรับ LIFF (4 slots)
+      description:  r.description||'',          // ← คำอธิบายสำหรับ popup LIFF
+      he_group:     r.he_group||'',
     };
   });
   showToast('⏳ กำลัง Sync '+items.length+' เมนูไป Supabase...');
