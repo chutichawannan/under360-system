@@ -16,10 +16,46 @@
   --blue:#3B82F6; --yellow:#F59E0B; --green:#22C55E; --purple:#8B5CF6;
   --bg:#F7F8F6; --white:#FFFFFF; --radius:12px;
   --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans Thai',sans-serif;
-  --sidebar-w:220px; --sidebar-mini:56px;
+  --sidebar-w:220px; --sidebar-mini:0px;
 }
 html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--ink);overflow:hidden}
 .app{display:flex;height:100vh}
+
+/* ── FLOAT EXPAND BUTTON (shows when sidebar is mini) ── */
+.sb-float-expand{
+  display:none;position:fixed;left:0;top:50%;
+  transform:translateY(-50%);width:18px;height:52px;
+  background:var(--forest);border:none;border-radius:0 10px 10px 0;
+  color:rgba(255,255,255,.9);cursor:pointer;z-index:200;font-size:12px;
+  box-shadow:2px 0 8px rgba(0,0,0,.2);
+}
+.sb-float-expand.show{display:block}
+
+/* ── CUSTOMER PANEL ── */
+.cust-layout{display:flex;gap:12px;height:calc(100vh - 120px)}
+.cust-list-panel{width:240px;flex-shrink:0;overflow-y:auto}
+.cust-detail-panel{flex:1;overflow-y:auto;background:#fff;border-radius:var(--radius);border:1px solid var(--ink-xsoft)}
+.cust-row{padding:10px 12px;border-radius:10px;border:1px solid var(--ink-xsoft);margin-bottom:6px;cursor:pointer;background:#fff;transition:.15s}
+.cust-row:hover,.cust-row.active{border-color:var(--forest);background:var(--forest-soft)}
+.cust-name{font-weight:600;font-size:13px;margin-bottom:2px}
+.cust-meta{font-size:11px;color:var(--ink-soft);display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.cust-badge{background:var(--forest);color:#fff;border-radius:10px;padding:1px 7px;font-size:10px;font-weight:600}
+.cust-avatar{width:56px;height:56px;border-radius:50%;object-fit:cover;border:2px solid var(--ink-xsoft);flex-shrink:0}
+.cust-avatar-ph{width:56px;height:56px;border-radius:50%;background:var(--forest-soft);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.cust-section{margin-bottom:18px}
+.cust-stitle{font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;padding-bottom:5px;border-bottom:1px solid var(--ink-xsoft)}
+.cust-field{font-size:13px;padding:4px 0}
+.cust-field label{color:var(--ink-soft);font-size:11px;display:block;margin-bottom:2px}
+.ord-row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--ink-xsoft);font-size:12px}
+.addr-chip{background:var(--forest-soft);border-radius:8px;padding:5px 10px;font-size:12px;margin-bottom:5px}
+.pts-adj{background:#F0FFF4;border-radius:10px;padding:12px;margin-top:6px}
+.member-id{font-family:var(--mono);font-weight:700;color:var(--forest);font-size:14px;letter-spacing:1px}
+
+/* ── MENU NOTE TOGGLE ── */
+.menu-note-wrap{margin-top:6px}
+.note-toggle{font-size:11px;color:var(--ink-soft);cursor:pointer;background:none;border:none;padding:0;font-family:inherit}
+.note-toggle:hover{color:var(--forest)}
+.menu-note{display:none;margin-top:4px}
 
 /* ── SIDEBAR ── */
 .sidebar{
@@ -254,6 +290,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 </style>
 </head>
 <body>
+<!-- Float expand button (visible when sidebar is mini) -->
+<button class="sb-float-expand" id="sbFloatExpand" onclick="toggleSidebar()">▶</button>
+
 <div class="app">
 
 <!-- SIDEBAR -->
@@ -291,10 +330,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <div class="sb-item" onclick="openApp('report.html','📊 รายงาน',this)">
       <span class="sb-icon">📊</span><span>รายงาน</span>
     </div>
-    <div class="sb-item" onclick="openApp('customer.html','👥 ข้อมูลลูกค้า',this)">
+    <div class="sb-item" onclick="openTab('customer',this)">
       <span class="sb-icon">👥</span><span>ข้อมูลลูกค้า</span>
-    </div>
-    <div class="sb-item" onclick="openApp('main_database_v2.html','🗄️ หลังบ้าน (DB)',this)">
+    </div>    <div class="sb-item" onclick="openApp('main_database_v2.html','🗄️ หลังบ้าน (DB)',this)">
       <span class="sb-icon">🗄️</span><span>หลังบ้าน (DB)</span>
     </div>
     <div class="sb-item" onclick="openTab('he',this)">
@@ -362,7 +400,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <div class="sec-header">
         <div class="sec-title">เมนูที่เปิดให้สั่งอยู่ตอนนี้</div>
         <div class="sec-actions">
-          <button class="btn toggle-img-btn" id="toggleImgBtn" onclick="toggleImages()">🖼️ ซ่อนรูป</button>
+          <button class="btn toggle-img-btn" id="toggleImgBtn" onclick="toggleImages()">🖼️ แสดงรูป</button>
           <button class="btn" onclick="loadMenus()">🔄 รีเฟรช</button>
         </div>
       </div>
@@ -487,6 +525,28 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       </div>
     </div>
 
+    <!-- TAB: CUSTOMER MANAGEMENT -->
+    <div class="tab-panel" id="panel-customer">
+      <div class="sec-header" style="margin-bottom:12px">
+        <div class="sec-title">ข้อมูลลูกค้า</div>
+        <button class="btn" onclick="loadCustomers()">🔄 รีเฟรช</button>
+      </div>
+      <div class="cust-layout">
+        <div class="cust-list-panel">
+          <input type="text" id="custSearch" class="ifield"
+            placeholder="🔍 ค้นหาชื่อ LINE หรือเบอร์..."
+            oninput="filterCustomers()"
+            style="width:100%;margin-bottom:10px;padding:8px 10px;border:1px solid var(--ink-xsoft);border-radius:8px;font-size:13px;font-family:inherit">
+          <div id="custList"><div style="padding:20px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div></div>
+        </div>
+        <div class="cust-detail-panel" id="custDetail">
+          <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:200px;color:var(--ink-soft)">
+            <span style="font-size:48px">👤</span><div style="margin-top:8px">เลือกลูกค้าเพื่อดูข้อมูล</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- TAB: HOME EDITOR (seamless iframe) -->
     <div class="tab-panel" id="panel-he" style="padding:0;overflow:hidden;">
       <iframe id="he-frame" src="" style="width:100%;height:calc(100vh - 56px);border:none;display:block;"
@@ -569,7 +629,7 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
-let dateMode="today",showImages=true,sidebarMini=false,refreshTimer=null;
+let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
 let planDays=1,planView="full";
 // customerAssign: {cid: [{code, qty, note}]}
 let customerAssign={};
@@ -586,12 +646,19 @@ function getDateCols(){var c=[];for(var i=0;i<planDays;i++){var d=new Date();d.s
 function toggleSidebar(){
   sidebarMini=!sidebarMini;
   document.getElementById("sidebar").classList.toggle("mini",sidebarMini);
-  
   document.getElementById("toggleIcon").textContent=sidebarMini?"▶":"◀";
+  var fb=document.getElementById("sbFloatExpand");
+  if(fb) fb.classList.toggle("show",sidebarMini);
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",he:"🏠 หน้าร้าน (HE)",app:"🔗"};
+var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",app:"🔗"};
 
+function _autoCollapseBar(){
+  sidebarMini=true;
+  document.getElementById("sidebar").classList.add("mini");
+  document.getElementById("toggleIcon").textContent="▶";
+  document.getElementById("sbFloatExpand").classList.add("show");
+}
 function openApp(url, label, el){
   document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
   document.querySelectorAll(".sb-item").forEach(function(i){i.classList.remove("active");});
@@ -599,12 +666,7 @@ function openApp(url, label, el){
   if(el) el.classList.add("active");
   document.getElementById("topTitle").textContent = label;
   document.querySelector(".content").classList.add("he-mode");
-  // collapse sidebar
-  sidebarMini=true;
-  document.getElementById("sidebar").classList.add("mini"); document.getElementById("toggleIcon").textContent="▶";
-  
-  
-  // load iframe
+  _autoCollapseBar();
   var fr=document.getElementById("app-frame");
   fr.src = url;
 }
@@ -619,17 +681,11 @@ function openTab(name,el){
   if(name==="plan")buildPlan();
   if(name==="messenger")loadMessenger();
   if(name==="promo")loadPromos();
-  // HE: auto-collapse sidebar + remove content padding + lazy-load iframe
+  if(name==="customer")loadCustomers();
   var content=document.querySelector(".content");
-  var sidebar=document.getElementById("sidebar");
-  
   if(name==="he"){
     content.classList.add("he-mode");
-    // collapse sidebar
-    sidebarMini=true;
-    sidebar.classList.add("mini");
-    document.getElementById("toggleIcon").textContent="▶";
-    // lazy-load: set src only once
+    _autoCollapseBar();
     var fr=document.getElementById("he-frame");
     if(!fr.src||!fr.src.includes("home_editor"))fr.src="home_editor.html";
   } else {
@@ -702,25 +758,29 @@ async function loadMenus(){
     if(!data.length){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>ยังไม่มีเมนูออนไลน์</div>";return;}
     var h="";
     data.forEach(function(m){
-      h+="<div class='menu-card'><div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
+      h+="<div class='menu-card'>";
+      h+="<div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
       h+="<div class='menu-card-body'><div class='menu-code'>"+(m.code||"—")+"</div>";
       h+="<div class='menu-name'>"+m.name+"</div>";
       h+="<div class='menu-stock'><div class='stock-dot"+(m.stock_reserved>0?" low":"")+"'></div>";
       h+="<span>"+(m.stock_reserved>0?"จอง "+m.stock_reserved:"พร้อม")+"</span>";
       h+="<span style='margin-left:auto;font-family:var(--mono);font-weight:600;color:#1F4D3A'>฿"+(m.price||0)+"</span></div>";
-      h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...'></textarea></div></div>";
+      // collapsed note toggle
+      h+="<div class='menu-note-wrap'><button class='note-toggle' onclick=\"this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.nextElementSibling.style.display==='block'?'▲ ปิด':'▼ โน้ต'\">▼ โน้ต</button>";
+      h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...' style='display:none;width:100%;margin-top:4px;font-size:12px;border:1px solid #D1FAE5;border-radius:5px;padding:4px 7px;font-family:inherit;resize:vertical'></textarea></div>";
+      h+="</div></div>";
     });
     grid.innerHTML=h;
   }catch(e){console.error(e);}
 }
-// imgMode: 0=ปกติ 1=เล็ก 2=ซ่อน
+// imgMode: 0=ซ่อน 1=เล็ก 2=ปกติ
 var imgMode=0;
 function toggleImages(){
   imgMode=(imgMode+1)%3;
-  var labels=["🖼️ ซ่อนรูป","🔲 รูปเล็ก","🖼️ รูปปกติ"];
+  var labels=["🖼️ แสดงรูป","🔲 รูปเล็ก","🖼️ ซ่อนรูป"];
   var btn=document.getElementById("toggleImgBtn");if(btn)btn.textContent=labels[imgMode];
   document.querySelectorAll(".menu-card-img").forEach(function(el){
-    el.classList.toggle("hide-img",imgMode===2);
+    el.classList.toggle("hide-img",imgMode===0);
     el.classList.toggle("small-img",imgMode===1);
   });
 }
@@ -982,6 +1042,199 @@ async function loadMessenger(){
 loadAll();
 refreshTimer=setInterval(loadAll,30000);
 subscribeRealtime();
+
+// ── CUSTOMER MANAGEMENT ──────────────────────────────────
+var allCustomers=[], selectedCustId=null;
+
+function genMemberId(idx){
+  // U360-000001 format
+  return "U360-"+(String(idx+1)).padStart(6,"0");
+}
+
+async function loadCustomers(){
+  var el=document.getElementById("custList"); if(!el)return;
+  el.innerHTML="<div style='padding:20px;text-align:center;color:var(--ink-soft);font-size:13px'>กำลังโหลด...</div>";
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    // Load customers
+    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true});
+    if(res.error)throw res.error;
+    allCustomers=(res.data||[]).map(function(c,i){
+      if(!c.member_id) c.member_id=genMemberId(i);
+      return c;
+    });
+    // Load order totals per customer
+    var oRes=await sb_.from("orders").select("customer_line_uid,total_price,id");
+    var orderMap={};
+    (oRes.data||[]).forEach(function(o){
+      if(!o.customer_line_uid)return;
+      if(!orderMap[o.customer_line_uid]) orderMap[o.customer_line_uid]={count:0,total:0};
+      orderMap[o.customer_line_uid].count++;
+      orderMap[o.customer_line_uid].total+=(Number(o.total_price)||0);
+    });
+    allCustomers.forEach(function(c){
+      var om=orderMap[c.line_uid||c.id]||{count:0,total:0};
+      c._orders=om.count; c._total=om.total;
+    });
+    renderCustList(allCustomers);
+  }catch(e){console.error(e);el.innerHTML="<div style='padding:20px;text-align:center;color:#DC2626'>โหลดไม่ได้</div>";}
+}
+
+function renderCustList(custs){
+  var el=document.getElementById("custList"); if(!el)return;
+  if(!custs.length){el.innerHTML="<div style='padding:20px;text-align:center;color:var(--ink-soft);font-size:13px'>ยังไม่มีข้อมูลลูกค้า</div>";return;}
+  el.innerHTML=custs.map(function(c){
+    var name=c.display_name||c.line_display_name||"ไม่ระบุชื่อ";
+    var phone=c.phone||"—";
+    var mid=c.member_id||"—";
+    var total=c._total?("฿"+Number(c._total).toLocaleString()):"฿0";
+    var planTag=c.plan_type?("<span class='cust-badge'>"+c.plan_type+"</span>"):"";
+    var isNew=(c._orders||0)<=1?"<span style='background:#FEF3C7;color:#92400E;border-radius:8px;padding:1px 6px;font-size:10px;font-weight:600'>ใหม่</span>":"";
+    return "<div class='cust-row"+(selectedCustId===c.id?" active":"")+"' onclick='selectCustomer(\""+c.id+"\")'>"
+      +"<div class='cust-name'>"+name+"</div>"
+      +"<div class='cust-meta'>"+planTag+isNew
+      +"<span>📞 "+phone+"</span>"
+      +"<span>🆔 "+mid+"</span>"
+      +"<span style='margin-left:auto;font-weight:600;color:#1F4D3A'>"+total+"</span>"
+      +"<span style='color:var(--ink-soft)'>"+c._orders+" ออเดอร์</span>"
+      +"</div></div>";
+  }).join("");
+}
+
+function filterCustomers(){
+  var q=(document.getElementById("custSearch").value||"").toLowerCase();
+  if(!q){renderCustList(allCustomers);return;}
+  renderCustList(allCustomers.filter(function(c){
+    return (c.display_name||c.line_display_name||"").toLowerCase().includes(q)
+      ||(c.phone||"").includes(q)
+      ||(c.member_id||"").toLowerCase().includes(q);
+  }));
+}
+
+async function selectCustomer(id){
+  selectedCustId=id;
+  // update active state
+  document.querySelectorAll(".cust-row").forEach(function(r){r.classList.remove("active");});
+  var rows=document.querySelectorAll(".cust-row");
+  rows.forEach(function(r){if(r.onclick&&r.onclick.toString().includes(id))r.classList.add("active");});
+  var c=allCustomers.find(function(x){return x.id===id;});
+  if(!c)return;
+  var det=document.getElementById("custDetail"); if(!det)return;
+  // load orders for this customer
+  var sb_=getSB();
+  var orders=[];
+  try{
+    var uid=c.line_uid||c.id;
+    var res=await sb_.from("orders").select("*").eq("customer_line_uid",uid).order("created_at",{ascending:false});
+    orders=res.data||[];
+  }catch(e){}
+  var name=c.display_name||c.line_display_name||"ไม่ระบุชื่อ";
+  var pts=c.loyalty_points||0;
+  var addrs=[...(c.addresses||[])];
+  // collect unique addresses from orders
+  orders.forEach(function(o){if(o.delivery_address&&!addrs.includes(o.delivery_address))addrs.push(o.delivery_address);});
+  det.innerHTML="<div class='cust-detail-inner'>"
+    // Profile header
+    +"<div style='display:flex;align-items:center;gap:14px;margin-bottom:20px;padding-bottom:16px;border-bottom:1px solid var(--ink-xsoft)'>"
+    +(c.line_picture_url?"<img class='cust-avatar' src='"+c.line_picture_url+"'>":"<div class='cust-avatar-ph'>👤</div>")
+    +"<div><div style='font-size:16px;font-weight:700'>"+name+"</div>"
+    +"<div class='member-id'>"+c.member_id+"</div>"
+    +"<div class='cust-uid'>LINE: "+(c.line_uid||"—")+"</div></div>"
+    +"<div style='margin-left:auto;text-align:right'><div style='font-size:11px;color:var(--ink-soft)'>ยอดซื้อรวม</div>"
+    +"<div style='font-size:20px;font-weight:800;color:#1F4D3A'>฿"+(c._total||0).toLocaleString()+"</div>"
+    +"<div style='font-size:11px;color:var(--ink-soft)'>"+(c._orders||0)+" ออเดอร์</div></div></div>"
+
+    // Points
+    +"<div class='cust-section'><div class='cust-stitle'>🌟 แต้มสะสม</div>"
+    +"<div style='display:flex;align-items:center;gap:10px'>"
+    +"<div style='font-size:24px;font-weight:800;color:var(--forest)'>"+pts+"<span style='font-size:13px;font-weight:400'> แต้ม</span></div>"
+    +"<button class='btn' onclick='document.getElementById(\"pts-adj-"+id+"\").style.display=\"block\"'>± ปรับแต้ม</button></div>"
+    +"<div id='pts-adj-"+id+"' class='pts-adj' style='display:none'>"
+    +"<div style='font-size:12px;font-weight:600;margin-bottom:8px'>ปรับแต้มโดย Admin</div>"
+    +"<div style='display:flex;gap:8px;margin-bottom:8px'>"
+    +"<input type='number' id='pts-val-"+id+"' placeholder='+ หรือ - แต้ม' style='flex:1;padding:6px 10px;border:1px solid #D1FAE5;border-radius:8px;font-family:inherit;font-size:13px'>"
+    +"<button class='btn btn-primary' onclick='adjustPoints(\""+id+"\")'>บันทึก</button></div>"
+    +"<textarea id='pts-note-"+id+"' placeholder='เหตุผล (บังคับ) เช่น แก้ไขจากคำสั่ง #U-0624-001' rows='2' style='width:100%;padding:6px 10px;border:1px solid #D1FAE5;border-radius:8px;font-family:inherit;font-size:12px;resize:none'></textarea></div></div>"
+
+    // Addresses
+    +"<div class='cust-section'><div class='cust-stitle'>📍 ที่อยู่จัดส่ง</div>"
+    +(addrs.length?addrs.map(function(a){return "<div class='addr-chip'>"+a+"</div>";}).join(""):"<div style='font-size:13px;color:var(--ink-soft)'>ยังไม่มีที่อยู่</div>")
+    +"</div>"
+
+    // Order history
+    +"<div class='cust-section'><div class='cust-stitle'>📋 ประวัติคำสั่งซื้อ ("+orders.length+")</div>"
+    +(orders.length?orders.slice(0,20).map(function(o){
+      return "<div class='ord-row'><span style='color:var(--ink-soft)'>"+(o.order_number||o.id.slice(0,8))+"</span>"
+        +"<span>"+((o.delivery_date||"").slice(0,10)||"—")+"</span>"
+        +"<span style='font-weight:600;color:#1F4D3A'>฿"+(o.total_price||0).toLocaleString()+"</span>"
+        +"<span class='tag' style='font-size:11px'>"+(o.status||"—")+"</span></div>";
+    }).join(""):"<div style='font-size:13px;color:var(--ink-soft)'>ยังไม่มีออเดอร์</div>")
+    +"</div>"
+
+    // Admin notes
+    +"<div class='cust-section'><div class='cust-stitle'>📝 โน้ตลูกค้า (Admin)</div>"
+    +"<textarea id='cust-notes-"+id+"' rows='3' placeholder='โน้ตเกี่ยวกับลูกค้าคนนี้...' "
+    +"style='width:100%;padding:8px 10px;border:1px solid var(--ink-xsoft);border-radius:8px;font-family:inherit;font-size:13px;resize:vertical'>"+(c.admin_notes||"")+"</textarea>"
+    +"<button class='btn' style='margin-top:6px' onclick='saveCustNotes(\""+id+"\")'>💾 บันทึกโน้ต</button></div>"
+
+    // AI comment
+    +"<div class='cust-section'><div class='cust-stitle'>🤖 ความเห็น AI (Marketing Agent)</div>"
+    +"<textarea id='cust-ai-"+id+"' rows='3' placeholder='AI insight เกี่ยวกับลูกค้า เช่น พฤติกรรมการซื้อ ความชอบ ข้อเสนอแนะ...' "
+    +"style='width:100%;padding:8px 10px;border:1px solid #DBEAFE;border-radius:8px;font-family:inherit;font-size:13px;resize:vertical;background:#F0F9FF'>"+(c.ai_comment||"")+"</textarea>"
+    +"<button class='btn' style='margin-top:6px' onclick='saveCustAI(\""+id+"\")'>💾 บันทึก AI</button></div>"
+    +"</div>";
+}
+
+async function adjustPoints(id){
+  var c=allCustomers.find(function(x){return x.id===id;}); if(!c)return;
+  var val=parseInt(document.getElementById("pts-val-"+id).value)||0;
+  var note=(document.getElementById("pts-note-"+id).value||"").trim();
+  if(!val){alert("ใส่จำนวนแต้มก่อน");return;}
+  if(!note){alert("กรุณาใส่เหตุผลในการปรับแต้ม (บังคับ)");return;}
+  var newPts=(c.loyalty_points||0)+val;
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    await sb_.from("customers").update({loyalty_points:newPts,updated_at:new Date().toISOString()}).eq("id",id);
+    c.loyalty_points=newPts;
+    var memo="["+new Date().toLocaleDateString("th-TH")+"] "+(val>0?"+":"")+val+" แต้ม — "+note;
+    c.admin_notes=(c.admin_notes?(c.admin_notes+"\n"):"")+memo;
+    await sb_.from("customers").update({admin_notes:c.admin_notes}).eq("id",id);
+    selectCustomer(id);
+    showToastOH("ปรับแต้มแล้ว: "+(val>0?"+":"")+val+" → รวม "+newPts+" แต้ม ✓");
+  }catch(e){alert("บันทึกไม่สำเร็จ: "+e.message);}
+}
+
+async function saveCustNotes(id){
+  var c=allCustomers.find(function(x){return x.id===id;}); if(!c)return;
+  var notes=(document.getElementById("cust-notes-"+id).value||"").trim();
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id);
+    c.admin_notes=notes;
+    showToastOH("บันทึกโน้ตแล้ว ✓");
+  }catch(e){alert("บันทึกไม่สำเร็จ");}
+}
+
+async function saveCustAI(id){
+  var c=allCustomers.find(function(x){return x.id===id;}); if(!c)return;
+  var ai=(document.getElementById("cust-ai-"+id).value||"").trim();
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id);
+    c.ai_comment=ai;
+    showToastOH("บันทึก AI comment แล้ว ✓");
+  }catch(e){alert("บันทึกไม่สำเร็จ");}
+}
+
+function showToastOH(msg){
+  var t=document.createElement("div");
+  t.textContent=msg;
+  t.style.cssText="position:fixed;bottom:24px;right:24px;background:#1F4D3A;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;z-index:9999;box-shadow:0 4px 16px rgba(0,0,0,.2)";
+  document.body.appendChild(t);
+  setTimeout(function(){t.remove();},3000);
+}
+
+
 
 </script>
 </body>
