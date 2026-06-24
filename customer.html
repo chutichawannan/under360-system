@@ -13,17 +13,24 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .hdr-title{font-family:var(--mono);font-size:16px;font-weight:700;color:#fff;}
 .hdr-sub{font-size:11px;color:rgba(255,255,255,.5);}
 .back-btn{color:rgba(255,255,255,.7);text-decoration:none;font-size:13px;padding:6px 12px;background:rgba(255,255,255,.1);border-radius:8px;}
+/* Stats bar */
+.stats-bar{background:var(--white);border-bottom:1px solid var(--ink-xsoft);padding:10px 24px;display:flex;gap:28px;overflow-x:auto;}
+.sb-item{flex-shrink:0;text-align:center;}
+.sb-num{font-family:var(--mono);font-size:18px;font-weight:700;color:var(--forest);}
+.sb-lbl{font-size:10px;color:var(--ink-soft);margin-top:1px;}
 .main{padding:20px;max-width:1000px;margin:0 auto;display:grid;grid-template-columns:320px 1fr;gap:16px;}
 @media(max-width:700px){.main{grid-template-columns:1fr;}}
 .search-box{position:relative;margin-bottom:12px;}
 .search-box input{width:100%;padding:10px 14px 10px 36px;border:1px solid var(--ink-xsoft);border-radius:10px;font-size:13px;font-family:var(--sans);background:var(--white);}
 .search-icon{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--ink-soft);}
-.cust-list{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 160px);overflow-y:auto;}
+.cust-list{display:flex;flex-direction:column;gap:6px;max-height:calc(100vh - 210px);overflow-y:auto;}
 .cust-item{background:var(--white);border-radius:10px;padding:12px 14px;cursor:pointer;border:1px solid var(--ink-xsoft);transition:.15s;}
 .cust-item:hover{background:var(--forest-soft);border-color:var(--forest);}
 .cust-item.active{background:var(--forest-soft);border-color:var(--forest);border-width:2px;}
-.ci-name{font-weight:600;font-size:14px;margin-bottom:3px;}
-.ci-meta{font-size:11px;color:var(--ink-soft);display:flex;gap:8px;flex-wrap:wrap;}
+.ci-name{font-weight:600;font-size:14px;margin-bottom:2px;display:flex;align-items:center;gap:6px;}
+.ci-mid{font-family:var(--mono);font-size:10px;color:var(--forest);font-weight:600;}
+.ci-meta{font-size:11px;color:var(--ink-soft);display:flex;gap:8px;flex-wrap:wrap;margin-top:3px;}
+.ci-total{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--forest);}
 .tag{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:700;}
 .tag-lc{background:#D1FAE5;color:#065F46;}
 .tag-hp{background:#DBEAFE;color:#1E40AF;}
@@ -31,12 +38,16 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .tag-loyal{background:#EDE9FE;color:#5B21B6;}
 .profile{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);overflow:hidden;}
 .p-header{background:var(--forest);padding:20px;display:flex;align-items:center;gap:14px;}
-.p-avatar{width:52px;height:52px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;}
+.p-avatar{width:56px;height:56px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden;border:2px solid rgba(255,255,255,.3);}
+.p-avatar img{width:100%;height:100%;object-fit:cover;}
 .p-name{font-size:18px;font-weight:700;color:#fff;}
 .p-meta{font-size:12px;color:rgba(255,255,255,.6);}
-.p-body{padding:18px;}
-.p-section{margin-bottom:18px;}
-.p-sec-title{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;}
+.member-badge{display:inline-flex;align-items:center;background:rgba(255,255,255,.2);color:#fff;border-radius:20px;padding:2px 10px;font-family:var(--mono);font-size:11px;font-weight:600;margin-top:4px;letter-spacing:.5px;}
+.uid-chip{font-family:var(--mono);font-size:10px;color:rgba(255,255,255,.5);margin-top:2px;word-break:break-all;}
+.p-body{padding:18px;max-height:calc(100vh - 210px);overflow-y:auto;}
+.p-section{margin-bottom:20px;}
+.p-sec-title{font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
+.p-sec-title button{font-size:11px;color:var(--forest);background:var(--forest-soft);border:none;border-radius:6px;padding:3px 10px;cursor:pointer;font-family:var(--sans);font-weight:600;text-transform:none;letter-spacing:0;}
 .p-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 .p-field{background:var(--bg);border-radius:8px;padding:10px 12px;}
 .p-field-label{font-size:10px;color:var(--ink-soft);font-weight:600;text-transform:uppercase;margin-bottom:3px;}
@@ -45,14 +56,39 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 .history-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--ink-xsoft);font-size:12px;}
 .h-date{font-family:var(--mono);font-size:11px;color:var(--ink-soft);width:80px;flex-shrink:0;}
 .h-items{flex:1;color:var(--ink-soft);}
+.h-num{font-family:var(--mono);font-size:11px;color:var(--ink-soft);flex-shrink:0;}
 .h-total{font-family:var(--mono);font-weight:700;color:var(--forest);}
+.h-status{font-size:10px;padding:1px 6px;border-radius:8px;background:var(--bg);color:var(--ink-soft);flex-shrink:0;}
 .empty-profile{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:300px;color:var(--ink-soft);gap:10px;}
+/* Points form */
+.pts-box{background:var(--forest-soft);border-radius:10px;padding:14px;margin-top:8px;}
+.ifield{width:100%;padding:9px 12px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:13px;color:var(--ink);background:var(--white);outline:none;transition:.15s;}
+.ifield:focus{border-color:var(--forest);}
+.btn-save{background:var(--forest);color:#fff;border:none;border-radius:8px;padding:9px 16px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;}
+.btn-save:hover{opacity:.9;}
+/* Notes/AI */
+.note-area{width:100%;padding:10px 12px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:13px;color:var(--ink);resize:vertical;min-height:72px;outline:none;}
+.note-area:focus{border-color:var(--forest);}
+.ai-area{background:#F0F9FF;border-color:#BFDBFE;}
+.addr-chip{background:var(--forest-soft);border-radius:8px;padding:6px 10px;font-size:12px;margin-bottom:4px;}
+.log-line{font-size:11px;color:var(--ink-soft);padding:3px 0;border-bottom:1px solid var(--ink-xsoft);}
+/* Toast */
+.toast{position:fixed;bottom:20px;right:20px;background:var(--forest);color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;font-weight:500;z-index:999;display:none;box-shadow:0 4px 16px rgba(0,0,0,.15);}
+.toast.show{display:block;}
 </style>
 </head>
 <body>
 <div class="header">
   <div><div class="hdr-title">👥 ข้อมูลลูกค้า</div><div class="hdr-sub">UNDER360 · Customer Management</div></div>
   <a class="back-btn" href="operation_hub.html">← OH</a>
+</div>
+
+<div class="stats-bar">
+  <div class="sb-item"><div class="sb-num" id="st-total">—</div><div class="sb-lbl">ลูกค้าทั้งหมด</div></div>
+  <div class="sb-item"><div class="sb-num" id="st-active">—</div><div class="sb-lbl">สั่งซื้อแล้ว</div></div>
+  <div class="sb-item"><div class="sb-num" id="st-rev">—</div><div class="sb-lbl">รายได้รวม</div></div>
+  <div class="sb-item"><div class="sb-num" id="st-pts">—</div><div class="sb-lbl">แต้มรวม</div></div>
+  <div class="sb-item" style="margin-left:auto"><button onclick="loadCustomersFromSB()" style="background:var(--forest-soft);color:var(--forest);border:none;border-radius:8px;padding:6px 14px;font-family:var(--sans);font-size:12px;font-weight:600;cursor:pointer;">🔄 รีเฟรช</button></div>
 </div>
 
 <div class="main">
@@ -74,109 +110,260 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
 const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
+function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+function genMid(idx){return "U360-"+(String(idx+1)).padStart(6,"0");}
 
-// Load customers from Supabase
+// ── STATE ──
+let allCusts=[], filteredCust=[], orderCache={};
+
+// ── MOCK DATA (fallback ถ้ายังไม่มี Supabase data) ──
+const CUSTOMERS=[
+  {id:"c1",name:"Boom",line_display_name:"boom_fitness",phone:"081-234-5678",plan_type:"HP",line_uid:null,line_picture_url:null,loyalty_points:0,admin_notes:"",ai_comment:"",addresses:[],member_id:"U360-000001",_oc:24,_ot:18600},
+  {id:"c2",name:"Pete",line_display_name:"pete.health",phone:"082-345-6789",plan_type:"HP",line_uid:null,line_picture_url:null,loyalty_points:0,admin_notes:"",ai_comment:"",addresses:[],member_id:"U360-000002",_oc:12,_ot:8400},
+  {id:"c5",name:"ชมพิสุทธิ์",line_display_name:"chom_clean",phone:"085-678-9012",plan_type:"LC",line_uid:null,line_picture_url:null,loyalty_points:120,admin_notes:"ไม่เผ็ด",ai_comment:"",addresses:["อโศก 12"],member_id:"U360-000003",_oc:18,_ot:11250},
+  {id:"c6",name:"ขวัญชนก",line_display_name:"kwanchanok_k",phone:"086-789-0123",plan_type:"LC",line_uid:null,line_picture_url:null,loyalty_points:310,admin_notes:"ไม่เอาผักชี",ai_comment:"",addresses:["นานา 3"],member_id:"U360-000004",_oc:31,_ot:19375},
+];
+
+// ── LOAD FROM SUPABASE ──
 async function loadCustomersFromSB(){
-  var sb_=getSB(); if(!sb_) return;
+  var sb_=getSB();
+  if(!sb_){allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();return;}
   try{
-    var res=await sb_.from("customers").select("*, orders(total,delivery_date,order_number,status)").order("created_at",{ascending:false});
-    if(res.error||!res.data||!res.data.length) return;
-    // แปลงเป็น CUSTOMERS format
-    window.CUSTOMERS_SB=res.data.map(function(c){
-      var orders=c.orders||[];
-      var totalSpend=orders.reduce(function(s,o){return s+(o.total||0);},0);
-      var lastOrder=orders.length?orders.sort(function(a,b){return b.delivery_date>a.delivery_date?1:-1;})[0].delivery_date:null;
-      return {
-        id:c.id,name:c.name||c.line_display_name||"ไม่ระบุ",
-        line:"@"+(c.line_display_name||"—"),phone:c.phone||"—",
-        type:c.tier<=2?"lc":"hp",
-        totalOrders:orders.length,totalSpend:totalSpend,
-        lastOrder:lastOrder||"—",pref:[],address:c.address||"—",
-        subscription:null,loyal:orders.length>=10,new:orders.length<=2,
-        history:orders.slice(0,3).map(function(o){return {date:o.delivery_date,items:o.order_number,total:o.total||0};})
-      };
+    // customers
+    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true});
+    if(res.error||!res.data||!res.data.length){
+      allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();return;
+    }
+    allCusts=res.data.map((c,i)=>({...c,member_id:c.member_id||genMid(i),_oc:0,_ot:0}));
+
+    // orders stats
+    var oRes=await sb_.from("orders").select("customer_line_uid,total_price,id,status");
+    var oMap={};
+    (oRes.data||[]).forEach(o=>{
+      var k=o.customer_line_uid; if(!k) return;
+      if(!oMap[k]) oMap[k]={count:0,total:0};
+      oMap[k].count++; oMap[k].total+=Number(o.total_price||0);
     });
-    filteredCust=[...window.CUSTOMERS_SB];
-    renderList();
-  }catch(e){console.error(e);}
+    allCusts.forEach(c=>{
+      var om=oMap[c.line_uid||""]||{count:0,total:0};
+      c._oc=om.count; c._ot=om.total;
+    });
+
+    filteredCust=[...allCusts];
+    renderList(); updateStats();
+  }catch(e){console.error(e);allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();}
 }
 
-const CUSTOMERS=[
-  {id:"c1",name:"Boom",line:"boom_fitness",phone:"081-234-5678",type:"hp",totalOrders:24,totalSpend:18600,lastOrder:"2026-06-19",pref:["ไม่ทานเนื้อแดง","ไม่ชอบเกาหลี"],address:"สุขุมวิท 39 แขวงคลองตัน",subscription:"HP Monthly รอบ9",loyal:true,new:false},
-  {id:"c2",name:"Pete",line:"pete.health",phone:"082-345-6789",type:"hp",totalOrders:12,totalSpend:8400,lastOrder:"2026-06-18",pref:[],address:"ทองหล่อ 15",subscription:"HP Weekly รอบ2",loyal:false,new:false},
-  {id:"c3",name:"Frederik",line:"fredrik_bkk",phone:"083-456-7890",type:"hp",totalOrders:8,totalSpend:5600,lastOrder:"2026-06-20",pref:["ไม่ทานเนื้อ"],address:"เอกมัย 10",subscription:"HP Weekly รอบ1",loyal:false,new:false},
-  {id:"c4",name:"คุณธัญภา",line:"thanyapa_t",phone:"084-567-8901",type:"hp",totalOrders:3,totalSpend:2100,lastOrder:"2026-06-15",pref:[],address:"ลาดพร้าว 71",subscription:null,loyal:false,new:true},
-  {id:"c5",name:"ชมพิสุทธิ์",line:"chom_clean",phone:"085-678-9012",type:"lc",totalOrders:18,totalSpend:11250,lastOrder:"2026-06-19",pref:["ไม่เผ็ด"],address:"อโศก 12",subscription:"LC Weekly รอบ3",loyal:true,new:false},
-  {id:"c6",name:"ขวัญชนก",line:"kwanchanok_k",phone:"086-789-0123",type:"lc",totalOrders:31,totalSpend:19375,lastOrder:"2026-06-20",pref:["ขาวไม่เอาข้าวกล้อง","ไม่ผักชี"],address:"นานา 3",subscription:"LC Monthly รอบ2",loyal:true,new:false},
-  {id:"c7",name:"พรรณพิไล",line:"punpilay",phone:"087-890-1234",type:"lc",totalOrders:7,totalSpend:4375,lastOrder:"2026-06-17",pref:[],address:"รัชดา 32",subscription:null,loyal:false,new:false},
-  {id:"c8",name:"คุณYok",line:"yok_diet",phone:"088-901-2345",type:"lc",totalOrders:15,totalSpend:9375,lastOrder:"2026-06-18",pref:["แพ้กุ้ง"],address:"ลาดกระบัง 18",subscription:"LC Monthly รอบ2",loyal:true,new:false},
-  {id:"c9",name:"คุณนุ่น",line:"noon_fit",phone:"089-012-3456",type:"hp",totalOrders:2,totalSpend:1400,lastOrder:"2026-06-10",pref:[],address:"บางนา 25",subscription:null,loyal:false,new:true},
-  {id:"c10",name:"คุณเมย์",line:"may_wellness",phone:"090-123-4567",type:"lc",totalOrders:9,totalSpend:5625,lastOrder:"2026-06-19",pref:["ไม่ทานปลา"],address:"สีลม 8",subscription:"LC Weekly รอบ1",loyal:false,new:false},
-];
-const HISTORY={
-  c1:[{date:"2026-06-19",items:"HP01×2, HP04×1",total:495},{date:"2026-06-17",items:"HP02×2, HP07×1",total:495},{date:"2026-06-15",items:"HP01×1, HP09×2",total:495}],
-  c6:[{date:"2026-06-20",items:"LC01×3, LC04×2",total:625},{date:"2026-06-18",items:"LC02×2, LC07×1",total:375},{date:"2026-06-16",items:"LC01×2, LC05×1",total:375}],
-};
+function updateStats(){
+  var totalRev=allCusts.reduce((s,c)=>s+c._ot,0);
+  var active=allCusts.filter(c=>c._oc>0).length;
+  var totalPts=allCusts.reduce((s,c)=>s+(c.loyalty_points||0),0);
+  document.getElementById("st-total").textContent=allCusts.length;
+  document.getElementById("st-active").textContent=active;
+  document.getElementById("st-rev").textContent=fmtB(Math.round(totalRev));
+  document.getElementById("st-pts").textContent=totalPts.toLocaleString();
+}
 
-let filteredCust=[...CUSTOMERS];
+// ── LIST ──
 function filterCustomers(){
-  const q=document.getElementById("searchInput").value.toLowerCase();
-  var src=window.CUSTOMERS_SB||CUSTOMERS; filteredCust=q?src.filter(c=>c.name.toLowerCase().includes(q)||c.line.toLowerCase().includes(q)||c.phone.includes(q)):src;
+  var q=(document.getElementById("searchInput").value||"").toLowerCase();
+  filteredCust=q?allCusts.filter(c=>{
+    var n=(c.name||c.display_name||c.line_display_name||"").toLowerCase();
+    return n.includes(q)||(c.phone||"").includes(q)||(c.member_id||"").toLowerCase().includes(q);
+  }):[...allCusts];
   renderList();
 }
+
 function renderList(){
-  document.getElementById("custList").innerHTML=filteredCust.map(c=>`
-    <div class="cust-item" id="ci-${c.id}" onclick="showProfile('${c.id}')">
-      <div class="ci-name">${c.name} ${c.loyal?"⭐":""}</div>
-      <div class="ci-meta">
-        <span class="tag tag-${c.type}">${c.type.toUpperCase()}</span>
-        ${c.new?`<span class="tag tag-new">ใหม่</span>`:""}
-        ${c.loyal?`<span class="tag tag-loyal">ขาประจำ</span>`:""}
-        <span>${c.totalOrders} ออเดอร์</span>
-        <span>${fmtB(c.totalSpend)}</span>
+  document.getElementById("custList").innerHTML=filteredCust.map(c=>{
+    var name=c.name||c.display_name||c.line_display_name||"ไม่ระบุ";
+    var type=(c.plan_type||c.type||"").toUpperCase();
+    var typeClass={HP:"tag-hp",LC:"tag-lc",S:"tag-hp",D:"tag-loyal"}[type]||"";
+    var loyal=c._oc>=10;
+    return `<div class="cust-item" id="ci-${c.id}" onclick="showProfile('${c.id}')">
+      <div class="ci-name">${esc(name)} ${loyal?"⭐":""}
+        <span class="ci-mid">${c.member_id||""}</span>
       </div>
-    </div>`).join("");
+      <div class="ci-meta">
+        ${type?`<span class="tag ${typeClass}">${type}</span>`:""}
+        ${c._oc<=2?'<span class="tag tag-new">ใหม่</span>':""}
+        ${loyal?'<span class="tag tag-loyal">ขาประจำ</span>':""}
+        ${c.phone?`<span>📞 ${c.phone}</span>`:""}
+        <span>${c._oc} ออเดอร์</span>
+        <span class="ci-total">${c._ot>0?fmtB(Math.round(c._ot)):""}</span>
+      </div>
+    </div>`;
+  }).join("");
 }
-function showProfile(id){
-  const c=CUSTOMERS.find(x=>x.id===id);
-  if(!c)return;
+
+// ── PROFILE ──
+async function showProfile(id){
+  var c=allCusts.find(x=>x.id===id); if(!c) return;
   document.querySelectorAll(".cust-item").forEach(el=>el.classList.remove("active"));
   document.getElementById("ci-"+id)?.classList.add("active");
-  const hist=HISTORY[id]||[];
+
+  // Load orders from cache or Supabase
+  var orders=orderCache[id]||[];
+  if(!orderCache[id]){
+    var sb_=getSB();
+    if(sb_&&c.line_uid){
+      try{
+        var r=await sb_.from("orders").select("*").eq("customer_line_uid",c.line_uid).order("created_at",{ascending:false}).limit(50);
+        orders=r.data||[]; orderCache[id]=orders;
+      }catch(e){}
+    }
+  }
+
+  // Addresses: from customer record + from order history (deduplicated)
+  var addrs=[...(c.addresses||[])];
+  orders.forEach(o=>{ if(o.delivery_address&&!addrs.includes(o.delivery_address)) addrs.push(o.delivery_address); });
+
+  var name=c.name||c.display_name||c.line_display_name||"ไม่ระบุ";
+  var type=(c.plan_type||c.type||"").toUpperCase();
+  var pts=c.loyalty_points||0;
+
   document.getElementById("profile").innerHTML=`
     <div class="p-header">
-      <div class="p-avatar">👤</div>
-      <div><div class="p-name">${c.name}</div><div class="p-meta">@${c.line} · ${c.phone}</div></div>
+      <div class="p-avatar">
+        ${c.line_picture_url?`<img src="${esc(c.line_picture_url)}" onerror="this.parentNode.innerHTML='👤'">`:"👤"}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div class="p-name">${esc(name)}</div>
+        <div class="p-meta">${c.phone||""} ${type?`· ${type}`:""}</div>
+        <div class="member-badge">🆔 ${c.member_id||"—"}</div>
+        ${c.line_uid?`<div class="uid-chip">LINE: ${c.line_uid}</div>`:""}
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-family:var(--mono);font-size:20px;font-weight:800;color:#fff">${fmtB(Math.round(c._ot))}</div>
+        <div style="font-size:11px;color:rgba(255,255,255,.5)">${c._oc} ออเดอร์</div>
+      </div>
     </div>
     <div class="p-body">
+      <!-- Stats -->
       <div class="p-section">
         <div class="p-sec-title">สถิติ</div>
         <div class="p-grid">
-          <div class="p-field"><div class="p-field-label">ออเดอร์ทั้งหมด</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:22px">${c.totalOrders}</div></div>
-          <div class="p-field"><div class="p-field-label">ยอดรวม</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:22px">${fmtB(c.totalSpend)}</div></div>
-          <div class="p-field"><div class="p-field-label">ออเดอร์ล่าสุด</div><div class="p-field-val">${c.lastOrder}</div></div>
-          <div class="p-field"><div class="p-field-label">ประเภท</div><div class="p-field-val"><span class="tag tag-${c.type}">${c.type.toUpperCase()}</span></div></div>
+          <div class="p-field"><div class="p-field-label">ออเดอร์</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:22px">${c._oc}</div></div>
+          <div class="p-field"><div class="p-field-label">ยอดรวม</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:18px">${fmtB(Math.round(c._ot))}</div></div>
+          <div class="p-field"><div class="p-field-label">ออเดอร์ล่าสุด</div><div class="p-field-val">${(orders[0]?.delivery_date||orders[0]?.created_at||"—").slice(0,10)}</div></div>
+          <div class="p-field"><div class="p-field-label">แต้มสะสม</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:18px" id="pts-show-${id}">${pts}</div></div>
         </div>
       </div>
-      ${c.subscription?`<div class="p-section"><div class="p-sec-title">Subscription</div><div class="p-field"><div class="p-field-label">คอร์สปัจจุบัน</div><div class="p-field-val">📅 ${c.subscription}</div></div></div>`:""}
+
+      <!-- Points adjustment -->
       <div class="p-section">
-        <div class="p-sec-title">ที่อยู่จัดส่ง</div>
-        <div class="p-field"><div class="p-field-label">ที่อยู่</div><div class="p-field-val">📍 ${c.address}</div></div>
+        <div class="p-sec-title">🌟 แต้มสะสม
+          <button onclick="document.getElementById('pts-box-${id}').style.display=document.getElementById('pts-box-${id}').style.display==='none'?'block':'none'">± ปรับแต้ม</button>
+        </div>
+        <div class="pts-box" id="pts-box-${id}" style="display:none">
+          <div style="font-size:12px;font-weight:600;color:var(--forest);margin-bottom:10px">ปรับแต้มโดย Admin — ต้องระบุเหตุผลเสมอ</div>
+          <div style="display:flex;gap:8px;margin-bottom:8px">
+            <input type="number" id="pts-val-${id}" class="ifield" placeholder="+เพิ่ม / -หัก แต้ม" style="font-size:16px;font-weight:700">
+            <button class="btn-save" onclick="adjustPoints('${id}')">บันทึก</button>
+          </div>
+          <textarea id="pts-note-${id}" class="note-area" rows="2" placeholder="เหตุผล เช่น แก้ไขออเดอร์ #U-0624-001 หรือ สมัครสมาชิกใหม่..."></textarea>
+        </div>
+        ${(c.pts_log||[]).length?`<div style="margin-top:8px">${(c.pts_log||[]).slice(-3).reverse().map(l=>`<div class="log-line">${esc(l)}</div>`).join("")}</div>`:""}
       </div>
-      ${c.pref.length?`<div class="p-section"><div class="p-sec-title">ข้อจำกัดอาหาร</div><div>${c.pref.map(p=>`<span class="pref-tag">⚠️ ${p}</span>`).join("")}</div></div>`:""}
+
+      <!-- Addresses -->
       <div class="p-section">
-        <div class="p-sec-title">ประวัติออเดอร์</div>
-        ${hist.length?hist.map(h=>`<div class="history-row"><span class="h-date">${h.date}</span><span class="h-items">${h.items}</span><span class="h-total">${fmtB(h.total)}</span></div>`).join(""):"<div style='font-size:12px;color:var(--ink-soft)'>ยังไม่มีประวัติ</div>"}
+        <div class="p-sec-title">📍 ที่อยู่จัดส่ง (${addrs.length})</div>
+        ${addrs.length?addrs.map((a,i)=>`<div class="addr-chip"><span style="color:var(--ink-soft);font-size:10px">${i+1}. </span>${esc(a)}</div>`).join("")
+          :'<div style="font-size:12px;color:var(--ink-soft)">ยังไม่มีที่อยู่</div>'}
+      </div>
+
+      <!-- Preferences -->
+      ${(c.pref||[]).length?`<div class="p-section"><div class="p-sec-title">ข้อจำกัดอาหาร</div><div>${(c.pref||[]).map(p=>`<span class="pref-tag">⚠️ ${p}</span>`).join("")}</div></div>`:""}
+
+      <!-- Order history -->
+      <div class="p-section">
+        <div class="p-sec-title">📋 ประวัติออเดอร์ (${orders.length})</div>
+        ${orders.length?orders.slice(0,20).map(o=>`
+          <div class="history-row">
+            <span class="h-num">${o.order_number||("#"+o.id.slice(0,6))}</span>
+            <span class="h-date">${(o.delivery_date||o.created_at||"").slice(0,10)}</span>
+            <span class="h-items">${(o.items||[]).map(i=>i.code||i.name||"").join(", ")||"—"}</span>
+            <span class="h-status">${statusTh(o.status)}</span>
+            <span class="h-total">${fmtB(o.total_price||0)}</span>
+          </div>`).join("")
+          :"<div style='font-size:12px;color:var(--ink-soft)'>ยังไม่มีประวัติ</div>"}
+      </div>
+
+      <!-- Admin notes -->
+      <div class="p-section">
+        <div class="p-sec-title">📝 โน้ต Admin</div>
+        <textarea id="notes-${id}" class="note-area" rows="3" placeholder="เช่น แพ้ถั่ว ต้องการอาหารไม่เผ็ด ลูกค้า VIP...">${esc(c.admin_notes||"")}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn-save" onclick="saveNotes('${id}')">💾 บันทึกโน้ต</button></div>
+      </div>
+
+      <!-- AI comment -->
+      <div class="p-section">
+        <div class="p-sec-title" style="color:#1D4ED8">🤖 AI Insight (Marketing Agent)</div>
+        <textarea id="ai-${id}" class="note-area ai-area" rows="4" placeholder="AI insight เช่น สั่ง HP plan สม่ำเสมอ มักเพิ่มโปรตีน แนะนำ bulk order...">${esc(c.ai_comment||"")}</textarea>
+        <div style="display:flex;justify-content:flex-end;margin-top:6px"><button class="btn-save" style="background:#1D4ED8" onclick="saveAI('${id}')">💾 บันทึก AI Insight</button></div>
       </div>
     </div>`;
 }
-renderList();
+
+function statusTh(s){return {confirmed:"ยืนยัน",preparing:"เตรียม",ready:"พร้อมส่ง",delivered:"ส่งแล้ว",cancelled:"ยกเลิก"}[s]||s||"—";}
+
+async function adjustPoints(id){
+  var c=allCusts.find(x=>x.id===id); if(!c) return;
+  var val=parseInt(document.getElementById("pts-val-"+id).value)||0;
+  var note=(document.getElementById("pts-note-"+id).value||"").trim();
+  if(!val){toast("ใส่จำนวนแต้มก่อน ⚠️");return;}
+  if(!note){toast("ต้องระบุเหตุผล (บังคับ) ⚠️");return;}
+  var newPts=Math.max(0,(c.loyalty_points||0)+val);
+  var log=`[${new Date().toLocaleDateString("th-TH")}] ${val>0?"+":""}${val} → ${newPts} แต้ม | ${note}`;
+  var newLog=[...(c.pts_log||[]),log];
+  var sb_=getSB();
+  if(sb_){
+    try{await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id);}
+    catch(e){toast("บันทึก Supabase ไม่สำเร็จ");return;}
+  }
+  c.loyalty_points=newPts; c.pts_log=newLog;
+  document.getElementById("pts-show-"+id).textContent=newPts;
+  document.getElementById("pts-val-"+id).value="";
+  document.getElementById("pts-note-"+id).value="";
+  document.getElementById("pts-box-"+id).style.display="none";
+  toast(`ปรับแต้มแล้ว: ${val>0?"+":""}${val} → รวม ${newPts} แต้ม ✓`);
+  updateStats();
+}
+
+async function saveNotes(id){
+  var c=allCusts.find(x=>x.id===id); if(!c) return;
+  var notes=document.getElementById("notes-"+id).value||"";
+  var sb_=getSB();
+  if(sb_){try{await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id);}catch(e){toast("บันทึกไม่สำเร็จ");return;}}
+  c.admin_notes=notes; toast("บันทึกโน้ตแล้ว ✓");
+}
+
+async function saveAI(id){
+  var c=allCusts.find(x=>x.id===id); if(!c) return;
+  var ai=document.getElementById("ai-"+id).value||"";
+  var sb_=getSB();
+  if(sb_){try{await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id);}catch(e){toast("บันทึกไม่สำเร็จ");return;}}
+  c.ai_comment=ai; toast("บันทึก AI Insight แล้ว ✓");
+}
+
+let _toastTimer;
+function toast(msg){
+  var el=document.getElementById("toast");
+  el.textContent=msg; el.classList.add("show");
+  clearTimeout(_toastTimer);
+  _toastTimer=setTimeout(()=>el.classList.remove("show"),3000);
+}
+
+// ── INIT ──
 loadCustomersFromSB();
 </script>
 </body>
