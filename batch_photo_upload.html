@@ -1,0 +1,703 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Under360 · Batch Photo Uploader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --forest:#1a5f43;--forest-soft:#e8f3ed;
+  --turmeric:#d98c2b;--turmeric-soft:#fef8ec;
+  --cream:#f5f2ee;--surface:#fff;
+  --ink:#2b2b2b;--ink-soft:#888;
+  --line:#e5e0d8;--red-soft:#fef0ee;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'IBM Plex Sans Thai',sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;display:flex;flex-direction:column}
+
+.hd{background:var(--forest);color:#fff;padding:13px 24px;display:flex;align-items:center;gap:14px;flex-shrink:0}
+.hd-brand{font-weight:800;font-size:14px;letter-spacing:1.5px}
+.hd-sep{width:1px;height:16px;background:rgba(255,255,255,.25)}
+.hd-title{font-size:13px;opacity:.8}
+.hd-badge{margin-left:auto;font-size:11px;background:rgba(255,255,255,.15);padding:3px 10px;border-radius:20px}
+
+.layout{display:flex;flex:1;min-height:0;overflow:hidden}
+
+/* ——— SIDEBAR ——— */
+.sb{width:268px;flex-shrink:0;background:var(--surface);border-right:1px solid var(--line);padding:18px;display:flex;flex-direction:column;gap:16px;overflow-y:auto}
+.sb-lbl{font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.6px;margin-bottom:6px}
+
+.key-wrap{position:relative}
+.key-wrap input{width:100%;padding:8px 32px 8px 10px;border:1px solid var(--line);border-radius:7px;font-size:11.5px;font-family:'IBM Plex Mono',monospace;background:var(--cream);color:var(--ink)}
+.key-wrap input:focus{outline:none;border-color:var(--forest)}
+.key-eye{position:absolute;right:8px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:13px;opacity:.5}
+
+.dz{border:2px dashed var(--line);border-radius:9px;padding:16px 12px;text-align:center;cursor:pointer;transition:all .18s;background:var(--cream)}
+.dz:hover,.dz.over{border-color:var(--forest);background:var(--forest-soft)}
+.dz .dz-ico{font-size:24px;margin-bottom:5px}
+.dz .dz-txt{font-size:11.5px;color:var(--ink-soft);line-height:1.45}
+
+.stat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.stat-box{background:var(--cream);border:1px solid var(--line);border-radius:7px;padding:8px 6px;text-align:center}
+.stat-n{font-size:22px;font-weight:800;color:var(--forest);font-family:'IBM Plex Mono',monospace}
+.stat-n.warn{color:var(--turmeric)}
+.stat-n.bad{color:#e74c3c}
+.stat-l{font-size:10px;color:var(--ink-soft);margin-top:1px}
+
+.btn-up{width:100%;padding:11px;background:var(--turmeric);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .15s}
+.btn-up:hover{opacity:.88}
+.btn-up:disabled{opacity:.45;cursor:not-allowed}
+
+.prog-bar{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:8px}
+.prog-fill{height:100%;background:var(--forest);border-radius:3px;transition:width .3s}
+.prog-txt{font-size:11px;color:var(--ink-soft);text-align:center;margin-top:5px}
+
+.hint{font-size:11px;color:var(--ink-soft);line-height:1.5}
+.hint a{color:var(--forest);text-decoration:none}
+
+/* ——— MAIN ——— */
+.main{flex:1;padding:22px;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+
+.poster-dz{border:2px dashed var(--line);border-radius:14px;padding:52px 24px;text-align:center;cursor:pointer;transition:all .2s;background:var(--surface)}
+.poster-dz:hover,.poster-dz.over{border-color:var(--turmeric);background:var(--turmeric-soft)}
+.poster-dz .pdz-ico{font-size:52px;margin-bottom:12px}
+.poster-dz h3{font-size:16px;margin-bottom:6px}
+.poster-dz p{font-size:12.5px;color:var(--ink-soft);line-height:1.6}
+
+/* Queue */
+.q-item{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--surface);border:1px solid var(--line);border-radius:8px;font-size:13px}
+.q-name{flex:1;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Pills */
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill-g{background:var(--forest-soft);color:var(--forest)}
+.pill-y{background:var(--turmeric-soft);color:#b07a0d}
+.pill-r{background:var(--red-soft);color:#c0392b}
+.pill-gr{background:#f0f0f0;color:#888}
+
+/* Filter bar */
+.fbar{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+.ftabs{display:flex;gap:3px;padding:3px;background:var(--cream);border-radius:7px}
+.ftab{padding:5px 12px;border-radius:5px;font-size:12px;font-weight:600;cursor:pointer;border:none;background:transparent;color:var(--ink-soft);font-family:inherit}
+.ftab.on{background:var(--surface);color:var(--forest);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.factions{display:flex;gap:6px}
+.btn-sm{padding:5px 10px;font-size:11px;font-weight:600;font-family:inherit;border-radius:5px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.btn-sm:hover{background:var(--cream)}
+
+/* Table */
+.tbl-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:auto}
+table{width:100%;border-collapse:collapse;min-width:700px}
+thead th{background:#faf9f6;padding:9px 12px;font-size:10.5px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:9px 12px;border-bottom:1px solid #f0ede8;vertical-align:middle;font-size:12.5px}
+tbody tr:last-child td{border-bottom:none}
+tbody tr.ok{background:#f9fdf9}
+tbody tr.no{background:var(--red-soft)}
+
+.thumb{width:62px;height:62px;object-fit:cover;border-radius:7px;border:1px solid var(--line);display:block}
+.thumb-ph{width:62px;height:62px;border-radius:7px;background:var(--cream);border:1.5px dashed var(--line);display:flex;align-items:center;justify-content:center;font-size:22px;color:var(--ink-soft)}
+
+.code-tag{font-family:'IBM Plex Mono',monospace;font-size:11px;background:var(--forest-soft);color:var(--forest);padding:2px 6px;border-radius:4px;font-weight:700;margin-right:4px}
+.code-tag.d{background:var(--turmeric-soft);color:#b07a0d}
+
+.conf-bar{height:4px;background:var(--line);border-radius:2px;width:56px;overflow:hidden;margin-top:3px}
+.conf-fill{height:100%;border-radius:2px;background:var(--forest)}
+.conf-fill.y{background:var(--turmeric)}
+.conf-fill.r{background:#e74c3c}
+.conf-n{font-size:11px;font-family:'IBM Plex Mono',monospace;color:var(--ink-soft)}
+
+.match-sel{font-size:11.5px;padding:4px 6px;border:1px solid var(--line);border-radius:5px;font-family:inherit;background:var(--cream);max-width:200px;display:block;margin-top:5px}
+
+.has-img{font-size:10px;padding:2px 6px;border-radius:4px;background:#e8f5e9;color:#2e7d32;font-weight:600}
+.no-img{font-size:10px;color:#ccc}
+
+.status-icon{font-size:16px}
+
+/* Empty state */
+.empty{text-align:center;padding:48px 24px;color:var(--ink-soft)}
+.empty .e-ico{font-size:40px;margin-bottom:10px}
+.empty p{font-size:13px}
+
+/* Toast */
+.toast{position:fixed;bottom:24px;right:24px;background:var(--forest);color:#fff;padding:11px 18px;border-radius:10px;font-size:13.5px;font-weight:600;animation:tIn .25s;z-index:999;max-width:320px}
+@keyframes tIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+.spin{width:14px;height:14px;border:2px solid rgba(255,255,255,.35);border-top-color:#fff;border-radius:50%;animation:sp .65s linear infinite;display:inline-block;vertical-align:middle}
+@keyframes sp{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+
+<div class="hd">
+  <div class="hd-brand">UNDER360</div>
+  <div class="hd-sep"></div>
+  <div class="hd-title">Batch Photo Uploader</div>
+  <div class="hd-badge">Admin Tool</div>
+</div>
+
+<div class="layout">
+
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sb">
+
+    <div>
+      <div class="sb-lbl">🔑 Anthropic API Key</div>
+      <div class="key-wrap">
+        <input type="password" id="apiKey" placeholder="sk-ant-api03-...">
+        <span class="key-eye" onclick="toggleKey()">👁</span>
+      </div>
+      <div class="hint" style="margin-top:5px">เก็บใน localStorage เครื่องนี้เท่านั้น</div>
+    </div>
+
+    <div>
+      <div class="sb-lbl">📊 ไฟล์เมนู Excel</div>
+      <div class="dz" id="xlsxDz" onclick="document.getElementById('xlsxIn').click()">
+        <input type="file" id="xlsxIn" accept=".xlsx,.xls" style="display:none">
+        <div class="dz-ico">📂</div>
+        <div class="dz-txt" id="xlsxTxt">วาง All_menu.xlsx ที่นี่<br>หรือคลิกเลือก</div>
+      </div>
+    </div>
+
+    <div id="dbSec" style="display:none">
+      <div class="sb-lbl">🗄️ Supabase</div>
+      <div id="dbTxt" class="hint">กำลังโหลด...</div>
+    </div>
+
+    <div id="statSec" style="display:none">
+      <div class="sb-lbl">สรุป</div>
+      <div class="stat-grid">
+        <div class="stat-box"><div class="stat-n" id="stOk">0</div><div class="stat-l">auto ✅</div></div>
+        <div class="stat-box"><div class="stat-n warn" id="stRv">0</div><div class="stat-l">รอดู 🟡</div></div>
+        <div class="stat-box"><div class="stat-n bad" id="stNo">0</div><div class="stat-l">ไม่พบ 🔴</div></div>
+      </div>
+    </div>
+
+    <div id="upSec" style="display:none">
+      <button class="btn-up" id="upBtn" onclick="doUpload()">🚀 Upload รูปที่เลือก</button>
+      <div id="upProg" style="display:none">
+        <div class="prog-bar"><div class="prog-fill" id="pgFill" style="width:0%"></div></div>
+        <div class="prog-txt" id="pgTxt"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="sb-lbl">วิธีใช้</div>
+      <div class="hint">
+        1. ใส่ Anthropic API Key<br>
+        2. วาง All_menu.xlsx<br>
+        3. วาง poster JPG รายสัปดาห์<br>
+        4. AI อ่านเมนู + crop รูป<br>
+        5. ตรวจ + กด Upload
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ===== MAIN ===== -->
+  <div class="main">
+
+    <div class="poster-dz" id="posterDz" onclick="document.getElementById('posterIn').click()">
+      <input type="file" id="posterIn" accept="image/*" multiple style="display:none">
+      <div class="pdz-ico">🖼️</div>
+      <h3>วาง poster เมนูรายสัปดาห์ที่นี่</h3>
+      <p>ไฟล์ JPG ชื่อแบบ <strong>177_6-12-Mar-2023-main.jpg</strong><br>
+      รองรับหลายไฟล์พร้อมกัน — AI อ่าน S1-S8, D1-D5 ให้อัตโนมัติ</p>
+    </div>
+
+    <div id="queueWrap" style="display:flex;flex-direction:column;gap:6px"></div>
+
+    <div id="tblSec" style="display:none">
+      <div class="fbar">
+        <div class="ftabs" id="ftabs">
+          <button class="ftab on" data-f="all">ทั้งหมด</button>
+          <button class="ftab" data-f="ok">✅ Auto</button>
+          <button class="ftab" data-f="rv">🟡 รอดู</button>
+          <button class="ftab" data-f="no">🔴 ไม่พบ</button>
+        </div>
+        <div class="factions">
+          <button class="btn-sm" onclick="selAll(true)">เลือกทั้งหมด</button>
+          <button class="btn-sm" onclick="selAll(false)">ล้างการเลือก</button>
+        </div>
+      </div>
+      <div class="tbl-wrap" style="margin-top:10px">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:32px"><input type="checkbox" id="mChk" onchange="masterChk(this)"></th>
+              <th style="width:70px">รูป crop</th>
+              <th>ชื่อจาก AI</th>
+              <th>เมนูใน DB</th>
+              <th style="width:80px">Code</th>
+              <th style="width:88px">ความมั่นใจ</th>
+              <th style="width:72px">สถานะ</th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* ===== CONFIG ===== */
+const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+
+/* ===== STATE ===== */
+const S = {
+  apiKey: '',
+  skuMap: new Map(),  // norm → {sku, name}
+  db: [],             // [{id, name, code, image_urls}]
+  posters: [],        // [{id, file, fileName, status, items, error}]
+  items: [],          // all extracted
+  filter: 'all',
+  processing: false
+};
+
+/* ===== INIT ===== */
+window.onload = () => {
+  S.apiKey = localStorage.getItem('u360_ak') || '';
+  document.getElementById('apiKey').value = S.apiKey;
+  document.getElementById('apiKey').addEventListener('input', e => {
+    S.apiKey = e.target.value.trim();
+    localStorage.setItem('u360_ak', S.apiKey);
+  });
+  setupDrops();
+  setupFilters();
+};
+
+function toggleKey() {
+  const el = document.getElementById('apiKey');
+  el.type = el.type === 'password' ? 'text' : 'password';
+}
+
+/* ===== DROP ZONES ===== */
+function setupDrops() {
+  makeDrop(document.getElementById('xlsxDz'), fs => {
+    const f = fs.find(f => /\.(xlsx|xls)$/i.test(f.name));
+    if (f) parseXlsx(f);
+  });
+  document.getElementById('xlsxIn').onchange = e => { if(e.target.files[0]) parseXlsx(e.target.files[0]); };
+
+  makeDrop(document.getElementById('posterDz'), fs => {
+    const imgs = fs.filter(f => f.type.startsWith('image/'));
+    if (imgs.length) addPosters(imgs);
+  });
+  document.getElementById('posterIn').onchange = e => addPosters(Array.from(e.target.files));
+}
+
+function makeDrop(el, cb) {
+  el.addEventListener('dragover', e => { e.preventDefault(); el.classList.add('over'); });
+  el.addEventListener('dragleave', () => el.classList.remove('over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault(); el.classList.remove('over');
+    cb(Array.from(e.dataTransfer.files));
+  });
+}
+
+function setupFilters() {
+  document.getElementById('ftabs').addEventListener('click', e => {
+    const t = e.target.closest('.ftab'); if (!t) return;
+    document.querySelectorAll('.ftab').forEach(x => x.classList.remove('on'));
+    t.classList.add('on');
+    S.filter = t.dataset.f;
+    renderTable();
+  });
+}
+
+/* ===== XLSX PARSE ===== */
+async function parseXlsx(file) {
+  setXlsxTxt('⏳ กำลังอ่าน...');
+  try {
+    const buf = await file.arrayBuffer();
+    const wb = XLSX.read(buf, {type: 'array'});
+    const map = new Map();
+    const specials = wb.SheetNames.filter(n => /special/i.test(n));
+
+    for (const sh of specials) {
+      const rows = XLSX.utils.sheet_to_json(wb.Sheets[sh], {header:1, defval:''});
+
+      // Auto-detect header row (contains 'Menu' and 'SKU')
+      let hdr = -1, mCol = -1, sCol = -1, dmCol = -1, dsCol = -1;
+      for (let i = 0; i < Math.min(6, rows.length); i++) {
+        const r = rows[i].map(v => String(v||'').trim());
+        const mi = r.indexOf('Menu');
+        const si = r.findIndex((v,j) => v === 'SKU' && j > mi);
+        if (mi >= 0 && si >= 0) {
+          hdr = i; mCol = mi; sCol = si;
+          // D-section: second 'SKU' after 'Note'
+          const ni = r.indexOf('Note');
+          if (ni >= 0) {
+            const dsi = r.findIndex((v,j) => v === 'SKU' && j > ni);
+            if (dsi >= 0) { dmCol = dsi - 2; dsCol = dsi; } // D-menu is 2 before D-SKU
+          }
+          break;
+        }
+      }
+      if (hdr < 0) continue;
+
+      for (let i = hdr + 1; i < rows.length; i++) {
+        const r = rows[i];
+        const sm = String(r[mCol]||'').trim();
+        const ss = String(r[sCol]||'').trim();
+        if (sm && ss && /^[SD]\d+$/.test(ss)) {
+          const k = norm(sm); if (!map.has(k)) map.set(k, {sku: ss, name: sm});
+        }
+        if (dmCol >= 0 && dsCol >= 0) {
+          const dm = String(r[dmCol]||'').trim();
+          const ds = String(r[dsCol]||'').trim();
+          if (dm && ds && /^D\d+$/.test(ds)) {
+            const k = norm(dm); if (!map.has(k)) map.set(k, {sku: ds, name: dm});
+          }
+        }
+      }
+    }
+    map.delete(norm('Menu')); map.delete(norm('SKU'));
+    S.skuMap = map;
+    setXlsxTxt(`✅ ${map.size} เมนู จาก ${specials.length} sheet`);
+    loadDb();
+  } catch(e) { setXlsxTxt('❌ ' + e.message.slice(0,60)); }
+}
+
+function setXlsxTxt(t) { document.getElementById('xlsxTxt').innerHTML = t; }
+
+/* ===== SUPABASE LOAD ===== */
+async function loadDb() {
+  show('dbSec'); document.getElementById('dbTxt').textContent = 'กำลังโหลด...';
+  try {
+    let all = [], off = 0;
+    for (;;) {
+      const r = await sbGet(`/rest/v1/menu_items?select=id,name,code,image_urls&order=code&limit=500&offset=${off}`);
+      all = all.concat(r); if (r.length < 500) break; off += 500;
+    }
+    S.db = all;
+    document.getElementById('dbTxt').textContent = `✅ ${all.length} เมนูใน DB`;
+    document.getElementById('posterDz').style.opacity = '1';
+  } catch(e) { document.getElementById('dbTxt').textContent = '❌ ' + e.message.slice(0,50); }
+}
+
+/* ===== POSTER PROCESSING ===== */
+function addPosters(files) {
+  if (!S.apiKey) { toast('⚠️ ใส่ API Key ก่อน'); return; }
+  if (!S.db.length) { toast('⚠️ รอโหลด DB ก่อน'); return; }
+  const news = files.map(f => ({id: uid(), file: f, fileName: f.name, status: 'pending', items: [], error: ''}));
+  S.posters = [...S.posters, ...news];
+  renderQueue();
+  pump();
+}
+
+async function pump() {
+  if (S.processing) return;
+  const p = S.posters.find(x => x.status === 'pending');
+  if (!p) return;
+  S.processing = true;
+  p.status = 'proc'; renderQueue();
+  try {
+    const b64 = await toBase64(p.file);
+    const mt = p.file.type || 'image/jpeg';
+    const extracted = await claudeReadPoster(b64, mt);
+    const imgURL = URL.createObjectURL(p.file);
+    const items = [];
+    for (let i = 0; i < extracted.length; i++) {
+      const e = extracted[i];
+      const m = bestMatch(e.name);
+      const item = {
+        id: uid(), pid: p.id, src: p.fileName,
+        sub: e.subcode, aiName: e.name,
+        xp: e.x_pct, yp: e.y_pct, wp: e.w_pct, hp: e.h_pct,
+        dbItem: m?.dbItem || null, sku: m?.sku || '',
+        conf: m?.score || 0,
+        crop: null,
+        sel: m && m.score >= 0.82,
+        upSt: 'wait' // wait|done|err
+      };
+      item.crop = await cropImg(imgURL, e.x_pct, e.y_pct, e.w_pct, e.h_pct);
+      items.push(item);
+    }
+    URL.revokeObjectURL(imgURL);
+    p.items = items; p.status = 'done';
+    S.items = [...S.items, ...items];
+  } catch(e) { p.status = 'err'; p.error = e.message; }
+  renderQueue(); renderTable(); updateStats();
+  show('tblSec'); show('upSec'); show('statSec');
+  S.processing = false;
+  pump(); // next in queue
+}
+
+/* ===== CLAUDE API ===== */
+async function claudeReadPoster(b64, mt) {
+  const res = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-api-key': S.apiKey,
+      'anthropic-version': '2023-06-01'
+    },
+    body: JSON.stringify({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 2000,
+      messages: [{
+        role: 'user',
+        content: [
+          { type: 'image', source: { type: 'base64', media_type: mt, data: b64 } },
+          { type: 'text', text: `นี่คือ poster เมนูรายสัปดาห์จากร้าน Under360 (อาหาร Delivery สุขภาพ)
+
+หาทุก รูปอาหาร ในภาพนี้ที่มี label กำกับ (S1-S8 = ข้าวกล่องพิเศษ, D1-D5 = แพคกับข้าว)
+
+Return เป็น JSON array เท่านั้น (ไม่มี markdown ไม่มี backtick ไม่มีคำอธิบาย):
+[{"subcode":"S1","name":"ชื่อเมนูภาษาไทยจาก poster","x_pct":0.05,"y_pct":0.22,"w_pct":0.22,"h_pct":0.26}]
+
+กฎ:
+- x_pct, y_pct = มุมบนซ้ายของรูปอาหาร (ไม่รวมข้อความ)  
+- w_pct, h_pct = ขนาดรูปอาหาร
+- ค่าทุกอย่างเป็น fraction ของขนาดภาพ (0.0–1.0)
+- name = ชื่อเมนูจาก poster ตามที่เขียนไว้จริงๆ
+- ใส่ทุก item ที่เห็น S และ D` }
+        ]
+      }]
+    })
+  });
+  if (!res.ok) {
+    const t = await res.text();
+    throw new Error(`Claude ${res.status}: ${t.slice(0,120)}`);
+  }
+  const d = await res.json();
+  const raw = d.content?.[0]?.text || '[]';
+  try {
+    const clean = raw.replace(/```[\w]*\n?/g,'').trim();
+    return JSON.parse(clean);
+  } catch {
+    const m = raw.match(/\[[\s\S]*\]/);
+    if (m) return JSON.parse(m[0]);
+    throw new Error('JSON parse fail: ' + raw.slice(0,80));
+  }
+}
+
+/* ===== MATCHING ===== */
+function norm(s) {
+  return String(s||'').trim().replace(/\s+/g,'').toLowerCase();
+}
+function sim(a, b) {
+  const na = norm(a), nb = norm(b);
+  if (!na || !nb) return 0;
+  if (na === nb) return 1.0;
+  if (na.includes(nb) || nb.includes(na))
+    return Math.min(na.length, nb.length) / Math.max(na.length, nb.length) * 0.95;
+  // Bigram overlap
+  const ba = new Set(), bb = new Set();
+  for (let i = 0; i < na.length-1; i++) ba.add(na.slice(i,i+2));
+  for (let i = 0; i < nb.length-1; i++) bb.add(nb.slice(i,i+2));
+  let hit = 0; for (const g of ba) if (bb.has(g)) hit++;
+  return ba.size + bb.size > 0 ? (2*hit) / (ba.size + bb.size) * 0.88 : 0;
+}
+
+function bestMatch(aiName) {
+  let best = 0, res = null;
+  // DB match
+  for (const item of S.db) {
+    const s = sim(aiName, item.name);
+    if (s > best) { best = s; res = {sku: item.code, dbItem: item, score: s}; }
+  }
+  // xlsx map match → find DB item
+  for (const [,{sku, name}] of S.skuMap) {
+    const s = sim(aiName, name);
+    if (s > best) {
+      const dbi = S.db.find(d => d.code === sku);
+      if (dbi) { best = s; res = {sku, dbItem: dbi, score: s}; }
+    }
+  }
+  return best >= 0.45 ? res : null;
+}
+
+/* ===== CANVAS CROP ===== */
+async function cropImg(url, xp, yp, wp, hp) {
+  if (xp === undefined) return null;
+  return new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => {
+      const x=Math.round(xp*img.width), y=Math.round(yp*img.height);
+      const w=Math.max(1,Math.round(wp*img.width)), h=Math.max(1,Math.round(hp*img.height));
+      const c = document.createElement('canvas');
+      c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,x,y,w,h,0,0,w,h);
+      resolve(c.toDataURL('image/jpeg', 0.92));
+    };
+    img.onerror = () => resolve(null);
+    img.src = url;
+  });
+}
+
+/* ===== UPLOAD ===== */
+async function doUpload() {
+  const items = S.items.filter(it => it.sel && it.dbItem && it.crop && it.upSt === 'wait');
+  if (!items.length) { toast('ไม่มีรายการที่เลือก'); return; }
+  document.getElementById('upBtn').disabled = true;
+  show('upProg');
+  let done = 0;
+  for (const it of items) {
+    it.upSt = 'upl'; renderTable();
+    try {
+      const blob = await compress(it.crop, 800);
+      const path = `${it.sku || it.dbItem.code}.jpg`;
+      // Upload to storage
+      const ur = await fetch(`${SB}/storage/v1/object/menu-images/${path}`, {
+        method: 'POST',
+        headers: { apikey: KEY, Authorization:`Bearer ${KEY}`, 'Content-Type':'image/jpeg', 'x-upsert':'true' },
+        body: blob
+      });
+      if (!ur.ok) throw new Error('Storage ' + ur.status);
+      const pubUrl = `${SB}/storage/v1/object/public/menu-images/${path}`;
+      // Update image_urls
+      const existing = Array.isArray(it.dbItem.image_urls) ? it.dbItem.image_urls : [];
+      const urls = existing.includes(pubUrl) ? existing : [pubUrl, ...existing];
+      await sbPatch(`/rest/v1/menu_items?id=eq.${it.dbItem.id}`, {image_urls: urls});
+      it.dbItem.image_urls = urls;
+      it.upSt = 'done';
+    } catch(e) { it.upSt = 'err'; it.errMsg = e.message; }
+    done++;
+    const pct = Math.round(done/items.length*100);
+    document.getElementById('pgFill').style.width = pct+'%';
+    document.getElementById('pgTxt').textContent = `${done} / ${items.length}`;
+    renderTable();
+  }
+  document.getElementById('upBtn').disabled = false;
+  toast(`✅ อัปโหลด ${done} รายการ`);
+  updateStats();
+}
+
+/* ===== RENDER ===== */
+function renderQueue() {
+  const el = document.getElementById('queueWrap');
+  el.innerHTML = S.posters.map(p => `
+    <div class="q-item">
+      <span>${p.status==='proc'?'⏳':p.status==='done'?'✅':p.status==='err'?'❌':'🖼️'}</span>
+      <span class="q-name">${p.fileName}</span>
+      <span>
+        ${p.status==='proc'?'<span class="pill pill-y"><span class="spin"></span> กำลังอ่าน</span>':''}
+        ${p.status==='done'?`<span class="pill pill-g">${p.items.length} รายการ</span>`:''}
+        ${p.status==='err'?`<span class="pill pill-r" title="${p.error}">Error</span>`:''}
+        ${p.status==='pending'?'<span class="pill pill-gr">รอ</span>':''}
+      </span>
+    </div>`).join('');
+}
+
+function renderTable() {
+  const list = S.items.filter(it => {
+    if (S.filter==='ok') return it.conf >= 0.82;
+    if (S.filter==='rv') return it.conf >= 0.45 && it.conf < 0.82;
+    if (S.filter==='no') return it.conf < 0.45;
+    return true;
+  });
+  const tb = document.getElementById('tbody');
+  if (!list.length) {
+    tb.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="e-ico">🔍</div><p>ไม่มีรายการในหมวดนี้</p></div></td></tr>`;
+    return;
+  }
+
+  // Build DB options list (once)
+  const opts = S.db.map(m => `<option value="${m.id}">${m.code||''} ${m.name}</option>`).join('');
+
+  tb.innerHTML = list.map(it => {
+    const cc = it.conf>=.82?'':'y'; const bcc = it.conf>=.5?cc:'r';
+    const rowCls = it.conf<.45?'no':it.sel?'ok':'';
+    const hasImg = it.dbItem?.image_urls?.length > 0;
+    const pct = Math.round(it.conf*100);
+    const scode = it.sub||'';
+    const sdTag = scode.startsWith('D') ? 'd' : '';
+    const stIco = it.upSt==='done'?'✅':it.upSt==='upl'?'<span class="spin"></span>':it.upSt==='err'?'❌':'';
+
+    return `<tr class="${rowCls}" data-id="${it.id}">
+      <td><input type="checkbox" class="rchk" data-id="${it.id}" ${it.sel?'checked':''}></td>
+      <td>${it.crop ? `<img class="thumb" src="${it.crop}">` : '<div class="thumb-ph">🍱</div>'}</td>
+      <td>
+        <div style="font-size:10.5px;color:var(--ink-soft);margin-bottom:2px">${it.src}</div>
+        <div style="font-weight:600">${scode?`<span class="code-tag ${sdTag}">${scode}</span>`:''}${it.aiName}</div>
+      </td>
+      <td>
+        ${it.dbItem?`<div style="font-size:12.5px;font-weight:500;margin-bottom:3px">${it.dbItem.name}</div>`:''}
+        <select class="match-sel" data-id="${it.id}">
+          <option value="">— เลือกเมนู —</option>${opts}
+        </select>
+      </td>
+      <td>${(it.sku||it.dbItem?.code)?`<span class="code-tag">${it.sku||it.dbItem?.code}</span>`:'<span style="color:#ccc">—</span>'}</td>
+      <td>
+        <div class="conf-n">${pct}%</div>
+        <div class="conf-bar"><div class="conf-fill ${bcc}" style="width:${pct}%"></div></div>
+      </td>
+      <td>
+        ${hasImg?'<span class="has-img">มีรูป</span>':'<span class="no-img">ยังไม่มี</span>'}
+        <div class="status-icon" style="margin-top:3px">${stIco}</div>
+      </td>
+    </tr>`;
+  }).join('');
+
+  // Wire checkboxes
+  tb.querySelectorAll('.rchk').forEach(c => {
+    c.onchange = () => {
+      const it = S.items.find(x => x.id===c.dataset.id);
+      if (it) { it.sel=c.checked; updateStats(); }
+    };
+  });
+  // Wire dropdowns — set current value and wire change
+  tb.querySelectorAll('.match-sel').forEach(sel => {
+    const it = S.items.find(x => x.id===sel.dataset.id);
+    if (it?.dbItem) sel.value = it.dbItem.id;
+    sel.onchange = () => {
+      const it = S.items.find(x => x.id===sel.dataset.id); if (!it) return;
+      const db = S.db.find(m => m.id===sel.value); if (!db) return;
+      it.dbItem=db; it.sku=db.code; it.conf=1.0; it.sel=true;
+      renderTable(); updateStats();
+    };
+  });
+}
+
+function updateStats() {
+  document.getElementById('stOk').textContent = S.items.filter(it=>it.conf>=.82).length;
+  document.getElementById('stRv').textContent = S.items.filter(it=>it.conf>=.45&&it.conf<.82).length;
+  document.getElementById('stNo').textContent = S.items.filter(it=>it.conf<.45).length;
+}
+
+function selAll(v) { S.items.forEach(it=>{ if(it.dbItem) it.sel=v; }); renderTable(); updateStats(); }
+function masterChk(c) { selAll(c.checked); }
+
+/* ===== HELPERS ===== */
+async function sbGet(path) {
+  const r = await fetch(SB+path, {headers:{apikey:KEY,Authorization:`Bearer ${KEY}`}});
+  if(!r.ok) throw new Error('SB '+r.status); return r.json();
+}
+async function sbPatch(path, body) {
+  const r = await fetch(SB+path, {
+    method:'PATCH',
+    headers:{apikey:KEY,Authorization:`Bearer ${KEY}`,'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:JSON.stringify(body)
+  }); if(!r.ok) throw new Error('SB PATCH '+r.status);
+}
+function toBase64(file) {
+  return new Promise(res => { const fr=new FileReader(); fr.onload=()=>res(fr.result.split(',')[1]); fr.readAsDataURL(file); });
+}
+async function compress(dataUrl, px) {
+  return new Promise(res => {
+    const img=new Image();
+    img.onload=()=>{
+      let w=img.width,h=img.height;
+      if(w>px||h>px){ if(w>=h){h=Math.round(h*px/w);w=px;}else{w=Math.round(w*px/h);h=px;} }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      c.toBlob(res,'image/jpeg',.85);
+    };
+    img.src=dataUrl;
+  });
+}
+function uid() { return Math.random().toString(36).slice(2)+Date.now().toString(36); }
+function show(id) { document.getElementById(id).style.display=''; }
+function toast(msg, ms=3200) {
+  const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
+  document.body.appendChild(el); setTimeout(()=>el.remove(),ms);
+}
+</script>
+</body>
+</html>
