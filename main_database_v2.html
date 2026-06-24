@@ -3100,6 +3100,24 @@ function renderCategoryPicker(selectedKeys, mode){
   return html;
 }
 
+// ── Multi-image slot (4 slots per recipe, uploaded to Supabase menu-images) ──
+function renderImgSlot(id, idx, url){
+  if(url){
+    return `<div style="flex-shrink:0;text-align:center;">
+      <img src="${escapeHtml(url)}" style="width:80px;height:80px;object-fit:cover;border-radius:8px;border:1px solid var(--line);display:block;">
+      <button type="button" class="img-slot-rm btn btn-warn btn-sm" data-id="${id}" data-idx="${idx}"
+        style="width:80px;margin-top:3px;padding:3px 0;font-size:11px;">ลบ</button>
+    </div>`;
+  }
+  return `<label style="width:80px;height:80px;border:1.5px dashed var(--line);border-radius:8px;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;
+    flex-direction:column;gap:2px;flex-shrink:0;background:var(--surface-2);" title="อัพโหลดรูปช่อง ${idx+1}">
+    <span style="font-size:20px;">📷</span>
+    <span style="font-size:10px;color:var(--ink-soft);">${idx+1}</span>
+    <input type="file" accept="image/*" class="img-slot-input" data-id="${id}" data-idx="${idx}" style="display:none;">
+  </label>`;
+}
+
 function renderEditPanel(r){
   const dup = r._dupCheck || null;
   let dupHtml = '';
@@ -3891,6 +3909,51 @@ function attachHandlers(){
             await deleteStored('photo:'+btn.dataset.id, true);
             state.photoCache[btn.dataset.id] = null;
             render();
+          });
+        };
+      });
+      // Multi-image slots (4 slots, Supabase menu-images bucket)
+      panel.querySelectorAll('.img-slot-input').forEach(inp=>{
+        inp.onchange = async ()=>{
+          if(!requireUser()) return;
+          const file = inp.files[0];
+          if(!file||!file.type.startsWith('image/')){ showToast('เลือกไฟล์รูปภาพ'); return; }
+          showToast('⏳ กำลังอัพโหลด...');
+          try{
+            const dataUrl = await compressImageFile(file, 800, 0.85);
+            const res = await fetch(dataUrl); const blob = await res.blob();
+            const ext = file.type==='image/png'?'png':'jpg';
+            const fileName = `${inp.dataset.id}/${inp.dataset.idx}_${Date.now()}.${ext}`;
+            const sb = getSB();
+            const {error} = await sb.storage.from('menu-images').upload(fileName, blob, {contentType:file.type, upsert:true});
+            if(error) throw error;
+            const publicUrl = sb.storage.from('menu-images').getPublicUrl(fileName).data.publicUrl;
+            const r = state.recipes.find(x=>x.id===inp.dataset.id);
+            if(r){
+              const imgs = [...(r.image_urls||[])];
+              imgs[parseInt(inp.dataset.idx)] = publicUrl;
+              r.image_urls = imgs.filter(Boolean);
+              r.updated_by=state.currentUser; r.updated_at=new Date().toISOString();
+              persistRecipes(); render();
+              showToast('✅ อัพโหลดรูปแล้ว');
+            }
+          }catch(e){ console.error(e); showToast('❌ อัพโหลดไม่สำเร็จ: '+(e.message||'')); }
+        };
+      });
+      panel.querySelectorAll('.img-slot-rm').forEach(btn=>{
+        btn.onclick = (e)=>{
+          e.stopPropagation();
+          if(!requireUser()) return;
+          showConfirm('ลบรูปนี้?', ()=>{
+            const r = state.recipes.find(x=>x.id===btn.dataset.id);
+            if(r){
+              const imgs = [...(r.image_urls||[])];
+              imgs[parseInt(btn.dataset.idx)] = '';
+              r.image_urls = imgs.filter(Boolean);
+              r.updated_by=state.currentUser; r.updated_at=new Date().toISOString();
+              persistRecipes(); render();
+              showToast('ลบรูปแล้ว');
+            }
           });
         };
       });
