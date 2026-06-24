@@ -2960,7 +2960,7 @@ function renderRecipesTab(){
       <div id="${catContentId}" style="display:${_isColl?'none':'block'}">`;
     // Pagination สำหรับ uncategorized หรือ category ที่มีเยอะ
     const pageKey = 'page_'+key;
-    const pageSize = 50;
+    const pageSize = 25;
     const page = state.catPages && state.catPages[pageKey] ? state.catPages[pageKey] : 1;
     const showItems = items.slice(0, page * pageSize);
     showItems.forEach(r=>{
