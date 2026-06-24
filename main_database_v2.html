@@ -25,6 +25,10 @@
   --leaf:#3C7A5C;
   --leaf-soft:#E7EFE9;
   --radius:10px;
+  /* aliases used in v2 components */
+  --brd:#E7DFD0;
+  --cream:#FAF6EF;
+  --gl:#E3ECE6;
 }
 @keyframes spin{to{transform:rotate(360deg);}}
 *{box-sizing:border-box;}
@@ -2850,11 +2854,9 @@ function renderRecipesTab(){
   }
 
   if(pinnedItems.length){
-    // PTT section: เปิดไว้เสมอ (ไม่ collapsible)
-    html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ⠿ ลากเรียง · แตะชื่อเพื่อแก้ไข</span></h2>`;
-    html += '<div style="border-radius:12px;overflow:hidden;border:1px solid var(--brd);margin:4px 0">';
-    pinnedItems.forEach((r,idx)=>{ html += renderPttCard(r); });
-    html += '</div></div>';
+    html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ลากเพื่อเรียงลำดับ</span></h2>`;
+    pinnedItems.forEach((r,idx)=>{ html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:true}); });
+    html += `</div>`;
   }
 
   if(restItems.length===0) return html;
@@ -3724,7 +3726,7 @@ function attachHandlers(){
         const wasOpen = state.openId===row.dataset.id;
         state.openId = wasOpen ? null : row.dataset.id;
         state.recipePickerOpen=false;
-        render();
+        render(true);  // immediate — ไม่ defer เมื่อ keyboard ขึ้นบนมือถือ
         if(!wasOpen) loadPhotoIfNeeded(row.dataset.id);
       };
     });
