@@ -2288,6 +2288,7 @@ async function init(){
     if(r.pinSubCode===undefined) r.pinSubCode = null;
     if(r.stock===undefined || r.stock===null) r.stock = 0;
     if(r.available_online===undefined) r.available_online = false;
+    if(r.no_morning===undefined) r.no_morning = false;
     if(r.he_group===undefined) r.he_group = '';
     if(r.description===undefined) r.description = '';
     if(r.image_urls===undefined) r.image_urls = r.image_url ? [r.image_url] : [];
@@ -2617,6 +2618,7 @@ async function exportOnlineMenus(){
       image_urls:   r.image_urls||[],           // ← รูปสำหรับ LIFF (4 slots)
       description:  r.description||'',          // ← คำอธิบายสำหรับ popup LIFF
       he_group:     r.he_group||'',
+      no_morning:   r.no_morning||false,        // ← ไม่ส่งช่วงเช้า
     };
   });
   showToast('⏳ กำลัง Sync '+items.length+' เมนูไป Supabase...');
@@ -2665,6 +2667,9 @@ function _doRender(force){
   _renderPending = false;
   const app = document.getElementById('app');
   const who = document.getElementById('whoami');
+  // บันทึก scroll ก่อน rebuild DOM
+  const savedScrollTop = app.scrollTop;
+  const savedScrollY   = window.scrollY;
   who.innerHTML = renderWhoami();
   document.querySelector('.tabs').style.display = 'flex';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===state.tab));
@@ -2674,22 +2679,18 @@ function _doRender(force){
   else if(state.tab==='plan') app.innerHTML = renderPlanTab();
   else if(state.tab==='mealplan') app.innerHTML = renderMealPlanTab();
   app.innerHTML += `<datalist id="ingList">${state.ingredients.map(i=>`<option value="${escapeHtml(i.name)}">`).join('')}</datalist>`;
-  if(state.showCategoryManager){
-    app.innerHTML += renderCategoryManager();
-  }
-  if(state.showSupplierManager){
-    app.innerHTML += renderSupplierManager();
-  }
-  if(state.showNameGate){
-    app.innerHTML += renderNameGateModal();
-  }
+  if(state.showCategoryManager){ app.innerHTML += renderCategoryManager(); }
+  if(state.showSupplierManager){ app.innerHTML += renderSupplierManager(); }
+  if(state.showNameGate){ app.innerHTML += renderNameGateModal(); }
   attachHandlers();
   attachWhoamiHandlers();
   if(state.tab==='mealplan') attachMealPlanHandlers();
   if(state.showCategoryManager) attachCategoryManagerHandlers();
   if(state.showSupplierManager) attachSupplierManagerHandlers();
   if(state.showNameGate) attachNameGateModalHandlers();
-}
+  // คืน scroll position หลัง rebuild (ไม่ให้หน้ากระโดด)
+  app.scrollTop = savedScrollTop;
+  if(savedScrollY) window.scrollTo(0, savedScrollY);
 
 function renderWhoami(){
   if(state.currentUser){
@@ -3169,6 +3170,13 @@ function renderEditPanel(r){
           <span>${r.available_online?'🛒 เปิดให้ลูกค้าสั่งได้':'○ ปิด — ลูกค้าไม่เห็น'}</span>
         </label>
       </div>
+      <div class="field">
+        <label>ข้อจำกัดการจัดส่ง</label>
+        <label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:14px;background:${r.no_morning?'var(--saffron-soft)':'var(--surface-2)'};border:1px solid ${r.no_morning?'rgba(232,179,57,.4)':'var(--line)'};">
+          <input type="checkbox" class="f-no-morning" ${r.no_morning?'checked':''} style="width:16px;height:16px;accent-color:var(--saffron);">
+          <span>${r.no_morning?'🌅 ไม่ส่งช่วงเช้า (Meal Plan / ผลิตสด)':'○ ส่งได้ทุกช่วงเวลา'}</span>
+        </label>
+      </div>
     </div>
     <div class="field"><label>ส่วนประกอบของสูตร (แยกเป็นพาร์ทได้ เช่น "หมักไก่" / "ทำซอส" — แต่ละพาร์ทมีวัตถุดิบและวิธีทำของตัวเอง ชื่อวัตถุดิบต้องตรงกับในแท็บ "วัตถุดิบ" ระบบจะคำนวณต้นทุน/แคลรวมทุกพาร์ทให้อัตโนมัติ)</label>
       <div class="parts-wrap">
@@ -3390,6 +3398,8 @@ function getRecipeFromPanel(panelEl, id){
   if(spEl) r.selling_price = parseFloat(spEl.value)||0;
   const aoEl = panelEl.querySelector('.f-available-online');
   if(aoEl) r.available_online = aoEl.checked;
+  const nmEl = panelEl.querySelector('.f-no-morning');
+  if(nmEl) r.no_morning = nmEl.checked;
   const descEl = panelEl.querySelector('.f-description');
   if(descEl) r.description = descEl.value;
   const hgEl = panelEl.querySelector('.f-he-group');

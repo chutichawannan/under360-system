@@ -1158,12 +1158,11 @@ function pickDate(key) { selDate=key; renderDatePick(); }
 // ══════════════════════════════════════
 // ⏰ TIME PICKER
 // ══════════════════════════════════════
-// ตรวจว่าตะกร้ามีสินค้า Meal Plan ไหม
+// ตรวจว่าตะกร้ามีสินค้าที่ไม่ส่งช่วงเช้าไหม (flag no_morning ใน menu_items)
 function hasMealPlan(){
   return cart.some(c=>{
     const item=menuItems.find(m=>m.id===c.id);
-    return item&&(item.category==='meal_hp'||item.category==='meal_lc'||
-                  (item.code&&(/^HP|^LC/i.test(item.code))));
+    return item && item.no_morning === true;
   });
 }
 
@@ -1383,6 +1382,23 @@ function pickPaymentAccount(ordersThisQuarter=[]) {
 }
 
 let selectedPaymentAccount = PAYMENT_ACCOUNTS[0];
+
+// ── SLIP UPLOAD ────────────────────────────────────────
+let slipBase64 = null;
+
+function handleSlipUpload(event){
+  const file = event.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    slipBase64 = e.target.result;
+    const preview = document.getElementById('slip-preview-img');
+    if(preview){ preview.src = slipBase64; preview.style.display='block'; }
+    const status = document.getElementById('slip-verify-status');
+    if(status){ status.textContent='✅ แนบสลิปแล้ว'; status.style.display='block'; status.style.background='#D1FAE5'; status.style.color='#065F46'; }
+  };
+  reader.readAsDataURL(file);
+}
 
 // ── LALAMOVE (ส่งด่วน) ──────────────────────────────────
 let lalamovePrice = null;   // null=ยังไม่ได้ fetch, 'loading', number
