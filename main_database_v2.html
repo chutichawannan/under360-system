@@ -3175,13 +3175,6 @@ function renderEditPanel(r){
         <input type="number" class="f-selling-price" value="${r.selling_price||0}" min="0" step="1">
       </div>
       <div class="field">
-        <label>เปิดให้สั่งออนไลน์ผ่าน LIFF</label>
-        <label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:14px;background:${r.available_online?'var(--forest-soft)':'var(--surface-2)'};border:1px solid ${r.available_online?'rgba(31,77,58,.3)':'var(--line)'};">
-          <input type="checkbox" class="f-available-online" ${r.available_online?'checked':''} style="width:16px;height:16px;accent-color:var(--forest);">
-          <span>${r.available_online?'🛒 เปิดให้ลูกค้าสั่งได้':'○ ปิด — ลูกค้าไม่เห็น'}</span>
-        </label>
-      </div>
-      <div class="field">
         <label>ข้อจำกัดการจัดส่ง</label>
         <label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:14px;background:${r.no_morning?'var(--saffron-soft)':'var(--surface-2)'};border:1px solid ${r.no_morning?'rgba(232,179,57,.4)':'var(--line)'};">
           <input type="checkbox" class="f-no-morning" ${r.no_morning?'checked':''} style="width:16px;height:16px;accent-color:var(--saffron);">
@@ -3234,6 +3227,7 @@ function renderEditPanel(r){
     <div class="panel-actions">
       <button class="btn btn-primary saveRecipe" data-id="${r.id}">บันทึก</button>
       <button class="btn btn-ghost closePanel">ปิด</button>
+      <button class="btn btn-ghost duplicateRecipe" data-id="${r.id}" title="สร้างสำเนา">⧉ Duplicate</button>
       <button class="btn btn-warn deleteRecipe" data-id="${r.id}" style="margin-left:auto;">ลบเมนูนี้ถาวร</button>
     </div>
   </div>`;
@@ -4024,6 +4018,29 @@ function attachHandlers(){
           render();
           showToast('ลบเมนูแล้ว');
         });
+      };
+      panel.querySelector('.duplicateRecipe').onclick = ()=>{
+        if(!requireUser()) return;
+        const src = state.recipes.find(x=>x.id===id);
+        if(!src) return;
+        const copy = JSON.parse(JSON.stringify(src));
+        copy.id   = 'r'+Date.now();
+        copy.name = (copy.name||'') + ' (copy)';
+        copy.code = '';           // ล้าง code ให้ตั้งใหม่
+        copy.available_online = false;
+        copy.pinned = false;
+        copy.updated_at = new Date().toISOString();
+        copy.updated_by = state.currentUser;
+        const idx = state.recipes.findIndex(x=>x.id===id);
+        state.recipes.splice(idx+1, 0, copy); // แทรกต่อจากต้นฉบับ
+        state.openId = copy.id;
+        persistRecipes();
+        render(true);
+        showToast('Duplicate แล้ว — แก้ชื่อ/รหัสได้เลย');
+        setTimeout(()=>{
+          const p = document.querySelector('[data-edit="'+copy.id+'"]');
+          if(p) p.scrollIntoView({behavior:'smooth', block:'start'});
+        }, 60);
       };
       panel.querySelector('.saveRecipe').onclick = ()=>{
         if(!requireUser()) return;
