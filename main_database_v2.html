@@ -3205,6 +3205,20 @@ function renderEditPanel(r){
         <textarea class="f-notes" placeholder="" style="height:60px">${escapeHtml(r.notes||'')}</textarea>
       </div>
     </div>
+    ${(()=>{
+      const tot = computeTotals(r);
+      if(!tot.kcal && !tot.protein) return '';
+      const txt = `${Math.floor(tot.kcal)}Kcal | P${Math.floor(tot.protein)} | C${Math.floor(tot.carb)} | F${Math.floor(tot.fat)}`;
+      return `<div onclick="navigator.clipboard&&navigator.clipboard.writeText('${txt}').then(()=>showToast('คัดลอกแล้ว ✓'))"
+        title="แตะเพื่อคัดลอก"
+        style="background:#EBF3EF;border:1px dashed #2D6B52;border-radius:8px;padding:8px 14px;
+               margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:10px;
+               font-family:'IBM Plex Mono',monospace;font-size:13px;font-weight:600;color:#1F4D3A;user-select:all;">
+        <span style="font-size:15px">📋</span>
+        <span id="macro-copy-${r.id}">${txt}</span>
+        <span style="margin-left:auto;font-size:10px;font-weight:400;opacity:.5">แตะเพื่อคัดลอก</span>
+      </div>`;
+    })()}
     ${renderTotalsLive(r)}
     <div class="panel-actions">
       <button class="btn btn-primary saveRecipe" data-id="${r.id}">บันทึก</button>
