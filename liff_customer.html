@@ -763,10 +763,10 @@ let selDate = null, selSlot = null;
 let activeCat = null;
 
 const SLOTS = [
-  { key:'morning',   label:'เช้า',   time:'8:00 – 11:00' },
-  { key:'noon',      label:'เที่ยง', time:'11:00 – 13:00' },
-  { key:'afternoon', label:'บ่าย',   time:'13:00 – 17:00' },
-  { key:'evening',   label:'เย็น',   time:'17:00 – 20:00' },
+  { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท' },
+  { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
+  { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
+  { key:'express',   label:'🚗 ส่งด่วน กำหนดเวลาเอง', time:'Lalamove', isExpress:true },
 ];
 
 const CAT_LABELS = {
@@ -1158,17 +1158,80 @@ function pickDate(key) { selDate=key; renderDatePick(); }
 // ══════════════════════════════════════
 // ⏰ TIME PICKER
 // ══════════════════════════════════════
-function renderTimePick() {
-  const el = document.getElementById('tpick');
-  el.innerHTML = SLOTS.map(s => `
-    <div class="tchip${selSlot===s.key?' on':''}" onclick="pickSlot('${s.key}')">
-      <div class="tchip-l">${s.label}</div>
-      <div class="tchip-t">${s.time}</div>
-    </div>
-  `).join('');
+// ตรวจว่าตะกร้ามีสินค้า Meal Plan ไหม
+function hasMealPlan(){
+  return cart.some(c=>{
+    const item=menuItems.find(m=>m.id===c.id);
+    return item&&(item.category==='meal_hp'||item.category==='meal_lc'||
+                  (item.code&&(/^HP|^LC/i.test(item.code))));
+  });
 }
 
-function pickSlot(key) { selSlot=key; renderTimePick(); }
+function renderTimePick() {
+  const el = document.getElementById('tpick');
+  const isMeal = hasMealPlan();
+  if(isMeal && selSlot==='morning') selSlot=null;
+
+  // rate table
+  const rateInfo = `<div style="background:#f9f9f7;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#666;line-height:1.8">
+    <b style="color:#333">อัตราค่าส่ง (Messenger)</b><br>
+    เริ่มต้น ฿10 · 0-5 กม. ฿4/กม. · 5-10 กม. ฿5/กม. · 10-15 กม. ฿7/กม. · 15-30 กม. ฿9/กม.<br>
+    <span style="color:#888">รับได้ตลอดวัน ลดค่าส่งเพิ่ม 10 บาท</span>
+  </div>`;
+
+  const farNotice = (distKm&&distKm>30) ? `<div style="background:#FFF3CD;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#856404">
+    ⏱️ <b>จัดส่งไกล:</b> เราจะผลิตและส่งเข้าระบบขนส่งภายในเย็นของวันที่เลือก — คาดว่าจะได้รับสินค้าภายใน <b>1-2 วันถัดไป</b> ขึ้นอยู่กับพื้นที่
+  </div>` : '';
+
+  const mealNotice = isMeal ? `<div style="background:#EFF6FF;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#1D4ED8">
+    🍱 <b>Meal Plan:</b> ผลิตสดใหม่ตั้งแต่ช่วงเช้า เสร็จช่วงเที่ยง messenger จะทยอยส่งตามคิว — <b>ช่วงเช้าไม่สามารถเลือกได้</b>
+  </div>` : '';
+
+  const slotHTML = SLOTS.map(s => {
+    const disabled = isMeal && s.mealPlanDisabled;
+    const isOn = selSlot===s.key && !disabled;
+
+    // Express slot: แสดง time picker + Lalamove price
+    if(s.isExpress){
+      let priceLabel = '';
+      if(selSlot==='express'){
+        if(lalamovePrice==='loading') priceLabel='<span style="color:#666;font-size:11px">⏳ กำลังเช็คราคา...</span>';
+        else if(lalamovePrice!=null)  priceLabel=`<span style="color:#C8922A;font-weight:700;font-size:13px">฿${lalamovePrice} <span style="font-size:10px;font-weight:400">(Lalamove)</span></span>`;
+        else                          priceLabel='<span style="color:#999;font-size:11px">ปักหมุดที่อยู่เพื่อดูราคา</span>';
+      }
+      return `<div class="tchip${isOn?' on':''}" onclick="pickSlot('express')"
+        style="flex-direction:column;align-items:flex-start;gap:6px">
+        <div style="display:flex;justify-content:space-between;width:100%;align-items:center">
+          <div class="tchip-l">${s.label}</div>
+          ${priceLabel}
+        </div>
+        ${isOn?`<div style="display:flex;align-items:center;gap:8px;width:100%" onclick="event.stopPropagation()">
+          <span style="font-size:12px;color:#666">เวลารับสินค้า:</span>
+          <input type="time" id="express-time-input" value="${expressTime||''}"
+            min="08:00" max="20:00"
+            onchange="expressTime=this.value;updateCartTotals()"
+            style="flex:1;padding:6px 10px;border:1.5px solid #1F4D3A;border-radius:8px;font-size:14px;font-family:inherit">
+          <span style="font-size:11px;color:#888">08:00–20:00</span>
+        </div>`:''}
+      </div>`;
+    }
+
+    return `<div class="tchip${isOn?' on':''}${disabled?' disabled':''}"
+      onclick="${disabled?'':' pickSlot(\''+s.key+'\')'}"
+      style="${disabled?'opacity:.35;cursor:not-allowed;':''}">
+      <div class="tchip-l">${s.label}${s.note?`<span style="font-size:10px;color:#2D6B52;margin-left:6px">${s.note}</span>`:''}${disabled?'<span style="font-size:10px;color:#888;margin-left:6px">ไม่พร้อมใช้งาน</span>':''}</div>
+      <div class="tchip-t">${s.time}</div>
+    </div>`;
+  }).join('');
+
+  el.innerHTML = farNotice + mealNotice + slotHTML;
+}
+
+function pickSlot(key) {
+  selSlot=key;
+  if(key==='express') fetchLalamovePrice();
+  renderTimePick(); updateCartTotals();
+}
 
 // ══════════════════════════════════════
 // 📋 CONFIRM RENDER
@@ -1225,7 +1288,7 @@ async function submitOrder() {
 
   try {
     // 1. Create order
-    const deliveryFee = calcDeliveryFee(distKm || 0);
+    const deliveryFee = calcDeliveryFee(distKm || 0, selSlot);
     const grandTotal = tot + deliveryFee;
     const { data: ord, error: oErr } = await sb.from('orders').insert({
       order_number:    orderNum,
@@ -1240,9 +1303,10 @@ async function submitOrder() {
       subtotal:         tot,
       total:            grandTotal,
       status:           'confirmed',
-      payment_method:   selectedPayMethod || 'qr',
+      payment_method:   payMethod || 'qr',
       payment_account:  selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
-      delivery_type:    isOutOfProvince ? 'cold_chain' : 'messenger',
+      delivery_type:    selSlot==='express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
+      time_slot:        selSlot==='express' ? expressTime : selSlot,
       slip_image:       slipBase64 ? true : false,
       notes:            (document.getElementById('notes-input').value || '').trim()
     }).select().single();
@@ -1318,7 +1382,33 @@ function pickPaymentAccount(ordersThisQuarter=[]) {
   return PAYMENT_ACCOUNTS.reduce((min, a) => counts[a.id] < counts[min.id] ? a : min);
 }
 
-let selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; // default ก่อนโหลด orders
+let selectedPaymentAccount = PAYMENT_ACCOUNTS[0];
+
+// ── LALAMOVE (ส่งด่วน) ──────────────────────────────────
+let lalamovePrice = null;   // null=ยังไม่ได้ fetch, 'loading', number
+let expressTime   = null;   // เวลาที่ลูกค้าเลือก เช่น "14:30"
+
+async function fetchLalamovePrice(){
+  if(!distKm){ lalamovePrice=null; return; }
+  // >30km → flat rate ฿200
+  if(distKm > 30){ lalamovePrice = 200; updateCartTotals(); return; }
+  // TODO: เชื่อม Lalamove v3 API จริงผ่าน /api/lalamove-quote ใน v0.4 (พี่เก่ง)
+  // ตอนนี้ estimate จาก distance (placeholder จนกว่า API จะพร้อม)
+  lalamovePrice = 'loading';
+  updateCartTotals();
+  try{
+    // Scaffold — เรียก backend proxy เมื่อพร้อม
+    // const res = await fetch('/api/lalamove-quote', { method:'POST',
+    //   body: JSON.stringify({ from: KITCHEN_POS, to: { lat: cusPin... } }) });
+    // const { price } = await res.json();
+    // lalamovePrice = price;
+    // placeholder: คิด 30 บาทเริ่มต้น + 8 บาท/กม.
+    await new Promise(r=>setTimeout(r,800)); // simulate API delay
+    lalamovePrice = Math.round(30 + distKm * 8);
+  }catch(e){ lalamovePrice = null; }
+  updateCartTotals();
+  renderTimePick();
+} // default ก่อนโหลด orders
 // รัศมีส่งปกติ (km) — ถ้าเกินนี้ถือว่าต้องใช้ cold chain
 const METRO_RADIUS_KM = 50;
 
@@ -1328,12 +1418,31 @@ function haversineKm(a,b,c,d){
   return R*2*Math.atan2(Math.sqrt(x),Math.sqrt(1-x));
 }
 
-function calcDeliveryFee(km){
-  if(!km||km<=0)return 0;
-  const tiers=[{max:5,rate:3},{max:10,rate:4},{max:15,rate:5},{max:20,rate:6},{max:25,rate:7}];
-  let fee=0,prev=0;
-  for(const t of tiers){if(km<=prev)break;fee+=Math.min(km-prev,t.max-prev)*t.rate;prev=t.max;}
-  return Math.ceil(fee);
+// อัตราค่าส่ง: เริ่มต้น 10 บาท + คิดตามระยะทาง
+// 0-5 km: ฿4/km | 5-10 km: ฿5/km | 10-15 km: ฿7/km | 15-30 km: ฿9/km
+function calcDeliveryFee(km, slotKey){
+  const sk = slotKey||selSlot;
+  if(sk==='express'){
+    if(typeof lalamovePrice==='number') return lalamovePrice;
+    return 0;
+  }
+  if(!km||km<=0) return 10;
+  let fee = 10; // เริ่มต้น 10 บาท
+  const tiers = [
+    {from:0,  to:5,  rate:4},
+    {from:5,  to:10, rate:5},
+    {from:10, to:15, rate:7},
+    {from:15, to:30, rate:9},
+  ];
+  for(const t of tiers){
+    if(km<=t.from) break;
+    fee += (Math.min(km, t.to) - t.from) * t.rate;
+    if(km<=t.to) break;
+  }
+  if(km>30) fee += (km-30)*9;
+  const slot = SLOTS.find(s=>s.key===sk);
+  if(slot&&slot.discount) fee = Math.max(0, fee - slot.discount);
+  return Math.round(fee);
 }
 
 function initCusMap(){
@@ -1385,7 +1494,7 @@ function setCusPin(lat,lng,addr){
   cusPin=new google.maps.Marker({position:{lat,lng},map:cusMap,draggable:true,title:'ที่อยู่จัดส่ง'});
   cusPin.addListener('dragend',e=>{const p=e.latLng;setCusPin(p.lat(),p.lng());});
   distKm=haversineKm(KITCHEN_POS.lat,KITCHEN_POS.lng,lat,lng);
-  const fee=calcDeliveryFee(distKm);
+  const fee=calcDeliveryFee(distKm, selSlot);
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว';
   const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent='฿'+fee;
@@ -1429,14 +1538,14 @@ function selectPay(m){
 }
 
 function updateQRAmount(){
-  const tot=cartTotal()+calcDeliveryFee(distKm||0);
+  const tot=cartTotal()+calcDeliveryFee(distKm||0, selSlot);
   const el=document.getElementById('qr-amount');
   if(el)el.textContent='฿'+tot.toLocaleString();
 }
 
 function updateCartTotals(){
   const sub=cartTotal();
-  const fee=calcDeliveryFee(distKm||0);
+  const fee=calcDeliveryFee(distKm||0, selSlot);
   const total=sub+fee;
   const subEl=document.getElementById('cart-sub');
   const feeEl=document.getElementById('cart-fee');
