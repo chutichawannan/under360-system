@@ -648,17 +648,17 @@ body{background:#fff!important}
       <div class="qr-placeholder">📱</div>
       <div style="font-size:12px;color:var(--soft);margin-bottom:6px">สแกน QR ชำระ PromptPay</div>
       <div class="qr-amount" id="qr-amount">฿0</div>
-      <div class="qr-sub">พร้อมเพย์: ใส่เบอร์/เลขบัญชีของนัท</div>
+      <div class="qr-sub" id="qr-promptpay-num">พร้อมเพย์: 0846556601</div>
     </div>
     <div class="transfer-box" id="pp-transfer">
       <div class="bank-row">
-        <span class="bank-ico">🟢</span>
+        <span class="bank-ico" id="bank-icon">🟡</span>
         <div>
-          <div style="font-size:13px;font-weight:700">กสิกรไทย</div>
-          <div class="bank-acct">XXX-X-XXXXX-X</div>
+          <div style="font-size:13px;font-weight:700" id="bank-name">ธนาคารออมสิน</div>
+          <div class="bank-acct" id="bank-acct">020272500180</div>
         </div>
       </div>
-      <div style="font-size:12px;color:var(--soft);margin-bottom:12px">ชื่อบัญชี: ใส่ชื่อบัญชีจริง</div>
+      <div style="font-size:12px;color:var(--soft);margin-bottom:12px" id="bank-holder">ชื่อบัญชี: นาย ณัฐพัชร ชุติชวาลนันท์</div>
       <!-- Slip upload -->
       <div class="slip-upload-wrap" onclick="document.getElementById('slip-file-input').click()"
         style="border:2px dashed rgba(0,0,0,.15);border-radius:12px;padding:16px;text-align:center;cursor:pointer;background:#FAFAFA;">
@@ -932,9 +932,32 @@ function goProfile() {
   const uid = lineProfile?.userId || '';
   window.location.href = 'liff_profile.html' + (uid ? '?uid=' + encodeURIComponent(uid) : '');
 }
+function updatePaymentUI(acct){
+  acct = acct || selectedPaymentAccount;
+  const el = id => document.getElementById(id);
+  if(el('qr-promptpay-num')) el('qr-promptpay-num').textContent = 'พร้อมเพย์: '+acct.promptpay;
+  if(el('bank-icon'))   el('bank-icon').textContent   = acct.icon;
+  if(el('bank-name'))   el('bank-name').textContent   = 'ธนาคาร'+acct.bank;
+  if(el('bank-acct'))   el('bank-acct').textContent   = acct.account_no;
+  if(el('bank-holder')) el('bank-holder').textContent = 'ชื่อบัญชี: '+acct.account_name;
+}
+
+async function loadPaymentAccount(){
+  // ถ้ามีหลายบัญชี → โหลดออเดอร์ไตรมาสนี้มาถัวเฉลี่ย
+  if(PAYMENT_ACCOUNTS.length <= 1){ selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; updatePaymentUI(); return; }
+  try{
+    const now = new Date();
+    const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1).toISOString().slice(0,10);
+    const { data } = await sb.from('orders').select('payment_account').gte('created_at', qStart);
+    selectedPaymentAccount = pickPaymentAccount(data||[]);
+  }catch(e){ selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; }
+  updatePaymentUI();
+}
+
 function goCart() {
   renderCart(); renderDatePick(); renderTimePick(); showScr('s-cart');
   updateCartTotals();
+  loadPaymentAccount(); // เลือกบัญชีรับเงินที่ถัวเฉลี่ยแล้ว
   // Google Maps: try immediately, retry if not loaded
   if (typeof google !== 'undefined') {
     setTimeout(initCusMap, 100);
@@ -1214,13 +1237,14 @@ async function submitOrder() {
       time_slot_label: slot?.time || '',
       delivery_address: addrFinal,
       delivery_fee:    deliveryFee,
-      subtotal:        tot,
-      total:           grandTotal,
-      status:          'confirmed',
-      payment_method:  selectedPayMethod || 'qr',
-      delivery_type:   isOutOfProvince ? 'cold_chain' : 'messenger',
-      slip_image:      slipBase64 ? true : false,
-      notes:           (document.getElementById('notes-input').value || '').trim()
+      subtotal:         tot,
+      total:            grandTotal,
+      status:           'confirmed',
+      payment_method:   selectedPayMethod || 'qr',
+      payment_account:  selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
+      delivery_type:    isOutOfProvince ? 'cold_chain' : 'messenger',
+      slip_image:       slipBase64 ? true : false,
+      notes:            (document.getElementById('notes-input').value || '').trim()
     }).select().single();
     // payment_method stored locally only (add column via SQL if needed: ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT)
     if (oErr) throw oErr;
@@ -1266,7 +1290,35 @@ async function submitOrder() {
 // ══════════════════════════════════════
 let cusMap=null, cusPin=null, cusAuto=null, distKm=null, payMethod='qr';
 let isOutOfProvince = false;  // ← fix: ต้อง declare ก่อนใช้ใน renderDatePick
-const KITCHEN_POS={lat:13.7205,lng:100.5855};
+const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
+
+// ── PAYMENT ACCOUNTS (ถัวเฉลี่ยรายไตรมาส) ────────────────
+// เพิ่ม/ลบบัญชีได้ที่นี่ ไม่ต้องแก้ที่อื่น
+const PAYMENT_ACCOUNTS = [
+  {
+    id: 'gsb_01',
+    bank: 'ออมสิน',
+    icon: '🟡',
+    promptpay: '0846556601',
+    account_no: '020272500180',
+    account_name: 'นาย ณัฐพัชร ชุติชวาลนันท์'
+  }
+  // เพิ่มบัญชีที่ 2 ได้ที่นี่ เช่น:
+  // { id:'kbank_01', bank:'กสิกรไทย', icon:'🟢', promptpay:'08XXXXXXXX', account_no:'XXX-X-XXXXX-X', account_name:'นาย ณัฐพัชร ชุติชวาลนันท์' }
+];
+
+// เลือกบัญชีที่รับเงินน้อยสุดในไตรมาสนี้
+function pickPaymentAccount(ordersThisQuarter=[]) {
+  if(PAYMENT_ACCOUNTS.length === 1) return PAYMENT_ACCOUNTS[0];
+  // นับจำนวนออเดอร์ต่อบัญชีในไตรมาส
+  const counts = {};
+  PAYMENT_ACCOUNTS.forEach(a => counts[a.id] = 0);
+  ordersThisQuarter.forEach(o => { if(o.payment_account && counts[o.payment_account] !== undefined) counts[o.payment_account]++; });
+  // เลือกบัญชีที่มี count น้อยสุด
+  return PAYMENT_ACCOUNTS.reduce((min, a) => counts[a.id] < counts[min.id] ? a : min);
+}
+
+let selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; // default ก่อนโหลด orders
 // รัศมีส่งปกติ (km) — ถ้าเกินนี้ถือว่าต้องใช้ cold chain
 const METRO_RADIUS_KM = 50;
 
