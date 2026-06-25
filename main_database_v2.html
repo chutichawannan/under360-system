@@ -2667,9 +2667,12 @@ function _doRender(force){
   _renderPending = false;
   const app = document.getElementById('app');
   const who = document.getElementById('whoami');
-  // บันทึก scroll ก่อน rebuild DOM
+  // บันทึก scroll + focus ก่อน rebuild DOM
   const savedScrollTop = app.scrollTop;
   const savedScrollY   = window.scrollY;
+  const focusedId      = document.activeElement?.id || null;
+  const focusedSel     = (focusedId && document.activeElement.setSelectionRange)
+    ? document.activeElement.selectionStart : null;
   who.innerHTML = renderWhoami();
   document.querySelector('.tabs').style.display = 'flex';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===state.tab));
@@ -2691,6 +2694,11 @@ function _doRender(force){
   // คืน scroll position หลัง rebuild (ไม่ให้หน้ากระโดด)
   app.scrollTop = savedScrollTop;
   if(savedScrollY) window.scrollTo(0, savedScrollY);
+  // คืน focus + cursor position (ไม่ให้ search input หาย focus)
+  if(focusedId){
+    const el = document.getElementById(focusedId);
+    if(el){ el.focus(); if(focusedSel!==null && el.setSelectionRange) el.setSelectionRange(focusedSel,focusedSel); }
+  }
 }
 
 function renderWhoami(){
