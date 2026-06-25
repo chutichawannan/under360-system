@@ -3087,7 +3087,7 @@ function renderRecipeCard(r, tot, pinInfo){
           <span class="name">${escapeHtml(r.name||'(ไม่มีชื่อ)')}</span>
           ${chips ? `<div class="chip-row">${chips}</div>` : ''}
         </div>
-        <div class="quick-row${!tot.complete?' incomplete':''}">
+        <div class="quick-row${!tot.complete?' incomplete':''}${isOpen?' hidden':''}">
           ${renderRatingDots3(r.rating===undefined?2:r.rating, 'row', r.id)}
           <input type="text" class="quick-note-input" data-id="${r.id}" placeholder="โน้ตสั้นๆ..." value="${escapeHtml(r.quickNote||'')}">
           <span class="quick-kcal">${!tot.complete ? '⚠ สูตรยังไม่ครบ' : (tot.kcal>0 ? fmtNum(tot.kcal)+' kcal' : '—')}</span>
@@ -3146,6 +3146,7 @@ function renderImgSlot(id, idx, url){
 }
 
 function renderEditPanel(r){
+  const tot = computeTotals(r);  // compute ครั้งเดียว ใช้ทั้ง banner และ green bar
   const dup = r._dupCheck || null;
   let dupHtml = '';
   if(dup && dup.length){
@@ -3210,7 +3211,6 @@ function renderEditPanel(r){
       </div>
     </div>
     ${(()=>{
-      const tot = computeTotals(r);
       if(!tot.kcal && !tot.protein) return '';
       const txt = `${Math.floor(tot.kcal)}Kcal | P${Math.floor(tot.protein)} | C${Math.floor(tot.carb)} | F${Math.floor(tot.fat)}`;
       return `<div onclick="navigator.clipboard&&navigator.clipboard.writeText('${txt}').then(()=>showToast('คัดลอกแล้ว ✓'))"
@@ -3223,7 +3223,7 @@ function renderEditPanel(r){
         <span style="margin-left:auto;font-size:10px;font-weight:400;opacity:.5">แตะเพื่อคัดลอก</span>
       </div>`;
     })()}
-    ${renderTotalsLive(r)}
+    ${renderTotalsLive(r, tot)}
     <div class="panel-actions">
       <button class="btn btn-primary saveRecipe" data-id="${r.id}">บันทึก</button>
       <button class="btn btn-ghost closePanel">ปิด</button>
@@ -3276,14 +3276,15 @@ function renderIngLine(l, partIdx, idx){
   <div class="line-calc" data-part-idx="${partIdx}" data-calc-idx="${idx}">${renderLineCalcInner(l)}</div>`;
 }
 
-function renderTotalsLive(r){
-  const tot = computeTotals(r);
+function renderTotalsLive(r, tot){
+  if(!tot) tot = computeTotals(r);
+  const fl = v => Math.floor(v||0);
   return `<div class="totals-box">
     <div class="t">ต้นทุนรวม<b>${tot.cost>0?'฿'+fmtMoney(tot.cost):'—'}</b></div>
-    <div class="t">แคลอรี่รวม<b>${tot.kcal>0?fmtNum(tot.kcal)+' kcal':'—'}</b></div>
-    <div class="t">โปรตีน<b>${fmtNum(tot.protein)} g</b></div>
-    <div class="t">คาร์บ<b>${fmtNum(tot.carb)} g</b></div>
-    <div class="t">ไขมัน<b>${fmtNum(tot.fat)} g</b></div>
+    <div class="t">แคลอรี่รวม<b>${tot.kcal>0?fl(tot.kcal)+' kcal':'—'}</b></div>
+    <div class="t">โปรตีน<b>${fl(tot.protein)} g</b></div>
+    <div class="t">คาร์บ<b>${fl(tot.carb)} g</b></div>
+    <div class="t">ไขมัน<b>${fl(tot.fat)} g</b></div>
     ${!tot.complete?'<div class="unlinked-flag" style="margin:0;">⚠ มีวัตถุดิบที่ยังไม่ตรงกับฐานข้อมูลวัตถุดิบ ตัวเลขด้านบนอาจไม่ครบ</div>':''}
   </div>`;
 }
@@ -3892,26 +3893,79 @@ function attachHandlers(){
           const r = state.recipes.find(x=>x.id===id);
           const pIdx = parseInt(btn.dataset.partIdx);
           r.parts[pIdx].lines = r.parts[pIdx].lines||[];
+          const newIdx = r.parts[pIdx].lines.length;
           r.parts[pIdx].lines.push({name:'',qty:'',unit:'g'});
-          render();
-          // Focus ช่อง name ใหม่
-          setTimeout(()=>{
-            const lines = document.querySelectorAll(`[data-part-idx="${pIdx}"] .ln-name`);
-            if(lines.length) lines[lines.length-1].focus();
-          },50);
+          // inject แถวใหม่โดยตรง ไม่ render ทั้งหน้า
+          const container = panel.querySelector(`.ing-lines[data-part-idx="${pIdx}"]`);
+          if(container){
+            const tmp = document.createElement('div');
+            tmp.innerHTML = renderIngLine({name:'',qty:'',unit:'g'}, pIdx, newIdx);
+            while(tmp.firstChild) container.appendChild(tmp.firstChild);
+            // attach handlers บนแถวใหม่
+            const newRows = container.querySelectorAll(`.ing-line[data-idx="${newIdx}"]`);
+            const newRow = newRows[newRows.length-1];
+            if(newRow){
+              attachIngLineHandlers(panel, newRow, id);
+              newRow.querySelector('.ln-name')?.focus();
+            }
+          } else {
+            render(true);
+            setTimeout(()=>{
+              const lines = document.querySelectorAll(`[data-part-idx="${pIdx}"] .ln-name`);
+              if(lines.length) lines[lines.length-1].focus();
+            },50);
+          }
         };
       });
-      // Enter ในช่อง name → เพิ่มแถวใหม่
+      // Enter บน name → เพิ่มแถวใหม่ทันที (workflow: พิมชื่อทั้งหมดก่อน)
       panel.querySelectorAll('.ln-name').forEach(inp=>{
         inp.onkeydown = (e)=>{
           if(e.key==='Enter'){
             e.preventDefault();
-            const pIdx = inp.closest('.ing-line').dataset.partIdx;
+            const pIdx = inp.closest('.ing-line')?.dataset.partIdx||inp.closest('[data-part-idx]')?.dataset.partIdx;
             const btn = panel.querySelector(`.addLine[data-part-idx="${pIdx}"]`);
             if(btn) btn.click();
           }
         };
       });
+      // Enter บน qty → focus unit
+      panel.querySelectorAll('.ln-qty').forEach(inp=>{
+        inp.onkeydown = (e)=>{
+          if(e.key==='Enter'){ e.preventDefault(); inp.closest('.ing-line')?.querySelector('.ln-unit')?.focus(); }
+        };
+      });
+      // Enter บน unit → เพิ่มแถวใหม่
+      panel.querySelectorAll('.ln-unit').forEach(inp=>{
+        inp.onkeydown = (e)=>{
+          if(e.key==='Enter'){
+            e.preventDefault();
+            const pIdx = inp.closest('.ing-lines')?.dataset.partIdx||inp.closest('[data-part-idx]')?.dataset.partIdx;
+            const btn = panel.querySelector(`.addLine[data-part-idx="${pIdx}"]`);
+            if(btn) btn.click();
+          }
+        };
+      });
+      // helper: attach handlers on a single ing-line row (ใช้ตอน inject แถวใหม่)
+      function attachIngLineHandlers(panel, row, recipeId){
+        const nameInp = row.querySelector('.ln-name');
+        const qtyInp  = row.querySelector('.ln-qty');
+        const unitInp = row.querySelector('.ln-unit');
+        const rmBtn   = row.querySelector('.rmLine');
+        if(nameInp){
+          nameInp.oninput = e=>{ const r=state.recipes.find(x=>x.id===recipeId); if(!r)return; const pIdx=parseInt(row.dataset.partIdx); const idx=parseInt(row.dataset.idx); r.parts[pIdx].lines[idx].name=e.target.value; render(); };
+          nameInp.onkeydown = e=>{ if(e.key==='Enter'){ e.preventDefault(); const pIdx=row.dataset.partIdx; const btn=panel.querySelector(`.addLine[data-part-idx="${pIdx}"]`); if(btn)btn.click(); } };
+        }
+        if(qtyInp){
+          qtyInp.oninput = e=>{ const r=state.recipes.find(x=>x.id===recipeId); if(!r)return; const pIdx=parseInt(row.dataset.partIdx); const idx=parseInt(row.dataset.idx); r.parts[pIdx].lines[idx].qty=e.target.value; render(); };
+          qtyInp.onkeydown = e=>{ if(e.key==='Enter'){ e.preventDefault(); unitInp?.focus(); } };
+        }
+        if(unitInp){
+          unitInp.oninput = e=>{ const r=state.recipes.find(x=>x.id===recipeId); if(!r)return; const pIdx=parseInt(row.dataset.partIdx); const idx=parseInt(row.dataset.idx); r.parts[pIdx].lines[idx].unit=e.target.value; render(); };
+          unitInp.onkeydown = e=>{ if(e.key==='Enter'){ e.preventDefault(); const pIdx=row.dataset.partIdx; const btn=panel.querySelector(`.addLine[data-part-idx="${pIdx}"]`); if(btn)btn.click(); } };
+        }
+        if(rmBtn) rmBtn.onclick = ()=>{ const r=state.recipes.find(x=>x.id===recipeId); if(!r)return; const pIdx=parseInt(row.dataset.partIdx); r.parts[pIdx].lines.splice(parseInt(row.dataset.idx),1); render(true); };
+      }
+
       panel.querySelectorAll('.rmLine').forEach(btn=>btn.onclick=()=>{
         const r = state.recipes.find(x=>x.id===id);
         const pIdx = parseInt(btn.dataset.partIdx);
@@ -4051,6 +4105,7 @@ function attachHandlers(){
           r._dupCheck = dups;
           state.recipes[idx] = r;
           render();
+          showToast(`⚠️ พบเมนูที่อาจซ้ำ ${dups.length} รายการ — ตรวจสอบก่อนบันทึก`);
         } else {
           r.updated_at = new Date().toISOString();
           r.updated_by = state.currentUser;
