@@ -2654,7 +2654,7 @@ function _doRender(force){
   if(!force){
     const active = document.activeElement;
     if(active && (active.tagName==='INPUT'||active.tagName==='TEXTAREA')){
-      const safeIds = ['db-search','sortModeSelect','showRetired','showRetiredChk'];
+      const safeIds = ['db-search','sortModeSelect','showRetired','showRetiredChk','searchInput','ingSearch','custTierSel','custSortSel'];
       if(!safeIds.includes(active.id)){
         if(!_renderPending){
           _renderPending = true;
@@ -2838,6 +2838,8 @@ function renderRecipesTab(){
 
   const q = state.search.trim().toLowerCase();
   let filtered = state.recipes.filter(r=>{
+    // ถ้า panel กำลังเปิดอยู่ → ไม่ filter recipe นั้นออก (ไม่ให้หายตอนแก้ category)
+    if(state.openId && r.id === state.openId) return true;
     // Category tab pre-filter (fastest)
     if(state.activeCatTab === '__ptt__'){ if(!r.pinned) return false; }
     else if(state.activeCatTab !== '__all__'){ if(r.category!==state.activeCatTab) return false; }
