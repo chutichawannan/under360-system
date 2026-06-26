@@ -7,99 +7,94 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--r:#DC2626;--rs:#FEF2F2;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--white:#fff;--radius:12px;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;}
+:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--golds:#FFF8EC;--r:#DC2626;--rs:#FEF2F2;--blue:#1D4ED8;--blues:#EFF6FF;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;--rad:12px;}
 body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 
 /* HEADER */
-.hdr{background:var(--g);padding:12px 16px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;}
+.hdr{background:var(--g);padding:10px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
 .hdr-title{font-size:15px;font-weight:700;color:#fff;flex:1;}
-.hdr-btn{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:6px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);text-decoration:none;}
-.live-dot{width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:.4}}
+.hdr-btn{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:var(--sans);text-decoration:none;white-space:nowrap;}
+.hdr-btn.active{background:rgba(255,255,255,.35);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
 /* TABS */
-.tab-bar{display:flex;background:var(--white);border-bottom:2px solid var(--xsoft);}
-.tab-btn{flex:1;padding:12px 8px;font-size:13px;font-weight:600;color:var(--soft);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;}
+.tab-bar{display:flex;background:var(--w);border-bottom:2px solid var(--xsoft);overflow-x:auto;}
+.tab-btn{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--soft);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;white-space:nowrap;}
 .tab-btn.active{color:var(--g);border-bottom-color:var(--g);}
 
-/* DATE BAR */
-.date-bar{background:var(--white);border-bottom:1px solid var(--xsoft);padding:8px 14px;display:flex;align-items:center;gap:8px;overflow-x:auto;}
-.dtab{flex-shrink:0;padding:5px 14px;border-radius:20px;border:1px solid var(--xsoft);font-size:13px;font-weight:500;cursor:pointer;background:var(--white);color:var(--soft);}
-.dtab.active{background:var(--g);color:#fff;border-color:var(--g);}
-.date-sel{flex-shrink:0;padding:5px 10px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--white);font-family:var(--sans);color:var(--soft);}
+/* DATE + SLOT BAR */
+.ctrl-bar{background:var(--w);border-bottom:1px solid var(--xsoft);padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.chip{flex-shrink:0;padding:5px 13px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;font-weight:500;cursor:pointer;background:var(--w);color:var(--soft);}
+.chip.on{background:var(--g);color:#fff;border-color:var(--g);}
+.sep{width:1px;height:20px;background:var(--xsoft);flex-shrink:0;}
+.date-sel{padding:5px 10px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
 
 /* MAIN */
-.main{padding:14px;max-width:900px;margin:0 auto;}
+.main{padding:12px;max-width:940px;margin:0 auto;}
 
-/* ─── TAB 1: PRODUCTION TABLE ─── */
-.prod-section{background:var(--white);border-radius:var(--radius);border:1px solid var(--xsoft);overflow:hidden;margin-bottom:14px;}
-.pt-hdr{display:grid;grid-template-columns:1fr 46px 54px 54px 68px;gap:4px;padding:7px 12px;background:var(--gs);border-bottom:2px solid var(--xsoft);}
-.pt-hdr span{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
-.pt-hdr span:first-child{text-align:left;}
-.pt-row{display:grid;grid-template-columns:1fr 46px 54px 54px 68px;gap:4px;padding:8px 12px;border-bottom:1px solid var(--xsoft);align-items:center;}
+/* PROD TABLE */
+.prod-wrap{background:var(--w);border-radius:var(--rad);border:1px solid var(--xsoft);overflow:hidden;margin-bottom:12px;}
+.pt-head{display:grid;grid-template-columns:1fr 52px 52px 62px;gap:4px;padding:7px 12px;background:var(--gs);border-bottom:2px solid var(--xsoft);}
+.pt-head span{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+.pt-head span:first-child{text-align:left;}
+.pt-row{display:grid;grid-template-columns:1fr 52px 52px 62px;gap:4px;padding:7px 12px;border-bottom:1px solid var(--xsoft);align-items:center;}
 .pt-row:last-child{border-bottom:none;}
-.pt-row.row-warn{background:#FFFBEB;}
-.pt-row.row-danger{background:#FFF1F1;}
-.pr-name-cell{display:flex;align-items:center;gap:5px;min-width:0;}
-.pr-code-tag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);background:var(--gs);padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
-.pr-name-text{font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.pr-n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;}
-.pr-sys-n{color:var(--soft);}
-.pr-ord-n{color:var(--gold);}
-.pr-rem-cell{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;padding:2px 6px;border-radius:6px;background:var(--gs);color:var(--g);}
-.pr-rem-cell.neg{background:var(--rs);color:var(--r);}
-.pr-rem-cell.zero{background:#FFF7ED;color:var(--gold);}
-.pr-act-input{width:100%;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--ink);border:1.5px solid var(--xsoft);border-radius:7px;padding:4px 2px;text-align:center;background:var(--white);}
-.pr-act-input:focus{outline:none;border-color:var(--g);background:var(--gs);}
+.pt-row.warn{background:#FFFBEB;}
+.pt-row.danger{background:#FFF1F1;}
+.code-tag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);background:var(--gs);padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.pt-n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;}
+.actual-input{width:44px;border:1.5px solid var(--g);border-radius:6px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g);padding:2px 0;background:var(--gs);}
 
-.reserve-card{background:#FDF5E8;border:1px solid var(--gold);border-radius:var(--radius);padding:10px 14px;margin-bottom:12px;}
-.reserve-title{font-size:12px;font-weight:700;color:var(--gold);margin-bottom:5px;}
-.reserve-item{font-size:12px;color:var(--ink);padding:2px 0;}
+/* SLOT SECTION */
+.slot-sec{margin-bottom:14px;}
+.slot-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--g);border-radius:10px 10px 0 0;color:#fff;}
+.slot-hdr-label{font-size:13px;font-weight:700;flex:1;}
+.slot-hdr-count{font-size:12px;background:rgba(255,255,255,.2);padding:2px 9px;border-radius:10px;}
+.slot-body{background:var(--w);border:1px solid var(--xsoft);border-top:none;border-radius:0 0 10px 10px;padding:8px;}
 
-/* ─── TAB 2: QUEUE ─── */
-.ready-banner{background:var(--gs);border:2px solid var(--g);border-radius:var(--radius);padding:12px 16px;margin-bottom:12px;display:flex;align-items:center;gap:14px;}
-.rb-num{font-family:var(--mono);font-size:32px;font-weight:700;color:var(--g);line-height:1;}
-.rb-label{font-size:14px;color:var(--g);font-weight:700;}
-.rb-sub{font-size:11px;color:var(--soft);margin-top:2px;}
-.zones{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-@media(max-width:600px){.zones{grid-template-columns:1fr;}}
-.zone{background:var(--white);border-radius:var(--radius);border:1px solid var(--xsoft);overflow:hidden;}
-.zone-hdr{padding:10px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--xsoft);}
-.zone-title{font-size:13px;font-weight:700;flex:1;}
-.zone-count{font-family:var(--mono);font-size:11px;font-weight:700;padding:2px 8px;border-radius:10px;}
-.zone-a .zone-hdr{background:#FEF3C7;}
-.zone-a .zone-count{background:#F59E0B;color:#fff;}
-.zone-c .zone-hdr{background:#D1FAE5;}
-.zone-c .zone-count{background:#22C55E;color:#fff;}
-.zone-d .zone-hdr{background:#F3F4F6;}
-.zone-d .zone-count{background:#6B7280;color:#fff;}
-.zone-body{padding:10px;max-height:400px;overflow-y:auto;}
-.adv-zone{background:var(--white);border-radius:var(--radius);border:1px solid #FDE68A;margin-bottom:10px;overflow:hidden;}
-.adv-hdr{padding:10px 14px;background:#FDF5E8;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #FDE68A;}
-.adv-date{font-size:13px;font-weight:700;color:var(--gold);}
-.order-card{background:var(--bg);border-radius:10px;padding:11px;margin-bottom:8px;border:1px solid var(--xsoft);}
-.order-card:last-child{margin-bottom:0;}
-.order-card.urgent{border-left:3px solid var(--r);}
-.oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:8px;}
-.oc-badge{font-family:var(--mono);font-size:10px;font-weight:700;padding:2px 6px;border-radius:5px;flex-shrink:0;}
-.oc-badge.hp{background:#DBEAFE;color:#1E40AF;}
+/* ORDER CARD */
+.oc{border:1px solid var(--xsoft);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--w);}
+.oc:last-child{margin-bottom:0;}
+.oc.pkg{border-color:var(--gold);background:var(--golds);}
+.oc.mealplan{border-color:var(--g);background:var(--gs);}
+.oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}
+.oc-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-top:2px;}
+.oc-badge.hp{background:#FEF3C7;color:#92400E;}
 .oc-badge.lc{background:#D1FAE5;color:#065F46;}
+.oc-badge.pkg{background:var(--golds);color:var(--gold);border:1px solid var(--gold);}
+.oc-badge.mp{background:var(--gs);color:var(--g);}
 .oc-name{font-size:13px;font-weight:700;}
 .oc-meta{font-size:11px;color:var(--soft);margin-top:1px;}
-.oc-items{font-size:12px;color:var(--soft);margin-bottom:8px;display:flex;flex-direction:column;gap:3px;}
-.item-chip{display:inline-flex;align-items:center;gap:4px;}
-.item-code{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--g);background:var(--gs);padding:1px 5px;border-radius:4px;}
-.oc-note{font-size:11px;color:var(--r);background:var(--rs);padding:3px 8px;border-radius:6px;margin-bottom:8px;}
-.oc-actions{display:flex;gap:6px;}
-.btn-pack{flex:1;background:var(--g);color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
-.btn-pick{flex:1;background:#3B82F6;color:#fff;border:none;border-radius:8px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
-.btn-back{background:var(--xsoft);color:var(--soft);border:none;border-radius:8px;padding:9px;font-size:12px;cursor:pointer;font-family:var(--sans);}
-.btn-recall-c{flex:1;background:#3B82F6;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-.btn-recall-a{flex:1;background:#F59E0B;color:#fff;border:none;border-radius:8px;padding:9px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-.delivered-meta{font-size:11px;color:#22C55E;font-weight:600;margin-bottom:6px;}
-.empty-zone{text-align:center;padding:22px;color:var(--xsoft);font-size:13px;}
-.adv-section{margin-top:12px;}
-.zone-d-section{margin-top:12px;}
+.oc-order-num{font-family:var(--mono);font-size:11px;color:var(--soft);}
+.items-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
+.item-chip{font-size:11px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:center;gap:4px;}
+.item-chip .ic-code{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);}
+.item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
+.oc-note{font-size:11px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
+.oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+.btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.empty-slot{text-align:center;padding:16px;color:var(--xsoft);font-size:12px;}
+
+/* PRINT MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--w);border-radius:16px;padding:20px;width:320px;max-width:90vw;}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:14px;}
+.print-opt{display:block;padding:12px 14px;border:1.5px solid var(--xsoft);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13px;font-weight:500;background:var(--w);width:100%;text-align:left;font-family:var(--sans);}
+.print-opt:hover{border-color:var(--g);background:var(--gs);}
+.modal-close{width:100%;padding:10px;border:none;background:var(--bg);border-radius:8px;cursor:pointer;font-size:13px;font-family:var(--sans);margin-top:4px;}
+
+/* PRINT CSS */
+@media print{
+  .hdr,.tab-bar,.ctrl-bar,.oc-actions,.no-print{display:none!important;}
+  body{background:#fff;font-size:11px;}
+  .main{padding:0;max-width:100%;}
+  .slot-hdr{background:#1F4D3A!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .oc{break-inside:avoid;border:1px solid #ccc;}
+  @page{margin:6mm;size:80mm auto;}
+}
 </style>
 </head>
 <body>
@@ -107,382 +102,313 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <div class="hdr">
   <div class="hdr-title">🍳 ครัว Under360</div>
   <div class="live-dot"></div>
-  <a href="main_database_v2.html" target="_blank" class="hdr-btn">📖 สูตร</a>
-  <button class="hdr-btn" onclick="loadAll()">🔄</button>
+  <!-- code toggle -->
+  <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">🏷️ Code</button>
+  <!-- print -->
+  <button class="hdr-btn no-print" onclick="openPrint()">🖨️ พิมพ์</button>
+  <button class="hdr-btn no-print" onclick="loadAll()">🔄</button>
+  <a href="main_database_v2.html" target="_blank" class="hdr-btn no-print">📖 สูตร</a>
 </div>
 
 <div class="tab-bar">
-  <button class="tab-btn active" id="tab1" onclick="switchTab(1)">🍳 ผลิต</button>
-  <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 จัดกล่อง & ส่ง</button>
+  <button class="tab-btn active" id="tab1" onclick="switchTab(1)">📋 รายสินค้า</button>
+  <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 รายออเดอร์</button>
 </div>
 
-<div class="date-bar">
-  <button class="dtab active" id="dtToday" onclick="setDateView('today',this)">วันนี้</button>
-  <button class="dtab" id="dtTom" onclick="setDateView('tomorrow',this)">พรุ่งนี้</button>
-  <button class="dtab" id="dtAll" onclick="setDateView('all',this)">ทั้งหมด</button>
-  <select class="date-sel" id="calPicker" onchange="setDateView('custom',this)"><option value="">📅 ย้อนหลัง...</option></select>
+<!-- DATE + SLOT FILTER -->
+<div class="ctrl-bar" id="ctrlBar">
+  <button class="chip on" id="d-today" onclick="setDate('today',this)">วันนี้</button>
+  <button class="chip" id="d-tomorrow" onclick="setDate('tomorrow',this)">พรุ่งนี้</button>
+  <button class="chip" id="d-all" onclick="setDate('all',this)">ทั้งหมด</button>
+  <select class="date-sel" id="calPicker" onchange="setDate('custom',this)"><option value="">📅 เลือกวัน...</option></select>
+  <div class="sep"></div>
+  <button class="chip on" id="s-all" onclick="setSlot('all',this)">ทุกช่วง</button>
+  <button class="chip" id="s-all_day" onclick="setSlot('all_day',this)">ตลอดวัน</button>
+  <button class="chip" id="s-morning" onclick="setSlot('morning',this)">เช้า</button>
+  <button class="chip" id="s-afternoon" onclick="setSlot('afternoon',this)">บ่าย</button>
+  <button class="chip" id="s-express" onclick="setSlot('express',this)">ด่วน</button>
 </div>
 
-<!-- TAB 1: PRODUCTION -->
+<!-- TAB 1: รายสินค้า -->
 <div class="main" id="tabContent1">
-  <div id="reserveSection"></div>
-  <div id="prodGrid"><div style="text-align:center;color:var(--soft);padding:32px">กำลังโหลด...</div></div>
-  <div style="margin-top:14px;text-align:center">
-    <button onclick="switchTab(2)" style="background:var(--g);color:#fff;border:none;border-radius:10px;padding:12px 28px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--sans);">ผลิตครบแล้ว → ไปจัดกล่อง 📦</button>
-  </div>
+  <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
 </div>
 
-<!-- TAB 2: QUEUE -->
+<!-- TAB 2: รายออเดอร์ -->
 <div class="main" id="tabContent2" style="display:none">
-  <div class="ready-banner" id="readyBanner">
-    <span class="rb-num">0</span>
-    <div><div class="rb-label">ออเดอร์ พร้อมส่งในตู้เย็น 🧊</div><div class="rb-sub">กด "จัดกล่องเสร็จ" เพื่อเพิ่มเข้าตู้เย็น</div></div>
-  </div>
-  <div class="zones">
-    <div class="zone zone-a">
-      <div class="zone-hdr"><span class="zone-title">📦 ยังไม่จัด</span><span class="zone-count" id="cntA">0</span></div>
-      <div class="zone-body" id="zoneA"><div class="empty-zone">✅ จัดครบแล้ว!</div></div>
+  <div id="orderView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+</div>
+
+<!-- PRINT MODAL -->
+<div class="modal-bg" id="printModal" style="display:none">
+  <div class="modal">
+    <h3>🖨️ พิมพ์เอกสาร</h3>
+    <button class="print-opt" onclick="doPrint('daily')">📋 สรุปรายสินค้าวันนี้</button>
+    <button class="print-opt" onclick="doPrint('orders')">📦 ใบจัดกล่องรายออเดอร์</button>
+    <div style="font-size:11px;color:var(--soft);margin:8px 0 4px;line-height:1.6">
+      🖨️ รองรับ: HT400 (Hprt) และเครื่องพิมพ์ทุกรุ่นที่ผ่าน browser<br>
+      ตั้งค่า: กระดาษ 80mm · ไม่มีขอบ · แนวตั้ง
     </div>
-    <div class="zone zone-c">
-      <div class="zone-hdr"><span class="zone-title">✅ จัดแล้ว รอส่ง</span><span class="zone-count" id="cntC">0</span></div>
-      <div class="zone-body" id="zoneC"><div class="empty-zone">📭 ยังไม่มี</div></div>
-    </div>
-  </div>
-  <div class="adv-section" id="zoneB" style="display:none">
-    <div style="font-size:12px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:8px;">📅 จัดล่วงหน้า</div>
-    <div id="zoneBContent"></div>
-  </div>
-  <div class="zone-d-section">
-    <div class="zone zone-d" style="margin-top:12px">
-      <div class="zone-hdr"><span class="zone-title">🚚 ส่งแล้ว — ดึงกลับได้</span><span class="zone-count" id="cntD">0</span></div>
-      <div class="zone-body" id="zoneD"><div class="empty-zone">📭 ยังไม่มี</div></div>
-    </div>
+    <button class="modal-close" onclick="closePrint()">ยกเลิก</button>
   </div>
 </div>
 
 <script>
 const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
-var sb=null,dateView="today",currentTab=1,customDate=null;
-var allOrders=[],allItems=[],allMenus=[];
-var saveTimers={};
-
+var sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function toISO(d){return d.toISOString().split("T")[0];}
 function today(){return toISO(new Date());}
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+
+// ── STATE ────────────────────────────────────────────────
+var allOrders=[], allItems=[], allMenus=[];
+var dateMode="today", slotMode="all", tabMode=1;
+var codeMode="code"; // code | name | subcode
+var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
+
+// ── DATE / SLOT / TAB ────────────────────────────────────
 function getTargetDate(){
-  if(dateView==="today")return today();
-  if(dateView==="tomorrow")return tomorrow();
-  if(dateView==="custom"&&customDate)return customDate;
-  return null;
+  if(dateMode==="today")return today();
+  if(dateMode==="tomorrow")return tomorrow();
+  if(dateMode==="custom"){var s=document.getElementById("calPicker");return s?s.value:null;}
+  return null; // all
 }
-
-// ── Tabs ─────────────────────────────────────────────────
+function setDate(mode,el){
+  dateMode=mode;
+  document.querySelectorAll("#ctrlBar .chip[id^='d-']").forEach(function(b){b.classList.remove("on");});
+  if(el&&el.classList)el.classList.add("on");
+  render();
+}
+function setSlot(mode,el){
+  slotMode=mode;
+  document.querySelectorAll("#ctrlBar .chip[id^='s-']").forEach(function(b){b.classList.remove("on");});
+  if(el&&el.classList)el.classList.add("on");
+  render();
+}
 function switchTab(n){
-  currentTab=n;
-  document.getElementById("tab1").classList.toggle("active",n===1);
-  document.getElementById("tab2").classList.toggle("active",n===2);
-  document.getElementById("tabContent1").style.display=n===1?"block":"none";
-  document.getElementById("tabContent2").style.display=n===2?"block":"none";
+  tabMode=n;
+  [1,2].forEach(function(i){
+    document.getElementById("tab"+i).classList.toggle("active",i===n);
+    document.getElementById("tabContent"+i).style.display=i===n?"block":"none";
+  });
+  render();
 }
 
-// ── Date ─────────────────────────────────────────────────
-function setDateView(v,btn){
-  dateView=v;
-  document.querySelectorAll(".dtab").forEach(function(b){b.classList.remove("active");});
-  if(btn&&btn.classList)btn.classList.add("active");
-  if(v==="custom")customDate=btn.value;
-  renderProd(allMenus);
-  renderQueue(allOrders);
+// ── CODE TOGGLE ──────────────────────────────────────────
+var CODE_MODES=["code","name","subcode"];
+var CODE_LABELS={"code":"🏷️ Code","name":"📝 ชื่อ","subcode":"#️⃣ Sub"};
+function cycleCodeMode(){
+  var idx=CODE_MODES.indexOf(codeMode);
+  codeMode=CODE_MODES[(idx+1)%CODE_MODES.length];
+  document.getElementById("codeToggleBtn").textContent=CODE_LABELS[codeMode];
+  render();
+}
+function getCodeDisplay(code,name){
+  if(codeMode==="name")return name;
+  if(codeMode==="subcode")return (code||"").replace(/^[A-Za-z]+/,"") || code;
+  return code||"—";
 }
 
-// ── Load ─────────────────────────────────────────────────
+// ── LOAD ─────────────────────────────────────────────────
 async function loadAll(){
   var sb_=getSB();
-  if(!sb_){
-    allMenus=MOCK_MENUS;allOrders=MOCK_ORDERS;allItems=MOCK_ITEMS;
-    renderProd(allMenus);renderQueue(allOrders);return;
-  }
+  if(!sb_){render();return;}
   try{
-    var [rO,rI,rM]=await Promise.all([
+    var r=await Promise.all([
       sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
       sb_.from("order_items").select("*"),
-      sb_.from("menu_items").select("id,code,name,price,stock_quantity,actual_stock,is_available")
+      sb_.from("menu_items").select("id,code,name,stock_quantity,actual_stock,is_available,no_morning,category").eq("is_available",true)
     ]);
-    allOrders=rO.data||[];allItems=rI.data||[];allMenus=rM.data||[];
-    renderProd(allMenus);renderQueue(allOrders);
-  }catch(e){
-    allMenus=MOCK_MENUS;allOrders=MOCK_ORDERS;allItems=MOCK_ITEMS;
-    renderProd(MOCK_MENUS);renderQueue(MOCK_ORDERS);
-  }
+    allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[];
+  }catch(e){console.error(e);}
+  render();
 }
 
-// ── TAB 1: Production ────────────────────────────────────
-function renderProd(menus){
+// ── FILTER ───────────────────────────────────────────────
+function filteredOrders(){
   var tgt=getTargetDate();
-  var tomStr=tomorrow();
-
-  // Count pending orders per menu for selected date
-  var pendingForDate=allOrders.filter(function(o){
-    if(o.status==="delivered")return false;
-    return !tgt||(o.delivery_date===tgt);
+  return allOrders.filter(function(o){
+    if(tgt&&o.delivery_date!==tgt)return false;
+    if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
+    return o.status!=="delivered";
   });
-  var menuOrdCount={};
-  pendingForDate.forEach(function(o){
-    allItems.filter(function(i){return i.order_id===o.id;}).forEach(function(i){
-      menuOrdCount[i.menu_item_id]=(menuOrdCount[i.menu_item_id]||0)+(i.quantity||1);
-    });
-  });
-
-  // Reserve section — advance orders beyond tomorrow
-  var reserved=allOrders.filter(function(o){
-    return o.delivery_date>tomStr&&(o.status==="confirmed"||o.status==="preparing");
-  });
-  var resEl=document.getElementById("reserveSection");
-  resEl.innerHTML=reserved.length?
-    "<div class='reserve-card'><div class='reserve-title'>⚠️ จองล่วงหน้า "+reserved.length+" ออเดอร์ — ต้องผลิตเก็บไว้</div>"
-    +reserved.slice(0,5).map(function(o){return "<div class='reserve-item'>📅 ส่ง "+fmtDate(o.delivery_date)+" · "+(o.customer_name||"ลูกค้า")+"</div>";}).join("")
-    +(reserved.length>5?"<div class='reserve-item' style='color:var(--soft)'>...และอีก "+(reserved.length-5)+" ออเดอร์</div>":"")
-    +"</div>":""
-  ;
-
-  // Build table
-  var onlineMenus=menus.filter(function(m){return m.is_available!==false;});
-  if(!onlineMenus.length)onlineMenus=MOCK_MENUS;
-
-  var rows=onlineMenus.map(function(m){
-    var ordered=menuOrdCount[m.id]||0;
-    var sys=m.stock_quantity!=null?m.stock_quantity:0;
-    var actual=m.actual_stock!=null?m.actual_stock:sys;
-    var remain=actual-ordered;
-    var rowCls=remain<0?" row-danger":ordered>0&&remain===0?" row-warn":"";
-    var remCls=remain<0?" neg":ordered>0&&remain===0?" zero":"";
-    return "<div class='pt-row"+rowCls+"'>"
-      +"<div class='pr-name-cell'><span class='pr-code-tag'>"+(m.code||"—")+"</span><span class='pr-name-text'>"+(m.name||"เมนู")+"</span></div>"
-      +"<div class='pr-n pr-sys-n'>"+sys+"</div>"
-      +"<div class='pr-n pr-ord-n'>"+ordered+"</div>"
-      +"<div class='pr-rem-cell"+remCls+"' id='rem-"+m.id+"'>"+remain+"</div>"
-      +"<input class='pr-act-input' id='act-"+m.id+"' type='number' min='0' value='"+actual+"' oninput='saveActual(\""+m.id+"\",this)'>"
-      +"</div>";
-  }).join("");
-
-  document.getElementById("prodGrid").innerHTML=
-    "<div class='prod-section'>"
-    +"<div class='pt-hdr'><span>เมนู</span><span>ระบบ</span><span>ออเดอร์</span><span>คงเหลือ</span><span>จริง ✏️</span></div>"
-    +rows
-    +"</div>";
 }
-
-function saveActual(menuId,input){
-  var val=parseInt(input.value);
-  if(isNaN(val)||val<0)return;
-  // Update in memory
-  var m=allMenus.find(function(x){return x.id===menuId;});
-  if(m)m.actual_stock=val;
-  // Update คงเหลือ cell only (no full re-render = preserve typing focus)
-  var tgt=getTargetDate();
-  var ordered=0;
-  allOrders.filter(function(o){
-    if(o.status==="delivered")return false;
-    return !tgt||(o.delivery_date===tgt);
-  }).forEach(function(o){
-    allItems.filter(function(i){return i.order_id===o.id&&i.menu_item_id===menuId;})
-      .forEach(function(i){ordered+=(i.quantity||1);});
-  });
-  var remain=val-ordered;
-  var remEl=document.getElementById("rem-"+menuId);
-  if(remEl){
-    remEl.textContent=remain;
-    remEl.className="pr-rem-cell"+(remain<0?" neg":ordered>0&&remain===0?" zero":"");
-  }
-  // Debounce DB save 600ms
-  clearTimeout(saveTimers[menuId]);
-  saveTimers[menuId]=setTimeout(async function(){
-    var sb_=getSB();
-    if(sb_)await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId);
-  },600);
-}
-
-// ── Helper: adjust actual_stock (+1 restore / -1 decrement) ──
-async function adjustActualStock(orderItems,delta){
-  var sb_=getSB();
-  for(var i=0;i<orderItems.length;i++){
-    var it=orderItems[i];
-    var m=allMenus.find(function(x){return x.id===it.menu_item_id;});
-    if(m){
-      var cur=m.actual_stock!=null?m.actual_stock:(m.stock_quantity||0);
-      var nv=Math.max(0,cur+(delta*(it.quantity||1)));
-      m.actual_stock=nv;
-      if(sb_)await sb_.from("menu_items").update({actual_stock:nv}).eq("id",it.menu_item_id);
-    }
-  }
-}
-
-// ── TAB 2: Queue ─────────────────────────────────────────
 function getOrderItems(orderId){
   return allItems.filter(function(i){return i.order_id===orderId;}).map(function(i){
     var m=allMenus.find(function(x){return x.id===i.menu_item_id;})||{code:"—",name:"—"};
-    return {code:m.code,name:m.name,qty:i.quantity||1};
+    return {code:m.code,name:m.name,qty:i.quantity||1,menu_item_id:i.menu_item_id};
   });
 }
-function detectType(items){
-  if(items.some(function(i){return (i.code||"").startsWith("HP");}))return "hp";
-  if(items.some(function(i){return (i.code||"").startsWith("LC");}))return "lc";
-  return "lc";
-}
-function renderCard(o,zone){
-  var items=getOrderItems(o.id);
-  var type=detectType(items);
-  var isUrgent=o.delivery_date===today()&&zone==="A";
-  var itemsHtml=items.length?items.map(function(i){
-    return "<div class='item-chip'><span class='item-code'>"+i.code+"</span> "+i.name.slice(0,14)+" ×"+i.qty+"</div>";
-  }).join(""):"<div style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</div>";
-  var noteHtml=o.notes?"<div class='oc-note'>📌 "+o.notes+"</div>":"";
-  var actionsHtml="";
-  if(zone==="A"){
-    actionsHtml="<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ พร้อมส่ง</button></div>";
-  } else if(zone==="C"){
-    actionsHtml="<div class='oc-actions'><button class='btn-pick' onclick='markPicked(\""+o.id+"\")'>🛵 Messenger หยิบแล้ว</button><button class='btn-back' onclick='markUnpack(\""+o.id+"\")'>↩</button></div>";
-  } else if(zone==="D"){
-    var t=o.updated_at?new Date(o.updated_at).toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"}):"—";
-    actionsHtml="<div class='delivered-meta'>🚚 ส่งเมื่อ "+t+"</div>"
-      +"<div class='oc-actions'><button class='btn-recall-c' onclick='markRecall(\""+o.id+"\",\"ready\")'>↩ กลับจัดแล้ว</button><button class='btn-recall-a' onclick='markRecall(\""+o.id+"\",\"confirmed\")'>↩↩ กลับไม่จัด</button></div>";
-  }
-  return "<div class='order-card"+(isUrgent?" urgent":"")+"'>"
-    +"<div class='oc-top'><span class='oc-badge "+type+"'>"+type.toUpperCase()+"</span>"
-    +"<div><div class='oc-name'>"+(o.customer_name||"ลูกค้า")+"</div>"
-    +"<div class='oc-meta'>"+(o.order_number||"—")+" · 📅 "+(o.delivery_date||"—")+" · ⏰ "+(o.time_slot_label||o.time_slot||"—")+"</div>"
-    +"<div class='oc-meta'>📍 "+(o.delivery_address||"—")+"</div></div></div>"
-    +"<div class='oc-items'>"+itemsHtml+"</div>"
-    +noteHtml+actionsHtml+"</div>";
+function detectBadge(items){
+  if(items.some(function(i){return (i.code||"").match(/^HP/i);}))return "hp";
+  if(items.some(function(i){return (i.code||"").match(/^LC/i);}))return "lc";
+  return "normal";
 }
 
-function renderQueue(orders){
+// ── RENDER ───────────────────────────────────────────────
+function render(){
+  if(tabMode===1)renderProd();
+  else renderOrders();
+}
+
+// TAB 1: รายสินค้า aggregated
+var saveTimers={};
+function renderProd(){
+  var orders=filteredOrders();
   var tgt=getTargetDate();
-  var tomStr=tomorrow();
-  var zA=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&(o.status==="confirmed"||o.status==="preparing");});
-  var zC=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&o.status==="ready";});
-  var zD=orders.filter(function(o){var ok=!tgt||(o.delivery_date===tgt);return ok&&o.status==="delivered";});
-  var zB=orders.filter(function(o){return o.delivery_date>tomStr&&(o.status==="confirmed"||o.status==="preparing");});
-
-  // Ready banner — total across ALL dates
-  var totalReady=orders.filter(function(o){return o.status==="ready";}).length;
-  document.getElementById("readyBanner").innerHTML=
-    "<span class='rb-num'>"+totalReady+"</span>"
-    +"<div><div class='rb-label'>ออเดอร์ พร้อมส่งในตู้เย็น 🧊</div><div class='rb-sub'>จัดเสร็จรอ Messenger มาหยิบ</div></div>";
-
-  document.getElementById("cntA").textContent=zA.length;
-  document.getElementById("cntC").textContent=zC.length;
-  document.getElementById("cntD").textContent=zD.length;
-  document.getElementById("zoneA").innerHTML=zA.length?zA.map(function(o){return renderCard(o,"A");}).join(""):"<div class='empty-zone'>✅ จัดครบแล้ว</div>";
-  document.getElementById("zoneC").innerHTML=zC.length?zC.map(function(o){return renderCard(o,"C");}).join(""):"<div class='empty-zone'>📭 ยังไม่มี</div>";
-  document.getElementById("zoneD").innerHTML=zD.length?zD.map(function(o){return renderCard(o,"D");}).join(""):"<div class='empty-zone'>📭 ยังไม่มี</div>";
-
-  var bSec=document.getElementById("zoneB"),bCon=document.getElementById("zoneBContent");
-  if(zB.length&&dateView!=="tomorrow"){
-    bSec.style.display="block";
-    var byDate={};
-    zB.forEach(function(o){if(!byDate[o.delivery_date])byDate[o.delivery_date]=[];byDate[o.delivery_date].push(o);});
-    bCon.innerHTML=Object.keys(byDate).sort().map(function(iso){
-      return "<div class='adv-zone'><div class='adv-hdr'><span class='adv-date'>📅 ส่ง "+fmtDate(iso)+"</span><span style='background:var(--gold);color:#fff;font-size:11px;padding:2px 8px;border-radius:10px'>"+byDate[iso].length+" ออเดอร์</span></div>"
-        +"<div style='padding:8px'>"+byDate[iso].map(function(o){return renderCard(o,"A");}).join("")+"</div></div>";
-    }).join("");
-  }else{bSec.style.display="none";}
+  var agg={};
+  orders.forEach(function(o){
+    getOrderItems(o.id).forEach(function(i){
+      if(!agg[i.menu_item_id])agg[i.menu_item_id]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
+      agg[i.menu_item_id].qty+=i.qty;
+    });
+  });
+  var rows=Object.values(agg).sort(function(a,b){return (a.code||"").localeCompare(b.code||"");});
+  if(!rows.length){
+    document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
+    return;
+  }
+  var html="<div class='prod-wrap'>"
+    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>ของจริง</span><span>เหลือ</span></div>";
+  rows.forEach(function(r){
+    var m=allMenus.find(function(x){return x.id===r.id;})||{};
+    var actual=m.actual_stock!=null?m.actual_stock:(m.stock_quantity||0);
+    var rem=actual-r.qty;
+    var rowCls=rem<0?"danger":rem<3?"warn":"";
+    html+="<div class='pt-row "+rowCls+"'>"
+      +"<div style='display:flex;align-items:center;gap:6px;min-width:0'>"
+      +"<span class='code-tag'>"+escH(getCodeDisplay(r.code,r.name))+"</span>"
+      +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+escH(r.name)+"</span>":"")
+      +"</div>"
+      +"<div class='pt-n' style='color:var(--gold)'>"+r.qty+"</div>"
+      +"<div class='pt-n'><input class='actual-input' type='number' min='0' value='"+actual+"' data-menu-id='"+r.id+"' oninput='schedSave(this)'></div>"
+      +"<div class='pt-n' style='color:"+(rem<0?"var(--r)":"var(--g)")+"'>"+rem+"</div>"
+      +"</div>";
+  });
+  html+="<div style='padding:8px 12px;font-size:11px;color:var(--soft);border-top:1px solid var(--xsoft)'>"
+    +"รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ"
+    +"<span style='float:right;color:var(--g);font-weight:600'>✏️ แก้ตัวเลข ของจริง ได้เลย</span></div></div>";
+  document.getElementById("prodView").innerHTML=html;
 }
 
-// markPacked: จัดกล่องเสร็จ → หัก actual_stock + status=ready
+// debounce save 600ms หลังพิมเสร็จ
+function schedSave(inp){
+  var menuId=inp.dataset.menuId;
+  var val=parseInt(inp.value)||0;
+  // update local ให้ rem re-calc
+  var m=allMenus.find(function(x){return x.id===menuId;});
+  if(m)m.actual_stock=val;
+  // update rem display ทันที
+  var row=inp.closest(".pt-row");
+  if(row){
+    var ordered=parseInt(row.querySelectorAll(".pt-n")[0].textContent)||0;
+    var rem=val-ordered;
+    var remEl=row.querySelectorAll(".pt-n")[2];
+    if(remEl){remEl.textContent=rem;remEl.style.color=rem<0?"var(--r)":"var(--g)";}
+    row.className="pt-row"+(rem<0?" danger":rem<3?" warn":"");
+  }
+  clearTimeout(saveTimers[menuId]);
+  saveTimers[menuId]=setTimeout(async function(){
+    var sb_=getSB(); if(!sb_)return;
+    await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId);
+  },600);
+}
+
+// TAB 2: รายออเดอร์ by slot
+function renderOrders(){
+  var orders=filteredOrders();
+  if(!orders.length){
+    document.getElementById("orderView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์</div>";
+    return;
+  }
+  // group by slot
+  var slotOrder=["all_day","morning","afternoon","express",""];
+  var bySlot={};
+  orders.forEach(function(o){
+    var s=o.time_slot||"";
+    if(!bySlot[s])bySlot[s]=[];
+    bySlot[s].push(o);
+  });
+  var html="";
+  slotOrder.forEach(function(s){
+    if(!bySlot[s]||!bySlot[s].length)return;
+    var label=SLOT_LABELS[s]||"⏰ ไม่ระบุช่วงเวลา";
+    html+="<div class='slot-sec'>"
+      +"<div class='slot-hdr'><span class='slot-hdr-label'>"+label+"</span><span class='slot-hdr-count'>"+bySlot[s].length+" ออเดอร์</span></div>"
+      +"<div class='slot-body'>"+bySlot[s].map(renderCard).join("")+"</div></div>";
+  });
+  document.getElementById("orderView").innerHTML=html;
+}
+
+function renderCard(o){
+  var items=getOrderItems(o.id);
+  var badge=detectBadge(items);
+  var isPkg=!!(o.package_type);
+  var isMp=items.some(function(i){return (i.code||"").match(/^HP|^LC/i);});
+  var cardCls=isPkg?"oc pkg":isMp?"oc mealplan":"oc";
+  var badgeHtml=isPkg?"<span class='oc-badge pkg'>📦 แพ็ค</span>"
+    :isMp?"<span class='oc-badge mp'>🥗 Meal</span>"
+    :badge!=="normal"?"<span class='oc-badge "+badge+"'>"+badge.toUpperCase()+"</span>":"";
+  var itemsHtml=items.length?items.map(function(i){
+    return "<div class='item-chip'><span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
+      +(codeMode!=="name"?" <span style='font-size:10px;color:var(--soft)'>"+escH(i.name.slice(0,12))+"</span>":"")
+      +" <span class='ic-qty'>×"+i.qty+"</span></div>";
+  }).join(""):"<span style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</span>";
+  var actions=o.status==="confirmed"||o.status==="preparing"
+    ?"<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button></div>"
+    :o.status==="ready"
+    ?"<div class='oc-actions'><span style='font-size:12px;color:var(--g);font-weight:600'>✅ พร้อมส่ง</span><button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยกเลิก</button></div>":"";
+  return "<div class='"+cardCls+"'>"
+    +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
+    +"<div style='display:flex;align-items:center;gap:6px'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"
+    +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div></div>"
+    +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div></div></div>"
+    +"<div class='items-grid'>"+itemsHtml+"</div>"
+    +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
+    +actions+"</div>";
+}
+
+// ── ACTIONS ──────────────────────────────────────────────
 async function markPacked(id){
-  var orderItems=allItems.filter(function(i){return i.order_id===id;});
-  await adjustActualStock(orderItems,-1);
-  var sb_=getSB();
-  if(sb_)await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});
-  if(o){o.status="ready";o.updated_at=new Date().toISOString();}
-  renderProd(allMenus);renderQueue(allOrders);
+  var sb_=getSB(); if(!sb_)return;
+  await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  render();
 }
-
-// markPicked: Messenger หยิบแล้ว → status=delivered + loyalty points
-async function markPicked(id){
-  var sb_=getSB();
-  if(sb_){
-    await sb_.from("orders").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
-    try{
-      var o=allOrders.find(function(x){return x.id===id;});
-      if(o&&o.line_uid&&o.total){
-        var cr=await sb_.from("customers").select("points,tier").eq("line_uid",o.line_uid).single();
-        if(!cr.error&&cr.data){
-          var np=(cr.data.points||0)+o.total;
-          var nt=np>=25000?4:np>=10000?3:np>=3000?2:1;
-          await sb_.from("customers").update({points:np,tier:nt}).eq("line_uid",o.line_uid);
-        }
-      }
-    }catch(e){}
-  }
-  var o2=allOrders.find(function(x){return x.id===id;});
-  if(o2)o2.status="delivered";
-  renderProd(allMenus);renderQueue(allOrders);
-}
-
-// markUnpack: ↩ ยกเลิกจัด → คืน actual_stock + status=confirmed
 async function markUnpack(id){
-  var orderItems=allItems.filter(function(i){return i.order_id===id;});
-  await adjustActualStock(orderItems,+1);
-  var sb_=getSB();
-  if(sb_)await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});
-  if(o)o.status="confirmed";
-  renderProd(allMenus);renderQueue(allOrders);
+  var sb_=getSB(); if(!sb_)return;
+  await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
+  render();
 }
 
-// markRecall: ดึงออเดอร์กลับจาก delivered
-async function markRecall(id,st){
-  if(st==="confirmed"){
-    // กลับ "ไม่จัด" → คืน actual_stock
-    var orderItems=allItems.filter(function(i){return i.order_id===id;});
-    await adjustActualStock(orderItems,+1);
-  }
-  // st==="ready" → กลับ "จัดแล้ว" → actual_stock ไม่เปลี่ยน (ยังอยู่ในตู้เย็น)
-  var sb_=getSB();
-  if(sb_)await sb_.from("orders").update({status:st,updated_at:new Date().toISOString()}).eq("id",id);
-  var o=allOrders.find(function(x){return x.id===id;});
-  if(o)o.status=st;
-  renderProd(allMenus);renderQueue(allOrders);
+// ── PRINT ─────────────────────────────────────────────────
+function openPrint(){document.getElementById("printModal").style.display="flex";}
+function closePrint(){document.getElementById("printModal").style.display="none";}
+function doPrint(type){
+  closePrint();
+  if(type==="daily")switchTab(1);
+  else switchTab(2);
+  setTimeout(function(){window.print();},300);
 }
 
-// ── Init date dropdown ────────────────────────────────────
+// ── UTIL ─────────────────────────────────────────────────
+function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+
+// ── INIT ─────────────────────────────────────────────────
 (function(){
   var sel=document.getElementById("calPicker");
-  for(var i=1;i<=30;i++){
+  for(var i=0;i<14;i++){
     var d=new Date();d.setDate(d.getDate()-i);
     var iso=d.toISOString().split("T")[0];
-    var label=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
-    var opt=document.createElement("option");opt.value=iso;opt.textContent=label;sel.appendChild(opt);
+    var opt=document.createElement("option");opt.value=iso;
+    opt.textContent=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    sel.appendChild(opt);
   }
 })();
-
-// ── Mock data ─────────────────────────────────────────────
-var MOCK_MENUS=[
-  {id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",stock_quantity:8,actual_stock:10,is_available:true},
-  {id:"m2",code:"HP02",name:"แซลมอนย่างเกลือ",stock_quantity:5,actual_stock:5,is_available:true},
-  {id:"m3",code:"LC01",name:"อกไก่ย่าง LC",stock_quantity:6,actual_stock:8,is_available:true},
-  {id:"m4",code:"LC04",name:"หมูย่างโรสแมรี่",stock_quantity:4,actual_stock:4,is_available:true},
-];
-var MOCK_ORDERS=[
-  {id:"o1",order_number:"U-0620-001",customer_name:"Boom",status:"confirmed",delivery_date:today(),time_slot:"morning",time_slot_label:"เช้า 8-11",delivery_address:"สุขุมวิท 39",notes:"ไม่เอาผักชี",updated_at:null,line_uid:"c1",total:330},
-  {id:"o2",order_number:"U-0620-002",customer_name:"Pete",status:"confirmed",delivery_date:today(),time_slot:"morning",time_slot_label:"เช้า 8-11",delivery_address:"ทองหล่อ 15",notes:"",updated_at:null,line_uid:"c2",total:165},
-  {id:"o3",order_number:"U-0620-003",customer_name:"ขวัญชนก",status:"ready",delivery_date:today(),time_slot:"noon",time_slot_label:"เที่ยง 11-13",delivery_address:"เอกมัย 10",notes:"",updated_at:new Date().toISOString(),line_uid:"c3",total:495},
-  {id:"o4",order_number:"U-0621-001",customer_name:"Frederik",status:"confirmed",delivery_date:tomorrow(),time_slot:"morning",time_slot_label:"เช้า 8-11",delivery_address:"ลาดพร้าว 71",notes:"ไม่ทานเนื้อ",updated_at:null,line_uid:"c4",total:165},
-];
-var MOCK_ITEMS=[
-  {id:"i1",order_id:"o1",menu_item_id:"m1",quantity:2},
-  {id:"i2",order_id:"o1",menu_item_id:"m2",quantity:1},
-  {id:"i3",order_id:"o2",menu_item_id:"m1",quantity:1},
-  {id:"i4",order_id:"o3",menu_item_id:"m3",quantity:2},
-  {id:"i5",order_id:"o3",menu_item_id:"m4",quantity:1},
-  {id:"i6",order_id:"o4",menu_item_id:"m1",quantity:1},
-];
 
 loadAll();
 setInterval(loadAll,30000);

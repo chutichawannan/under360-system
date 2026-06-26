@@ -1028,14 +1028,38 @@ function renderMenu() {
   el.innerHTML = '<div class="mlist-v2">' + items.map(item => {
     const inCart = cart.find(c => c.id === item.id);
     const qty = inCart ? inCart.qty : 0;
+    // Meal Plan = HP/LC → no stock concept
+    const isMealPlan = item.category==='meal_hp' || item.category==='meal_lc'
+                    || /^HP|^LC/i.test(item.code||'');
+    const stock = isMealPlan ? 999 : (item.stock_quantity != null ? item.stock_quantity : 999);
+    const remaining = stock - qty;
+    const isOut = !isMealPlan && stock <= 0;
+    const isLow = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
     const img = item.image_url
       ? `<img class="mi-v2-photo" src="${item.image_url}" onerror="imgFallback(this)">`
       : `<div class="mi-v2-ph">🍱</div>`;
-    const tags = (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'') + (item.protein?`<span class="mi-v2-pro">โปรตีน ${item.protein}g</span>`:'');
-    const ctrl = qty===0
+    const stockBadge = isOut
+      ? `<span style="font-size:10px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px">หมดแล้ว</span>`
+      : isLow
+      ? `<span style="font-size:10px;font-weight:700;color:#92400E;background:#FEF3C7;padding:2px 7px;border-radius:8px">เหลือ ${remaining} ชิ้นสุดท้าย</span>`
+      : isMealPlan
+      ? `<span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 7px;border-radius:8px">🥗 Meal Plan</span>`
+      : '';
+    const tags = (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'')
+      + (item.protein?`<span class="mi-v2-pro">โปรตีน ${item.protein}g</span>`:'')
+      + (stockBadge?`<span>${stockBadge}</span>`:'');
+    // Fix 3: HP/LC block add-to-cart (รอ Meal Plan flow ใหม่)
+    const ctrl = isMealPlan
+      ? `<button class="mi-v2-add" disabled style="opacity:.4;cursor:not-allowed;font-size:10px;width:auto;padding:0 8px" title="Meal Plan — สมัครผ่าน Line OA">แพลน</button>`
+      : isOut
+      ? `<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>`
+      : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
-      : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)">+</button></div>`;
-    return `<div class="mi-v2" onclick="openProduct('${item.id}')">${img}<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div><div class="mi-v2-right"><div class="mi-v2-price">฿${item.price}</div>${ctrl}</div></div>`;
+      : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" onclick="openProduct('${item.id}')" style="${isOut?'opacity:.6':''}">` +
+      img +
+      `<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
+      `<div class="mi-v2-right"><div class="mi-v2-price">฿${item.price}</div>${ctrl}</div></div>`;
   }).join('') + '</div>';
 }
 
@@ -1158,11 +1182,16 @@ function pickDate(key) { selDate=key; renderDatePick(); }
 // ══════════════════════════════════════
 // ⏰ TIME PICKER
 // ══════════════════════════════════════
-// ตรวจว่าตะกร้ามีสินค้าที่ไม่ส่งช่วงเช้าไหม (flag no_morning ใน menu_items)
+// ตรวจว่าตะกร้ามีสินค้าที่ไม่ส่งช่วงเช้าไหม
+// HP/LC = no_morning อัตโนมัติ ไม่ต้อง tick ใน DB
 function hasMealPlan(){
   return cart.some(c=>{
     const item=menuItems.find(m=>m.id===c.id);
-    return item && item.no_morning === true;
+    if(!item) return false;
+    return item.no_morning === true
+      || item.category==='meal_hp'
+      || item.category==='meal_lc'
+      || /^HP|^LC/i.test(item.code||'');
   });
 }
 
