@@ -3,7 +3,10 @@
     "allow": [
       "Bash(curl -s \"https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/*)",
       "Bash(curl -s 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/*)",
-      "Bash(curl -s \"$URL/*)"
+      "Bash(curl -s \"$URL/*)",
+      "Bash(node scripts/check-html-js.js *)",
+      "Bash(git add *)",
+      "Bash(git commit -m *)"
     ]
   }
 }
