@@ -47,9 +47,9 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 | ไฟล์ | หน้าที่ | สถานะ |
 |------|--------|-------|
-| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout | ✅ updated (v0.3.3) — รอ push |
-| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages tab | ✅ updated (v0.3.2) — รอ push |
-| `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ updated (v0.3.2) — รอ push |
+| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout | ✅ live (v0.3.3) |
+| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages tab | ✅ live (v0.3.2) |
+| `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
 | `kitchen_queue.html` | หน้าครัว + print | ✅ live |
 | `operation_hub.html` | Admin hub (5 tabs) | ✅ live — รอ v0.3.5 |
 | `customer.html` | ข้อมูลลูกค้า standalone | ✅ live |
@@ -105,14 +105,13 @@ CREATE TABLE package_items ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   sku text NOT NULL, extra_price integer DEFAULT 0,
   created_at timestamptz DEFAULT now(), UNIQUE(package_id, sku) );
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'individual';
-```
 
-### ⚠️ SQL ที่ยังต้องรัน
-```sql
 -- v0.3.3 pre-order
 ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS available_from DATE;
 ALTER TABLE orders     ADD COLUMN IF NOT EXISTS delivery_week TEXT DEFAULT 'current';
 ```
+
+### ✅ SQL รันครบแล้ว — ไม่มีค้าง
 
 ### Storage
 - `menu-images` (Public) ✅
@@ -161,7 +160,7 @@ Syntax check    → node --check file.js หลัง edit ทุกครั้
 
 ---
 
-## 🚦 Current Version: v0.3.3 (dev เสร็จ รอ push)
+## 🚦 Current Version: v0.3.3 (✅ push แล้ว — live บน Vercel)
 
 ### ✅ Fixed Issues (แก้แล้วในแชทนี้)
 | # | ปัญหาเดิม | สถานะ |
@@ -241,8 +240,8 @@ const MP_SETS = [
 | Version | งาน | สถานะ |
 |---------|-----|-------|
 | v0.3.1 | Order flow · Customer migration | ✅ Done |
-| v0.3.2 | Package S/M/L system | ✅ Dev done — รอ push |
-| v0.3.3 | Meal Plan flow + Pre-order | ✅ Dev done — รอ push |
+| v0.3.2 | Package S/M/L system | ✅ Live |
+| v0.3.3 | Meal Plan flow + Pre-order | ✅ Live |
 | v0.3.4 | Product images (`batch_photo_upload.html`) | 🔴 ยังไม่รัน |
 | v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | 🔄 ถัดไป |
 | v0.4   | AI Agents: น้องนิว + พี่เก่ง | 🚀 Beta Launch |
@@ -250,21 +249,20 @@ const MP_SETS = [
 
 ---
 
-## 🔴 Push Checklist (ทำก่อน push)
+## 🔴 Post-push Checklist (v0.3.3 — เหลือ verify บน production)
 
 ```
-1. รัน SQL ที่ยังค้าง:
-   ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS available_from DATE;
-   ALTER TABLE orders     ADD COLUMN IF NOT EXISTS delivery_week TEXT DEFAULT 'current';
+1. ✅ รัน SQL แล้ว (available_from + delivery_week — verify ผ่าน REST)
 
-2. แก้ราคา MP_SETS ใน liff_customer.html (บรรทัดต้นไฟล์)
+2. ⚠️ MP_SETS ยังเป็นราคา mock — live แล้วแต่ต้องยืนยัน:
+   trial 7 กล่อง   HP 1499 / LC 1399
+   weekly 21 กล่อง HP 3990 / LC 3790
+   monthly 84 กล่อง HP 13990 / LC 13490
 
-3. Push ไฟล์ทั้ง 3:
-   liff_customer.html     ← v0.3.3
-   main_database_v2.html  ← v0.3.2
-   home_editor.html       ← v0.3.2
+3. ✅ Push ไฟล์ทั้ง 3 แล้ว (commit 09fcf9f)
+   liff_customer.html · main_database_v2.html · home_editor.html
 
-4. Test checklist liff_customer:
+4. Test checklist liff_customer (รอ test บน production):
    □ Package S card ใน HomeGrid → เลือก 9 เมนู → ตะกร้า
    □ Meal Plan card → เลือก HP + weekly → ตะกร้า
    □ เมนูอาทิตย์หน้า (ใส่ available_from ทดสอบ) → badge 📅
@@ -314,4 +312,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: มิ.ย. 2026 — v0.3.3 dev done, รอ push + v0.3.4-5 ถัดไป*
+*Last updated: มิ.ย. 2026 — v0.3.3 ✅ live (push 09fcf9f), ถัดไป v0.3.4-5 + verify MP_SETS pricing*
