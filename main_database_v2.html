@@ -3037,6 +3037,31 @@ async function exportOnlineMenus(){
     showToast('❌ Sync ล้มเหลว: '+(e.message||'ตรวจสอบ credentials'));
   }
 }
+// sync เมนูตัวเดียวเข้า menu_items ทันทีตอนกดเปิด/ปิดออนไลน์ (is_available ตามสถานะ)
+async function syncOnlineMenu(r){
+  if(!r) return;
+  if(!r.code){ showToast('⚠ เมนูนี้ยังไม่มีรหัส (code) — sync ออนไลน์ไม่ได้ ใส่ code ก่อน'); return; }
+  const tot = computeTotals(r);
+  const row = {
+    code: r.code, name: r.name||'',
+    category: (r.categories&&r.categories[0])||'other', type:'single',
+    price: r.selling_price||0,
+    kcal: Math.round(tot.kcal)||null,
+    protein: Math.round(tot.protein*10)/10||null,
+    carb: Math.round(tot.carb*10)/10||null,
+    fat: Math.round(tot.fat*10)/10||null,
+    is_available: !!(r.available_online && r.status==='active'),  // ปิดออนไลน์ = false → OH/LIFF ไม่เห็น
+    sort_order: 0,
+    image_urls: r.image_urls||[], description: r.description||'',
+    he_group: r.he_group||'', no_morning: r.no_morning||false,
+  };
+  try{
+    const sb = getSB();
+    const { error } = await sb.from('menu_items').upsert(row, { onConflict:'code', ignoreDuplicates:false });
+    if(error) throw error;
+    showToast(row.is_available ? '✅ เปิดออนไลน์แล้ว — OH/LIFF เห็นเลย' : '✅ ปิดออนไลน์แล้ว — OH/LIFF อัปเดตแล้ว');
+  }catch(e){ console.error(e); showToast('❌ sync ออนไลน์ล้มเหลว: '+(e.message||'ตรวจ credentials')); }
+}
 async function persistIngredients(){ await setStored('ingredients', state.ingredients, true); }
 
 function showToast(msg){
@@ -4179,7 +4204,8 @@ function attachHandlers(){
         r.updated_at = new Date().toISOString();
         persistRecipes();
         render();
-        showToast(r.available_online ? '🛒 เปิดให้สั่งออนไลน์แล้ว' : '○ ปิดออนไลน์แล้ว');
+        showToast(r.available_online ? '🛒 เปิดออนไลน์ — กำลัง sync...' : '○ ปิดออนไลน์ — กำลัง sync...');
+        syncOnlineMenu(r);  // ← sync เข้า menu_items ทันที (OH/LIFF เห็นตรงกับ DB เลย)
       };
     });
 
