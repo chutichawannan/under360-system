@@ -3770,9 +3770,7 @@ function renderIngredientsTab(){
     ${nutriHead}<th></th>
   </tr></thead><tbody id="ingBody">`;
 
-  allList.forEach(i=>{ html += renderIngRow(i, showNutri); });
-
-  // New row
+  // New row — ย้ายขึ้นบนสุด (ใต้หัวตาราง) จะได้ไม่ต้องเลื่อนลงไปกรอกล่างสุด
   const nutriNew = showNutri ? `
     <td><input type="number" class="new-kcal nutri-col-w" placeholder="0" step="any"></td>
     <td><input type="number" class="new-protein nutri-col-w" placeholder="0" step="any"></td>
@@ -3792,6 +3790,9 @@ function renderIngredientsTab(){
     ${nutriNew}
     <td><button class="btn btn-primary btn-sm addIngBtn" data-type="ingredient">+ เพิ่ม</button></td>
   </tr>`;
+
+  // รายการวัตถุดิบเดิม (ต่อจากแถวเพิ่มด้านบน)
+  allList.forEach(i=>{ html += renderIngRow(i, showNutri); });
   html += `</tbody></table></div>`;
   html += `<datalist id="unitList">${UNIT_SUGGEST.map(u=>`<option value="${u}">`).join('')}</datalist>`;
   return html;
