@@ -1508,20 +1508,55 @@ function renderRatingDots3(value, mode, id){
 function renderLineCalcInner(l){
   if(!l.name) return '';
   const ing = findIngredient(l.name);
-  if(!ing) return `<span class="line-calc-warn">⚠ ไม่พบ "${escapeHtml(l.name)}" ในฐานข้อมูลวัตถุดิบ</span>`;
+  // ปุ่มเพิ่มเข้าลิสต์ (กรณีไม่ match เลย)
+  const addBtn = `<button type="button" class="line-add-ing" data-name="${escapeHtml(l.name)}" data-unit="${escapeHtml(l.unit||'')}" onclick="quickAddIngredient(this)" style="margin-left:6px;font-size:10.5px;padding:1px 7px;border:1px solid var(--turmeric);color:var(--turmeric);background:var(--turmeric-soft);border-radius:5px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">➕ เพิ่มเข้าลิสต์</button>`;
+  if(!ing) return `<span class="line-calc-warn">⚠ ไม่พบ "${escapeHtml(l.name)}" ในลิสต์</span>${addBtn}`;
+  // variant match (ไม่ตรงเป๊ะ — ใช้ราคาฐาน) → โชว์ชื่อฐาน + ปุ่มแยกเป็นตัวใหม่
+  const exact = normTxt(ing.name).toLowerCase()===normTxt(l.name).toLowerCase();
+  const baseHint = exact ? '' : ` <span class="line-calc-soft">· ใช้ราคาฐาน “${escapeHtml(ing.name)}”</span><button type="button" class="line-add-ing" data-name="${escapeHtml(l.name)}" data-unit="${escapeHtml(l.unit||'')}" onclick="quickAddIngredient(this)" title="ถ้าราคาต่างจาก ${escapeHtml(ing.name)} กดเพื่อแยกเป็นวัตถุดิบใหม่" style="margin-left:6px;font-size:10.5px;padding:1px 7px;border:1px solid var(--line);color:var(--ink-soft);background:var(--surface-2);border-radius:5px;cursor:pointer;font-family:'IBM Plex Sans Thai',sans-serif;">➕ แยกเป็นตัวใหม่</button>`;
   const qty = parseFloat(l.qty)||0;
-  if(!qty) return `<span class="line-calc-soft">กรอกปริมาณเพื่อคำนวณ</span>`;
+  if(!qty) return `<span class="line-calc-soft">กรอกปริมาณเพื่อคำนวณ</span>${baseHint}`;
   const cost = qty*(parseFloat(ing.cost_per_unit)||0);
   const kcal = qty*(parseFloat(ing.kcal_per_unit)||0);
   const protein = qty*(parseFloat(ing.protein_per_unit)||0);
   const carb = qty*(parseFloat(ing.carb_per_unit)||0);
   const fat = qty*(parseFloat(ing.fat_per_unit)||0);
-  return `→ ${fmtNum(kcal)} kcal · P${fmtNum(protein)} C${fmtNum(carb)} F${fmtNum(fat)} · ฿${fmtMoney(cost)}`;
+  return `→ ${fmtNum(kcal)} kcal · P${fmtNum(protein)} C${fmtNum(carb)} F${fmtNum(fat)} · ฿${fmtMoney(cost)}${baseHint}`;
 }
 
 function findIngredient(name){
   const n = normTxt(name).toLowerCase();
-  return state.ingredients.find(i=>normTxt(i.name).toLowerCase()===n);
+  if(!n) return null;
+  // 1) ตรงเป๊ะ
+  const exact = state.ingredients.find(i=>normTxt(i.name).toLowerCase()===n);
+  if(exact) return exact;
+  // 2) variant — ชื่อในสูตรขึ้นต้นด้วยชื่อวัตถุดิบฐาน เช่น "กระเทียมสับ" → "กระเทียม"
+  //    เลือก prefix ที่ยาว/เจาะจงสุด เพื่อกันจับผิด (เช่น "น้ำมันมะกอก" ไม่ไปเหมา "น้ำมัน" ถ้ามีตัวเจาะจงกว่า)
+  let best=null, bestLen=0;
+  for(const i of state.ingredients){
+    const m = normTxt(i.name).toLowerCase();
+    if(m.length>=2 && n.startsWith(m) && m.length>bestLen){ best=i; bestLen=m.length; }
+  }
+  return best;
+}
+// เพิ่มวัตถุดิบเข้าลิสต์ทันทีจากบรรทัดในสูตร (ราคา 0 ไว้ไปใส่ทีหลังที่แท็บวัตถุดิบ)
+function quickAddIngredient(btn){
+  if(!requireUser()) return;
+  const name = (btn.dataset.name||'').trim();
+  const unit = (btn.dataset.unit||'').trim() || 'g';
+  if(!name) return;
+  const exists = state.ingredients.find(i=>normTxt(i.name).toLowerCase()===normTxt(name).toLowerCase());
+  if(exists){ showToast('มีวัตถุดิบนี้อยู่แล้ว'); render(); return; }
+  state.ingredients.push({
+    id:'i'+Date.now(), name, type:'ingredient', ingCategory:'', unit,
+    market_price_kg:0, cost_per_unit:0, stock:0,
+    kcal_per_unit:0, protein_per_unit:0, carb_per_unit:0, fat_per_unit:0,
+    suppliers:[], defaultSupplier:null,
+    updated_by:state.currentUser, updated_at:new Date().toISOString(),
+  });
+  persistIngredients();
+  render();
+  showToast('✅ เพิ่ม “'+name+'” เข้าลิสต์แล้ว — ไปใส่ราคาที่แท็บวัตถุดิบ');
 }
 function linkedNameSet(recipe){
   const set = new Set();
@@ -1533,9 +1568,10 @@ function linkedNameSet(recipe){
   return set;
 }
 function computeTotals(recipe){
-  let cost=0, kcal=0, protein=0, carb=0, fat=0, allLinked=true, hasLine=false;
+  let cost=0, kcal=0, protein=0, carb=0, fat=0, allLinked=true, hasLine=false, unmatched=0;
   (recipe.parts||[]).forEach(part=>{
     (part.lines||[]).forEach(l=>{
+      if(!l.name) return;  // ข้ามบรรทัดว่าง (ไม่ให้ทำให้สูตรขึ้น "ไม่ครบ" เปล่าๆ)
       hasLine = true;
       const ing = findIngredient(l.name);
       const qty = parseFloat(l.qty)||0;
@@ -1545,10 +1581,10 @@ function computeTotals(recipe){
         protein += qty*(parseFloat(ing.protein_per_unit)||0);
         carb += qty*(parseFloat(ing.carb_per_unit)||0);
         fat += qty*(parseFloat(ing.fat_per_unit)||0);
-      } else { allLinked = false; }
+      } else { allLinked = false; unmatched++; }
     });
   });
-  return {cost,kcal,protein,carb,fat,complete: hasLine && allLinked};
+  return {cost,kcal,protein,carb,fat,complete: hasLine && allLinked, unmatched};
 }
 function computePurchasePlan(){
   const needed = {};
@@ -3483,7 +3519,7 @@ function renderRecipeCard(r, tot, pinInfo){
         <div class="quick-row${!tot.complete?' incomplete':''}${isOpen?' hidden':''}">
           ${renderRatingDots3(r.rating===undefined?2:r.rating, 'row', r.id)}
           <input type="text" class="quick-note-input" data-id="${r.id}" placeholder="โน้ตสั้นๆ..." value="${escapeHtml(r.quickNote||'')}">
-          <span class="quick-kcal">${!tot.complete ? '⚠ สูตรยังไม่ครบ' : (tot.kcal>0 ? fmtNum(tot.kcal)+' kcal' : '—')}</span>
+          <span class="quick-kcal">${!tot.complete ? '⚠ ขาด '+tot.unmatched+' วัตถุดิบ' : (tot.kcal>0 ? fmtNum(tot.kcal)+' kcal' : '—')}</span>
         </div>
       </div>
       <div class="stock-ctrl" data-id="${r.id}">
@@ -3712,7 +3748,7 @@ function renderTotalsLive(r, tot){
     <div class="t">โปรตีน<b>${fl(tot.protein)} g</b></div>
     <div class="t">คาร์บ<b>${fl(tot.carb)} g</b></div>
     <div class="t">ไขมัน<b>${fl(tot.fat)} g</b></div>
-    ${!tot.complete?'<div class="unlinked-flag" style="margin:0;">⚠ มีวัตถุดิบที่ยังไม่ตรงกับฐานข้อมูลวัตถุดิบ ตัวเลขด้านบนอาจไม่ครบ</div>':''}
+    ${!tot.complete?'<div class="unlinked-flag" style="margin:0;">⚠ มี '+tot.unmatched+' วัตถุดิบไม่ตรงลิสต์ — ต้นทุน/โภชนาการอาจไม่ครบ (กดปุ่ม ➕ ที่บรรทัดนั้นเพื่อเพิ่มเข้าลิสต์)</div>':''}
   </div>`;
 }
 
