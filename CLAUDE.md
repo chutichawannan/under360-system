@@ -155,8 +155,13 @@ Phone format    → fmtPhone() → เพิ่ม 0 นำหน้าถ้า
 Parallel read   → ห้าม Promise.all() ใน Claude artifact storage → sequential เท่านั้น
 Mobile scroll   → ใช้ inline spacer div ไม่ใช่ padding-left
 Single file     → HTML/CSS/JS ในไฟล์เดียว ไม่แยก
-Syntax check    → node --check file.js หลัง edit ทุกครั้ง
+Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit ทุกครั้ง
+                  (ไฟล์เป็น HTML ก้อนเดียว → ดึง <script> มาเช็ค ไม่ใช่ node --check ตรงๆ)
 ```
+
+> 🛠️ **Dev env:** ลง Node.js v24 LTS แล้ว (winget) — รัน syntax check / สคริปต์ได้
+> ถ้า `node` ไม่เข้า PATH ใน terminal ให้รีสตาร์ท Claude Code ครั้งเดียว
+> Allowlist: `.claude/settings.json` อนุญาต curl อ่าน Supabase REST แล้ว (ไม่ถามซ้ำ)
 
 ---
 
