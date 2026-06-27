@@ -1057,6 +1057,7 @@ const NO_CODE_RECIPES = [
   <button class="tab-btn" data-tab="ingredients">วัตถุดิบ</button>
   <button class="tab-btn" data-tab="plan">แพลนซื้อวัตถุดิบ</button>
   <button class="tab-btn" data-tab="mealplan">📅 Meal Plan</button>
+  <button class="tab-btn" data-tab="packages">📦 แพคเกจ</button>
 </div>
 <main id="app"><div class="empty">กำลังโหลดข้อมูล...</div></main>
 <button class="fab" id="fabNew">+ เมนูใหม่</button>
@@ -1175,7 +1176,10 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
   mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpCustAssign:{}, mpSelectedCid:null,
   showOnlineOnly: false,  // toggle: แสดงเฉพาะเมนูออนไลน์
-  compactMode: false      // Compact Mode: แก้สูตรรวดเร็ว
+  compactMode: false,     // Compact Mode: แก้สูตรรวดเร็ว
+  // ── v0.3.2 packages tab ──
+  packages: [], pkgItems: {}, pkgLoaded: false, pkgLoading: false,
+  openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: ''
 };
 
 // ── Storage Layer: Supabase (shared) + localStorage (private) ────────────
@@ -2223,6 +2227,369 @@ function fmtDateShort(iso){
   }catch(e){ return ''; }
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PACKAGES TAB — v0.3.2
+// ═══════════════════════════════════════════════════════════════
+
+async function loadPackages(){
+  if(state.pkgLoading) return;
+  state.pkgLoading = true;
+  render();
+  try {
+    const sb = getSB(); if(!sb) throw new Error('no sb');
+    const pkgsRes  = await sb.from('packages').select('*').order('display_order');
+    const itemsRes = await sb.from('package_items').select('*');
+    if(pkgsRes.error)  throw pkgsRes.error;
+    if(itemsRes.error) throw itemsRes.error;
+    state.packages = pkgsRes.data || [];
+    state.pkgItems = {};
+    (itemsRes.data || []).forEach(it => {
+      (state.pkgItems[it.package_id] = state.pkgItems[it.package_id] || []).push(it);
+    });
+    state.pkgLoaded = true;
+  } catch(e){
+    showToast('โหลดแพคเกจไม่สำเร็จ');
+    console.error('loadPackages error:', e);
+  }
+  state.pkgLoading = false;
+  render();
+}
+
+function renderPackagesTab(){
+  if(state.pkgLoading) return `<div class="empty" style="padding:60px 0;">⏳ กำลังโหลด...</div>`;
+  const count = state.packages.length;
+  let html = `<div class="toolbar">
+    <button class="btn btn-primary btn-sm" id="newPkgBtn">+ สร้างแพคใหม่</button>
+    <span style="font-size:12px;color:var(--ink-soft);margin-left:auto;">${count} แพคในระบบ</span>
+  </div>`;
+  if(!count) return html + `<div class="empty">ยังไม่มีแพค — กด "+ สร้างแพคใหม่" เพื่อเริ่ม</div>`;
+  state.packages.forEach(p => { html += renderPackageCard(p); });
+  return html;
+}
+
+function renderPackageCard(pkg){
+  const isOpen   = state.openPkgId === pkg.id;
+  const itemCnt  = (state.pkgItems[pkg.id] || []).length;
+  const badge    = pkg.is_active
+    ? `<span style="font-size:11px;background:var(--forest-soft);color:var(--forest);padding:2px 8px;border-radius:10px;font-weight:600;">เปิดขาย</span>`
+    : `<span style="font-size:11px;background:var(--surface-2);color:var(--ink-soft);padding:2px 8px;border-radius:10px;">ปิดอยู่</span>`;
+  let html = `<div class="card" style="margin-bottom:8px;">
+    <div class="row pkg-row-hd" data-pkg-id="${pkg.id}" style="cursor:pointer;">
+      <div style="flex:1;min-width:0;">
+        <div class="name-line">
+          <span class="code-badge">${escapeHtml(pkg.size)}</span>
+          <span class="name">${escapeHtml(pkg.name)}</span>
+          ${badge}
+        </div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-top:2px;">
+          ${pkg.qty} กล่อง · ฿${Number(pkg.base_price).toLocaleString()} · ${itemCnt} เมนูในแพค
+        </div>
+      </div>
+      <span style="font-size:12px;color:var(--turmeric);flex-shrink:0;padding:4px 0 4px 8px;">${isOpen ? '▲' : '▼ แก้ไข'}</span>
+    </div>`;
+  if(isOpen) html += renderPackageEditor(pkg);
+  html += `</div>`;
+  return html;
+}
+
+function renderPackageEditor(pkg){
+  // Init editing state only when freshly opening this package
+  if(state._pkgEditorInit !== pkg.id){
+    state.editingPkgItems = {};
+    (state.pkgItems[pkg.id] || []).forEach(it => {
+      state.editingPkgItems[it.sku] = it.extra_price;
+    });
+    state._pkgEditorInit = pkg.id;
+    state.pkgMenuSearch  = '';
+  }
+
+  const activeRecipes = (state.recipes || []).filter(r => r.status === 'active');
+  const q = (state.pkgMenuSearch || '').trim().toLowerCase();
+  const shown = q
+    ? activeRecipes.filter(r => (r.name||'').toLowerCase().includes(q) || (r.code||'').toLowerCase().includes(q))
+    : activeRecipes;
+  const checkedCount = Object.keys(state.editingPkgItems).length;
+
+  // ── Menu list rows ──
+  let rows = '';
+  shown.forEach(r => {
+    const sku      = r.code || '';
+    const isChk    = Object.prototype.hasOwnProperty.call(state.editingPkgItems, sku);
+    const ep       = isChk ? state.editingPkgItems[sku] : 0;
+    const isZero   = ep === 0;
+    const isForty  = ep === 40;
+    const isCustom = isChk && !isZero && !isForty;
+    const qBtn = (price, active, baseColor) =>
+      `<button type="button" class="pkg-q-price" data-sku="${escapeHtml(sku)}" data-price="${price}"
+        style="padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;
+               border:1px solid ${active?baseColor:'var(--line)'};border-radius:6px;
+               background:${active?baseColor:'var(--surface-2)'};
+               color:${active?'#fff':'var(--ink)'};">${price===0?'+0':'+'+price}</button>`;
+    rows += `<div class="pkg-menu-row" data-sku="${escapeHtml(sku)}"
+        data-sn="${escapeHtml((r.name||'').toLowerCase())}"
+        data-sc="${escapeHtml((r.code||'').toLowerCase())}"
+        style="display:flex;align-items:center;gap:8px;padding:8px 12px;
+               border-bottom:1px solid var(--line);${isChk?'background:var(--forest-soft);':''}">
+      <input type="checkbox" class="pkg-item-chk" data-sku="${escapeHtml(sku)}" ${isChk?'checked':''}
+        style="width:16px;height:16px;flex-shrink:0;cursor:pointer;">
+      <span class="code-badge" style="font-size:10.5px;flex-shrink:0;">${escapeHtml(sku||'—')}</span>
+      <span class="pkg-item-name" style="flex:1;min-width:0;font-size:13px;overflow:hidden;
+             text-overflow:ellipsis;white-space:nowrap;${isChk?'':'color:var(--ink-soft);'}"
+        >${escapeHtml(r.name||'')}</span>
+      <div class="pkg-price-ctrl" style="display:flex;align-items:center;gap:3px;flex-shrink:0;
+           ${isChk?'':'opacity:.3;pointer-events:none;'}">
+        ${qBtn(0,  isChk&&isZero,  'var(--forest)')}
+        ${qBtn(40, isForty,        'var(--turmeric)')}
+        <input type="number" class="pkg-custom-price" data-sku="${escapeHtml(sku)}"
+          value="${isCustom?ep:''}" placeholder="฿" min="0"
+          style="width:48px;padding:3px 5px;text-align:center;font-family:inherit;font-size:12px;
+                 border:1px solid ${isCustom?'var(--turmeric)':'var(--line)'};border-radius:6px;">
+      </div>
+    </div>`;
+  });
+
+  return `<div class="panel" style="background:#fdfbf6;">
+    <div class="grid2" style="margin-bottom:12px;">
+      <div class="field"><label>ชื่อแพค</label>
+        <input type="text" class="pkg-f-name" value="${escapeHtml(pkg.name)}" placeholder="เช่น Package S">
+      </div>
+      <div class="field"><label>Size</label>
+        <select class="pkg-f-size">
+          ${['S','M','L'].map(s=>`<option value="${s}"${pkg.size===s?' selected':''}>${s}</option>`).join('')}
+        </select>
+      </div>
+      <div class="field"><label>จำนวนกล่อง</label>
+        <input type="number" class="pkg-f-qty" value="${pkg.qty}" min="1">
+      </div>
+      <div class="field"><label>ราคาฐาน (฿)</label>
+        <input type="number" class="pkg-f-price" value="${pkg.base_price}" min="0">
+      </div>
+    </div>
+    <div class="field" style="margin-bottom:10px;"><label>คำอธิบาย</label>
+      <input type="text" class="pkg-f-desc" value="${escapeHtml(pkg.description||'')}"
+        placeholder="เช่น เลือก 9 กล่องจากเมนู online">
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:18px;cursor:pointer;">
+      <input type="checkbox" class="pkg-f-active" ${pkg.is_active?'checked':''}> เปิดขายแพคนี้
+    </label>
+    <div style="display:flex;align-items:center;justify-content:space-between;
+         margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+      <span style="font-size:13px;font-weight:600;color:var(--forest);">เมนูในแพคนี้</span>
+      <span id="pkgCheckedCount" style="font-size:12px;color:var(--ink-soft);">
+        ${checkedCount} เมนูถูกเลือก · active ทั้งหมด ${activeRecipes.length} รายการ
+      </span>
+    </div>
+    <input type="text" id="pkgMenuSearchInput" value="${escapeHtml(state.pkgMenuSearch||'')}"
+      placeholder="🔍 ค้นหาชื่อเมนูหรือโค้ด..."
+      style="width:100%;padding:9px 12px;border:1px solid var(--line);border-radius:8px;
+             font-size:13.5px;font-family:inherit;margin-bottom:8px;">
+    <div id="pkgMenuList"
+      style="max-height:380px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;background:#fff;">
+      ${rows || `<div class="empty" style="padding:20px;">ไม่พบเมนูที่ตรงกัน</div>`}
+    </div>
+    <div class="panel-actions" style="margin-top:12px;">
+      <button class="btn btn-primary pkg-save-btn" data-pkg-id="${pkg.id}">💾 บันทึก</button>
+      <button class="btn btn-ghost btn-sm" id="closePkgEditorBtn">ยกเลิก</button>
+      <button class="btn btn-warn btn-sm pkg-delete-btn" data-pkg-id="${pkg.id}"
+        style="margin-left:auto;">🗑 ลบแพค</button>
+    </div>
+  </div>`;
+}
+
+function attachPackagesHandlers(){
+  // Toggle open/close card
+  document.querySelectorAll('.pkg-row-hd').forEach(row => {
+    row.onclick = () => {
+      const pid = row.dataset.pkgId;
+      state.openPkgId      = state.openPkgId === pid ? null : pid;
+      state._pkgEditorInit = null;
+      render();
+    };
+  });
+
+  // New package
+  const newPkgBtn = document.getElementById('newPkgBtn');
+  if(newPkgBtn) newPkgBtn.onclick = async () => {
+    const sb = getSB(); if(!sb) return;
+    const { data, error } = await sb.from('packages').insert({
+      name: 'Package ใหม่', size: 'S', qty: 9, base_price: 990,
+      description: '', is_active: false, display_order: state.packages.length
+    }).select().single();
+    if(error){ showToast('สร้างแพคไม่สำเร็จ'); return; }
+    state.packages.push(data);
+    state.pkgItems[data.id] = [];
+    state.openPkgId      = data.id;
+    state._pkgEditorInit = null;
+    render();
+  };
+
+  // Close editor (cancel)
+  const closePkgEditorBtn = document.getElementById('closePkgEditorBtn');
+  if(closePkgEditorBtn) closePkgEditorBtn.onclick = () => {
+    state.openPkgId      = null;
+    state._pkgEditorInit = null;
+    render();
+  };
+
+  // Search — filter in-place, no render
+  const pkgSearch = document.getElementById('pkgMenuSearchInput');
+  if(pkgSearch){
+    pkgSearch.onclick  = e => e.stopPropagation();
+    pkgSearch.oninput  = () => {
+      const q = pkgSearch.value.trim().toLowerCase();
+      state.pkgMenuSearch = pkgSearch.value;
+      document.querySelectorAll('.pkg-menu-row').forEach(row => {
+        row.style.display = (!q || row.dataset.sn.includes(q) || row.dataset.sc.includes(q)) ? '' : 'none';
+      });
+    };
+  }
+
+  // Checkbox toggle — DOM inline, no render
+  document.querySelectorAll('.pkg-item-chk').forEach(chk => {
+    chk.onclick  = e => e.stopPropagation();
+    chk.onchange = () => {
+      const sku    = chk.dataset.sku;
+      const row    = chk.closest('.pkg-menu-row');
+      const ctrl   = row.querySelector('.pkg-price-ctrl');
+      const nameEl = row.querySelector('.pkg-item-name');
+      if(chk.checked){
+        state.editingPkgItems[sku] = 0;
+        row.style.background = 'var(--forest-soft)';
+        if(ctrl)   { ctrl.style.opacity = '1'; ctrl.style.pointerEvents = ''; }
+        if(nameEl) nameEl.style.color = '';
+        row.querySelectorAll('.pkg-q-price').forEach(b => {
+          const active = b.dataset.price === '0';
+          b.style.background  = active ? 'var(--forest)' : 'var(--surface-2)';
+          b.style.color       = active ? '#fff' : 'var(--ink)';
+          b.style.borderColor = active ? 'var(--forest)' : 'var(--line)';
+        });
+        row.querySelector('.pkg-custom-price').value = '';
+      } else {
+        delete state.editingPkgItems[sku];
+        row.style.background = '';
+        if(ctrl)   { ctrl.style.opacity = '0.3'; ctrl.style.pointerEvents = 'none'; }
+        if(nameEl) nameEl.style.color = 'var(--ink-soft)';
+        row.querySelectorAll('.pkg-q-price').forEach(b => {
+          b.style.background = 'var(--surface-2)';
+          b.style.color = 'var(--ink)';
+          b.style.borderColor = 'var(--line)';
+        });
+      }
+      const countEl = document.getElementById('pkgCheckedCount');
+      if(countEl) countEl.textContent = `${Object.keys(state.editingPkgItems).length} เมนูถูกเลือก`;
+    };
+  });
+
+  // Quick price buttons (+0 / +40) — DOM inline, no render
+  document.querySelectorAll('.pkg-q-price').forEach(btn => {
+    btn.onclick = e => {
+      e.stopPropagation();
+      const sku   = btn.dataset.sku;
+      if(!Object.prototype.hasOwnProperty.call(state.editingPkgItems, sku)) return;
+      const price = parseInt(btn.dataset.price) || 0;
+      state.editingPkgItems[sku] = price;
+      const row     = btn.closest('.pkg-menu-row');
+      const isForty = price === 40;
+      row.querySelectorAll('.pkg-q-price').forEach(b => {
+        const a  = parseInt(b.dataset.price) === price;
+        const ac = isForty ? 'var(--turmeric)' : 'var(--forest)';
+        b.style.background  = a ? ac : 'var(--surface-2)';
+        b.style.color       = a ? '#fff' : 'var(--ink)';
+        b.style.borderColor = a ? ac : 'var(--line)';
+      });
+      const ci = row.querySelector('.pkg-custom-price');
+      if(ci){ ci.value = ''; ci.style.borderColor = 'var(--line)'; }
+    };
+  });
+
+  // Custom price input — DOM inline, no render
+  document.querySelectorAll('.pkg-custom-price').forEach(inp => {
+    inp.onclick  = e => e.stopPropagation();
+    inp.oninput  = () => {
+      const sku = inp.dataset.sku;
+      if(!Object.prototype.hasOwnProperty.call(state.editingPkgItems, sku)) return;
+      const val = parseFloat(inp.value);
+      if(!isNaN(val) && val >= 0){
+        state.editingPkgItems[sku] = val;
+        const row = inp.closest('.pkg-menu-row');
+        row.querySelectorAll('.pkg-q-price').forEach(b => {
+          b.style.background = 'var(--surface-2)';
+          b.style.color = 'var(--ink)';
+          b.style.borderColor = 'var(--line)';
+        });
+        inp.style.borderColor = 'var(--turmeric)';
+      }
+    };
+  });
+
+  // Save package
+  document.querySelectorAll('.pkg-save-btn').forEach(btn => {
+    btn.onclick = async () => {
+      if(!requireUser()) return;
+      const pkgId  = btn.dataset.pkgId;
+      const panel  = btn.closest('.panel');
+      const name   = panel.querySelector('.pkg-f-name').value.trim();
+      const size   = panel.querySelector('.pkg-f-size').value;
+      const qty    = parseInt(panel.querySelector('.pkg-f-qty').value) || 1;
+      const price  = parseInt(panel.querySelector('.pkg-f-price').value) || 0;
+      const desc   = panel.querySelector('.pkg-f-desc').value.trim();
+      const active = panel.querySelector('.pkg-f-active').checked;
+      if(!name){ showToast('กรุณาใส่ชื่อแพค'); return; }
+      btn.disabled = true;
+      btn.textContent = 'กำลังบันทึก...';
+      try {
+        const sb = getSB(); if(!sb) throw new Error('no sb');
+        const { error: pkgErr } = await sb.from('packages').update({
+          name, size, qty, base_price: price,
+          description: desc, is_active: active,
+          updated_at: new Date().toISOString()
+        }).eq('id', pkgId);
+        if(pkgErr) throw pkgErr;
+        const { error: delErr } = await sb.from('package_items').delete().eq('package_id', pkgId);
+        if(delErr) throw delErr;
+        const toInsert = Object.entries(state.editingPkgItems).map(([sku, extra_price]) => ({
+          package_id: pkgId, sku, extra_price: Math.round(Number(extra_price)) || 0
+        }));
+        if(toInsert.length){
+          const { error: insErr } = await sb.from('package_items').insert(toInsert);
+          if(insErr) throw insErr;
+        }
+        const pkg = state.packages.find(p => p.id === pkgId);
+        if(pkg) Object.assign(pkg, { name, size, qty, base_price: price, description: desc, is_active: active });
+        state.pkgItems[pkgId] = toInsert;
+        state.openPkgId      = null;
+        state._pkgEditorInit = null;
+        render();
+        showToast(`บันทึก "${name}" แล้ว ✓`);
+      } catch(e){
+        showToast('บันทึกไม่สำเร็จ: ' + (e.message || ''));
+        btn.disabled = false;
+        btn.textContent = '💾 บันทึก';
+      }
+    };
+  });
+
+  // Delete package
+  document.querySelectorAll('.pkg-delete-btn').forEach(btn => {
+    btn.onclick = () => {
+      if(!requireUser()) return;
+      const pkgId = btn.dataset.pkgId;
+      const pkg   = state.packages.find(p => p.id === pkgId);
+      showConfirm(`ลบแพค "${pkg?.name||''}" ถาวร? เมนูในแพคทั้งหมดจะถูกลบด้วย`, async () => {
+        const sb = getSB(); if(!sb) return;
+        const { error } = await sb.from('packages').delete().eq('id', pkgId);
+        if(error){ showToast('ลบไม่สำเร็จ'); return; }
+        state.packages       = state.packages.filter(p => p.id !== pkgId);
+        delete state.pkgItems[pkgId];
+        state.openPkgId      = null;
+        state._pkgEditorInit = null;
+        render();
+        showToast('ลบแพคแล้ว');
+      });
+    };
+  });
+}
+
 async function init(){
   // ── 4 SEQUENTIAL READS (was 9, was 16) ────────────────────────────────────
   // Large mutable data (separate keys so individual persists stay cheap)
@@ -2698,6 +3065,7 @@ function _doRender(force){
   else if(state.tab==='ingredients') app.innerHTML = renderIngredientsTab();
   else if(state.tab==='plan') app.innerHTML = renderPlanTab();
   else if(state.tab==='mealplan') app.innerHTML = renderMealPlanTab();
+  else if(state.tab==='packages') app.innerHTML = renderPackagesTab();
   app.innerHTML += `<datalist id="ingList">${state.ingredients.map(i=>`<option value="${escapeHtml(i.name)}">`).join('')}</datalist>`;
   if(state.showCategoryManager){ app.innerHTML += renderCategoryManager(); }
   if(state.showSupplierManager){ app.innerHTML += renderSupplierManager(); }
@@ -2705,6 +3073,7 @@ function _doRender(force){
   attachHandlers();
   attachWhoamiHandlers();
   if(state.tab==='mealplan') attachMealPlanHandlers();
+  if(state.tab==='packages') attachPackagesHandlers();
   if(state.showCategoryManager) attachCategoryManagerHandlers();
   if(state.showSupplierManager) attachSupplierManagerHandlers();
   if(state.showNameGate) attachNameGateModalHandlers();
@@ -3517,7 +3886,7 @@ function movePinned(id, dir){
 }
 
 function attachHandlers(){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.search=''; state.openId=null; render(); });
+  document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.search=''; state.openId=null; render(); if(state.tab==='packages'&&!state.pkgLoaded&&!state.pkgLoading) loadPackages(); });
 
   // Close all floating pickers on outside click
   document.onclick = ()=>{

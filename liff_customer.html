@@ -577,6 +577,56 @@ body{background:#fff!important}
 </div>
 
 <!-- ══════════════════════════════════════
+     SCREEN: PACKAGE MENU SELECTION (v0.3.2)
+══════════════════════════════════════ -->
+<div class="scr" id="s-pkg-select">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showScr('s-menu')">←</button>
+    <div class="hdr-title" id="pkg-hdr-title">เลือกเมนูในแพค</div>
+  </div>
+  <div class="scroll pb-btn">
+    <div id="pkg-progress"></div>
+    <div style="padding:8px 14px 4px;">
+      <input type="text" id="pkg-search-inp" placeholder="🔍 ค้นหาชื่อเมนู..."
+        oninput="pkgSearch=this.value;renderPkgSelect();"
+        style="width:100%;padding:10px 14px;border:1.5px solid #E5E5E1;border-radius:10px;
+               font-size:14px;font-family:inherit;background:#fff;outline:none;">
+    </div>
+    <div id="pkg-mlist" style="background:#fff;border-radius:12px;margin:8px 14px 14px;
+         overflow:hidden;border:1px solid #E5E5E1;"></div>
+  </div>
+  <div style="position:sticky;bottom:0;background:#fff;padding:12px 14px;
+       border-top:1px solid #E5E5E1;box-shadow:0 -2px 12px rgba(0,0,0,.08);">
+    <button id="pkg-confirm-btn" onclick="addPkgToCart()" disabled
+      style="width:100%;padding:16px;border-radius:14px;font-size:16px;font-weight:800;
+             background:#D98C2B;color:#fff;opacity:.5;letter-spacing:-.2px;">
+      เลือกเมนูก่อน
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: MEAL PLAN PICKER (v0.3.3)
+══════════════════════════════════════ -->
+<div class="scr" id="s-meal-plan">
+  <div class="hdr">
+    <button class="hdr-back" onclick="showScr('s-menu')">←</button>
+    <div class="hdr-title">สมัคร Meal Plan</div>
+  </div>
+  <div class="scroll pb-btn">
+    <div id="mp-picker-body" style="padding:16px 14px;"></div>
+  </div>
+  <div style="position:sticky;bottom:0;background:#fff;padding:12px 14px;
+       border-top:1px solid #E5E5E1;box-shadow:0 -2px 12px rgba(0,0,0,.08);">
+    <button id="mp-confirm-btn" onclick="addMealPlanToCart()" disabled
+      style="width:100%;padding:16px;border-radius:14px;font-size:16px;font-weight:800;
+             background:#1F4D3A;color:#fff;opacity:.5;">
+      เลือกประเภทและขนาดก่อน
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
      SCREEN: CART + DELIVERY SELECTION
 ══════════════════════════════════════ -->
 <div class="scr" id="s-cart">
@@ -758,6 +808,16 @@ const CFG = {
 // ══════════════════════════════════════
 let sb, lineProfile, customer;
 let menuItems = [], cats = [];
+// ── v0.3.2 Package state ──
+let packages = [], pkgItems = {}, currentPkg = null, pkgSelection = {}, pkgSearch = '';
+// ── v0.3.3 Meal Plan state ──
+let mpType = '', mpSetId = '', mpRequest = '';
+// ── Meal Plan config (แก้ราคาที่นี่ก่อน launch) ──
+const MP_SETS = [
+  { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1499,  price_lc:1399  },
+  { id:'weekly',  label:'1 สัปดาห์',   boxes:21, price_hp:3990,  price_lc:3790  },
+  { id:'monthly', label:'1 เดือน',     boxes:84, price_hp:13990, price_lc:13490 },
+];
 let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
 let selDate = null, selSlot = null;
 let activeCat = null;
@@ -823,6 +883,300 @@ function confirmPreorder(){
   saveCart(); updateCartUI();
   closeStockPopup();
   toast('จองผลิตพิเศษแล้ว ✓');
+}
+
+
+// ══════════════════════════════════════
+// 📦 PACKAGE FLOW — v0.3.2
+// ══════════════════════════════════════
+
+async function loadPackagesIfNeeded() {
+  if (packages.length) return;
+  try {
+    const { data: pkgs, error: e1 } = await sb.from('packages').select('*').eq('is_active', true).order('display_order');
+    const { data: pitems, error: e2 } = await sb.from('package_items').select('*');
+    if (!e1) packages = pkgs || [];
+    pkgItems = {};
+    (pitems || []).forEach(it => { (pkgItems[it.package_id] = pkgItems[it.package_id] || []).push(it); });
+  } catch(e) { console.warn('loadPackages failed', e); }
+  // pkg-band removed — homeGrid cards are entry point
+}
+
+function renderPkgBand() {
+  const el = document.getElementById('pkg-band');
+  if (!el) return;
+  if (!packages.length) { el.innerHTML = ''; return; }
+  el.innerHTML =
+    '<div style="padding:10px 14px 4px;font-size:13px;font-weight:700;color:#1F4D3A;">📦 แพคเกจประหยัด</div>' +
+    '<div style="display:flex;gap:10px;padding:0 14px 14px;overflow-x:auto;-webkit-overflow-scrolling:touch;">' +
+    packages.map(p => `
+      <div onclick="openPackage('${p.id}')" style="
+          flex-shrink:0;background:#fff;border-radius:14px;padding:14px 16px;min-width:150px;
+          border:2px solid #D98C2B;cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,.08);">
+        <div style="font-size:11px;font-weight:700;color:#D98C2B;letter-spacing:.6px;margin-bottom:3px;">PACKAGE ${h(p.size)}</div>
+        <div style="font-size:22px;font-weight:800;color:#1A1A1A;line-height:1.1;">฿${Number(p.base_price).toLocaleString()}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:3px;">${p.qty} กล่อง · เลือกเองได้</div>
+        <div style="margin-top:10px;background:#D98C2B;color:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;text-align:center;">เลือกเมนู →</div>
+      </div>`
+    ).join('') +
+    '</div>';
+}
+
+function openPackage(pkgId) {
+  currentPkg = packages.find(p => p.id === pkgId);
+  if (!currentPkg) return;
+  pkgSelection = {};
+  pkgSearch = '';
+  const inp = document.getElementById('pkg-search-inp');
+  if (inp) inp.value = '';
+  document.getElementById('pkg-hdr-title').textContent = currentPkg.name;
+  renderPkgSelect();
+  showScr('s-pkg-select');
+}
+
+function renderPkgSelect() {
+  if (!currentPkg) return;
+  const slots = pkgItems[currentPkg.id] || [];
+  const total = currentPkg.qty;
+  const selected = Object.keys(pkgSelection).length;
+
+  // Progress
+  const progEl = document.getElementById('pkg-progress');
+  if (progEl) {
+    const pct = total > 0 ? Math.min(Math.round(selected / total * 100), 100) : 0;
+    const done = selected >= total;
+    progEl.innerHTML = `
+      <div style="padding:12px 14px 8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:14px;font-weight:700;color:${done?'#1F4D3A':'#1A1A1A'};">
+            เลือกแล้ว ${selected}/${total} กล่อง ${done?'✅':''}
+          </span>
+          ${selected > 0 ? `<span style="font-size:14px;font-weight:800;color:#D98C2B;">฿${pkgCurrentPrice().toLocaleString()}</span>` : ''}
+        </div>
+        <div style="height:6px;background:#E5E5E1;border-radius:3px;overflow:hidden;">
+          <div style="height:100%;width:${pct}%;background:${done?'#1F4D3A':'#D98C2B'};border-radius:3px;transition:width .2s;"></div>
+        </div>
+        ${pkgPremiumTotal() > 0 ? `<div style="font-size:11px;color:#6B7280;margin-top:4px;">ราคาฐาน ฿${currentPkg.base_price} + premium ฿${pkgPremiumTotal()}</div>` : ''}
+      </div>`;
+  }
+
+  // Menu list
+  const listEl = document.getElementById('pkg-mlist');
+  if (!listEl) return;
+  const q = (pkgSearch || '').trim().toLowerCase();
+  let rows = '';
+  slots.forEach(slot => {
+    const mi = menuItems.find(m => m.code === slot.sku);
+    if (!mi) return;
+    if (q && !(mi.name||''). toLowerCase().includes(q) && !(mi.code||'').toLowerCase().includes(q)) return;
+    const isChk = Object.prototype.hasOwnProperty.call(pkgSelection, slot.sku);
+    const isPremium = slot.extra_price > 0;
+    const img = mi.image_url
+      ? `<img src="${mi.image_url}" onerror="imgFallback(this)" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
+      : `<div style="width:48px;height:48px;border-radius:8px;background:#E8F0EC;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🍱</div>`;
+    rows += `
+      <div onclick="togglePkgItem('${slot.sku}',${slot.extra_price})"
+        style="display:flex;align-items:center;gap:10px;padding:10px 14px;
+               background:${isChk?'#EBF3EF':'#fff'};border-bottom:1px solid #F0F0EE;cursor:pointer;">
+        ${img}
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:13.5px;font-weight:${isChk?'700':'500'};color:${isChk?'#1F4D3A':'#1A1A1A'};
+               overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h(mi.name)}</div>
+          <div style="font-size:11.5px;margin-top:2px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+            ${mi.code?`<span style="font-family:monospace;font-size:10.5px;background:#F0F0EE;padding:1px 5px;border-radius:4px;color:#6B7280;">${h(mi.code)}</span>`:''}
+            ${isPremium?`<span style="color:#D97706;font-weight:700;">+฿${slot.extra_price} Premium</span>`:''}
+            ${mi.calories?`<span style="color:#6B7280;">${mi.calories} kcal</span>`:''}
+          </div>
+        </div>
+        <div style="width:22px;height:22px;border-radius:50%;flex-shrink:0;
+             border:2px solid ${isChk?'#1F4D3A':'#D1D5DB'};
+             background:${isChk?'#1F4D3A':'transparent'};
+             display:flex;align-items:center;justify-content:center;">
+          ${isChk?'<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>':''}
+        </div>
+      </div>`;
+  });
+  if (!rows) rows = '<div style="padding:40px 20px;text-align:center;color:#6B7280;font-size:14px;">ไม่พบเมนูที่ตรงกับการค้นหา</div>';
+  listEl.innerHTML = rows;
+
+  // Confirm button
+  const btn = document.getElementById('pkg-confirm-btn');
+  if (btn) {
+    const done = selected === total;
+    btn.disabled = !done;
+    btn.style.opacity = done ? '1' : '0.5';
+    btn.textContent = done
+      ? `✅ ยืนยัน ${total} กล่อง — ฿${pkgCurrentPrice().toLocaleString()}`
+      : `เลือกอีก ${total - selected} กล่อง (${selected}/${total})`;
+  }
+}
+
+function pkgCurrentPrice() {
+  return currentPkg ? currentPkg.base_price + pkgPremiumTotal() : 0;
+}
+function pkgPremiumTotal() {
+  return Object.values(pkgSelection).reduce((s, ep) => s + ep, 0);
+}
+
+function togglePkgItem(sku, extraPrice) {
+  if (Object.prototype.hasOwnProperty.call(pkgSelection, sku)) {
+    delete pkgSelection[sku];
+  } else {
+    if (Object.keys(pkgSelection).length >= (currentPkg ? currentPkg.qty : 9)) {
+      toast(`เลือกได้สูงสุด ${currentPkg.qty} กล่อง`);
+      return;
+    }
+    pkgSelection[sku] = extraPrice || 0;
+  }
+  renderPkgSelect();
+}
+
+function addPkgToCart() {
+  if (!currentPkg) return;
+  const selected = Object.keys(pkgSelection).length;
+  if (selected !== currentPkg.qty) { toast(`กรุณาเลือกให้ครบ ${currentPkg.qty} กล่อง`); return; }
+  const items = Object.entries(pkgSelection).map(([sku, extra_price]) => {
+    const mi = menuItems.find(m => m.code === sku);
+    return { sku, name: mi ? mi.name : sku, extra_price };
+  });
+  // Remove existing package of same ID before re-adding
+  cart = cart.filter(c => c.id !== 'pkg_' + currentPkg.id);
+  cart.push({
+    id:         'pkg_' + currentPkg.id,
+    type:       'package',
+    package_id: currentPkg.id,
+    name:       currentPkg.name,
+    code:       'PKG-' + currentPkg.size,
+    base_price: currentPkg.base_price,
+    price:      pkgCurrentPrice(),
+    qty:        1,
+    items
+  });
+  saveCart(); updateCartUI();
+  toast(`เพิ่ม ${currentPkg.name} เข้าตะกร้าแล้ว ✓`);
+  showScr('s-menu');
+}
+
+function removePkgFromCart(id) {
+  cart = cart.filter(c => c.id !== id);
+  saveCart(); updateCartUI(); renderCart();
+}
+
+
+// ══════════════════════════════════════
+// 🥗 MEAL PLAN FLOW — v0.3.3
+// ══════════════════════════════════════
+
+function openMealPlanPicker() {
+  mpType = ''; mpSetId = ''; mpRequest = '';
+  renderMealPlanPicker();
+  showScr('s-meal-plan');
+}
+
+function renderMealPlanPicker() {
+  const el = document.getElementById('mp-picker-body');
+  if (!el) return;
+  const typeHtml = ['hp','lc'].map(t => {
+    const cfg = t==='hp'
+      ? {label:'High Protein',emoji:'💪',desc:'เพิ่มกล้ามเนื้อ · สูตร HP',color:'#1F4D3A'}
+      : {label:'Low Carb',    emoji:'🥗',desc:'ลดน้ำหนัก · สูตร LC',     color:'#2D6B53'};
+    const on = mpType===t;
+    return `<div onclick="selectMPType('${t}')" style="
+        flex:1;border-radius:14px;padding:16px;text-align:center;cursor:pointer;
+        border:2px solid ${on?cfg.color:'#E5E5E1'};
+        background:${on?cfg.color:'#fff'};color:${on?'#fff':'#1A1A1A'};">
+      <div style="font-size:28px;margin-bottom:6px;">${cfg.emoji}</div>
+      <div style="font-size:15px;font-weight:800;">${cfg.label}</div>
+      <div style="font-size:11.5px;margin-top:3px;opacity:.75;">${cfg.desc}</div>
+    </div>`;
+  }).join('');
+  const setsHtml = MP_SETS.map(s => {
+    const price = mpType==='lc' ? s.price_lc : s.price_hp;
+    const on = mpSetId===s.id;
+    return `<div onclick="selectMPSet('${s.id}')" style="
+        display:flex;align-items:center;justify-content:space-between;
+        padding:14px 16px;border-radius:12px;margin-bottom:8px;cursor:pointer;
+        border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
+      <div>
+        <div style="font-size:15px;font-weight:700;color:${on?'#1F4D3A':'#1A1A1A'};">${s.label}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px;">${s.boxes} กล่อง</div>
+      </div>
+      <div style="font-size:18px;font-weight:800;color:${on?'#1F4D3A':'#C9573F'};">
+        ${mpType ? '฿'+price.toLocaleString() : '—'}
+      </div>
+    </div>`;
+  }).join('');
+  el.innerHTML = `
+    <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">1. เลือกประเภท</div>
+    <div style="display:flex;gap:10px;margin-bottom:20px;">${typeHtml}</div>
+    <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">2. เลือกขนาด</div>
+    ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
+    ${mpType&&mpSetId ? `
+    <div style="margin-top:16px;">
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:6px;">3. Request เมนู (ไม่บังคับ)</div>
+      <input type="text" id="mp-request-inp" value="${h(mpRequest)}"
+        placeholder="เช่น ไม่ชอบผักชี ชอบเนื้อไก่..."
+        oninput="mpRequest=this.value"
+        style="width:100%;padding:12px 14px;border:1.5px solid #E5E5E1;border-radius:10px;font-size:14px;font-family:inherit;">
+      <div style="font-size:11px;color:#6B7280;margin-top:4px;">ทีมแอดมินจะพิจารณาตามความเป็นไปได้</div>
+    </div>` : ''}`;
+  updateMPConfirmBtn();
+}
+
+function selectMPType(t) { mpType=t; mpSetId=''; renderMealPlanPicker(); }
+function selectMPSet(id)  { mpSetId=id; renderMealPlanPicker(); }
+
+function updateMPConfirmBtn() {
+  const btn = document.getElementById('mp-confirm-btn');
+  if (!btn) return;
+  const ready = !!(mpType && mpSetId);
+  btn.disabled = !ready;
+  btn.style.opacity = ready ? '1' : '0.5';
+  if (ready) {
+    const s = MP_SETS.find(x=>x.id===mpSetId);
+    const price = mpType==='lc' ? s.price_lc : s.price_hp;
+    btn.textContent = '✅ '+(mpType==='hp'?'High Protein':'Low Carb')+' · '+s.label+' — ฿'+price.toLocaleString();
+  } else {
+    btn.textContent = 'เลือกประเภทและขนาดก่อน';
+  }
+}
+
+function addMealPlanToCart() {
+  if (!mpType||!mpSetId) return;
+  const s = MP_SETS.find(x=>x.id===mpSetId);
+  const price = mpType==='lc' ? s.price_lc : s.price_hp;
+  const cartId = 'mp_'+mpType+'_'+mpSetId;
+  cart = cart.filter(c=>c.id!==cartId);
+  cart.push({
+    id:cartId, type:'meal_plan', mp_type:mpType, mp_set:mpSetId,
+    name:'Meal Plan '+(mpType==='hp'?'HP':'LC')+' · '+s.label+' ('+s.boxes+' กล่อง)',
+    code:'MP-'+mpType.toUpperCase()+'-'+mpSetId.slice(0,1).toUpperCase(),
+    price, qty:1, request:mpRequest.trim()
+  });
+  saveCart(); updateCartUI();
+  toast('เพิ่ม Meal Plan เข้าตะกร้าแล้ว ✓');
+  showScr('s-menu');
+}
+
+
+// ══════════════════════════════════════
+// 📅 PRE-ORDER / NEXT-WEEK HELPERS — v0.3.5
+// ══════════════════════════════════════
+function isNextWeekItem(item) {
+  if (!item || !item.available_from) return false;
+  const today = new Date(); today.setHours(0,0,0,0);
+  return new Date(item.available_from) > today;
+}
+
+function cartWeekType() {
+  // 'next' | 'current' | null
+  for (const c of cart) {
+    if (c.type === 'package' || c.type === 'meal_plan') continue;
+    const item = menuItems.find(m => m.id === c.id);
+    if (!item) continue;
+    return isNextWeekItem(item) ? 'next' : 'current';
+  }
+  return null;
 }
 
 // ══════════════════════════════════════
@@ -906,6 +1260,7 @@ async function init() {
     renderMenu();
     updateCartUI();
     loadHomeLayout();
+    loadPackagesIfNeeded(); // v0.3.2
   } catch(e) { console.warn('Render error', e); }
   showScr('s-menu');
 }
@@ -1033,8 +1388,9 @@ function renderMenu() {
                     || /^HP|^LC/i.test(item.code||'');
     const stock = isMealPlan ? 999 : (item.stock_quantity != null ? item.stock_quantity : 999);
     const remaining = stock - qty;
-    const isOut = !isMealPlan && stock <= 0;
-    const isLow = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
+    const isOut     = !isMealPlan && stock <= 0;
+    const isLow     = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
+    const isNextWk  = isNextWeekItem(item);
     const img = item.image_url
       ? `<img class="mi-v2-photo" src="${item.image_url}" onerror="imgFallback(this)">`
       : `<div class="mi-v2-ph">🍱</div>`;
@@ -1044,6 +1400,8 @@ function renderMenu() {
       ? `<span style="font-size:10px;font-weight:700;color:#92400E;background:#FEF3C7;padding:2px 7px;border-radius:8px">เหลือ ${remaining} ชิ้นสุดท้าย</span>`
       : isMealPlan
       ? `<span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 7px;border-radius:8px">🥗 Meal Plan</span>`
+      : isNextWk
+      ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 อาทิตย์หน้า</span>`
       : '';
     const tags = (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'')
       + (item.protein?`<span class="mi-v2-pro">โปรตีน ${item.protein}g</span>`:'')
@@ -1056,7 +1414,7 @@ function renderMenu() {
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
-    return `<div class="mi-v2${isOut?' out-of-stock':''}" onclick="openProduct('${item.id}')" style="${isOut?'opacity:.6':''}">` +
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" onclick="openProduct('${item.id}')" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
       img +
       `<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
       `<div class="mi-v2-right"><div class="mi-v2-price">฿${item.price}</div>${ctrl}</div></div>`;
@@ -1075,6 +1433,11 @@ function addItem(id) {
   const curQty = ex ? ex.qty : 0;
   if (stock <= 0) { toast('สินค้าหมดแล้ว'); return; }
   if (curQty >= stock) { toast('ใส่ตะกร้าครบจำนวนที่มีในสต็อกแล้ว (' + stock + ')'); return; }
+  // Week-type check: block mixed cart (A)
+  const _isNext = isNextWeekItem(item);
+  const _cwt   = cartWeekType();
+  if (_cwt === 'current' && _isNext)  { toast('เมนูนี้ส่งอาทิตย์หน้า — กรุณาสั่งแยกออเดอร์'); return; }
+  if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูอาทิตย์หน้าอยู่ — กรุณาสั่งแยกออเดอร์'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
   saveCart(); renderMenu(); updateCartUI();
@@ -1121,8 +1484,49 @@ function renderCart() {
     el.innerHTML = '<div class="empty"><div class="empty-ico">🛒</div><div class="empty-txt">ตะกร้าว่างเปล่า<br><small>กลับไปเลือกเมนูก่อนนะ</small></div></div>';
     return;
   }
-  const rows = cart.map(c => `
-    <div class="citem">
+  // Next-week notice banner
+  const _cwt = cartWeekType();
+  const weekBanner = _cwt === 'next'
+    ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1D4ED8;">
+        📅 <b>ออเดอร์นี้ส่งอาทิตย์หน้า</b> — ระบบจะเลือกวันส่งให้อัตโนมัติ
+       </div>` : '';
+  el.insertAdjacentHTML('afterbegin', weekBanner);
+  const rows = cart.map(c => {
+    if (c.type === 'meal_plan') {
+      const typeLabel = c.mp_type === 'hp' ? 'High Protein 💪' : 'Low Carb 🥗';
+      const setObj = MP_SETS.find(x => x.id === c.mp_set) || {};
+      return `<div class="citem" style="border-left:4px solid #1F4D3A;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div class="citem-name" style="color:#1F4D3A;">🥗 ${h(c.name)}</div>
+          <div style="font-size:11.5px;color:#6B7280;margin:4px 0;">
+            ${typeLabel} · ${setObj.boxes||''} กล่อง
+            ${c.request ? '<br>Request: '+h(c.request) : ''}
+          </div>
+          <div class="citem-sub" style="color:#1F4D3A;font-weight:700;">฿${c.price.toLocaleString()}</div>
+        </div>
+        <button onclick="cart=cart.filter(x=>x.id!=='${c.id}');saveCart();renderCart();updateCartUI();"
+          style="background:#FDF0ED;color:#C9573F;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;flex-shrink:0;">
+          ลบ
+        </button>
+      </div>`;
+    }
+    if (c.type === 'package') {
+      const ilist = (c.items || []).map(it =>
+        `<div style="font-size:11.5px;color:#6B7280;line-height:1.8;">· ${h(it.name)}${it.extra_price>0?` <span style="color:#D97706;font-weight:700;">+฿${it.extra_price}</span>`:''}</div>`
+      ).join('');
+      return `<div class="citem" style="border-left:4px solid #D98C2B;align-items:flex-start;flex-wrap:wrap;gap:8px;">
+        <div style="flex:1;min-width:0;">
+          <div class="citem-name" style="color:#7c4f10;">📦 ${h(c.name)}</div>
+          <div style="margin:6px 0 4px;">${ilist}</div>
+          <div class="citem-sub" style="color:#D98C2B;font-weight:700;">฿${c.price.toLocaleString()}</div>
+        </div>
+        <button onclick="removePkgFromCart('${c.id}')"
+          style="background:#FDF0ED;color:#C9573F;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;flex-shrink:0;">
+          เปลี่ยน
+        </button>
+      </div>`;
+    }
+    return `<div class="citem">
       <div style="flex:1">
         <div class="citem-name">${h(c.name)}</div>
         <div class="citem-sub">฿${c.price} × ${c.qty}</div>
@@ -1133,8 +1537,8 @@ function renderCart() {
         <button class="qb plus" onclick="chgQty('${c.id}',1)">+</button>
       </div>
       <div class="citem-tot">฿${(c.price*c.qty).toLocaleString()}</div>
-    </div>
-  `).join('');
+    </div>`;
+  }).join('');
   el.innerHTML = rows + `
     <div class="cart-total-row">
       <div class="cart-total-l">ยอดรวมสินค้า</div>
@@ -1336,22 +1740,35 @@ async function submitOrder() {
       delivery_type:    selSlot==='express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
       time_slot:        selSlot==='express' ? expressTime : selSlot,
       slip_image:       slipBase64 ? true : false,
+      order_type:       cart.some(c=>c.type==='package')?'package':cart.some(c=>c.type==='meal_plan')?'meal_plan':'individual',
+      delivery_week:    cartWeekType()==='next' ? 'next' : 'current',
       notes:            (document.getElementById('notes-input').value || '').trim()
     }).select().single();
     // payment_method stored locally only (add column via SQL if needed: ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT)
     if (oErr) throw oErr;
 
-    // 2. Create order items
-    const items = cart.map(c => ({
-      order_id:     ord.id,
-      menu_item_id: c.id,
-      menu_name:    c.name,
-      menu_code:    c.code,
-      quantity:     c.qty,
-      unit_price:   c.price,
-      subtotal:     c.price * c.qty,
-      notes:        ''
-    }));
+    // 2. Create order items (expand package items into individual rows)
+    const items = [];
+    cart.forEach(c => {
+      if (c.type === 'package') {
+        (c.items || []).forEach(it => {
+          const mi = menuItems.find(m => m.code === it.sku);
+          items.push({ order_id: ord.id, menu_item_id: mi ? mi.id : null,
+            menu_name: it.name, menu_code: it.sku,
+            quantity: 1, unit_price: it.extra_price, subtotal: it.extra_price,
+            notes: 'pkg:' + c.package_id });
+        });
+      } else if (c.type === 'meal_plan') {
+        items.push({ order_id: ord.id, menu_item_id: null,
+          menu_name: c.name, menu_code: c.code,
+          quantity: 1, unit_price: c.price, subtotal: c.price,
+          notes: 'meal_plan:'+c.mp_type+':'+c.mp_set+(c.request?':req='+c.request:'') });
+      } else {
+        items.push({ order_id: ord.id, menu_item_id: c.id,
+          menu_name: c.name, menu_code: c.code,
+          quantity: c.qty, unit_price: c.price, subtotal: c.price * c.qty, notes: '' });
+      }
+    });
     const { error: iErr } = await sb.from('order_items').insert(items);
     if (iErr) throw iErr;
 
@@ -1764,8 +2181,12 @@ function renderHomeGrid() {
 
 function colCardClick(el) {
   var cat = el.dataset.cat || '';
-  if (cat === '__anchor__') {
-    // anchor scroll to product list
+  if (cat.startsWith('__pkg:')) {
+    var pkgId = cat.slice(6, -2);
+    openPackage(pkgId);
+  } else if (cat === '__meal_plan__') {
+    openMealPlanPicker();
+  } else if (cat === '__anchor__') {
     var tgt = document.getElementById('ctabsInner');
     if (tgt) tgt.scrollIntoView({behavior:'smooth'});
   } else if (cat) {

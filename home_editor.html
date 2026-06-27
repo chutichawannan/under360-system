@@ -235,19 +235,26 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 const COLORS=['#1F4D3A','#2D6B53','#3D8B6E','#5B4E2E','#7C3D1E','#2563EB','#6D28D9','#BE185D'];
 const CAT_LABELS_STORED = {}; // loaded from Supabase on init
 
-let sb, cards=[], menuItems=[], activeCat=null, activeCardIdx=null;
+let sb, cards=[], menuItems=[], hePackages=[], activeCat=null, activeCardIdx=null;
 let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
 
 // ── INIT ──
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
-  await Promise.all([loadCards(), loadMenuItems()]);
+  await Promise.all([loadCards(), loadMenuItems(), loadHEPackages()]);
   try{ const {data:td}=await sb.from('kitchen_data').select('value').eq('key','home_section_title').maybeSingle(); if(td?.value) document.getElementById('sectionTitle').value=td.value; }catch(e){}
   setupDragScroll();
   startAutoScroll();
 };
 
 // ── DATA ──
+async function loadHEPackages(){
+  try{
+    const {data} = await sb.from('packages').select('id,name,size,qty,base_price').eq('is_active',true).order('display_order');
+    hePackages = data||[];
+  }catch(e){ hePackages=[]; }
+}
+
 async function loadCards(){
   try{
     const {data} = await sb.from('home_layout').select('*').order('sort_order');
@@ -463,6 +470,8 @@ function renderEditor(){
         <select id="c-cat" onchange="liveUpdate()">
           <option value="">— ไม่ลิ้งไปไหน —</option>
           <option value="__anchor__"${c.link_cat==='__anchor__'?' selected':''}>⬇ เลื่อนลงไปที่เมนู</option>
+          <option value="__meal_plan__"${c.link_cat==='__meal_plan__'?' selected':''}>🥗 Meal Plan (HP / LC)</option>
+          ${hePackages.map(p=>`<option value="__pkg:${p.id}__"${c.link_cat==='__pkg:'+p.id+'__'?' selected':''}> 📦 ${p.name} (${p.qty} กล่อง ฿${Number(p.base_price).toLocaleString()})</option>`).join('')}
           ${catOptions}
         </select>
       </div>
