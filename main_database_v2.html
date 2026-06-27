@@ -3903,15 +3903,15 @@ function attachHandlers(){
     const id = 'r'+Date.now();
     if(!requireUser()) return;
     const defaultCats = state.categoryFilter.length ? [...state.categoryFilter] : [];
-    // Auto-pin + ใส่ category จาก tab ที่กำลังดูอยู่
+    // ใส่ category จาก tab ที่กำลังดูอยู่ (ไม่ auto-pin — pin เป็น manual ล้วน นัทกดเอง)
     const autoCat = (state.activeCatTab && state.activeCatTab !== '__all__' && state.activeCatTab !== '__ptt__')
       ? state.activeCatTab : (defaultCats[0] || '');
     const newR = {id, code:'', name:'', categories: autoCat ? [autoCat] : defaultCats,
       category: autoCat, // v0.4 category field
       status:'active', parts:[{label:'', instructions:'', lines:[{name:'',qty:'',unit:'g'}]}],
       notes:'', quickNote:'', rating:2,
-      pinned: true,
-      pinOrder: -(Date.now()),  // ← ค่าลบ = เล็กที่สุด = sort ขึ้นบนสุดเสมอ
+      pinned: false,
+      pinOrder: Date.now(),  // ไม่ pin → ค่านี้ใช้ตอนนัทกด pin เองภายหลัง
       pinSubCode:null, stock:0, available_online:false,
       description:'', image_urls:[], image_url:'', he_group:'', updated_at:null};
     state.recipes.unshift(newR);
