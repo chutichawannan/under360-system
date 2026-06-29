@@ -126,7 +126,8 @@ input,select,textarea{font-family:inherit;}
 .move-btn{flex:1;padding:9px;border-radius:8px;border:1px solid var(--brd);background:#fff;font-size:13px;font-weight:600;color:var(--ink2);}
 
 /* ─── CATEGORY SECTION ─── */
-.cat-scroll{overflow-x:auto;display:flex;align-items:center;gap:6px;padding:10px 14px;scrollbar-width:none;background:#fff;border-bottom:0.5px solid var(--brd);}
+.cat-scroll{display:flex;flex-wrap:wrap;align-items:center;gap:8px;padding:10px 14px;background:#fff;border-bottom:0.5px solid var(--brd);}
+.cat-rename-input[readonly]{cursor:pointer;}
 .cat-scroll::-webkit-scrollbar{display:none;}
 .cat-btn-he{padding:7px 14px;border-radius:20px;background:#F0F0F0;color:var(--ink2);font-size:13px;font-weight:600;white-space:nowrap;flex-shrink:0;border:1px solid transparent;}
 .cat-btn-he.on{background:var(--g);color:#fff;}
@@ -737,23 +738,28 @@ function renderCatSection(){
     const label=getCatLabel(cat);
     const cnt=menuItems.filter(m=>m.category===cat).length;
     const isHidden = hiddenCats.includes(cat);
-    return `<button class="cat-btn-he${activeCat===cat?' on':''}" draggable="true" data-cat="${cat}"
+    return `<button class="cat-btn-he${activeCat===cat?' on':''}" data-cat="${cat}" draggable="false"
       ondragstart="catDragStart(event,'${cat}')" ondragover="event.preventDefault()" ondrop="catDrop(event,'${cat}')"
-      title="key: ${cat} · ลากเพื่อเรียง" onclick="selectCatHe('${cat}')"
+      ondragend="this.setAttribute('draggable','false')"
+      title="key: ${cat}" onclick="selectCatHe('${cat}')"
       style="${isHidden?'opacity:.45':''}">
+      <span class="cat-grip" title="ลากเพื่อเรียงลำดับ"
+        onmousedown="this.closest('.cat-btn-he').setAttribute('draggable','true')"
+        onclick="event.stopPropagation()"
+        style="cursor:grab;margin-right:4px;color:#bbb;font-size:13px">⠿</span>
       <span class="cat-eye" onclick="event.stopPropagation();toggleHideCat('${cat}')"
         title="${isHidden?'ซ่อนจากลูกค้าอยู่ — กดเพื่อโชว์':'กดเพื่อซ่อนจากลูกค้า'}"
         style="cursor:pointer;margin-right:3px;font-size:12px">${isHidden?'🚫':'👁'}</span>
-      <input class="cat-rename-input" value="${esc(label)}" title="key: ${cat}"
-        draggable="false" onmousedown="event.stopPropagation()"
-        onclick="event.stopPropagation()"
+      <input class="cat-rename-input" value="${esc(label)}" title="ดับเบิลคลิกเพื่อแก้ชื่อ" readonly
+        onclick="if(!this.readOnly)event.stopPropagation()"
+        ondblclick="this.readOnly=false;this.focus();this.select();event.stopPropagation()"
         onchange="renameCat('${cat}',this.value)"
-        onblur="renameCat('${cat}',this.value)"
+        onblur="this.readOnly=true;renameCat('${cat}',this.value)"
         style="color:inherit">
       <span style="opacity:.7;font-size:11px;margin-left:3px">${cnt}</span>
     </button>`;
   }).join('');
-  document.getElementById('catKeyHint').textContent = `key จริง: "${activeCat}" · คลิกชื่อ rename (ลิ้ง DB) · ลากเรียง · 👁 กดซ่อนจากลูกค้า`;
+  document.getElementById('catKeyHint').textContent = `⠿ ลากเรียง · ดับเบิลคลิกชื่อเพื่อแก้ (ลิ้ง DB) · 👁 ซ่อนจากลูกค้า · key: "${activeCat}"`;
   renderCatItems();
 }
 
