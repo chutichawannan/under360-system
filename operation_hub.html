@@ -312,9 +312,10 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-chip.clickable{cursor:pointer;border-style:dashed;}
 .menu-chip.clickable:hover{opacity:.75;transform:scale(.98);}
 .menu-count-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);flex-shrink:0;}
-.assign-chip-full{display:block;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:3px 0;font-size:11px;}
+.assign-chip-full{display:block;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:0;font-size:11px;}
 .acf-top{display:flex;align-items:center;gap:4px;}
 .acf-name{font-size:10px;opacity:.85;line-height:1.25;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
+.assign-grid{display:grid;grid-auto-flow:column;grid-template-rows:repeat(3,auto);grid-auto-columns:minmax(120px,max-content);gap:5px;justify-content:start;align-items:start;}
 .assign-chip-full.lc{background:#D1FAE5;}
 .assign-chip-full.hp{background:#DBEAFE;}
 .rm-chip{cursor:pointer;color:#DC2626;font-weight:700;font-size:12px;padding:0 2px;}
@@ -1022,8 +1023,8 @@ function renderCustomerCell(cid){
     td.innerHTML=h;
     return;
   }
-  // Full view — รหัส 1 บรรทัด + ชื่อเมนูไม่เกิน 2 บรรทัด (รวมไม่เกิน 3 บรรทัด)
-  var h="";
+  // Full view — เมนูสูงไม่เกิน 3 แถว (เกินไหลไปคอลัมน์ถัดไป) · รหัส + ชื่อ ≤2 บรรทัด
+  var h="<div class='assign-grid'>";
   arr.forEach(function(e){
     var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:""};
     h+="<div class='assign-chip-full "+m.type+"'>";
@@ -1036,6 +1037,7 @@ function renderCustomerCell(cid){
     h+=" onchange='saveNote(\""+cid+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+cid+"\",\""+e.code+"\")'>";
     h+="</div>";
   });
+  h+="</div>";
   if(total<7)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/7</span>";
   else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/7</span>";
   td.innerHTML=h;
