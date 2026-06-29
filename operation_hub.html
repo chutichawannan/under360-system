@@ -312,9 +312,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-chip.clickable{cursor:pointer;border-style:dashed;}
 .menu-chip.clickable:hover{opacity:.75;transform:scale(.98);}
 .menu-count-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);flex-shrink:0;}
-.assign-chip-full{display:flex;align-items:center;gap:4px;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:2px;font-size:11px;flex-wrap:wrap;}
-.assign-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:start;}
-.assign-grid3 .assign-chip-full{margin:0;align-items:flex-start;}
+.assign-chip-full{display:block;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:3px 0;font-size:11px;}
+.acf-top{display:flex;align-items:center;gap:4px;}
+.acf-name{font-size:10px;opacity:.85;line-height:1.25;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;word-break:break-word;}
 .assign-chip-full.lc{background:#D1FAE5;}
 .assign-chip-full.hp{background:#DBEAFE;}
 .rm-chip{cursor:pointer;color:#DC2626;font-weight:700;font-size:12px;padding:0 2px;}
@@ -1015,22 +1015,20 @@ function renderCustomerCell(cid){
     td.innerHTML=h;
     return;
   }
-  // Full view — เมนูเรียง 3 คอลัมน์
-  var h="<div class='assign-grid3'>";
+  // Full view — รหัส 1 บรรทัด + ชื่อเมนูไม่เกิน 2 บรรทัด (รวมไม่เกิน 3 บรรทัด)
+  var h="";
   arr.forEach(function(e){
     var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:""};
     h+="<div class='assign-chip-full "+m.type+"'>";
-    h+="<span class='rm-chip' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='ลบ'>×</span>";
-    h+=" <b>"+e.code+"</b>";
-    h+=" <span style='font-size:10px;opacity:.8'>"+m.name.slice(0,24)+"</span>";
-    if(e.qty>1)h+=" <span class='qty-badge'>×"+e.qty+"</span>";
-    h+=" <span class='note-btn' onclick='toggleNote(\""+cid+"\",\""+e.code+"\")'>···</span>";
-    if(e.note)h+=" <span style='font-size:10px;color:#F59E0B'>📌"+e.note+"</span>";
-    h+="<input id='note-"+cid+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+e.note+"'";
+    h+="<div class='acf-top'><span class='rm-chip' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='ลบ'>×</span><b>"+e.code+"</b>";
+    if(e.qty>1)h+="<span class='qty-badge'>×"+e.qty+"</span>";
+    h+="<span class='note-btn' onclick='toggleNote(\""+cid+"\",\""+e.code+"\")'>···</span></div>";
+    h+="<div class='acf-name'>"+esc2(m.name||"")+"</div>";
+    if(e.note)h+="<div style='font-size:10px;color:#F59E0B'>📌"+esc2(e.note)+"</div>";
+    h+="<input id='note-"+cid+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+esc2(e.note||"")+"'";
     h+=" onchange='saveNote(\""+cid+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+cid+"\",\""+e.code+"\")'>";
     h+="</div>";
   });
-  h+="</div>";
   if(total<7)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/7</span>";
   else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/7</span>";
   td.innerHTML=h;
@@ -1056,7 +1054,7 @@ function _buildPlanTable(){
   var head=document.getElementById("planHead");
   var body=document.getElementById("planBody");
   if(!head||!body)return;
-  var hh="<th style='width:110px'>ลูกค้า</th><th style='width:44px;text-align:center'>คอร์ส</th>";
+  var hh="<th style='width:120px'>ลูกค้า</th>";
   cols.forEach(function(d,i){hh+="<th>"+fmtD(d)+(i===0?" (วันนี้)":"")+"</th>";});
   head.innerHTML=hh;
   var rows="";
@@ -1066,11 +1064,12 @@ function _buildPlanTable(){
     for(var i=1;i<cols.length;i++)otherCols+="<td style='color:#D1D5DB;font-size:11px;text-align:center'>—</td>";
     var isSel=selectedCid===c.id;
     rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='selectCustomer(\""+c.id+"\")' style='cursor:pointer'>";
-    rows+="<td style='width:108px;max-width:108px;vertical-align:top;padding-top:10px'>";
+    rows+="<td style='width:120px;max-width:120px;vertical-align:top;padding-top:10px'>";
     rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
     rows+="<div style='font-size:10px;color:#6B7280'>"+c.boxes+" กล่อง</div>";
+    rows+="<div style='margin-top:3px'>"+chip+"</div>";
     if(c.pref)rows+="<span class='pref-tag'>"+c.pref+"</span>";
-    rows+="</td><td style='text-align:center;vertical-align:top;padding-top:10px'>"+chip+"</td>";
+    rows+="</td>";
     rows+="<td class='assign-cell' data-cid='"+c.id+"'></td>";
     rows+=otherCols+"</tr>";
   });
