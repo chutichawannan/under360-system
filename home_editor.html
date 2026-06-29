@@ -234,9 +234,11 @@ const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const COLORS=['#1F4D3A','#2D6B53','#3D8B6E','#5B4E2E','#7C3D1E','#2563EB','#6D28D9','#BE185D'];
 const CAT_LABELS_STORED = {}; // loaded from Supabase on init
+const DB_CAT_NAMES = {};      // key -> ชื่อหมวดจากหน้า DB (source of truth — ลิ้งกับ DB)
 
 let sb, cards=[], menuItems=[], hePackages=[], activeCat=null, activeCardIdx=null;
 let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
+let dbCats=[], catOrder=[], catDragKey=null;
 
 // ── INIT ──
 window.onload = async function(){
@@ -280,12 +282,42 @@ async function loadMenuItems(){
     const {data} = await sb.from('menu_items').select('id,name,code,price,calories,category,is_available,sort_order').eq('is_available',true).order('sort_order');
     menuItems = data||[];
   }catch(e){ menuItems=[]; }
-  // Load custom labels from Supabase
+  // Load custom labels (legacy override) from Supabase
   try{
     const {data:ld} = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
     if(ld?.value){ Object.assign(CAT_LABELS_STORED, ld.value); }
   }catch(e){}
+  await loadDbCategories();  // ← ชื่อหมวดจากหน้า DB (ลิ้งกัน)
+  await loadCatOrder();      // ← ลำดับ chip ที่เคยลากไว้
   renderCatSection();
+}
+
+// ดึงลิสต์หมวดจากหน้า DB (kitchen_data 'categories' = [{key,name}]) → ใช้เป็นชื่อหลัก
+async function loadDbCategories(){
+  try{
+    const {data} = await sb.from('kitchen_data').select('value').eq('key','categories').maybeSingle();
+    dbCats = (data && Array.isArray(data.value)) ? data.value : [];
+    Object.keys(DB_CAT_NAMES).forEach(k=>delete DB_CAT_NAMES[k]);
+    dbCats.forEach(c=>{ if(c && c.key) DB_CAT_NAMES[c.key]= c.name || c.key; });
+  }catch(e){ dbCats=[]; }
+}
+
+// ลำดับ chip ที่ลากเรียงไว้
+async function loadCatOrder(){
+  try{
+    const {data} = await sb.from('kitchen_data').select('value').eq('key','he_cat_order').maybeSingle();
+    catOrder = (data && Array.isArray(data.value)) ? data.value : [];
+  }catch(e){ catOrder=[]; }
+}
+let catOrderSaveTimer=null;
+function saveCatOrder(){
+  clearTimeout(catOrderSaveTimer);
+  catOrderSaveTimer=setTimeout(async()=>{
+    try{
+      await sb.from('kitchen_data').upsert({key:'he_cat_order',value:catOrder,updated_at:new Date().toISOString()},{onConflict:'key'});
+      showToast('✅ บันทึกลำดับหมวดแล้ว','ok');
+    }catch(e){ showToast('⚠️ บันทึกลำดับไม่ได้','err'); }
+  },600);
 }
 
 // ── RENDER COLLAGE ──
@@ -681,8 +713,11 @@ function renderCatSection(){
   bar.innerHTML=cats.map(cat=>{
     const label=getCatLabel(cat);
     const cnt=menuItems.filter(m=>m.category===cat).length;
-    return `<button class="cat-btn-he${activeCat===cat?' on':''}" title="key: ${cat}" onclick="selectCatHe('${cat}')">
+    return `<button class="cat-btn-he${activeCat===cat?' on':''}" draggable="true" data-cat="${cat}"
+      ondragstart="catDragStart(event,'${cat}')" ondragover="event.preventDefault()" ondrop="catDrop(event,'${cat}')"
+      title="key: ${cat} · ลากเพื่อเรียง" onclick="selectCatHe('${cat}')">
       <input class="cat-rename-input" value="${esc(label)}" title="key: ${cat}"
+        draggable="false" onmousedown="event.stopPropagation()"
         onclick="event.stopPropagation()"
         onchange="renameCat('${cat}',this.value)"
         onblur="renameCat('${cat}',this.value)"
@@ -690,18 +725,27 @@ function renderCatSection(){
       <span style="opacity:.7;font-size:11px;margin-left:3px">${cnt}</span>
     </button>`;
   }).join('');
-  document.getElementById('catKeyHint').textContent = `key จริง: "${activeCat}" · ดับเบิลคลิกชื่อเพื่อ rename`;
+  document.getElementById('catKeyHint').textContent = `key จริง: "${activeCat}" · คลิกชื่อเพื่อ rename (ลิ้งกับ DB) · ลาก chip เพื่อเรียงลำดับ`;
   renderCatItems();
 }
 
 function getCats(){
   const seen={},cats=[];
   menuItems.forEach(m=>{ if(m.category&&!seen[m.category]){seen[m.category]=1;cats.push(m.category);} });
+  // เรียงตามลำดับที่ลากไว้ (ตัวที่ยังไม่เคยจัดไปต่อท้าย)
+  if(catOrder.length){
+    cats.sort((a,b)=>{
+      let ia=catOrder.indexOf(a), ib=catOrder.indexOf(b);
+      if(ia<0) ia=9999; if(ib<0) ib=9999;
+      return ia-ib;
+    });
+  }
   return cats;
 }
 
+// ชื่อหมวด: DB เป็นหลัก (ลิ้งกัน) → override เก่า → hardcode → key ดิบ
 function getCatLabel(cat){
-  return CAT_LABELS_STORED[cat] || CAT_LABELS[cat] || cat;
+  return DB_CAT_NAMES[cat] || CAT_LABELS_STORED[cat] || CAT_LABELS[cat] || cat;
 }
 const CAT_LABELS={
   meal_hp:'🥩 HP Plan',meal_lc:'🥗 LC Plan',
@@ -711,15 +755,33 @@ const CAT_LABELS={
 
 let renameSaveTimer=null;
 function renameCat(key,newName){
-  CAT_LABELS_STORED[key]=newName;
-  // Debounced save to Supabase
+  newName=(newName||'').trim();
+  DB_CAT_NAMES[key]=newName;
+  // อัปเดตลิสต์หมวดของ DB (source of truth) แล้วเขียนกลับ → หน้า DB เห็นตรงกัน
+  const found = dbCats.find(c=>c && c.key===key);
+  if(found) found.name=newName; else dbCats.push({key,name:newName});
   clearTimeout(renameSaveTimer);
   renameSaveTimer=setTimeout(async()=>{
     try{
-      await sb.from('kitchen_data').upsert({key:'category_labels',value:{...CAT_LABELS_STORED},updated_at:new Date().toISOString()},{onConflict:'key'});
-      showToast('✅ บันทึกชื่อหมวดแล้ว','ok');
+      await sb.from('kitchen_data').upsert({key:'categories',value:dbCats,updated_at:new Date().toISOString()},{onConflict:'key'});
+      showToast('✅ บันทึกชื่อหมวดแล้ว (ลิ้งกับ DB)','ok');
     }catch(e){ showToast('⚠️ บันทึกไม่ได้','err'); }
   },1200);
+}
+
+// ── ลากเรียง chip หมวด ──
+function catDragStart(e,cat){ catDragKey=cat; try{ e.dataTransfer.effectAllowed='move'; }catch(_){} }
+function catDrop(e,targetCat){
+  e.preventDefault();
+  if(!catDragKey || catDragKey===targetCat){ catDragKey=null; return; }
+  const cats=getCats();
+  const from=cats.indexOf(catDragKey), to=cats.indexOf(targetCat);
+  if(from<0||to<0){ catDragKey=null; return; }
+  cats.splice(to,0,cats.splice(from,1)[0]);
+  catOrder=cats.slice();
+  catDragKey=null;
+  saveCatOrder();
+  renderCatSection();
 }
 
 function selectCatHe(cat){
