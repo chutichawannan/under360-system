@@ -313,6 +313,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-chip.clickable:hover{opacity:.75;transform:scale(.98);}
 .menu-count-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);flex-shrink:0;}
 .assign-chip-full{display:flex;align-items:center;gap:4px;background:#F3F4F6;border-radius:7px;padding:4px 7px;margin:2px;font-size:11px;flex-wrap:wrap;}
+.assign-grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;align-items:start;}
+.assign-grid3 .assign-chip-full{margin:0;align-items:flex-start;}
 .assign-chip-full.lc{background:#D1FAE5;}
 .assign-chip-full.hp{background:#DBEAFE;}
 .rm-chip{cursor:pointer;color:#DC2626;font-weight:700;font-size:12px;padding:0 2px;}
@@ -1013,8 +1015,8 @@ function renderCustomerCell(cid){
     td.innerHTML=h;
     return;
   }
-  // Full view
-  var h="";
+  // Full view — เมนูเรียง 3 คอลัมน์
+  var h="<div class='assign-grid3'>";
   arr.forEach(function(e){
     var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:""};
     h+="<div class='assign-chip-full "+m.type+"'>";
@@ -1028,6 +1030,7 @@ function renderCustomerCell(cid){
     h+=" onchange='saveNote(\""+cid+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+cid+"\",\""+e.code+"\")'>";
     h+="</div>";
   });
+  h+="</div>";
   if(total<7)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/7</span>";
   else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/7</span>";
   td.innerHTML=h;
