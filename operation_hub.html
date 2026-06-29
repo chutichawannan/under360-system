@@ -299,7 +299,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .assign-chip.req{background:#FEF3C7;color:#92400E;border:1px dashed #D97706;}
 .assign-chip .rm-chip{cursor:pointer;opacity:.5;font-size:12px;margin-left:2px;}
 .assign-chip .rm-chip:hover{opacity:1;}
-.pref-tag{font-size:10px;color:var(--red);background:var(--red-soft);padding:1px 5px;border-radius:4px;white-space:nowrap;display:inline-block;margin-top:2px;}
+.pref-tag{font-size:10px;color:var(--red);background:var(--red-soft);padding:1px 5px;border-radius:4px;white-space:normal;display:block;max-width:104px;line-height:1.25;margin-top:3px;}
 .drop-zone{min-height:36px;padding:4px;border-radius:8px;border:1.5px dashed var(--ink-xsoft);transition:.15s;}
 .drop-zone.over{border-color:var(--forest);background:var(--forest-soft);}
 
@@ -1020,7 +1020,7 @@ function renderCustomerCell(cid){
     h+="<div class='assign-chip-full "+m.type+"'>";
     h+="<span class='rm-chip' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='ลบ'>×</span>";
     h+=" <b>"+e.code+"</b>";
-    h+=" <span style='font-size:10px;opacity:.8'>"+m.name.slice(0,14)+"</span>";
+    h+=" <span style='font-size:10px;opacity:.8'>"+m.name.slice(0,24)+"</span>";
     if(e.qty>1)h+=" <span class='qty-badge'>×"+e.qty+"</span>";
     h+=" <span class='note-btn' onclick='toggleNote(\""+cid+"\",\""+e.code+"\")'>···</span>";
     if(e.note)h+=" <span style='font-size:10px;color:#F59E0B'>📌"+e.note+"</span>";
@@ -1063,8 +1063,8 @@ function _buildPlanTable(){
     for(var i=1;i<cols.length;i++)otherCols+="<td style='color:#D1D5DB;font-size:11px;text-align:center'>—</td>";
     var isSel=selectedCid===c.id;
     rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='selectCustomer(\""+c.id+"\")' style='cursor:pointer'>";
-    rows+="<td style='white-space:nowrap;vertical-align:top;padding-top:10px'>";
-    rows+="<div style='font-weight:600;font-size:12px"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
+    rows+="<td style='width:108px;max-width:108px;vertical-align:top;padding-top:10px'>";
+    rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
     rows+="<div style='font-size:10px;color:#6B7280'>"+c.boxes+" กล่อง</div>";
     if(c.pref)rows+="<span class='pref-tag'>"+c.pref+"</span>";
     rows+="</td><td style='text-align:center;vertical-align:top;padding-top:10px'>"+chip+"</td>";
