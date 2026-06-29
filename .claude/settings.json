@@ -6,7 +6,13 @@
       "Bash(curl -s \"$URL/*)",
       "Bash(node scripts/check-html-js.js *)",
       "Bash(git add *)",
-      "Bash(git commit -m *)"
+      "Bash(git commit -m *)",
+      "Bash(curl -sL \"https://docs.google.com/spreadsheets/*)",
+      "Bash(curl -s \"https://docs.google.com/spreadsheets/*)",
+      "Bash(curl -sL -G \"https://docs.google.com/spreadsheets/*)",
+      "Bash(curl -s -G \"https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/*)",
+      "Bash(curl -sL -G \"https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/*)",
+      "Bash(URL=\"https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1\"*)"
     ]
   }
 }

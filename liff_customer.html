@@ -1232,15 +1232,25 @@ async function init() {
     activeCat = cats[0] || '';
 
   } catch(e) { console.warn('Menu load failed', e); menuItems = []; cats = []; }
-  // Load custom category labels (from HE rename)
-  // Load section title
+  // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}], คอลัมน์ data)
   try {
-    const { data: td } = await sb.from('kitchen_data').select('value').eq('key','home_section_title').maybeSingle();
-    if (td?.value) window._homeSectionTitle = td.value;
+    const { data: cfg } = await sb.from('kitchen_data').select('data').eq('key','appConfig').maybeSingle();
+    const dbCats = (cfg?.data && Array.isArray(cfg.data.categories)) ? cfg.data.categories : [];
+    dbCats.forEach(c => { if (c && c.key) customCatLabels[c.key] = c.label || c.name || c.key; });
+    localStorage.setItem('u360_cat_labels', JSON.stringify(customCatLabels));
   } catch(e) {}
+  // ซ่อนหมวดที่ HE ตั้ง hide
   try {
-    const { data: ld } = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
-    if (ld?.value) { customCatLabels = {...ld.value}; localStorage.setItem('u360_cat_labels', JSON.stringify(customCatLabels)); }
+    const { data: hd } = await sb.from('kitchen_data').select('data').eq('key','he_cat_hidden').maybeSingle();
+    if (hd?.data && Array.isArray(hd.data) && hd.data.length) {
+      cats = cats.filter(c => !hd.data.includes(c));
+      if (!cats.includes(activeCat)) activeCat = cats[0] || '';
+    }
+  } catch(e) {}
+  // Section title
+  try {
+    const { data: td } = await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
+    if (td?.data) window._homeSectionTitle = td.data;
   } catch(e) {}
 
   // Update profile button
