@@ -244,7 +244,7 @@ let dbCats=[], catOrder=[], catDragKey=null;
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
   await Promise.all([loadCards(), loadMenuItems(), loadHEPackages()]);
-  try{ const {data:td}=await sb.from('kitchen_data').select('value').eq('key','home_section_title').maybeSingle(); if(td?.value) document.getElementById('sectionTitle').value=td.value; }catch(e){}
+  try{ const {data:td}=await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle(); if(td?.data) document.getElementById('sectionTitle').value=td.data; }catch(e){}
   setupDragScroll();
   startAutoScroll();
 };
@@ -284,29 +284,30 @@ async function loadMenuItems(){
   }catch(e){ menuItems=[]; }
   // Load custom labels (legacy override) from Supabase
   try{
-    const {data:ld} = await sb.from('kitchen_data').select('value').eq('key','category_labels').maybeSingle();
-    if(ld?.value){ Object.assign(CAT_LABELS_STORED, ld.value); }
+    const {data:ld} = await sb.from('kitchen_data').select('data').eq('key','category_labels').maybeSingle();
+    if(ld?.data){ Object.assign(CAT_LABELS_STORED, ld.data); }
   }catch(e){}
   await loadDbCategories();  // ← ชื่อหมวดจากหน้า DB (ลิ้งกัน)
   await loadCatOrder();      // ← ลำดับ chip ที่เคยลากไว้
   renderCatSection();
 }
 
-// ดึงลิสต์หมวดจากหน้า DB (kitchen_data 'categories' = [{key,name}]) → ใช้เป็นชื่อหลัก
+// ดึงชื่อหมวดจาก DB จริง: appConfig.categories = [{key,label}] (คอลัมน์ data) → source of truth
 async function loadDbCategories(){
   try{
-    const {data} = await sb.from('kitchen_data').select('value').eq('key','categories').maybeSingle();
-    dbCats = (data && Array.isArray(data.value)) ? data.value : [];
+    const {data} = await sb.from('kitchen_data').select('data').eq('key','appConfig').maybeSingle();
+    const cats = (data && data.data && Array.isArray(data.data.categories)) ? data.data.categories : [];
+    dbCats = cats;
     Object.keys(DB_CAT_NAMES).forEach(k=>delete DB_CAT_NAMES[k]);
-    dbCats.forEach(c=>{ if(c && c.key) DB_CAT_NAMES[c.key]= c.name || c.key; });
+    cats.forEach(c=>{ if(c && c.key) DB_CAT_NAMES[c.key]= c.label || c.name || c.key; });
   }catch(e){ dbCats=[]; }
 }
 
-// ลำดับ chip ที่ลากเรียงไว้
+// ลำดับ chip ที่ลากเรียงไว้ (คอลัมน์ data)
 async function loadCatOrder(){
   try{
-    const {data} = await sb.from('kitchen_data').select('value').eq('key','he_cat_order').maybeSingle();
-    catOrder = (data && Array.isArray(data.value)) ? data.value : [];
+    const {data} = await sb.from('kitchen_data').select('data').eq('key','he_cat_order').maybeSingle();
+    catOrder = (data && Array.isArray(data.data)) ? data.data : [];
   }catch(e){ catOrder=[]; }
 }
 let catOrderSaveTimer=null;
@@ -314,7 +315,7 @@ function saveCatOrder(){
   clearTimeout(catOrderSaveTimer);
   catOrderSaveTimer=setTimeout(async()=>{
     try{
-      await sb.from('kitchen_data').upsert({key:'he_cat_order',value:catOrder,updated_at:new Date().toISOString()},{onConflict:'key'});
+      await sb.from('kitchen_data').upsert({key:'he_cat_order',data:catOrder,updated_at:new Date().toISOString()},{onConflict:'key'});
       showToast('✅ บันทึกลำดับหมวดแล้ว','ok');
     }catch(e){ showToast('⚠️ บันทึกลำดับไม่ได้','err'); }
   },600);
@@ -757,13 +758,16 @@ let renameSaveTimer=null;
 function renameCat(key,newName){
   newName=(newName||'').trim();
   DB_CAT_NAMES[key]=newName;
-  // อัปเดตลิสต์หมวดของ DB (source of truth) แล้วเขียนกลับ → หน้า DB เห็นตรงกัน
-  const found = dbCats.find(c=>c && c.key===key);
-  if(found) found.name=newName; else dbCats.push({key,name:newName});
   clearTimeout(renameSaveTimer);
   renameSaveTimer=setTimeout(async()=>{
     try{
-      await sb.from('kitchen_data').upsert({key:'categories',value:dbCats,updated_at:new Date().toISOString()},{onConflict:'key'});
+      // โหลด appConfig สดๆ → แก้ label หมวดนั้น → เขียนกลับทั้งก้อน (กันทับ planItems/mealPlan/ฯลฯ)
+      const {data} = await sb.from('kitchen_data').select('data').eq('key','appConfig').maybeSingle();
+      const cfg = (data && data.data) ? data.data : {};
+      if(!Array.isArray(cfg.categories)) cfg.categories=[];
+      const found = cfg.categories.find(c=>c && c.key===key);
+      if(found) found.label=newName; else cfg.categories.push({key,label:newName});
+      await sb.from('kitchen_data').upsert({key:'appConfig',data:cfg,updated_at:new Date().toISOString()},{onConflict:'key'});
       showToast('✅ บันทึกชื่อหมวดแล้ว (ลิ้งกับ DB)','ok');
     }catch(e){ showToast('⚠️ บันทึกไม่ได้','err'); }
   },1200);
@@ -831,7 +835,7 @@ function setupItemDrag(){
 // ── SAVE ──
 async function saveSectionTitle(){
   const title = document.getElementById('sectionTitle').value;
-  try{ await sb.from('kitchen_data').upsert({key:'home_section_title',value:title,updated_at:new Date().toISOString()},{onConflict:'key'}); }catch(e){}
+  try{ await sb.from('kitchen_data').upsert({key:'home_section_title',data:title,updated_at:new Date().toISOString()},{onConflict:'key'}); }catch(e){}
 }
 
 async function saveAll(){
