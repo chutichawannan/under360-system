@@ -475,7 +475,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <!-- LEFT: Menu List -->
         <div style="width:150px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:10px;position:sticky;top:0;">
           <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูวันนี้</div>
-          <div id="selectHint">👆 คลิกชื่อลูกค้าก่อน</div>
+          <div id="selectHint">👆 คลิกชื่อลูกค้า (เลือกได้หลายคน) แล้วกดเมนู</div>
           <div id="menuListDrag"></div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
             <select id="addMenuSel2" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-bottom:6px;">
@@ -698,7 +698,7 @@ let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
 let planDays=1,planView="full";
 // customerAssign: {cid: [{code, qty, note}]}
 let customerAssign={};
-let selectedCid=null;
+let selectedCids=[];
 
 function toISO(d){return d.toISOString().split("T")[0];}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
@@ -893,32 +893,39 @@ function getEntry(cid,code){return (customerAssign[cid]||[]).find(function(e){re
 function totalQty(cid){return (customerAssign[cid]||[]).reduce(function(s,e){return s+e.qty;},0);}
 
 // ── CLICK INTERACTION ────────────────────────────────────
-function selectCustomer(cid){
-  selectedCid=(selectedCid===cid)?null:cid;
+function togglePlanCust(cid){
+  var i=selectedCids.indexOf(cid);
+  if(i>=0) selectedCids.splice(i,1); else selectedCids.push(cid);
   document.querySelectorAll(".cust-row").forEach(function(r){
-    r.classList.toggle("selected", r.dataset.cid===selectedCid);
+    r.classList.toggle("selected", selectedCids.indexOf(r.dataset.cid)>=0);
   });
   renderLeftPanel();
+  var hint=document.getElementById("selectHint");
+  if(hint){
+    if(selectedCids.length){ hint.textContent="เลือก "+selectedCids.length+" คน — กดเมนูใส่ให้ทุกคนพร้อมกัน"; hint.style.opacity="1"; }
+    else { hint.style.opacity="0"; }
+  }
 }
 function clickMenu(code){
-  if(!selectedCid){
-    // ถ้าไม่ได้เลือกลูกค้า ให้ flash แจ้งเตือน
+  if(!selectedCids.length){
     var hint=document.getElementById("selectHint");
-    if(hint){hint.style.opacity="1";setTimeout(function(){hint.style.opacity="0";},1500);}
+    if(hint){hint.textContent="👆 คลิกชื่อลูกค้าก่อน (เลือกได้หลายคน)";hint.style.opacity="1";setTimeout(function(){if(!selectedCids.length&&hint)hint.style.opacity="0";},1600);}
     return;
   }
-  var arr=customerAssign[selectedCid]||[];
-  var entry=arr.find(function(e){return e.code===code;});
-  if(entry){
-    if(totalQty(selectedCid)>=7){return;} // max 7
-    entry.qty++;
-  } else {
-    if(totalQty(selectedCid)>=7){return;}
-    arr.push({code:code,qty:1,note:""});
-    customerAssign[selectedCid]=arr;
-  }
-  renderCustomerCell(selectedCid);
+  var added=0, full=0;
+  selectedCids.forEach(function(cid){
+    if(totalQty(cid)>=7){ full++; return; } // เต็ม 7 แล้ว ข้าม
+    var arr=customerAssign[cid]||[];
+    var entry=arr.find(function(e){return e.code===code;});
+    if(entry){ entry.qty++; }
+    else { entry={code:code,qty:1,note:""}; arr.push(entry); customerAssign[cid]=arr; }
+    saveAssignment(cid,code,entry.qty,entry.note);
+    renderCustomerCell(cid);
+    added++;
+  });
   renderLeftPanel();
+  var hint=document.getElementById("selectHint");
+  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" คน"+(full?(" (เต็มแล้ว "+full+" คน)"):""); hint.style.opacity="1"; }
 }
 function removeMenuEntry(cid,code){
   customerAssign[cid]=(customerAssign[cid]||[]).filter(function(e){return e.code!==code;});
@@ -977,7 +984,7 @@ function renderLeftPanel(){
   todayPlan.forEach(function(code){
     var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
     var cnt=countMenu(code);
-    var active=selectedCid&&!getEntry(selectedCid,code)&&totalQty(selectedCid)<7;
+    var active=selectedCids.length&&selectedCids.some(function(cid){return totalQty(cid)<7;});
     h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
     h+="<span style='font-family:var(--mono);font-size:10px;font-weight:700'>"+code+"</span>";
     h+=" <span style='font-size:10px;opacity:.8;flex:1'>"+m.name.slice(0,16)+"</span>";
@@ -1062,8 +1069,8 @@ function _buildPlanTable(){
     var chip="<span class='customer-tag "+(c.type==="lc"?"tag-lc":"tag-hp")+"' title='"+c.course+"' style='cursor:default;font-size:11px'>"+c.type.toUpperCase()+"</span>";
     var otherCols="";
     for(var i=1;i<cols.length;i++)otherCols+="<td style='color:#D1D5DB;font-size:11px;text-align:center'>—</td>";
-    var isSel=selectedCid===c.id;
-    rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='selectCustomer(\""+c.id+"\")' style='cursor:pointer'>";
+    var isSel=selectedCids.indexOf(c.id)>=0;
+    rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='togglePlanCust(\""+c.id+"\")' style='cursor:pointer'>";
     rows+="<td style='width:120px;max-width:120px;vertical-align:top;padding-top:10px'>";
     rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
     rows+="<div style='font-size:10px;color:#6B7280'>"+c.boxes+" กล่อง</div>";
