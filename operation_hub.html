@@ -929,7 +929,15 @@ function clickMenu(code){
   if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" คน"+(full?(" (เต็มแล้ว "+full+" คน)"):""); hint.style.opacity="1"; }
 }
 function removeMenuEntry(cid,code){
-  customerAssign[cid]=(customerAssign[cid]||[]).filter(function(e){return e.code!==code;});
+  var arr=customerAssign[cid]||[];
+  var entry=arr.find(function(e){return e.code===code;});
+  if(entry && entry.qty>1){
+    entry.qty--;                       // ×2/×3 → ลดทีละ 1 กล่อง
+    saveAssignment(cid,code,entry.qty,entry.note);
+  } else {
+    customerAssign[cid]=arr.filter(function(e){return e.code!==code;});  // เหลือ 1 → เอาออก
+    deleteAssignment(cid,code);
+  }
   renderCustomerCell(cid);
   renderLeftPanel();
 }
