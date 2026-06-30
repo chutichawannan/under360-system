@@ -811,7 +811,9 @@ let menuItems = [], cats = [];
 // ── v0.3.2 Package state ──
 let packages = [], pkgItems = {}, currentPkg = null, pkgSelection = {}, pkgSearch = '';
 // ── v0.3.3 Meal Plan state ──
-let mpType = '', mpSetId = '', mpRequest = '';
+let mpType = '', mpSetId = '', mpRequest = '', mpReqSel = [];
+// mock — ของจริงแอดมิน assign จากลิสต์เมนูใน DB ภายหลัง
+const MP_REQUESTS = ['Request A — (แอดมินกำหนด)','Request B — (แอดมินกำหนด)','Request C — (แอดมินกำหนด)'];
 // ── Meal Plan config (แก้ราคาที่นี่ก่อน launch) ──
 const MP_SETS = [
   { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1499,  price_lc:1399  },
@@ -1068,9 +1070,15 @@ function removePkgFromCart(id) {
 // ══════════════════════════════════════
 
 function openMealPlanPicker() {
-  mpType = ''; mpSetId = ''; mpRequest = '';
+  mpType = ''; mpSetId = ''; mpRequest = ''; mpReqSel = [];
   renderMealPlanPicker();
   showScr('s-meal-plan');
+}
+function toggleMPReq(i){
+  const k = mpReqSel.indexOf(i);
+  if(k>=0) mpReqSel.splice(k,1); else mpReqSel.push(i);
+  mpRequest = mpReqSel.map(j=>MP_REQUESTS[j]).join(', ');
+  renderMealPlanPicker();
 }
 
 function renderMealPlanPicker() {
@@ -1078,8 +1086,8 @@ function renderMealPlanPicker() {
   if (!el) return;
   const typeHtml = ['hp','lc'].map(t => {
     const cfg = t==='hp'
-      ? {label:'High Protein',emoji:'💪',desc:'เพิ่มกล้ามเนื้อ · สูตร HP',color:'#1F4D3A'}
-      : {label:'Low Carb',    emoji:'🥗',desc:'ลดน้ำหนัก · สูตร LC',     color:'#2D6B53'};
+      ? {label:'High Protein',emoji:'💪',desc:'โปรตีนสูง อิ่มนาน · เหมาะออกกำลัง/เพิ่มกล้าม',color:'#1F4D3A'}
+      : {label:'Low Carb',    emoji:'🥗',desc:'คาร์บต่ำ คุมแคลฯ · เหมาะลดน้ำหนัก/คุมหุ่น',color:'#2D6B53'};
     const on = mpType===t;
     return `<div onclick="selectMPType('${t}')" style="
         flex:1;border-radius:14px;padding:16px;text-align:center;cursor:pointer;
@@ -1113,12 +1121,15 @@ function renderMealPlanPicker() {
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
     <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:6px;">3. Request เมนู (ไม่บังคับ)</div>
-      <input type="text" id="mp-request-inp" value="${h(mpRequest)}"
-        placeholder="เช่น ไม่ชอบผักชี ชอบเนื้อไก่..."
-        oninput="mpRequest=this.value"
-        style="width:100%;padding:12px 14px;border:1.5px solid #E5E5E1;border-radius:10px;font-size:14px;font-family:inherit;">
-      <div style="font-size:11px;color:#6B7280;margin-top:4px;">ทีมแอดมินจะพิจารณาตามความเป็นไปได้</div>
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:6px;">3. เลือกเมนู Request (แอดมินจัดให้ · เลือกได้หลายอัน)</div>
+      ${MP_REQUESTS.map((r,i)=>{
+        const on = mpReqSel.includes(i);
+        return `<div onclick="toggleMPReq(${i})" style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:1.5px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
+          <span style="font-size:16px;">${on?'☑️':'⬜'}</span>
+          <span style="font-size:14px;color:#1A1A1A;">${h(r)}</span>
+        </div>`;
+      }).join('')}
+      <div style="font-size:11px;color:#6B7280;margin-top:4px;">* ตัวอย่าง — แอดมินจะ assign เมนู Request จริงจากลิสต์ใน DB ภายหลัง</div>
     </div>` : ''}`;
   updateMPConfirmBtn();
 }
