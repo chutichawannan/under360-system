@@ -338,6 +338,11 @@ body{background:#fff!important}
 /* Section title row */
 .sec-title-row{display:flex;justify-content:space-between;align-items:center;padding:18px 16px 10px;}
 .sec-title{font-size:20px;font-weight:800;color:var(--ink);}
+.sec-title-marquee{overflow:hidden;white-space:nowrap;padding:18px 0 10px;}
+.sec-marquee-track{display:inline-block;white-space:nowrap;font-weight:800;color:var(--ink);animation:secScroll linear infinite;}
+@keyframes secScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+.ctabs{cursor:grab;}
+.ctabs.dragging{cursor:grabbing;}
 .sec-see-all{font-size:13px;color:var(--g);font-weight:600;}
 
 /* ── Marquee strips ── */
@@ -1280,7 +1285,7 @@ async function init() {
   // Section title
   try {
     const { data: td } = await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
-    if (td?.data) window._homeSectionTitle = td.data;
+    if (td?.data){ const c=(typeof td.data==='string')?{text:td.data}:(td.data||{}); window._homeTitleCfg=c; window._homeSectionTitle=c.text||'Meal Plans'; }
   } catch(e) {}
   // เมนู Request (แอดมิน assign) สำหรับ Meal Plan picker
   try {
@@ -1408,6 +1413,18 @@ function renderCatTabs() {
     const active = el.querySelector('.ctab.on');
     if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   }, 50);
+  setupCatDragScroll();
+}
+
+// ลากซ้าย-ขวาเลื่อนแถบหมวด (เมาส์) — touch เลื่อนได้อยู่แล้ว
+function setupCatDragScroll(){
+  const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
+  if(!el || el._dragSet) return; el._dragSet = true;
+  let down=false, sx=0, sl=0, moved=false;
+  el.addEventListener('mousedown', e=>{ down=true; moved=false; sx=e.pageX; sl=el.scrollLeft; el.classList.add('dragging'); });
+  window.addEventListener('mousemove', e=>{ if(!down) return; const dx=e.pageX-sx; if(Math.abs(dx)>4) moved=true; el.scrollLeft=sl-dx; });
+  window.addEventListener('mouseup', ()=>{ down=false; el.classList.remove('dragging'); });
+  el.addEventListener('click', e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); } }, true);
 }
 
 function selectCat(c) {
@@ -2170,7 +2187,13 @@ function renderHomeGrid() {
   // ── Collage (meal_plan + promo) — เรียงตาม sort_order + จัดกลุ่มตามขนาดจริง ให้ตรงกับ HE ──
   var colCards = homeLayout.filter(function(s){ return s.section_type==='meal_plan'||s.section_type==='promo'; });
   if (colCards.length) {
-    html += '<div class="sec-title-row"><span class="sec-title">'+(window._homeSectionTitle||'Meal Plans')+'</span></div>';
+    var _tc = window._homeTitleCfg||{}; var _tt = window._homeSectionTitle||'Meal Plans'; var _ts = _tc.size||20;
+    if(_tc.scroll){
+      var _gap='&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;';
+      html += '<div class="sec-title-marquee" style="padding-left:16px;padding-right:16px"><span class="sec-marquee-track" style="font-size:'+_ts+'px;animation-duration:'+(_tc.speed||14)+'s;">'+_tt+_gap+_tt+_gap+'</span></div>';
+    } else {
+      html += '<div class="sec-title-row"><span class="sec-title" style="font-size:'+_ts+'px;">'+_tt+'</span></div>';
+    }
     html += '<div class="col-scroll" id="colScroll" style="padding-left:16px!important">';
 
     var cc = colCards.map(function(s){

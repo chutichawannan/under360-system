@@ -175,16 +175,20 @@ input,select,textarea{font-family:inherit;}
   <div style="padding:10px 12px 4px;display:flex;align-items:center;gap:8px;flex-wrap:wrap">
     <label style="font-size:12px;font-weight:700;color:var(--ink2);white-space:nowrap">Section Title:</label>
     <input id="sectionTitle" value="Meal Plans" style="flex:1;min-width:120px;border:1px solid var(--brd);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700"
-      placeholder="เช่น Meal Plans, Featured..." oninput="saveSectionTitle()">
-    <button class="toggle-btn" id="titleScrollBtn" onclick="toggleTitleScroll()"
-      style="white-space:nowrap;font-size:12px;padding:5px 12px;border-radius:14px;border:1.5px solid var(--brd);background:#fff;font-weight:700;color:var(--ink2);">
-      ⏸ Scroll ชื่อ
-    </button>
-    <select id="titleSpeedSel" style="padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff"
-      onchange="updateTitleSpeed()">
+      placeholder="เช่น Meal Plans, Featured..." oninput="saveTitleConfig()">
+    <label style="font-size:11px;color:var(--ink2);display:flex;align-items:center;gap:4px;white-space:nowrap">
+      <input type="checkbox" id="titleScrollChk" onchange="saveTitleConfig()"> Scroll ชื่อออกจอ</label>
+    <select id="titleSpeedSel" style="padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff" onchange="saveTitleConfig()">
+      <option value="30">ช้ามาก</option>
       <option value="20">ช้า</option>
-      <option value="12" selected>ปกติ</option>
-      <option value="6">เร็ว</option>
+      <option value="14" selected>ปกติ</option>
+      <option value="8">เร็ว</option>
+    </select>
+    <select id="titleSizeSel" style="padding:4px 8px;border-radius:10px;border:1px solid var(--brd);font-size:12px;background:#fff" onchange="saveTitleConfig()">
+      <option value="16">ฟอนต์เล็ก</option>
+      <option value="20" selected>ฟอนต์ปกติ</option>
+      <option value="26">ฟอนต์ใหญ่</option>
+      <option value="32">ใหญ่มาก</option>
     </select>
   </div>
   <div class="preview-label">
@@ -245,7 +249,14 @@ let dbCats=[], catOrder=[], catDragKey=null, hiddenCats=[];
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
   await Promise.all([loadCards(), loadMenuItems(), loadHEPackages()]);
-  try{ const {data:td}=await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle(); if(td?.data) document.getElementById('sectionTitle').value=td.data; }catch(e){}
+  try{ const {data:td}=await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
+    if(td?.data){ const c=(typeof td.data==='string')?{text:td.data}:td.data;
+      if(c.text!=null) document.getElementById('sectionTitle').value=c.text;
+      const chk=document.getElementById('titleScrollChk'); if(chk) chk.checked=!!c.scroll;
+      const sp=document.getElementById('titleSpeedSel'); if(sp&&c.speed) sp.value=c.speed;
+      const sz=document.getElementById('titleSizeSel'); if(sz&&c.size) sz.value=c.size;
+    }
+  }catch(e){}
   setupDragScroll();
   startAutoScroll();
 };
@@ -865,9 +876,19 @@ function setupItemDrag(){
 }
 
 // ── SAVE ──
-async function saveSectionTitle(){
-  const title = document.getElementById('sectionTitle').value;
-  try{ await sb.from('kitchen_data').upsert({key:'home_section_title',data:title,updated_at:new Date().toISOString()},{onConflict:'key'}); }catch(e){}
+let titleSaveTimer=null;
+function saveTitleConfig(){
+  const cfg={
+    text:  document.getElementById('sectionTitle').value,
+    scroll:!!(document.getElementById('titleScrollChk')||{}).checked,
+    speed: parseInt((document.getElementById('titleSpeedSel')||{}).value)||14,
+    size:  parseInt((document.getElementById('titleSizeSel')||{}).value)||20
+  };
+  clearTimeout(titleSaveTimer);
+  titleSaveTimer=setTimeout(async()=>{
+    try{ await sb.from('kitchen_data').upsert({key:'home_section_title',data:cfg,updated_at:new Date().toISOString()},{onConflict:'key'}); showToast('✅ บันทึกชื่อ section','ok'); }
+    catch(e){ showToast('⚠️ บันทึกไม่ได้','err'); }
+  },800);
 }
 
 async function saveAll(){
