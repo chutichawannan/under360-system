@@ -705,10 +705,10 @@ body{background:#fff!important}
     <div class="sec-head">💳 วิธีชำระเงิน</div>
     <div class="pay-compact-row" onclick="openPayPopup()">
       <span id="pay-compact-ico">📱</span>
-      <span id="pay-compact-lbl">QR / PromptPay</span>
+      <span id="pay-compact-lbl">เลือกวิธีชำระเงิน</span>
       <span style="margin-left:auto;font-size:18px;color:var(--soft)">›</span>
     </div>
-    <div class="qr-box on" id="pp-qr">
+    <div class="qr-box" id="pp-qr">
       <div class="qr-placeholder">📱</div>
       <div style="font-size:12px;color:var(--soft);margin-bottom:6px">สแกน QR ชำระ PromptPay</div>
       <div class="qr-amount" id="qr-amount">฿0</div>
@@ -737,9 +737,32 @@ body{background:#fff!important}
     </div>
     <div class="divider"></div>
 
+    <!-- ═══ COUPON ═══ -->
+    <div class="sec-head">🎟️ คูปอง / โค้ดส่วนลด</div>
+    <div id="coupon-wrap" style="padding:0 14px 4px">
+      <div style="display:flex;gap:8px">
+        <input id="coupon-input" class="ifield" type="text" placeholder="กรอกโค้ด เช่น UNDER50" style="text-transform:uppercase;flex:1"
+          onkeydown="if(event.key==='Enter'){event.preventDefault();applyPromo();}">
+        <button id="coupon-btn" onclick="applyPromo()" style="flex-shrink:0;padding:0 16px;background:var(--g);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer">ใช้โค้ด</button>
+      </div>
+      <div id="coupon-msg" style="font-size:12px;margin-top:6px;display:none"></div>
+    </div>
+    <div id="coupon-applied" style="display:none;padding:0 14px 4px">
+      <div style="display:flex;align-items:center;gap:8px;background:var(--gl);border-radius:12px;padding:10px 12px">
+        <span style="font-size:18px">🎟️</span>
+        <div style="flex:1">
+          <div id="coupon-applied-code" style="font-size:13px;font-weight:700;color:var(--ink)"></div>
+          <div id="coupon-applied-desc" style="font-size:11px;color:var(--soft)"></div>
+        </div>
+        <button onclick="removePromo()" style="background:none;border:none;color:var(--r);font-size:13px;font-weight:600;cursor:pointer">ลบ</button>
+      </div>
+    </div>
+    <div class="divider"></div>
+
     <!-- ═══ ORDER TOTAL ═══ -->
     <div class="order-total">
       <div class="ot-row"><span class="ot-l">ยอดสินค้า</span><span class="ot-v" id="cart-sub">฿0</span></div>
+      <div class="ot-row" id="ot-discount-row" style="display:none"><span class="ot-l" style="color:var(--g)">ส่วนลด</span><span class="ot-v" id="cart-discount" style="color:var(--g)">-฿0</span></div>
       <div class="ot-row"><span class="ot-l">ค่าจัดส่ง</span><span class="ot-v" id="cart-fee">—</span></div>
       <div class="stot"><div class="stot-l">รวมทั้งหมด</div><div class="stot-v" id="cart-total-display">฿0</div></div>
     </div>
@@ -1378,7 +1401,7 @@ async function loadPaymentAccount(){
 }
 
 function goCart() {
-  renderCart(); renderDatePick(); renderTimePick(); showScr('s-cart');
+  renderCart(); renderDatePick(); renderTimePick(); refreshCouponUI(); showScr('s-cart');
   updateCartTotals();
   loadPaymentAccount(); // เลือกบัญชีรับเงินที่ถัวเฉลี่ยแล้ว
   // Google Maps: try immediately, retry if not loaded
@@ -1806,9 +1829,10 @@ async function submitOrder() {
   // ───────────────────────────────────────────────────────────
 
   try {
-    // 1. Create order — ค่าส่งคิดเฉพาะตอนรู้แล้ว (ปักหมุด/express) ไม่งั้น 0 ให้แอดมินคิดทีหลัง
-    const deliveryFee = deliveryFeeKnown() ? calcDeliveryFee(distKm || 0, selSlot) : 0;
-    const grandTotal = tot + deliveryFee;
+    // 1. Create order — คิดยอดผ่าน computeOrder (ค่าส่ง + ส่วนลดคูปอง)
+    const o = computeOrder();
+    const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
+    const grandTotal  = o.total;             // ยอดสุทธิ
     const { data: ord, error: oErr } = await sb.from('orders').insert({
       order_number:    orderNum,
       customer_id:     customer?.id || null,
@@ -1819,7 +1843,9 @@ async function submitOrder() {
       time_slot_label: slot?.time || '',
       delivery_address: addrFinal,
       delivery_fee:    deliveryFee,
-      subtotal:         tot,
+      subtotal:         o.sub,
+      discount_amount:  o.discount,
+      promotion_code:   appliedPromo?.code || null,
       total:            grandTotal,
       status:           'confirmed',
       payment_method:   payMethod || 'qr',
@@ -1831,6 +1857,11 @@ async function submitOrder() {
     }).select().single();
     // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
     if (oErr) throw oErr;
+
+    // 1b. นับการใช้คูปอง +1 (best-effort)
+    if (appliedPromo?.id) {
+      try { await sb.from('promo_codes').update({ used_count: (appliedPromo.used_count||0)+1 }).eq('id', appliedPromo.id); } catch(e){}
+    }
 
     // 2. Create order items (expand package items into individual rows)
     const items = [];
@@ -1868,6 +1899,7 @@ async function submitOrder() {
       `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
+    appliedPromo = null; refreshCouponUI();
     showScr('s-ok');
 
   } catch(e) {
@@ -1885,6 +1917,93 @@ async function submitOrder() {
 let cusMap=null, cusPin=null, cusAuto=null, distKm=null, payMethod='qr';
 let isOutOfProvince = false;  // ← fix: ต้อง declare ก่อนใช้ใน renderDatePick
 const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
+
+// ══════════════════════════════════════
+// 🎟️ COUPON / DISCOUNT ENGINE
+// ══════════════════════════════════════
+let appliedPromo = null;   // {id,code,discount_type,discount_value,min_order,used_count,description,...}
+
+// คำนวณยอดทั้งหมด: ยอดสินค้า - ส่วนลด + ค่าส่ง(หลังหักส่งฟรี)
+function computeOrder(){
+  const sub = cartTotal();
+  const feeKnown = deliveryFeeKnown();
+  const fee = feeKnown ? calcDeliveryFee(distKm||0, selSlot) : 0;
+  let itemDisc = 0, shipDisc = 0;
+  if(appliedPromo){
+    const p = appliedPromo;
+    // ยอดต่ำกว่าขั้นต่ำ → คูปองใช้ไม่ได้ ตัดทิ้งเงียบๆ
+    if((p.min_order||0) > sub){ appliedPromo = null; refreshCouponUI(); }
+    else if(p.discount_type==='fixed')    itemDisc = Math.min(p.discount_value, sub);
+    else if(p.discount_type==='percent')  itemDisc = Math.round(sub * p.discount_value/100);
+    else if(p.discount_type==='free_shipping') shipDisc = fee; // ลดค่าส่งเท่าที่รู้แล้ว
+  }
+  const feeAfter = Math.max(0, fee - shipDisc);
+  const discount = itemDisc + shipDisc;
+  const total = Math.max(0, sub - itemDisc + feeAfter);
+  return {sub, fee, feeKnown, feeAfter, itemDisc, shipDisc, discount, total};
+}
+
+function promoLabel(p){
+  if(p.discount_type==='fixed')        return 'ลด ฿'+p.discount_value;
+  if(p.discount_type==='percent')      return 'ลด '+p.discount_value+'%';
+  if(p.discount_type==='free_shipping')return 'ส่งฟรี';
+  return '';
+}
+
+async function applyPromo(){
+  const inp = document.getElementById('coupon-input');
+  const msg = document.getElementById('coupon-msg');
+  const code = (inp.value||'').trim().toUpperCase();
+  const showMsg = (t,ok)=>{ msg.style.display='block'; msg.textContent=t; msg.style.color = ok?'var(--g)':'var(--r)'; };
+  if(!code){ showMsg('กรุณากรอกโค้ด', false); return; }
+  const btn = document.getElementById('coupon-btn');
+  btn.disabled = true; btn.textContent = '...';
+  try{
+    const { data, error } = await sb.from('promo_codes').select('*').eq('code', code).limit(1);
+    if(error) throw error;
+    const p = (data||[])[0];
+    if(!p){ showMsg('ไม่พบโค้ดนี้', false); return; }
+    if(!p.is_active){ showMsg('โค้ดนี้ถูกปิดใช้งาน', false); return; }
+    if(p.expires_at){
+      const today = new Date().toISOString().slice(0,10);
+      if(p.expires_at < today){ showMsg('โค้ดหมดอายุแล้ว', false); return; }
+    }
+    if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit){ showMsg('โค้ดถูกใช้ครบจำนวนแล้ว', false); return; }
+    const sub = cartTotal();
+    if((p.min_order||0) > sub){ showMsg('ต้องมียอดสินค้าขั้นต่ำ ฿'+p.min_order, false); return; }
+    appliedPromo = p;
+    msg.style.display = 'none';
+    refreshCouponUI();
+    updateCartTotals();
+  }catch(e){
+    showMsg('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', false);
+  }finally{
+    btn.disabled = false; btn.textContent = 'ใช้โค้ด';
+  }
+}
+
+function removePromo(){
+  appliedPromo = null;
+  const inp = document.getElementById('coupon-input'); if(inp) inp.value='';
+  refreshCouponUI();
+  updateCartTotals();
+}
+
+// สลับ UI ระหว่าง "ช่องกรอกโค้ด" กับ "โค้ดที่ใช้แล้ว"
+function refreshCouponUI(){
+  const wrap = document.getElementById('coupon-wrap');
+  const applied = document.getElementById('coupon-applied');
+  if(!wrap || !applied) return;
+  if(appliedPromo){
+    wrap.style.display = 'none';
+    applied.style.display = 'block';
+    document.getElementById('coupon-applied-code').textContent = '🏷️ '+appliedPromo.code+' — '+promoLabel(appliedPromo);
+    document.getElementById('coupon-applied-desc').textContent = appliedPromo.description || '';
+  }else{
+    wrap.style.display = 'block';
+    applied.style.display = 'none';
+  }
+}
 
 // ── PAYMENT ACCOUNTS (ถัวเฉลี่ยรายไตรมาส) ────────────────
 // เพิ่ม/ลบบัญชีได้ที่นี่ ไม่ต้องแก้ที่อื่น
@@ -2113,25 +2232,32 @@ function deliveryFeeKnown(){
 }
 
 function updateQRAmount(){
-  const fee=deliveryFeeKnown()?calcDeliveryFee(distKm||0, selSlot):0;
-  const tot=cartTotal()+fee;
+  const o=computeOrder();
   const el=document.getElementById('qr-amount');
-  if(el)el.textContent='฿'+tot.toLocaleString();
+  if(el)el.textContent='฿'+o.total.toLocaleString();
 }
 
 function updateCartTotals(){
-  const sub=cartTotal();
-  const known=deliveryFeeKnown();
-  const fee=known?calcDeliveryFee(distKm||0, selSlot):0;
-  const total=sub+fee;
+  const o=computeOrder();
   const subEl=document.getElementById('cart-sub');
   const feeEl=document.getElementById('cart-fee');
   const totEl=document.getElementById('cart-total-display');
   const subBtn=document.getElementById('sub-btn');
-  if(subEl)subEl.textContent='฿'+sub.toLocaleString();
-  if(feeEl)feeEl.textContent=known?'฿'+fee:'ยังไม่ได้ปักหมุด';
-  if(totEl)totEl.textContent='฿'+total.toLocaleString();
-  if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+total.toLocaleString()+')';
+  const discRow=document.getElementById('ot-discount-row');
+  const discEl=document.getElementById('cart-discount');
+  if(subEl)subEl.textContent='฿'+o.sub.toLocaleString();
+  // แถวส่วนลด
+  if(discRow&&discEl){
+    if(o.discount>0){ discRow.style.display='flex'; discEl.textContent='-฿'+o.discount.toLocaleString(); }
+    else discRow.style.display='none';
+  }
+  // ค่าส่ง: ส่งฟรี → ฟรี, ยังไม่ปักหมุด → ข้อความ, ปกติ → ตัวเลข
+  if(feeEl){
+    if(appliedPromo && appliedPromo.discount_type==='free_shipping' && o.feeKnown) feeEl.textContent='ฟรี';
+    else feeEl.textContent = o.feeKnown ? '฿'+o.fee.toLocaleString() : 'ยังไม่ได้ปักหมุด';
+  }
+  if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
+  if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
   updateQRAmount();
 }
 
