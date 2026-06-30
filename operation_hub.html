@@ -489,6 +489,13 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
             </select>
             <button class="btn btn-primary" onclick="addToProdPlan()" style="width:100%;font-size:11px;padding:5px;">เพิ่ม</button>
           </div>
+          <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
+            <div style="font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">🔁 เมนู Request (ลูกค้าเลือกได้ใน LIFF)</div>
+            <div id="mpReqList"></div>
+            <select id="mpReqAdd" onchange="addMpRequest(this.value);this.value='';" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-top:4px;">
+              <option value="">+ เพิ่มเมนู request...</option>
+            </select>
+          </div>
           <div id="menuSummary" style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
           </div>
         </div>
@@ -876,6 +883,7 @@ var MENU_POOL=[
   {code:"HP25",name:"สเต็กปลากระพงเพสโต้+ผักย่าง",type:"hp"}
 ];
 var todayPlan=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
+var mpRequestMenus=[];  // เมนู Request ที่ลูกค้าเลือกได้ (เก็บ kitchen_data 'mp_request_menus')
 var MOCK_CUSTOMERS=[
   {id:"c1",name:"Boom",course:"HP Monthly รอบ9",boxes:7,type:"hp",pref:"ไม่ทานเนื้อ ไม่ชอบเกาหลี"},
   {id:"c2",name:"Pete",course:"HP Weekly รอบ2",boxes:7,type:"hp",pref:""},
@@ -1070,7 +1078,49 @@ function renderCustomerCell(cid){
   td.innerHTML=h;
 }
 
+// ── เมนู Request (ลูกค้าเลือกได้ใน LIFF) ──
+async function loadMpRequests(){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var res=await sb_.from("kitchen_data").select("data").eq("key","mp_request_menus").maybeSingle();
+    mpRequestMenus=(res.data&&Array.isArray(res.data.data))?res.data.data:[];
+  }catch(e){ mpRequestMenus=[]; }
+}
+async function saveMpRequests(){
+  var sb_=getSB(); if(!sb_) return;
+  try{ await sb_.from("kitchen_data").upsert({key:"mp_request_menus",data:mpRequestMenus,updated_at:new Date().toISOString()},{onConflict:"key"}); }
+  catch(e){ console.error("saveMpRequests:",e); }
+}
+function addMpRequest(code){
+  if(!code) return;
+  if(mpRequestMenus.find(function(x){return x.code===code;})){ renderMpRequests(); return; }
+  var m=MENU_POOL.find(function(x){return x.code===code;}); if(!m) return;
+  mpRequestMenus.push({code:m.code,name:m.name});
+  saveMpRequests(); renderMpRequests();
+}
+function removeMpRequest(code){
+  mpRequestMenus=mpRequestMenus.filter(function(x){return x.code!==code;});
+  saveMpRequests(); renderMpRequests();
+}
+function renderMpRequests(){
+  var list=document.getElementById("mpReqList");
+  if(list){
+    list.innerHTML=mpRequestMenus.length?mpRequestMenus.map(function(r){
+      return "<div style='display:flex;align-items:center;gap:4px;font-size:11px;background:#FEF3C7;border-radius:6px;padding:3px 6px;margin-bottom:4px;'><span style='flex:1'>"+r.code+" "+(r.name||"").slice(0,14)+"</span><span onclick=\"removeMpRequest('"+r.code+"')\" style='cursor:pointer;color:#B91C1C;font-weight:700'>×</span></div>";
+    }).join(""):"<div style='font-size:10px;color:#B8BCC8'>ยังไม่มี</div>";
+  }
+  var sel=document.getElementById("mpReqAdd");
+  if(sel){
+    var opts="<option value=''>+ เพิ่มเมนู request...</option>";
+    MENU_POOL.forEach(function(m){
+      if(!mpRequestMenus.find(function(x){return x.code===m.code;})) opts+="<option value='"+m.code+"'>"+m.code+" — "+m.name.slice(0,18)+"</option>";
+    });
+    sel.innerHTML=opts;
+  }
+}
+
 function buildPlan(){
+  loadMpRequests().then(renderMpRequests);
   // โหลดจาก Supabase ถ้ายังไม่เคยโหลด
   var sb_=getSB();
   if(sb_&&Object.keys(customerAssign).length===0){

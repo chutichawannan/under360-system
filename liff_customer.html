@@ -817,8 +817,7 @@ let menuItems = [], cats = [];
 let packages = [], pkgItems = {}, currentPkg = null, pkgSelection = {}, pkgSearch = '';
 // ── v0.3.3 Meal Plan state ──
 let mpType = '', mpSetId = '', mpRequest = '', mpReqSel = [];
-// mock — ของจริงแอดมิน assign จากลิสต์เมนูใน DB ภายหลัง
-const MP_REQUESTS = ['Request A — (แอดมินกำหนด)','Request B — (แอดมินกำหนด)','Request C — (แอดมินกำหนด)'];
+let mpRequestMenus = [];  // โหลดจาก kitchen_data 'mp_request_menus' (แอดมิน assign ในหน้าแพลนเมนู)
 // ── Meal Plan config (แก้ราคาที่นี่ก่อน launch) ──
 const MP_SETS = [
   { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1499,  price_lc:1399  },
@@ -1089,7 +1088,7 @@ function closeMealPlanSheet(){
 function toggleMPReq(i){
   const k = mpReqSel.indexOf(i);
   if(k>=0) mpReqSel.splice(k,1); else mpReqSel.push(i);
-  mpRequest = mpReqSel.map(j=>MP_REQUESTS[j]).join(', ');
+  mpRequest = mpReqSel.map(j=>mpRequestMenus[j]?(mpRequestMenus[j].code+' '+mpRequestMenus[j].name):'').filter(Boolean).join(', ');
   renderMealPlanPicker();
 }
 
@@ -1134,14 +1133,13 @@ function renderMealPlanPicker() {
     ${mpType&&mpSetId ? `
     <div style="margin-top:16px;">
       <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:6px;">3. เลือกเมนู Request (แอดมินจัดให้ · เลือกได้หลายอัน)</div>
-      ${MP_REQUESTS.map((r,i)=>{
+      ${mpRequestMenus.length ? mpRequestMenus.map((r,i)=>{
         const on = mpReqSel.includes(i);
         return `<div onclick="toggleMPReq(${i})" style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:1.5px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
           <span style="font-size:16px;">${on?'☑️':'⬜'}</span>
-          <span style="font-size:14px;color:#1A1A1A;">${h(r)}</span>
+          <span style="font-size:14px;color:#1A1A1A;"><b>${h(r.code)}</b> ${h(r.name)}</span>
         </div>`;
-      }).join('')}
-      <div style="font-size:11px;color:#6B7280;margin-top:4px;">* ตัวอย่าง — แอดมินจะ assign เมนู Request จริงจากลิสต์ใน DB ภายหลัง</div>
+      }).join('') : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
     </div>` : ''}`;
   updateMPConfirmBtn();
 }
@@ -1274,6 +1272,11 @@ async function init() {
   try {
     const { data: td } = await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
     if (td?.data) window._homeSectionTitle = td.data;
+  } catch(e) {}
+  // เมนู Request (แอดมิน assign) สำหรับ Meal Plan picker
+  try {
+    const { data: mr } = await sb.from('kitchen_data').select('data').eq('key','mp_request_menus').maybeSingle();
+    if (mr?.data && Array.isArray(mr.data)) mpRequestMenus = mr.data;
   } catch(e) {}
 
   // Update profile button
