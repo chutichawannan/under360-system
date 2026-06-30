@@ -1636,6 +1636,7 @@ function pickDate(key) { selDate=key; renderDatePick(); }
 // HP/LC = no_morning อัตโนมัติ ไม่ต้อง tick ใน DB
 function hasMealPlan(){
   return cart.some(c=>{
+    if(c.type==='meal_plan') return true;   // ← Meal Plan subscription (id 'mp_...' ไม่อยู่ใน menuItems)
     const item=menuItems.find(m=>m.id===c.id);
     if(!item) return false;
     return item.no_morning === true
