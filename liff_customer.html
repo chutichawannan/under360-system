@@ -1815,7 +1815,7 @@ async function submitOrder() {
       line_uid:        lineProfile.userId,
       customer_name:   lineProfile.displayName,
       delivery_date:   selDate,
-      time_slot:       selSlot,
+      time_slot:       selSlot==='express' ? expressTime : selSlot,
       time_slot_label: slot?.time || '',
       delivery_address: addrFinal,
       delivery_fee:    deliveryFee,
@@ -1825,13 +1825,11 @@ async function submitOrder() {
       payment_method:   payMethod || 'qr',
       payment_account:  selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
       delivery_type:    selSlot==='express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
-      time_slot:        selSlot==='express' ? expressTime : selSlot,
       slip_image:       slipBase64 ? true : false,
-      order_type:       cart.some(c=>c.type==='package')?'package':cart.some(c=>c.type==='meal_plan')?'meal_plan':'individual',
       delivery_week:    cartWeekType()==='next' ? 'next' : 'current',
       notes:            (document.getElementById('notes-input').value || '').trim()
     }).select().single();
-    // payment_method stored locally only (add column via SQL if needed: ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_method TEXT)
+    // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
     if (oErr) throw oErr;
 
     // 2. Create order items (expand package items into individual rows)
