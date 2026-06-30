@@ -752,9 +752,8 @@ function renderCatSection(){
         style="cursor:pointer;margin-right:3px;font-size:12px">${isHidden?'🚫':'👁'}</span>
       <input class="cat-rename-input" value="${esc(label)}" title="ดับเบิลคลิกเพื่อแก้ชื่อ" readonly
         onclick="if(!this.readOnly)event.stopPropagation()"
-        ondblclick="this.readOnly=false;this.focus();this.select();event.stopPropagation()"
-        onchange="renameCat('${cat}',this.value)"
-        onblur="this.readOnly=true;renameCat('${cat}',this.value)"
+        ondblclick="this.readOnly=false;this.dataset.orig=this.value;this.focus();this.select();event.stopPropagation()"
+        onblur="if(!this.readOnly){this.readOnly=true;if(this.value!==this.dataset.orig)renameCat('${cat}',this.value);}"
         style="color:inherit">
       <span style="opacity:.7;font-size:11px;margin-left:3px">${cnt}</span>
     </button>`;
