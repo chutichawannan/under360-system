@@ -31,6 +31,10 @@ input,textarea{font-family:inherit}
 /* ═══════════ SCREENS ═══════════ */
 .scr{display:none;flex-direction:column;min-height:100vh;position:relative}
 .scr.on{display:flex}
+/* Meal Plan = bottom sheet ~76% (ไม่ full screen) */
+#mp-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:310;display:none;}
+#mp-backdrop.on{display:block;}
+#s-meal-plan.on{position:fixed;left:0;right:0;bottom:0;top:auto;min-height:0;height:76vh;max-height:76vh;border-radius:18px 18px 0 0;overflow:hidden;box-shadow:0 -6px 30px rgba(0,0,0,.28);z-index:320;}
 
 /* ═══════════ LOADING ═══════════ */
 #s-load{align-items:center;justify-content:center;background:var(--g);color:#fff;gap:20px}
@@ -608,9 +612,10 @@ body{background:#fff!important}
 <!-- ══════════════════════════════════════
      SCREEN: MEAL PLAN PICKER (v0.3.3)
 ══════════════════════════════════════ -->
+<div id="mp-backdrop" onclick="closeMealPlanSheet()"></div>
 <div class="scr" id="s-meal-plan">
   <div class="hdr">
-    <button class="hdr-back" onclick="showScr('s-menu')">←</button>
+    <button class="hdr-back" onclick="closeMealPlanSheet()">←</button>
     <div class="hdr-title">สมัคร Meal Plan</div>
   </div>
   <div class="scroll pb-btn">
@@ -1072,7 +1077,14 @@ function removePkgFromCart(id) {
 function openMealPlanPicker() {
   mpType = ''; mpSetId = ''; mpRequest = ''; mpReqSel = [];
   renderMealPlanPicker();
-  showScr('s-meal-plan');
+  document.getElementById('s-menu').classList.add('on');       // เมนูอยู่ข้างหลัง
+  document.getElementById('mp-backdrop').classList.add('on');
+  document.getElementById('s-meal-plan').classList.add('on');  // sheet ขึ้นทับ
+  window.scrollTo(0,0);
+}
+function closeMealPlanSheet(){
+  document.getElementById('s-meal-plan').classList.remove('on');
+  document.getElementById('mp-backdrop').classList.remove('on');
 }
 function toggleMPReq(i){
   const k = mpReqSel.indexOf(i);
@@ -1166,7 +1178,7 @@ function addMealPlanToCart() {
   });
   saveCart(); updateCartUI();
   toast('เพิ่ม Meal Plan เข้าตะกร้าแล้ว ✓');
-  showScr('s-menu');
+  closeMealPlanSheet();
 }
 
 
@@ -1299,6 +1311,7 @@ function showErr(msg) {
 function showScr(id) {
   document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
   document.getElementById(id).classList.add('on');
+  var bd=document.getElementById('mp-backdrop'); if(bd) bd.classList.remove('on');
   window.scrollTo(0,0);
 }
 
