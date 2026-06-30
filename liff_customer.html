@@ -1806,8 +1806,8 @@ async function submitOrder() {
   // ───────────────────────────────────────────────────────────
 
   try {
-    // 1. Create order
-    const deliveryFee = calcDeliveryFee(distKm || 0, selSlot);
+    // 1. Create order — ค่าส่งคิดเฉพาะตอนรู้แล้ว (ปักหมุด/express) ไม่งั้น 0 ให้แอดมินคิดทีหลัง
+    const deliveryFee = deliveryFeeKnown() ? calcDeliveryFee(distKm || 0, selSlot) : 0;
     const grandTotal = tot + deliveryFee;
     const { data: ord, error: oErr } = await sb.from('orders').insert({
       order_number:    orderNum,
@@ -2106,22 +2106,30 @@ function toggleMapSection(){
   if(!isOpen)initCusMap();
 }
 
+// ค่าส่ง "รู้แล้วหรือยัง": express ใช้ราคา Lalamove, slot อื่นต้องปักหมุดก่อน
+function deliveryFeeKnown(){
+  if(selSlot==='express') return typeof lalamovePrice==='number';
+  return !!distKm;
+}
+
 function updateQRAmount(){
-  const tot=cartTotal()+calcDeliveryFee(distKm||0, selSlot);
+  const fee=deliveryFeeKnown()?calcDeliveryFee(distKm||0, selSlot):0;
+  const tot=cartTotal()+fee;
   const el=document.getElementById('qr-amount');
   if(el)el.textContent='฿'+tot.toLocaleString();
 }
 
 function updateCartTotals(){
   const sub=cartTotal();
-  const fee=calcDeliveryFee(distKm||0, selSlot);
+  const known=deliveryFeeKnown();
+  const fee=known?calcDeliveryFee(distKm||0, selSlot):0;
   const total=sub+fee;
   const subEl=document.getElementById('cart-sub');
   const feeEl=document.getElementById('cart-fee');
   const totEl=document.getElementById('cart-total-display');
   const subBtn=document.getElementById('sub-btn');
   if(subEl)subEl.textContent='฿'+sub.toLocaleString();
-  if(feeEl)feeEl.textContent=distKm?'฿'+fee:'ยังไม่ได้ปักหมุด';
+  if(feeEl)feeEl.textContent=known?'฿'+fee:'ยังไม่ได้ปักหมุด';
   if(totEl)totEl.textContent='฿'+total.toLocaleString();
   if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+total.toLocaleString()+')';
   updateQRAmount();
