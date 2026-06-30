@@ -312,6 +312,9 @@ body{background:#fff!important}
 .card-wrap{border-radius:14px!important;overflow:hidden!important;margin:0 12px!important;box-shadow:0 2px 8px rgba(0,0,0,.05)!important;}
 .citem{background:#fff!important;border-bottom:1px solid #F2F2F2!important;}
 .sec-head{padding:14px 14px 8px!important;font-size:12px!important;text-transform:uppercase!important;letter-spacing:.06em!important;}
+.pay-compact-row{display:flex;align-items:center;gap:10px;padding:12px 14px;background:#fff;border:2px solid var(--line);border-radius:var(--r12);margin:0 14px 10px;cursor:pointer;font-size:14px;font-weight:600}
+.pay-popup-opt{display:flex;align-items:center;gap:12px;padding:14px 10px;border-radius:12px;cursor:pointer;transition:background .1s}
+.pay-popup-opt:active{background:var(--gl)}
 
 /* Bottom nav */
 .bnav{box-shadow:0 -1px 0 rgba(0,0,0,.06)!important;border-top:none!important;}
@@ -650,62 +653,60 @@ body{background:#fff!important}
   <div class="scroll pb-btn">
     <!-- cart items -->
     <div class="card-wrap" id="clist"></div>
+    <div style="padding:6px 14px 0;text-align:center">
+      <button onclick="goMenu()" style="background:none;border:none;color:var(--g);font-size:13px;font-weight:600;cursor:pointer;padding:6px 16px">← กลับไปเลือกสินค้าเพิ่ม</button>
+    </div>
     <div class="divider"></div>
     <!-- date picker -->
     <div class="sec-head">📅 เลือกวันจัดส่ง</div>
+    <div id="date-notice"></div>
     <div class="dscroll" id="dpick"></div>
     <div class="divider"></div>
     <!-- time slot -->
     <div class="sec-head">⏰ เลือกช่วงเวลา</div>
     <div class="tgrid" id="tpick"></div>
     <div class="divider"></div>
-    <!-- address -->
+    <!-- address compact -->
     <div class="sec-head">📍 ที่อยู่จัดส่ง</div>
     <div class="igrp">
-      <textarea id="addr-input" class="ifield" rows="3" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด"></textarea>
+      <div style="display:flex;gap:8px;align-items:flex-start">
+        <textarea id="addr-input" class="ifield" rows="2" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด" style="flex:1;resize:none"></textarea>
+        <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px">🗺️<br><span style="font-size:9px;color:var(--soft);font-weight:600">ปักหมุด</span></button>
+      </div>
+      <input id="notes-input" class="ifield" type="text" placeholder="รายละเอียดเพิ่ม เช่น ชั้น 3, ไม่เผ็ด">
     </div>
-    <div class="sec-head">📝 หมายเหตุ (ถ้ามี)</div>
-    <div class="igrp">
-      <input id="notes-input" class="ifield" type="text" placeholder="เช่น ไม่เผ็ด, วางหน้าบ้านได้เลย">
-    </div>
-    <div class="divider"></div>
 
-    <!-- ═══ MAP ═══ -->
-    <div class="sec-head">🗺️ ปักหมุดที่อยู่จัดส่ง</div>
-    <div style="position:relative;padding:0 14px 10px">
-      <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
-      <div style="display:flex;gap:8px">
-      <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
-      <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">📍 ตำแหน่งฉัน</button>
+    <!-- MAP (collapsible) -->
+    <div id="map-section" style="display:none">
+      <div style="position:relative;padding:0 14px 10px">
+        <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
+        <div style="display:flex;gap:8px">
+          <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
+          <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">📍 ตำแหน่งฉัน</button>
+        </div>
+      </div>
+      <div id="customer-map"></div>
+      <div id="fee-row" class="fee-row" style="display:none;margin-top:8px">
+        <span class="fee-km" id="fee-dist">—</span>
+        <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
+      </div>
+      <div class="zone-notice bkk" id="zone-bkk">
+        <span class="zone-ico">🏍️</span>พื้นที่จัดส่งปกติ — ส่งด้วยรถมอเตอร์ไซค์ในวันที่เลือก
+      </div>
+      <div class="zone-notice cold" id="zone-cold">
+        <span class="zone-ico">❄️</span><strong>นอกพื้นที่จัดส่งทั่วไป</strong> — จะจัดส่งด้วย<strong>รถห้องเย็น</strong>
+        ซึ่งต้องโหลดสินค้าล่วงหน้า 1 วัน วันรับสินค้าจะถูกปรับให้อัตโนมัติ
+        <br><small>เช่น: สั่งวันจันทร์ → จัดส่งวันอังคาร → รับวันพุธ</small>
       </div>
     </div>
-    <div id="customer-map"></div>
-    <div id="fee-row" class="fee-row" style="display:none;margin-top:8px">
-      <span class="fee-km" id="fee-dist">—</span>
-      <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
-    </div>
-    <!-- Zone notice -->
-    <div class="zone-notice bkk" id="zone-bkk">
-      <span class="zone-ico">🏍️</span>พื้นที่จัดส่งปกติ — ส่งด้วยรถมอเตอร์ไซค์ในวันที่เลือก
-    </div>
-    <div class="zone-notice cold" id="zone-cold">
-      <span class="zone-ico">❄️</span><strong>นอกพื้นที่จัดส่งทั่วไป</strong> — จะจัดส่งด้วย<strong>รถห้องเย็น</strong>
-      ซึ่งต้องโหลดสินค้าล่วงหน้า 1 วัน วันรับสินค้าจะถูกปรับให้อัตโนมัติ
-      <br><small>เช่น: สั่งวันจันทร์ → จัดส่งวันอังคาร → รับวันพุธ</small>
-    </div>
-    <div class="divider" style="margin-top:10px"></div>
+    <div class="divider" style="margin-top:6px"></div>
 
     <!-- ═══ PAYMENT ═══ -->
     <div class="sec-head">💳 วิธีชำระเงิน</div>
-    <div class="pay-methods">
-      <div class="pay-m on" id="pm-qr" onclick="selectPay('qr')">
-        <div class="pm-ico">📱</div>
-        <div class="pm-l">QR / PromptPay</div>
-      </div>
-      <div class="pay-m" id="pm-transfer" onclick="selectPay('transfer')">
-        <div class="pm-ico">🏦</div>
-        <div class="pm-l">โอนเงิน</div>
-      </div>
+    <div class="pay-compact-row" onclick="openPayPopup()">
+      <span id="pay-compact-ico">📱</span>
+      <span id="pay-compact-lbl">QR / PromptPay</span>
+      <span style="margin-left:auto;font-size:18px;color:var(--soft)">›</span>
     </div>
     <div class="qr-box on" id="pp-qr">
       <div class="qr-placeholder">📱</div>
@@ -745,6 +746,22 @@ body{background:#fff!important}
   </div>
   <div class="fixbot nonav">
     <button class="btn-p" id="sub-btn" onclick="submitOrder()">✅ ยืนยันและสั่งอาหาร</button>
+  </div>
+</div>
+
+<!-- PAYMENT POPUP -->
+<div id="pay-popup-overlay" onclick="closePayPopup()" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:500"></div>
+<div id="pay-popup" style="display:none;position:fixed;bottom:0;left:0;right:0;max-width:480px;margin:0 auto;background:#fff;border-radius:20px 20px 0 0;z-index:501;padding:20px 16px 36px;box-shadow:0 -4px 24px rgba(0,0,0,.15)">
+  <div style="font-size:15px;font-weight:700;color:var(--ink);margin-bottom:12px">เลือกวิธีชำระเงิน</div>
+  <div class="pay-popup-opt" onclick="selectPay('qr');closePayPopup()">
+    <span style="font-size:22px">📱</span>
+    <div style="flex:1"><div style="font-size:14px;font-weight:600">QR / PromptPay</div><div style="font-size:11px;color:var(--soft)">สแกน QR จ่ายทันที</div></div>
+    <span id="pay-check-qr" style="color:var(--g);font-weight:700;font-size:16px">✓</span>
+  </div>
+  <div class="pay-popup-opt" onclick="selectPay('transfer');closePayPopup()">
+    <span style="font-size:22px">🏦</span>
+    <div style="flex:1"><div style="font-size:14px;font-weight:600">โอนเงิน</div><div style="font-size:11px;color:var(--soft)">โอนแล้วแนบสลิป</div></div>
+    <span id="pay-check-transfer" style="display:none;color:var(--g);font-weight:700;font-size:16px">✓</span>
   </div>
 </div>
 
@@ -1618,19 +1635,19 @@ const CUTOFF_HOUR = 18;
 
 function renderDatePick() {
   const el = document.getElementById('dpick');
+  const notice = document.getElementById('date-notice');
   const now = new Date();
   const DAYS   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  // ถ้าเลย cutoff → วันแรกที่สั่งได้เป็นมะรืน (offset=2)
   const isPastCutoff = now.getHours() >= CUTOFF_HOUR;
   const baseOffset   = isPastCutoff ? 2 : 1;
-  const startOffset  = isOutOfProvince ? baseOffset + 1 : baseOffset; // cold chain +1 วัน
-  let html = '';
-  if(isPastCutoff){
-    html += `<div style="padding:8px 14px 4px;font-size:12px;color:#92400E;
-      background:#FEF3C7;border-radius:8px;margin:0 14px 6px;line-height:1.5;">
-      ⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`;
+  const startOffset  = isOutOfProvince ? baseOffset + 1 : baseOffset;
+  if(notice){
+    notice.innerHTML = isPastCutoff
+      ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
+      : '';
   }
+  let html = '';
   for(let i = startOffset; i <= startOffset + 6; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
     const key  = d.toISOString().split('T')[0];
@@ -2060,13 +2077,35 @@ function useMyLocation(){
 
 function selectPay(m){
   payMethod=m;
+  const ICONS={'qr':'📱','transfer':'🏦'};
+  const LABELS={'qr':'QR / PromptPay','transfer':'โอนเงิน'};
+  const icoEl=document.getElementById('pay-compact-ico');
+  const lblEl=document.getElementById('pay-compact-lbl');
+  if(icoEl)icoEl.textContent=ICONS[m]||'💳';
+  if(lblEl)lblEl.textContent=LABELS[m]||m;
   ['qr','transfer'].forEach(x=>{
-    const btn=document.getElementById('pm-'+x);
+    const chk=document.getElementById('pay-check-'+x);
+    if(chk)chk.style.display=x===m?'':'none';
     const panel=document.getElementById('pp-'+x);
-    if(btn)btn.classList.toggle('on',x===m);
     if(panel)panel.classList.toggle('on',x===m);
   });
   if(m==='qr')updateQRAmount();
+}
+function openPayPopup(){
+  document.getElementById('pay-popup-overlay').style.display='block';
+  document.getElementById('pay-popup').style.display='block';
+}
+function closePayPopup(){
+  document.getElementById('pay-popup-overlay').style.display='none';
+  document.getElementById('pay-popup').style.display='none';
+}
+function toggleMapSection(){
+  const sec=document.getElementById('map-section');
+  const btn=document.getElementById('btn-pin-map');
+  const isOpen=sec.style.display!=='none';
+  sec.style.display=isOpen?'none':'block';
+  if(btn)btn.style.borderColor=isOpen?'var(--line)':'var(--g)';
+  if(!isOpen)initCusMap();
 }
 
 function updateQRAmount(){
