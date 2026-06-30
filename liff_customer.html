@@ -2135,41 +2135,43 @@ function renderHomeGrid() {
   var itemGrids = homeLayout.filter(function(s){ return s.section_type==='item_grid'; });
   var html = '';
 
-  // ── Collage (meal_plan cards) — static 1big+2small, swipeable ──
-  var colCards = mealSecs.concat(promoSecs);
+  // ── Collage (meal_plan + promo) — เรียงตาม sort_order + จัดกลุ่มตามขนาดจริง ให้ตรงกับ HE ──
+  var colCards = homeLayout.filter(function(s){ return s.section_type==='meal_plan'||s.section_type==='promo'; });
   if (colCards.length) {
     html += '<div class="sec-title-row"><span class="sec-title">'+(window._homeSectionTitle||'Meal Plans')+'</span></div>';
     html += '<div class="col-scroll" id="colScroll" style="padding-left:16px!important">';
 
-    // Group into sets of 3 (1 large + 2 small) per swipe page
-    for (var i = 0; i < colCards.length || i === 0; i += 3) {
-      var g = colCards.slice(i, i + 3);
-      if (!g.length) break;
+    var cc = colCards.map(function(s){
+      var f=s.item_filter||{};
+      return { cat:(f.category||f.he_group||''), title:(s.title||''), subtitle:(s.subtitle||''),
+               bg_color:s.bg_color, bg_image:s.bg_image, size:((s.col_span||2)>=3?'large':'small') };
+    });
+    // จัดกลุ่มแบบ HE: การ์ดนึง + การ์ดเล็กที่ตามมา (สูงสุด 3 ต่อกลุ่ม)
+    var groups=[], gi=0;
+    while (gi<cc.length){
+      var grp=[cc[gi]]; gi++;
+      while (gi<cc.length && cc[gi].size==='small' && grp.length<3){ grp.push(cc[gi]); gi++; }
+      groups.push(grp);
+    }
+    var cardHtml=function(c,cls){
+      var img=c.bg_image?'<img src="'+c.bg_image+'" onerror="this.remove()">':'';
+      var sc=(cls==='sm'?' sm':'');
+      var cta=(cls==='lg'?'<span class="col-cta">ดูเมนู →</span>':'');
+      return '<div class="col-card '+cls+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
+    };
+    groups.forEach(function(grp){
       html += '<div class="col-group">';
-
-      // First card = large
-      var c0 = g[0], f0 = c0.item_filter||{};
-      var cat0 = f0.category||f0.he_group||'';
-      var img0 = c0.bg_image ? '<img src="'+c0.bg_image+'" onerror="this.remove()">' : '';
-      html += '<div class="col-card lg" data-cat="'+cat0+'" onclick="colCardClick(this)" style="background:'+c0.bg_color+'">'+img0+'<div class="col-ov"></div><div class="col-body"><div class="col-title">'+c0.title+'</div><div class="col-sub">'+(c0.subtitle||'')+'</div><span class="col-cta">ดูเมนู →</span></div></div>';
-
-      // Second + third = small (right column)
-      if (g.length > 1) {
+      html += cardHtml(grp[0],'lg');           // การ์ดหลัก (solo ก็เต็มช่อง)
+      if (grp.length>1){
         html += '<div class="col-col">';
-        for (var j = 1; j < Math.min(g.length, 3); j++) {
-          var cj = g[j], fj = cj.item_filter||{};
-          var catj = fj.category||fj.he_group||'';
-          var imgj = cj.bg_image ? '<img src="'+cj.bg_image+'" onerror="this.remove()">' : '';
-          html += '<div class="col-card sm" data-cat="'+catj+'" onclick="colCardClick(this)" style="background:'+cj.bg_color+'">'+imgj+'<div class="col-ov"></div><div class="col-body"><div class="col-title sm">'+cj.title+'</div><div class="col-sub sm">'+(cj.subtitle||'')+'</div></div></div>';
-        }
+        for (var j=1;j<grp.length;j++) html += cardHtml(grp[j],'sm');
         html += '</div>';
       }
       html += '</div>';
-    }
-    html += '</div>';
+    });
+    html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // right spacer
+    html += '</div>'; // close col-scroll
   }
-  html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // right spacer
-  html += '</div>'; // close col-scroll
 
   // ── Item Grid Sections ──
   itemGrids.forEach(function(s) {
