@@ -832,10 +832,10 @@ let selDate = null, selSlot = null;
 let activeCat = null;
 
 const SLOTS = [
-  { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท' },
+  { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท', mealPlanDisabled:true },
   { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
   { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
-  { key:'express',   label:'🚗 ส่งด่วน กำหนดเวลาเอง', time:'Lalamove', isExpress:true },
+  { key:'express',   label:'🚗 ส่งด่วน กำหนดเวลาเอง', time:'Lalamove', isExpress:true, mealPlanDisabled:true },
 ];
 
 const CAT_LABELS = {
@@ -1135,14 +1135,20 @@ function renderMealPlanPicker() {
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
     <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:6px;">3. เลือกเมนู Request (แอดมินจัดให้ · เลือกได้หลายอัน)</div>
-      ${mpRequestMenus.length ? mpRequestMenus.map((r,i)=>{
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:8px;">3. เลือกเมนู Request (แอดมินจัดให้ · เลือกได้หลายอัน)</div>
+      ${mpRequestMenus.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${mpRequestMenus.map((r,i)=>{
         const on = mpReqSel.includes(i);
-        return `<div onclick="toggleMPReq(${i})" style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-radius:10px;margin-bottom:6px;cursor:pointer;border:1.5px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
-          <span style="font-size:16px;">${on?'☑️':'⬜'}</span>
-          <span style="font-size:14px;color:#1A1A1A;"><b>${h(r.code)}</b> ${h(r.name)}</span>
+        const mi = menuItems.find(m=>m.code===r.code) || {};
+        const img = mi.image_url
+          ? `<img src="${mi.image_url}" style="width:100%;height:88px;object-fit:cover;border-radius:9px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px&quot;>🍱</div>'">`
+          : `<div style="width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px;">🍱</div>`;
+        return `<div onclick="toggleMPReq(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:13px;padding:8px;cursor:pointer;position:relative;">
+          ${img}
+          <div style="font-size:12px;font-weight:700;color:#1A1A1A;margin-top:6px;line-height:1.25;">${h(r.name)}</div>
+          <div style="font-size:10px;color:#9AA0AC;margin-top:1px;">${h(r.code)}</div>
+          ${on?'<div style="position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;background:#1F4D3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;">✓</div>':''}
         </div>`;
-      }).join('') : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
+      }).join('')}</div>` : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
     </div>` : ''}`;
   updateMPConfirmBtn();
 }
@@ -1642,7 +1648,7 @@ function hasMealPlan(){
 function renderTimePick() {
   const el = document.getElementById('tpick');
   const isMeal = hasMealPlan();
-  if(isMeal && selSlot==='morning') selSlot=null;
+  if(isMeal && (SLOTS.find(s=>s.key===selSlot)||{}).mealPlanDisabled) selSlot=null;
 
   // rate table
   const rateInfo = `<div style="background:#f9f9f7;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#666;line-height:1.8">
@@ -1656,7 +1662,7 @@ function renderTimePick() {
   </div>` : '';
 
   const mealNotice = isMeal ? `<div style="background:#EFF6FF;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:12px;color:#1D4ED8">
-    🍱 <b>Meal Plan:</b> ผลิตสดใหม่ตั้งแต่ช่วงเช้า เสร็จช่วงเที่ยง messenger จะทยอยส่งตามคิว — <b>ช่วงเช้าไม่สามารถเลือกได้</b>
+    🍱 <b>Meal Plan:</b> ผลิตสดใหม่เสร็จช่วงเที่ยง — <b>ส่งได้เฉพาะช่วงบ่าย (13:00–18:00)</b> เท่านั้น (ไม่มีช่วงเช้า/ตลอดวัน/ส่งด่วน)
   </div>` : '';
 
   const slotHTML = SLOTS.map(s => {
@@ -1665,6 +1671,12 @@ function renderTimePick() {
 
     // Express slot: แสดง time picker + Lalamove price
     if(s.isExpress){
+      if(disabled){
+        return `<div class="tchip disabled" style="opacity:.35;cursor:not-allowed;">
+          <div class="tchip-l">${s.label}<span style="font-size:10px;color:#888;margin-left:6px">ไม่พร้อมใช้งาน</span></div>
+          <div class="tchip-t">${s.time}</div>
+        </div>`;
+      }
       let priceLabel = '';
       if(selSlot==='express'){
         if(lalamovePrice==='loading') priceLabel='<span style="color:#666;font-size:11px">⏳ กำลังเช็คราคา...</span>';
