@@ -1794,6 +1794,24 @@ function renderConfirm(addr) {
 }
 
 // ══════════════════════════════════════
+// 📍 MAP CONFIRM (popup เตือนยังไม่ปักหมุด) — คืน Promise<boolean>
+// ══════════════════════════════════════
+let mapConfirmResolve = null;
+function showMapConfirm(){
+  return new Promise(resolve=>{
+    mapConfirmResolve = resolve;
+    const ov = document.getElementById('mapConfirmOverlay');
+    if(ov){ ov.style.display = 'flex'; }
+    else { resolve(true); } // ไม่มี overlay → ปล่อยผ่าน
+  });
+}
+function closeMapConfirm(proceed){
+  const ov = document.getElementById('mapConfirmOverlay');
+  if(ov) ov.style.display = 'none';
+  if(mapConfirmResolve){ const r = mapConfirmResolve; mapConfirmResolve = null; r(!!proceed); }
+}
+
+// ══════════════════════════════════════
 // 📤 SUBMIT ORDER
 // ══════════════════════════════════════
 async function submitOrder() {

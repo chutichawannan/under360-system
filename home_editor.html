@@ -832,8 +832,13 @@ function catDrop(e,targetCat){
 }
 
 function selectCatHe(cat){
+  if(activeCat===cat) return;   // คลิกหมวดเดิม → ไม่ rebuild (กัน dblclick rename หลุด)
   activeCat=cat;
-  renderCatSection();
+  // อัพเดท highlight + รายการ โดยไม่ rebuild ทั้งแถบ (ไม่งั้น input rename ถูกลบก่อน dblclick ทำงาน)
+  document.querySelectorAll('.cat-btn-he').forEach(b=>b.classList.toggle('on', b.dataset.cat===cat));
+  const hint=document.getElementById('catKeyHint');
+  if(hint) hint.textContent=`⠿ ลากเรียง · ดับเบิลคลิกชื่อเพื่อแก้ (ลิ้ง DB) · 👁 ซ่อนจากลูกค้า · key: "${activeCat}"`;
+  renderCatItems();
 }
 
 function renderCatItems(){
