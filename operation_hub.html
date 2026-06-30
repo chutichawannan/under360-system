@@ -462,10 +462,15 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
             <button id="vCode" class="btn" onclick="setPlanView('Code')" style="padding:4px 8px;font-size:11px;border:none;">Code</button>
             <button id="vCompact" class="btn" onclick="setPlanView('Compact')" style="padding:4px 8px;font-size:11px;border:none;">จำนวน</button>
           </div>
-          <div class="date-tabs" style="margin:0;">
-            <button class="dtab active" id="pd1" onclick="setPlanDays(1,this)">วันนี้</button>
-            <button class="dtab" id="pd3" onclick="setPlanDays(3,this)">3 วัน</button>
-            <button class="dtab" id="pd5" onclick="setPlanDays(5,this)">5 วัน</button>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <select id="planDateRel" onchange="onPlanRel(this.value)" style="padding:5px 8px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:12px;font-family:inherit;">
+              <option value="0">วันนี้</option>
+              <option value="1">พรุ่งนี้</option>
+              <option value="2">มะรืน</option>
+              <option value="3">+3 วัน</option>
+              <option value="">เลือกวันที่เอง…</option>
+            </select>
+            <input type="date" id="planDateInput" onchange="onPlanExact(this.value)" style="padding:4px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:12px;font-family:inherit;">
           </div>
         </div>
       </div>
@@ -654,7 +659,7 @@ async function saveAssignment(cid,code,qty,note,dateStr){
   var sb_=getSB(); if(!sb_) return;
   try{
     await sb_.from("daily_menu_assignments").upsert({
-      plan_date:dateStr||today2(),
+      plan_date:dateStr||planDate,
       customer_id:cid,
       menu_code:code,
       qty:qty||1,
@@ -668,7 +673,7 @@ async function deleteAssignment(cid,code,dateStr){
   var sb_=getSB(); if(!sb_) return;
   try{
     await sb_.from("daily_menu_assignments").delete()
-      .eq("plan_date",dateStr||today2())
+      .eq("plan_date",dateStr||planDate)
       .eq("customer_id",cid)
       .eq("menu_code",code);
   }catch(e){console.error("deleteAssignment:",e);}
@@ -696,7 +701,7 @@ let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
 let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
-let planDays=1,planView="full";
+let planDays=1,planView="full",planDate=today2();
 // customerAssign: {cid: [{code, qty, note}]}
 let customerAssign={};
 let selectedCids=[];
@@ -707,7 +712,7 @@ function today2(){return toISO(new Date());}
 function tomorrow2(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function dayAfter2(){var d=new Date();d.setDate(d.getDate()+2);return toISO(d);}
 function fmtD(d){return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
-function getDateCols(){var c=[];for(var i=0;i<planDays;i++){var d=new Date();d.setDate(d.getDate()+i);c.push(d);}return c;}
+function getDateCols(){return [new Date(planDate+"T00:00:00")];}
 
 function toggleSidebar(){
   sidebarMini=!sidebarMini;
@@ -957,11 +962,25 @@ function saveNote(cid,code,val){
 }
 
 // ── RENDER ─────────────────────────────────────────────
-function setPlanDays(n,btn){
-  planDays=n;
-  document.querySelectorAll("#pd1,#pd3,#pd5").forEach(function(b){b.classList.remove("active");});
-  btn.classList.add("active");
-  buildPlan();
+function onPlanRel(v){
+  if(v==="") return;  // "เลือกเอง" → ใช้ช่องวันที่
+  var d=new Date(); d.setDate(d.getDate()+parseInt(v,10));
+  setPlanDate(toISO(d));
+}
+function onPlanExact(v){ if(v) setPlanDate(v); }
+function setPlanDate(dateStr){
+  planDate=dateStr;
+  selectedCids=[];  // เปลี่ยนวัน → ล้างการเลือกลูกค้า
+  var inp=document.getElementById("planDateInput"); if(inp) inp.value=dateStr;
+  var rel=document.getElementById("planDateRel");
+  if(rel){
+    var diff=Math.round((new Date(dateStr+"T00:00:00")-new Date(today2()+"T00:00:00"))/86400000);
+    rel.value=(diff>=0&&diff<=3)?String(diff):"";
+  }
+  customerAssign={};  // โหลดใหม่ตามวันที่
+  var sb_=getSB();
+  if(sb_){ loadAssignments(dateStr).then(function(){ initAssign(); renderLeftPanel(); _buildPlanTable(); }); }
+  else { initAssign(); renderLeftPanel(); _buildPlanTable(); }
 }
 function setPlanView(v){
   planView=v;
@@ -1055,7 +1074,7 @@ function buildPlan(){
   // โหลดจาก Supabase ถ้ายังไม่เคยโหลด
   var sb_=getSB();
   if(sb_&&Object.keys(customerAssign).length===0){
-    loadAssignments(today2()).then(function(){
+    loadAssignments(planDate).then(function(){
       initAssign();
       renderLeftPanel();
       _buildPlanTable();
@@ -1071,8 +1090,10 @@ function _buildPlanTable(){
   var head=document.getElementById("planHead");
   var body=document.getElementById("planBody");
   if(!head||!body)return;
+  var _di=document.getElementById("planDateInput"); if(_di&&!_di.value)_di.value=planDate;
+  var dayLbl=(planDate===today2())?" (วันนี้)":(planDate===tomorrow2())?" (พรุ่งนี้)":(planDate===dayAfter2())?" (มะรืน)":"";
   var hh="<th style='width:120px'>ลูกค้า</th>";
-  cols.forEach(function(d,i){hh+="<th>"+fmtD(d)+(i===0?" (วันนี้)":"")+"</th>";});
+  cols.forEach(function(d){hh+="<th>"+fmtD(d)+dayLbl+"</th>";});
   head.innerHTML=hh;
   var rows="";
   MOCK_CUSTOMERS.forEach(function(c){
