@@ -104,7 +104,8 @@ CREATE TABLE package_items ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
   package_id uuid REFERENCES packages(id) ON DELETE CASCADE,
   sku text NOT NULL, extra_price integer DEFAULT 0,
   created_at timestamptz DEFAULT now(), UNIQUE(package_id, sku) );
-ALTER TABLE orders ADD COLUMN IF NOT EXISTS order_type TEXT DEFAULT 'individual';
+-- ⚠️ order_type ไม่ได้ลงจริง (insert เคยพังเพราะคอลัมน์ไม่มี) — เลิกใช้แล้ว
+-- order_type เดาจาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
 
 -- v0.3.3 pre-order
 ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS available_from DATE;
