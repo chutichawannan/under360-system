@@ -1179,8 +1179,15 @@ function renderMealPlanPicker() {
     <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">2. เลือกขนาด</div>
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
+    <div style="background:#FEF9E7;border:1px solid #F5E4A8;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px;color:#8A6D1F;line-height:1.6;">
+      📅 <strong>จัดส่งเฉพาะวันจันทร์ / พุธ / ศุกร์</strong> เท่านั้น — ระบบจะทยอยส่งกล่องอาหารตามรอบนี้ไปเรื่อยๆ จนครบ ${MP_SETS.find(x=>x.id===mpSetId)?.boxes||''} กล่อง<br>
+      หากต้องการเลื่อน/ข้ามวันส่ง แจ้งแอดมินหรือแก้ไขได้ภายหลังในหน้าประวัติออเดอร์
+    </div>
     <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:8px;">3. เลือกเมนู Request (แอดมินจัดให้ · เลือกได้หลายอัน)</div>
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">3. เมนู Request (ถ้าต้องการ)</div>
+      <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
+        ปกติแอดมินจะจัดเมนูให้ 7 รายการ/สัปดาห์ตามความเหมาะสม ถ้ามีเมนูที่อยากกินเป็นพิเศษ เลือกได้ตรงนี้ — ระบบจะขอสลับเมนูที่แอดมินจัดไว้ 1-2 รายการ ให้เป็นเมนูที่เลือก (ไม่ต้องเลือกครบทุกอัน เลือกแค่ที่อยากได้)
+      </div>
       ${mpRequestMenus.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${mpRequestMenus.map((r,i)=>{
         const on = mpReqSel.includes(i);
         const mi = menuItems.find(m=>m.code===r.code) || {};
