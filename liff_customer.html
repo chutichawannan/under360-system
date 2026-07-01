@@ -1918,6 +1918,7 @@ async function submitOrder() {
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
     appliedPromo = null; refreshCouponUI();
+    if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     showScr('s-ok');
 
   } catch(e) {
