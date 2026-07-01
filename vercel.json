@@ -1,0 +1,5 @@
+{
+  "crons": [
+    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" }
+  ]
+}

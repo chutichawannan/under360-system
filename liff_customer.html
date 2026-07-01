@@ -842,9 +842,20 @@ body{background:#fff!important}
     <button class="hdr-back" onclick="goMenu()">←</button>
     <div class="hdr-title">ออเดอร์ของฉัน</div>
   </div>
-  <div class="scroll pb-nav" id="olist">
-    <div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">กำลังโหลด...</div></div>
+  <div class="scroll pb-nav">
+    <div onclick="showScr('s-mp-manage'); renderMpManage();" style="margin:14px 14px 0;background:#EBF3EF;border:2px solid #1F4D3A;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+      <div style="font-size:14px;font-weight:800;color:#1F4D3A;">🥗 จัดการ Meal Plan</div>
+      <div style="font-size:18px;color:#1F4D3A;">→</div>
+    </div>
+    <div id="olist">
+      <div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">กำลังโหลด...</div></div>
+    </div>
   </div>
+</div>
+
+<div class="scr" id="s-mp-manage">
+  <div class="hdr"><button class="hdr-back" onclick="goOrders()">←</button><div class="hdr-title">จัดการ Meal Plan ของฉัน</div></div>
+  <div class="scroll pb-nav" id="mp-manage-list"></div>
 </div>
 
 <script>
@@ -1233,11 +1244,53 @@ function addMealPlanToCart() {
     id:cartId, type:'meal_plan', mp_type:mpType, mp_set:mpSetId,
     name:'Meal Plan '+(mpType==='hp'?'HP':'LC')+' · '+s.label+' ('+s.boxes+' กล่อง)',
     code:'MP-'+mpType.toUpperCase()+'-'+mpSetId.slice(0,1).toUpperCase(),
-    price, qty:1, request:mpRequest.trim()
+    price, qty:1, request:mpRequest.trim(),
+    requestList: mpReqSel.map(j => mpRequestMenus[j]).filter(Boolean).map(r => ({code: r.code, name: r.name}))
   });
   saveCart(); updateCartUI();
   toast('เพิ่ม Meal Plan เข้าตะกร้าแล้ว ✓');
   closeMealPlanSheet();
+}
+
+async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
+  try {
+    const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
+    if (!setObj) return;
+    const totalRounds = Math.max(1, Math.round(setObj.boxes / 7));
+    const isMWF = dt => [1,3,5].includes(dt.getDay());
+    let d = new Date(selDate + 'T00:00:00');
+    while (!isMWF(d)) d.setDate(d.getDate()+1);
+    const rows = [];
+    for (let i = 1; i <= totalRounds; i++) {
+      const deliveryDateStr = d.toISOString().slice(0,10);
+      const opensAt = new Date(d); opensAt.setDate(opensAt.getDate()-3);
+      const deadline = new Date(d); deadline.setDate(deadline.getDate()-1);
+      rows.push({
+        order_id: orderId,
+        customer_id: customer?.id || null,
+        line_uid: lineProfile.userId,
+        customer_name: lineProfile.displayName,
+        mp_type: cartItem.mp_type,
+        mp_set: cartItem.mp_set,
+        round_no: i,
+        total_rounds: totalRounds,
+        delivery_date: deliveryDateStr,
+        time_slot: slot?.key || selSlot,
+        time_slot_label: slot?.time || '',
+        delivery_address: addrFinal,
+        box_count: 7,
+        status: 'scheduled',
+        customer_request: i === 1 ? (cartItem.requestList || []) : [],
+        request_opens_at: opensAt.toISOString().slice(0,10),
+        request_deadline: deadline.toISOString().slice(0,10)
+      });
+      d.setDate(d.getDate()+1);
+      while (!isMWF(d)) d.setDate(d.getDate()+1);
+    }
+    await sb.from('mp_deliveries').insert(rows);
+  } catch (e) {
+    console.error('generateMpDeliveries failed (non-blocking):', e);
+  }
 }
 
 
@@ -1359,7 +1412,9 @@ async function init() {
     loadHomeLayout();
     loadPackagesIfNeeded(); // v0.3.2
   } catch(e) { console.warn('Render error', e); }
-  showScr('s-menu');
+  const _screenParam = new URLSearchParams(location.search).get('screen');
+  if (_screenParam === 'mp-manage') { showScr('s-mp-manage'); renderMpManage(); }
+  else { showScr('s-menu'); }
 }
 
 function showErr(msg) {
@@ -1912,6 +1967,9 @@ async function submitOrder() {
     });
     const { error: iErr } = await sb.from('order_items').insert(items);
     if (iErr) throw iErr;
+
+    // 2b. สร้างตารางส่ง Meal Plan (Mon/Wed/Fri rounds) — ไม่บล็อก flow ถ้าพัง
+    for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot); }
 
     // 3. Save default address for next time
     if (customer?.id) {
@@ -2523,6 +2581,153 @@ function renderOrders(orders) {
       </div>
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════
+// 🥗 MEAL PLAN — MANAGE (ลูกค้าจัดการรอบส่ง)
+// ══════════════════════════════════════
+const MP_STATUS = {
+  scheduled:         { t:'📋 รอกำหนดคิว',                c:'gray'  },
+  request_open:      { t:'🔓 เปิดให้เลือกเมนู',           c:'amber' },
+  request_submitted: { t:'📨 ส่งคำขอแล้ว รอแอดมินยืนยัน', c:'amber' },
+  menu_assigned:      { t:'✅ กำหนดเมนูแล้ว',             c:'green' },
+  skip_requested:     { t:'⏭ ลูกค้าขอเลื่อน/ข้าม (รอแอดมิน)', c:'amber' },
+  skipped:            { t:'⏹ ข้ามรอบนี้',                 c:'gray'  },
+  delivered:          { t:'📦 ส่งแล้ว',                    c:'green' },
+  cancelled:          { t:'❌ ยกเลิก',                     c:'gray'  },
+};
+const MP_STATUS_COLORS = {
+  green: { bg:'#EBF3EF', fg:'#1F4D3A' },
+  amber: { bg:'#FEF9E7', fg:'#8A6D1F' },
+  gray:  { bg:'#F0F0EE', fg:'#6B7280' },
+};
+let mpManageRows = [];
+let mpManageOpenReq = null;   // row id ที่กำลังเปิด request picker อยู่
+let mpManageReqSel = [];      // index ที่เลือกใน mpRequestMenus (สำหรับ picker นี้)
+
+async function renderMpManage() {
+  const el = document.getElementById('mp-manage-list');
+  if (!el) return;
+  el.innerHTML = '<div class="empty"><div class="spin"></div></div>';
+  try {
+    const { data } = await sb.from('mp_deliveries')
+      .select('*')
+      .eq('line_uid', lineProfile.userId)
+      .order('delivery_date');
+    mpManageRows = data || [];
+  } catch(e) {
+    console.warn('load mp_deliveries failed', e);
+    mpManageRows = [];
+  }
+  if (!mpManageRows.length) {
+    el.innerHTML = '<div class="empty"><div class="empty-ico">🥗</div><div class="empty-txt">ยังไม่มี Meal Plan ที่ใช้งานอยู่<br><small>กด 🥗 Meal Plan ในหน้าเมนูเพื่อสมัคร</small></div></div>';
+    return;
+  }
+  // group by order_id
+  const groups = {};
+  const order = [];
+  mpManageRows.forEach(r => {
+    if (!groups[r.order_id]) { groups[r.order_id] = []; order.push(r.order_id); }
+    groups[r.order_id].push(r);
+  });
+  const typeLabel = t => t === 'lc' ? 'Low Carb' : 'High Protein';
+  const setLabel = s => MP_SETS.find(x => x.id === s)?.label || s;
+
+  el.innerHTML = order.map(oid => {
+    const rows = groups[oid].slice().sort((a,b) => a.round_no - b.round_no);
+    const first = rows[0];
+    const totalRounds = first.total_rounds || rows.length;
+    const doneCount = rows.filter(r => r.status === 'delivered').length;
+    const roundsHtml = rows.map(r => mpManageRenderRound(r)).join('');
+    return `<div style="background:#fff;border-radius:14px;padding:14px 16px;margin:0 14px 14px;border:1px solid #E5E5E1;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div>
+          <div style="font-size:15px;font-weight:800;color:#1A1A1A;">${first.mp_type==='lc'?'🥗':'💪'} ${typeLabel(first.mp_type)} · ${h(setLabel(first.mp_set))}</div>
+          <div style="font-size:12px;color:#6B7280;margin-top:2px;">รอบ ${doneCount}/${totalRounds}</div>
+        </div>
+      </div>
+      <div>${roundsHtml}</div>
+    </div>`;
+  }).join('');
+}
+
+function mpManageRenderRound(r) {
+  const st = MP_STATUS[r.status] || { t:r.status, c:'gray' };
+  const col = MP_STATUS_COLORS[st.c] || MP_STATUS_COLORS.gray;
+  const canPick = r.status === 'request_open';
+  const canSkip = !['delivered','skipped','cancelled'].includes(r.status);
+  const isOpen = mpManageOpenReq === r.id;
+  return `<div style="border-top:1px solid #F0F0EE;padding:10px 0;">
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;${canPick?'cursor:pointer;':''}" ${canPick?`onclick="mpManageToggleReqPicker('${r.id}')"`:''}>
+      <div style="font-size:13px;color:#1A1A1A;">
+        <b>รอบ ${r.round_no}</b> · ${fmtDate(r.delivery_date)}
+      </div>
+      <span style="font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:20px;background:${col.bg};color:${col.fg};white-space:nowrap;">${st.t}</span>
+    </div>
+    ${canPick ? mpManageReqPickerHtml(r, isOpen) : ''}
+    ${canSkip ? `<div style="margin-top:6px;"><span onclick="mpManageSkipRound('${r.id}')" style="font-size:12px;color:#C9573F;text-decoration:underline;cursor:pointer;">ขอเลื่อน/ข้ามรอบนี้</span></div>` : ''}
+  </div>`;
+}
+
+function mpManageReqPickerHtml(r, isOpen) {
+  if (!isOpen) return '';
+  if (!mpRequestMenus.length) {
+    return '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:12.5px;">ยังไม่มีเมนู request ตอนนี้</div>';
+  }
+  const cards = mpRequestMenus.map((r2,i) => {
+    const on = mpManageReqSel.includes(i);
+    const mi = menuItems.find(m => m.code === r2.code) || {};
+    const img = mi.image_url
+      ? `<img src="${mi.image_url}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px&quot;>🍱</div>'">`
+      : `<div style="width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px;">🍱</div>`;
+    return `<div onclick="event.stopPropagation();mpManageToggleReqItem(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:11px;padding:7px;cursor:pointer;position:relative;">
+      ${img}
+      <div style="font-size:11.5px;font-weight:700;color:#1A1A1A;margin-top:5px;line-height:1.25;">${h(r2.name)}</div>
+      ${on?'<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#1F4D3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">✓</div>':''}
+    </div>`;
+  }).join('');
+  return `<div style="margin-top:8px;" onclick="event.stopPropagation()">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">${cards}</div>
+    <button onclick="mpManageSubmitReq('${r.id}')" style="margin-top:8px;width:100%;background:#1F4D3A;color:#fff;border:none;border-radius:9px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">✅ ยืนยันเมนูที่เลือก</button>
+  </div>`;
+}
+
+function mpManageToggleReqPicker(rowId) {
+  if (mpManageOpenReq === rowId) { mpManageOpenReq = null; mpManageReqSel = []; }
+  else { mpManageOpenReq = rowId; mpManageReqSel = []; }
+  renderMpManage();
+}
+
+function mpManageToggleReqItem(i) {
+  const k = mpManageReqSel.indexOf(i);
+  if (k >= 0) mpManageReqSel.splice(k,1); else mpManageReqSel.push(i);
+  renderMpManage();
+}
+
+async function mpManageSubmitReq(rowId) {
+  const selList = mpManageReqSel.map(i => mpRequestMenus[i]).filter(Boolean).map(r => ({code:r.code, name:r.name}));
+  try {
+    await sb.from('mp_deliveries').update({ customer_request: selList, status:'request_submitted' }).eq('id', rowId);
+    toast('ส่งคำขอเมนูแล้ว ✓');
+  } catch(e) {
+    console.error(e);
+    toast('ส่งคำขอไม่สำเร็จ ลองใหม่อีกครั้ง');
+  }
+  mpManageOpenReq = null; mpManageReqSel = [];
+  renderMpManage();
+}
+
+async function mpManageSkipRound(rowId) {
+  if (!confirm('ต้องการขอเลื่อน/ข้ามรอบนี้ใช่ไหม? แอดมินจะตรวจสอบและติดต่อกลับ')) return;
+  const note = prompt('หมายเหตุเพิ่มเติม (ถ้ามี) — เว้นว่างได้') || '';
+  try {
+    await sb.from('mp_deliveries').update({ status:'skip_requested', customer_note: note }).eq('id', rowId);
+    toast('ส่งคำขอเลื่อน/ข้ามแล้ว ✓');
+  } catch(e) {
+    console.error(e);
+    toast('ส่งคำขอไม่สำเร็จ ลองใหม่อีกครั้ง');
+  }
+  renderMpManage();
 }
 
 // ══════════════════════════════════════

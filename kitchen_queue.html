@@ -44,6 +44,21 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .pt-row.danger{background:#FFF1F1;}
 .code-tag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);background:var(--gs);padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
 .pt-n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;}
+.mp-wrap{background:var(--w);border-radius:var(--rad);border:1px solid var(--xsoft);border-left:4px solid #7C3AED;overflow:hidden;margin-bottom:12px;}
+.mp-head{padding:9px 12px;background:#F5F3FF;border-bottom:2px solid var(--xsoft);font-size:12px;font-weight:700;color:#5B21B6;}
+.mp-row{padding:8px 12px;border-bottom:1px solid var(--xsoft);}
+.mp-row:last-child{border-bottom:none;}
+.mp-row-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mp-name{font-size:13px;font-weight:700;}
+.mp-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;}
+.mp-tag.hp{background:#FEF3C7;color:#92400E;}
+.mp-tag.lc{background:#D1FAE5;color:#065F46;}
+.mp-round{font-size:11px;color:var(--soft);font-weight:600;}
+.mp-meta{font-size:11px;color:var(--soft);margin-top:3px;}
+.mp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.mp-chip{font-family:var(--mono);font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FE;padding:2px 6px;border-radius:4px;}
+.mp-chip.empty{font-family:inherit;font-style:italic;font-weight:400;color:var(--xsoft);background:none;padding:0;}
+.btn-mp-done{margin-top:6px;font-size:11px;font-weight:700;color:var(--g);background:var(--gs);border:1px solid var(--g);border-radius:6px;padding:4px 10px;cursor:pointer;}
 .actual-input{width:44px;border:1.5px solid var(--g);border-radius:6px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g);padding:2px 0;background:var(--gs);}
 
 /* SLOT SECTION */
@@ -132,6 +147,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <!-- TAB 1: รายสินค้า -->
 <div class="main" id="tabContent1">
   <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+  <div id="mpQueueView"></div>
 </div>
 
 <!-- TAB 2: รายออเดอร์ -->
@@ -164,7 +180,7 @@ function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
 
 // ── STATE ────────────────────────────────────────────────
-var allOrders=[], allItems=[], allMenus=[];
+var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
 var dateMode="today", slotMode="all", tabMode=1;
 var codeMode="code"; // code | name | subcode
 var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
@@ -220,9 +236,10 @@ async function loadAll(){
     var r=await Promise.all([
       sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
       sb_.from("order_items").select("*"),
-      sb_.from("menu_items").select("id,code,name,stock_quantity,actual_stock,is_available,no_morning,category").eq("is_available",true)
+      sb_.from("menu_items").select("id,code,name,stock_quantity,actual_stock,is_available,no_morning,category").eq("is_available",true),
+      sb_.from("mp_deliveries").select("*")
     ]);
-    allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[];
+    allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[]; allMpDeliveries=r[3].data||[];
   }catch(e){console.error(e);}
   render();
 }
@@ -269,6 +286,7 @@ function renderProd(){
   var rows=Object.values(agg).sort(function(a,b){return (a.code||"").localeCompare(b.code||"");});
   if(!rows.length){
     document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
+    renderMpQueue();
     return;
   }
   var html="<div class='prod-wrap'>"
@@ -292,6 +310,53 @@ function renderProd(){
     +"รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ"
     +"<span style='float:right;color:var(--g);font-weight:600'>✏️ แก้ตัวเลข ของจริง ได้เลย</span></div></div>";
   document.getElementById("prodView").innerHTML=html;
+  renderMpQueue();
+}
+
+// MEAL PLAN QUEUE (คิวส่งระยะยาว)
+function renderMpQueue(){
+  var tgt=getTargetDate();
+  var rows=allMpDeliveries.filter(function(x){
+    if(x.status==="skipped"||x.status==="cancelled")return false;
+    if(!tgt)return false; // ไม่แสดงถ้าเลือก "ทั้งหมด" — คิวนี้ผูกกับวันเดียว
+    if(x.delivery_date!==tgt)return false;
+    return true;
+  }).sort(function(a,b){return (a.round_no||0)-(b.round_no||0);});
+  var el=document.getElementById("mpQueueView");
+  if(!el)return;
+  if(!rows.length){el.innerHTML="";return;}
+  var html="<div class='mp-wrap'>"
+    +"<div class='mp-head'>📦 Meal Plan ระยะยาว — คิวส่ง"+(tgt?"วันที่ "+fmtDate(tgt):"วันนี้")+"</div>";
+  rows.forEach(function(r){
+    var tagCls=(r.mp_type||"").toLowerCase()==="hp"?"hp":"lc";
+    var tagLabel=(r.mp_type||"").toUpperCase();
+    var menuItems=r.menu_items||[];
+    var chipsHtml=menuItems.length
+      ?menuItems.map(function(m){return "<span class='mp-chip'>"+escH(m.code||m.name||"—")+"</span>";}).join("")
+      :"<span class='mp-chip empty'>ยังไม่กำหนดเมนู</span>";
+    html+="<div class='mp-row'>"
+      +"<div class='mp-row-top'>"
+      +"<span class='mp-name'>"+escH(r.customer_name||"ลูกค้า")+"</span>"
+      +"<span class='mp-tag "+tagCls+"'>"+escH(tagLabel)+"</span>"
+      +"<span class='mp-round'>รอบ "+(r.round_no||"—")+"/"+(r.total_rounds||"—")+"</span>"
+      +"<span class='mp-round'>📦 "+(r.box_count||7)+" กล่อง</span>"
+      +"</div>"
+      +"<div class='mp-chips'>"+chipsHtml+"</div>"
+      +"<div class='mp-meta'>📍 "+escH(r.delivery_address||"—")+"</div>"
+      +"<div class='mp-meta'>⏰ "+escH(r.time_slot_label||r.time_slot||"—")+"</div>"
+      +(r.status==="delivered"
+        ?"<span style='font-size:11px;color:var(--g);font-weight:700'>✅ ส่งแล้ว</span>"
+        :"<button class='btn-mp-done' onclick='markMpDelivered(\""+r.id+"\")'>✅ ส่งแล้ว</button>")
+      +"</div>";
+  });
+  html+="</div>";
+  el.innerHTML=html;
+}
+async function markMpDelivered(id){
+  var sb_=getSB(); if(!sb_)return;
+  await sb_.from("mp_deliveries").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
+  var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="delivered";
+  renderMpQueue();
 }
 
 // debounce save 600ms หลังพิมเสร็จ

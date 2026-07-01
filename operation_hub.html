@@ -509,6 +509,16 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         </div>
 
       </div>
+
+      <div style="margin-top:20px;border-top:2px solid var(--ink-xsoft);padding-top:16px;">
+        <div class="sec-header"><div class="sec-title">📦 Meal Plan ระยะยาว (คิวรอบต่อไป)</div>
+          <div style="display:flex;gap:6px">
+            <button class="btn" id="mpqFilterBtn" onclick="toggleMpqFilter()">🔴 ต้องดำเนินการ</button>
+            <button class="btn" onclick="loadMpDeliveries()">🔄 รีเฟรช</button>
+          </div>
+        </div>
+        <div id="mpqList"></div>
+      </div>
     </div>
 
     <!-- TAB: PROMO -->
@@ -756,7 +766,7 @@ function openTab(name,el){
   document.getElementById("topTitle").textContent=TAB_TITLES[name]||name;
   if(name==="orders")loadAll();
   if(name==="menu")loadMenus();
-  if(name==="plan")buildPlan();
+  if(name==="plan"){buildPlan();loadMpDeliveries();}
   if(name==="messenger")loadMessenger();
   if(name==="promo")loadPromos();
   if(name==="customer")loadCustomers();
@@ -1290,6 +1300,181 @@ async function delPromo(id,code){
   var sb_=getSB(); if(!sb_)return;
   try{ var res=await sb_.from("promo_codes").delete().eq("id",id); if(res.error)throw res.error; loadPromos(); }
   catch(e){alert("ลบไม่ได้");}
+}
+
+// ── MEAL PLAN QUEUE (mp_deliveries) ────────────────────
+var MPQ_STATUS_MAP={
+  scheduled:"📋 รอกำหนดคิว",
+  request_open:"🔓 เปิดให้เลือกเมนู",
+  request_submitted:"📨 ส่งคำขอแล้ว รอแอดมินยืนยัน",
+  menu_assigned:"✅ กำหนดเมนูแล้ว",
+  skip_requested:"⏭ ลูกค้าขอเลื่อน/ข้าม (รอแอดมิน)",
+  skipped:"⏹ ข้ามรอบนี้",
+  delivered:"📦 ส่งแล้ว",
+  cancelled:"❌ ยกเลิก"
+};
+var MPQ_ATTENTION_STATUSES=["request_submitted","skip_requested"];
+var allMpDeliveries=[],mpqFilterAttentionOnly=false,mpqExpandedId=null,mpqExpandedSel=[];
+var mpqNoteTimers={};
+
+async function loadMpDeliveries(){
+  var sb_=getSB(); if(!sb_)return;
+  var el=document.getElementById("mpqList");
+  try{
+    var res=await sb_.from("mp_deliveries").select("*").order("delivery_date");
+    if(res.error)throw res.error;
+    allMpDeliveries=res.data||[];
+    renderMpDeliveriesQueue();
+  }catch(e){
+    console.error(e);
+    if(el)el.innerHTML="<div style='padding:20px;text-align:center;color:#DC2626'>โหลดไม่ได้ (ตาราง mp_deliveries อาจยังไม่ถูกสร้าง)</div>";
+  }
+}
+
+function toggleMpqFilter(){
+  mpqFilterAttentionOnly=!mpqFilterAttentionOnly;
+  var b=document.getElementById("mpqFilterBtn");
+  if(b)b.classList.toggle("btn-primary",mpqFilterAttentionOnly);
+  renderMpDeliveriesQueue();
+}
+
+function renderMpDeliveriesQueue(){
+  var el=document.getElementById("mpqList"); if(!el)return;
+  var todayStr=today2();
+  var rows=allMpDeliveries.filter(function(r){
+    var isAttention=MPQ_ATTENTION_STATUSES.indexOf(r.status)>=0;
+    if(mpqFilterAttentionOnly)return isAttention;
+    return isAttention||(r.delivery_date&&r.delivery_date>=todayStr);
+  });
+  if(!rows.length){el.innerHTML="<div style='padding:24px;text-align:center;color:var(--ink-soft);font-size:13px'>"+(mpqFilterAttentionOnly?"ไม่มีรายการที่ต้องดำเนินการ":"ยังไม่มีคิว Meal Plan")+"</div>";return;}
+
+  var h="<div style='display:flex;flex-direction:column;gap:8px'>";
+  rows.forEach(function(r){
+    var isAttention=MPQ_ATTENTION_STATUSES.indexOf(r.status)>=0;
+    var borderColor=r.status==="skip_requested"?"#F59E0B":(r.status==="request_submitted"?"#DC2626":"var(--ink-xsoft)");
+    var tagCls=r.mp_type==="lc"?"tag-lc":"tag-hp";
+    h+="<div style='background:#fff;border:1px solid var(--ink-xsoft);border-left:4px solid "+borderColor+";border-radius:10px;padding:10px 12px'>";
+    h+="<div style='display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px'>";
+    h+="<input type='date' value='"+(r.delivery_date||"")+"' onchange=\"updateMpDeliveryDate('"+r.id+"',this.value)\" style='padding:4px 6px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:12px;font-family:inherit'>";
+    h+="<b>"+esc2(r.customer_name||"-")+"</b>";
+    h+="<span class='customer-tag "+tagCls+"'>"+(r.mp_type||"").toUpperCase()+"</span>";
+    h+="<span style='color:var(--ink-soft)'>รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+"</span>";
+    h+="<span style='color:var(--ink-soft)'>"+(r.box_count||7)+" กล่อง</span>";
+    h+="<select onchange=\"updateMpDeliveryStatus('"+r.id+"',this.value)\" style='padding:4px 6px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:12px;font-family:inherit'>";
+    Object.keys(MPQ_STATUS_MAP).forEach(function(k){
+      h+="<option value='"+k+"'"+(r.status===k?" selected":"")+">"+MPQ_STATUS_MAP[k]+"</option>";
+    });
+    h+="</select>";
+    h+="<button class='btn' onclick=\"openMpMenuPicker('"+r.id+"')\" style='font-size:11px;padding:4px 8px'>🍽 กำหนดเมนู</button>";
+    h+="</div>";
+
+    h+="<div style='margin-top:6px;display:flex;flex-wrap:wrap;gap:4px;align-items:center'>";
+    var mi=r.menu_items||[];
+    if(mi.length){
+      mi.forEach(function(m){h+="<span class='menu-tag'>"+esc2(m.code||m.name||"")+"</span>";});
+    }else{
+      h+="<span style='font-size:11px;color:var(--ink-soft)'>ยังไม่กำหนดเมนู</span>";
+    }
+    h+="</div>";
+
+    if(r.customer_request&&r.customer_request.length){
+      h+="<div style='margin-top:4px;font-size:11px;color:var(--ink-soft)'>ลูกค้าขอ: "+r.customer_request.map(function(m){return esc2(m.code||m.name||"");}).join(", ")+"</div>";
+    }
+
+    h+="<div style='margin-top:6px'><input type='text' value=\""+esc2(r.admin_notes||"")+"\" placeholder='โน้ตแอดมิน...' oninput=\"queueMpNoteSave('"+r.id+"',this.value)\" style='width:100%;padding:5px 8px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:11px;font-family:inherit'></div>";
+
+    if(mpqExpandedId===r.id){
+      h+="<div style='margin-top:8px;border-top:1px dashed var(--ink-xsoft);padding-top:8px'>";
+      h+="<div style='font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:6px'>เลือกเมนู (สูงสุด "+(r.box_count||7)+" รายการ) — "+(r.mp_type||"").toUpperCase()+"</div>";
+      h+="<div style='display:flex;flex-wrap:wrap;gap:6px'>";
+      MENU_POOL.filter(function(m){return m.type===r.mp_type;}).forEach(function(m){
+        var checked=mpqExpandedSel.indexOf(m.code)>=0;
+        h+="<label style='display:flex;align-items:center;gap:4px;font-size:11px;background:#F3F4F6;border-radius:6px;padding:4px 8px;cursor:pointer'>";
+        h+="<input type='checkbox'"+(checked?" checked":"")+" onchange=\"toggleMpMenuSel('"+m.code+"',this.checked)\">"+esc2(m.code)+" "+esc2(m.name);
+        h+="</label>";
+      });
+      h+="</div>";
+      h+="<div style='margin-top:8px;display:flex;gap:6px'>";
+      h+="<button class='btn btn-primary' onclick=\"saveMpMenuPicker('"+r.id+"')\" style='font-size:11px;padding:5px 10px'>💾 บันทึกเมนู</button>";
+      h+="<button class='btn' onclick=\"closeMpMenuPicker()\" style='font-size:11px;padding:5px 10px'>ยกเลิก</button>";
+      h+="</div>";
+      h+="</div>";
+    }
+
+    h+="</div>";
+  });
+  h+="</div>";
+  el.innerHTML=h;
+}
+
+async function updateMpDeliveryStatus(id,status){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    var res=await sb_.from("mp_deliveries").update({status:status,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error)throw res.error;
+    var row=allMpDeliveries.find(function(x){return x.id===id;});
+    if(row)row.status=status;
+    renderMpDeliveriesQueue();
+  }catch(e){alert("อัพเดทไม่ได้");}
+}
+
+async function updateMpDeliveryDate(id,newDate){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    var res=await sb_.from("mp_deliveries").update({delivery_date:newDate,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error)throw res.error;
+    var row=allMpDeliveries.find(function(x){return x.id===id;});
+    if(row)row.delivery_date=newDate;
+    renderMpDeliveriesQueue();
+  }catch(e){alert("แก้วันที่ไม่ได้");}
+}
+
+function queueMpNoteSave(id,val){
+  if(mpqNoteTimers[id])clearTimeout(mpqNoteTimers[id]);
+  mpqNoteTimers[id]=setTimeout(function(){saveMpNote(id,val);},600);
+}
+async function saveMpNote(id,val){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    var res=await sb_.from("mp_deliveries").update({admin_notes:val,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error)throw res.error;
+    var row=allMpDeliveries.find(function(x){return x.id===id;});
+    if(row)row.admin_notes=val;
+  }catch(e){console.error(e);}
+}
+
+function openMpMenuPicker(id){
+  var row=allMpDeliveries.find(function(x){return x.id===id;});
+  if(!row)return;
+  mpqExpandedId=id;
+  mpqExpandedSel=(row.menu_items||[]).map(function(m){return m.code;});
+  renderMpDeliveriesQueue();
+}
+function closeMpMenuPicker(){
+  mpqExpandedId=null;
+  mpqExpandedSel=[];
+  renderMpDeliveriesQueue();
+}
+function toggleMpMenuSel(code,checked){
+  var i=mpqExpandedSel.indexOf(code);
+  if(checked&&i<0)mpqExpandedSel.push(code);
+  if(!checked&&i>=0)mpqExpandedSel.splice(i,1);
+}
+async function saveMpMenuPicker(id){
+  var sb_=getSB(); if(!sb_)return;
+  var row=allMpDeliveries.find(function(x){return x.id===id;});
+  if(!row)return;
+  var selArr=mpqExpandedSel.map(function(code){
+    var m=MENU_POOL.find(function(x){return x.code===code;});
+    return {code:code,name:m?m.name:code};
+  });
+  var newStatus=(row.status==="scheduled"||row.status==="request_open"||row.status==="request_submitted")?"menu_assigned":row.status;
+  try{
+    var res=await sb_.from("mp_deliveries").update({menu_items:selArr,status:newStatus,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error)throw res.error;
+    row.menu_items=selArr; row.status=newStatus;
+    closeMpMenuPicker();
+  }catch(e){alert("บันทึกเมนูไม่ได้");}
 }
 
 loadAll();
