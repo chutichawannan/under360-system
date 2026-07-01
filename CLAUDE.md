@@ -281,6 +281,45 @@ const MP_SETS = [
 
 ---
 
+## 🔴 Post-push Checklist (Meal Plan Scheduling — mp_deliveries, commit a0f542c)
+
+```
+1. ✅ SQL รันแล้ว: ตาราง mp_deliveries + RLS policy (verify ผ่าน REST insert/delete)
+2. ⚠️ SQL ค้าง: ALTER TABLE เพิ่ม day_before_notified_at (scripts/sql_mp_deliveries.sql ส่วนท้าย — v0.4.1)
+3. ⚠️ ยังไม่ตั้ง: Vercel env var LINE_CHANNEL_ACCESS_TOKEN (ไม่มีก็ใช้ระบบได้ปกติ แค่ยังไม่ push LINE)
+
+4. Test checklist LIFF (liff_customer.html):
+   □ สั่ง Meal Plan จริง 1 ออเดอร์ (เช่น trial) → เช็คใน Supabase ว่า mp_deliveries มีแถวตามจำนวนรอบ (boxes/7)
+     และ delivery_date ตกวัน จ/พ/ศ ทุกแถว
+   □ เข้าหน้า "ออเดอร์ของฉัน" → เห็น banner "🥗 จัดการ Meal Plan" → กดเข้าหน้าใหม่ได้
+   □ เห็นรายการรอบ + status badge ตรงกับที่ตั้งใน OH
+   □ ตั้งแถวทดสอบ status=request_open ผ่าน OH ก่อน → กลับมา LIFF → เลือก request เมนู → ยืนยัน →
+     เช็ค status เปลี่ยนเป็น request_submitted
+   □ กด "ขอเลื่อน/ข้ามรอบนี้" → confirm → เช็ค status เปลี่ยนเป็น skip_requested
+
+5. Test checklist OH (operation_hub.html):
+   □ แท็บแพลนเมนู → เห็นส่วน "📦 Meal Plan ระยะยาว" โหลดรายการจริง
+   □ กดปุ่มกรอง "🔴 ต้องดำเนินการ" → เห็นเฉพาะแถว request_submitted/skip_requested
+   □ กด "🍽 กำหนดเมนู" → เลือก SKU → บันทึก → status เปลี่ยนเป็น menu_assigned
+   □ แก้วันที่ส่งรายรอบ (date input) → เช็ค Supabase อัพเดทจริง
+   □ พิมพ์โน้ตแอดมิน → รอ debounce 600ms → เช็ค admin_notes บันทึกแล้ว
+
+6. Test checklist KQ (kitchen_queue.html):
+   □ เลือกวันที่ตรงกับ mp_deliveries ที่มี → เห็น section สีม่วง "📦 Meal Plan ระยะยาว" แยกจากออเดอร์ปกติ
+   □ กด "✅ ส่งแล้ว" → เช็ค status เปลี่ยนเป็น delivered + ปุ่มเปลี่ยนเป็น label static
+
+7. Test checklist api/notify-mp-requests.js (หลังตั้ง LINE_CHANNEL_ACCESS_TOKEN):
+   □ เช็คใน Vercel dashboard → Cron Jobs → เห็น job รันสำเร็จรายวัน (schedule 0 1 * * * UTC = 08:00 ไทย)
+   □ ทดสอบ "เปิด request window": ตั้งแถว status=scheduled, request_opens_at=วันนี้หรือก่อนหน้า, notified_at=null
+     → รัน endpoint (เปิด URL /api/notify-mp-requests ตรงๆ หรือรอ cron) → เช็ค status→request_open + ได้ LINE
+   □ ทดสอบ "auto no-change": ตั้งแถว status=request_open, request_deadline=เมื่อวาน → รัน endpoint
+     → เช็ค status→no_change + ได้ LINE ข้อความ "ไม่เปลี่ยนแปลงเมนู"
+   □ ทดสอบ "เตือนก่อนส่ง 1 วัน": ตั้งแถว delivery_date=พรุ่งนี้, day_before_notified_at=null → รัน endpoint
+     → เช็ค day_before_notified_at ถูกเซ็ต + ได้ LINE ข้อความเตือน
+```
+
+---
+
 ## 🤖 AI Agents (v0.4)
 
 **น้องนิว**

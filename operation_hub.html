@@ -1307,6 +1307,7 @@ var MPQ_STATUS_MAP={
   scheduled:"📋 รอกำหนดคิว",
   request_open:"🔓 เปิดให้เลือกเมนู",
   request_submitted:"📨 ส่งคำขอแล้ว รอแอดมินยืนยัน",
+  no_change:"🔒 ไม่เปลี่ยนแปลงเมนู (อัตโนมัติ)",
   menu_assigned:"✅ กำหนดเมนูแล้ว",
   skip_requested:"⏭ ลูกค้าขอเลื่อน/ข้าม (รอแอดมิน)",
   skipped:"⏹ ข้ามรอบนี้",
@@ -1468,7 +1469,7 @@ async function saveMpMenuPicker(id){
     var m=MENU_POOL.find(function(x){return x.code===code;});
     return {code:code,name:m?m.name:code};
   });
-  var newStatus=(row.status==="scheduled"||row.status==="request_open"||row.status==="request_submitted")?"menu_assigned":row.status;
+  var newStatus=(row.status==="scheduled"||row.status==="request_open"||row.status==="request_submitted"||row.status==="no_change")?"menu_assigned":row.status;
   try{
     var res=await sb_.from("mp_deliveries").update({menu_items:selArr,status:newStatus,updated_at:new Date().toISOString()}).eq("id",id);
     if(res.error)throw res.error;

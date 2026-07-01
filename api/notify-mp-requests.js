@@ -1,111 +1,145 @@
 const SUPABASE_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+const LIFF_URL = "https://liff.line.me/2010442513-NI3JGTkb?screen=mp-manage";
 
-function buildMessage(row) {
+function fetchMpDeliveries(query) {
+  return fetch(`${SUPABASE_URL}/rest/v1/mp_deliveries?${query}&select=*`, {
+    headers: { apikey: SUPABASE_ANON_KEY, Authorization: 'Bearer ' + SUPABASE_ANON_KEY },
+  });
+}
+
+function patchMpDelivery(id, body) {
+  return fetch(`${SUPABASE_URL}/rest/v1/mp_deliveries?id=eq.${id}`, {
+    method: 'PATCH',
+    headers: {
+      apikey: SUPABASE_ANON_KEY,
+      Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      Prefer: 'return=minimal',
+    },
+    body: JSON.stringify(body),
+  });
+}
+
+function pushLine(token, lineUid, text) {
+  return fetch('https://api.line.me/v2/bot/message/push', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+    body: JSON.stringify({ to: lineUid, messages: [{ type: 'text', text }] }),
+  });
+}
+
+function openMsg(row) {
   const typeLabel = (row.mp_type || '').toUpperCase();
-  return `📋 แจ้งเตือน Meal Plan\n\nรอบที่ ${row.round_no}/${row.total_rounds} ของแผน ${typeLabel} ${row.mp_set} ของคุณ\nตอนนี้เปิดให้เลือกเมนูสำหรับรอบนี้แล้ว!\n\nกดลิงก์เพื่อเลือกเมนู:\nhttps://liff.line.me/2010442513-NI3JGTkb?screen=mp-manage`;
+  return `📋 แจ้งเตือน Meal Plan\n\nรอบที่ ${row.round_no}/${row.total_rounds} ของแผน ${typeLabel} ${row.mp_set} ของคุณ\nตอนนี้เปิดให้เลือกเมนูสำหรับรอบนี้แล้ว!\n\nกดลิงก์เพื่อเลือกเมนู:\n${LIFF_URL}`;
+}
+function noChangeMsg(row) {
+  const typeLabel = (row.mp_type || '').toUpperCase();
+  return `🔒 แจ้งเตือน Meal Plan\n\nรอบที่ ${row.round_no}/${row.total_rounds} ของแผน ${typeLabel} ${row.mp_set} — ครบกำหนดเวลาเลือกเมนูแล้ว\nระบบตั้งเป็น "ไม่เปลี่ยนแปลงเมนู" ให้อัตโนมัตินะครับ\nหากต้องการเปลี่ยนแปลง ทักแอดมินได้เลย`;
+}
+function dayBeforeMsg(row) {
+  const typeLabel = (row.mp_type || '').toUpperCase();
+  return `🥗 แจ้งเตือน Meal Plan\n\nพรุ่งนี้มีรอบส่ง Meal Plan ของคุณ (รอบที่ ${row.round_no}/${row.total_rounds}, ${typeLabel} ${row.mp_set}) นะครับ\nเตรียมรับได้เลย!`;
+}
+
+async function runOpenRequestWindows(token, hasToken, today) {
+  const out = { checked: 0, notified: 0, skipped_no_token: 0, errors: [] };
+  let rows = [];
+  try {
+    const resp = await fetchMpDeliveries(`status=eq.scheduled&notified_at=is.null&request_opens_at=lte.${today}`);
+    if (!resp.ok) out.errors.push(`fetch(open) failed: ${resp.status} ${await resp.text().catch(()=>'')}`);
+    else rows = await resp.json();
+  } catch (e) { out.errors.push('fetch(open) threw: ' + (e && e.message ? e.message : String(e))); }
+  out.checked = Array.isArray(rows) ? rows.length : 0;
+
+  for (const row of rows) {
+    try {
+      if (!row.line_uid) continue;
+      if (!hasToken) { out.skipped_no_token++; continue; }
+      const pushResp = await pushLine(token, row.line_uid, openMsg(row));
+      if (pushResp.ok) {
+        const patchResp = await patchMpDelivery(row.id, { status: 'request_open', notified_at: new Date().toISOString() });
+        if (patchResp.ok) out.notified++;
+        else out.errors.push(`patch(open) failed for row ${row.id}: ${patchResp.status} ${await patchResp.text().catch(()=>'')}`);
+      } else {
+        out.errors.push(`line push(open) failed for row ${row.id}: ${pushResp.status} ${await pushResp.text().catch(()=>'')}`);
+      }
+    } catch (e) { out.errors.push(`row ${row && row.id} (open) threw: ` + (e && e.message ? e.message : String(e))); }
+  }
+  if (!hasToken && out.checked) out.errors.push('LINE_CHANNEL_ACCESS_TOKEN missing — open-window pushes skipped, rows left un-notified for retry');
+  return out;
+}
+
+// ครบ request_deadline แล้วลูกค้ายังไม่ตอบ (status ยังเป็น request_open) → ปิดอัตโนมัติเป็น "ไม่เปลี่ยนแปลงเมนู"
+// สถานะปิดนี้เป็น deadline จริง ไม่รอผลส่ง LINE — ครัว/แอดมินต้องไม่ค้างรอ แค่ยิงแจ้งลูกค้าแบบ best-effort ควบคู่ไป
+async function runAutoCloseExpired(token, hasToken, today) {
+  const out = { checked: 0, closed: 0, notify_failed: 0, errors: [] };
+  let rows = [];
+  try {
+    const resp = await fetchMpDeliveries(`status=eq.request_open&request_deadline=lt.${today}`);
+    if (!resp.ok) out.errors.push(`fetch(expire) failed: ${resp.status} ${await resp.text().catch(()=>'')}`);
+    else rows = await resp.json();
+  } catch (e) { out.errors.push('fetch(expire) threw: ' + (e && e.message ? e.message : String(e))); }
+  out.checked = Array.isArray(rows) ? rows.length : 0;
+
+  for (const row of rows) {
+    try {
+      const patchResp = await patchMpDelivery(row.id, { status: 'no_change' });
+      if (!patchResp.ok) { out.errors.push(`patch(expire) failed for row ${row.id}: ${patchResp.status} ${await patchResp.text().catch(()=>'')}`); continue; }
+      out.closed++;
+      if (row.line_uid && hasToken) {
+        const pushResp = await pushLine(token, row.line_uid, noChangeMsg(row));
+        if (!pushResp.ok) out.notify_failed++;
+      } else if (row.line_uid) {
+        out.notify_failed++; // ไม่มี token — นับเป็นแจ้งไม่สำเร็จ แต่สถานะปิดไปแล้ว
+      }
+    } catch (e) { out.errors.push(`row ${row && row.id} (expire) threw: ` + (e && e.message ? e.message : String(e))); }
+  }
+  return out;
+}
+
+async function runDayBeforeReminder(token, hasToken, tomorrow) {
+  const out = { checked: 0, notified: 0, skipped_no_token: 0, errors: [] };
+  let rows = [];
+  try {
+    const resp = await fetchMpDeliveries(`delivery_date=eq.${tomorrow}&day_before_notified_at=is.null&status=not.in.(skipped,cancelled)`);
+    if (!resp.ok) out.errors.push(`fetch(day-before) failed: ${resp.status} ${await resp.text().catch(()=>'')}`);
+    else rows = await resp.json();
+  } catch (e) { out.errors.push('fetch(day-before) threw: ' + (e && e.message ? e.message : String(e))); }
+  out.checked = Array.isArray(rows) ? rows.length : 0;
+
+  for (const row of rows) {
+    try {
+      if (!row.line_uid) continue;
+      if (!hasToken) { out.skipped_no_token++; continue; }
+      const pushResp = await pushLine(token, row.line_uid, dayBeforeMsg(row));
+      if (pushResp.ok) {
+        const patchResp = await patchMpDelivery(row.id, { day_before_notified_at: new Date().toISOString() });
+        if (patchResp.ok) out.notified++;
+        else out.errors.push(`patch(day-before) failed for row ${row.id}: ${patchResp.status} ${await patchResp.text().catch(()=>'')}`);
+      } else {
+        out.errors.push(`line push(day-before) failed for row ${row.id}: ${pushResp.status} ${await pushResp.text().catch(()=>'')}`);
+      }
+    } catch (e) { out.errors.push(`row ${row && row.id} (day-before) threw: ` + (e && e.message ? e.message : String(e))); }
+  }
+  if (!hasToken && out.checked) out.errors.push('LINE_CHANNEL_ACCESS_TOKEN missing — day-before pushes skipped, rows left un-notified for retry');
+  return out;
 }
 
 module.exports = async (req, res) => {
   try {
     const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const hasToken = !!token;
-
     const today = new Date().toISOString().slice(0, 10);
+    const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    const tomorrow = tomorrowDate.toISOString().slice(0, 10);
 
-    const errors = [];
-    let checked = 0;
-    let notified = 0;
-    let skippedNoToken = 0;
+    const openWindows = await runOpenRequestWindows(token, hasToken, today);
+    const autoClose = await runAutoCloseExpired(token, hasToken, today);
+    const dayBefore = await runDayBeforeReminder(token, hasToken, tomorrow);
 
-    let rows = [];
-    try {
-      const url = `${SUPABASE_URL}/rest/v1/mp_deliveries?status=eq.scheduled&notified_at=is.null&request_opens_at=lte.${today}&select=*`;
-      const listResp = await fetch(url, {
-        headers: {
-          apikey: SUPABASE_ANON_KEY,
-          Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-        },
-      });
-      if (!listResp.ok) {
-        const text = await listResp.text().catch(() => '');
-        errors.push(`fetch mp_deliveries failed: ${listResp.status} ${text}`);
-      } else {
-        rows = await listResp.json();
-      }
-    } catch (e) {
-      errors.push('fetch mp_deliveries threw: ' + (e && e.message ? e.message : String(e)));
-    }
-
-    checked = Array.isArray(rows) ? rows.length : 0;
-
-    for (const row of rows) {
-      try {
-        if (!row.line_uid) continue;
-
-        if (!hasToken) {
-          skippedNoToken++;
-          continue;
-        }
-
-        const pushResp = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: 'Bearer ' + token,
-          },
-          body: JSON.stringify({
-            to: row.line_uid,
-            messages: [{ type: 'text', text: buildMessage(row) }],
-          }),
-        });
-
-        if (pushResp.ok) {
-          const patchResp = await fetch(`${SUPABASE_URL}/rest/v1/mp_deliveries?id=eq.${row.id}`, {
-            method: 'PATCH',
-            headers: {
-              apikey: SUPABASE_ANON_KEY,
-              Authorization: 'Bearer ' + SUPABASE_ANON_KEY,
-              'Content-Type': 'application/json',
-              Prefer: 'return=minimal',
-            },
-            body: JSON.stringify({
-              status: 'request_open',
-              notified_at: new Date().toISOString(),
-            }),
-          });
-
-          if (patchResp.ok) {
-            notified++;
-          } else {
-            const text = await patchResp.text().catch(() => '');
-            errors.push(`patch failed for row ${row.id}: ${patchResp.status} ${text}`);
-          }
-        } else {
-          const text = await pushResp.text().catch(() => '');
-          errors.push(`line push failed for row ${row.id}: ${pushResp.status} ${text}`);
-        }
-      } catch (rowErr) {
-        errors.push(`row ${row && row.id} threw: ` + (rowErr && rowErr.message ? rowErr.message : String(rowErr)));
-      }
-    }
-
-    if (!hasToken) {
-      errors.push('LINE_CHANNEL_ACCESS_TOKEN missing — pushes skipped, rows left un-notified for retry');
-    }
-
-    return res.status(200).json({
-      checked,
-      notified,
-      skipped_no_token: skippedNoToken,
-      errors,
-    });
+    return res.status(200).json({ open_windows: openWindows, auto_close_expired: autoClose, day_before_reminder: dayBefore });
   } catch (outerErr) {
-    return res.status(200).json({
-      checked: 0,
-      notified: 0,
-      skipped_no_token: 0,
-      errors: ['unhandled error: ' + (outerErr && outerErr.message ? outerErr.message : String(outerErr))],
-    });
+    return res.status(200).json({ errors: ['unhandled error: ' + (outerErr && outerErr.message ? outerErr.message : String(outerErr))] });
   }
 };
