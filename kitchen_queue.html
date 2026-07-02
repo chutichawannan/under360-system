@@ -255,8 +255,13 @@ function filteredOrders(){
 }
 function getOrderItems(orderId){
   return allItems.filter(function(i){return i.order_id===orderId;}).map(function(i){
-    var m=allMenus.find(function(x){return x.id===i.menu_item_id;})||{code:"—",name:"—"};
-    return {code:m.code,name:m.name,qty:i.quantity||1,menu_item_id:i.menu_item_id};
+    var m=allMenus.find(function(x){return x.id===i.menu_item_id;});
+    return {
+      code: i.menu_code || (m&&m.code) || "—",
+      name: i.menu_name || (m&&m.name) || "—",
+      qty: i.quantity||1,
+      menu_item_id: i.menu_item_id
+    };
   });
 }
 function detectBadge(items){
