@@ -761,8 +761,8 @@ function renderCatSection(){
       <span class="cat-eye" onclick="event.stopPropagation();toggleHideCat('${cat}')"
         title="${isHidden?'ซ่อนจากลูกค้าอยู่ — กดเพื่อโชว์':'กดเพื่อซ่อนจากลูกค้า'}"
         style="cursor:pointer;margin-right:3px;font-size:12px">${isHidden?'🚫':'👁'}</span>
-      <input class="cat-rename-input" value="${esc(label)}" title="ดับเบิลคลิกเพื่อแก้ชื่อ" readonly
-        onclick="if(!this.readOnly)event.stopPropagation()"
+      <input class="cat-rename-input" value="${esc(label)}" title="คลิกเพื่อเลือกหมวด · ดับเบิลคลิกเพื่อแก้ชื่อ" readonly
+        onclick="event.stopPropagation();if(this.readOnly)selectCatHe('${cat}')"
         ondblclick="this.readOnly=false;this.dataset.orig=this.value;this.focus();this.select();event.stopPropagation()"
         onblur="if(!this.readOnly){this.readOnly=true;if(this.value!==this.dataset.orig)renameCat('${cat}',this.value);}"
         style="color:inherit">
