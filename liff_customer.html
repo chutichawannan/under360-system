@@ -1727,17 +1727,29 @@ function renderDatePick() {
   const isPastCutoff = now.getHours() >= CUTOFF_HOUR;
   const baseOffset   = isPastCutoff ? 2 : 1;
   const startOffset  = isOutOfProvince ? baseOffset + 1 : baseOffset;
-  if(notice){
-    notice.innerHTML = isPastCutoff
-      ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
-      : '';
+  const isMeal = hasMealPlan();
+  const isMWF = dow => [1,3,5].includes(dow);
+
+  // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
+  if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
+
+  let noticeHtml = isPastCutoff
+    ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
+    : '';
+  if(isMeal){
+    noticeHtml += `<div style="padding:6px 14px 4px;font-size:11px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;margin:0 14px 4px;line-height:1.5">
+      🥗 <b>Meal Plan ส่งเฉพาะวันจันทร์/พุธ/ศุกร์</b> — เลือกวันแรกที่จะเริ่มรับได้เลย ระบบจะจัดส่งต่อเนื่องอัตโนมัติทุกรอบ (จ/พ/ศ) จนครบจำนวนกล่อง
+    </div>`;
   }
+  if(notice) notice.innerHTML = noticeHtml;
+
   let html = '';
   for(let i = startOffset; i <= startOffset + 6; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
     const key  = d.toISOString().split('T')[0];
-    const isOn = selDate===key ? 'on' : '';
-    html += `<div class="dchip ${isOn}" onclick="pickDate('${key}')">
+    const disabled = isMeal && !isMWF(d.getDay());
+    const isOn = selDate===key && !disabled ? 'on' : '';
+    html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
       <div class="dd">${DAYS[d.getDay()]}</div>
       <div class="dn">${d.getDate()}</div>
       <div class="dm">${MONTHS[d.getMonth()]}</div>
