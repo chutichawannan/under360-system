@@ -850,6 +850,7 @@ var OH_CAT_FALLBACK={
   uncategorized:'ไม่ระบุหมวด'
 };
 function ohCatLabel(key){ return OH_CAT_NAMES[key]||OH_CAT_FALLBACK[key]||key||'ไม่ระบุหมวด'; }
+var OH_CAT_ORDER=[];   // จาก kitchen_data 'he_cat_order' — ลำดับเดียวกับที่ลากจัดใน HE
 async function loadOhCatNames(){
   var sb_=getSB(); if(!sb_)return;
   try{
@@ -857,6 +858,10 @@ async function loadOhCatNames(){
     var cfg=(res.data&&res.data.data)?res.data.data:{};
     (cfg.categories||[]).forEach(function(c){ if(c&&c.key) OH_CAT_NAMES[c.key]=c.label||c.name||c.key; });
   }catch(e){}
+  try{
+    var ordRes=await sb_.from("kitchen_data").select("data").eq("key","he_cat_order").maybeSingle();
+    OH_CAT_ORDER=(ordRes.data&&Array.isArray(ordRes.data.data))?ordRes.data.data:[];
+  }catch(e){ OH_CAT_ORDER=[]; }
 }
 
 async function loadMenus(){
@@ -874,6 +879,12 @@ async function loadMenus(){
       var cat=m.category||"uncategorized";
       if(!groups[cat]){groups[cat]=[];order.push(cat);}
       groups[cat].push(m);
+    });
+    // เรียงหมวดตามลำดับที่ลากจัดไว้ใน HE (he_cat_order) — ตัวที่ยังไม่เคยจัดไปต่อท้าย
+    order.sort(function(a,b){
+      var ia=OH_CAT_ORDER.indexOf(a), ib=OH_CAT_ORDER.indexOf(b);
+      if(ia<0) ia=9999; if(ib<0) ib=9999;
+      return ia-ib;
     });
     var h="";
     order.forEach(function(cat){
