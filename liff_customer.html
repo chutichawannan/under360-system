@@ -2612,7 +2612,7 @@ const MP_STATUS = {
   request_submitted: { t:'📨 ส่งคำขอแล้ว รอแอดมินยืนยัน', c:'amber' },
   no_change:          { t:'🔒 ไม่เปลี่ยนแปลงเมนู (อัตโนมัติ)', c:'gray'  },
   menu_assigned:      { t:'✅ กำหนดเมนูแล้ว',             c:'green' },
-  skip_requested:     { t:'⏭ ลูกค้าขอเลื่อน/ข้าม (รอแอดมิน)', c:'amber' },
+  skip_requested:     { t:'❌ ลูกค้าขอยกเลิกรอบนี้ (รอแอดมิน)', c:'amber' },
   skipped:            { t:'⏹ ข้ามรอบนี้',                 c:'gray'  },
   delivered:          { t:'📦 ส่งแล้ว',                    c:'green' },
   cancelled:          { t:'❌ ยกเลิก',                     c:'gray'  },
@@ -2729,8 +2729,8 @@ function mpManageRenderRound(r) {
     <div style="font-size:10.5px;color:#9AA0AC;margin-top:1px;">หากไม่เลือกภายในเวลานี้ ทางร้านขออนุญาตเลือกเมนูให้อัตโนมัตินะครับ</div>` : ''}
     ${canPick ? mpManageReqPickerHtml(r, isOpen) : ''}
     ${canSkip ? `<div style="margin-top:6px;display:flex;gap:16px;">
-      <span onclick="mpManageToggleMoveDate('${r.id}')" style="font-size:12px;color:#1F4D3A;font-weight:600;text-decoration:underline;cursor:pointer;">📅 ย้ายวันส่ง</span>
-      <span onclick="mpManageSkipRound('${r.id}')" style="font-size:12px;color:#C9573F;text-decoration:underline;cursor:pointer;">✕ ข้ามรอบนี้ (แจ้งแอดมิน)</span>
+      <span onclick="mpManageToggleMoveDate('${r.id}')" style="font-size:12px;color:#1F4D3A;font-weight:600;text-decoration:underline;cursor:pointer;">📅 ขอเลื่อน / ย้ายวันส่ง</span>
+      <span onclick="mpManageSkipRound('${r.id}')" style="font-size:12px;color:#C9573F;text-decoration:underline;cursor:pointer;">❌ ยกเลิกรอบนี้เลย (ไม่ย้ายวัน)</span>
     </div>
     ${mpManageMoveDatePickerHtml(r)}` : ''}
   </div>`;
@@ -2793,7 +2793,9 @@ async function mpManageConfirmMoveDate(rowId) {
       request_opens_at: localYMD(opensAt),
       request_deadline: localYMD(deadline),
       status: 'scheduled',
-      notified_at: null
+      notified_at: null,
+      menu_items: [],   // ย้ายวัน = เมนูเดิมไม่เกี่ยวกับวันใหม่แล้ว ปล่อยว่างให้แอดมิน/ระบบ assign ใหม่ตามรอบวันนั้น
+      customer_request: []
     }).eq('id', rowId);
     toast('ย้ายวันส่งแล้ว ✓');
   } catch(e) {
@@ -2853,11 +2855,11 @@ async function mpManageSubmitReq(rowId) {
 }
 
 async function mpManageSkipRound(rowId) {
-  if (!confirm('ต้องการขอเลื่อน/ข้ามรอบนี้ใช่ไหม? แอดมินจะตรวจสอบและติดต่อกลับ')) return;
+  if (!confirm('ต้องการยกเลิกรอบนี้ไปเลยใช่ไหม? (ไม่ใช่การย้ายวัน — ถ้าแค่อยากเปลี่ยนวันส่ง ใช้ "ขอเลื่อน/ย้ายวันส่ง" แทน)\nแอดมินจะตรวจสอบและติดต่อกลับ')) return;
   const note = prompt('หมายเหตุเพิ่มเติม (ถ้ามี) — เว้นว่างได้') || '';
   try {
     await sb.from('mp_deliveries').update({ status:'skip_requested', customer_note: note }).eq('id', rowId);
-    toast('ส่งคำขอเลื่อน/ข้ามแล้ว ✓');
+    toast('ส่งคำขอยกเลิกรอบนี้แล้ว ✓');
   } catch(e) {
     console.error(e);
     toast('ส่งคำขอไม่สำเร็จ ลองใหม่อีกครั้ง');
