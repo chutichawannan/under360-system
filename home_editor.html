@@ -142,7 +142,7 @@ input,select,textarea{font-family:inherit;}
 .item-name-he{font-size:13px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .item-kcal-he{font-size:11px;color:#888;}
 .item-price-he{font-size:13px;font-weight:700;color:#C9573F;flex-shrink:0;}
-.cat-key-hint{padding:6px 14px 10px;font-size:11px;color:#aaa;}
+.cat-key-hint{margin:6px 14px 10px;padding:8px 12px;font-size:12px;color:#5B6472;background:#F3F6F4;border:1px solid #E2E8E4;border-radius:9px;line-height:1.6;}
 
 /* FAB */
 .fab{position:fixed;bottom:20px;right:16px;background:var(--g);color:#fff;border-radius:28px;padding:13px 22px;font-size:14px;font-weight:700;box-shadow:0 4px 18px rgba(31,77,58,.4);display:flex;align-items:center;gap:8px;z-index:199;}
@@ -769,8 +769,12 @@ function renderCatSection(){
       <span style="opacity:.7;font-size:11px;margin-left:3px">${cnt}</span>
     </button>`;
   }).join('');
-  document.getElementById('catKeyHint').textContent = `⠿ ลากเรียง · ดับเบิลคลิกชื่อเพื่อแก้ (ลิ้ง DB) · 👁 ซ่อนจากลูกค้า · key: "${activeCat}"`;
+  document.getElementById('catKeyHint').innerHTML = CAT_HINT_HTML(activeCat);
   renderCatItems();
+}
+function CAT_HINT_HTML(cat){
+  return `💡 <b>ดับเบิลคลิกที่ชื่อหมวด</b>เพื่อแก้ไขชื่อ (บันทึกอัตโนมัติ ลิ้งกับหน้าร้านจริง) · ลาก ⠿ เพื่อจัดลำดับ · กด 👁 เพื่อซ่อนจากลูกค้า
+    <span style="opacity:.5;margin-left:4px" title="key: ${cat}">·</span>`;
 }
 
 function getCats(){
@@ -837,7 +841,7 @@ function selectCatHe(cat){
   // อัพเดท highlight + รายการ โดยไม่ rebuild ทั้งแถบ (ไม่งั้น input rename ถูกลบก่อน dblclick ทำงาน)
   document.querySelectorAll('.cat-btn-he').forEach(b=>b.classList.toggle('on', b.dataset.cat===cat));
   const hint=document.getElementById('catKeyHint');
-  if(hint) hint.textContent=`⠿ ลากเรียง · ดับเบิลคลิกชื่อเพื่อแก้ (ลิ้ง DB) · 👁 ซ่อนจากลูกค้า · key: "${activeCat}"`;
+  if(hint) hint.innerHTML=CAT_HINT_HTML(activeCat);
   renderCatItems();
 }
 
