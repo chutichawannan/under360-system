@@ -945,11 +945,11 @@ function togglePlanCell(rowId){
 }
 // เลือกทุกคน type เดียวกัน (LC/HP) ในรอบที่ N พร้อมกัน — สำหรับตั้งชุดมาตรฐานของรอบให้ทุกคนทีเดียว
 // (ค่อยแก้เฉพาะคนที่ request/เบื่อทีหลัง ไม่ต้อง assign ทีละคนจากศูนย์)
-function togglePlanColumn(roundNo,type){
+function togglePlanColumn(dateStr,type){
   var ids=[];
   mpPlanSubs().forEach(function(s){
     if(s.first.mp_type!==type)return;
-    var r=s.rows.filter(function(x){return x.round_no===roundNo;})[0];
+    var r=s.rows.filter(function(x){return x.delivery_date===dateStr;})[0];
     if(r)ids.push(r.id);
   });
   if(!ids.length)return;
@@ -1083,14 +1083,14 @@ function renderPlanCell(rowId){
   var arr=mpRowItems(rowId);
   var total=mpRowTotalQty(rowId);
   var box=mpRowBoxCount(rowId);
-  var dateLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>"+fmtD(new Date(r.delivery_date+'T00:00:00'))+"</div>";
+  var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+"</div>";
 
   if(planView==="Compact"){
-    td.innerHTML=dateLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
+    td.innerHTML=roundLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
     return;
   }
   if(planView==="Code"){
-    var h=dateLabel;
+    var h=roundLabel;
     arr.forEach(function(e){
       var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc"};
       h+="<span class='assign-chip "+m.type+"' onclick='event.stopPropagation();removeMenuEntry(\""+rowId+"\",\""+e.code+"\")' title='คลิกเพื่อลบ'>"+e.code+((e.qty||1)>1?" ×"+e.qty:"")+"</span>";
@@ -1100,7 +1100,7 @@ function renderPlanCell(rowId){
     return;
   }
   // Full view — เมนูสูงไม่เกิน 3 แถว (เกินไหลไปคอลัมน์ถัดไป) · รหัส + ชื่อ ≤2 บรรทัด
-  var h=dateLabel+"<div class='assign-grid'>";
+  var h=roundLabel+"<div class='assign-grid'>";
   arr.forEach(function(e){
     var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:e.name||""};
     h+="<div class='assign-chip-full "+m.type+"'>";
@@ -1170,24 +1170,27 @@ function _buildPlanTable(){
   if(!head||!body)return;
 
   var subs=mpPlanSubs();
-  var maxRounds=1;
-  subs.forEach(function(s){ maxRounds=Math.max(maxRounds, s.first.total_rounds||s.rows.length); });
+  // คอลัมน์ = วันที่จัดส่งจริง (union ของทุกแพลน) ไม่ใช่ round index — ทุกแถวจะตรงแนวเดียวกันตามวันปฏิทินจริง
+  var dateSet={};
+  subs.forEach(function(s){ s.rows.forEach(function(r){ dateSet[r.delivery_date]=1; }); });
+  var allDates=Object.keys(dateSet).sort();
+
   var hint=document.getElementById("planSubHint");
-  if(hint) hint.textContent="ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · สูงสุด "+maxRounds+" รอบ (เลื่อนดูได้ทุกรอบ ไม่ว่าจะยาวแค่ไหน)";
+  if(hint) hint.textContent="ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · "+allDates.length+" วันจัดส่ง (เรียงตามวันที่จริง — ตรงแนวเดียวกันทุกแถว)";
 
   var hh="<th style='width:130px'>ลูกค้า</th>";
-  for(var i=1;i<=maxRounds;i++){
-    var hasLc=subs.some(function(s){return s.first.mp_type==="lc"&&s.rows.some(function(r){return r.round_no===i;});});
-    var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.round_no===i;});});
-    hh+="<th style='min-width:110px'>รอบ "+i+"<br>";
-    if(hasLc)hh+="<span onclick='togglePlanColumn("+i+",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
-    if(hasHp)hh+="<span onclick='togglePlanColumn("+i+",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
+  allDates.forEach(function(dateStr){
+    var hasLc=subs.some(function(s){return s.first.mp_type==="lc"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
+    var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
+    hh+="<th style='min-width:110px'>"+fmtD(new Date(dateStr+'T00:00:00'))+"<br>";
+    if(hasLc)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
+    if(hasHp)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
     hh+="</th>";
-  }
+  });
   head.innerHTML=hh;
 
   if(!subs.length){
-    body.innerHTML="<tr><td colspan='"+(maxRounds+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>ยังไม่มี Meal Plan ที่ทำงานอยู่</td></tr>";
+    body.innerHTML="<tr><td colspan='"+(allDates.length+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>ยังไม่มี Meal Plan ที่ทำงานอยู่</td></tr>";
     return;
   }
 
@@ -1204,12 +1207,12 @@ function _buildPlanTable(){
     rows+="<div style='font-size:10px;color:#6B7280'>"+doneCount+"/"+(first.total_rounds||s.rows.length)+" รอบ · "+(first.box_count||7)+" กล่อง/รอบ</div>";
     rows+="<div style='margin-top:3px'><span class='customer-tag "+typeCls+"' style='cursor:default;font-size:11px'>"+(first.mp_type||"").toUpperCase()+" "+esc2(first.mp_set||"")+"</span></div>";
     rows+="</td>";
-    for(var i=1;i<=maxRounds;i++){
-      var r=s.rows.filter(function(x){return x.round_no===i;})[0];
-      if(!r){ rows+="<td style='color:#E5E7EB;text-align:center;vertical-align:middle'>—</td>"; continue; }
+    allDates.forEach(function(dateStr){
+      var r=s.rows.filter(function(x){return x.delivery_date===dateStr;})[0];
+      if(!r){ rows+="<td style='color:#E5E7EB;text-align:center;vertical-align:middle'>—</td>"; return; }
       var cellSelected=selectedRowIds.indexOf(r.id)>=0;
       rows+="<td class='assign-cell' data-rowid='"+r.id+"' onclick='togglePlanCell(\""+r.id+"\")' style='cursor:pointer;vertical-align:top;"+(cellSelected?"background:#EBF3EF":"")+"'></td>";
-    }
+    });
     rows+="</tr>";
   });
   body.innerHTML=rows;
