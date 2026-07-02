@@ -191,7 +191,14 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
 /* ── TAB 1: ONLINE MENUS ── */
 .toggle-img-btn{display:flex;align-items:center;gap:6px;font-size:12px}
-.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.menu-cat-group{margin-bottom:16px}
+.menu-cat-head{
+  display:flex;align-items:center;gap:7px;
+  font-size:12px;font-weight:700;color:var(--forest);
+  padding:4px 2px 7px;margin-bottom:8px;border-bottom:1px solid var(--ink-xsoft);
+}
+.menu-cat-count{font-size:10px;font-weight:600;color:var(--ink-soft);background:var(--bg);border-radius:10px;padding:1px 7px}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(126px,1fr));gap:8px}
 .menu-card{
   background:var(--white);border-radius:var(--radius);
   border:1px solid var(--ink-xsoft);overflow:hidden;
@@ -202,15 +209,15 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-card-img{
   width:100%;aspect-ratio:4/3;object-fit:cover;
   background:var(--forest-soft);display:flex;align-items:center;justify-content:center;
-  font-size:28px;color:var(--ink-soft);
+  font-size:24px;color:var(--ink-soft);
 }
 .menu-card-img.hide-img{display:none}
-.menu-card-body{padding:10px}
-.menu-code{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--forest);margin-bottom:3px}
-.menu-name{font-size:12px;font-weight:500;line-height:1.4;margin-bottom:6px}
+.menu-card-body{padding:7px}
+.menu-code{font-family:var(--mono);font-size:9px;font-weight:600;color:var(--forest);margin-bottom:2px}
+.menu-name{font-size:11.5px;font-weight:500;line-height:1.35;margin-bottom:5px}
 .menu-stock{
-  display:flex;align-items:center;gap:6px;font-size:11px;
-  color:var(--ink-soft);margin-bottom:6px;
+  display:flex;align-items:center;gap:5px;font-size:10.5px;
+  color:var(--ink-soft);margin-bottom:5px;
 }
 .stock-dot{width:6px;height:6px;border-radius:50%;background:var(--green)}
 .stock-dot.low{background:var(--yellow)}
@@ -835,31 +842,61 @@ function renderOrders(orders){
 }
 
 // ── MENUS ──────────────────────────────────────────────
+var OH_CAT_NAMES={};   // จาก kitchen_data appConfig.categories — ลิ้งกับ DB ตัวเดียวกับ HE/LIFF
+var OH_CAT_FALLBACK={
+  meal_hp:'🥩 HP Plan',meal_lc:'🥗 LC Plan',
+  no_regular:'🍱 ข้าวกล่อง',no_special:'⭐ สัปดาห์นี้',
+  pack_regular:'📦 แพคกับข้าว',pack_special:'📦 แพคพิเศษ',trend:'🌟 เทรนด์',
+  uncategorized:'ไม่ระบุหมวด'
+};
+function ohCatLabel(key){ return OH_CAT_NAMES[key]||OH_CAT_FALLBACK[key]||key||'ไม่ระบุหมวด'; }
+async function loadOhCatNames(){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    var res=await sb_.from("kitchen_data").select("data").eq("key","appConfig").maybeSingle();
+    var cfg=(res.data&&res.data.data)?res.data.data:{};
+    (cfg.categories||[]).forEach(function(c){ if(c&&c.key) OH_CAT_NAMES[c.key]=c.label||c.name||c.key; });
+  }catch(e){}
+}
+
 async function loadMenus(){
   var grid=document.getElementById("menuGrid"); if(!grid)return;
-  grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>กำลังโหลด...</div>";
+  grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>กำลังโหลด...</div>";
   var sb_=getSB();
-  if(!sb_){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>Offline</div>";return;}
+  if(!sb_){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>Offline</div>";return;}
   try{
+    if(!Object.keys(OH_CAT_NAMES).length) await loadOhCatNames();
     var res=await sb_.from("menu_items").select("*").eq("is_available",true).order("sort_order");
     if(res.error)throw res.error; var data=res.data||[];
-    if(!data.length){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280;grid-column:1/-1'>ยังไม่มีเมนูออนไลน์</div>";return;}
-    var h="";
+    if(!data.length){grid.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>ยังไม่มีเมนูออนไลน์</div>";return;}
+    var groups={}, order=[];
     data.forEach(function(m){
-      h+="<div class='menu-card'>";
-      h+="<div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
-      h+="<div class='menu-card-body'><div class='menu-code'>"+(m.code||"—")+"</div>";
-      h+="<div class='menu-name'>"+m.name+"</div>";
-      h+="<div class='menu-stock'><div class='stock-dot"+(m.stock_reserved>0?" low":"")+"'></div>";
-      h+="<span>"+(m.stock_reserved>0?"จอง "+m.stock_reserved:"พร้อม")+"</span>";
-      h+="<span style='margin-left:auto;font-family:var(--mono);font-weight:600;color:#1F4D3A'>฿"+(m.price||0)+"</span></div>";
-      // collapsed note toggle
-      h+="<div class='menu-note-wrap'><button class='note-toggle' onclick=\"this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.nextElementSibling.style.display==='block'?'▲ ปิด':'▼ โน้ต'\">▼ โน้ต</button>";
-      h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...' style='display:none;width:100%;margin-top:4px;font-size:12px;border:1px solid #D1FAE5;border-radius:5px;padding:4px 7px;font-family:inherit;resize:vertical'></textarea></div>";
+      var cat=m.category||"uncategorized";
+      if(!groups[cat]){groups[cat]=[];order.push(cat);}
+      groups[cat].push(m);
+    });
+    var h="";
+    order.forEach(function(cat){
+      var items=groups[cat];
+      h+="<div class='menu-cat-group'>";
+      h+="<div class='menu-cat-head'>"+esc2(ohCatLabel(cat))+"<span class='menu-cat-count'>"+items.length+"</span></div>";
+      h+="<div class='menu-grid'>";
+      items.forEach(function(m){
+        h+="<div class='menu-card'>";
+        h+="<div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
+        h+="<div class='menu-card-body'><div class='menu-code'>"+(m.code||"—")+"</div>";
+        h+="<div class='menu-name'>"+esc2(m.name)+"</div>";
+        h+="<div class='menu-stock'><div class='stock-dot"+(m.stock_reserved>0?" low":"")+"'></div>";
+        h+="<span>"+(m.stock_reserved>0?"จอง "+m.stock_reserved:"พร้อม")+"</span>";
+        h+="<span style='margin-left:auto;font-family:var(--mono);font-weight:600;color:#1F4D3A'>฿"+(m.price||0)+"</span></div>";
+        h+="<div class='menu-note-wrap'><button class='note-toggle' onclick=\"this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.nextElementSibling.style.display==='block'?'▲ ปิด':'▼ โน้ต'\">▼ โน้ต</button>";
+        h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...' style='display:none;width:100%;margin-top:4px;font-size:12px;border:1px solid #D1FAE5;border-radius:5px;padding:4px 7px;font-family:inherit;resize:vertical'></textarea></div>";
+        h+="</div></div>";
+      });
       h+="</div></div>";
     });
     grid.innerHTML=h;
-  }catch(e){console.error(e);}
+  }catch(e){console.error(e);grid.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้</div>";}
 }
 // imgMode: 0=ซ่อน 1=เล็ก 2=ปกติ
 var imgMode=0;

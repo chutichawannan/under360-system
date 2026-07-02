@@ -33,10 +33,6 @@ function openMsg(row) {
   const typeLabel = (row.mp_type || '').toUpperCase();
   return `📋 แจ้งเตือน Meal Plan\n\nรอบที่ ${row.round_no}/${row.total_rounds} ของแผน ${typeLabel} ${row.mp_set} ของคุณ\nตอนนี้เปิดให้เลือกเมนูสำหรับรอบนี้แล้ว!\n\nกดลิงก์เพื่อเลือกเมนู:\n${LIFF_URL}`;
 }
-function noChangeMsg(row) {
-  const typeLabel = (row.mp_type || '').toUpperCase();
-  return `🔒 แจ้งเตือน Meal Plan\n\nรอบที่ ${row.round_no}/${row.total_rounds} ของแผน ${typeLabel} ${row.mp_set} — ครบกำหนดเวลาเลือกเมนูแล้ว\nระบบตั้งเป็น "ไม่เปลี่ยนแปลงเมนู" ให้อัตโนมัตินะครับ\nหากต้องการเปลี่ยนแปลง ทักแอดมินได้เลย`;
-}
 function dayBeforeMsg(row) {
   const typeLabel = (row.mp_type || '').toUpperCase();
   return `🥗 แจ้งเตือน Meal Plan\n\nพรุ่งนี้มีรอบส่ง Meal Plan ของคุณ (รอบที่ ${row.round_no}/${row.total_rounds}, ${typeLabel} ${row.mp_set}) นะครับ\nเตรียมรับได้เลย!`;
@@ -71,9 +67,9 @@ async function runOpenRequestWindows(token, hasToken, today) {
 }
 
 // ครบ request_deadline แล้วลูกค้ายังไม่ตอบ (status ยังเป็น request_open) → ปิดอัตโนมัติเป็น "ไม่เปลี่ยนแปลงเมนู"
-// สถานะปิดนี้เป็น deadline จริง ไม่รอผลส่ง LINE — ครัว/แอดมินต้องไม่ค้างรอ แค่ยิงแจ้งลูกค้าแบบ best-effort ควบคู่ไป
-async function runAutoCloseExpired(token, hasToken, today) {
-  const out = { checked: 0, closed: 0, notify_failed: 0, errors: [] };
+// ไม่ push LINE ตรงนี้ — ลูกค้าเห็นเวลาถอยหลัง + ข้อความอธิบายอยู่แล้วในหน้า LIFF ตอนกดเข้ามาดู (กันสแปม)
+async function runAutoCloseExpired(today) {
+  const out = { checked: 0, closed: 0, errors: [] };
   let rows = [];
   try {
     const resp = await fetchMpDeliveries(`status=eq.request_open&request_deadline=lt.${today}`);
@@ -87,12 +83,6 @@ async function runAutoCloseExpired(token, hasToken, today) {
       const patchResp = await patchMpDelivery(row.id, { status: 'no_change' });
       if (!patchResp.ok) { out.errors.push(`patch(expire) failed for row ${row.id}: ${patchResp.status} ${await patchResp.text().catch(()=>'')}`); continue; }
       out.closed++;
-      if (row.line_uid && hasToken) {
-        const pushResp = await pushLine(token, row.line_uid, noChangeMsg(row));
-        if (!pushResp.ok) out.notify_failed++;
-      } else if (row.line_uid) {
-        out.notify_failed++; // ไม่มี token — นับเป็นแจ้งไม่สำเร็จ แต่สถานะปิดไปแล้ว
-      }
     } catch (e) { out.errors.push(`row ${row && row.id} (expire) threw: ` + (e && e.message ? e.message : String(e))); }
   }
   return out;
@@ -135,7 +125,7 @@ module.exports = async (req, res) => {
     const tomorrow = tomorrowDate.toISOString().slice(0, 10);
 
     const openWindows = await runOpenRequestWindows(token, hasToken, today);
-    const autoClose = await runAutoCloseExpired(token, hasToken, today);
+    const autoClose = await runAutoCloseExpired(today);
     const dayBefore = await runDayBeforeReminder(token, hasToken, tomorrow);
 
     return res.status(200).json({ open_windows: openWindows, auto_close_expired: autoClose, day_before_reminder: dayBefore });
