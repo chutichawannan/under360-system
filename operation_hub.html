@@ -943,6 +943,22 @@ function togglePlanCell(rowId){
   _buildPlanTable();
   updateSelectHint();
 }
+// เลือกทุกคน type เดียวกัน (LC/HP) ในรอบที่ N พร้อมกัน — สำหรับตั้งชุดมาตรฐานของรอบให้ทุกคนทีเดียว
+// (ค่อยแก้เฉพาะคนที่ request/เบื่อทีหลัง ไม่ต้อง assign ทีละคนจากศูนย์)
+function togglePlanColumn(roundNo,type){
+  var ids=[];
+  mpPlanSubs().forEach(function(s){
+    if(s.first.mp_type!==type)return;
+    var r=s.rows.filter(function(x){return x.round_no===roundNo;})[0];
+    if(r)ids.push(r.id);
+  });
+  if(!ids.length)return;
+  var allSelected=ids.every(function(id){return selectedRowIds.indexOf(id)>=0;});
+  if(allSelected) selectedRowIds=selectedRowIds.filter(function(id){return ids.indexOf(id)<0;});
+  else ids.forEach(function(id){ if(selectedRowIds.indexOf(id)<0) selectedRowIds.push(id); });
+  _buildPlanTable();
+  updateSelectHint();
+}
 function updateSelectHint(){
   var hint=document.getElementById("selectHint"); if(!hint)return;
   if(selectedRowIds.length){ hint.textContent="เลือก "+selectedRowIds.length+" ช่อง — กดเมนูใส่ให้ทุกช่องพร้อมกัน"; hint.style.opacity="1"; }
@@ -1160,7 +1176,14 @@ function _buildPlanTable(){
   if(hint) hint.textContent="ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · สูงสุด "+maxRounds+" รอบ (เลื่อนดูได้ทุกรอบ ไม่ว่าจะยาวแค่ไหน)";
 
   var hh="<th style='width:130px'>ลูกค้า</th>";
-  for(var i=1;i<=maxRounds;i++)hh+="<th style='min-width:110px'>รอบ "+i+"</th>";
+  for(var i=1;i<=maxRounds;i++){
+    var hasLc=subs.some(function(s){return s.first.mp_type==="lc"&&s.rows.some(function(r){return r.round_no===i;});});
+    var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.round_no===i;});});
+    hh+="<th style='min-width:110px'>รอบ "+i+"<br>";
+    if(hasLc)hh+="<span onclick='togglePlanColumn("+i+",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
+    if(hasHp)hh+="<span onclick='togglePlanColumn("+i+",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
+    hh+="</th>";
+  }
   head.innerHTML=hh;
 
   if(!subs.length){
