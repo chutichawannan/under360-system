@@ -174,7 +174,8 @@ const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 var sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
-function toISO(d){return d.toISOString().split("T")[0];}
+// d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด
+function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
 function today(){return toISO(new Date());}
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
@@ -477,7 +478,7 @@ function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
   var sel=document.getElementById("calPicker");
   for(var i=0;i<14;i++){
     var d=new Date();d.setDate(d.getDate()-i);
-    var iso=d.toISOString().split("T")[0];
+    var iso=toISO(d);
     var opt=document.createElement("option");opt.value=iso;
     opt.textContent=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
     sel.appendChild(opt);

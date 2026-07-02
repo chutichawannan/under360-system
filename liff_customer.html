@@ -1252,6 +1252,14 @@ function addMealPlanToCart() {
   closeMealPlanSheet();
 }
 
+// d.toISOString() แปลงเป็น UTC ก่อนตัด — เวลาไทย (UTC+7) เที่ยงคืนท้องถิ่น = 17:00 UTC เมื่อวาน
+// ใช้ toISOString().slice(0,10) กับ "วันที่ท้องถิ่น" จะได้วันที่ผิดเพี้ยนไป 1 วันเสมอ (เจอบั๊กจริงตอนเทส รอบส่งตกวันอาทิตย์/อังคาร/พฤหัสแทนที่จะเป็น จ/พ/ศ)
+// ต้องใช้ getFullYear/getMonth/getDate (ค่าท้องถิ่นเสมอ) แทน
+function localYMD(d) {
+  const y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dd}`;
+}
+
 async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
   try {
     const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
@@ -1262,7 +1270,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
     while (!isMWF(d)) d.setDate(d.getDate()+1);
     const rows = [];
     for (let i = 1; i <= totalRounds; i++) {
-      const deliveryDateStr = d.toISOString().slice(0,10);
+      const deliveryDateStr = localYMD(d);
       const opensAt = new Date(d); opensAt.setDate(opensAt.getDate()-3);
       const deadline = new Date(d); deadline.setDate(deadline.getDate()-1);
       rows.push({
@@ -1281,8 +1289,8 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
         box_count: 7,
         status: 'scheduled',
         customer_request: i === 1 ? (cartItem.requestList || []) : [],
-        request_opens_at: opensAt.toISOString().slice(0,10),
-        request_deadline: deadline.toISOString().slice(0,10)
+        request_opens_at: localYMD(opensAt),
+        request_deadline: localYMD(deadline)
       });
       d.setDate(d.getDate()+1);
       while (!isMWF(d)) d.setDate(d.getDate()+1);
@@ -1455,7 +1463,7 @@ async function loadPaymentAccount(){
   if(PAYMENT_ACCOUNTS.length <= 1){ selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; updatePaymentUI(); return; }
   try{
     const now = new Date();
-    const qStart = new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1).toISOString().slice(0,10);
+    const qStart = localYMD(new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1));
     const { data } = await sb.from('orders').select('payment_account').gte('created_at', qStart);
     selectedPaymentAccount = pickPaymentAccount(data||[]);
   }catch(e){ selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; }
@@ -1746,7 +1754,7 @@ function renderDatePick() {
   let html = '';
   for(let i = startOffset; i <= startOffset + 6; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
-    const key  = d.toISOString().split('T')[0];
+    const key  = localYMD(d);
     const disabled = isMeal && !isMWF(d.getDay());
     const isOn = selDate===key && !disabled ? 'on' : '';
     html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
@@ -2061,7 +2069,7 @@ async function applyPromo(){
     if(!p){ showMsg('ไม่พบโค้ดนี้', false); return; }
     if(!p.is_active){ showMsg('โค้ดนี้ถูกปิดใช้งาน', false); return; }
     if(p.expires_at){
-      const today = new Date().toISOString().slice(0,10);
+      const today = localYMD(new Date());
       if(p.expires_at < today){ showMsg('โค้ดหมดอายุแล้ว', false); return; }
     }
     if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit){ showMsg('โค้ดถูกใช้ครบจำนวนแล้ว', false); return; }
@@ -2756,7 +2764,7 @@ function mpManageMoveDatePickerHtml(r) {
   while (found < 6 && i < 30) {
     const d = new Date(now); d.setDate(now.getDate() + i); i++;
     if (!isMWF(d)) continue;
-    const key = d.toISOString().slice(0,10);
+    const key = localYMD(d);
     if (usedDates.includes(key)) continue;
     found++;
     const on = mpManageMoveDateSel === key;
@@ -2782,8 +2790,8 @@ async function mpManageConfirmMoveDate(rowId) {
   try {
     await sb.from('mp_deliveries').update({
       delivery_date: newDate,
-      request_opens_at: opensAt.toISOString().slice(0,10),
-      request_deadline: deadline.toISOString().slice(0,10),
+      request_opens_at: localYMD(opensAt),
+      request_deadline: localYMD(deadline),
       status: 'scheduled',
       notified_at: null
     }).eq('id', rowId);

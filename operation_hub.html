@@ -460,7 +460,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <div class="sec-header" style="margin-bottom:12px;">
         <div>
           <div class="sec-title">แพลนเมนูผลิต + assign ลูกค้า</div>
-          <div style="font-size:11px;color:var(--ink-soft);margin-top:2px;">ลากเมนูจากซ้ายไปใส่ในช่องลูกค้า · คลิก × เพื่อเอาออก</div>
+          <div style="font-size:11px;color:var(--ink-soft);margin-top:2px;" id="planSubHint">ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · เห็นทุกรอบที่ยังไม่ส่ง (ลูกค้าสั่งยาวแค่ไหนก็เลื่อนดูได้หมด)</div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
           <a class="btn" href="main_database_v2.html" target="_blank" style="font-size:12px;">🗄️ DB ↗</a>
@@ -469,16 +469,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
             <button id="vCode" class="btn" onclick="setPlanView('Code')" style="padding:4px 8px;font-size:11px;border:none;">Code</button>
             <button id="vCompact" class="btn" onclick="setPlanView('Compact')" style="padding:4px 8px;font-size:11px;border:none;">จำนวน</button>
           </div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <select id="planDateRel" onchange="onPlanRel(this.value)" style="padding:5px 8px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:12px;font-family:inherit;">
-              <option value="0">วันนี้</option>
-              <option value="1">พรุ่งนี้</option>
-              <option value="2">มะรืน</option>
-              <option value="3">+3 วัน</option>
-              <option value="">เลือกวันที่เอง…</option>
-            </select>
-            <input type="date" id="planDateInput" onchange="onPlanExact(this.value)" style="padding:4px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:12px;font-family:inherit;">
-          </div>
+          <button class="btn" onclick="loadMpPlanData()" style="font-size:12px;">🔄 รีเฟรช</button>
         </div>
       </div>
 
@@ -488,7 +479,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <!-- LEFT: Menu List -->
         <div style="width:150px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:10px;position:sticky;top:0;">
           <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูวันนี้</div>
-          <div id="selectHint">👆 คลิกชื่อลูกค้า (เลือกได้หลายคน) แล้วกดเมนู</div>
+          <div id="selectHint">👆 คลิกชื่อลูกค้า (ทั้งแถว) หรือคลิกช่องรอบเดียว (เลือกได้หลายอัน) แล้วกดเมนู</div>
           <div id="menuListDrag"></div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
             <select id="addMenuSel2" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-bottom:6px;">
@@ -662,57 +653,16 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 <script>
 
 // ── SUPABASE: daily_menu_assignments ─────────────────────────────────────
-async function loadAssignments(dateStr){
-  var sb_=getSB(); if(!sb_) return;
-  try{
-    var res=await sb_.from("daily_menu_assignments").select("*").eq("plan_date",dateStr||today2());
-    if(res.error) throw res.error;
-    // rebuild customerAssign from DB
-    customerAssign={};
-    (res.data||[]).forEach(function(row){
-      if(!customerAssign[row.customer_id]) customerAssign[row.customer_id]=[];
-      var existing=customerAssign[row.customer_id].find(function(e){return e.code===row.menu_code;});
-      if(existing){existing.qty=row.qty;existing.note=row.note;}
-      else customerAssign[row.customer_id].push({code:row.menu_code,qty:row.qty||1,note:row.note||""});
-    });
-    console.log("✅ loaded assignments from Supabase");
-  }catch(e){console.error("loadAssignments:",e);}
-}
-
-async function saveAssignment(cid,code,qty,note,dateStr){
-  var sb_=getSB(); if(!sb_) return;
-  try{
-    await sb_.from("daily_menu_assignments").upsert({
-      plan_date:dateStr||planDate,
-      customer_id:cid,
-      menu_code:code,
-      qty:qty||1,
-      note:note||"",
-      updated_at:new Date().toISOString()
-    },{onConflict:"plan_date,customer_id,menu_code"});
-  }catch(e){console.error("saveAssignment:",e);}
-}
-
-async function deleteAssignment(cid,code,dateStr){
-  var sb_=getSB(); if(!sb_) return;
-  try{
-    await sb_.from("daily_menu_assignments").delete()
-      .eq("plan_date",dateStr||planDate)
-      .eq("customer_id",cid)
-      .eq("menu_code",code);
-  }catch(e){console.error("deleteAssignment:",e);}
-}
-
+// แพลนเมนู (Meal Plan) ผูกกับ mp_deliveries โดยตรงแล้ว — ดู loadMpPlanData()/saveMpPlanRow() ด้านล่าง
+// (เดิมใช้ตาราง daily_menu_assignments + MOCK_CUSTOMERS — เลิกใช้ในแท็บนี้)
 function subscribeRealtime(){
   var sb_=getSB(); if(!sb_) return;
   try{
-    sb_.channel("dma-changes")
-      .on("postgres_changes",{event:"*",schema:"public",table:"daily_menu_assignments"},function(payload){
+    sb_.channel("mpd-changes")
+      .on("postgres_changes",{event:"*",schema:"public",table:"mp_deliveries"},function(payload){
         console.log("🔄 realtime update:",payload.eventType);
-        loadAssignments(today2()).then(function(){
-          var panel=document.getElementById("panel-plan");
-          if(panel&&panel.classList.contains("active")) buildPlan();
-        });
+        var panel=document.getElementById("panel-plan");
+        if(panel&&panel.classList.contains("active")){ loadMpPlanData(); loadMpDeliveries(); }
       })
       .subscribe();
     console.log("✅ Realtime subscribed");
@@ -725,18 +675,16 @@ let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
 let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
-let planDays=1,planView="full",planDate=today2();
-// customerAssign: {cid: [{code, qty, note}]}
-let customerAssign={};
-let selectedCids=[];
+let planView="full";
+let selectedRowIds=[];   // mp_deliveries.id ที่เลือกไว้ (คลิกชื่อลูกค้า = เลือกทั้งแถว, คลิกช่องรอบ = เลือกรอบเดียว)
 
-function toISO(d){return d.toISOString().split("T")[0];}
+// d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด (เจอบั๊กจริงจาก mp_deliveries)
+function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
 function today2(){return toISO(new Date());}
 function tomorrow2(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function dayAfter2(){var d=new Date();d.setDate(d.getDate()+2);return toISO(d);}
 function fmtD(d){return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
-function getDateCols(){return [new Date(planDate+"T00:00:00")];}
 
 function toggleSidebar(){
   sidebarMini=!sidebarMini;
@@ -942,132 +890,148 @@ var MENU_POOL=[
 ];
 var todayPlan=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
 var mpRequestMenus=[];  // เมนู Request ที่ลูกค้าเลือกได้ (เก็บ kitchen_data 'mp_request_menus')
-var MOCK_CUSTOMERS=[
-  {id:"c1",name:"Boom",course:"HP Monthly รอบ9",boxes:7,type:"hp",pref:"ไม่ทานเนื้อ ไม่ชอบเกาหลี"},
-  {id:"c2",name:"Pete",course:"HP Weekly รอบ2",boxes:7,type:"hp",pref:""},
-  {id:"c3",name:"Frederik",course:"HP รายสัปดาห์",boxes:7,type:"hp",pref:""},
-  {id:"c4",name:"คุณธัญภา",course:"HP Weekly รอบ1",boxes:7,type:"hp",pref:""},
-  {id:"c5",name:"ชมพิสุทธิ์",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
-  {id:"c6",name:"ขวัญชนก",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:"ขาวไม่เอาข้าวกล้อง"},
-  {id:"c7",name:"พรรณพิไล",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
-  {id:"c8",name:"คุณYok",course:"LC รายเดือน รอบ2",boxes:6,type:"lc",pref:""}
-];
+// ── ข้อมูลจริงจาก mp_deliveries (ไม่ใช้ mock customer แล้ว) ─────────────
+var mpPlanRows=[];   // แถว mp_deliveries ที่ยังไม่ส่ง/ไม่ข้าม/ไม่ยกเลิก — ทุกรอบ ทุกวันในอนาคต ไม่จำกัดว่าไกลแค่ไหน
 
-function initAssign(){
-  MOCK_CUSTOMERS.forEach(function(c){
-    if(!customerAssign[c.id]){
-      var pool=todayPlan.filter(function(code){return code.startsWith(c.type.toUpperCase());});
-      customerAssign[c.id]=pool.slice(0,5).map(function(code){return {code:code,qty:1,note:""};});
-    }
+async function loadMpPlanData(){
+  var sb_=getSB();
+  if(!sb_){ mpPlanRows=[]; renderLeftPanel(); _buildPlanTable(); return; }
+  try{
+    var res=await sb_.from("mp_deliveries").select("*")
+      .not("status","in","(delivered,skipped,cancelled)")
+      .order("customer_name").order("round_no");
+    if(res.error)throw res.error;
+    mpPlanRows=res.data||[];
+  }catch(e){ console.error("loadMpPlanData:",e); mpPlanRows=[]; }
+  renderLeftPanel();
+  _buildPlanTable();
+}
+
+// จัดกลุ่มเป็น subscription (order_id) → เรียง round_no ในแต่ละกลุ่ม
+function mpPlanSubs(){
+  var groups={}, order=[];
+  mpPlanRows.forEach(function(r){
+    var key=r.order_id||r.id;
+    if(!groups[key]){groups[key]=[];order.push(key);}
+    groups[key].push(r);
+  });
+  return order.map(function(key){
+    var rows=groups[key].slice().sort(function(a,b){return (a.round_no||0)-(b.round_no||0);});
+    return {key:key, rows:rows, first:rows[0]};
   });
 }
-function getEntry(cid,code){return (customerAssign[cid]||[]).find(function(e){return e.code===code;});}
-function totalQty(cid){return (customerAssign[cid]||[]).reduce(function(s,e){return s+e.qty;},0);}
+function getMpRow(rowId){ return mpPlanRows.find(function(x){return x.id===rowId;}); }
+function mpRowItems(rowId){ var r=getMpRow(rowId); return (r&&Array.isArray(r.menu_items))?r.menu_items:[]; }
+function mpRowTotalQty(rowId){ return mpRowItems(rowId).reduce(function(s,e){return s+(e.qty||1);},0); }
+function mpRowBoxCount(rowId){ var r=getMpRow(rowId); return (r&&r.box_count)||7; }
+function getEntry(rowId,code){ return mpRowItems(rowId).find(function(e){return e.code===code;}); }
 
 // ── CLICK INTERACTION ────────────────────────────────────
-function togglePlanCust(cid){
-  var i=selectedCids.indexOf(cid);
-  if(i>=0) selectedCids.splice(i,1); else selectedCids.push(cid);
-  document.querySelectorAll(".cust-row").forEach(function(r){
-    r.classList.toggle("selected", selectedCids.indexOf(r.dataset.cid)>=0);
-  });
-  renderLeftPanel();
-  var hint=document.getElementById("selectHint");
-  if(hint){
-    if(selectedCids.length){ hint.textContent="เลือก "+selectedCids.length+" คน — กดเมนูใส่ให้ทุกคนพร้อมกัน"; hint.style.opacity="1"; }
-    else { hint.style.opacity="0"; }
-  }
+// คลิกชื่อลูกค้า = เลือก/ยกเลิกทั้งแถว (ทุกรอบของ subscription นั้น) · คลิกช่องรอบ = เลือกรอบเดียว
+function togglePlanCust(subKey){
+  var sub=mpPlanSubs().find(function(s){return s.key===subKey;}); if(!sub)return;
+  var ids=sub.rows.map(function(r){return r.id;});
+  var allSelected=ids.every(function(id){return selectedRowIds.indexOf(id)>=0;});
+  if(allSelected) selectedRowIds=selectedRowIds.filter(function(id){return ids.indexOf(id)<0;});
+  else ids.forEach(function(id){ if(selectedRowIds.indexOf(id)<0) selectedRowIds.push(id); });
+  _buildPlanTable();
+  updateSelectHint();
+}
+function togglePlanCell(rowId){
+  var i=selectedRowIds.indexOf(rowId);
+  if(i>=0) selectedRowIds.splice(i,1); else selectedRowIds.push(rowId);
+  _buildPlanTable();
+  updateSelectHint();
+}
+function updateSelectHint(){
+  var hint=document.getElementById("selectHint"); if(!hint)return;
+  if(selectedRowIds.length){ hint.textContent="เลือก "+selectedRowIds.length+" ช่อง — กดเมนูใส่ให้ทุกช่องพร้อมกัน"; hint.style.opacity="1"; }
+  else { hint.style.opacity="0"; }
 }
 function clickMenu(code){
-  if(!selectedCids.length){
+  if(!selectedRowIds.length){
     var hint=document.getElementById("selectHint");
-    if(hint){hint.textContent="👆 คลิกชื่อลูกค้าก่อน (เลือกได้หลายคน)";hint.style.opacity="1";setTimeout(function(){if(!selectedCids.length&&hint)hint.style.opacity="0";},1600);}
+    if(hint){hint.textContent="👆 คลิกชื่อลูกค้า/ช่องรอบก่อน (เลือกได้หลายอัน)";hint.style.opacity="1";setTimeout(function(){if(!selectedRowIds.length&&hint)hint.style.opacity="0";},1600);}
     return;
   }
   var added=0, full=0;
-  selectedCids.forEach(function(cid){
-    if(totalQty(cid)>=7){ full++; return; } // เต็ม 7 แล้ว ข้าม
-    var arr=customerAssign[cid]||[];
-    var entry=arr.find(function(e){return e.code===code;});
-    if(entry){ entry.qty++; }
-    else { entry={code:code,qty:1,note:""}; arr.push(entry); customerAssign[cid]=arr; }
-    saveAssignment(cid,code,entry.qty,entry.note);
-    renderCustomerCell(cid);
+  selectedRowIds.forEach(function(rowId){
+    var r=getMpRow(rowId); if(!r)return;
+    if(mpRowTotalQty(rowId)>=mpRowBoxCount(rowId)){ full++; return; }
+    var items=r.menu_items?r.menu_items.slice():[];
+    var entry=items.find(function(e){return e.code===code;});
+    if(entry){ entry.qty=(entry.qty||1)+1; }
+    else { var m=MENU_POOL.find(function(x){return x.code===code;}); items.push({code:code,name:m?m.name:code,qty:1,note:""}); }
+    r.menu_items=items;
+    saveMpPlanRow(rowId);
+    renderPlanCell(rowId);
     added++;
   });
   renderLeftPanel();
   var hint=document.getElementById("selectHint");
-  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" คน"+(full?(" (เต็มแล้ว "+full+" คน)"):""); hint.style.opacity="1"; }
+  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" ช่อง"+(full?(" (เต็มแล้ว "+full+" ช่อง)"):""); hint.style.opacity="1"; }
 }
-function removeMenuEntry(cid,code){
-  var arr=customerAssign[cid]||[];
-  var entry=arr.find(function(e){return e.code===code;});
-  if(entry && entry.qty>1){
-    entry.qty--;                       // ×2/×3 → ลดทีละ 1 กล่อง
-    saveAssignment(cid,code,entry.qty,entry.note);
-  } else {
-    customerAssign[cid]=arr.filter(function(e){return e.code!==code;});  // เหลือ 1 → เอาออก
-    deleteAssignment(cid,code);
-  }
-  renderCustomerCell(cid);
+function removeMenuEntry(rowId,code){
+  var r=getMpRow(rowId); if(!r)return;
+  var items=r.menu_items?r.menu_items.slice():[];
+  var entry=items.find(function(e){return e.code===code;});
+  if(entry && (entry.qty||1)>1){ entry.qty--; }
+  else { items=items.filter(function(e){return e.code!==code;}); }
+  r.menu_items=items;
+  saveMpPlanRow(rowId);
+  renderPlanCell(rowId);
   renderLeftPanel();
 }
-function toggleNote(cid,code){
-  var id="note-"+cid+"-"+code;
+function toggleNote(rowId,code){
+  var id="note-"+rowId+"-"+code;
   var el=document.getElementById(id);
   if(!el)return;
   el.style.display=el.style.display==="none"?"block":"none";
   if(el.style.display==="block")el.focus();
 }
-function saveNote(cid,code,val){
-  var entry=getEntry(cid,code);
-  if(entry){
-    entry.note=val;
-    saveAssignment(cid,code,entry.qty,val);
-  }
+function saveNote(rowId,code,val){
+  var entry=getEntry(rowId,code);
+  if(entry){ entry.note=val; saveMpPlanRow(rowId); }
+}
+
+var mpPlanSaveTimers={};
+function saveMpPlanRow(rowId){
+  clearTimeout(mpPlanSaveTimers[rowId]);
+  mpPlanSaveTimers[rowId]=setTimeout(async function(){
+    var sb_=getSB(); if(!sb_)return;
+    var r=getMpRow(rowId); if(!r)return;
+    var items=r.menu_items||[];
+    var total=items.reduce(function(s,e){return s+(e.qty||1);},0);
+    var newStatus=r.status;
+    if(total>=(r.box_count||7) && ["scheduled","request_open","request_submitted","no_change"].indexOf(r.status)>=0) newStatus="menu_assigned";
+    try{
+      await sb_.from("mp_deliveries").update({menu_items:items,status:newStatus,updated_at:new Date().toISOString()}).eq("id",rowId);
+      r.status=newStatus;
+    }catch(e){console.error("saveMpPlanRow:",e);}
+  },500);
 }
 
 // ── RENDER ─────────────────────────────────────────────
-function onPlanRel(v){
-  if(v==="") return;  // "เลือกเอง" → ใช้ช่องวันที่
-  var d=new Date(); d.setDate(d.getDate()+parseInt(v,10));
-  setPlanDate(toISO(d));
-}
-function onPlanExact(v){ if(v) setPlanDate(v); }
-function setPlanDate(dateStr){
-  planDate=dateStr;
-  selectedCids=[];  // เปลี่ยนวัน → ล้างการเลือกลูกค้า
-  var inp=document.getElementById("planDateInput"); if(inp) inp.value=dateStr;
-  var rel=document.getElementById("planDateRel");
-  if(rel){
-    var diff=Math.round((new Date(dateStr+"T00:00:00")-new Date(today2()+"T00:00:00"))/86400000);
-    rel.value=(diff>=0&&diff<=3)?String(diff):"";
-  }
-  customerAssign={};  // โหลดใหม่ตามวันที่
-  var sb_=getSB();
-  if(sb_){ loadAssignments(dateStr).then(function(){ initAssign(); renderLeftPanel(); _buildPlanTable(); }); }
-  else { initAssign(); renderLeftPanel(); _buildPlanTable(); }
-}
 function setPlanView(v){
   planView=v;
   ["vFull","vCode","vCompact"].forEach(function(id){
     var el=document.getElementById(id);
     if(el)el.classList.toggle("active",id==="v"+v.charAt(0).toUpperCase()+v.slice(1));
   });
-  document.querySelectorAll(".cust-row").forEach(function(r){
-    renderCustomerCell(r.dataset.cid);
+  document.querySelectorAll(".assign-cell").forEach(function(td){
+    renderPlanCell(td.dataset.rowid);
   });
 }
 function addToProdPlan(){
   var sel=document.getElementById("addMenuSel2");
-  if(sel&&sel.value){todayPlan.push(sel.value);sel.value="";buildPlan();}
+  if(sel&&sel.value){todayPlan.push(sel.value);sel.value="";renderLeftPanel();}
 }
 
 function countMenu(code){
   var total=0;
-  MOCK_CUSTOMERS.forEach(function(c){
-    var entry=getEntry(c.id,code);
-    if(entry)total+=entry.qty;
+  mpPlanRows.forEach(function(r){
+    var entry=(r.menu_items||[]).find(function(e){return e.code===code;});
+    if(entry)total+=(entry.qty||1);
   });
   return total;
 }
@@ -1078,7 +1042,7 @@ function renderLeftPanel(){
   todayPlan.forEach(function(code){
     var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
     var cnt=countMenu(code);
-    var active=selectedCids.length&&selectedCids.some(function(cid){return totalQty(cid)<7;});
+    var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
     h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
     h+="<span style='font-family:var(--mono);font-size:10px;font-weight:700'>"+code+"</span>";
     h+=" <span style='font-size:10px;opacity:.8;flex:1'>"+m.name.slice(0,16)+"</span>";
@@ -1097,42 +1061,45 @@ function renderLeftPanel(){
   }
 }
 
-function renderCustomerCell(cid){
-  var td=document.querySelector(".assign-cell[data-cid='"+cid+"']"); if(!td)return;
-  var arr=customerAssign[cid]||[];
-  var total=totalQty(cid);
+function renderPlanCell(rowId){
+  var td=document.querySelector(".assign-cell[data-rowid='"+rowId+"']"); if(!td)return;
+  var r=getMpRow(rowId); if(!r)return;
+  var arr=mpRowItems(rowId);
+  var total=mpRowTotalQty(rowId);
+  var box=mpRowBoxCount(rowId);
+  var dateLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>"+fmtD(new Date(r.delivery_date+'T00:00:00'))+"</div>";
 
   if(planView==="Compact"){
-    td.innerHTML="<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/7 กล่อง</span>";
+    td.innerHTML=dateLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
     return;
   }
   if(planView==="Code"){
-    var h="";
+    var h=dateLabel;
     arr.forEach(function(e){
       var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc"};
-      h+="<span class='assign-chip "+m.type+"' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='คลิกเพื่อลบ'>"+e.code+(e.qty>1?" ×"+e.qty:"")+"</span>";
+      h+="<span class='assign-chip "+m.type+"' onclick='event.stopPropagation();removeMenuEntry(\""+rowId+"\",\""+e.code+"\")' title='คลิกเพื่อลบ'>"+e.code+((e.qty||1)>1?" ×"+e.qty:"")+"</span>";
     });
-    h+="<span style='font-size:10px;color:#D1D5DB;padding:2px'>"+total+"/7</span>";
+    h+="<span style='font-size:10px;color:#D1D5DB;padding:2px'>"+total+"/"+box+"</span>";
     td.innerHTML=h;
     return;
   }
   // Full view — เมนูสูงไม่เกิน 3 แถว (เกินไหลไปคอลัมน์ถัดไป) · รหัส + ชื่อ ≤2 บรรทัด
-  var h="<div class='assign-grid'>";
+  var h=dateLabel+"<div class='assign-grid'>";
   arr.forEach(function(e){
-    var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:""};
+    var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:e.name||""};
     h+="<div class='assign-chip-full "+m.type+"'>";
-    h+="<div class='acf-top'><span class='rm-chip' onclick='removeMenuEntry(\""+cid+"\",\""+e.code+"\")' title='ลบ'>×</span><b>"+e.code+"</b>";
-    if(e.qty>1)h+="<span class='qty-badge'>×"+e.qty+"</span>";
-    h+="<span class='note-btn' onclick='toggleNote(\""+cid+"\",\""+e.code+"\")'>···</span></div>";
+    h+="<div class='acf-top'><span class='rm-chip' onclick='event.stopPropagation();removeMenuEntry(\""+rowId+"\",\""+e.code+"\")' title='ลบ'>×</span><b>"+e.code+"</b>";
+    if((e.qty||1)>1)h+="<span class='qty-badge'>×"+e.qty+"</span>";
+    h+="<span class='note-btn' onclick='event.stopPropagation();toggleNote(\""+rowId+"\",\""+e.code+"\")'>···</span></div>";
     h+="<div class='acf-name'>"+esc2(m.name||"")+"</div>";
     if(e.note)h+="<div style='font-size:10px;color:#F59E0B'>📌"+esc2(e.note)+"</div>";
-    h+="<input id='note-"+cid+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+esc2(e.note||"")+"'";
-    h+=" onchange='saveNote(\""+cid+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+cid+"\",\""+e.code+"\")'>";
+    h+="<input id='note-"+rowId+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+esc2(e.note||"")+"' onclick='event.stopPropagation()'";
+    h+=" onchange='saveNote(\""+rowId+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+rowId+"\",\""+e.code+"\")'>";
     h+="</div>";
   });
   h+="</div>";
-  if(total<7)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/7</span>";
-  else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/7</span>";
+  if(total<box)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/"+box+"</span>";
+  else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/"+box+"</span>";
   td.innerHTML=h;
 }
 
@@ -1179,48 +1146,51 @@ function renderMpRequests(){
 
 function buildPlan(){
   loadMpRequests().then(renderMpRequests);
-  // โหลดจาก Supabase ถ้ายังไม่เคยโหลด
-  var sb_=getSB();
-  if(sb_&&Object.keys(customerAssign).length===0){
-    loadAssignments(planDate).then(function(){
-      initAssign();
-      renderLeftPanel();
-      _buildPlanTable();
-    });
-    return;
-  }
-  initAssign();
-  renderLeftPanel();
-  _buildPlanTable();
+  loadMpPlanData();
 }
 function _buildPlanTable(){
-  var cols=getDateCols();
   var head=document.getElementById("planHead");
   var body=document.getElementById("planBody");
   if(!head||!body)return;
-  var _di=document.getElementById("planDateInput"); if(_di&&!_di.value)_di.value=planDate;
-  var dayLbl=(planDate===today2())?" (วันนี้)":(planDate===tomorrow2())?" (พรุ่งนี้)":(planDate===dayAfter2())?" (มะรืน)":"";
-  var hh="<th style='width:120px'>ลูกค้า</th>";
-  cols.forEach(function(d){hh+="<th>"+fmtD(d)+dayLbl+"</th>";});
+
+  var subs=mpPlanSubs();
+  var maxRounds=1;
+  subs.forEach(function(s){ maxRounds=Math.max(maxRounds, s.first.total_rounds||s.rows.length); });
+  var hint=document.getElementById("planSubHint");
+  if(hint) hint.textContent="ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · สูงสุด "+maxRounds+" รอบ (เลื่อนดูได้ทุกรอบ ไม่ว่าจะยาวแค่ไหน)";
+
+  var hh="<th style='width:130px'>ลูกค้า</th>";
+  for(var i=1;i<=maxRounds;i++)hh+="<th style='min-width:110px'>รอบ "+i+"</th>";
   head.innerHTML=hh;
+
+  if(!subs.length){
+    body.innerHTML="<tr><td colspan='"+(maxRounds+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>ยังไม่มี Meal Plan ที่ทำงานอยู่</td></tr>";
+    return;
+  }
+
   var rows="";
-  MOCK_CUSTOMERS.forEach(function(c){
-    var chip="<span class='customer-tag "+(c.type==="lc"?"tag-lc":"tag-hp")+"' title='"+c.course+"' style='cursor:default;font-size:11px'>"+c.type.toUpperCase()+"</span>";
-    var otherCols="";
-    for(var i=1;i<cols.length;i++)otherCols+="<td style='color:#D1D5DB;font-size:11px;text-align:center'>—</td>";
-    var isSel=selectedCids.indexOf(c.id)>=0;
-    rows+="<tr class='cust-row"+(isSel?" selected":"")+"' data-cid='"+c.id+"' onclick='togglePlanCust(\""+c.id+"\")' style='cursor:pointer'>";
-    rows+="<td style='width:120px;max-width:120px;vertical-align:top;padding-top:10px'>";
-    rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(isSel?";color:#1F4D3A":"")+"'>"+c.name+(isSel?" ✎":"")+"</div>";
-    rows+="<div style='font-size:10px;color:#6B7280'>"+c.boxes+" กล่อง</div>";
-    rows+="<div style='margin-top:3px'>"+chip+"</div>";
-    if(c.pref)rows+="<span class='pref-tag'>"+c.pref+"</span>";
+  subs.forEach(function(s){
+    var first=s.first;
+    var typeCls=first.mp_type==="lc"?"tag-lc":"tag-hp";
+    var doneCount=s.rows.filter(function(r){return r.status==="delivered";}).length;
+    var allIds=s.rows.map(function(r){return r.id;});
+    var rowSelected=allIds.length&&allIds.every(function(id){return selectedRowIds.indexOf(id)>=0;});
+    rows+="<tr>";
+    rows+="<td style='width:130px;max-width:130px;vertical-align:top;padding-top:10px;cursor:pointer;"+(rowSelected?"background:#EBF3EF":"")+"' onclick='togglePlanCust(\""+s.key+"\")'>";
+    rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(rowSelected?";color:#1F4D3A":"")+"'>"+esc2(first.customer_name||"ลูกค้า")+(rowSelected?" ✎":"")+"</div>";
+    rows+="<div style='font-size:10px;color:#6B7280'>"+doneCount+"/"+(first.total_rounds||s.rows.length)+" รอบ · "+(first.box_count||7)+" กล่อง/รอบ</div>";
+    rows+="<div style='margin-top:3px'><span class='customer-tag "+typeCls+"' style='cursor:default;font-size:11px'>"+(first.mp_type||"").toUpperCase()+" "+esc2(first.mp_set||"")+"</span></div>";
     rows+="</td>";
-    rows+="<td class='assign-cell' data-cid='"+c.id+"'></td>";
-    rows+=otherCols+"</tr>";
+    for(var i=1;i<=maxRounds;i++){
+      var r=s.rows.filter(function(x){return x.round_no===i;})[0];
+      if(!r){ rows+="<td style='color:#E5E7EB;text-align:center;vertical-align:middle'>—</td>"; continue; }
+      var cellSelected=selectedRowIds.indexOf(r.id)>=0;
+      rows+="<td class='assign-cell' data-rowid='"+r.id+"' onclick='togglePlanCell(\""+r.id+"\")' style='cursor:pointer;vertical-align:top;"+(cellSelected?"background:#EBF3EF":"")+"'></td>";
+    }
+    rows+="</tr>";
   });
   body.innerHTML=rows;
-  MOCK_CUSTOMERS.forEach(function(c){renderCustomerCell(c.id);});
+  subs.forEach(function(s){ s.rows.forEach(function(r){ renderPlanCell(r.id); }); });
 }
 
 // ── MESSENGER ─────────────────────────────────────────
@@ -1309,7 +1279,7 @@ async function loadPromos(){
     var res=await sb_.from("promo_codes").select("*").order("created_at",{ascending:false});
     if(res.error)throw res.error; var data=res.data||[];
     if(!data.length){el.innerHTML="<div style='padding:30px;text-align:center;color:var(--ink-soft);font-size:13px'>ยังไม่มีโค้ดส่วนลด — กด \"+ สร้างโค้ดใหม่\"</div>";return;}
-    var today=new Date().toISOString().slice(0,10);
+    var today=today2();
     var h="";
     data.forEach(function(p){
       var expired=p.expires_at&&p.expires_at<today;
