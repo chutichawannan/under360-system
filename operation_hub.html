@@ -781,7 +781,7 @@ function renderOrders(orders){
   orders.slice(0,20).forEach(function(o){
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
     h+="<div class='orders-mini-row'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
-    h+="<div style='font-size:13px;font-weight:500'>"+(o.customer_name||"ลูกค้า")+"</div>";
+    h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
     h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
     h+="<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
@@ -1242,6 +1242,7 @@ function _buildPlanTable(){
     rows+="<tr>";
     rows+="<td style='width:130px;max-width:130px;vertical-align:top;padding-top:10px;cursor:pointer;"+(rowSelected?"background:#EBF3EF":"")+"' onclick='togglePlanCust(\""+s.key+"\")'>";
     rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(rowSelected?";color:#1F4D3A":"")+"'>"+esc2(first.customer_name||"ลูกค้า")+(rowSelected?" ✎":"")+"</div>";
+    if(first.line_display_name&&first.line_display_name!==first.customer_name)rows+="<div style='font-size:9.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>LINE: "+esc2(first.line_display_name)+"</div>";
     rows+="<div style='font-size:10px;color:#6B7280'>"+doneCount+"/"+(first.total_rounds||s.rows.length)+" รอบ · "+(first.box_count||7)+" กล่อง/รอบ</div>";
     rows+="<div style='margin-top:3px'><span class='customer-tag "+typeCls+"' style='cursor:default;font-size:11px'>"+(first.mp_type||"").toUpperCase()+" "+esc2(first.mp_set||"")+"</span></div>";
     rows+="</td>";
@@ -1270,7 +1271,7 @@ async function loadMessenger(){
     data.forEach(function(o){
       h+="<div class='msg-card'><div><div class='msg-order'>"+(o.order_number||"—")+"</div>";
       h+="<div style='font-size:11px;color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
-      h+="<div><div class='msg-customer'>"+(o.customer_name||"ลูกค้า")+"</div>";
+      h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
       h+="<div class='msg-addr'>📍 "+(o.delivery_address||"—")+"</div>";
       h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:4px'>"+fmtB(o.total)+"</div></div>";
       h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
@@ -1439,7 +1440,7 @@ function renderMpDeliveriesQueue(){
     h+="<div style='background:#fff;border:1px solid var(--ink-xsoft);border-left:4px solid "+borderColor+";border-radius:10px;padding:10px 12px'>";
     h+="<div style='display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px'>";
     h+="<input type='date' value='"+(r.delivery_date||"")+"' onchange=\"updateMpDeliveryDate('"+r.id+"',this.value)\" style='padding:4px 6px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:12px;font-family:inherit'>";
-    h+="<b>"+esc2(r.customer_name||"-")+"</b>";
+    h+="<b>"+esc2(r.customer_name||"-")+"</b>"+lineTag(r);
     h+="<span class='customer-tag "+tagCls+"'>"+(r.mp_type||"").toUpperCase()+"</span>";
     h+="<span style='color:var(--ink-soft)'>รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+"</span>";
     h+="<span style='color:var(--ink-soft)'>"+(r.box_count||7)+" กล่อง</span>";
@@ -1572,6 +1573,11 @@ function genMemberId(idx){ return "U360-"+(String(idx+1)).padStart(6,"0"); }
 function fmtPhone(p){ if(!p) return ""; var s=String(p).replace(/\D/g,""); return (s.length===9?"0":"")+s; }
 function fmtB2(n){ return "฿"+Number(n||0).toLocaleString(); }
 function esc2(s){ return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+// โชว์ชื่อ LINE ต่อท้าย เฉพาะตอนไม่ตรงกับชื่อผู้รับ — กันสั่งซ้ำ 2 รอบให้คนละคน (บัญชี LINE เดียวสั่งแทนเพื่อนได้)
+function lineTag(o){
+  if(!o||!o.line_display_name||o.line_display_name===o.customer_name) return "";
+  return " <span style='font-size:10px;color:#9CA3AF;font-weight:400'>(LINE: "+esc2(o.line_display_name)+")</span>";
+}
 function planTagOH(type){
   if(!type) return "";
   var cls={HP:"tag-hp",LC:"tag-lc",S:"tag-hp",D:"tag-loyal"}[type.toUpperCase()]||"";
