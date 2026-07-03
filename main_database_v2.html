@@ -3500,6 +3500,30 @@ function chgStockFast(id, delta){
   const inp = document.querySelector('[data-stock-id="'+id+'"]');
   if(inp) inp.value = r.stock;
   persistRecipesDebounced();
+  syncStockDebounced(r);
+}
+
+function saveStockInline(id, val){
+  const r = state.recipes.find(r=>r.id===id);
+  if(!r) return;
+  r.stock = Math.max(0, parseInt(val)||0);
+  persistRecipesDebounced();
+  syncStockDebounced(r);
+}
+
+// ดัน stock ขึ้น menu_items จริง (คนละที่กับ persistRecipes ที่เซฟแค่ local working copy)
+// nat: null=ไม่จำกัด(ค่าเริ่มต้น) / 0=หมดสต็อกจริง / N=เหลือ N — ต้องมี code ถึง sync ได้ (เหมือน syncOnlineMenu)
+let _stockSyncTimers = {};
+function syncStockDebounced(r){
+  if(!r || !r.code) return;
+  clearTimeout(_stockSyncTimers[r.id]);
+  _stockSyncTimers[r.id] = setTimeout(async () => {
+    try{
+      const sb = getSB();
+      const { error } = await sb.from('menu_items').update({ stock_total: r.stock }).eq('code', r.code);
+      if(error) throw error;
+    }catch(e){ console.error('syncStockDebounced failed', e); showToast('⚠ ซิงค์สต็อกออนไลน์ไม่สำเร็จ'); }
+  }, 500);
 }
 
 function renderRecipeCard(r, tot, pinInfo){

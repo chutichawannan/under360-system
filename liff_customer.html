@@ -1554,6 +1554,14 @@ function selectCat(c) {
 }
 
 // ══════════════════════════════════════
+// 📦 STOCK — stock_total=0/null = ไม่จำกัด (ยังไม่ได้ตั้งสต็อก) ตั้งค่า > 0 เมื่อไหร่ถึงเริ่มจำกัดจริง
+// (เดิมโค้ดอ้าง item.stock_quantity ซึ่งไม่มีคอลัมน์นี้จริง — เลยกดซื้อได้ตลอดไม่ว่าสต็อกจะเท่าไหร่)
+// ══════════════════════════════════════
+function effectiveStock(item) {
+  return (item && item.stock_total != null) ? item.stock_total : 999;
+}
+
+// ══════════════════════════════════════
 // 🍽️ MENU RENDER
 // ══════════════════════════════════════
 function renderMenu() {
@@ -1569,7 +1577,7 @@ function renderMenu() {
     // Meal Plan = HP/LC → no stock concept
     const isMealPlan = item.category==='meal_hp' || item.category==='meal_lc'
                     || /^HP|^LC/i.test(item.code||'');
-    const stock = isMealPlan ? 999 : (item.stock_quantity != null ? item.stock_quantity : 999);
+    const stock = isMealPlan ? 999 : effectiveStock(item);
     const remaining = stock - qty;
     const isOut     = !isMealPlan && stock <= 0;
     const isLow     = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
@@ -1611,7 +1619,7 @@ function addItem(id) {
   const item = menuItems.find(m => m.id===id);
   if (!item) return;
   // Check stock limit
-  const stock = item.stock_quantity != null ? item.stock_quantity : 999;
+  const stock = effectiveStock(item);
   const ex = cart.find(c => c.id===id);
   const curQty = ex ? ex.qty : 0;
   if (stock <= 0) { toast('สินค้าหมดแล้ว'); return; }
@@ -1631,7 +1639,7 @@ function chgQty(id, delta) {
   if (idx===-1) return;
   if (delta > 0) {
     const item = menuItems.find(m => m.id===id);
-    const stock = item?.stock_quantity != null ? item.stock_quantity : 999;
+    const stock = effectiveStock(item);
     if (cart[idx].qty >= stock) { toast('สต็อกมีแค่ ' + stock + ' ชิ้น'); return; }
   }
   cart[idx].qty += delta;
@@ -2425,7 +2433,7 @@ function renderProdCart(id) {
   if (!item) return;
   var area = document.getElementById('pd-cart-area');
   if (!area) return;
-  var stock = item.stock_quantity != null ? item.stock_quantity : 999;
+  var stock = effectiveStock(item);
   var inCart = cart.find(function(c){ return c.id === id; });
   var badgeEl = document.getElementById('prod-badge');
   var cartBadge = document.getElementById('cart-badge');

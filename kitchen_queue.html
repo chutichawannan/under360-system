@@ -237,7 +237,7 @@ async function loadAll(){
     var r=await Promise.all([
       sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
       sb_.from("order_items").select("*"),
-      sb_.from("menu_items").select("id,code,name,stock_quantity,actual_stock,is_available,no_morning,category").eq("is_available",true),
+      sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*")
     ]);
     allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[]; allMpDeliveries=r[3].data||[];
@@ -299,7 +299,7 @@ function renderProd(){
     +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>ของจริง</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
-    var actual=m.actual_stock!=null?m.actual_stock:(m.stock_quantity||0);
+    var actual=m.actual_stock!=null?m.actual_stock:(m.stock_total||0);
     var rem=actual-r.qty;
     var rowCls=rem<0?"danger":rem<3?"warn":"";
     html+="<div class='pt-row "+rowCls+"'>"
