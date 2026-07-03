@@ -669,6 +669,10 @@ body{background:#fff!important}
     <!-- address compact -->
     <div class="sec-head">📍 ที่อยู่จัดส่ง</div>
     <div class="igrp">
+      <div style="display:flex;gap:8px">
+        <input id="recipient-name-input" class="ifield" type="text" placeholder="ชื่อผู้รับ" style="flex:1">
+        <input id="recipient-phone-input" class="ifield" type="tel" placeholder="เบอร์โทร" style="flex:1" maxlength="10">
+      </div>
       <div style="display:flex;gap:8px;align-items:flex-start">
         <textarea id="addr-input" class="ifield" rows="2" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด" style="flex:1;resize:none"></textarea>
         <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px">🗺️<br><span style="font-size:9px;color:var(--soft);font-weight:600">ปักหมุด</span></button>
@@ -1260,7 +1264,7 @@ function localYMD(d) {
   return `${y}-${m}-${dd}`;
 }
 
-async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
+async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipientName) {
   try {
     const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
     if (!setObj) return;
@@ -1277,7 +1281,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot) {
         order_id: orderId,
         customer_id: customer?.id || null,
         line_uid: lineProfile.userId,
-        customer_name: lineProfile.displayName,
+        customer_name: recipientName || lineProfile.displayName,
         mp_type: cartItem.mp_type,
         mp_set: cartItem.mp_set,
         round_no: i,
@@ -1355,6 +1359,11 @@ async function init() {
     if (customer?.default_address) {
       document.getElementById('addr-input').value = customer.default_address;
     }
+    // auto-fill ชื่อผู้รับ/เบอร์โทร — แก้ไขได้ทั้งคู่ก่อนสั่งจริง
+    const nameInput = document.getElementById('recipient-name-input');
+    if (nameInput) nameInput.value = lineProfile.displayName || '';
+    const phoneInput = document.getElementById('recipient-phone-input');
+    if (phoneInput && customer?.phone) phoneInput.value = customer.phone;
   } catch(e) { console.warn('Customer upsert failed', e); }
 
   // Load menu
@@ -1903,6 +1912,10 @@ async function submitOrder() {
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
   const addr = (document.getElementById('addr-input').value || document.getElementById('addr-search').value || '').trim();
   if (!addr)         { toast('กรุณาใส่หรือค้นหาที่อยู่จัดส่ง'); return; }
+  const recipientName  = document.getElementById('recipient-name-input').value.trim();
+  const recipientPhone = document.getElementById('recipient-phone-input').value.trim();
+  if (!recipientName)  { toast('กรุณาใส่ชื่อผู้รับ'); return; }
+  if (!recipientPhone) { toast('กรุณาใส่เบอร์โทรผู้รับ'); return; }
   // Warn if no map pin
   if (!distKm) {
     const proceed = await showMapConfirm();
@@ -1937,7 +1950,8 @@ async function submitOrder() {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
       line_uid:        lineProfile.userId,
-      customer_name:   lineProfile.displayName,
+      customer_name:   recipientName,
+      customer_phone:  recipientPhone,
       delivery_date:   selDate,
       time_slot:       selSlot==='express' ? expressTime : selSlot,
       time_slot_label: slot?.time || '',
@@ -1989,11 +2003,11 @@ async function submitOrder() {
     if (iErr) throw iErr;
 
     // 2b. สร้างตารางส่ง Meal Plan (Mon/Wed/Fri rounds) — ไม่บล็อก flow ถ้าพัง
-    for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot); }
+    for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot, recipientName); }
 
-    // 3. Save default address for next time
+    // 3. Save default address + phone for next time (ชื่อไม่เซฟทับ — ให้ auto-fill จาก LINE เหมือนเดิมทุกครั้ง)
     if (customer?.id) {
-      await sb.from('customers').update({ default_address: addr }).eq('id', customer.id);
+      await sb.from('customers').update({ default_address: addr, phone: recipientPhone }).eq('id', customer.id);
     }
 
     // 4. Show success + reset cart
