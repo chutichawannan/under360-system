@@ -447,7 +447,8 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 
 /* ── Category Tabs (DB page) ── */
 .cat-tab-strip{overflow-x:auto;display:flex;align-items:center;gap:6px;padding:8px 14px;
-  background:var(--cream);border-bottom:1px solid var(--brd);scrollbar-width:none;}
+  background:var(--cream);border-bottom:1px solid var(--brd);scrollbar-width:none;cursor:grab;}
+.cat-tab-strip:active{cursor:grabbing;}
 .cat-tab-strip::-webkit-scrollbar{display:none;}
 .cat-tab-db{padding:6px 14px;border-radius:20px;border:1.5px solid var(--brd);
   background:#fff;font-size:13px;font-weight:600;color:var(--ink-soft);
@@ -3971,8 +3972,21 @@ function movePinned(id, dir){
   render();
 }
 
+// แถบหมวด (.cat-tab-strip) เลื่อนได้อยู่แล้วแต่ scrollbar ซ่อน — เมาส์บนเดสก์ท็อปลากเลื่อนไม่ได้ถ้าไม่มีทัชแพด
+// ผูก drag-to-scroll ให้เหมือนที่ทำใน liff_customer.html (.ctabs) — element ใหม่ทุก render เลยต้อง setup ใหม่ทุกครั้ง
+function setupCatTabDragScroll(){
+  const el = document.querySelector('.cat-tab-strip');
+  if(!el || el._dragSet) return; el._dragSet = true;
+  let down=false, sx=0, sl=0, moved=false;
+  el.addEventListener('mousedown', e=>{ down=true; moved=false; sx=e.pageX; sl=el.scrollLeft; });
+  window.addEventListener('mousemove', e=>{ if(!down) return; const dx=e.pageX-sx; if(Math.abs(dx)>4) moved=true; el.scrollLeft=sl-dx; });
+  window.addEventListener('mouseup', ()=>{ down=false; });
+  el.addEventListener('click', e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); } }, true);
+}
+
 function attachHandlers(){
   document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.search=''; state.openId=null; render(); if(state.tab==='packages'&&!state.pkgLoaded&&!state.pkgLoading) loadPackages(); });
+  setupCatTabDragScroll();
 
   // Close all floating pickers on outside click
   document.onclick = ()=>{
