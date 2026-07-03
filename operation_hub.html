@@ -481,11 +481,11 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูวันนี้</div>
           <div id="selectHint">👆 คลิกชื่อลูกค้า (ทั้งแถว) หรือคลิกช่องรอบเดียว (เลือกได้หลายอัน) แล้วกดเมนู</div>
           <div id="menuListDrag"></div>
-          <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
-            <select id="addMenuSel2" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-bottom:6px;">
-              <option value="">+ เพิ่มเมนู...</option>
-            </select>
-            <button class="btn btn-primary" onclick="addToProdPlan()" style="width:100%;font-size:11px;padding:5px;">เพิ่ม</button>
+          <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;position:relative;">
+            <input id="menuSearchBox" type="text" placeholder="🔍 ค้นหาเมนู (ชื่อ/โค้ด)..." autocomplete="off"
+              oninput="renderMenuSearchResults(this.value)" onfocus="renderMenuSearchResults(this.value)"
+              style="width:100%;padding:6px 8px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;">
+            <div id="menuSearchResults" style="display:none;position:absolute;left:10px;right:10px;top:34px;z-index:20;background:#fff;border:1px solid var(--ink-xsoft);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;"></div>
           </div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
             <div style="font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">🔁 เมนู Request (ลูกค้าเลือกได้ใน LIFF)</div>
@@ -1044,10 +1044,43 @@ function setPlanView(v){
     renderPlanCell(td.dataset.rowid);
   });
 }
-function addToProdPlan(){
-  var sel=document.getElementById("addMenuSel2");
-  if(sel&&sel.value){todayPlan.push(sel.value);sel.value="";renderLeftPanel();}
+// เสิร์ชเมนูจาก MENU_POOL (ชื่อ/โค้ด) — คลิกผลลัพธ์เพื่อเพิ่มเข้า "เมนูวันนี้" ทันที ไม่ต้องกดปุ่มเพิ่มแยก
+function renderMenuSearchResults(q){
+  var box=document.getElementById("menuSearchResults"); if(!box)return;
+  q=(q||"").trim().toLowerCase();
+  if(!q){ box.style.display="none"; box.innerHTML=""; return; }
+  var matches=MENU_POOL.filter(function(m){
+    return (m.code||"").toLowerCase().indexOf(q)>=0 || (m.name||"").toLowerCase().indexOf(q)>=0;
+  }).slice(0,30);
+  if(!matches.length){
+    box.innerHTML="<div style='padding:10px;font-size:11px;color:var(--ink-soft);text-align:center'>ไม่พบเมนู</div>";
+    box.style.display="block";
+    return;
+  }
+  box.innerHTML=matches.map(function(m){
+    var already=todayPlan.indexOf(m.code)>=0;
+    return "<div onclick=\"addMenuFromSearch('"+m.code+"')\" style='padding:7px 10px;cursor:"+(already?"default":"pointer")+";border-bottom:1px solid var(--ink-xsoft);display:flex;align-items:center;gap:6px;"+(already?"opacity:.4":"")+"' onmouseover=\"this.style.background='var(--bg)'\" onmouseout=\"this.style.background=''\">"
+      +"<span class='customer-tag "+(m.type==="lc"?"tag-lc":"tag-hp")+"' style='font-size:9px'>"+(m.type||"").toUpperCase()+"</span>"
+      +"<span style='font-family:var(--mono);font-size:10px;font-weight:700;flex-shrink:0'>"+esc2(m.code)+"</span>"
+      +"<span style='font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+esc2(m.name)+"</span>"
+      +(already?"<span style='font-size:9px;color:var(--ink-soft)'>เพิ่มแล้ว</span>":"")
+      +"</div>";
+  }).join("");
+  box.style.display="block";
 }
+function addMenuFromSearch(code){
+  if(todayPlan.indexOf(code)<0){ todayPlan.push(code); renderLeftPanel(); }
+  var input=document.getElementById("menuSearchBox");
+  var box=document.getElementById("menuSearchResults");
+  if(input) input.value="";
+  if(box){ box.style.display="none"; box.innerHTML=""; }
+}
+document.addEventListener("click",function(e){
+  var box=document.getElementById("menuSearchResults");
+  var input=document.getElementById("menuSearchBox");
+  if(!box||!input)return;
+  if(e.target!==input && !box.contains(e.target)) box.style.display="none";
+});
 
 function countMenu(code){
   var total=0;
@@ -1072,15 +1105,6 @@ function renderLeftPanel(){
     h+="</div>";
   });
   el.innerHTML=h;
-
-  var sel=document.getElementById("addMenuSel2");
-  if(sel){
-    var opts="<option value=''>+ เพิ่มเมนู...</option>";
-    MENU_POOL.forEach(function(m){
-      if(todayPlan.indexOf(m.code)<0)opts+="<option value='"+m.code+"'>"+m.code+" — "+m.name.slice(0,20)+"</option>";
-    });
-    sel.innerHTML=opts;
-  }
 }
 
 function renderPlanCell(rowId){
