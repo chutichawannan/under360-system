@@ -3285,14 +3285,15 @@ function renderRecipesTab(){
   </div>`;
 
   // ── Category Tabs ── (กดเพื่อแสดงแค่หมวดนั้น ลด render จาก 460 → ~80)
-  const allCats = [...new Set(state.recipes.filter(r=>r.category).map(r=>r.category))];
+  // ใช้ r.categories (array — ตัวจริงที่ใช้ทั้งระบบ) ไม่ใช่ r.category (เดี่ยว — ของเก่าเหลือติดอยู่แค่ไม่กี่เมนู)
+  const allCats = [...new Set(state.recipes.flatMap(r=>r.categories||[]))];
   if(allCats.length){
     html += '<div class="cat-tab-strip">';
     html += `<button class="cat-tab-db${state.activeCatTab==='__all__'?' on':''}" onclick="setCatTab('__all__')">ทั้งหมด</button>`;
     html += `<button class="cat-tab-db${state.activeCatTab==='__ptt__'?' on':''}" onclick="setCatTab('__ptt__')">📌 PTT</button>`;
     allCats.forEach(cat=>{
       const label = getCategory(cat)?.label || cat;
-      const cnt = state.recipes.filter(r=>r.category===cat&&(r.status==='active'||state.showRetired)).length;
+      const cnt = state.recipes.filter(r=>(r.categories||[]).includes(cat)&&(r.status==='active'||state.showRetired)).length;
       if(!cnt) return;
       html += `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
     });
@@ -3301,11 +3302,10 @@ function renderRecipesTab(){
 
   const q = state.search.trim().toLowerCase();
   let filtered = state.recipes.filter(r=>{
-    // ถ้า panel กำลังเปิดอยู่ → ไม่ filter recipe นั้นออก (ไม่ให้หายตอนแก้ category)
-    if(state.openId && r.id === state.openId) return true;
-    // Category tab pre-filter (fastest)
-    if(state.activeCatTab === '__ptt__'){ if(!r.pinned) return false; }
-    else if(state.activeCatTab !== '__all__'){ if(r.category!==state.activeCatTab) return false; }
+    // Category tab pre-filter (fastest) — ใช้ r.categories (array) ไม่ใช่ r.category (เดี่ยว)
+    // panel ที่เปิดอยู่ไม่ต้องหายตอนแก้หมวดของตัวเอง (เฉพาะเช็คหมวดเท่านั้น — สลับแท็บจริงจะปิด panel ให้เองใน setCatTab)
+    if(state.activeCatTab === '__ptt__'){ if(!r.pinned && r.id!==state.openId) return false; }
+    else if(state.activeCatTab !== '__all__'){ if(!(r.categories||[]).includes(state.activeCatTab) && r.id!==state.openId) return false; }
     if(!state.showRetired && r.status!=='active') return false;
     if(state.showOnlineOnly && !r.available_online) return false;  // กรองเฉพาะออนไลน์
     if(state.categoryFilter.length && !(r.categories||[]).some(c=>state.categoryFilter.includes(c))) return false;
@@ -3451,6 +3451,7 @@ function renderRecipesTab(){
 
 
 function setCatTab(cat) {
+  if(cat !== state.activeCatTab) state.openId = null;  // สลับแท็บจริง → ปิด panel ที่เปิดค้างไว้ (กันตามไปทุกหน้า)
   state.activeCatTab = cat;
   render();
 }
