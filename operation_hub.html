@@ -677,6 +677,7 @@ function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createCli
 let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
 let planView="full";
 let selectedRowIds=[];   // mp_deliveries.id ที่เลือกไว้ (คลิกชื่อลูกค้า = เลือกทั้งแถว, คลิกช่องรอบ = เลือกรอบเดียว)
+let planDateFilter=null; // คลิกวันที่ที่ header → กรองให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle — คลิกซ้ำ = เอาออก)
 
 // d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด (เจอบั๊กจริงจาก mp_deliveries)
 function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
@@ -959,6 +960,11 @@ function togglePlanColumn(dateStr,type){
   _buildPlanTable();
   updateSelectHint();
 }
+// คลิกวันที่ที่ header → กรองตารางให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle: คลิกวันเดิมซ้ำ = เอาตัวกรองออก)
+function toggleDateFilter(dateStr){
+  planDateFilter=(planDateFilter===dateStr)?null:dateStr;
+  _buildPlanTable();
+}
 function updateSelectHint(){
   var hint=document.getElementById("selectHint"); if(!hint)return;
   if(selectedRowIds.length){ hint.textContent="เลือก "+selectedRowIds.length+" ช่อง — กดเมนูใส่ให้ทุกช่องพร้อมกัน"; hint.style.opacity="1"; }
@@ -1175,27 +1181,35 @@ function _buildPlanTable(){
   subs.forEach(function(s){ s.rows.forEach(function(r){ dateSet[r.delivery_date]=1; }); });
   var allDates=Object.keys(dateSet).sort();
 
+  var visibleSubs=planDateFilter?subs.filter(function(s){return s.rows.some(function(r){return r.delivery_date===planDateFilter;});}):subs;
+
   var hint=document.getElementById("planSubHint");
-  if(hint) hint.textContent="ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · "+allDates.length+" วันจัดส่ง (เรียงตามวันที่จริง — ตรงแนวเดียวกันทุกแถว)";
+  if(hint){
+    hint.textContent=planDateFilter
+      ? "🔎 กรองเฉพาะวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))+" — เห็น "+visibleSubs.length+"/"+subs.length+" แพลน (คลิกวันที่เดิมอีกครั้งเพื่อดูทั้งหมด)"
+      : "ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · "+allDates.length+" วันจัดส่ง (คลิกวันที่ที่หัวตารางเพื่อกรองดูแค่วันนั้น)";
+  }
 
   var hh="<th style='width:130px'>ลูกค้า</th>";
   allDates.forEach(function(dateStr){
     var hasLc=subs.some(function(s){return s.first.mp_type==="lc"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
     var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
-    hh+="<th style='min-width:110px'>"+fmtD(new Date(dateStr+'T00:00:00'))+"<br>";
+    var isFiltered=planDateFilter===dateStr;
+    hh+="<th style='min-width:110px;"+(isFiltered?"background:#15803D;":"")+"'>";
+    hh+="<span onclick='toggleDateFilter(\""+dateStr+"\")' style='cursor:pointer;text-decoration:underline dotted;' title='คลิกเพื่อกรองดูแค่วันนี้'>"+fmtD(new Date(dateStr+'T00:00:00'))+(isFiltered?" 🔎":"")+"</span><br>";
     if(hasLc)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
     if(hasHp)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
     hh+="</th>";
   });
   head.innerHTML=hh;
 
-  if(!subs.length){
-    body.innerHTML="<tr><td colspan='"+(allDates.length+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>ยังไม่มี Meal Plan ที่ทำงานอยู่</td></tr>";
+  if(!visibleSubs.length){
+    body.innerHTML="<tr><td colspan='"+(allDates.length+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>"+(planDateFilter?"ไม่มีลูกค้าส่งวันนี้":"ยังไม่มี Meal Plan ที่ทำงานอยู่")+"</td></tr>";
     return;
   }
 
   var rows="";
-  subs.forEach(function(s){
+  visibleSubs.forEach(function(s){
     var first=s.first;
     var typeCls=first.mp_type==="lc"?"tag-lc":"tag-hp";
     var doneCount=s.rows.filter(function(r){return r.status==="delivered";}).length;
