@@ -1333,6 +1333,15 @@ function deleteCategoryEverywhere(key){
   persistCategories();
   persistRecipes();
 }
+function mergeCategoryInto(fromKey, toKey){
+  state.recipes.forEach(r=>{
+    if(r.categories && r.categories.includes(fromKey)){
+      if(!r.categories.includes(toKey)) r.categories.push(toKey);
+      r.categories = r.categories.filter(c=>c!==fromKey);
+    }
+  });
+  deleteCategoryEverywhere(fromKey);
+}
 function renderCategoryManager(){
   return `<div class="modal-overlay" id="catManagerOverlay">
     <div class="modal-card">
@@ -1351,6 +1360,7 @@ function renderCategoryManager(){
             <span class="cat-dot" style="background:${c.color}"></span>
             <input type="text" class="cat-rename-input" data-key="${c.key}" value="${escapeHtml(c.label)}">
             <span style="font-size:11px;color:var(--ink-soft);white-space:nowrap;">${usedCount} เมนู</span>
+            <button class="btn btn-sm cat-merge-btn" data-key="${c.key}" title="ย้ายเมนูทั้งหมดไปหมวดอื่น แล้วลบหมวดนี้ทิ้ง">🔗 รวม</button>
             <button class="btn btn-warn btn-sm cat-delete-btn" data-key="${c.key}">ลบ</button>
           </div>`;
         }).join('')}
@@ -1371,6 +1381,11 @@ function attachCategoryManagerHandlers(){
       const c = state.categories.find(x=>x.key===inp.dataset.key);
       const val = inp.value.trim();
       if(c && val && c.label!==val){
+        const dup = state.categories.find(x=>x.key!==c.key && x.label.trim().toLowerCase()===val.toLowerCase());
+        if(dup){
+          alert(`ชื่อหมวด "${val}" ซ้ำกับหมวดที่มีอยู่แล้ว — ตั้งชื่อซ้ำไม่ได้ (ถ้าอยากรวมเมนูเข้าด้วยกัน ใช้ปุ่มรวมหมวดแทน)`);
+          inp.value = c.label; return;
+        }
         if(!requireUser()) return;
         c.label = val; persistCategories();
       }
@@ -1388,6 +1403,24 @@ function attachCategoryManagerHandlers(){
         : `ลบหมวด "${c.label}"?`;
       showConfirm(msg, ()=>{
         deleteCategoryEverywhere(btn.dataset.key);
+        render();
+      });
+    };
+  });
+  document.querySelectorAll('.cat-merge-btn').forEach(btn=>{
+    btn.onclick = ()=>{
+      if(!requireUser()) return;
+      const fromKey = btn.dataset.key;
+      const from = state.categories.find(x=>x.key===fromKey);
+      const others = state.categories.filter(x=>x.key!==fromKey);
+      const list = others.map((x,i)=>`${i+1}. ${x.label}`).join('\n');
+      const pick = prompt(`รวม "${from.label}" เข้าไปในหมวดไหน? พิมพ์หมายเลข:\n${list}`);
+      const idx = parseInt(pick)-1;
+      if(!(idx>=0 && idx<others.length)) return;
+      const to = others[idx];
+      const usedCount = state.recipes.filter(r=>(r.categories||[]).includes(fromKey)).length;
+      showConfirm(`ย้ายเมนู ${usedCount} รายการจาก "${from.label}" ไปหมวด "${to.label}" แล้วลบ "${from.label}" ทิ้ง?`, ()=>{
+        mergeCategoryInto(fromKey, to.key);
         render();
       });
     };
