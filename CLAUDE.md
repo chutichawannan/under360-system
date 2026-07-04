@@ -194,7 +194,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.4.6 (⚠️ เขียนโค้ดเสร็จ push แล้ว — แต่ต้องรัน SQL ก่อน feature ใหม่จะทำงาน ดู "📜 Activity Log")
+## 🚦 Current Version: v0.4.6 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `520aa68` — ⚠️ ต้องรัน SQL ก่อน Activity Log จะเริ่มทำงาน ดูหัวข้อ "📜 Activity Log")
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -208,7 +208,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.3 | แก้ระบบสต็อกที่พังทั้งเส้นทาง (`stock_quantity`→`stock_total` จริง, LIFF/KQ/DB ครบ) | `9620cc1` |
 | v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
 | v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
-| v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | (ดู git log ล่าสุด) |
+| v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
@@ -449,4 +449,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 4 ก.ค. 2026 — v0.4.5 กำลัง push — ยกเลิกไอเดียส่งที่เดียวกัน (นัทตัดสินใจแล้ว), แก้ลำดับเมนู liff ให้ตรง HE, เพิ่มลากเลื่อนการ์ดหน้าแรก, เจอ+แก้บั๊กสต็อกหลักไม่เคย sync จริง, เพิ่มปุ่ม +10 เติมสต็อก, เปลี่ยน DB Meal Plan mock sub-view เป็น "🍳 ผลิตวันนี้" ของจริง — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
+*Last updated: 4 ก.ค. 2026 — v0.4.6 ✅ push แล้ว (commit `520aa68`) — เพิ่ม Activity Log (ประวัติเปลี่ยนแปลง+เติมสต็อก, batch กันสแปม) ⚠️ รอนัทรัน `scripts/sql_activity_log.sql` ก่อน feature นี้จะเริ่มเก็บข้อมูล — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
