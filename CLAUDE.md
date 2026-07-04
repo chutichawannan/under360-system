@@ -90,7 +90,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 ### มีแล้ว
 `orders` · `order_items` · `menu_items` · `customers` · `home_layout` · `kitchen_data`
-`daily_menu_assignments` (⚠️ legacy — ไม่ใช้แล้วสำหรับ Meal Plan จริง ดู mp_deliveries) · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries`
+`daily_menu_assignments` (ใช้จริงแต่คนละเรื่องกับ Meal Plan รายลูกค้า — เป็นกริดวางแผนผลิตรวมของครัว ดู main_database_v2.html tab "📅 แผนผลิต") · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries` (Meal Plan ระยะยาวรายลูกค้า — คนละตารางกับข้างต้น)
 
 ### SQL ที่รันแล้ว ✅
 ```sql
@@ -191,7 +191,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.4.4 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `edf2eb1`)
+## 🚦 Current Version: v0.4.5 (กำลัง push — ดู commit ล่าสุดใน git log)
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -204,18 +204,21 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.2 | หน้าแรก: การ์ด collage เลื่อนอิสระ (เอา scroll-snap ออก) | `7b017a7` |
 | v0.4.3 | แก้ระบบสต็อกที่พังทั้งเส้นทาง (`stock_quantity`→`stock_total` จริง, LIFF/KQ/DB ครบ) | `9620cc1` |
 | v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
+| v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` (+ commit ถัดไป) |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
 ### ⚠️ Known Issues (อัพเดทล่าสุด — เช็คจาก code จริงรอบนี้)
 | # | ปัญหา | Priority |
 |---|-------|----------|
-| 1 | `main_database_v2.html` แท็บ Meal Plan มี sub-view "👥 กำหนดเมนูลูกค้า" ที่ยังใช้ลูกค้า mock 8 คน (`MP_MOCK_CUSTOMERS`) — คนละชุดกับ **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) เข้าไปดูแล้วจะเห็นข้อมูลปลอมสับสน | 🟡 ควรซ่อน/ลบ sub-view เก่านี้ทิ้ง |
+| 1 | ✅ **แก้แล้ว** — `main_database_v2.html` แท็บ Meal Plan sub-view "👥 กำหนดเมนูลูกค้า" (mock 8 คน) เปลี่ยนเป็น **"🍳 ผลิตวันนี้"** จริงแล้ว ต่อ `mp_deliveries` ตรง ดู [What's in main_database_v2.html](#) หัวข้อ "🍳 ผลิตวันนี้" | ✅ Done |
 | 2 | `report.html` ยัง mock data ทั้งหมด (`genMockData` fallback) | 🟡 Med |
 | 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง — ดีขึ้นกว่าที่เคยบันทึกไว้ | 🟢 ใกล้เสร็จ |
 | 4 | `liff_register.html` ต่อ Supabase จริงแล้ว (upsert customers) — **ไม่ใช่ mock แล้ว** แก้ไขจากที่เคยบันทึกผิดไว้ | ✅ ไม่ใช่ปัญหาแล้ว |
 | 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — cron ทำงานปกติแต่ไม่ส่ง LINE จริง | 🔴 ก่อน launch |
 | 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
+| 7 | **พบใหม่ 2026-07-04:** หน้า DB สต็อกหลักที่การ์ดเมนู (`.stock-ctrl`) ไม่เคย sync ขึ้น `menu_items.stock_total` จริงมาตลอด (โค้ด sync เดิมผูกกับ `renderPttCard`/`chgStockFast` ที่เป็น dead code ไม่เคยถูกเรียก) — **แก้แล้ว** เพิ่ม `syncStockDebounced()` เข้า `commitStock()` จริง + เพิ่มปุ่ม "+10" | ✅ Done |
+| 8 | **พบใหม่ 2026-07-04 (ยังไม่แก้ ไม่กระทบการใช้งานตอนนี้):** `mpIsoDate()` ในแท็บ "แผนผลิต" ของ Meal Plan ใช้ `.toISOString().split('T')[0]` — เป็น pattern เดียวกับบั๊ก timezone ที่เคยแก้ไปแล้วในไฟล์อื่น (UTC+7 จะเพี้ยนไป 1 วันได้) แต่ยังไม่มีรายงานปัญหาจริง จึงยังไม่แตะ — ถ้าจะแก้ทีหลังใช้ pattern `localYMD()`/`toISO()` แบบเดียวกับที่แก้ไปแล้ว | 🟡 ระวังไว้ |
 
 ---
 
@@ -266,9 +269,13 @@ const MP_SETS = [
 - Quick buttons +0 / +40 + custom price input
 - Save = delete + insert ใหม่ใน `package_items`
 
-### Tab Meal Plan — ⚠️ มี 2 sub-view คนละสถานะ
-- **"แผนผลิต"** — ต่อ `daily_menu_assignments` จริง ใช้งานได้
-- **"👥 กำหนดเมนูลูกค้า"** — ⚠️ **ยัง mock ทั้งหมด** (`MP_MOCK_CUSTOMERS` 8 คน + `MP_MENU_POOL` + `MP_TODAY_PLAN` เป็น hardcode) คนละชุดกับ OH แพลนเมนู (ตัวจริง ต่อ `mp_deliveries`) — แนะนำซ่อน/ลบ sub-view นี้ทิ้งกันสับสน
+### Tab Meal Plan — 2 sub-view คนละเรื่องกัน (ทั้งคู่ต่อข้อมูลจริงแล้ว)
+- **"📅 แผนผลิต"** — กริดวางแผนผลิตหลายวันของครัวโดยรวม (ไม่ผูกกับลูกค้ารายคน) ต่อ `daily_menu_assignments` จริง — คนละเรื่องกับ Meal Plan ระยะยาวรายลูกค้า (`mp_deliveries`) แม้ชื่อตารางจะดูคล้ายกัน
+- **"🍳 ผลิตวันนี้"** (เดิมชื่อ "👥 กำหนดเมนูลูกค้า", commit `768e88f` ถัดไป — เปลี่ยนจาก mock เป็นของจริงแล้ว) — ให้ครัวดูว่าวันนี้ต้องผลิต/แพ็คอะไรบ้างสำหรับ Meal Plan ระยะยาว โดยไม่ต้องสลับไปหน้า KQ:
+  - นำทางวันที่ (‹ › + date picker + ปุ่มวันนี้ + รีเฟรช) — โหลดจาก `mp_deliveries` ตรง (`.eq('delivery_date',...)`, ไม่รวม skipped/cancelled)
+  - Section 1 สรุป: รอบทั้งหมด / นับ HP / นับ LC / นับลูกค้าที่รีเควสเมนูเอง (`customer_request` ไม่ว่าง) / นับรอบที่ยังกำหนดเมนูไม่ครบ
+  - Section 2 "🍳 ต้องผลิต": aggregate `menu_items` ทุกรอบของวันนั้น กลุ่มตาม code (เหมือนหน้าจัดของ KQ แต่ไม่ต้องสลับหน้า) แต่ละเมนูโชว่ลูกค้า/รอบที่ต้องการ + ช่องโน้ตแก้เมนูฉุกเฉินต่อคน (ผูกกับ `menu_items[].note` ตัวเดียวกับที่ OH ใช้ — พิมพ์ที่นี่ก็เห็นที่ OH ด้วย ไม่ใช่ข้อมูลแยกชุด)
+  - Debounce 600ms ต่อโน้ต, ทดสอบผ่าน preview + REST แล้วว่าเซฟถูกแถว/ถูก entry ไม่กระทบเมนูอื่น
 
 ### จัดการหมวดหมู่ (ใหม่ — commit `edf2eb1`)
 - ปุ่ม **🔗 รวม** ต่อแถวหมวด — ย้ายเมนูทั้งหมดจากหมวดหนึ่งไปอีกหมวด แล้วลบหมวดต้นทางทิ้ง (`mergeCategoryInto`)
@@ -294,7 +301,7 @@ const MP_SETS = [
 | v0.3.2 | Package S/M/L system | ✅ Live |
 | v0.3.3 | Meal Plan flow + Pre-order | ✅ Live |
 | v0.3.4 | Product images (`batch_photo_upload.html`) | 🟡 เขียนเสร็จแล้ว ต่อ Supabase Storage จริง — ยังไม่เคยรัน ดูหมวด "📸 Photo Migration" ด้านล่าง |
-| v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | 🟢 ส่วนใหญ่ทำแล้ว (แพลนเมนู mp_deliveries ตัวจริง, promo, messenger) — เหลือ: ซ่อน mock sub-view ใน DB |
+| v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | ✅ ทำครบตามที่วางแผนไว้ (แพลนเมนู mp_deliveries ตัวจริง, promo, messenger, DB "🍳 ผลิตวันนี้") |
 | v0.4   | AI Agents: น้องนิว + พี่เก่ง | 🚀 Beta Launch (ยังไม่เริ่ม) |
 | v1.0   | ปิด Hato Heart | 🏁 Full Launch |
 
@@ -423,4 +430,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 4 ก.ค. 2026 — v0.4.4 ✅ live (push `edf2eb1`) — ทำ version audit ทั้งระบบรอบนี้, เจอ mock sub-view ค้างใน DB Meal Plan tab (Known Issues #1), ยืนยัน batch_photo_upload.html พร้อมใช้แบบมีคนคุม, ออกแบบกลไกส่งที่เดียวกันรอ greenlight*
+*Last updated: 4 ก.ค. 2026 — v0.4.5 กำลัง push — ยกเลิกไอเดียส่งที่เดียวกัน (นัทตัดสินใจแล้ว), แก้ลำดับเมนู liff ให้ตรง HE, เพิ่มลากเลื่อนการ์ดหน้าแรก, เจอ+แก้บั๊กสต็อกหลักไม่เคย sync จริง, เพิ่มปุ่ม +10 เติมสต็อก, เปลี่ยน DB Meal Plan mock sub-view เป็น "🍳 ผลิตวันนี้" ของจริง — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*

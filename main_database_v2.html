@@ -215,6 +215,8 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .stock-ctrl button:hover{background:#e9e0cd;}
 .stock-ctrl input{width:48px;text-align:center;padding:4px 2px;border:1px solid var(--line);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
 .stock-lbl{font-size:9.5px;color:var(--ink-soft);text-align:center;}
+.stock-plus10{width:auto!important;padding:0 7px;font-size:11px!important;font-weight:700;background:var(--turmeric-soft)!important;color:var(--turmeric)!important;}
+.stock-plus10:hover{background:var(--turmeric)!important;color:#fff!important;}
 
 /* === name + category combined line, compact 2-line card === */
 .name-line{display:flex;align-items:baseline;flex-wrap:wrap;gap:6px;row-gap:2px;}
@@ -354,23 +356,30 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .icon-btn::after{content:attr(data-tip);position:absolute;top:calc(100%+6px);left:50%;transform:translateX(-50%);background:rgba(25,25,25,.9);color:#fff;font-size:11.5px;font-family:'IBM Plex Sans Thai',sans-serif;padding:5px 10px;border-radius:6px;white-space:nowrap;pointer-events:none;opacity:0;transition:opacity .15s;z-index:200;font-weight:400;}
 .icon-btn:hover::after{opacity:1;}
 
-.mp-menu-chip{display:flex;align-items:center;gap:4px;padding:5px 7px;border-radius:7px;font-size:11px;font-weight:600;margin-bottom:4px;border:1.5px solid transparent;}
-.mp-menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
-.mp-menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
-.mp-menu-chip.clickable{cursor:pointer;border-style:dashed;}
-.mp-menu-chip.clickable:hover{opacity:.75;}
-.mp-cnt-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 5px;font-size:10px;font-family:var(--mono);}
-.mp-assign-table{width:100%;border-collapse:collapse;font-size:12px;}
-.mp-assign-table th{background:var(--forest);color:#fff;padding:9px 12px;text-align:left;font-weight:600;}
-.mp-assign-table td{padding:6px 10px;border-bottom:1px solid var(--line);}
-.mp-assign-table tr:hover td{background:var(--forest-soft);}
-.mp-row-selected td{background:#EBF3EF!important;}
-.mp-assign-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;font-size:11px;margin:2px;}
-.mp-assign-chip.lc{background:#D1FAE5;color:#065F46;}
-.mp-assign-chip.hp{background:#DBEAFE;color:#1E40AF;}
-.mp-rm{cursor:pointer;color:#DC2626;font-weight:700;padding:0 2px;}
-.mp-rm:hover{opacity:.6;}
-.mp-qty-badge{background:rgba(0,0,0,.12);border-radius:8px;padding:1px 4px;font-family:var(--mono);font-size:10px;}
+/* === Meal Plan: Production View (🍳 ผลิตวันนี้) === */
+.customer-tag{display:inline-block;padding:2px 7px;border-radius:5px;font-weight:700;}
+.customer-tag.tag-lc{background:#D1FAE5;color:#065F46;}
+.customer-tag.tag-hp{background:#FEF3C7;color:#92400E;}
+.mp-prod-stat{display:flex;flex-direction:column;align-items:center;gap:1px;background:var(--surface);border:1px solid var(--line);border-radius:9px;padding:8px 16px;min-width:70px;}
+.mp-prod-stat b{font-size:19px;font-weight:800;color:var(--ink);line-height:1;}
+.mp-prod-stat span{font-size:10.5px;color:var(--ink-soft);}
+.mp-prod-stat.hp b{color:#92400E;}
+.mp-prod-stat.lc b{color:#065F46;}
+.mp-prod-stat.warn b{color:#B45309;}
+.mp-prod-stat.danger{border-color:#FCA5A5;background:#FEF2F2;}
+.mp-prod-stat.danger b{color:#DC2626;}
+.mp-prod-menu-card{background:#fff;border:1px solid var(--line);border-radius:10px;margin-bottom:10px;overflow:hidden;}
+.mp-prod-menu-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--surface-2);border-bottom:1px solid var(--line);}
+.mp-prod-code{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;color:var(--ink-soft);background:#fff;padding:2px 6px;border-radius:4px;}
+.mp-prod-name{flex:1;font-size:13px;font-weight:600;color:var(--ink);}
+.mp-prod-total{font-size:15px;font-weight:800;color:var(--forest);}
+.mp-prod-cust-list{display:flex;flex-direction:column;}
+.mp-prod-cust-row{display:flex;align-items:center;gap:8px;padding:7px 12px;border-top:1px solid var(--line);}
+.mp-prod-cust-name{font-size:12.5px;font-weight:600;min-width:90px;}
+.mp-prod-round{font-size:11px;color:var(--ink-soft);white-space:nowrap;}
+.mp-prod-note-input{flex:1;min-width:0;padding:4px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;font-family:inherit;background:var(--surface);}
+.mp-prod-note-input:focus{outline:none;border-color:var(--turmeric);background:#fff;}
+.mp-prod-note-input:not(:placeholder-shown){border-color:#F59E0B;background:#FFFBEB;}
 
 /* ═══ MOBILE COMPACT (≤520px) ═══ */
 @media (max-width:520px){
@@ -1175,7 +1184,7 @@ const SKU_SEED = [{"sku":"S181","name":"ข้าวปลากระพงน�
 
 let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, pinModeEnabled:false, sortMode:'category', activeCatTab:'__all__', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
-  mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpCustAssign:{}, mpSelectedCid:null,
+  mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpProdDate:null,
   showOnlineOnly: false,  // toggle: แสดงเฉพาะเมนูออนไลน์
   compactMode: false,     // Compact Mode: แก้สูตรรวดเร็ว
   // ── v0.3.2 packages tab ──
@@ -1817,163 +1826,127 @@ function mpLookbackDateRange(days){
   return dates;
 }
 
-// ── Meal Plan: Customer Assignment View ─────────────────────────────────────
-const MP_MENU_POOL=[
-  {code:"LC01",name:"อกไก่ย่างสมุนไพร+มันหวาน",type:"lc"},
-  {code:"HP01",name:"อกไก่ย่างสมุนไพร+มันหวาน",type:"hp"},
-  {code:"LC02",name:"แซลมอนย่างเกลือ+ข้าวกล้อง",type:"lc"},
-  {code:"HP02",name:"แซลมอนย่างเกลือ+ข้าวกล้อง",type:"hp"},
-  {code:"LC04",name:"สันในหมูย่างโรสแมรี่",type:"lc"},
-  {code:"HP04",name:"สันในหมูย่างโรสแมรี่",type:"hp"},
-  {code:"LC05",name:"หมูย่างน้ำจิ้มแจ่ว",type:"lc"},
-  {code:"HP05",name:"หมูย่างน้ำจิ้มแจ่ว",type:"hp"},
-  {code:"LC07",name:"ลาบแซลมอน+ข้าวไรซ์เบอร์รี่",type:"lc"},
-  {code:"HP07",name:"ลาบแซลมอน+ข้าวไรซ์เบอร์รี่",type:"hp"},
-  {code:"LC09",name:"หมูสันในหวานไร้มัน+ไข่ฝอย",type:"lc"},
-  {code:"HP09",name:"หมูสันในหวานไร้มัน+ไข่ฝอย",type:"hp"},
-  {code:"LC15",name:"กุ้งผัดซอสกระเทียมพริกไทยดำ",type:"lc"},
-  {code:"HP15",name:"กุ้งผัดซอสกระเทียมพริกไทยดำ",type:"hp"},
-];
-const MP_TODAY_PLAN=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
-const MP_MOCK_CUSTOMERS=[
-  {id:"mc1",name:"Boom",course:"HP Monthly รอบ9",boxes:7,type:"hp",pref:"ไม่ทานเนื้อ"},
-  {id:"mc2",name:"Pete",course:"HP Weekly รอบ2",boxes:7,type:"hp",pref:""},
-  {id:"mc3",name:"Frederik",course:"HP รายสัปดาห์",boxes:7,type:"hp",pref:""},
-  {id:"mc4",name:"คุณธัญภา",course:"HP Weekly รอบ1",boxes:7,type:"hp",pref:""},
-  {id:"mc5",name:"ชมพิสุทธิ์",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
-  {id:"mc6",name:"ขวัญชนก",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:"ขาวไม่เอาข้าวกล้อง"},
-  {id:"mc7",name:"พรรณพิไล",course:"LC รายสัปดาห์",boxes:7,type:"lc",pref:""},
-  {id:"mc8",name:"คุณYok",course:"LC รายเดือน รอบ2",boxes:6,type:"lc",pref:""},
-];
+// ── Meal Plan: Production View (ครัวดูวันนี้ต้องผลิต/แพ็คอะไรบ้าง — อ่านจาก mp_deliveries จริง) ──
+let mpProdRows = [];
+let mpProdLoadedIso = null;
+let _mpProdNoteTimers = {};
 
-// ── daily_menu_assignments sync (DB side) ───────────────────────────────
-async function mpLoadAssignments(){
+function mpProdTodayIso(){
+  const d=new Date();
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function mpProdAddDays(iso,n){
+  const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+async function mpProdLoad(iso){
   const sb=getSB(); if(!sb) return;
   try{
-    const today=new Date().toISOString().split('T')[0];
-    const {data,error}=await sb.from('daily_menu_assignments').select('*').eq('plan_date',today);
+    const {data,error}=await sb.from('mp_deliveries').select('*').eq('delivery_date',iso)
+      .not('status','in','(skipped,cancelled)');
     if(error) throw error;
-    state.mpCustAssign={};
-    (data||[]).forEach(row=>{
-      if(!state.mpCustAssign[row.customer_id]) state.mpCustAssign[row.customer_id]=[];
-      state.mpCustAssign[row.customer_id].push({code:row.menu_code,qty:row.qty||1,note:row.note||''});
+    mpProdRows=data||[];
+  }catch(e){ console.error('mpProdLoad:',e); mpProdRows=[]; }
+  mpProdLoadedIso=iso;
+  if(state.tab==='mealplan'&&state.mpSubView==='assign') render();
+}
+function mpProdSetDate(iso){
+  state.mpProdDate=iso;
+  mpProdLoad(iso);
+}
+function mpProdSaveNote(rowId,code,val){
+  const r=mpProdRows.find(x=>x.id===rowId); if(!r) return;
+  const items=(r.menu_items||[]).slice();
+  const entry=items.find(e=>e.code===code);
+  if(entry) entry.note=val;
+  r.menu_items=items;
+  const key=rowId+'|'+code;
+  clearTimeout(_mpProdNoteTimers[key]);
+  _mpProdNoteTimers[key]=setTimeout(async ()=>{
+    const sb=getSB(); if(!sb) return;
+    try{ await sb.from('mp_deliveries').update({menu_items:items,updated_at:new Date().toISOString()}).eq('id',rowId); }
+    catch(e){ console.error('mpProdSaveNote:',e); }
+  },600);
+}
+
+function renderMpProdView(){
+  if(!state.mpProdDate) state.mpProdDate=mpProdTodayIso();
+  const iso=state.mpProdDate;
+  if(mpProdLoadedIso!==iso){ mpProdLoad(iso); }
+
+  const rows=(mpProdLoadedIso===iso)?mpProdRows:[];
+  const d=new Date(iso+'T00:00:00');
+  const dateLabel=d.getDate()+' '+MONTH_TH[d.getMonth()]+' '+(d.getFullYear()+543);
+
+  let html=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap;">
+    <button class="btn btn-ghost btn-sm" id="mpProdPrevDay">‹</button>
+    <input type="date" id="mpProdDateInput" value="${iso}" style="padding:6px 9px;border:1px solid var(--line);border-radius:7px;font-size:13px;font-family:inherit;">
+    <button class="btn btn-ghost btn-sm" id="mpProdNextDay">›</button>
+    <button class="btn btn-ghost btn-sm" id="mpProdTodayBtn">📍 วันนี้</button>
+    <button class="btn btn-ghost btn-sm" id="mpProdRefreshBtn">🔄</button>
+    <span style="font-size:13px;color:var(--ink-soft);margin-left:6px;">${dateLabel}</span>
+  </div>`;
+
+  if(!rows.length){
+    html+=`<div class="empty">ไม่มี Meal Plan ส่งวันที่นี้</div>`;
+    return html;
+  }
+
+  const hpCount=rows.filter(r=>(r.mp_type||'').toLowerCase()==='hp').length;
+  const lcCount=rows.filter(r=>(r.mp_type||'').toLowerCase()==='lc').length;
+  const reqCount=rows.filter(r=>(r.customer_request||[]).length>0).length;
+  const unassignedCount=rows.filter(r=>{
+    const total=(r.menu_items||[]).reduce((s,e)=>s+(e.qty||1),0);
+    return total<(r.box_count||7);
+  }).length;
+
+  html+=`<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;">
+    <div class="mp-prod-stat"><b>${rows.length}</b><span>รอบทั้งหมด</span></div>
+    <div class="mp-prod-stat hp"><b>${hpCount}</b><span>HP</span></div>
+    <div class="mp-prod-stat lc"><b>${lcCount}</b><span>LC</span></div>
+    <div class="mp-prod-stat${reqCount?' warn':''}"><b>${reqCount}</b><span>ลูกค้ารีเควสเอง</span></div>
+    ${unassignedCount?`<div class="mp-prod-stat danger"><b>${unassignedCount}</b><span>ยังกำหนดเมนูไม่ครบ</span></div>`:''}
+  </div>`;
+
+  const byCode={};
+  rows.forEach(r=>{
+    (r.menu_items||[]).forEach(e=>{
+      if(!e.code) return;
+      if(!byCode[e.code]) byCode[e.code]={code:e.code,name:e.name||e.code,total:0,entries:[]};
+      byCode[e.code].total+=(e.qty||1);
+      byCode[e.code].entries.push({
+        rowId:r.id, customerName:r.customer_name||'ลูกค้า', mpType:(r.mp_type||'').toUpperCase(),
+        roundLabel:'รอบ '+(r.round_no||'—')+'/'+(r.total_rounds||'—'),
+        qty:e.qty||1, note:e.note||''
+      });
     });
-  }catch(e){console.error('mpLoadAssignments:',e);}
-}
-async function mpSaveAssign(cid,code,qty,note){
-  const sb=getSB(); if(!sb) return;
-  try{
-    const today=new Date().toISOString().split('T')[0];
-    await sb.from('daily_menu_assignments').upsert({
-      plan_date:today,customer_id:cid,menu_code:code,qty:qty||1,note:note||'',
-      updated_at:new Date().toISOString()
-    },{onConflict:'plan_date,customer_id,menu_code'});
-  }catch(e){console.error('mpSaveAssign:',e);}
-}
-async function mpDeleteAssign(cid,code){
-  const sb=getSB(); if(!sb) return;
-  try{
-    const today=new Date().toISOString().split('T')[0];
-    await sb.from('daily_menu_assignments').delete().eq('plan_date',today).eq('customer_id',cid).eq('menu_code',code);
-  }catch(e){console.error('mpDeleteAssign:',e);}
-}
-function mpSubscribeRealtime(){
-  const sb=getSB(); if(!sb) return;
-  try{
-    sb.channel('dma-db-changes')
-      .on('postgres_changes',{event:'*',schema:'public',table:'daily_menu_assignments'},()=>{
-        mpLoadAssignments().then(()=>{ if(state.tab==='mealplan'&&state.mpSubView==='assign') render(); });
-      }).subscribe();
-  }catch(e){}
-}
-
-
-function mpInitAssign(){
-  MP_MOCK_CUSTOMERS.forEach(function(c){
-    if(!state.mpCustAssign[c.id]){
-      const pool=MP_TODAY_PLAN.filter(code=>code.startsWith(c.type.toUpperCase()));
-      state.mpCustAssign[c.id]=pool.slice(0,5).map(code=>({code,qty:1,note:""}));
-    }
   });
-}
-function mpTotalQty(cid){return (state.mpCustAssign[cid]||[]).reduce((s,e)=>s+e.qty,0);}
-function mpCountMenu(code){
-  let t=0; MP_MOCK_CUSTOMERS.forEach(c=>{ const e=(state.mpCustAssign[c.id]||[]).find(x=>x.code===code); if(e)t+=e.qty; }); return t;
-}
-function mpClickMenu(code){
-  const cid=state.mpSelectedCid; if(!cid){ showToast('คลิกชื่อลูกค้าก่อน'); return; }
-  const arr=state.mpCustAssign[cid]||[];
-  const entry=arr.find(e=>e.code===code);
-  if(entry){ if(mpTotalQty(cid)>=7) return; entry.qty++; mpSaveAssign(cid,code,entry.qty,""); }
-  else { if(mpTotalQty(cid)>=7) return; arr.push({code,qty:1,note:""}); state.mpCustAssign[cid]=arr; mpSaveAssign(cid,code,1,""); }
-  render();
-}
-function mpSelectCust(cid){
-  state.mpSelectedCid=(state.mpSelectedCid===cid)?null:cid;
-  render();
-}
-function mpRemoveMenu(cid,code){
-  state.mpCustAssign[cid]=(state.mpCustAssign[cid]||[]).filter(e=>e.code!==code);
-  mpDeleteAssign(cid,code);
-  render();
-}
+  const codes=Object.values(byCode).sort((a,b)=>b.total-a.total);
 
-function renderMpAssignView(){
-  mpInitAssign();
-  const selCid=state.mpSelectedCid;
-
-  // Left panel
-  let leftH="<div style='font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px'>เมนูวันนี้</div>";
-  MP_TODAY_PLAN.forEach(code=>{
-    const m=MP_MENU_POOL.find(x=>x.code===code)||{code,name:code,type:"lc"};
-    const cnt=mpCountMenu(code);
-    const isActive=selCid&&!(state.mpCustAssign[selCid]||[]).find(e=>e.code===code)&&mpTotalQty(selCid)<7;
-    leftH+=`<div class="mp-menu-chip ${m.type}${isActive?" clickable":""}" onclick="mpClickMenu('${code}')">
-      <span style="font-family:var(--mono);font-size:10px;font-weight:700">${code}</span>
-      <span style="font-size:10px;opacity:.8;flex:1">${m.name.slice(0,15)}</span>
-      ${cnt>0?`<span class="mp-cnt-badge">×${cnt}</span>`:""}
+  html+=`<div style="font-size:12px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">🍳 ต้องผลิต (${codes.length} รายการ)</div>`;
+  if(!codes.length){
+    html+=`<div class="empty" style="margin-bottom:16px;">ยังไม่มีเมนูที่กำหนด — ไปกำหนดที่แท็บแพลนเมนูฝั่ง Admin (Operation Hub)</div>`;
+  }
+  codes.forEach(c=>{
+    html+=`<div class="mp-prod-menu-card">
+      <div class="mp-prod-menu-head">
+        <span class="mp-prod-code">${escapeHtml(c.code)}</span>
+        <span class="mp-prod-name">${escapeHtml(c.name)}</span>
+        <span class="mp-prod-total">×${c.total}</span>
+      </div>
+      <div class="mp-prod-cust-list">
+        ${c.entries.map(en=>`<div class="mp-prod-cust-row">
+          <span class="customer-tag ${en.mpType==='LC'?'tag-lc':'tag-hp'}" style="font-size:10px;">${en.mpType}</span>
+          <span class="mp-prod-cust-name">${escapeHtml(en.customerName)}</span>
+          <span class="mp-prod-round">${en.roundLabel}${en.qty>1?' ×'+en.qty:''}</span>
+          <input type="text" class="mp-prod-note-input" data-row="${en.rowId}" data-code="${escapeHtml(c.code)}"
+            placeholder="โน้ตเปลี่ยนเมนู (ถ้าวัตถุดิบไม่พอ)..." value="${escapeHtml(en.note)}">
+        </div>`).join('')}
+      </div>
     </div>`;
   });
 
-  // Table
-  let tableH=`<table class="mp-assign-table">
-    <thead><tr>
-      <th style="width:110px">ลูกค้า</th>
-      <th style="width:44px;text-align:center">คอร์ส</th>
-      <th>เมนูวันนี้</th>
-    </tr></thead><tbody>`;
-  MP_MOCK_CUSTOMERS.forEach(c=>{
-    const arr=state.mpCustAssign[c.id]||[];
-    const total=mpTotalQty(c.id);
-    const isSel=selCid===c.id;
-    const chip=`<span class="customer-tag ${c.type==="lc"?"tag-lc":"tag-hp"}" title="${c.course}" style="cursor:default;font-size:11px">${c.type.toUpperCase()}</span>`;
-    let cellH=arr.map(e=>{
-      const m=MP_MENU_POOL.find(x=>x.code===e.code)||{type:"lc",name:""};
-      return `<span class="mp-assign-chip ${m.type}">
-        <span class="mp-rm" onclick="mpRemoveMenu('${c.id}','${e.code}')">×</span>
-        <b>${e.code}</b> ${m.name.slice(0,12)}${e.qty>1?` <span class="mp-qty-badge">×${e.qty}</span>`:""}
-      </span>`;
-    }).join("");
-    cellH+=total<7?`<span style="font-size:10px;color:var(--ink-xsoft);padding:2px 4px">${total}/7</span>`:`<span style="font-size:10px;color:var(--leaf);padding:2px 4px">✓ ${total}/7</span>`;
-    tableH+=`<tr class="${isSel?"mp-row-selected":""}" onclick="mpSelectCust('${c.id}')" style="cursor:pointer">
-      <td style="white-space:nowrap;vertical-align:top;padding-top:8px">
-        <div style="font-weight:600;font-size:12px${isSel?";color:var(--forest)":""}">${c.name}${isSel?" ✎":""}</div>
-        <div style="font-size:10px;color:var(--ink-soft)">${c.boxes} กล่อง</div>
-        ${c.pref?`<span style="font-size:10px;color:var(--red);background:var(--red-soft);padding:1px 5px;border-radius:4px">${c.pref}</span>`:""}
-      </td>
-      <td style="text-align:center;vertical-align:top;padding-top:8px">${chip}</td>
-      <td>${cellH}</td>
-    </tr>`;
-  });
-  tableH+="</tbody></table>";
-
-  return `<div style="display:flex;gap:14px;align-items:flex-start;">
-    <div style="width:150px;flex-shrink:0;background:var(--surface);border-radius:10px;border:1px solid var(--line);padding:10px;position:sticky;top:0">
-      ${selCid?"":`<div style="font-size:11px;color:#F59E0B;background:#FEF3C7;padding:4px 8px;border-radius:6px;margin-bottom:8px;text-align:center">👆 คลิกชื่อลูกค้าก่อน</div>`}
-      ${leftH}
-    </div>
-    <div style="flex:1;overflow-x:auto;border-radius:10px;border:1px solid var(--line)">${tableH}</div>
-  </div>`;
+  return html;
 }
 
 function renderMealPlanTab(){
@@ -1983,10 +1956,10 @@ function renderMealPlanTab(){
   // Sub-view toggle
   let html = `<div style="display:flex;gap:6px;margin-bottom:12px;">
     <button class="ing-subtab-btn${state.mpSubView==='plan'?' active':''}" id="mpSubPlan">📅 แผนผลิต</button>
-    <button class="ing-subtab-btn${state.mpSubView==='assign'?' active':''}" id="mpSubAssign">👥 กำหนดเมนูลูกค้า</button>
+    <button class="ing-subtab-btn${state.mpSubView==='assign'?' active':''}" id="mpSubAssign">🍳 ผลิตวันนี้</button>
   </div>`;
 
-  if(state.mpSubView==='assign') return html + renderMpAssignView();
+  if(state.mpSubView==='assign') return html + renderMpProdView();
 
   const allDates  = [...state.mpDates].sort();
   const colW      = MP_COL_W[state.mpViewDays]||190;
@@ -3610,6 +3583,7 @@ function renderRecipeCard(r, tot, pinInfo){
         <button type="button" class="stock-minus" data-id="${r.id}">−</button>
         <div><input type="number" class="stock-val" data-id="${r.id}" value="${stockVal}" step="1"><div class="stock-lbl">สต็อก</div></div>
         <button type="button" class="stock-plus" data-id="${r.id}">+</button>
+        <button type="button" class="stock-plus10" data-id="${r.id}" title="เติมทีละ 10">+10</button>
       </div>
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
@@ -4311,10 +4285,12 @@ function attachHandlers(){
         r.updated_by = state.currentUser;
         r.updated_at = new Date().toISOString();
         persistRecipes();
+        syncStockDebounced(r);
         render();
       };
       ctrl.querySelector('.stock-minus').onclick = (e)=>{ e.stopPropagation(); const r=state.recipes.find(x=>x.id===id); commitStock(Math.max(0,(r.stock||0)-1)); };
       ctrl.querySelector('.stock-plus').onclick = (e)=>{ e.stopPropagation(); const r=state.recipes.find(x=>x.id===id); commitStock((r.stock||0)+1); };
+      ctrl.querySelector('.stock-plus10').onclick = (e)=>{ e.stopPropagation(); const r=state.recipes.find(x=>x.id===id); commitStock((r.stock||0)+10); };
       valInput.onclick = e=>e.stopPropagation();
       valInput.onkeydown = e=>{ if(e.key==='Enter') e.target.blur(); };
       valInput.onblur = ()=>{
@@ -4908,6 +4884,28 @@ function attachHandlers(){
     if(manageSupBtn) manageSupBtn.onclick = ()=>{ state.showSupplierManager=true; render(); };
     document.querySelectorAll('.ing-subtab-btn').forEach(btn=>{
       btn.onclick = ()=>{ state.ingSubtab = btn.dataset.subtab; render(); };
+    });
+    const mpSubPlanBtn = document.getElementById('mpSubPlan');
+    if(mpSubPlanBtn) mpSubPlanBtn.onclick = ()=>{ state.mpSubView='plan'; render(); };
+    const mpSubAssignBtn = document.getElementById('mpSubAssign');
+    if(mpSubAssignBtn) mpSubAssignBtn.onclick = ()=>{
+      state.mpSubView='assign';
+      if(!state.mpProdDate) state.mpProdDate=mpProdTodayIso();
+      mpProdLoad(state.mpProdDate);
+      render();
+    };
+    const mpProdPrevDay = document.getElementById('mpProdPrevDay');
+    if(mpProdPrevDay) mpProdPrevDay.onclick = ()=>{ mpProdSetDate(mpProdAddDays(state.mpProdDate,-1)); render(); };
+    const mpProdNextDay = document.getElementById('mpProdNextDay');
+    if(mpProdNextDay) mpProdNextDay.onclick = ()=>{ mpProdSetDate(mpProdAddDays(state.mpProdDate,1)); render(); };
+    const mpProdTodayBtn = document.getElementById('mpProdTodayBtn');
+    if(mpProdTodayBtn) mpProdTodayBtn.onclick = ()=>{ mpProdSetDate(mpProdTodayIso()); render(); };
+    const mpProdRefreshBtn = document.getElementById('mpProdRefreshBtn');
+    if(mpProdRefreshBtn) mpProdRefreshBtn.onclick = ()=>{ mpProdLoad(state.mpProdDate); };
+    const mpProdDateInput = document.getElementById('mpProdDateInput');
+    if(mpProdDateInput) mpProdDateInput.onchange = ()=>{ if(mpProdDateInput.value) { mpProdSetDate(mpProdDateInput.value); render(); } };
+    document.querySelectorAll('.mp-prod-note-input').forEach(inp=>{
+      inp.oninput = ()=>{ mpProdSaveNote(inp.dataset.row, inp.dataset.code, inp.value); };
     });
     document.querySelectorAll('#ingBody tr[data-id]').forEach(tr=>{
       const id = tr.dataset.id;
