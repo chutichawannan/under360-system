@@ -47,7 +47,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 | ไฟล์ | หน้าที่ | สถานะ |
 |------|--------|-------|
-| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) | ✅ live (v0.4.4) |
+| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) + ป้อบอัพเมนู/lightbox | ✅ live (v0.4.8) |
 | `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง + Activity Log | ✅ live (v0.4.7) — optimize ขนาดไฟล์แล้ว (330KB) |
 | `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
 | `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print | ✅ live |
@@ -192,9 +192,12 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 > ถ้า `node` ไม่เข้า PATH ใน terminal ให้รีสตาร์ท Claude Code ครั้งเดียว
 > Allowlist: `.claude/settings.json` อนุญาต curl อ่าน Supabase REST แล้ว (ไม่ถามซ้ำ)
 
+> ⚠️ **บั๊กแพทเทิร์นที่เจอซ้ำๆ (4 ครั้งในวันเดียว 2026-07-04) — ระวังไว้เวลาแก้ฟีเจอร์ที่มีจุดแสดงผลซ้ำกันหลายที่:**
+> ไฟล์พวกนี้มักมีโค้ด render เมนู/สต็อกซ้ำกันคนละจุด (เช่น รายการเมนูหลัก vs การ์ดพรีวิวหน้าแรก, ปุ่ม stock ที่การ์ด vs ที่ตาราง pin) — แก้จุดเดียวแล้วคิดว่าจบ มักพลาดอีกจุดที่เหมือนกันทุกประการ (stock sync ผูกกับ dead code, ปุ่ม migrate ไม่มี HTML, badge/limit หายในหน้าแรก, `openProduct()` อ้าง element ที่ไม่เคยสร้างเลย) **ก่อนบอกว่า "แก้แล้ว" ต้อง `grep` หาทุกจุดที่มี pattern เดียวกันในไฟล์ก่อนเสมอ** อย่าเชื่อว่าแก้จุดเดียวพอ
+
 ---
 
-## 🚦 Current Version: v0.4.7 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `93e20ca` — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
+## 🚦 Current Version: v0.4.8 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `5020fc9` — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -210,6 +213,8 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
 | v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
 | v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
+| v0.4.8 | **แก้บั๊กร้ายแรง:** คลิกเมนูใดๆ ในหน้า liff พังจริง (throw error เงียบๆ — `openProduct()` อ้าง HTML ที่ไม่เคยมีอยู่จริง) + เพิ่มคลิกชื่อเมนู→ป้อบอัพ (ชื่อ/แคลอรี่/คำอธิบาย) และคลิกรูป→lightbox (ของเดิมเขียน JS/CSS ไว้ครบแต่ไม่เคยต่อ onclick) + แก้รูปเมนูไม่เคยโชว์ (`item.image_url`→`item.image_urls[0]`, 6 จุด) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก (โค้ดคนละชุดกับรายการเมนูหลัก) | `5020fc9` |
+| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
@@ -224,13 +229,16 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
 | 7 | **พบใหม่ 2026-07-04:** หน้า DB สต็อกหลักที่การ์ดเมนู (`.stock-ctrl`) ไม่เคย sync ขึ้น `menu_items.stock_total` จริงมาตลอด (โค้ด sync เดิมผูกกับ `renderPttCard`/`chgStockFast` ที่เป็น dead code ไม่เคยถูกเรียก) — **แก้แล้ว** เพิ่ม `syncStockDebounced()` เข้า `commitStock()` จริง + เพิ่มปุ่ม "+10" | ✅ Done |
 | 8 | **พบใหม่ 2026-07-04 (ยังไม่แก้ ไม่กระทบการใช้งานตอนนี้):** `mpIsoDate()` ในแท็บ "แผนผลิต" ของ Meal Plan ใช้ `.toISOString().split('T')[0]` — เป็น pattern เดียวกับบั๊ก timezone ที่เคยแก้ไปแล้วในไฟล์อื่น (UTC+7 จะเพี้ยนไป 1 วันได้) แต่ยังไม่มีรายงานปัญหาจริง จึงยังไม่แตะ — ถ้าจะแก้ทีหลังใช้ pattern `localYMD()`/`toISO()` แบบเดียวกับที่แก้ไปแล้ว | 🟡 ระวังไว้ |
+| 9 | ✅ **แก้แล้ว** — `liff_customer.html`: คลิกเมนูในหน้า liff **พังจริงตอนนี้มาตลอด** (`openProduct()` อ้าง element ที่ไม่เคยมี HTML รองรับเลย → throw error เงียบๆ ไม่ทำอะไร) ลบทิ้ง เปลี่ยนเป็นคลิกชื่อเมนู→ป้อบอัพ + คลิกรูป→lightbox (ของเดิมมี JS/CSS ครบแต่ไม่เคยต่อ onclick) + แก้รูปเมนูไม่เคยโชว์เลย (`item.image_url`→`item.image_urls[0]`) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก | ✅ Done |
 
 ---
 
-## 📋 What's in liff_customer.html (v0.4.4)
+## 📋 What's in liff_customer.html (v0.4.8)
 
 ### Screens
 `s-menu` · `s-pkg-select` · `s-meal-plan` · `s-cart` · `s-confirm` · `s-ok` · `s-orders` · Meal Plan self-service (จัดการรอบ/เลื่อนวัน/ยกเลิก)
+
+> ⚠️ `s-product` (หน้ารายละเอียดสินค้าแบบเต็มจอ) **ถูกลบทิ้งแล้ว** (commit `5020fc9`) — พังมาตลอดเพราะไม่เคยมี HTML รองรับ ตอนนี้แทนที่ด้วยป้อบอัพ (ดูด้านล่าง)
 
 ### Key features
 - **Package flow:** HomeGrid card → `openPackage()` → เลือกเมนู → ตะกร้า
@@ -240,6 +248,9 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 - **Saved address:** restore จาก `customers.default_address` อัตโนมัติ
 - **Order history:** `s-orders` screen + `goOrders()`
 - **Profile:** redirect ไป `liff_profile.html` พร้อม uid
+- **คลิกชื่อเมนู → ป้อบอัพรายละเอียด** (`openMenuDetail()`, element `#mdOverlay`) — ชื่อ/โค้ด/แคลอรี่/โปรตีน/คำอธิบาย/ราคา + ปุ่มเพิ่มตะกร้า (เคารพ stock limit ผ่าน `addItem()` เดิม)
+- **คลิกรูปเมนู → lightbox ขยายเต็มจอ** (`openItemLightbox(id)` → `openLightbox(urls)`, element `#lbOverlay`) — รองรับหลายรูป เลื่อนดูได้ + จุดบอกตำแหน่ง
+- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก (`renderHomeGrid()`'s Item Grid Sections) — `NULL`=ไม่จำกัด (ต้องตั้งค่าจริงที่หน้า DB ถึงจะเห็น limit/badge "เหลือ N ชิ้นสุดท้าย")
 
 ### Meal Plan Config (⚠️ แก้ราคาก่อน launch — ยังไม่ยืนยัน)
 ```javascript
@@ -455,4 +466,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 4 ก.ค. 2026 — v0.4.7 ✅ push แล้ว — Activity Log (v0.4.6, ⚠️ รอรัน `scripts/sql_activity_log.sql`) + optimize main_database_v2.html (778KB→330KB, ลบ seed data ที่ import ครั้งเดียวไปแล้วทิ้ง) — นัทกำลังเตรียมทริปแคนาดา 7 วัน จะใช้ claude.ai/code จากมือถือแทน Claude Code เดิม (ยืนยันว่าโฟลเดอร์นี้ = repo เดียวกับ GitHub) — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
+*Last updated: 4 ก.ค. 2026 — v0.4.8 ✅ push แล้ว (commit `5020fc9`) — แก้บั๊กร้ายแรง: คลิกเมนู liff พังจริงมาตลอด (openProduct ไม่มี HTML รองรับ) เปลี่ยนเป็นป้อบอัพชื่อเมนู+lightbox รูป, แก้รูปเมนูไม่เคยโชว์ (image_url→image_urls[0]), แก้ badge/limit สต็อกหายในหน้าแรก — ก่อนหน้า: Activity Log (v0.4.6, ⚠️ รอรัน `scripts/sql_activity_log.sql`) + optimize main_database_v2.html (778KB→330KB) — นัทกำลังเตรียมทริปแคนาดา 7 วัน จะใช้ claude.ai/code จากมือถือแทน Claude Code เดิม — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
