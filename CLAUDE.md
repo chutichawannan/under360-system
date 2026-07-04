@@ -194,7 +194,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.4.7 (✅ push แล้ว — live บน Vercel, commit ล่าสุด ดู git log — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
+## 🚦 Current Version: v0.4.7 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `93e20ca` — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -209,7 +209,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
 | v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
 | v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
-| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | (ดู git log ล่าสุด) |
+| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
