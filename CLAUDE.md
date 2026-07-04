@@ -47,24 +47,27 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 | ไฟล์ | หน้าที่ | สถานะ |
 |------|--------|-------|
-| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout | ✅ live (v0.3.3) |
-| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages tab | ✅ live (v0.3.2) |
+| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) | ✅ live (v0.4.4) |
+| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง | ✅ live (v0.4.4) — มี sub-view เก่า mock ค้างอยู่ ดู Known Issues #1 |
 | `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
-| `kitchen_queue.html` | หน้าครัว + print | ✅ live |
-| `operation_hub.html` | Admin hub (5 tabs) | ✅ live — รอ v0.3.5 |
+| `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print | ✅ live |
+| `operation_hub.html` | Admin hub (orders/menu/แพลนเมนู/promo/messenger/customer/HE + เปิด KQ/DB/report ผ่าน iframe) | ✅ live |
 | `customer.html` | ข้อมูลลูกค้า standalone | ✅ live |
-| `liff_register.html` | สมัครสมาชิก | deployed (mock data) |
-| `liff_profile.html` | โปรไฟล์ลูกค้า | deployed (mock data) |
-| `report.html` | รายงาน | deployed (mock data) |
+| `batch_photo_upload.html` | Batch upload รูปเมนูจากภาพโบรชัวร์ (AI vision จับตำแหน่ง+ชื่อ, fuzzy match, crop, upload) | 🟡 เขียนเสร็จ ต่อ Supabase/Storage จริงแล้ว — ยังไม่เคยรันจริงสักครั้ง ดูหมวด "Photo Migration" ด้านล่างก่อนรัน |
+| `liff_register.html` | สมัครสมาชิก | ✅ ต่อ Supabase จริง (upsert customers) — ไม่ใช่ mock แล้ว |
+| `liff_profile.html` | โปรไฟล์ลูกค้า | 🟡 ดึงจริงก่อน (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง |
+| `report.html` | รายงาน | deployed (mock data ทั้งหมด) |
 | `landing.html` | FB/IG → LINE bridge | deployed |
 | `api/webhook.js` | Meta Webhook scaffold | built, ยังไม่ configure |
+| `api/notify-mp-requests.js` | Cron แจ้งเตือน Meal Plan (เปิด request window / auto no-change / เตือนก่อนส่ง 1 วัน) | ✅ live — รอตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ถึงจะส่ง LINE จริง |
 
 ---
 
 ## 🥡 Product Lines
 
 ### Line 1 — เมนูสต็อค (SKU: No · S · D)
-- ทำล่วงหน้า 1 วัน, มี `stock_quantity`
+- ทำล่วงหน้า 1 วัน, สต็อกจริงคือ `menu_items.stock_total` (⚠️ ไม่ใช่ `stock_quantity` — คอลัมน์นั้นไม่มีอยู่จริง เคยพังทั้งเส้นทางเพราะเข้าใจผิด แก้แล้ว commit `9620cc1`)
+- นิยาม: `NULL`=ไม่จำกัด (default) · `0`=หมดสต็อกจริง · `N>0`=เหลือ N (badge "เหลือ N ชิ้นสุดท้าย" เมื่อ ≤5)
 - ส่งได้ทุก time slot รวมเช้า
 - ขายทั้ง individual และ Package S/M/L
 - **Pre-order:** เมนูอาทิตย์หน้าตั้ง `available_from` = วันจันทร์ถัดไป → โชว์ badge 📅 + block ผสมตะกร้า
@@ -73,7 +76,8 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 - ทำสดวันนั้น ส่งบ่ายเท่านั้น — `no_morning = true` อัตโนมัติ
 - **ไม่มี stock concept** — วางแผนจากวัตถุดิบ
 - **✅ เป็น add-to-cart ปกติ** ลูกค้าเลือก HP/LC + set size → เข้าตะกร้าเลย
-- Admin assign เมนูหลังบ้าน (น้องนิวทำใน v0.4)
+- Admin assign เมนูหลังบ้าน ผ่าน **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) — น้องนิว (v0.4) จะมาช่วย auto-suggest ทีหลัง
+- ⚠️ เมนู HP/LC **ไม่ต้องขึ้นหน้าลูกค้าเลือกเอง** — มีไว้ให้แอดมิน assign หลังบ้านเท่านั้น (ยืนยันแล้วว่าตั้งใจ ไม่ใช่บั๊ก)
 
 ### Package S/M/L
 - HomeGrid card → `openPackage(pkgId)` → เลือก 9 เมนู → เข้าตะกร้า
@@ -86,7 +90,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 ### มีแล้ว
 `orders` · `order_items` · `menu_items` · `customers` · `home_layout` · `kitchen_data`
-`daily_menu_assignments` · `bot_sessions` · `promo_codes` · `packages` · `package_items`
+`daily_menu_assignments` (⚠️ legacy — ไม่ใช้แล้วสำหรับ Meal Plan จริง ดู mp_deliveries) · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries`
 
 ### SQL ที่รันแล้ว ✅
 ```sql
@@ -110,9 +114,30 @@ CREATE TABLE package_items ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
 -- v0.3.3 pre-order
 ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS available_from DATE;
 ALTER TABLE orders     ADD COLUMN IF NOT EXISTS delivery_week TEXT DEFAULT 'current';
+
+-- v0.4.0 Meal Plan scheduling (scripts/sql_mp_deliveries.sql)
+CREATE TABLE mp_deliveries ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id uuid REFERENCES orders(id), customer_id uuid, line_uid text,
+  customer_name text, line_display_name text, mp_type text, mp_set text,
+  round_no int, total_rounds int, delivery_date date, time_slot text, time_slot_label text,
+  delivery_address text, box_count int DEFAULT 7, status text DEFAULT 'scheduled',
+  menu_items jsonb, customer_request jsonb, customer_note text,
+  request_opens_at date, request_deadline date, notified_at timestamptz,
+  day_before_notified_at timestamptz, admin_notes text,
+  created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now() );
+-- + RLS policy อนุญาต anon (ดูรายละเอียดเต็มใน scripts/sql_mp_deliveries.sql)
+
+-- v0.4.1 line_display_name (scripts/sql_line_display_name.sql)
+ALTER TABLE orders        ADD COLUMN IF NOT EXISTS line_display_name TEXT;
+ALTER TABLE mp_deliveries ADD COLUMN IF NOT EXISTS line_display_name TEXT;
+
+-- v0.4.3 stock fix (scripts/sql_stock_fix.sql)
+UPDATE menu_items SET stock_total = NULL WHERE stock_total = 0;
+ALTER TABLE menu_items ALTER COLUMN stock_total DROP DEFAULT;
+-- นิยามใหม่: NULL = ไม่จำกัด (default) / 0 = หมดสต็อกจริง / N>0 = เหลือ N ชิ้น
 ```
 
-### ✅ SQL รันครบแล้ว — ไม่มีค้าง
+### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยกเว้น `day_before_notified_at` ALTER ท้าย sql_mp_deliveries.sql ถ้ายังไม่ได้รัน — เช็คซ้ำได้)
 
 ### Storage
 - `menu-images` (Public) ✅
@@ -166,28 +191,38 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.3.3 (✅ push แล้ว — live บน Vercel)
+## 🚦 Current Version: v0.4.4 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `edf2eb1`)
 
-### ✅ Fixed Issues (แก้แล้วในแชทนี้)
-| # | ปัญหาเดิม | สถานะ |
-|---|-----------|-------|
-| 1 | HP/LC ควรเป็น subscribe flow | ✅ เปลี่ยนเป็น add-to-cart + picker screen |
-| 2 | Stock badge บน HP/LC | ✅ แสดง "🥗 Meal Plan" badge แทน |
-| 3 | no_morning ต้อง tick per item | ✅ auto จาก category แล้ว |
+> v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
-### ⚠️ Known Issues (ยังค้างอยู่)
+### ✅ สรุปงานที่ทำไปแล้วตั้งแต่ v0.3.3
+| Version | งาน | Commit |
+|---------|-----|--------|
+| v0.3.4* | คูปอง/ส่วนลด (`promo_codes`) ที่หน้า checkout | (รวมอยู่ในช่วง cart fix) |
+| v0.4.0 | ระบบ Meal Plan ระยะยาว (`mp_deliveries`) — LIFF self-service (เลื่อน/ยกเลิกรอบ) + OH แพลนเมนู (คอลัมน์ตามวันที่) + KQ แยก view + LINE cron แจ้งเตือน | `a0f542c` |
+| v0.4.1 | ชื่อ+เบอร์ผู้รับ (recipient) แยกจากชื่อบัญชีไลน์ (`line_display_name`) | — |
+| v0.4.2 | หน้าแรก: การ์ด collage เลื่อนอิสระ (เอา scroll-snap ออก) | `7b017a7` |
+| v0.4.3 | แก้ระบบสต็อกที่พังทั้งเส้นทาง (`stock_quantity`→`stock_total` จริง, LIFF/KQ/DB ครบ) | `9620cc1` |
+| v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
+
+*หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
+
+### ⚠️ Known Issues (อัพเดทล่าสุด — เช็คจาก code จริงรอบนี้)
 | # | ปัญหา | Priority |
 |---|-------|----------|
-| 1 | KQ รวม Stock + Meal Plan (ควรแยก view) | 🟡 Med |
-| 2 | report.html, liff_profile.html, liff_register.html ยัง mock data | 🟡 Med |
-| 3 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม | 🔴 ก่อน launch |
+| 1 | `main_database_v2.html` แท็บ Meal Plan มี sub-view "👥 กำหนดเมนูลูกค้า" ที่ยังใช้ลูกค้า mock 8 คน (`MP_MOCK_CUSTOMERS`) — คนละชุดกับ **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) เข้าไปดูแล้วจะเห็นข้อมูลปลอมสับสน | 🟡 ควรซ่อน/ลบ sub-view เก่านี้ทิ้ง |
+| 2 | `report.html` ยัง mock data ทั้งหมด (`genMockData` fallback) | 🟡 Med |
+| 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง — ดีขึ้นกว่าที่เคยบันทึกไว้ | 🟢 ใกล้เสร็จ |
+| 4 | `liff_register.html` ต่อ Supabase จริงแล้ว (upsert customers) — **ไม่ใช่ mock แล้ว** แก้ไขจากที่เคยบันทึกผิดไว้ | ✅ ไม่ใช่ปัญหาแล้ว |
+| 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — cron ทำงานปกติแต่ไม่ส่ง LINE จริง | 🔴 ก่อน launch |
+| 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
 
 ---
 
-## 📋 What's in liff_customer.html (v0.3.3)
+## 📋 What's in liff_customer.html (v0.4.4)
 
 ### Screens
-`s-menu` · `s-pkg-select` · `s-meal-plan` · `s-cart` · `s-confirm` · `s-ok` · `s-orders`
+`s-menu` · `s-pkg-select` · `s-meal-plan` · `s-cart` · `s-confirm` · `s-ok` · `s-orders` · Meal Plan self-service (จัดการรอบ/เลื่อนวัน/ยกเลิก)
 
 ### Key features
 - **Package flow:** HomeGrid card → `openPackage()` → เลือกเมนู → ตะกร้า
@@ -198,14 +233,15 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 - **Order history:** `s-orders` screen + `goOrders()`
 - **Profile:** redirect ไป `liff_profile.html` พร้อม uid
 
-### Meal Plan Config (⚠️ แก้ราคาก่อน launch)
+### Meal Plan Config (⚠️ แก้ราคาก่อน launch — ยังไม่ยืนยัน)
 ```javascript
 const MP_SETS = [
   { id:'trial',   label:'ทดลอง',      boxes:7,  price_hp:1499,  price_lc:1399  },
   { id:'weekly',  label:'1 สัปดาห์',  boxes:21, price_hp:3990,  price_lc:3790  },
   { id:'monthly', label:'1 เดือน',    boxes:84, price_hp:13990, price_lc:13490 },
 ];
-// ราคาเป็น mock — นัทต้องยืนยันก่อน push จริง
+// comment ในโค้ดเปลี่ยนจาก "ราคาเป็น mock" เป็น "แก้ราคาที่นี่ก่อน launch" แล้ว
+// แต่ตัวราคายังไม่เปลี่ยน — นัทยังต้องยืนยันก่อน launch จริงอยู่ดี
 ```
 
 ### Order types
@@ -219,16 +255,25 @@ const MP_SETS = [
 
 ---
 
-## 📋 What's in main_database_v2.html (v0.3.2)
+## 📋 What's in main_database_v2.html (v0.4.4)
 
 ### Tabs
-เมนู · วัตถุดิบ · Meal Plan · 📦 แพคเกจ ← **ใหม่**
+เมนู · วัตถุดิบ · Meal Plan · 📦 แพคเกจ
 
 ### Tab แพคเกจ
 - สร้าง/แก้ Package S/M/L ได้เอง
 - Checkbox เมนู active ทั้งหมด + กำหนด extra_price ต่อ SKU
 - Quick buttons +0 / +40 + custom price input
 - Save = delete + insert ใหม่ใน `package_items`
+
+### Tab Meal Plan — ⚠️ มี 2 sub-view คนละสถานะ
+- **"แผนผลิต"** — ต่อ `daily_menu_assignments` จริง ใช้งานได้
+- **"👥 กำหนดเมนูลูกค้า"** — ⚠️ **ยัง mock ทั้งหมด** (`MP_MOCK_CUSTOMERS` 8 คน + `MP_MENU_POOL` + `MP_TODAY_PLAN` เป็น hardcode) คนละชุดกับ OH แพลนเมนู (ตัวจริง ต่อ `mp_deliveries`) — แนะนำซ่อน/ลบ sub-view นี้ทิ้งกันสับสน
+
+### จัดการหมวดหมู่ (ใหม่ — commit `edf2eb1`)
+- ปุ่ม **🔗 รวม** ต่อแถวหมวด — ย้ายเมนูทั้งหมดจากหมวดหนึ่งไปอีกหมวด แล้วลบหมวดต้นทางทิ้ง (`mergeCategoryInto`)
+- Rename หมวดชื่อซ้ำกับหมวดอื่น → บล็อกด้วย alert ทันที (กันปัญหาซ้ำแบบ "ข้าวกล่อง" ที่เคยเกิด)
+- แถบหมวด (`.cat-tab-strip`) ลากเลื่อนซ้ายขวาด้วยเมาส์ได้แล้ว (commit `f599c12`)
 
 ---
 
@@ -248,9 +293,9 @@ const MP_SETS = [
 | v0.3.1 | Order flow · Customer migration | ✅ Done |
 | v0.3.2 | Package S/M/L system | ✅ Live |
 | v0.3.3 | Meal Plan flow + Pre-order | ✅ Live |
-| v0.3.4 | Product images (`batch_photo_upload.html`) | 🔴 ยังไม่รัน |
-| v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | 🔄 ถัดไป |
-| v0.4   | AI Agents: น้องนิว + พี่เก่ง | 🚀 Beta Launch |
+| v0.3.4 | Product images (`batch_photo_upload.html`) | 🟡 เขียนเสร็จแล้ว ต่อ Supabase Storage จริง — ยังไม่เคยรัน ดูหมวด "📸 Photo Migration" ด้านล่าง |
+| v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | 🟢 ส่วนใหญ่ทำแล้ว (แพลนเมนู mp_deliveries ตัวจริง, promo, messenger) — เหลือ: ซ่อน mock sub-view ใน DB |
+| v0.4   | AI Agents: น้องนิว + พี่เก่ง | 🚀 Beta Launch (ยังไม่เริ่ม) |
 | v1.0   | ปิด Hato Heart | 🏁 Full Launch |
 
 ---
@@ -320,6 +365,34 @@ const MP_SETS = [
 
 ---
 
+## 📸 Photo Migration (`batch_photo_upload.html`) — ตรวจสอบแล้ว พร้อมใช้แบบมีคนคุม
+
+**สรุป:** ไฟล์นี้เขียนเสร็จสมบูรณ์แล้ว (ไม่ใช่ stub) — flow: อ่าน `All_menu.xlsx` หา SKU → โหลด `menu_items` จริงจาก Supabase → ลากรูปโบรชัวร์เข้ามา → ส่งรูปให้ Claude Vision หาตำแหน่ง+ชื่อแต่ละเมนู → crop อัตโนมัติ → fuzzy match ชื่อกับเมนูจริง (fuzzy score ≥0.82 = auto-select) → ตารางรีวิวให้เช็ค/แก้ทีละแถวก่อน → อัพโหลดเข้า Storage bucket `menu-images` จริง + PATCH `menu_items.image_urls` จริง (ยืนยันแล้วว่าคอลัมน์/บัคเก็ตตรงกับที่ `main_database_v2.html` ใช้งานอยู่)
+
+**ต้องมีอะไรก่อนรัน:** เปิดไฟล์ในเบราว์เซอร์ตรงๆ (ไม่ต้อง deploy) แล้วใส่ Anthropic API key ของตัวเองในช่อง (เก็บใน localStorage เครื่องตัวเองเท่านั้น ไม่ขึ้น Supabase) — เหมาะกับรันเองคนเดียว **ไม่ควรแชร์ลิงก์นี้ให้คนนอก** เพราะ key ฝังอยู่ฝั่ง browser ตรงๆ
+
+**⚠️ ความเสี่ยงที่ควรรู้ก่อนรันจริงกับโบรชัวร์ทั้งชุด (ยังไม่ได้แก้ ถ้าอยากให้แก้บอกได้):**
+1. `image_urls` array ไม่มีการจำกัดจำนวน — โค้ดจะ prepend URL ใหม่เข้าไปเรื่อยๆ แต่ `main_database_v2.html` โชว์แค่ 4 ช่องแรก (`.slice(0,4)`) แปลว่าถ้ารันหลายรอบ array จะยาวขึ้นเรื่อยๆ แบบไม่โชว์ผล กินพื้นที่ DB เปล่าๆ
+2. Path อัพโหลดคือ `{sku}.jpg` แบบ upsert=true — ถ้ารูปโบรชัวร์ 2 ใบ map ไปที่ SKU เดียวกัน (เช่น อัพซ้ำ 2 สัปดาห์) รูปเก่าจะถูกทับเงียบๆ ไม่มี confirm ไม่มี versioning
+3. threshold 0.82 ยังไม่เคยทดสอบกับชื่อเมนูจริงของร้าน (ภาษาไทย มีคำซ้ำ/สะกดต่าง) — แนะนำเช็ค auto-selected ทุกแถวก่อนกด upload จริง ไม่ควร trust แบบ batch เต็มๆ ตั้งแต่รอบแรก
+
+**คำแนะนำ:** ลองรัน 1 โบรชัวร์ก่อน (ไม่กี่ SKU) → เช็คว่า `main_database_v2.html` ยังโชว์ 4 ช่องรูปถูกต้อง ไม่พังจากปัญหา #1-2 → ค่อยไล่ทำทั้งชุด
+
+---
+
+## 🚚 ออกแบบ: ลูกค้าสั่ง 2 รอบที่เดียวกัน ไม่อยากคิดค่าส่งซ้ำ (ข้อเสนอ — ยังไม่ได้สร้าง)
+
+**สถานะข้อมูลตอนนี้:** `liff_customer.html` ปักหมุดแผนที่ได้ lat/lng จริง (ใช้คำนวณ `distKm` ตอน checkout) **แต่ไม่เคยบันทึกลง Supabase เลย** — `orders`/`customers`/`mp_deliveries` เก็บที่อยู่เป็น text ล้วน ดังนั้นการจับคู่ "ที่อยู่เดียวกัน" วันนี้ทำได้แค่เทียบ string (เปราะบาง สะกดต่างนิดเดียวก็ไม่ match) การเพิ่มคอลัมน์ lat/lng เป็นงานเล็ก (ค่าที่คำนวณแล้วมีอยู่ใน memory ตอน submit อยู่แล้ว แค่ยังไม่ได้ใส่เข้า insert)
+
+**ข้อเสนอแนะ (เรียงตามที่แนะนำ):**
+1. **ให้แอดมินเห็น ไม่ auto-waive ตอน checkout** — เพิ่ม lat/lng ลง `orders` (schema เล็ก, ไม่เสี่ยง) แล้วที่ OH (หน้า orders/แพลนส่ง) แสดง badge "🔗 อาจส่งพร้อมกัน" เมื่อพบออเดอร์อื่นวันเดียวกัน + ช่วงเวลาเดียวกัน + พิกัดใกล้กัน (เช่น <100m) → นัทกดยืนยันเองว่าจะยกเว้นค่าส่งออเดอร์ไหน
+2. **เหตุผลที่ไม่แนะนำ auto-waive แบบ real-time ตอนนี้:** ร้านยังเป็น solo operator ไม่มีระบบ route dispatch อัตโนมัติ (พี่เก่ง ยังไม่สร้าง) การ auto-detect กลางทาง checkout เสี่ยง false-positive (บล็อก/ลดราคาผิดคน) และเพิ่ม edge case ต้อง handle เยอะ (ออเดอร์พร้อมกันจริงไหม, ยกเลิกออเดอร์นึงแล้วอีกอันควรคืนค่าส่งไหม ฯลฯ) — ให้คนตัดสินใจตอนนี้ตรงไปตรงมากว่า
+3. **ถ้าอยากลองแบบ auto ในอนาคต** (หลัง พี่เก่ง/route มาแล้ว): ใช้พิกัดแทน string match, จำกัดแค่ waive ออเดอร์ที่ 2 เป็นต้นไปในวัน+ช่วงเวลาเดียวกัน, เก็บ field เช่น `combined_with_order_id` ไว้ให้ครัว/คนขับเห็นว่าเป็นทริปเดียวกัน (สำคัญกว่าเรื่องเงินด้วยซ้ำ เพราะกระทบการแพ็ค/จัดส่งจริง)
+
+**สรุป:** แนะนำเริ่มจาก (1) ก่อน — เพิ่มคอลัมน์ lat/lng + badge เตือนแอดมิน เป็นงานเล็กเสี่ยงต่ำ ได้ประโยชน์ทันที ส่วน auto-waive ทั้งระบบรอจังหวะที่มี route dispatch จริงค่อยทำ ต้องการให้เริ่มทำเลยไหม
+
+---
+
 ## 🤖 AI Agents (v0.4)
 
 **น้องนิว**
@@ -357,4 +430,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: มิ.ย. 2026 — v0.3.3 ✅ live (push 09fcf9f), ถัดไป v0.3.4-5 + verify MP_SETS pricing*
+*Last updated: 4 ก.ค. 2026 — v0.4.4 ✅ live (push `edf2eb1`) — ทำ version audit ทั้งระบบรอบนี้, เจอ mock sub-view ค้างใน DB Meal Plan tab (Known Issues #1), ยืนยัน batch_photo_upload.html พร้อมใช้แบบมีคนคุม, ออกแบบกลไกส่งที่เดียวกันรอ greenlight*
