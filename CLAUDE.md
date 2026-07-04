@@ -48,7 +48,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 | ไฟล์ | หน้าที่ | สถานะ |
 |------|--------|-------|
 | `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) | ✅ live (v0.4.4) |
-| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง | ✅ live (v0.4.4) — มี sub-view เก่า mock ค้างอยู่ ดู Known Issues #1 |
+| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง + Activity Log | ✅ live (v0.4.7) — optimize ขนาดไฟล์แล้ว (330KB) |
 | `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
 | `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print | ✅ live |
 | `operation_hub.html` | Admin hub (orders/menu/แพลนเมนู/promo/messenger/customer/HE + เปิด KQ/DB/report ผ่าน iframe) | ✅ live |
@@ -194,7 +194,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.4.6 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `520aa68` — ⚠️ ต้องรัน SQL ก่อน Activity Log จะเริ่มทำงาน ดูหัวข้อ "📜 Activity Log")
+## 🚦 Current Version: v0.4.7 (✅ push แล้ว — live บน Vercel, commit ล่าสุด ดู git log — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -209,6 +209,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
 | v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
 | v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
+| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | (ดู git log ล่าสุด) |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
@@ -262,7 +263,12 @@ const MP_SETS = [
 
 ---
 
-## 📋 What's in main_database_v2.html (v0.4.4)
+## 📋 What's in main_database_v2.html (v0.4.7)
+
+### ⚡ Optimize ขนาดไฟล์ (v0.4.7) — ลบ seed data ที่ import ครั้งเดียวไปแล้วทิ้ง
+ไฟล์เคย 778KB (~55% เป็น hardcoded seed array ที่ import ครั้งเดียวตอน deploy ครั้งแรกแล้วไม่มีวันรันซ้ำ — auto-gate ด้วย `initFlags` ถาวร หรือปุ่ม migrate ที่ไม่มี HTML element เหลืออยู่แล้ว = dead code) — **ลบแล้ว ไฟล์เหลือ 330KB (-58%)** ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบ: recipes/ingredients/categories load ปกติ, stock +10, category manager ใช้ได้หมด)
+
+**ถ้าเจอสูตรที่ยังไม่ได้ import เข้าระบบในอนาคต** (นัทถามไว้แล้ว ยืนยันวิธีนี้): ส่งไฟล์ Excel ให้ Claude วิเคราะห์แล้วใส่เข้า Supabase ตรงๆ ได้เลย — **ไม่ต้อง**กลับไปฝัง hardcoded array ในโค้ดแบบเดิมอีก (เป็นต้นเหตุที่ทำให้ไฟล์บวมมาตลอด)
 
 ### Tabs
 เมนู · วัตถุดิบ · Meal Plan · 📦 แพคเกจ
@@ -449,4 +455,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 4 ก.ค. 2026 — v0.4.6 ✅ push แล้ว (commit `520aa68`) — เพิ่ม Activity Log (ประวัติเปลี่ยนแปลง+เติมสต็อก, batch กันสแปม) ⚠️ รอนัทรัน `scripts/sql_activity_log.sql` ก่อน feature นี้จะเริ่มเก็บข้อมูล — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
+*Last updated: 4 ก.ค. 2026 — v0.4.7 ✅ push แล้ว — Activity Log (v0.4.6, ⚠️ รอรัน `scripts/sql_activity_log.sql`) + optimize main_database_v2.html (778KB→330KB, ลบ seed data ที่ import ครั้งเดียวไปแล้วทิ้ง) — นัทกำลังเตรียมทริปแคนาดา 7 วัน จะใช้ claude.ai/code จากมือถือแทน Claude Code เดิม (ยืนยันว่าโฟลเดอร์นี้ = repo เดียวกับ GitHub) — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
