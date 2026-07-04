@@ -259,21 +259,6 @@ input,textarea{font-family:inherit}
 .hg-ic-out{font-size:9px;color:var(--soft);margin-top:4px;}
 
 
-/* ═══════════ PRODUCT DETAIL ═══════════ */
-#s-product{background:var(--w);}
-.pd-img{width:100%;height:220px;object-fit:cover;background:var(--bg);}
-.pd-img-ph{height:220px;background:var(--bg);display:flex;align-items:center;justify-content:center;font-size:72px;}
-.pd-body{padding:16px;}
-.pd-code{font-size:11px;color:var(--soft);font-weight:700;letter-spacing:.06em;margin-bottom:4px;}
-.pd-name{font-size:22px;font-weight:800;color:var(--ink);line-height:1.25;margin-bottom:10px;}
-.pd-meta{display:flex;align-items:center;gap:14px;margin-bottom:14px;}
-.pd-price{font-size:22px;font-weight:800;color:var(--r);}
-.pd-cal{font-size:14px;color:var(--soft);display:flex;align-items:center;gap:4px;}
-.pd-desc{font-size:14px;color:var(--soft);line-height:1.75;}
-.pd-cart-wrap{display:flex;align-items:center;gap:12px;}
-.pd-out{font-size:14px;color:var(--soft);text-align:center;padding:12px;}
-
-
 /* ═══════════ REDESIGN v0.3 — White & Clean ═══════════ */
 body{background:#fff!important}
 
@@ -318,11 +303,6 @@ body{background:#fff!important}
 
 /* Bottom nav */
 .bnav{box-shadow:0 -1px 0 rgba(0,0,0,.06)!important;border-top:none!important;}
-
-/* Product detail */
-.pd-body{padding:18px!important;}
-.pd-name{font-size:21px!important;font-weight:800!important;}
-
 
 /* ═══ REDESIGN v0.4 — Reference Design ═══ */
 /* Override old grid system — home-grid is now a plain block container */
@@ -1040,8 +1020,8 @@ function renderPkgSelect() {
     if (q && !(mi.name||''). toLowerCase().includes(q) && !(mi.code||'').toLowerCase().includes(q)) return;
     const isChk = Object.prototype.hasOwnProperty.call(pkgSelection, slot.sku);
     const isPremium = slot.extra_price > 0;
-    const img = mi.image_url
-      ? `<img src="${mi.image_url}" onerror="imgFallback(this)" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
+    const img = (mi.image_urls && mi.image_urls[0])
+      ? `<img src="${mi.image_urls[0]}" onerror="imgFallback(this)" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0;">`
       : `<div style="width:48px;height:48px;border-radius:8px;background:#E8F0EC;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🍱</div>`;
     rows += `
       <div onclick="togglePkgItem('${slot.sku}',${slot.extra_price})"
@@ -1206,8 +1186,8 @@ function renderMealPlanPicker() {
       ${mpRequestMenus.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${mpRequestMenus.map((r,i)=>{
         const on = mpReqSel.includes(i);
         const mi = menuItems.find(m=>m.code===r.code) || {};
-        const img = mi.image_url
-          ? `<img src="${mi.image_url}" style="width:100%;height:88px;object-fit:cover;border-radius:9px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px&quot;>🍱</div>'">`
+        const img = (mi.image_urls && mi.image_urls[0])
+          ? `<img src="${mi.image_urls[0]}" style="width:100%;height:88px;object-fit:cover;border-radius:9px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px&quot;>🍱</div>'">`
           : `<div style="width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px;">🍱</div>`;
         return `<div onclick="toggleMPReq(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:13px;padding:8px;cursor:pointer;position:relative;">
           ${img}
@@ -1582,8 +1562,9 @@ function renderMenu() {
     const isOut     = !isMealPlan && stock <= 0;
     const isLow     = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
     const isNextWk  = isNextWeekItem(item);
-    const img = item.image_url
-      ? `<img class="mi-v2-photo" src="${item.image_url}" onerror="imgFallback(this)">`
+    const imgUrl = item.image_urls && item.image_urls[0];
+    const img = imgUrl
+      ? `<img class="mi-v2-photo" src="${imgUrl}" onerror="imgFallback(this)" onclick="event.stopPropagation();openItemLightbox('${item.id}')">`
       : `<div class="mi-v2-ph">🍱</div>`;
     const stockBadge = isOut
       ? `<span style="font-size:10px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px">หมดแล้ว</span>`
@@ -1605,9 +1586,9 @@ function renderMenu() {
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
-    return `<div class="mi-v2${isOut?' out-of-stock':''}" onclick="openProduct('${item.id}')" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
       img +
-      `<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
+      `<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name" onclick="openMenuDetail('${item.id}')">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
       `<div class="mi-v2-right"><div class="mi-v2-price">฿${item.price}</div>${ctrl}</div></div>`;
   }).join('') + '</div>';
 }
@@ -2394,62 +2375,6 @@ function updateCartTotals(){
 // ══════════════════════════════════════
 // 🔍 PRODUCT DETAIL
 // ══════════════════════════════════════
-var prodFromScreen = 's-menu';
-
-function openProduct(id) {
-  var item = menuItems.find(function(m){ return m.id === id; });
-  if (!item) return;
-  prodFromScreen = document.querySelector('.scr.on')?.id || 's-menu';
-
-  document.getElementById('prod-back-btn').onclick = function(){ showScr(prodFromScreen); };
-  document.getElementById('prod-name-hdr').textContent = item.name;
-  document.getElementById('pd-code').textContent = item.code || '';
-  document.getElementById('pd-name').textContent = item.name;
-  document.getElementById('pd-price').textContent = '฿' + item.price;
-
-  if (item.calories) {
-    var calEl = document.getElementById('pd-cal');
-    calEl.innerHTML = '🔥 ' + item.calories + ' kcal';
-    calEl.style.display = '';
-  } else {
-    document.getElementById('pd-cal').style.display = 'none';
-  }
-  document.getElementById('pd-desc').textContent = item.description || '';
-
-  if (item.image_url) {
-    document.getElementById('pd-img').src = item.image_url;
-    document.getElementById('pd-img').style.display = 'block';
-    document.getElementById('pd-img-ph').style.display = 'none';
-  } else {
-    document.getElementById('pd-img').style.display = 'none';
-    document.getElementById('pd-img-ph').style.display = 'flex';
-  }
-  renderProdCart(id);
-  showScr('s-product');
-}
-
-function renderProdCart(id) {
-  var item = menuItems.find(function(m){ return m.id === id; });
-  if (!item) return;
-  var area = document.getElementById('pd-cart-area');
-  if (!area) return;
-  var stock = effectiveStock(item);
-  var inCart = cart.find(function(c){ return c.id === id; });
-  var badgeEl = document.getElementById('prod-badge');
-  var cartBadge = document.getElementById('cart-badge');
-  if (badgeEl) { badgeEl.textContent = inCart ? inCart.qty : ''; badgeEl.style.display = inCart ? 'flex' : 'none'; }
-  if (stock === 0) {
-    area.innerHTML = '<div class="pd-out">สินค้าหมดแล้ว</div>';
-  } else if (inCart) {
-    area.innerHTML = '<div class="pd-cart-wrap" style="justify-content:center;gap:16px">'
-      + '<button class="qb" style="width:44px;height:44px;font-size:22px" onclick="chgQty(\'' + id + '\',-1);renderProdCart(\'' + id + '\')">−</button>'
-      + '<span class="qn" style="font-size:20px;min-width:28px;text-align:center">' + inCart.qty + '</span>'
-      + '<button class="qb plus" style="width:44px;height:44px;font-size:22px" onclick="chgQty(\'' + id + '\',1);renderProdCart(\'' + id + '\')">+</button>'
-      + '</div>';
-  } else {
-    area.innerHTML = '<button class="btn-p" onclick="addItem(\'' + id + '\');renderProdCart(\'' + id + '\')">+ เพิ่มลงตะกร้า ฿' + item.price + '</button>';
-  }
-}
 
 // ══════════════════════════════════════
 // 🏠 HOME LAYOUT GRID
@@ -2539,14 +2464,27 @@ function renderHomeGrid() {
     if (!items.length) return;
     var iHtml = items.map(function(m){
       var qty=0; cart.forEach(function(c){ if(c.id===m.id) qty=c.qty; });
-      var img = m.image_url
-        ? '<img class="mi-v2-photo" src="'+m.image_url+'" onerror="imgFallback(this)">'
+      var isMealPlan = m.category==='meal_hp' || m.category==='meal_lc' || /^HP|^LC/i.test(m.code||'');
+      var stock = isMealPlan ? 999 : effectiveStock(m);
+      var remaining = stock - qty;
+      var isOut = !isMealPlan && stock<=0;
+      var isLow = !isMealPlan && !isOut && remaining>0 && remaining<=5;
+      var imgUrl = m.image_urls && m.image_urls[0];
+      var img = imgUrl
+        ? '<img class="mi-v2-photo" src="'+imgUrl+'" onerror="imgFallback(this)" onclick="event.stopPropagation();openItemLightbox(\''+m.id+'\')">'
         : '<div class="mi-v2-ph">🍱</div>';
-      var tags = (m.calories?'<span class="mi-v2-kcal">'+m.calories+' kcal</span>':'')+(m.protein?'<span class="mi-v2-pro">โปรตีน '+m.protein+'g</span>':'');
-      var ctrl = qty===0
+      var stockBadge = isOut
+        ? '<span style="font-size:10px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px">หมดแล้ว</span>'
+        : isLow
+        ? '<span style="font-size:10px;font-weight:700;color:#92400E;background:#FEF3C7;padding:2px 7px;border-radius:8px">เหลือ '+remaining+' ชิ้นสุดท้าย</span>'
+        : '';
+      var tags = (m.calories?'<span class="mi-v2-kcal">'+m.calories+' kcal</span>':'')+(m.protein?'<span class="mi-v2-pro">โปรตีน '+m.protein+'g</span>':'')+(stockBadge?'<span>'+stockBadge+'</span>':'');
+      var ctrl = isOut
+        ? '<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>'
+        : qty===0
         ? '<button class="mi-v2-add" data-mid="'+m.id+'" onclick="event.stopPropagation();addItem(this.dataset.mid)">+</button>'
-        : '<div class="mi-v2-qc" data-mid="'+m.id+'"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,-1)">−</button><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,1)">+</button></div>';
-      return '<div class="mi-v2" data-mid="'+m.id+'" onclick="openProduct(this.dataset.mid)">'+img+'<div class="mi-v2-info"><div class="mi-v2-code">'+(m.code||'')+'</div><div class="mi-v2-name">'+(m.name||'')+'</div><div class="mi-v2-tags">'+tags+'</div></div><div class="mi-v2-right"><div class="mi-v2-price">฿'+m.price+'</div>'+ctrl+'</div></div>';
+        : '<div class="mi-v2-qc" data-mid="'+m.id+'"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,-1)">−</button><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,1)"'+(remaining<=0?' disabled style="opacity:.35"':'')+'>+</button></div>';
+      return '<div class="mi-v2'+(isOut?' out-of-stock':'')+'" data-mid="'+m.id+'"'+(isOut?' style="opacity:.6"':'')+'>'+img+'<div class="mi-v2-info"><div class="mi-v2-code">'+(m.code||'')+'</div><div class="mi-v2-name" onclick="openMenuDetail(\''+m.id+'\')">'+(m.name||'')+'</div><div class="mi-v2-tags">'+tags+'</div></div><div class="mi-v2-right"><div class="mi-v2-price">฿'+m.price+'</div>'+ctrl+'</div></div>';
     }).join('');
     var allCat = f.category||f.he_group||'';
     var allLink = allCat ? '<span class="ig-all" data-cat="'+allCat+'" onclick="jumpCat(this.dataset.cat)">ดูทั้งหมด →</span>' : '';
@@ -2850,8 +2788,8 @@ function mpManageReqPickerHtml(r, isOpen) {
   const cards = mpRequestMenus.map((r2,i) => {
     const on = mpManageReqSel.includes(i);
     const mi = menuItems.find(m => m.code === r2.code) || {};
-    const img = mi.image_url
-      ? `<img src="${mi.image_url}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px&quot;>🍱</div>'">`
+    const img = (mi.image_urls && mi.image_urls[0])
+      ? `<img src="${mi.image_urls[0]}" style="width:100%;height:70px;object-fit:cover;border-radius:8px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px&quot;>🍱</div>'">`
       : `<div style="width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px;">🍱</div>`;
     return `<div onclick="event.stopPropagation();mpManageToggleReqItem(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:11px;padding:7px;cursor:pointer;position:relative;">
       ${img}
@@ -2930,6 +2868,12 @@ function toast(msg, ms=2800) {
 window.addEventListener('DOMContentLoaded', init);
 
 // ══ LIGHTBOX ══
+function openItemLightbox(id) {
+  const item = menuItems.find(m => m.id === id);
+  if (!item) return;
+  const urls = (item.image_urls && item.image_urls.length) ? item.image_urls : (item.image_url ? [item.image_url] : []);
+  openLightbox(urls);
+}
 function openLightbox(urls) {
   if (!urls || !urls.length) return;
   const strip = document.getElementById('lbStrip');
@@ -2987,6 +2931,28 @@ function mdAddToCart() {
     <div class="stock-btns">
       <button class="stock-btn-cancel" onclick="closeStockPopup()">ยกเลิก</button>
       <button class="stock-btn-confirm" id="stockConfirmBtn" onclick="confirmPreorder()">✅ ยืนยัน — สั่งผลิตพิเศษ</button>
+    </div>
+  </div>
+</div>
+
+<div class="lb-overlay" id="lbOverlay" onclick="closeLB(event)">
+  <button class="lb-close" onclick="closeLB(event)">×</button>
+  <div class="lb-strip" id="lbStrip"></div>
+  <div class="lb-dots" id="lbDots"></div>
+</div>
+
+<div class="md-overlay" id="mdOverlay">
+  <div class="md-backdrop" onclick="closeMD()"></div>
+  <div class="md-sheet">
+    <div class="md-drag"></div>
+    <img class="md-img" id="mdImg" src="" alt="">
+    <div class="md-code" id="mdCode"></div>
+    <div class="md-title" id="mdTitle"></div>
+    <div class="md-tags" id="mdTags"></div>
+    <div class="md-desc" id="mdDesc"></div>
+    <div class="md-price-row">
+      <span class="md-price" id="mdPrice"></span>
+      <button class="md-add-btn" id="mdAddBtn" onclick="mdAddToCart()"></button>
     </div>
   </div>
 </div>
