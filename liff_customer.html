@@ -1369,7 +1369,7 @@ async function init() {
 
   // Load menu
   try {
-    const { data } = await sb.from('menu_items').select('*').eq('is_available', true).order('name');
+    const { data } = await sb.from('menu_items').select('*').eq('is_available', true).order('sort_order');
     menuItems = data || [];
     // extract unique cats in display order
     // ใช้ทุก category ที่มีใน data — ไม่ hardcode
@@ -2554,6 +2554,18 @@ function renderHomeGrid() {
   });
 
   el.innerHTML = html;
+  setupColScrollDrag();
+}
+
+// ลากซ้าย-ขวาเลื่อน collage การ์ดหน้าแรก (เมาส์) — touch เลื่อนได้อยู่แล้ว, แพทเทิร์นเดียวกับ setupCatDragScroll
+function setupColScrollDrag(){
+  const el = document.getElementById('colScroll');
+  if(!el || el._dragSet) return; el._dragSet = true;
+  let down=false, sx=0, sl=0, moved=false;
+  el.addEventListener('mousedown', e=>{ down=true; moved=false; sx=e.pageX; sl=el.scrollLeft; });
+  window.addEventListener('mousemove', e=>{ if(!down) return; const dx=e.pageX-sx; if(Math.abs(dx)>4) moved=true; el.scrollLeft=sl-dx; });
+  window.addEventListener('mouseup', ()=>{ down=false; });
+  el.addEventListener('click', e=>{ if(moved){ e.preventDefault(); e.stopPropagation(); } }, true);
 }
 
 function colCardClick(el) {
