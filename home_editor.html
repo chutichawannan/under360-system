@@ -900,6 +900,22 @@ function saveTitleConfig(){
   },800);
 }
 
+// เก็บ log กิจกรรม HE — 1 คลิก "บันทึก" = 1 log (batch ตามธรรมชาติของปุ่มนี้อยู่แล้ว ไม่ต้อง debounce)
+async function logHeActivity(cardCount, menuOrderCount){
+  try{
+    const actor = (localStorage.getItem('lastNickname')||'').trim() || 'ไม่ทราบชื่อ';
+    const parts=[];
+    if(cardCount) parts.push(`การ์ดหน้าแรก ${cardCount} ใบ`);
+    if(menuOrderCount) parts.push(`ลำดับเมนู ${menuOrderCount} รายการ`);
+    if(!parts.length) return;
+    await sb.from('activity_log').insert({
+      session_id:'he-'+Date.now(), actor, source:'he', action_type:'he_layout',
+      summary:'บันทึก '+parts.join(' + '),
+      detail:{cardCount, menuOrderCount}
+    });
+  }catch(e){ console.error('logHeActivity:',e); }
+}
+
 async function saveAll(){
   showToast('กำลังบันทึก...','info');
   let ok=true;
@@ -916,10 +932,13 @@ async function saveAll(){
       },{onConflict:'section_key'});
     }
   }catch(e){ ok=false; }
+  let menuOrderCount=0;
   try{
     const changed=menuItems.filter(m=>m.sort_order!==undefined);
+    menuOrderCount=changed.length;
     for(const m of changed){ await sb.from('menu_items').update({sort_order:m.sort_order}).eq('id',m.id); }
   }catch(e){}
+  if(ok) logHeActivity(cards.length, menuOrderCount);
   showToast(ok?'✅ บันทึกสำเร็จ!':'⚠️ บางส่วนไม่สำเร็จ — ตรวจสอบ console',ok?'ok':'err');
 }
 

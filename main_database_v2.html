@@ -178,6 +178,24 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 }
 .whoami{display:flex;align-items:center;gap:8px;font-size:12.5px;opacity:.85;}
 .whoami button{appearance:none;border:1px solid rgba(255,255,255,.35);background:transparent;color:#fff;border-radius:20px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:inherit;}
+/* === Activity log bar === */
+.act-log-bar{display:flex;align-items:center;gap:10px;padding:6px 20px;background:var(--surface-2);border-bottom:1px solid var(--line);font-size:12px;color:var(--ink-soft);}
+.act-log-latest{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.act-log-latest b{color:var(--ink);}
+.act-log-time{color:var(--ink-xsoft);}
+.act-log-toggle{appearance:none;border:1px solid var(--line);background:#fff;color:var(--ink-soft);border-radius:14px;padding:3px 10px;font-size:11px;cursor:pointer;font-family:inherit;flex-shrink:0;}
+.act-log-toggle:hover{border-color:var(--forest);color:var(--forest);}
+.act-log-panel{max-height:280px;overflow-y:auto;background:#fff;border-bottom:1px solid var(--line);}
+.act-log-row{display:flex;align-items:flex-start;gap:9px;padding:8px 20px;border-top:1px solid var(--line);}
+.act-log-row:first-child{border-top:none;}
+.act-log-icon{font-size:14px;flex-shrink:0;margin-top:1px;}
+.act-log-body{flex:1;min-width:0;}
+.act-log-summary{font-size:12.5px;color:var(--ink);word-break:break-word;}
+.act-log-meta{font-size:10.5px;color:var(--ink-xsoft);margin-top:1px;}
+@media (max-width:640px){
+  .act-log-bar{padding:6px 12px;}
+  .act-log-row{padding:8px 12px;}
+}
 .gate-wrap{min-height:60vh;display:flex;align-items:center;justify-content:center;padding:20px;}
 .gate-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:28px 26px;max-width:340px;width:100%;text-align:center;}
 .gate-card h2{font-size:17px;margin:0 0 6px;color:var(--forest);}
@@ -1062,6 +1080,7 @@ const NO_CODE_RECIPES = [
     <div id="whoami" class="whoami"></div>
   </div>
 </header>
+<div id="actLogWrap"></div>
 <div class="tabs">
   <button class="tab-btn" data-tab="recipes">เมนูทั้งหมด</button>
   <button class="tab-btn" data-tab="ingredients">วัตถุดิบ</button>
@@ -1102,6 +1121,7 @@ function addCategory(label){
   const key = 'cat_'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);
   state.categories.push({key, label, color: COLOR_POOL[state.categories.length % COLOR_POOL.length]});
   persistCategories();
+  logActivity('category', `สร้างหมวด "${label}"`);
   return key;
 }
 async function persistCategories(){ await persistAppConfig(); }
@@ -1189,7 +1209,8 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   compactMode: false,     // Compact Mode: แก้สูตรรวดเร็ว
   // ── v0.3.2 packages tab ──
   packages: [], pkgItems: {}, pkgLoaded: false, pkgLoading: false,
-  openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: ''
+  openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: '',
+  showActivityLog: false
 };
 
 // ── Storage Layer: Supabase (shared) + localStorage (private) ────────────
@@ -1343,6 +1364,7 @@ function deleteCategoryEverywhere(key){
   persistRecipes();
 }
 function mergeCategoryInto(fromKey, toKey){
+  const fromLabel = categoryLabel(fromKey), toLabel = categoryLabel(toKey);
   state.recipes.forEach(r=>{
     if(r.categories && r.categories.includes(fromKey)){
       if(!r.categories.includes(toKey)) r.categories.push(toKey);
@@ -1350,6 +1372,7 @@ function mergeCategoryInto(fromKey, toKey){
     }
   });
   deleteCategoryEverywhere(fromKey);
+  logActivity('category', `รวมหมวด "${fromLabel}" → "${toLabel}"`);
 }
 function renderCategoryManager(){
   return `<div class="modal-overlay" id="catManagerOverlay">
@@ -1396,7 +1419,9 @@ function attachCategoryManagerHandlers(){
           inp.value = c.label; return;
         }
         if(!requireUser()) return;
+        const oldLabel = c.label;
         c.label = val; persistCategories();
+        logActivity('category', `เปลี่ยนชื่อหมวด "${oldLabel}" → "${val}"`);
       }
     };
     inp.onblur = commit;
@@ -1412,6 +1437,7 @@ function attachCategoryManagerHandlers(){
         : `ลบหมวด "${c.label}"?`;
       showConfirm(msg, ()=>{
         deleteCategoryEverywhere(btn.dataset.key);
+        logActivity('category', `ลบหมวด "${c.label}"`);
         render();
       });
     };
@@ -2463,6 +2489,7 @@ function attachPackagesHandlers(){
     state.pkgItems[data.id] = [];
     state.openPkgId      = data.id;
     state._pkgEditorInit = null;
+    logActivity('package', `สร้างแพค "${data.name}"`);
     render();
   };
 
@@ -2602,6 +2629,7 @@ function attachPackagesHandlers(){
         state.pkgItems[pkgId] = toInsert;
         state.openPkgId      = null;
         state._pkgEditorInit = null;
+        logActivity('package', `แก้ไขแพค "${name}"`);
         render();
         showToast(`บันทึก "${name}" แล้ว ✓`);
       } catch(e){
@@ -2626,6 +2654,7 @@ function attachPackagesHandlers(){
         delete state.pkgItems[pkgId];
         state.openPkgId      = null;
         state._pkgEditorInit = null;
+        logActivity('package', `ลบแพค "${pkg?.name||''}"`);
         render();
         showToast('ลบแพคแล้ว');
       });
@@ -2777,6 +2806,7 @@ async function init(){
     await setStored('recipes',     state.recipes,     true);
     await setStored('ingredients', state.ingredients, true);
   }
+  await loadActivityLog();
   render();
 }
 
@@ -3126,6 +3156,9 @@ function _doRender(force){
     }
   }
   who.innerHTML = renderWhoami();
+  document.getElementById('actLogWrap').innerHTML = renderActivityLogBar();
+  const actLogToggleBtn = document.getElementById('actLogToggleBtn');
+  if(actLogToggleBtn) actLogToggleBtn.onclick = ()=>{ state.showActivityLog = !state.showActivityLog; render(); };
   document.querySelector('.tabs').style.display = 'flex';
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.tab===state.tab));
   document.getElementById('fabNew').style.display = state.tab==='recipes' ? 'block':'none';
@@ -3216,6 +3249,98 @@ function attachNameGateModalHandlers(){
       if(inp){ inp.focus(); inp.classList.add('pulse-highlight'); setTimeout(()=>{ if(inp) inp.classList.remove('pulse-highlight'); }, 2000); }
     }, 50);
   };
+}
+
+// ══════════════════════════════════════
+// 📜 ACTIVITY LOG — batch ต่อ session+ประเภท กันสแปม (คลิก +10 สต็อกรัวๆ = แถวเดียว รวมยอด)
+// session_id สุ่มใหม่ทุกครั้งที่เปิดหน้า (1 รอบเปิดเว็บ = 1 session) — เขียนจริงหลัง debounce 3 วิ
+// ══════════════════════════════════════
+const _actLogSessionId = (crypto.randomUUID ? crypto.randomUUID() : ('s'+Date.now()+Math.random().toString(36).slice(2)));
+let _actLogCache = {};      // key: action_type -> {id, count, items:{label:delta}}
+let _actLogFlushTimers = {};
+let activityLogRows = [];
+const ACT_LOG_ICON = {stock:'📦', category:'🏷️', package:'🎁', he_layout:'🏠'};
+const ACT_LOG_SOURCE_LABEL = {db:'DB', he:'Home Editor', oh:'Operation Hub'};
+
+function logActivity(actionType, itemLabel, delta){
+  let cache = _actLogCache[actionType];
+  if(!cache) cache = _actLogCache[actionType] = {id:null, count:0, items:{}};
+  cache.count++;
+  if(itemLabel){ cache.items[itemLabel] = (cache.items[itemLabel]||0) + (typeof delta==='number' ? delta : 1); }
+  clearTimeout(_actLogFlushTimers[actionType]);
+  _actLogFlushTimers[actionType] = setTimeout(()=>_actLogFlush(actionType), 3000);
+}
+function buildActLogSummary(actionType, cache){
+  const entries = Object.entries(cache.items);
+  const fmt = entries.map(([k,v])=>{
+    if(actionType==='stock') return `${k} ${v>0?'+':''}${v}`;
+    return v>1 ? `${k} ×${v}` : k;
+  });
+  const shown = fmt.slice(0,5).join(', ');
+  const more = fmt.length>5 ? ` +อีก ${fmt.length-5} รายการ` : '';
+  return shown + more;
+}
+async function _actLogFlush(actionType){
+  const cache = _actLogCache[actionType]; if(!cache) return;
+  const sb = getSB(); if(!sb) return;
+  const actor = state.currentUser || 'ไม่ทราบชื่อ';
+  const summary = buildActLogSummary(actionType, cache);
+  try{
+    if(!cache.id){
+      const {data,error} = await sb.from('activity_log').insert({
+        session_id:_actLogSessionId, actor, source:'db', action_type:actionType,
+        summary, detail:{items:cache.items, count:cache.count}
+      }).select().single();
+      if(error) throw error;
+      cache.id = data.id;
+    } else {
+      await sb.from('activity_log').update({
+        summary, detail:{items:cache.items, count:cache.count}, updated_at:new Date().toISOString()
+      }).eq('id', cache.id);
+    }
+    await loadActivityLog();
+    const wrap = document.getElementById('actLogWrap');
+    if(wrap) wrap.innerHTML = renderActivityLogBar();
+  }catch(e){ console.error('actLogFlush:',e); }
+}
+async function loadActivityLog(){
+  const sb = getSB(); if(!sb) return;
+  try{
+    const {data,error} = await sb.from('activity_log').select('*').order('updated_at',{ascending:false}).limit(50);
+    if(error) throw error;
+    activityLogRows = data||[];
+  }catch(e){ console.error('loadActivityLog:',e); }
+}
+function timeAgo(iso){
+  const mins = Math.floor((Date.now()-new Date(iso).getTime())/60000);
+  if(mins<1) return 'เมื่อกี้';
+  if(mins<60) return mins+' นาทีที่แล้ว';
+  const hrs = Math.floor(mins/60);
+  if(hrs<24) return hrs+' ชม.ที่แล้ว';
+  return Math.floor(hrs/24)+' วันที่แล้ว';
+}
+function renderActivityLogBar(){
+  const latest = activityLogRows[0];
+  const latestText = latest
+    ? `${ACT_LOG_ICON[latest.action_type]||'📝'} <b>${escapeHtml(latest.actor)}</b> ${escapeHtml(latest.summary)} <span class="act-log-time">· ${timeAgo(latest.updated_at)}</span>`
+    : 'ยังไม่มีประวัติการเปลี่ยนแปลง';
+  return `<div class="act-log-bar">
+    <span class="act-log-latest">${latestText}</span>
+    <button class="act-log-toggle" id="actLogToggleBtn">${state.showActivityLog?'ซ่อน ▲':'ประวัติ ▼'}</button>
+  </div>
+  ${state.showActivityLog ? renderActivityLogPanel() : ''}`;
+}
+function renderActivityLogPanel(){
+  if(!activityLogRows.length) return `<div class="act-log-panel"><div class="empty" style="padding:16px;">ยังไม่มีประวัติการเปลี่ยนแปลง</div></div>`;
+  return `<div class="act-log-panel">
+    ${activityLogRows.map(r=>`<div class="act-log-row">
+      <span class="act-log-icon">${ACT_LOG_ICON[r.action_type]||'📝'}</span>
+      <div class="act-log-body">
+        <div class="act-log-summary"><b>${escapeHtml(r.actor)}</b> ${escapeHtml(r.summary)}</div>
+        <div class="act-log-meta">${ACT_LOG_SOURCE_LABEL[r.source]||r.source} · ${timeAgo(r.updated_at)}</div>
+      </div>
+    </div>`).join('')}
+  </div>`;
 }
 
 function renderStatBar(){
@@ -4281,11 +4406,13 @@ function attachHandlers(){
       const commitStock = (newVal)=>{
         if(!requireUser()) return;
         const r = state.recipes.find(x=>x.id===id);
+        const delta = newVal - (r.stock||0);
         r.stock = newVal;
         r.updated_by = state.currentUser;
         r.updated_at = new Date().toISOString();
         persistRecipes();
         syncStockDebounced(r);
+        if(delta!==0) logActivity('stock', r.code||r.name||'(ไม่มีชื่อ)', delta);
         render();
       };
       ctrl.querySelector('.stock-minus').onclick = (e)=>{ e.stopPropagation(); const r=state.recipes.find(x=>x.id===id); commitStock(Math.max(0,(r.stock||0)-1)); };
