@@ -59,7 +59,7 @@ input,select,textarea{font-family:inherit;}
 .col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .col-card-he.fmt-square{width:230px;height:230px;}
 .col-card-he.fmt-portrait{width:150px;height:230px;}
-.col-card-he.fmt-full{width:360px;height:230px;}
+.col-card-he.fmt-full{width:288px;height:230px;}
 .col-card-he.fmt-tiny{width:110px;height:110px;}
 .col-tiny-stack-he{display:flex;flex-direction:column;gap:10px;flex-shrink:0;} /* จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ สูงรวม 230px เท่าแนวตั้ง */
 .col-card-he.active{border-color:var(--g);}
@@ -418,8 +418,12 @@ function renderCardList(){
   const el = document.getElementById('cardList');
   el.innerHTML = cards.map((c,i)=>{
     const thumbBg=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:`<div class="thumb-bg" style="background:${c.bg_color};width:100%;height:100%"></div>`;
-    return `<div class="card-list-item${activeCardIdx===i?' active':''}" onclick="selectCard(${i})">
-      <span class="card-drag" onclick="event.stopPropagation()">⠿</span>
+    return `<div class="card-list-item${activeCardIdx===i?' active':''}" draggable="false"
+      ondragstart="cardDragStart(event,${i})" ondragover="event.preventDefault()" ondrop="cardDrop(event,${i})"
+      ondragend="this.setAttribute('draggable','false')" onclick="selectCard(${i})">
+      <span class="card-drag" title="ลากเพื่อเรียงลำดับ"
+        onmousedown="this.closest('.card-list-item').setAttribute('draggable','true')"
+        onclick="event.stopPropagation()">⠿</span>
       <div class="card-list-thumb">${thumbBg}</div>
       <div class="card-list-info">
         <div class="card-list-name">${esc(c.title)||'(ไม่มีชื่อ)'}</div>
@@ -428,6 +432,20 @@ function renderCardList(){
       <button class="card-del-btn" onclick="event.stopPropagation();deleteCard(${i})">🗑</button>
     </div>`;
   }).join('');
+}
+
+// ลากเรียงลำดับ Card ใน HomeGrid (เดียวกับ pattern ลากเรียงหมวดที่ catDragStart/catDrop ใช้)
+let cardDragIdx = null;
+function cardDragStart(e, idx){ cardDragIdx = idx; try{ e.dataTransfer.effectAllowed='move'; }catch(_){} }
+function cardDrop(e, targetIdx){
+  e.preventDefault();
+  if(cardDragIdx===null || cardDragIdx===targetIdx){ cardDragIdx=null; return; }
+  const moved = cards.splice(cardDragIdx, 1)[0];
+  cards.splice(targetIdx, 0, moved);
+  if(activeCardIdx===cardDragIdx) activeCardIdx = targetIdx;
+  cardDragIdx = null;
+  renderAll();
+  if(activeCardIdx!==null) renderEditor();
 }
 
 function selectCard(idx){
@@ -480,7 +498,7 @@ function renderEditor(){
           <button class="size-btn${c.size==='full'?' on':''}" onclick="setSize('full')" style="flex:1 1 45%">▬ เต็มผืน</button>
           <button class="size-btn${c.size==='tiny'?' on':''}" onclick="setSize('tiny')" style="flex:1 1 45%">▪ จิ๋ว</button>
         </div>
-        <div class="field-hint">จตุรัส 230×230 · แนวตั้ง 150×230 · เต็มผืน 360×230 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ) — ทุกฟอแมตสูง 230px เท่ากันหมด (ยกเว้นจิ๋วเดี่ยวที่ไม่มีคู่) แถวจะได้เรียบเสมอกัน · ถ้ามีจิ๋ว 2 การ์ดติดกันในลำดับ จะซ้อนกันเป็นคอลัมน์เดียวอัตโนมัติ (สูงรวม 230px)</div>
+        <div class="field-hint">จตุรัส 230×230 · แนวตั้ง 150×230 · เต็มผืน 288×230 (5:4) · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ) — ทุกฟอแมตสูง 230px เท่ากันหมด (ยกเว้นจิ๋วเดี่ยวที่ไม่มีคู่) แถวจะได้เรียบเสมอกัน · ถ้ามีจิ๋ว 2 การ์ดติดกันในลำดับ จะซ้อนกันเป็นคอลัมน์เดียวอัตโนมัติ (สูงรวม 230px)</div>
       </div>
 
       <div class="field">
@@ -501,7 +519,7 @@ function renderEditor(){
           <div class="img-upload-hint" id="uploadHint">
             PNG/JPEG/WebP · ไม่เกิน 1MB · PNG โปร่งใสได้<br>
             <b>จตุรัส:</b> แนะนำ 800×800px (1:1) · <b>แนวตั้ง:</b> 700×1050px (2:3)<br>
-            <b>เต็มผืน:</b> 1200×770px (แนวนอนกว้าง) · <b>จิ๋ว:</b> 600×600px (1:1)
+            <b>เต็มผืน:</b> 1000×800px (5:4) · <b>จิ๋ว:</b> 600×600px (1:1)
           </div>
         </div>
         <div class="upload-progress" id="uploadProg"><div class="bar" id="uploadBar" style="width:0"></div></div>
