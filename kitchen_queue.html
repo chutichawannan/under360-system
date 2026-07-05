@@ -87,6 +87,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .item-chip .ic-code{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);}
 .item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
 .oc-note{font-size:11px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
+.oc-utensil{font-size:12px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
+.oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
+.oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
 .oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
 .btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);}
@@ -230,6 +233,7 @@ function getCodeDisplay(code,name){
 }
 
 // ── LOAD ─────────────────────────────────────────────────
+var kitchenUtensilSize="normal";
 async function loadAll(){
   var sb_=getSB();
   if(!sb_){render();return;}
@@ -238,9 +242,11 @@ async function loadAll(){
       sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
       sb_.from("order_items").select("*"),
       sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
-      sb_.from("mp_deliveries").select("*")
+      sb_.from("mp_deliveries").select("*"),
+      sb_.from("kitchen_data").select("data").eq("key","globalSettings").maybeSingle()
     ]);
     allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[]; allMpDeliveries=r[3].data||[];
+    kitchenUtensilSize=(r[4].data&&r[4].data.data&&r[4].data.data.kitchenUtensilSize)||"normal";
   }catch(e){console.error(e);}
   render();
 }
@@ -436,12 +442,16 @@ function renderCard(o){
     ?"<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button></div>"
     :o.status==="ready"
     ?"<div class='oc-actions'><span style='font-size:12px;color:var(--g);font-weight:600'>✅ พร้อมส่ง</span><button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยกเลิก</button></div>":"";
+  var wantsUtensils=o.want_utensils!==false;
+  var utensilHtml="<div class='oc-utensil"+(kitchenUtensilSize==="large"?" oc-utensil-lg":"")+(wantsUtensils?"":" oc-utensil-no")+"'>"
+    +(wantsUtensils?"🥄🍴 ใส่ช้อนส้อม":"❌ ไม่ต้องช้อนส้อม")+"</div>";
   return "<div class='"+cardCls+"'>"
     +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
     +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
     +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div></div>"
     +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div></div></div>"
     +"<div class='items-grid'>"+itemsHtml+"</div>"
+    +utensilHtml
     +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
     +actions+"</div>";
 }

@@ -659,6 +659,10 @@ body{background:#fff!important}
         <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px">🗺️<br><span style="font-size:9px;color:var(--soft);font-weight:600">ปักหมุด</span></button>
       </div>
       <input id="notes-input" class="ifield" type="text" placeholder="รายละเอียดเพิ่ม เช่น ชั้น 3, ไม่เผ็ด">
+      <label style="display:flex;align-items:center;gap:8px;padding:8px 2px 2px;font-size:14px;color:var(--ink);cursor:pointer;">
+        <input type="checkbox" id="utensil-input" checked style="width:20px;height:20px;accent-color:var(--g);cursor:pointer;flex-shrink:0;">
+        🥄 ต้องการช้อนส้อม
+      </label>
     </div>
 
     <!-- MAP (collapsible) -->
@@ -1311,11 +1315,18 @@ function cartWeekType() {
 // ══════════════════════════════════════
 // 🚀 INIT
 // ══════════════════════════════════════
+let hasUtensilColumn = false;
 async function init() {
   // Init Supabase
   try {
     sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
   } catch(e) { showErr('ไม่สามารถเชื่อมต่อ database ได้'); return; }
+
+  // เช็คว่ารัน scripts/sql_utensils.sql แล้วหรือยัง — ถ้ายัง ข้ามการส่งฟิลด์นี้ไปเงียบๆ ไม่ให้กระทบการสั่งซื้อ
+  try {
+    const { error } = await sb.from('orders').select('want_utensils').limit(1);
+    hasUtensilColumn = !error;
+  } catch(e) { hasUtensilColumn = false; }
 
   // Init LIFF
   try {
@@ -1946,7 +1957,7 @@ async function submitOrder() {
     const o = computeOrder();
     const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
     const grandTotal  = o.total;             // ยอดสุทธิ
-    const { data: ord, error: oErr } = await sb.from('orders').insert({
+    const orderPayload = {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
       line_uid:        lineProfile.userId,
@@ -1969,7 +1980,13 @@ async function submitOrder() {
       slip_image:       slipBase64 ? true : false,
       delivery_week:    cartWeekType()==='next' ? 'next' : 'current',
       notes:            (document.getElementById('notes-input').value || '').trim()
-    }).select().single();
+    };
+    // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
+    if (hasUtensilColumn) {
+      const utEl = document.getElementById('utensil-input');
+      orderPayload.want_utensils = utEl ? utEl.checked : true;
+    }
+    const { data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single();
     // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
     if (oErr) throw oErr;
 
