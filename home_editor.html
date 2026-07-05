@@ -485,6 +485,8 @@ function renderEditor(){
   // Build link options
   const cats=[...new Set(menuItems.map(m=>m.category).filter(Boolean))];
   const catOptions=cats.map(cat=>`<option value="${cat}"${c.link_cat===cat?' selected':''}>${getCatLabel(cat)} (${cat})</option>`).join('');
+  // เมนูเฉพาะ (anchor point) — คลิกการ์ดแล้วเลื่อนตรงไปที่เมนูอันนั้นเป๊ะๆ ในหน้าลูกค้า ไม่ใช่กะระยะ
+  const itemOptions=menuItems.map(m=>`<option value="__anchoritem:${m.code}__"${c.link_cat==='__anchoritem:'+m.code+'__'?' selected':''}>🎯 ${esc(m.name)} (${m.code})</option>`).join('');
 
   document.getElementById('editorPanel').innerHTML=`
   <div class="card-edit-panel">
@@ -568,7 +570,9 @@ function renderEditor(){
           ${heMpOffers.map(o=>`<option value="__mpoffer:${o.id}__"${c.link_cat==='__mpoffer:'+o.id+'__'?' selected':''}> 🥗 ${o.label} (${o.boxes} กล่อง HP ฿${Number(o.price_hp).toLocaleString()} / LC ฿${Number(o.price_lc).toLocaleString()})</option>`).join('')}
           ${hePackages.map(p=>`<option value="__pkg:${p.id}__"${c.link_cat==='__pkg:'+p.id+'__'?' selected':''}> 📦 ${p.name} (${p.qty} กล่อง ฿${Number(p.base_price).toLocaleString()})</option>`).join('')}
           ${catOptions}
+          <optgroup label="🎯 เมนูเฉพาะ (เลื่อนตรงไปที่การ์ดเมนูนั้นเป๊ะๆ)">${itemOptions}</optgroup>
         </select>
+        <div class="field-hint">"เมนูเฉพาะ" = ลูกค้ากดการ์ดนี้แล้วจะเลื่อนตรงไปที่เมนูนั้นในหมวดของมันเลย เหมาะกับปักหมุดเมนูพิเศษประจำสัปดาห์ (S) ไม่ต้องกะระยะเลื่อนเอง</div>
       </div>
 
       <div class="move-btns">

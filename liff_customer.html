@@ -353,6 +353,8 @@ body{background:#fff!important}
 .mlist-v2{background:#fff;border-radius:16px;overflow:hidden;margin:0 12px 12px;}
 .mi-v2{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(0,0,0,.05);}
 .mi-v2:last-child{border-bottom:none;}
+.mi-v2.mi-highlight{animation:miPulse 1.6s ease;border-radius:12px;}
+@keyframes miPulse{0%,100%{background:transparent;}25%{background:var(--gl);}}
 .mi-v2-photo{width:62px;height:62px;border-radius:10px;object-fit:cover;background:#F2F2F2;flex-shrink:0;cursor:pointer;}
 .mi-v2-ph{width:62px;height:62px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;cursor:pointer;}
 /* Smoother card wrapper */
@@ -1614,7 +1616,7 @@ function renderMenu() {
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
-    return `<div class="mi-v2${isOut?' out-of-stock':''}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" id="menu-item-${h(item.code||item.id)}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
       img +
       `<div class="mi-v2-info"><div class="mi-v2-code">${h(item.code||'')}</div><div class="mi-v2-name" onclick="openMenuDetail('${item.id}')">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
       `<div class="mi-v2-right"><div class="mi-v2-price">฿${item.price}</div>${ctrl}</div></div>`;
@@ -2672,8 +2674,24 @@ function colCardClick(el) {
   } else if (cat === '__anchor__') {
     var tgt = document.getElementById('ctabsInner');
     if (tgt) tgt.scrollIntoView({behavior:'smooth'});
+  } else if (cat.startsWith('__anchoritem:')) {
+    var itemCode = cat.slice(13, -2);
+    jumpToMenuItem(itemCode);
   } else if (cat) {
     jumpCat(cat);
+  }
+}
+
+// เลื่อนตรงไปที่เมนูเฉพาะ (anchor point จริง ผูกกับ id การ์ดนั้นเป๊ะๆ ไม่ใช่กะระยะเอา — แม่นยำแม้ลิสยาว/สั้นแค่ไหนก็ตาม)
+function jumpToMenuItem(code) {
+  var item = menuItems.find(m => m.code === code);
+  if (!item) { toast('ไม่พบเมนูนี้ (อาจถูกลบหรือปิดขายไปแล้ว)'); return; }
+  selectCat(item.category);
+  var el = document.getElementById('menu-item-' + code);
+  if (el) {
+    el.scrollIntoView({behavior:'smooth', block:'center'});
+    el.classList.add('mi-highlight');
+    setTimeout(function(){ el.classList.remove('mi-highlight'); }, 1600);
   }
 }
 
