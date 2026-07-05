@@ -481,7 +481,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
         <!-- LEFT: Menu List -->
         <div style="width:150px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:10px;position:sticky;top:0;">
-          <div style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูวันนี้</div>
+          <div id="planPanelTitle" style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูทุกวัน (รวม)</div>
           <div id="selectHint">👆 คลิกชื่อลูกค้า (ทั้งแถว) หรือคลิกช่องรอบเดียว (เลือกได้หลายอัน) แล้วกดเมนู</div>
           <div id="menuListDrag"></div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;position:relative;">
@@ -510,6 +510,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         </div>
 
       </div>
+
+      <!-- วันที่ผ่านมาแล้ว — เก็บไว้ดูย้อนหลัง ไม่โชว์ในตารางหลักอีกต่อไป -->
+      <div id="planHistoryWrap" style="margin-top:8px;"></div>
 
       <div style="margin-top:20px;border-top:2px solid var(--ink-xsoft);padding-top:16px;">
         <div class="sec-header"><div class="sec-title">📦 Meal Plan ระยะยาว (คิวรอบต่อไป)</div>
@@ -1020,6 +1023,7 @@ function togglePlanColumn(dateStr,type){
 function toggleDateFilter(dateStr){
   planDateFilter=(planDateFilter===dateStr)?null:dateStr;
   _buildPlanTable();
+  renderLeftPanel();
 }
 function updateSelectHint(){
   var hint=document.getElementById("selectHint"); if(!hint)return;
@@ -1045,9 +1049,12 @@ function clickMenu(code){
     renderPlanCell(rowId);
     added++;
   });
+  // เลิกเลือกช่องที่เต็มแล้วอัตโนมัติ — กันบั๊กที่ช่องยังโชว์ค้างว่า "เลือกอยู่" ทั้งที่ใส่ครบแล้ว
+  selectedRowIds=selectedRowIds.filter(function(id){ return mpRowTotalQty(id)<mpRowBoxCount(id); });
+  _buildPlanTable();
   renderLeftPanel();
   var hint=document.getElementById("selectHint");
-  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" ช่อง"+(full?(" (เต็มแล้ว "+full+" ช่อง)"):""); hint.style.opacity="1"; }
+  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" ช่อง"+(full?(" (เต็มแล้ว "+full+" ช่อง)"):"")+(selectedRowIds.length?(" — เหลือเลือกอยู่ "+selectedRowIds.length+" ช่อง"):""); hint.style.opacity="1"; }
 }
 function removeMenuEntry(rowId,code){
   var r=getMpRow(rowId); if(!r)return;
@@ -1138,9 +1145,11 @@ document.addEventListener("click",function(e){
   if(e.target!==input && !box.contains(e.target)) box.style.display="none";
 });
 
-function countMenu(code){
+// ระบุ dateStr เพื่อนับเฉพาะวันนั้น (ตาม planDateFilter ที่กำลังดูอยู่) — ไม่ระบุ = รวมทุกวัน (เดิม)
+function countMenu(code,dateStr){
   var total=0;
   mpPlanRows.forEach(function(r){
+    if(dateStr && r.delivery_date!==dateStr) return;
     var entry=(r.menu_items||[]).find(function(e){return e.code===code;});
     if(entry)total+=(entry.qty||1);
   });
@@ -1149,10 +1158,12 @@ function countMenu(code){
 
 function renderLeftPanel(){
   var el=document.getElementById("menuListDrag"); if(!el)return;
+  var titleEl=document.getElementById("planPanelTitle");
+  if(titleEl)titleEl.textContent=planDateFilter?("เมนูวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))):"เมนูทุกวัน (รวม)";
   var h="";
   todayPlan.forEach(function(code){
     var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
-    var cnt=countMenu(code);
+    var cnt=countMenu(code,planDateFilter);
     var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
     h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
     h+="<span style='font-family:var(--mono);font-size:10px;font-weight:700'>"+code+"</span>";
@@ -1161,6 +1172,22 @@ function renderLeftPanel(){
     h+="</div>";
   });
   el.innerHTML=h;
+  renderMpSummary();
+}
+
+// สรุปจำนวนรอบ/HP/LC/ความคืบหน้า — ของวันที่กำลังกรองอยู่ (planDateFilter) หรือรวมทั้งหมดถ้าไม่ได้กรอง
+function renderMpSummary(){
+  var el=document.getElementById("menuSummary"); if(!el)return;
+  var rows=planDateFilter?mpPlanRows.filter(function(r){return r.delivery_date===planDateFilter;}):mpPlanRows;
+  var hp=rows.filter(function(r){return r.mp_type==="hp";}).length;
+  var lc=rows.filter(function(r){return r.mp_type==="lc";}).length;
+  var doneCount=rows.filter(function(r){return mpRowTotalQty(r.id)>=mpRowBoxCount(r.id);}).length;
+  el.innerHTML="<div style='font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;'>📊 สรุป"+(planDateFilter?"":"ทั้งหมด")+"</div>"
+    +"<div style='font-size:11px;color:var(--ink);line-height:1.9;'>"
+    +"รอบทั้งหมด: <b>"+rows.length+"</b><br>"
+    +"HP: <b>"+hp+"</b> · LC: <b>"+lc+"</b><br>"
+    +"กำหนดเมนูครบแล้ว: <b>"+doneCount+"/"+rows.length+"</b>"
+    +"</div>";
 }
 
 function renderPlanCell(rowId){
@@ -1259,7 +1286,12 @@ function _buildPlanTable(){
   // คอลัมน์ = วันที่จัดส่งจริง (union ของทุกแพลน) ไม่ใช่ round index — ทุกแถวจะตรงแนวเดียวกันตามวันปฏิทินจริง
   var dateSet={};
   subs.forEach(function(s){ s.rows.forEach(function(r){ dateSet[r.delivery_date]=1; }); });
-  var allDates=Object.keys(dateSet).sort();
+  var allDatesFull=Object.keys(dateSet).sort();
+  // วันที่เลยมาแล้ว (< วันนี้) ไม่โชว์ในตารางหลักอีกต่อไป — เก็บไว้ดูย้อนหลังในส่วนประวัติด้านล่างแทน
+  var todayStr=today2();
+  var pastDates=allDatesFull.filter(function(d){return d<todayStr;});
+  var allDates=allDatesFull.filter(function(d){return d>=todayStr;});
+  renderPlanHistory(pastDates,subs);
 
   var visibleSubs=planDateFilter?subs.filter(function(s){return s.rows.some(function(r){return r.delivery_date===planDateFilter;});}):subs;
 
@@ -1312,6 +1344,38 @@ function _buildPlanTable(){
   });
   body.innerHTML=rows;
   subs.forEach(function(s){ s.rows.forEach(function(r){ renderPlanCell(r.id); }); });
+}
+
+// ── ประวัติวันที่เลยมาแล้ว (อ่านอย่างเดียว ไม่มีปุ่ม assign) ──
+var planHistoryOpen=false;
+function togglePlanHistory(){ planHistoryOpen=!planHistoryOpen; _buildPlanTable(); }
+function renderPlanHistory(pastDates,subs){
+  var wrap=document.getElementById("planHistoryWrap"); if(!wrap)return;
+  if(!pastDates.length){ wrap.innerHTML=""; return; }
+  var h="<button class='btn' onclick='togglePlanHistory()' style='font-size:11px'>"
+    +(planHistoryOpen?"▲ ซ่อนประวัติ":"▼ ดูประวัติ")+" ("+pastDates.length+" วันที่เลยมาแล้ว)</button>";
+  if(planHistoryOpen){
+    h+="<div style='margin-top:8px;overflow-x:auto;border-radius:8px;border:1px solid var(--ink-xsoft);'>";
+    h+="<table class='plan-table' style='min-width:400px'><thead><tr><th style='width:130px'>ลูกค้า</th>";
+    pastDates.forEach(function(d){ h+="<th style='min-width:90px;font-size:10px'>"+fmtD(new Date(d+'T00:00:00'))+"</th>"; });
+    h+="</tr></thead><tbody>";
+    subs.forEach(function(s){
+      var hasAny=s.rows.some(function(r){return pastDates.indexOf(r.delivery_date)>=0;});
+      if(!hasAny)return;
+      h+="<tr><td style='width:130px;font-size:12px;padding:6px 8px'>"+esc2(s.first.customer_name||"ลูกค้า")+"</td>";
+      pastDates.forEach(function(d){
+        var r=s.rows.filter(function(x){return x.delivery_date===d;})[0];
+        if(!r){ h+="<td style='color:#E5E7EB;text-align:center'>—</td>"; return; }
+        var total=mpRowTotalQty(r.id), box=mpRowBoxCount(r.id);
+        var statusColor=r.status==="delivered"?"#22C55E":(total>=box?"#F59E0B":"#9CA3AF");
+        var statusTxt=r.status==="delivered"?"✓ ส่งแล้ว":(total+"/"+box);
+        h+="<td style='font-size:10px;color:"+statusColor+";text-align:center'>"+statusTxt+"</td>";
+      });
+      h+="</tr>";
+    });
+    h+="</tbody></table></div>";
+  }
+  wrap.innerHTML=h;
 }
 
 // ── MESSENGER ─────────────────────────────────────────
