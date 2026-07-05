@@ -92,14 +92,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 `orders` · `order_items` · `menu_items` · `customers` · `home_layout` · `kitchen_data`
 `daily_menu_assignments` (ใช้จริงแต่คนละเรื่องกับ Meal Plan รายลูกค้า — เป็นกริดวางแผนผลิตรวมของครัว ดู main_database_v2.html tab "📅 แผนผลิต") · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries` (Meal Plan ระยะยาวรายลูกค้า — คนละตารางกับข้างต้น)
 
-### ⚠️ ยังไม่ได้สร้าง/เพิ่ม — รอนัทรัน SQL (โค้ดทุกจุด catch error รองรับไว้แล้ว ไม่รันก็ไม่พัง แค่ feature ยังไม่ทำงาน)
-> ✅ เช็คตรงกับ Supabase จริงแล้ว (2026-07-05 ผ่าน REST): `activity_log`, `orders.want_utensils`, `mp_offer_sets` มีอยู่แล้วทั้งหมด (นัทรันไปแล้ว) — เหลือ 3 ตัวข้างล่างนี้
-
-| ไฟล์ SQL | ทำอะไร | ผลถ้ายังไม่รัน |
-|---------|--------|---------------|
-| `scripts/sql_promo_scope.sql` | เพิ่มคอลัมน์ `promo_codes.scope_type/scope_value/show_suggested` (โปรโมชั่นเจาะจงสินค้า + โค้ดแนะนำ v0.4.12) | OH เช็ค capability เองแล้วซ่อน UI ที่เกี่ยวข้อง — สร้างโค้ดแบบ "ทั้งร้าน" ได้ปกติทุกอย่าง แค่ยังตั้ง scope/แนะนำไม่ได้จนกว่าจะรัน |
-| `scripts/sql_packages_rls.sql` | เพิ่ม RLS policy ให้ anon เขียน `packages`/`package_items` ได้ (v0.4.13 — **แก้บั๊ก "สร้างแพคเกจไม่สำเร็จ"**) | ยังกด "+ สร้างแพคเกจใหม่" ไม่ได้เหมือนเดิม (error 42501 RLS) จนกว่าจะรัน |
-| `scripts/sql_promo_stack.sql` | เพิ่มคอลัมน์ `promo_codes.stackable/scope_mode` (โค้ดซ้อนกันได้ + scope แบบ "ยกเว้น" v0.4.14) | OH ซ่อน UI ที่เกี่ยวข้อง — โค้ดยังใช้แบบเดี่ยว/include ได้ปกติ แค่ยังตั้งซ้อน/ยกเว้นไม่ได้จนกว่าจะรัน |
+### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยกเว้น `day_before_notified_at` ALTER ท้าย sql_mp_deliveries.sql ถ้ายังไม่ได้รัน — เช็คซ้ำได้)
 
 ### SQL ที่รันแล้ว ✅
 ```sql
@@ -150,6 +143,18 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS want_utensils BOOLEAN DEFAULT true;
 
 -- v0.4.11 ชุด Meal Plan (scripts/sql_mp_offer_sets.sql) — รันแล้ว 2026-07-05
 -- CREATE TABLE mp_offer_sets (...) + seed trial/weekly/monthly — รายละเอียดเต็มในไฟล์
+
+-- v0.4.12 promo scope (scripts/sql_promo_scope.sql) — รันแล้ว 2026-07-05
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_type TEXT NOT NULL DEFAULT 'all';
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_value JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS show_suggested BOOLEAN NOT NULL DEFAULT false;
+
+-- v0.4.13 packages RLS (scripts/sql_packages_rls.sql) — รันแล้ว 2026-07-05
+-- เพิ่ม RLS policy anon select/insert/update/delete ให้ packages + package_items — รายละเอียดเต็มในไฟล์
+
+-- v0.4.14 promo stack (scripts/sql_promo_stack.sql) — รันแล้ว 2026-07-05
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS stackable BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_mode TEXT NOT NULL DEFAULT 'include';
 ```
 
 ### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยกเว้น `day_before_notified_at` ALTER ท้าย sql_mp_deliveries.sql ถ้ายังไม่ได้รัน — เช็คซ้ำได้)
@@ -210,6 +215,8 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 ---
 
 ## 🚦 Current Version: v0.4.22 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `f2293ef` — ⚠️ รอรัน 3 SQL: `scripts/sql_promo_scope.sql`, `scripts/sql_packages_rls.sql`, `scripts/sql_promo_stack.sql`)
+
+> ✅ อัพเดท 2026-07-05: นัทรัน SQL ทั้ง 3 ไฟล์ข้างต้นแล้ว (ยืนยันผ่าน REST ตรง — scope_type/scope_value/show_suggested/stackable/scope_mode ใน promo_codes มีครบ, packages RLS ให้ anon insert ได้แล้ว) **ไม่มี SQL ค้างเลย** ทุกฟีเจอร์ตั้งแต่ v0.4.12–v0.4.22 เปิดใช้งานได้เต็มที่แล้ว
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -540,4 +547,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 5 ก.ค. 2026 — v0.4.22 ✅ push แล้ว (commit `f2293ef`) — **KQ: เพิ่มวันที่สั่ง/ส่งในการ์ด + ปุ่มยกเลิก "ส่งแล้ว" (Meal Plan) + log ทุกคลิกปุ่มสถานะ (ใครกด/เมื่อไหร่ — กันมือลั่นหาไม่เจอ) + ระบบชื่อผู้ใช้ที่ KQ (เดิมไม่มีเลย)** — นี่คืองานสุดท้ายก่อนนัทเริ่ม **beta test แบบ parallel กับ Hato** (แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน) ดูหัวข้อ Roadmap ด้านบนสำหรับลำดับงานถัดจากนี้ (migrate ลูกค้าเก่า → Facebook → AI agents น้องนิว/น้องฟ้า/พี่เก่ง — ยังไม่เริ่มสักตัว) — v0.4.12–v0.4.21 (รายละเอียดเต็มในตารางด้านบน): ระบบ Promo Scope + ซ้อนโค้ด (⚠️ รอรัน `scripts/sql_promo_scope.sql` + `scripts/sql_promo_stack.sql`), แก้บั๊กแพคเกจสร้างไม่ได้ (⚠️ รอรัน `scripts/sql_packages_rls.sql`), รื้อ Card HE เป็น 4 ฟอแมต + anchor point เมนูเฉพาะ, ปรับปรุงหน้าแพลนเมนูครั้งใหญ่ — เรื่องแต้มสะสม/tier ยัง **หยุดรอนัท** (ดู Backlog) — นัทกำลังเตรียมทริปแคนาดา 7 วัน (รอสัญญาณ "พร้อมไปแคนาดาแล้ว") — ถัดไป: รอนัทรัน 3 SQL ค้าง + รอนัททดสอบ KQ ให้ครบก่อนเริ่ม beta parallel test*
+*Last updated: 5 ก.ค. 2026 — v0.4.22 ✅ push แล้ว (commit `f2293ef`) — **KQ: เพิ่มวันที่สั่ง/ส่งในการ์ด + ปุ่มยกเลิก "ส่งแล้ว" (Meal Plan) + log ทุกคลิกปุ่มสถานะ (ใครกด/เมื่อไหร่ — กันมือลั่นหาไม่เจอ) + ระบบชื่อผู้ใช้ที่ KQ (เดิมไม่มีเลย)** — นี่คืองานสุดท้ายก่อนนัทเริ่ม **beta test แบบ parallel กับ Hato** (แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน) ดูหัวข้อ Roadmap ด้านบนสำหรับลำดับงานถัดจากนี้ (migrate ลูกค้าเก่า → Facebook → AI agents น้องนิว/น้องฟ้า/พี่เก่ง — ยังไม่เริ่มสักตัว) — v0.4.12–v0.4.21 (รายละเอียดเต็มในตารางด้านบน): ระบบ Promo Scope + ซ้อนโค้ด, แก้บั๊กแพคเกจสร้างไม่ได้, รื้อ Card HE เป็น 4 ฟอแมต + anchor point เมนูเฉพาะ, ปรับปรุงหน้าแพลนเมนูครั้งใหญ่ — **✅ นัทรัน SQL ครบทั้ง 3 ไฟล์แล้ว 2026-07-05 (ยืนยันผ่าน REST) ไม่มี SQL ค้างเลย** — เรื่องแต้มสะสม/tier ยัง **หยุดรอนัท** (ดู Backlog) — นัทไปแคนาดาแล้ว (7 วัน) จะใช้ claude.ai มือถือ + อัพโหลดไฟล์ผ่านหน้าเว็บ GitHub แทน Claude Code จนกว่าจะกลับ — ถัดไป: รอนัททดสอบ KQ ให้ครบก่อนเริ่ม beta parallel test (พร้อมทำได้ทันทีที่นัทว่าง ไม่มีอะไรค้างแล้ว)*
