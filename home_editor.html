@@ -284,7 +284,10 @@ async function loadCards(){
       bg_color:r.bg_color||'#1F4D3A', bg_image:r.bg_image||'',
       size:COL_SPAN_TO_SIZE[r.col_span]||'square',
       link_cat:(r.item_filter||{}).category||(r.item_filter||{}).he_group||'',
-      sort_order:r.sort_order||0
+      sort_order:r.sort_order||0,
+      show_cta:(r.item_filter||{}).show_cta!==false,
+      cta_text:(r.item_filter||{}).cta_text||'ดูเมนู →',
+      overlay:(r.item_filter||{}).overlay||'gradient'
     }));
   }catch(e){
     cards=[

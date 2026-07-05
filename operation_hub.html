@@ -576,13 +576,21 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           </select>
         </div>
         <div id="pc-scope-picker" style="display:none;margin-bottom:10px;border:1.5px solid var(--ink-xsoft);border-radius:8px;padding:10px">
+          <div class="size-btns" id="pc-scope-mode-btns" style="margin-bottom:8px">
+            <button type="button" class="size-btn on" id="pc-scope-mode-include" onclick="setPromoScopeMode('include')" style="font-size:12px">✅ เฉพาะรายการที่เลือก</button>
+            <button type="button" class="size-btn" id="pc-scope-mode-exclude" onclick="setPromoScopeMode('exclude')" style="font-size:12px">🚫 ทุกอย่าง ยกเว้นที่เลือก</button>
+          </div>
           <input id="pc-scope-search" placeholder="ค้นหาเมนู..." style="display:none;width:100%;padding:7px 9px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:13px;margin-bottom:8px;font-family:inherit" oninput="renderPromoScopeList(this.value)">
           <div id="pc-scope-list" style="max-height:180px;overflow-y:auto;font-size:13px"></div>
           <div id="pc-scope-selected-count" style="font-size:11px;color:var(--ink-soft);margin-top:6px"></div>
         </div>
-        <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer">
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer">
           <input type="checkbox" id="pc-suggested" style="width:16px;height:16px">
           🌟 แนะนำให้ลูกค้าเห็นตอนเช็คเอาท์ (ไม่ติ๊ก = ลูกค้าต้องพิมพ์โค้ดเอง)
+        </label>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer">
+          <input type="checkbox" id="pc-stackable" style="width:16px;height:16px">
+          🔗 ใช้ซ้อนกับโค้ด "ซ้อนได้" อันอื่นพร้อมกันได้ (ไม่ติ๊ก = ใช้แล้วแทนที่โค้ดอื่นทั้งหมด)
         </label>
         <div style="display:flex;gap:8px">
           <button id="promoFormSaveBtn" class="btn btn-primary" onclick="savePromo()" style="flex:1">💾 บันทึกโค้ด</button>
@@ -771,7 +779,7 @@ function openTab(name,el){
   if(name==="menu")loadMenus();
   if(name==="plan"){buildPlan();loadMpDeliveries();}
   if(name==="messenger")loadMessenger();
-  if(name==="promo"){checkPromoScopeCapability().then(loadPromos);}
+  if(name==="promo"){Promise.all([checkPromoScopeCapability(),checkPromoStackCapability()]).then(loadPromos);}
   if(name==="customer")loadCustomers();
   if(name==="settings")loadGlobalSettings();
   var content=document.querySelector(".content");
@@ -1353,9 +1361,21 @@ function showCreatePromo(){
   document.getElementById("pc-type").value="fixed";
   document.getElementById("pc-scope-type").value="all";
   document.getElementById("pc-suggested").checked=false;
+  document.getElementById("pc-stackable").checked=false;
   _promoScopeSelected=[];
+  setPromoScopeMode("include");
   updatePromoForm();
   updatePromoScopeUI();
+}
+
+// ── 🔗 Stackable + scope mode (include/exclude) ──
+var _promoScopeMode="include";
+function setPromoScopeMode(mode){
+  _promoScopeMode=mode;
+  var incBtn=document.getElementById("pc-scope-mode-include");
+  var excBtn=document.getElementById("pc-scope-mode-exclude");
+  if(incBtn)incBtn.classList.toggle("on",mode==="include");
+  if(excBtn)excBtn.classList.toggle("on",mode==="exclude");
 }
 
 // แก้ไขโค้ดที่ยังไม่มีใครใช้เลย (used_count===0) — ถ้าเคยใช้แล้วห้ามแก้ เพื่อไม่ให้เงื่อนไขเปลี่ยนย้อนหลังกับออเดอร์ที่ใช้โค้ดไปแล้ว
@@ -1377,8 +1397,10 @@ async function editPromo(id){
   document.getElementById("pc-exp").value=p.expires_at||"";
   document.getElementById("pc-desc").value=p.description||"";
   document.getElementById("pc-suggested").checked=!!p.show_suggested;
+  document.getElementById("pc-stackable").checked=!!p.stackable;
   document.getElementById("pc-scope-type").value=p.scope_type||"all";
   _promoScopeSelected=(p.scope_value||[]).slice();
+  setPromoScopeMode(p.scope_mode||"include");
   updatePromoForm();
   await updatePromoScopeUI();
   f.scrollIntoView({behavior:"smooth",block:"start"});
@@ -1399,6 +1421,12 @@ async function checkPromoScopeCapability(){
   var sb_=getSB(); if(!sb_)return;
   try{ var r=await sb_.from("promo_codes").select("scope_type").limit(1); hasPromoScopeColumns=!r.error; }
   catch(e){ hasPromoScopeColumns=false; }
+}
+var hasPromoStackColumns=false; // capability-check: true ถ้ารัน scripts/sql_promo_stack.sql แล้ว (stackable/scope_mode)
+async function checkPromoStackCapability(){
+  var sb_=getSB(); if(!sb_)return;
+  try{ var r=await sb_.from("promo_codes").select("stackable").limit(1); hasPromoStackColumns=!r.error; }
+  catch(e){ hasPromoStackColumns=false; }
 }
 
 async function loadPromoScopeOptions(type){
@@ -1426,7 +1454,11 @@ async function updatePromoScopeUI(){
   var picker=document.getElementById("pc-scope-picker");
   var search=document.getElementById("pc-scope-search");
   var suggestedBox=document.getElementById("pc-suggested");
+  var stackableBox=document.getElementById("pc-stackable");
+  var modeBtns=document.getElementById("pc-scope-mode-btns");
   if(suggestedBox)suggestedBox.disabled=!hasPromoScopeColumns;
+  if(stackableBox)stackableBox.disabled=!hasPromoStackColumns;
+  if(modeBtns)modeBtns.style.display=(hasPromoStackColumns && type!=="all")?"flex":"none";
   if(type==="all"){ picker.style.display="none"; return; }
   if(!hasPromoScopeColumns){
     picker.style.display="block";
@@ -1495,6 +1527,10 @@ async function savePromo(){
     row.scope_value=(scopeType==="all"?[]:_promoScopeSelected.slice());
     row.show_suggested=document.getElementById("pc-suggested").checked;
   }
+  if(hasPromoStackColumns){
+    row.stackable=document.getElementById("pc-stackable").checked;
+    row.scope_mode=(scopeType==="all"?"include":_promoScopeMode);
+  }
   try{
     var res=editingPromoId
       ? await sb_.from("promo_codes").update(row).eq("id",editingPromoId)
@@ -1558,8 +1594,11 @@ async function loadPromos(){
       h+="<div style='display:flex;justify-content:space-between;align-items:flex-start;gap:10px'>";
       h+="<div style='flex:1'>";
       var scopeType=p.scope_type||"all";
-      h+="<div style='font-size:15px;font-weight:800;font-family:var(--mono);letter-spacing:.5px'>"+esc2(p.code)+" <span style='font-size:11px;font-weight:600;color:#1F9D55;background:#E8F5EE;padding:2px 7px;border-radius:6px;margin-left:4px'>"+(PROMO_TYPE_LABEL[p.discount_type]||p.discount_type)+" "+valTxt+"</span>"+(p.show_suggested?" <span style='font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:6px;margin-left:4px'>🌟 แนะนำ</span>":"")+"</div>";
-      if(scopeType!=="all")h+="<div style='font-size:11px;font-weight:600;color:#7C3AED;margin-top:4px'>🎯 "+(PROMO_SCOPE_LABEL[scopeType]||scopeType)+" ("+((p.scope_value||[]).length)+" รายการ)</div>";
+      h+="<div style='font-size:15px;font-weight:800;font-family:var(--mono);letter-spacing:.5px'>"+esc2(p.code)+" <span style='font-size:11px;font-weight:600;color:#1F9D55;background:#E8F5EE;padding:2px 7px;border-radius:6px;margin-left:4px'>"+(PROMO_TYPE_LABEL[p.discount_type]||p.discount_type)+" "+valTxt+"</span>"+(p.show_suggested?" <span style='font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:6px;margin-left:4px'>🌟 แนะนำ</span>":"")+(p.stackable?" <span style='font-size:11px;font-weight:600;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:6px;margin-left:4px'>🔗 ซ้อนได้</span>":"")+"</div>";
+      if(scopeType!=="all"){
+        var scopeModeTxt=(p.scope_mode==="exclude")?"🚫 ทุกอย่าง ยกเว้น":"🎯 เฉพาะ";
+        h+="<div style='font-size:11px;font-weight:600;color:#7C3AED;margin-top:4px'>"+scopeModeTxt+" "+(PROMO_SCOPE_LABEL[scopeType]||scopeType)+" ("+((p.scope_value||[]).length)+" รายการ)</div>";
+      }
       if(p.description)h+="<div style='font-size:12px;color:var(--ink-soft);margin-top:3px'>"+esc2(p.description)+"</div>";
       h+="<div style='font-size:11px;color:var(--ink-soft);margin-top:5px'>";
       h+=(p.min_order>0?("ขั้นต่ำ ฿"+p.min_order+" · "):"")+"ใช้แล้ว "+(p.used_count||0)+(p.usage_limit>0?("/"+p.usage_limit):"")+" ครั้ง";

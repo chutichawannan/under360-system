@@ -382,7 +382,8 @@ body{background:#fff!important}
 /* v0.4.13 — เลิกจับกลุ่ม large+small (col-group/col-col) เพราะเป็นต้นเหตุที่การ์ดใหม่ใน HE
    เรนเดอร์ผิดขนาด (การ์ดโดดเดี่ยวยืดเต็ม 100% ไม่ว่าตั้งใจให้ใหญ่หรือเล็ก) — การ์ดแต่ละใบตอนนี้
    อิสระ ขนาดคงที่ตาม format เดียวกับที่ home_editor.html พรีวิว (px ตรงกันเป๊ะ = WYSIWYG จริง) */
-.col-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
+.col-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;
+  max-width:calc(100vw - 40px);} /* บังคับให้แคบกว่าจอเสมอ การ์ดถัดไปจะโผล่ peek ~40px ให้เห็นว่าเลื่อนได้ — ไม่งั้นถ้าผลรวมความกว้างการ์ดพอดีจอ จะดูเหมือนเลื่อนไม่ได้เลย (v0.4.13 หลังเปลี่ยนเป็นการ์ด fixed-width) */
 .col-scroll::-webkit-scrollbar{display:none;}
 #homeGrid .col-scroll{padding-right:0!important;} /* left padding set via inline style in JS */
 .sec-title-row{padding:16px 16px 8px!important;}
@@ -725,6 +726,7 @@ body{background:#fff!important}
     <!-- ═══ COUPON ═══ -->
     <div class="sec-head">🎟️ คูปอง / โค้ดส่วนลด</div>
     <div id="promo-suggest-wrap" style="padding:0 14px 8px;display:none"></div>
+    <div id="coupon-applied" style="display:none;padding:0 14px 4px"></div>
     <div id="coupon-wrap" style="padding:0 14px 4px">
       <div style="display:flex;gap:8px">
         <input id="coupon-input" class="ifield" type="text" placeholder="กรอกโค้ด เช่น UNDER50" style="text-transform:uppercase;flex:1"
@@ -732,16 +734,6 @@ body{background:#fff!important}
         <button id="coupon-btn" onclick="applyPromo()" style="flex-shrink:0;padding:0 16px;background:var(--g);color:#fff;border:none;border-radius:12px;font-weight:700;cursor:pointer">ใช้โค้ด</button>
       </div>
       <div id="coupon-msg" style="font-size:12px;margin-top:6px;display:none"></div>
-    </div>
-    <div id="coupon-applied" style="display:none;padding:0 14px 4px">
-      <div style="display:flex;align-items:center;gap:8px;background:var(--gl);border-radius:12px;padding:10px 12px">
-        <span style="font-size:18px">🎟️</span>
-        <div style="flex:1">
-          <div id="coupon-applied-code" style="font-size:13px;font-weight:700;color:var(--ink)"></div>
-          <div id="coupon-applied-desc" style="font-size:11px;color:var(--soft)"></div>
-        </div>
-        <button onclick="removePromo()" style="background:none;border:none;color:var(--r);font-size:13px;font-weight:600;cursor:pointer">ลบ</button>
-      </div>
     </div>
     <div class="divider"></div>
 
@@ -875,7 +867,8 @@ async function loadMpOfferSets(){
   try{
     const { data, error } = await sb.from('mp_offer_sets').select('*').eq('is_active', true).order('display_order');
     if (error || !data || !data.length) return; // ยังไม่รัน SQL หรือยังไม่มีข้อมูล — ใช้ fallback เดิมต่อไป
-    MP_SETS = data.map(r => ({ id:r.set_key, label:r.label, boxes:r.boxes, price_hp:r.price_hp, price_lc:r.price_lc, showInDefault: r.show_in_default_picker!==false }));
+    // rowId เก็บ uuid จริงของแถวไว้ด้วย เพราะการ์ด HE ลิ้ง __mpoffer:{uuid}__ ด้วย uuid ไม่ใช่ set_key
+    MP_SETS = data.map(r => ({ id:r.set_key, rowId:r.id, label:r.label, boxes:r.boxes, price_hp:r.price_hp, price_lc:r.price_lc, showInDefault: r.show_in_default_picker!==false }));
     mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
   }catch(e){ console.warn('loadMpOfferSets failed', e); }
 }
@@ -1131,7 +1124,8 @@ function removePkgFromCart(id) {
 function openMealPlanPicker(offerSetKey) {
   mpType = ''; mpRequest = ''; mpReqSel = [];
   if (offerSetKey) {
-    const one = MP_SETS.find(s => s.id === offerSetKey);
+    // การ์ด HE ลิ้งด้วย uuid จริง (rowId) — เช็คทั้ง id (set_key) และ rowId (uuid) กันไม่เจอ
+    const one = MP_SETS.find(s => s.id === offerSetKey || s.rowId === offerSetKey);
     mpActiveSets = one ? [one] : MP_SETS.filter(s => s.showInDefault!==false);
     mpSetId = one ? one.id : ''; // ชุดเดียว → เลือกให้อัตโนมัติ ข้ามขั้นตอนเลือกไซส์
   } else {
@@ -1990,7 +1984,7 @@ async function submitOrder() {
       delivery_fee:    deliveryFee,
       subtotal:         o.sub,
       discount_amount:  o.discount,
-      promotion_code:   appliedPromo?.code || null,
+      promotion_code:   appliedPromos.length ? appliedPromos.map(p=>p.code).join(',') : null, // ซ้อนหลายโค้ด → คั่นด้วย , (ใช้เก็บรายงานเท่านั้น ไม่ใช่ FK)
       total:            grandTotal,
       status:           'confirmed',
       payment_method:   payMethod || 'qr',
@@ -2009,9 +2003,9 @@ async function submitOrder() {
     // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
     if (oErr) throw oErr;
 
-    // 1b. นับการใช้คูปอง +1 (best-effort)
-    if (appliedPromo?.id) {
-      try { await sb.from('promo_codes').update({ used_count: (appliedPromo.used_count||0)+1 }).eq('id', appliedPromo.id); } catch(e){}
+    // 1b. นับการใช้คูปอง +1 ทุกโค้ดที่ซ้อนอยู่ (best-effort)
+    for (const p of appliedPromos) {
+      try { await sb.from('promo_codes').update({ used_count: (p.used_count||0)+1 }).eq('id', p.id); } catch(e){}
     }
 
     // 2. Create order items (expand package items into individual rows)
@@ -2053,7 +2047,7 @@ async function submitOrder() {
       `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
-    appliedPromo = null; refreshCouponUI();
+    appliedPromos = []; refreshCouponUI();
     if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     showScr('s-ok');
 
@@ -2076,23 +2070,29 @@ const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
 // ══════════════════════════════════════
 // 🎟️ COUPON / DISCOUNT ENGINE
 // ══════════════════════════════════════
-let appliedPromo = null;   // {id,code,discount_type,discount_value,min_order,used_count,description,...}
+let appliedPromos = [];   // array of {id,code,discount_type,discount_value,min_order,used_count,description,stackable,scope_mode,...}
 let suggestedPromos = [];
 let suggestedPromosLoaded = false;
 
-// โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง
+// โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง (include)
+// หรือตะกร้าต้องไม่มีสินค้านั้นเลย (exclude — v0.4.14 "ทุกอย่างยกเว้นที่เลือก")
 // scope_value เทียบกับ cart item ตาม type: sku→c.code, package→c.package_id, mp_offer→c.mp_set
 function cartMatchesPromoScope(p){
   const scopeType = p.scope_type || 'all';
   if(scopeType === 'all') return true;
   const scopeValue = Array.isArray(p.scope_value) ? p.scope_value : [];
-  if(!scopeValue.length) return false;
-  return cart.some(c => {
+  const matches = c => {
     if(scopeType === 'sku')      return !c.type && scopeValue.includes(c.code);
     if(scopeType === 'package')  return c.type === 'package' && scopeValue.includes(c.package_id);
     if(scopeType === 'mp_offer') return c.type === 'meal_plan' && scopeValue.includes(c.mp_set);
     return false;
-  });
+  };
+  if(p.scope_mode === 'exclude'){
+    if(!scopeValue.length) return true; // ไม่มีรายการยกเว้น = ใช้ได้ทั้งหมด
+    return !cart.some(matches); // ตะกร้าต้องไม่มีสินค้าที่ยกเว้นเลยสักชิ้น
+  }
+  if(!scopeValue.length) return false;
+  return cart.some(matches);
 }
 
 // โค้ดที่ตั้ง show_suggested=true และยังใช้ได้กับตะกร้าปัจจุบัน (ไม่หมดอายุ/ไม่ครบโควต้า/ถึงขั้นต่ำ/ตรง scope)
@@ -2123,8 +2123,8 @@ function renderSuggestedPromoChips(){
   wrap.innerHTML = '<div style="font-size:11.5px;color:var(--soft);font-weight:600;margin-bottom:6px">🎁 โค้ดแนะนำสำหรับคุณ — แตะเพื่อใช้</div>' +
     '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
     eligible.map(p => {
-      const active = appliedPromo && appliedPromo.id === p.id;
-      return `<button onclick="tapSuggestedPromo('${p.id}')" style="border:1.5px solid ${active?'var(--g)':'rgba(0,0,0,.12)'};background:${active?'var(--gl)':'#fff'};color:${active?'var(--g)':'var(--ink)'};border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">${active?'✓ ':''}${h(p.code)} — ${h(promoLabel(p))}</button>`;
+      const active = appliedPromos.some(x => x.id === p.id);
+      return `<button onclick="tapSuggestedPromo('${p.id}')" style="border:1.5px solid ${active?'var(--g)':'rgba(0,0,0,.12)'};background:${active?'var(--gl)':'#fff'};color:${active?'var(--g)':'var(--ink)'};border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">${active?'✓ ':''}${h(p.code)} — ${h(promoLabel(p))}${p.stackable?' 🔗':''}</button>`;
     }).join('') +
     '</div>';
 }
@@ -2132,24 +2132,25 @@ function renderSuggestedPromoChips(){
 function tapSuggestedPromo(id){
   const p = suggestedPromos.find(x => x.id === id);
   if(!p) return;
-  if(appliedPromo && appliedPromo.id === id){ removePromo(); return; }
+  if(appliedPromos.some(x => x.id === id)){ removePromo(id); return; }
   applyPromo(p.code);
 }
 
-// คำนวณยอดทั้งหมด: ยอดสินค้า - ส่วนลด + ค่าส่ง(หลังหักส่งฟรี)
+// คำนวณยอดทั้งหมด: ยอดสินค้า - ส่วนลด(รวมทุกโค้ดที่ซ้อนอยู่) + ค่าส่ง(หลังหักส่งฟรี)
 function computeOrder(){
   const sub = cartTotal();
   const feeKnown = deliveryFeeKnown();
   const fee = feeKnown ? calcDeliveryFee(distKm||0, selSlot) : 0;
   let itemDisc = 0, shipDisc = 0;
-  if(appliedPromo){
-    const p = appliedPromo;
-    // ยอดต่ำกว่าขั้นต่ำ หรือตะกร้าไม่มีสินค้าตรง scope แล้ว (เช่นลบสินค้าที่โค้ดผูกไว้ทิ้ง) → คูปองใช้ไม่ได้ ตัดทิ้งเงียบๆ
-    if((p.min_order||0) > sub || !cartMatchesPromoScope(p)){ appliedPromo = null; refreshCouponUI(); }
-    else if(p.discount_type==='fixed')    itemDisc = Math.min(p.discount_value, sub);
-    else if(p.discount_type==='percent')  itemDisc = Math.round(sub * p.discount_value/100);
-    else if(p.discount_type==='free_shipping') shipDisc = fee; // ลดค่าส่งเท่าที่รู้แล้ว
-  }
+  // ตัดโค้ดที่ใช้ไม่ได้แล้วทิ้งเงียบๆ (ยอดต่ำกว่าขั้นต่ำ หรือตะกร้าไม่ตรง scope อีกต่อไป เช่นลบสินค้าที่โค้ดผูกไว้ทิ้ง)
+  const stillValid = appliedPromos.filter(p => (p.min_order||0) <= sub && cartMatchesPromoScope(p));
+  if(stillValid.length !== appliedPromos.length){ appliedPromos = stillValid; refreshCouponUI(); }
+  appliedPromos.forEach(p => {
+    if(p.discount_type==='fixed')         itemDisc += p.discount_value;
+    else if(p.discount_type==='percent')  itemDisc += Math.round(sub * p.discount_value/100);
+    else if(p.discount_type==='free_shipping') shipDisc = fee; // ส่งฟรีเป็นได้แค่ฟรีทั้งหมด ไม่ทบซ้อน
+  });
+  itemDisc = Math.min(itemDisc, sub); // กันลดเกินยอดสินค้าเวลาซ้อนหลายโค้ด fixed รวมกัน
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDisc + shipDisc;
   const total = Math.max(0, sub - itemDisc + feeAfter);
@@ -2185,8 +2186,15 @@ async function applyPromo(codeOverride){
     const sub = cartTotal();
     if((p.min_order||0) > sub){ showMsg('ต้องมียอดสินค้าขั้นต่ำ ฿'+p.min_order, false); return; }
     if(!cartMatchesPromoScope(p)){ showMsg('โค้ดนี้ใช้ได้เฉพาะกับสินค้าบางรายการเท่านั้น — ตะกร้าของคุณยังไม่มีสินค้านั้น', false); return; }
-    appliedPromo = p;
+    if(appliedPromos.some(x => x.id === p.id)){ showMsg('ใช้โค้ดนี้อยู่แล้ว', false); return; }
+    // กติกาซ้อนโค้ด: โค้ด "ซ้อนได้" รวมกับโค้ดซ้อนได้อื่นที่ใช้อยู่ได้ / โค้ดเดี่ยว (หรือถ้ามีโค้ดเดี่ยวค้างอยู่) จะแทนที่ทั้งหมด
+    if(p.stackable && appliedPromos.length && appliedPromos.every(x => x.stackable)){
+      appliedPromos.push(p);
+    }else{
+      appliedPromos = [p];
+    }
     msg.style.display = 'none';
+    if(inp) inp.value = '';
     refreshCouponUI();
     updateCartTotals();
   }catch(e){
@@ -2196,26 +2204,34 @@ async function applyPromo(codeOverride){
   }
 }
 
-function removePromo(){
-  appliedPromo = null;
+// ไม่ระบุ id = ลบทั้งหมด, ระบุ id = ลบเฉพาะโค้ดนั้น (กรณีซ้อนหลายโค้ด)
+function removePromo(id){
+  appliedPromos = id ? appliedPromos.filter(p => p.id !== id) : [];
   const inp = document.getElementById('coupon-input'); if(inp) inp.value='';
   refreshCouponUI();
   updateCartTotals();
 }
 
-// สลับ UI ระหว่าง "ช่องกรอกโค้ด" กับ "โค้ดที่ใช้แล้ว" — คูปองใช้ได้ครั้งละ 1 โค้ดต่อออเดอร์เท่านั้น (ตั้งใจ กันบั๊กซ้อนโค้ด)
+// โชว์รายการโค้ดที่ใช้อยู่ (0-หลายอัน) + ช่องกรอกโค้ดเปิดไว้เสมอ (เผื่ออยากเพิ่มโค้ดที่ซ้อนได้ต่อ)
 function refreshCouponUI(){
   const wrap = document.getElementById('coupon-wrap');
   const applied = document.getElementById('coupon-applied');
   if(!wrap || !applied) return;
-  if(appliedPromo){
-    wrap.style.display = 'none';
+  wrap.style.display = 'block';
+  if(appliedPromos.length){
     applied.style.display = 'block';
-    document.getElementById('coupon-applied-code').textContent = '🏷️ '+appliedPromo.code+' — '+promoLabel(appliedPromo);
-    document.getElementById('coupon-applied-desc').textContent = appliedPromo.description || '';
+    applied.innerHTML = appliedPromos.map(p => `
+      <div style="display:flex;align-items:center;gap:8px;background:var(--gl);border-radius:12px;padding:10px 12px;margin-bottom:6px">
+        <span style="font-size:18px">🎟️</span>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">🏷️ ${h(p.code)} — ${h(promoLabel(p))}${p.stackable?' 🔗':''}</div>
+          <div style="font-size:11px;color:var(--soft)">${h(p.description||'')}</div>
+        </div>
+        <button onclick="removePromo('${p.id}')" style="background:none;border:none;color:var(--r);font-size:13px;font-weight:600;cursor:pointer">ลบ</button>
+      </div>`).join('');
   }else{
-    wrap.style.display = 'block';
     applied.style.display = 'none';
+    applied.innerHTML = '';
   }
   renderSuggestedPromoChips();
 }
@@ -2468,7 +2484,7 @@ function updateCartTotals(){
   }
   // ค่าส่ง: ส่งฟรี → ฟรี, ยังไม่ปักหมุด → ข้อความ, ปกติ → ตัวเลข
   if(feeEl){
-    if(appliedPromo && appliedPromo.discount_type==='free_shipping' && o.feeKnown) feeEl.textContent='ฟรี';
+    if(appliedPromos.some(p=>p.discount_type==='free_shipping') && o.feeKnown) feeEl.textContent='ฟรี';
     else feeEl.textContent = o.feeKnown ? '฿'+o.fee.toLocaleString() : 'ยังไม่ได้ปักหมุด';
   }
   if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
