@@ -2619,7 +2619,34 @@ function renderHomeGrid() {
 
   el.innerHTML = html;
   setupColScrollDrag();
+  startHomeAutoScroll();
 }
+
+// ── Auto-scroll การ์ด Collage หน้าแรก ──
+// เดิม feature นี้มีแค่ใน home_editor.html (พรีวิวให้แอดมินดูเฉยๆ) ไม่เคยต่อมาที่หน้าลูกค้าจริงเลย
+// หยุดถาวรทันทีที่ลูกค้าแตะ/ลากเอง (ไม่ resume ให้ ต่างจาก HE ที่ resume หลังปล่อยเมาส์ — ที่นี่ลูกค้ากำลังดูเมนูจริง ไม่อยากแย่งโฟกัสตอนเขาตั้งใจดูการ์ดใดการ์ดหนึ่งอยู่)
+let homeAutoScrollTimer = null;
+function startHomeAutoScroll(){
+  stopHomeAutoScroll();
+  const el = document.getElementById('colScroll');
+  if(!el || el.scrollWidth <= el.clientWidth + 2) return; // ไม่มีอะไรให้เลื่อน
+  if(!el._autoScrollPauseSet){
+    el._autoScrollPauseSet = true;
+    el.addEventListener('touchstart', stopHomeAutoScroll, {passive:true});
+    el.addEventListener('mousedown', stopHomeAutoScroll);
+  }
+  let lastTs = 0;
+  function tick(ts){
+    if(ts - lastTs > (1000/60)){
+      el.scrollLeft += 1;
+      if(el.scrollLeft >= el.scrollWidth - el.clientWidth - 2){ el.scrollLeft = 0; }
+      lastTs = ts;
+    }
+    homeAutoScrollTimer = requestAnimationFrame(tick);
+  }
+  homeAutoScrollTimer = requestAnimationFrame(tick);
+}
+function stopHomeAutoScroll(){ if(homeAutoScrollTimer){ cancelAnimationFrame(homeAutoScrollTimer); homeAutoScrollTimer=null; } }
 
 // ลากซ้าย-ขวาเลื่อน collage การ์ดหน้าแรก (เมาส์) — touch เลื่อนได้อยู่แล้ว, แพทเทิร์นเดียวกับ setupCatDragScroll
 function setupColScrollDrag(){
