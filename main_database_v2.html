@@ -2623,7 +2623,7 @@ const _actLogSessionId = (crypto.randomUUID ? crypto.randomUUID() : ('s'+Date.no
 let _actLogCache = {};      // key: action_type -> {id, count, items:{label:delta}}
 let _actLogFlushTimers = {};
 let activityLogRows = [];
-const ACT_LOG_ICON = {stock:'📦', category:'🏷️', package:'🎁', he_layout:'🏠', mp_offer:'🥗'};
+const ACT_LOG_ICON = {stock:'📦', category:'🏷️', package:'🎁', he_layout:'🏠', mp_offer:'🥗', kq_status:'🚚'};
 const ACT_LOG_SOURCE_LABEL = {db:'DB', he:'Home Editor', oh:'Operation Hub'};
 
 function logActivity(actionType, itemLabel, delta){

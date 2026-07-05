@@ -122,6 +122,8 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
   <div class="live-dot"></div>
   <!-- code toggle -->
   <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">🏷️ Code</button>
+  <!-- ชื่อผู้ใช้ — ผูกกับปุ่มกดสถานะ (จัดกล่องเสร็จ/ส่งแล้ว) เพื่อเก็บ log ว่าใครกด กันมือลั่นแล้วหาไม่เจอ -->
+  <button class="hdr-btn no-print" id="whoamiBtn" onclick="promptNickname()">👋 ตั้งชื่อ</button>
   <!-- print -->
   <button class="hdr-btn no-print" onclick="openPrint()">🖨️ พิมพ์</button>
   <button class="hdr-btn no-print" onclick="loadAll()">🔄</button>
@@ -182,6 +184,52 @@ function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0")
 function today(){return toISO(new Date());}
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+// created_at เป็น timestamp เต็ม (มี T อยู่แล้ว) ต้องแยกจาก fmtDate ที่รับแค่วันที่เปล่า
+function fmtOrderPlaced(iso){
+  if(!iso)return "—";
+  var d=new Date(iso);
+  return d.toLocaleDateString("th-TH",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+}
+
+// ── ชื่อผู้ใช้ + Activity Log (ใครกดปุ่มสถานะ เมื่อไหร่ — กันมือลั่นแล้วหาไม่เจอ) ──
+var kqCurrentUser=null;
+function loadNickname(){
+  try{ kqCurrentUser=localStorage.getItem("lastNickname")||null; }catch(e){ kqCurrentUser=null; }
+  updateWhoamiBtn();
+}
+function updateWhoamiBtn(){
+  var btn=document.getElementById("whoamiBtn");
+  if(btn)btn.textContent=kqCurrentUser?("👋 "+kqCurrentUser):"👋 ตั้งชื่อ";
+}
+function promptNickname(){
+  var name=prompt("ใส่ชื่อเล่นของคุณ (ระบบจะจำไว้ใช้ตอนกดปุ่มสถานะต่างๆ เช่น จัดกล่องเสร็จ/ส่งแล้ว)",kqCurrentUser||"");
+  if(name===null)return;
+  name=name.trim();
+  if(!name)return;
+  kqCurrentUser=name;
+  try{ localStorage.setItem("lastNickname",name); }catch(e){}
+  updateWhoamiBtn();
+}
+// ต้องมีชื่อก่อนถึงกดปุ่มสถานะได้ — ถ้ายังไม่มี เด้ง prompt ให้กรอกทันที (prompt เป็น blocking ทำให้กดปุ่มเดิมซ้ำได้เลยไม่ต้องกด 2 รอบ)
+function requireKqUser(){
+  if(kqCurrentUser&&kqCurrentUser.trim())return true;
+  promptNickname();
+  return !!(kqCurrentUser&&kqCurrentUser.trim());
+}
+// เขียนทุกครั้งที่กด ไม่ debounce/รวมแถว (ต่างจาก DB) เพราะเป็นการกดที่มีผลจริงต่อออเดอร์ ไม่ใช่ปรับตัวเลขรัวๆ — ต้องมี record แยกทุกครั้งเพื่อสอบย้อนหลังได้
+async function logKqActivity(summary){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    await sb_.from("activity_log").insert({
+      session_id:"kq_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+      actor:kqCurrentUser||"ไม่ทราบชื่อ",
+      source:"kq",
+      action_type:"kq_status",
+      summary:summary,
+      detail:{}
+    });
+  }catch(e){ console.warn("logKqActivity failed:",e); }
+}
 
 // ── STATE ────────────────────────────────────────────────
 var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
@@ -357,7 +405,7 @@ function renderMpQueue(){
       +"<div class='mp-meta'>📍 "+escH(r.delivery_address||"—")+"</div>"
       +"<div class='mp-meta'>⏰ "+escH(r.time_slot_label||r.time_slot||"—")+"</div>"
       +(r.status==="delivered"
-        ?"<span style='font-size:11px;color:var(--g);font-weight:700'>✅ ส่งแล้ว</span>"
+        ?"<span style='font-size:11px;color:var(--g);font-weight:700'>✅ ส่งแล้ว</span><button class='btn-undo' onclick='markMpUndelivered(\""+r.id+"\")'>↩ ยกเลิก</button>"
         :"<button class='btn-mp-done' onclick='markMpDelivered(\""+r.id+"\")'>✅ ส่งแล้ว</button>")
       +"</div>";
   });
@@ -365,9 +413,20 @@ function renderMpQueue(){
   el.innerHTML=html;
 }
 async function markMpDelivered(id){
+  if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
   await sb_.from("mp_deliveries").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
   var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="delivered";
+  logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ✅ ส่งแล้ว");
+  renderMpQueue();
+}
+async function markMpUndelivered(id){
+  if(!requireKqUser())return;
+  if(!confirm("ยกเลิกสถานะ \"ส่งแล้ว\" ใช่ไหม? (เผื่อกดพลาด)"))return;
+  var sb_=getSB(); if(!sb_)return;
+  await sb_.from("mp_deliveries").update({status:"menu_assigned",updated_at:new Date().toISOString()}).eq("id",id);
+  var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="menu_assigned";
+  logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ↩ ยกเลิกส่งแล้ว");
   renderMpQueue();
 }
 
@@ -449,7 +508,8 @@ function renderCard(o){
     +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
     +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
     +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div></div>"
-    +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div></div></div>"
+    +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div>"
+    +"<div class='oc-meta' style='font-size:10px;color:var(--soft)'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
     +"<div class='items-grid'>"+itemsHtml+"</div>"
     +utensilHtml
     +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
@@ -458,15 +518,19 @@ function renderCard(o){
 
 // ── ACTIONS ──────────────────────────────────────────────
 async function markPacked(id){
+  if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
   await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
   render();
 }
 async function markUnpack(id){
+  if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
   await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดกล่อง");
   render();
 }
 
@@ -500,6 +564,7 @@ function lineTag(o){
   }
 })();
 
+loadNickname();
 loadAll();
 setInterval(loadAll,30000);
 </script>
