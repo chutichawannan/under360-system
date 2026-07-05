@@ -2861,7 +2861,7 @@ function renderRecipesTab(){
 
   if(pinnedItems.length){
     html += `<div class="line-group ptt-group"><h2 class="ptt-head"><span class="ptt-pill">PTT</span>ปักหมุดไว้บนสุด (${pinnedItems.length}) <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">— ลากเพื่อเรียงลำดับ</span></h2>`;
-    pinnedItems.forEach((r,idx)=>{ html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:false}); });
+    pinnedItems.forEach((r,idx)=>{ html += renderRecipeCard(r, computeTotals(r), {pinIdx:idx, pinTotal:pinnedItems.length, draggable:true}); });
     html += `</div>`;
   }
 
@@ -3061,7 +3061,7 @@ function renderRecipeCard(r, tot, pinInfo){
   }
   toggles += `<label class="row-toggle-lbl" title="เปิดขายอยู่ตอนนี้"><input type="checkbox" class="selling-toggle" data-id="${r.id}" ${isSelling?'checked':''}>เปิดขาย</label>`;
 
-  let row = `<div class="card${isPinned?' is-pinned':''}${isOpen?' is-open':''}" data-id="${r.id}">
+  let row = `<div class="card${isPinned?' is-pinned':''}${isOpen?' is-open':''}" data-id="${r.id}"${isDraggable?` draggable="true"`:''}>
     <div class="row recipe-row${!isSelling?' not-selling':''}" data-id="${r.id}">
       <div class="row-toggles">${toggles}</div>
       <div class="code-col">
