@@ -52,15 +52,16 @@ input,select,textarea{font-family:inherit;}
 .col-scroll-he::-webkit-scrollbar{display:none;}
 .col-scroll-he.dragging{cursor:grabbing;user-select:none;}
 /* continuous — ไม่ paginate, กว้างคงที่ให้การ์ดถัดไปโผล่ */
-.col-group-he{display:flex;flex-direction:row;flex-shrink:0;flex-grow:0;
-  height:200px;gap:6px;width:304px;min-width:304px;max-width:304px;align-items:stretch;}
+/* v0.4.13 — เลิกใช้ระบบจับคู่กลุ่ม (group/solo) ที่เคยทำให้การ์ดใหม่เรนเดอร์ผิดขนาด
+   เปลี่ยนเป็นการ์ดอิสระ 4 ฟอแมต ขนาดคงที่ตายตัว ไม่ขึ้นกับการ์ดข้างเคียงอีกต่อไป
+   ค่า px เดียวกันเป๊ะกับที่ liff_customer.html ใช้จริง — พรีวิวตรงนี้ = สิ่งที่ลูกค้าเห็นจริง 100% */
 .col-card-he{border-radius:14px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
 .col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.col-card-he.lg{flex:0 0 182px;width:182px;}
-.col-col-he{flex:0 0 116px;width:116px;display:flex;flex-direction:column;gap:6px;}
-.col-card-he.sm{flex:1;}
+.col-card-he.fmt-square{width:190px;height:190px;}
+.col-card-he.fmt-portrait{width:150px;height:230px;}
+.col-card-he.fmt-full{width:360px;height:170px;}
+.col-card-he.fmt-tiny{width:110px;height:110px;}
 .col-card-he.active{border-color:var(--g);}
-.col-card-he.solo{flex:1!important;width:100%!important;} /* large card fills full group when alone */
 .col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
 .col-card-he.empty span{font-size:24px;}
 .col-ov-he{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.04),rgba(0,0,0,.56));}
@@ -281,15 +282,15 @@ async function loadCards(){
     cards = (data||[]).map(r=>({
       id:r.section_key, title:r.title||'', subtitle:r.subtitle||'',
       bg_color:r.bg_color||'#1F4D3A', bg_image:r.bg_image||'',
-      size:(r.col_span||2)>=3?'large':'small',
+      size:COL_SPAN_TO_SIZE[r.col_span]||'square',
       link_cat:(r.item_filter||{}).category||(r.item_filter||{}).he_group||'',
       sort_order:r.sort_order||0
     }));
   }catch(e){
     cards=[
-      {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'large',link_cat:'meal_hp',sort_order:0,overlay:'gradient'},
-      {id:'meal_lc',title:'Low Carb',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'meal_lc',sort_order:1},
-      {id:'weekly',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'small',link_cat:'__anchor__',sort_order:2}
+      {id:'meal_hp',title:'HP Meal Plan',subtitle:'High Protein · 7 เมนู/สัปดาห์',bg_color:'#1F4D3A',bg_image:'',size:'square',link_cat:'meal_hp',sort_order:0,overlay:'gradient'},
+      {id:'meal_lc',title:'Low Carb',subtitle:'Low Carb · ลดน้ำหนัก',bg_color:'#2D6B53',bg_image:'',size:'tiny',link_cat:'meal_lc',sort_order:1},
+      {id:'weekly',title:'Weekly Menu',subtitle:'Special เปลี่ยนทุปดาห์',bg_color:'#3D8B6E',bg_image:'',size:'tiny',link_cat:'__anchor__',sort_order:2}
     ];
   }
   renderAll();
@@ -364,50 +365,35 @@ function saveCatOrder(){
 // ── RENDER COLLAGE ──
 function renderAll(){ renderPreview(); renderCardList(); }
 
+// v0.4.13 — เลิกจับกลุ่ม large+small เข้าด้วยกัน (เคยเป็นต้นเหตุบั๊ก "การ์ดใหม่ขนาดเพี้ยน"
+// เพราะการ์ดที่โดดเดี่ยวในกลุ่มจะยืดเต็ม 100% ไม่ว่าตั้งใจให้ใหญ่หรือเล็ก) — ตอนนี้การ์ดแต่ละใบ
+// อิสระจากกัน ขนาดคงที่ตาม format (จตุรัส/แนวตั้ง/เต็มผืน/จิ๋ว) เสมอ ไม่ขึ้นกับการ์ดข้างเคียง
+const CARD_FMT_CLASS = {square:'fmt-square', portrait:'fmt-portrait', full:'fmt-full', tiny:'fmt-tiny'};
+const CARD_FMT_LABEL = {square:'◼ จตุรัส', portrait:'▯ แนวตั้ง', full:'▬ เต็มผืน', tiny:'▪ จิ๋ว'};
+// เก็บ format ไว้ในคอลัมน์ col_span เดิม (เลข 1-5) ไม่ต้องเพิ่มคอลัมน์ใหม่ — ค่าเก่า 2(small)/4(large)
+// ยังอ่านถูกต้องอัตโนมัติ (map ไปที่ tiny/square) การ์ดเก่าที่เคยสร้างไว้จึงไม่ขยับเลย
+const COL_SPAN_TO_SIZE = {1:'tiny', 2:'tiny', 3:'portrait', 4:'square', 5:'full'};
+const SIZE_TO_COL_SPAN = {tiny:2, portrait:3, square:4, full:5};
+
 function renderPreview(){
   const el = document.getElementById('colScroll');
   if(!cards.length){ el.innerHTML='<div class="empty-txt">ยังไม่มี card</div>'; return; }
-
-  // Group: consecutive [large, sm, sm] or [sm, sm] or [large] 
-  const groups=[];
-  let i=0;
-  while(i<cards.length){
-    const g=[];
-    g.push(cards[i]); i++;
-    // fill right column if first is large
-    while(i<cards.length && cards[i].size==='small' && g.length<3){ g.push(cards[i]); i++; }
-    groups.push(g);
-  }
-
-  el.innerHTML = groups.map((g,gi)=>{
-    const main=g[0];
-    const alone = g.length===1; // large card with no small cards
-    let html='<div class="col-group-he">';
-    html+=renderPrevCard(main, cards.indexOf(main), alone?'solo':'');
-    if(!alone && g.length>1){
-      html+='<div class="col-col-he">';
-      g.slice(1).forEach(c=>{ html+=renderPrevCard(c, cards.indexOf(c)); });
-      html+='</div>';
-    }
-    html+='</div>';
-    return html;
-  }).join('');
-
-  
+  el.innerHTML = cards.map((c,idx)=>renderPrevCard(c, idx)).join('');
 }
 
-function renderPrevCard(c,idx,extraClass){
-  const isLg=c.size==='large';
+function renderPrevCard(c,idx){
+  const fmt = CARD_FMT_CLASS[c.size] ? c.size : 'square'; // fallback เผื่อข้อมูลเก่า/ค่าผิด
+  const isTiny = fmt==='tiny';
   const bg=`background:${c.bg_color}`;
   const img=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:'';
   const active=activeCardIdx===idx?' active':'';
-  return `<div class="col-card-he ${isLg?'lg':'sm'}${active}${extraClass?' '+extraClass:''}" style="${bg}" onclick="selectCard(${idx})">
+  return `<div class="col-card-he ${CARD_FMT_CLASS[fmt]}${active}" style="${bg}" onclick="selectCard(${idx})">
     ${img}
     <div class="col-ov-he"></div>
     <div class="col-body-he">
-      <div class="col-title-he${isLg?'':' sm'}">${esc(c.title)}</div>
+      <div class="col-title-he${isTiny?' sm':''}">${esc(c.title)}</div>
       <div class="col-sub-he">${esc(c.subtitle)}</div>
-      ${isLg&&c.show_cta!==false?`<span class="col-cta-he">${esc(c.cta_text||'ดูเมนู →')}</span>`:''}
+      ${!isTiny&&c.show_cta!==false?`<span class="col-cta-he">${esc(c.cta_text||'ดูเมนู →')}</span>`:''}
     </div>
     <div class="sel-indicator">✓</div>
   </div>`;
@@ -422,7 +408,7 @@ function renderCardList(){
       <div class="card-list-thumb">${thumbBg}</div>
       <div class="card-list-info">
         <div class="card-list-name">${esc(c.title)||'(ไม่มีชื่อ)'}</div>
-        <div class="card-list-sz">${c.size==='large'?'⬛ ใหญ่':'▪ เล็ก'} · #${i+1}</div>
+        <div class="card-list-sz">${CARD_FMT_LABEL[c.size]||CARD_FMT_LABEL.square} · #${i+1}</div>
       </div>
       <button class="card-del-btn" onclick="event.stopPropagation();deleteCard(${i})">🗑</button>
     </div>`;
@@ -473,11 +459,13 @@ function renderEditor(){
     <div class="cep-body">
       <div class="field">
         <label>ขนาด Card</label>
-        <div class="size-btns">
-          <button class="size-btn${c.size==='large'?' on':''}" onclick="setSize('large')">⬛ ใหญ่ (2/3 จอ)</button>
-          <button class="size-btn${c.size==='small'?' on':''}" onclick="setSize('small')">▪ เล็ก (1/3 จอ)</button>
+        <div class="size-btns" style="flex-wrap:wrap">
+          <button class="size-btn${c.size==='square'?' on':''}" onclick="setSize('square')" style="flex:1 1 45%">◼ จตุรัส</button>
+          <button class="size-btn${c.size==='portrait'?' on':''}" onclick="setSize('portrait')" style="flex:1 1 45%">▯ แนวตั้ง</button>
+          <button class="size-btn${c.size==='full'?' on':''}" onclick="setSize('full')" style="flex:1 1 45%">▬ เต็มผืน</button>
+          <button class="size-btn${c.size==='tiny'?' on':''}" onclick="setSize('tiny')" style="flex:1 1 45%">▪ จิ๋ว</button>
         </div>
-        <div class="field-hint">ใหญ่ = 215×210px · เล็ก = 143×99px ที่หน้าจอ 390px</div>
+        <div class="field-hint">จตุรัส 190×190 · แนวตั้ง 150×230 · เต็มผืน 360×170 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ)</div>
       </div>
 
       <div class="field">
@@ -497,8 +485,8 @@ function renderEditor(){
           <div class="img-upload-txt">อัพโหลดรูป</div>
           <div class="img-upload-hint" id="uploadHint">
             PNG/JPEG/WebP · ไม่เกิน 1MB · PNG โปร่งใสได้<br>
-            <b>Card ใหญ่:</b> แนะนำ 800×800px (1:1) หรือ 1000×900px<br>
-            <b>Card เล็ก:</b> แนะนำ 800×640px (5:4 แนวนอน)
+            <b>จตุรัส:</b> แนะนำ 800×800px (1:1) · <b>แนวตั้ง:</b> 700×1050px (2:3)<br>
+            <b>เต็มผืน:</b> 1200×560px (แนวนอนกว้าง) · <b>จิ๋ว:</b> 600×600px (1:1)
           </div>
         </div>
         <div class="upload-progress" id="uploadProg"><div class="bar" id="uploadBar" style="width:0"></div></div>
@@ -521,9 +509,9 @@ function renderEditor(){
         </div>
       </div>
 
-      ${c.size==='large'?`
+      ${c.size!=='tiny'?`
       <div class="field">
-        <label>ปุ่ม CTA (การ์ดใหญ่)</label>
+        <label>ปุ่ม CTA (ซ่อนอัตโนมัติเมื่อเลือกฟอแมต "จิ๋ว" เพราะพื้นที่เล็กเกินไป)</label>
         <label style="display:flex;align-items:center;gap:8px;margin-bottom:6px;cursor:pointer">
           <input type="checkbox" id="c-show-cta" ${c.show_cta!==false?'checked':''} onchange="liveUpdate()">
           <span style="font-size:14px">แสดงปุ่ม</span>
@@ -669,7 +657,7 @@ function setOverlay(type){ if(activeCardIdx===null)return; cards[activeCardIdx].
 function setColor(col){ if(activeCardIdx===null)return; cards[activeCardIdx].bg_color=col; document.getElementById('c-color').value=col; renderAll(); renderEditor(); }
 
 function addCard(){
-  cards.push({id:'card_'+Date.now(),title:'Card ใหม่',subtitle:'',bg_color:'#2D6B53',bg_image:'',size:'small',link_cat:'',sort_order:cards.length});
+  cards.push({id:'card_'+Date.now(),title:'Card ใหม่',subtitle:'',bg_color:'#2D6B53',bg_image:'',size:'square',link_cat:'',sort_order:cards.length});
   activeCardIdx=cards.length-1;
   renderAll(); renderEditor();
   setTimeout(()=>{
@@ -930,8 +918,8 @@ async function saveAll(){
     for(let i=0;i<cards.length;i++){
       const c=cards[i];
       await sb.from('home_layout').upsert({
-        section_key:c.id, section_type:c.size==='large'?'meal_plan':'promo',
-        col_start:1,row_start:i+1, col_span:c.size==='large'?4:2, row_span:c.size==='large'?4:2,
+        section_key:c.id, section_type:'promo', // 'meal_plan'/'promo' ทั้งคู่ถูกรวมเป็น collage เดียวกันฝั่ง liff_customer.html อยู่แล้ว ไม่ผูกกับขนาดอีกต่อไป
+        col_start:1,row_start:i+1, col_span:SIZE_TO_COL_SPAN[c.size]||4, row_span:SIZE_TO_COL_SPAN[c.size]||4,
         title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image||'',
         text_color:'#fff',
         item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}, {overlay:c.overlay||'gradient'}),

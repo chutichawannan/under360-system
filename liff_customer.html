@@ -379,23 +379,19 @@ body{background:#fff!important}
 
 
 /* ── Collage swipeable strip ── */
+/* v0.4.13 — เลิกจับกลุ่ม large+small (col-group/col-col) เพราะเป็นต้นเหตุที่การ์ดใหม่ใน HE
+   เรนเดอร์ผิดขนาด (การ์ดโดดเดี่ยวยืดเต็ม 100% ไม่ว่าตั้งใจให้ใหญ่หรือเล็ก) — การ์ดแต่ละใบตอนนี้
+   อิสระ ขนาดคงที่ตาม format เดียวกับที่ home_editor.html พรีวิว (px ตรงกันเป๊ะ = WYSIWYG จริง) */
 .col-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;display:flex;gap:10px;padding:0 16px 12px;scrollbar-width:none;}
 .col-scroll::-webkit-scrollbar{display:none;}
-/* Group = viewport - 56px ให้ card ถัดไปโผล่ ~30px (peek effect) */
 #homeGrid .col-scroll{padding-right:0!important;} /* left padding set via inline style in JS */
-/* left gap handled via JS inline style on first group */
-.col-group:last-child{margin-right:20px!important;}   /* trailing gap to show next card peek */
 .sec-title-row{padding:16px 16px 8px!important;}
-.col-group{display:flex;flex-shrink:0;
-  /* clamp: ไม่เล็กกว่า 300px, ไม่ใหญ่กว่า 334px */
-  width:clamp(300px,calc(100vw - 56px),334px);
-  min-width:clamp(300px,calc(100vw - 56px),334px);
-  height:224px;gap:8px;}
 .col-card{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;}
 .col-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.col-card.lg{flex:3;}
-.col-col{flex:2;display:flex;flex-direction:column;gap:8px;}
-.col-card.sm{flex:1;}
+.col-card.fmt-square{width:190px;height:190px;}
+.col-card.fmt-portrait{width:150px;height:230px;}
+.col-card.fmt-full{width:360px;height:170px;}
+.col-card.fmt-tiny{width:110px;height:110px;}
 .col-ov{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.58) 100%);}
 .col-body{position:absolute;bottom:0;left:0;right:0;padding:14px 14px 12px;}
 .col-title{font-size:16px;font-weight:800;color:#fff;line-height:1.2;}
@@ -1615,7 +1611,9 @@ function renderMenu() {
     const ctrl = isMealPlan
       ? `<button class="mi-v2-add" disabled style="opacity:.4;cursor:not-allowed;font-size:10px;width:auto;padding:0 8px" title="Meal Plan — สมัครผ่าน Line OA">แพลน</button>`
       : isOut
-      ? `<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>`
+      ? (qty>0
+          ? `<div class="mi-v2-qc"><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" onclick="event.stopPropagation();cart=cart.filter(c=>c.id!=='${item.id}');saveCart();renderMenu();updateCartUI();if(document.getElementById('s-cart').classList.contains('on'))renderCart();">🗑</button></div>`
+          : `<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>`)
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
@@ -2529,33 +2527,20 @@ function renderHomeGrid() {
     }
     html += '<div class="col-scroll" id="colScroll" style="padding-left:16px!important">';
 
+    // v0.4.13 — ไม่จับกลุ่ม large+small อีกต่อไป (เคยทำให้การ์ดโดดเดี่ยวยืดเต็มช่องผิดขนาด)
+    // การ์ดแต่ละใบอิสระ ขนาดคงที่ตาม format — เดียวกับ COL_SPAN_TO_SIZE ใน home_editor.html เป๊ะ
+    var COL_SPAN_TO_SIZE = {1:'tiny', 2:'tiny', 3:'portrait', 4:'square', 5:'full'};
     var cc = colCards.map(function(s){
       var f=s.item_filter||{};
       return { cat:(f.category||f.he_group||''), title:(s.title||''), subtitle:(s.subtitle||''),
-               bg_color:s.bg_color, bg_image:s.bg_image, size:((s.col_span||2)>=3?'large':'small') };
+               bg_color:s.bg_color, bg_image:s.bg_image, size:COL_SPAN_TO_SIZE[s.col_span]||'square' };
     });
-    // จัดกลุ่มแบบ HE: การ์ดนึง + การ์ดเล็กที่ตามมา (สูงสุด 3 ต่อกลุ่ม)
-    var groups=[], gi=0;
-    while (gi<cc.length){
-      var grp=[cc[gi]]; gi++;
-      while (gi<cc.length && cc[gi].size==='small' && grp.length<3){ grp.push(cc[gi]); gi++; }
-      groups.push(grp);
-    }
-    var cardHtml=function(c,cls){
+    cc.forEach(function(c){
+      var isTiny=(c.size==='tiny');
       var img=c.bg_image?'<img src="'+c.bg_image+'" onerror="this.remove()">':'';
-      var sc=(cls==='sm'?' sm':'');
-      var cta=(cls==='lg'?'<span class="col-cta">ดูเมนู →</span>':'');
-      return '<div class="col-card '+cls+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
-    };
-    groups.forEach(function(grp){
-      html += '<div class="col-group">';
-      html += cardHtml(grp[0],'lg');           // การ์ดหลัก (solo ก็เต็มช่อง)
-      if (grp.length>1){
-        html += '<div class="col-col">';
-        for (var j=1;j<grp.length;j++) html += cardHtml(grp[j],'sm');
-        html += '</div>';
-      }
-      html += '</div>';
+      var sc=(isTiny?' sm':'');
+      var cta=(!isTiny?'<span class="col-cta">ดูเมนู →</span>':'');
+      html += '<div class="col-card fmt-'+c.size+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
     });
     html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // right spacer
     html += '</div>'; // close col-scroll
@@ -2589,7 +2574,9 @@ function renderHomeGrid() {
         : '';
       var tags = (m.calories?'<span class="mi-v2-kcal">'+m.calories+' kcal</span>':'')+(m.protein?'<span class="mi-v2-pro">โปรตีน '+m.protein+'g</span>':'')+(stockBadge?'<span>'+stockBadge+'</span>':'');
       var ctrl = isOut
-        ? '<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>'
+        ? (qty>0
+            ? '<div class="mi-v2-qc"><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" data-mid="'+m.id+'" onclick="event.stopPropagation();var mid=this.dataset.mid;cart=cart.filter(function(c){return c.id!==mid;});saveCart();renderMenu();updateCartUI();if(document.getElementById(\'s-cart\').classList.contains(\'on\'))renderCart();">🗑</button></div>'
+            : '<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>')
         : qty===0
         ? '<button class="mi-v2-add" data-mid="'+m.id+'" onclick="event.stopPropagation();addItem(this.dataset.mid)">+</button>'
         : '<div class="mi-v2-qc" data-mid="'+m.id+'"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,-1)">−</button><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty(this.parentNode.dataset.mid,1)"'+(remaining<=0?' disabled style="opacity:.35"':'')+'>+</button></div>';

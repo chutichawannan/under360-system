@@ -531,7 +531,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
       <!-- Create form (hidden) -->
       <div id="promoForm" style="display:none;background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px">
-        <div style="font-size:14px;font-weight:700;margin-bottom:12px">สร้างโค้ดส่วนลดใหม่</div>
+        <div id="promoFormTitle" style="font-size:14px;font-weight:700;margin-bottom:12px">สร้างโค้ดส่วนลดใหม่</div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">รหัสโค้ด</label>
@@ -585,8 +585,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           🌟 แนะนำให้ลูกค้าเห็นตอนเช็คเอาท์ (ไม่ติ๊ก = ลูกค้าต้องพิมพ์โค้ดเอง)
         </label>
         <div style="display:flex;gap:8px">
-          <button class="btn btn-primary" onclick="savePromo()" style="flex:1">💾 บันทึกโค้ด</button>
-          <button class="btn" onclick="document.getElementById('promoForm').style.display='none'">ยกเลิก</button>
+          <button id="promoFormSaveBtn" class="btn btn-primary" onclick="savePromo()" style="flex:1">💾 บันทึกโค้ด</button>
+          <button class="btn" onclick="editingPromoId=null;document.getElementById('promoForm').style.display='none'">ยกเลิก</button>
         </div>
       </div>
 
@@ -1339,9 +1339,15 @@ async function loadMessenger(){
 var PROMO_TYPE_LABEL={fixed:"ลดเงินสด",percent:"ลด %",free_shipping:"ส่งฟรี"};
 var PROMO_SCOPE_LABEL={all:"ทั้งร้าน",sku:"เมนูที่เลือก",package:"แพคเกจที่เลือก",mp_offer:"มีลแพลนที่เลือก"};
 
+var editingPromoId=null; // uuid ของโค้ดที่กำลังแก้ไข — null = โหมดสร้างใหม่
+var _loadedPromos=[];    // แคชโค้ดที่โหลดล่าสุดจาก loadPromos() ไว้ใช้เปิดฟอร์มแก้ไข
+
 function showCreatePromo(){
   var f=document.getElementById("promoForm");
   if(!f)return;
+  editingPromoId=null;
+  document.getElementById("promoFormTitle").textContent="สร้างโค้ดส่วนลดใหม่";
+  document.getElementById("promoFormSaveBtn").textContent="💾 บันทึกโค้ด";
   f.style.display="block";
   ["pc-code","pc-value","pc-min","pc-limit","pc-exp","pc-desc"].forEach(function(id){var e=document.getElementById(id);if(e)e.value="";});
   document.getElementById("pc-type").value="fixed";
@@ -1350,6 +1356,32 @@ function showCreatePromo(){
   _promoScopeSelected=[];
   updatePromoForm();
   updatePromoScopeUI();
+}
+
+// แก้ไขโค้ดที่ยังไม่มีใครใช้เลย (used_count===0) — ถ้าเคยใช้แล้วห้ามแก้ เพื่อไม่ให้เงื่อนไขเปลี่ยนย้อนหลังกับออเดอร์ที่ใช้โค้ดไปแล้ว
+async function editPromo(id){
+  var p=_loadedPromos.find(function(x){return x.id===id;});
+  if(!p)return;
+  if((p.used_count||0)>0){alert("โค้ดนี้ถูกใช้ไปแล้ว แก้ไขไม่ได้ — ปิดโค้ดนี้แล้วสร้างโค้ดใหม่แทน");return;}
+  var f=document.getElementById("promoForm");
+  if(!f)return;
+  editingPromoId=id;
+  document.getElementById("promoFormTitle").textContent="แก้ไขโค้ด "+p.code;
+  document.getElementById("promoFormSaveBtn").textContent="💾 บันทึกการแก้ไข";
+  f.style.display="block";
+  document.getElementById("pc-code").value=p.code||"";
+  document.getElementById("pc-type").value=p.discount_type||"fixed";
+  document.getElementById("pc-value").value=p.discount_value||"";
+  document.getElementById("pc-min").value=p.min_order||"";
+  document.getElementById("pc-limit").value=p.usage_limit||"";
+  document.getElementById("pc-exp").value=p.expires_at||"";
+  document.getElementById("pc-desc").value=p.description||"";
+  document.getElementById("pc-suggested").checked=!!p.show_suggested;
+  document.getElementById("pc-scope-type").value=p.scope_type||"all";
+  _promoScopeSelected=(p.scope_value||[]).slice();
+  updatePromoForm();
+  await updatePromoScopeUI();
+  f.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
 // type=free_shipping → ซ่อนช่องมูลค่า (ไม่ต้องกรอก)
@@ -1454,20 +1486,22 @@ async function savePromo(){
     discount_value:(type==="free_shipping"?0:val),
     min_order:parseInt(document.getElementById("pc-min").value)||0,
     usage_limit:parseInt(document.getElementById("pc-limit").value)||0,
-    used_count:0,
-    is_active:true,
     description:(document.getElementById("pc-desc").value||"").trim(),
     expires_at:document.getElementById("pc-exp").value||null
   };
+  if(!editingPromoId){ row.used_count=0; row.is_active=true; } // ค่าเริ่มต้นเฉพาะตอนสร้างใหม่ — ตอนแก้ไขไม่แตะสถานะเปิด/ปิดหรือจำนวนที่ใช้ไปแล้ว
   if(hasPromoScopeColumns){
     row.scope_type=scopeType;
     row.scope_value=(scopeType==="all"?[]:_promoScopeSelected.slice());
     row.show_suggested=document.getElementById("pc-suggested").checked;
   }
   try{
-    var res=await sb_.from("promo_codes").insert(row);
+    var res=editingPromoId
+      ? await sb_.from("promo_codes").update(row).eq("id",editingPromoId)
+      : await sb_.from("promo_codes").insert(row);
     if(res.error)throw res.error;
     document.getElementById("promoForm").style.display="none";
+    editingPromoId=null;
     loadPromos();
   }catch(e){
     if((e.message||"").indexOf("duplicate")>=0||e.code==="23505")alert("โค้ดนี้มีอยู่แล้ว ใช้รหัสอื่น");
@@ -1511,6 +1545,7 @@ async function loadPromos(){
   try{
     var res=await sb_.from("promo_codes").select("*").order("created_at",{ascending:false});
     if(res.error)throw res.error; var data=res.data||[];
+    _loadedPromos=data;
     if(!data.length){el.innerHTML="<div style='padding:30px;text-align:center;color:var(--ink-soft);font-size:13px'>ยังไม่มีโค้ดส่วนลด — กด \"+ สร้างโค้ดใหม่\"</div>";return;}
     var today=today2();
     var h="";
@@ -1534,6 +1569,7 @@ async function loadPromos(){
       else if(usedUp)h+="<div style='font-size:11px;color:#DC2626;font-weight:600;margin-top:3px'>🚫 ใช้ครบจำนวนแล้ว</div>";
       h+="</div>";
       h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+      if((p.used_count||0)===0)h+="<button class='btn' onclick=\"editPromo('"+p.id+"')\" style='font-size:12px;padding:5px 10px'>✏️ แก้ไข</button>";
       h+="<button class='btn' onclick=\"togglePromo('"+p.id+"',"+(p.is_active?"false":"true")+")\" style='font-size:12px;padding:5px 10px'>"+(p.is_active?"🟢 เปิด":"⚪ ปิด")+"</button>";
       h+="<button class='btn' onclick=\"delPromo('"+p.id+"','"+esc2(p.code)+"')\" style='font-size:12px;padding:5px 10px;color:#DC2626'>ลบ</button>";
       h+="</div></div></div>";
