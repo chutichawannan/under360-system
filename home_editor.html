@@ -61,6 +61,7 @@ input,select,textarea{font-family:inherit;}
 .col-card-he.fmt-portrait{width:150px;height:230px;}
 .col-card-he.fmt-full{width:360px;height:170px;}
 .col-card-he.fmt-tiny{width:110px;height:110px;}
+.col-tiny-stack-he{display:flex;flex-direction:column;gap:10px;flex-shrink:0;} /* จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ สูงรวม 230px เท่าแนวตั้ง */
 .col-card-he.active{border-color:var(--g);}
 .col-card-he.empty{background:#F0F0F0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:#bbb;font-size:11px;}
 .col-card-he.empty span{font-size:24px;}
@@ -381,7 +382,18 @@ const SIZE_TO_COL_SPAN = {tiny:2, portrait:3, square:4, full:5};
 function renderPreview(){
   const el = document.getElementById('colScroll');
   if(!cards.length){ el.innerHTML='<div class="empty-txt">ยังไม่มี card</div>'; return; }
-  el.innerHTML = cards.map((c,idx)=>renderPrevCard(c, idx)).join('');
+  // จิ๋ว 2 อันติดกัน (เรียงตามลำดับ) → ซ้อนเป็นคอลัมน์เดียว ไม่วางเรียงแนวนอนเหมือนฟอแมตอื่น
+  const parts = []; let i = 0;
+  while(i < cards.length){
+    if(cards[i].size==='tiny' && cards[i+1] && cards[i+1].size==='tiny'){
+      parts.push(`<div class="col-tiny-stack-he">${renderPrevCard(cards[i], i)}${renderPrevCard(cards[i+1], i+1)}</div>`);
+      i += 2;
+    }else{
+      parts.push(renderPrevCard(cards[i], i));
+      i += 1;
+    }
+  }
+  el.innerHTML = parts.join('');
 }
 
 function renderPrevCard(c,idx){
@@ -468,7 +480,7 @@ function renderEditor(){
           <button class="size-btn${c.size==='full'?' on':''}" onclick="setSize('full')" style="flex:1 1 45%">▬ เต็มผืน</button>
           <button class="size-btn${c.size==='tiny'?' on':''}" onclick="setSize('tiny')" style="flex:1 1 45%">▪ จิ๋ว</button>
         </div>
-        <div class="field-hint">จตุรัส 190×190 · แนวตั้ง 150×230 · เต็มผืน 360×170 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ)</div>
+        <div class="field-hint">จตุรัส 190×190 · แนวตั้ง 150×230 · เต็มผืน 360×170 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ) · ถ้ามีจิ๋ว 2 การ์ดติดกันในลำดับ จะซ้อนกันเป็นคอลัมน์เดียวอัตโนมัติ (สูงรวม 230px เท่าแนวตั้ง)</div>
       </div>
 
       <div class="field">

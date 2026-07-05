@@ -393,6 +393,7 @@ body{background:#fff!important}
 .col-card.fmt-portrait{width:150px;height:230px;}
 .col-card.fmt-full{width:360px;height:170px;}
 .col-card.fmt-tiny{width:110px;height:110px;}
+.col-tiny-stack{display:flex;flex-direction:column;gap:10px;flex-shrink:0;} /* จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ สูงรวม 230px เท่าแนวตั้ง */
 .col-ov{position:absolute;inset:0;background:linear-gradient(165deg,rgba(0,0,0,.05) 0%,rgba(0,0,0,.58) 100%);}
 .col-body{position:absolute;bottom:0;left:0;right:0;padding:14px 14px 12px;}
 .col-title{font-size:16px;font-weight:800;color:#fff;line-height:1.2;}
@@ -2551,13 +2552,24 @@ function renderHomeGrid() {
       return { cat:(f.category||f.he_group||''), title:(s.title||''), subtitle:(s.subtitle||''),
                bg_color:s.bg_color, bg_image:s.bg_image, size:COL_SPAN_TO_SIZE[s.col_span]||'square' };
     });
-    cc.forEach(function(c){
+    var cardHtml = function(c){
       var isTiny=(c.size==='tiny');
       var img=c.bg_image?'<img src="'+c.bg_image+'" onerror="this.remove()">':'';
       var sc=(isTiny?' sm':'');
       var cta=(!isTiny?'<span class="col-cta">ดูเมนู →</span>':'');
-      html += '<div class="col-card fmt-'+c.size+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
-    });
+      return '<div class="col-card fmt-'+c.size+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
+    };
+    // จิ๋ว 2 อันติดกัน (เรียงตามลำดับ) → ซ้อนเป็นคอลัมน์เดียว เดียวกับ home_editor.html เป๊ะ
+    var ci = 0;
+    while (ci < cc.length){
+      if (cc[ci].size==='tiny' && cc[ci+1] && cc[ci+1].size==='tiny'){
+        html += '<div class="col-tiny-stack">'+cardHtml(cc[ci])+cardHtml(cc[ci+1])+'</div>';
+        ci += 2;
+      }else{
+        html += cardHtml(cc[ci]);
+        ci += 1;
+      }
+    }
     html += '<div style="min-width:16px;flex-shrink:0;height:1px;"></div>'; // right spacer
     html += '</div>'; // close col-scroll
   }
