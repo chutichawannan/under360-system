@@ -728,6 +728,7 @@ body{background:#fff!important}
 
     <!-- ═══ COUPON ═══ -->
     <div class="sec-head">🎟️ คูปอง / โค้ดส่วนลด</div>
+    <div id="promo-suggest-wrap" style="padding:0 14px 8px;display:none"></div>
     <div id="coupon-wrap" style="padding:0 14px 4px">
       <div style="display:flex;gap:8px">
         <input id="coupon-input" class="ifield" type="text" placeholder="กรอกโค้ด เช่น UNDER50" style="text-transform:uppercase;flex:1"
@@ -1494,6 +1495,7 @@ async function loadPaymentAccount(){
 function goCart() {
   renderCart(); renderDatePick(); renderTimePick(); refreshCouponUI(); showScr('s-cart');
   updateCartTotals();
+  loadSuggestedPromosIfNeeded().then(renderSuggestedPromoChips);
   loadPaymentAccount(); // เลือกบัญชีรับเงินที่ถัวเฉลี่ยแล้ว
   // Google Maps: try immediately, retry if not loaded
   if (typeof google !== 'undefined') {
@@ -2077,6 +2079,64 @@ const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
 // 🎟️ COUPON / DISCOUNT ENGINE
 // ══════════════════════════════════════
 let appliedPromo = null;   // {id,code,discount_type,discount_value,min_order,used_count,description,...}
+let suggestedPromos = [];
+let suggestedPromosLoaded = false;
+
+// โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง
+// scope_value เทียบกับ cart item ตาม type: sku→c.code, package→c.package_id, mp_offer→c.mp_set
+function cartMatchesPromoScope(p){
+  const scopeType = p.scope_type || 'all';
+  if(scopeType === 'all') return true;
+  const scopeValue = Array.isArray(p.scope_value) ? p.scope_value : [];
+  if(!scopeValue.length) return false;
+  return cart.some(c => {
+    if(scopeType === 'sku')      return !c.type && scopeValue.includes(c.code);
+    if(scopeType === 'package')  return c.type === 'package' && scopeValue.includes(c.package_id);
+    if(scopeType === 'mp_offer') return c.type === 'meal_plan' && scopeValue.includes(c.mp_set);
+    return false;
+  });
+}
+
+// โค้ดที่ตั้ง show_suggested=true และยังใช้ได้กับตะกร้าปัจจุบัน (ไม่หมดอายุ/ไม่ครบโควต้า/ถึงขั้นต่ำ/ตรง scope)
+async function loadSuggestedPromosIfNeeded(){
+  if(suggestedPromosLoaded) return;
+  suggestedPromosLoaded = true;
+  try{
+    const { data, error } = await sb.from('promo_codes').select('*').eq('is_active', true).eq('show_suggested', true);
+    if(error) throw error;
+    suggestedPromos = data || [];
+  }catch(e){ suggestedPromos = []; }
+}
+
+function renderSuggestedPromoChips(){
+  const wrap = document.getElementById('promo-suggest-wrap');
+  if(!wrap) return;
+  const today = localYMD(new Date());
+  const sub = cartTotal();
+  const eligible = suggestedPromos.filter(p => {
+    if(p.expires_at && p.expires_at < today) return false;
+    if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit) return false;
+    if((p.min_order||0) > sub) return false;
+    if(!cartMatchesPromoScope(p)) return false;
+    return true;
+  });
+  if(!eligible.length){ wrap.style.display = 'none'; wrap.innerHTML = ''; return; }
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div style="font-size:11.5px;color:var(--soft);font-weight:600;margin-bottom:6px">🎁 โค้ดแนะนำสำหรับคุณ — แตะเพื่อใช้</div>' +
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">' +
+    eligible.map(p => {
+      const active = appliedPromo && appliedPromo.id === p.id;
+      return `<button onclick="tapSuggestedPromo('${p.id}')" style="border:1.5px solid ${active?'var(--g)':'rgba(0,0,0,.12)'};background:${active?'var(--gl)':'#fff'};color:${active?'var(--g)':'var(--ink)'};border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">${active?'✓ ':''}${h(p.code)} — ${h(promoLabel(p))}</button>`;
+    }).join('') +
+    '</div>';
+}
+
+function tapSuggestedPromo(id){
+  const p = suggestedPromos.find(x => x.id === id);
+  if(!p) return;
+  if(appliedPromo && appliedPromo.id === id){ removePromo(); return; }
+  applyPromo(p.code);
+}
 
 // คำนวณยอดทั้งหมด: ยอดสินค้า - ส่วนลด + ค่าส่ง(หลังหักส่งฟรี)
 function computeOrder(){
@@ -2086,8 +2146,8 @@ function computeOrder(){
   let itemDisc = 0, shipDisc = 0;
   if(appliedPromo){
     const p = appliedPromo;
-    // ยอดต่ำกว่าขั้นต่ำ → คูปองใช้ไม่ได้ ตัดทิ้งเงียบๆ
-    if((p.min_order||0) > sub){ appliedPromo = null; refreshCouponUI(); }
+    // ยอดต่ำกว่าขั้นต่ำ หรือตะกร้าไม่มีสินค้าตรง scope แล้ว (เช่นลบสินค้าที่โค้ดผูกไว้ทิ้ง) → คูปองใช้ไม่ได้ ตัดทิ้งเงียบๆ
+    if((p.min_order||0) > sub || !cartMatchesPromoScope(p)){ appliedPromo = null; refreshCouponUI(); }
     else if(p.discount_type==='fixed')    itemDisc = Math.min(p.discount_value, sub);
     else if(p.discount_type==='percent')  itemDisc = Math.round(sub * p.discount_value/100);
     else if(p.discount_type==='free_shipping') shipDisc = fee; // ลดค่าส่งเท่าที่รู้แล้ว
@@ -2105,14 +2165,14 @@ function promoLabel(p){
   return '';
 }
 
-async function applyPromo(){
+async function applyPromo(codeOverride){
   const inp = document.getElementById('coupon-input');
   const msg = document.getElementById('coupon-msg');
-  const code = (inp.value||'').trim().toUpperCase();
+  const code = codeOverride ? codeOverride.toUpperCase() : (inp.value||'').trim().toUpperCase();
   const showMsg = (t,ok)=>{ msg.style.display='block'; msg.textContent=t; msg.style.color = ok?'var(--g)':'var(--r)'; };
   if(!code){ showMsg('กรุณากรอกโค้ด', false); return; }
   const btn = document.getElementById('coupon-btn');
-  btn.disabled = true; btn.textContent = '...';
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
   try{
     const { data, error } = await sb.from('promo_codes').select('*').eq('code', code).limit(1);
     if(error) throw error;
@@ -2126,6 +2186,7 @@ async function applyPromo(){
     if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit){ showMsg('โค้ดถูกใช้ครบจำนวนแล้ว', false); return; }
     const sub = cartTotal();
     if((p.min_order||0) > sub){ showMsg('ต้องมียอดสินค้าขั้นต่ำ ฿'+p.min_order, false); return; }
+    if(!cartMatchesPromoScope(p)){ showMsg('โค้ดนี้ใช้ได้เฉพาะกับสินค้าบางรายการเท่านั้น — ตะกร้าของคุณยังไม่มีสินค้านั้น', false); return; }
     appliedPromo = p;
     msg.style.display = 'none';
     refreshCouponUI();
@@ -2133,7 +2194,7 @@ async function applyPromo(){
   }catch(e){
     showMsg('เกิดข้อผิดพลาด ลองใหม่อีกครั้ง', false);
   }finally{
-    btn.disabled = false; btn.textContent = 'ใช้โค้ด';
+    if(btn){ btn.disabled = false; btn.textContent = 'ใช้โค้ด'; }
   }
 }
 
@@ -2144,7 +2205,7 @@ function removePromo(){
   updateCartTotals();
 }
 
-// สลับ UI ระหว่าง "ช่องกรอกโค้ด" กับ "โค้ดที่ใช้แล้ว"
+// สลับ UI ระหว่าง "ช่องกรอกโค้ด" กับ "โค้ดที่ใช้แล้ว" — คูปองใช้ได้ครั้งละ 1 โค้ดต่อออเดอร์เท่านั้น (ตั้งใจ กันบั๊กซ้อนโค้ด)
 function refreshCouponUI(){
   const wrap = document.getElementById('coupon-wrap');
   const applied = document.getElementById('coupon-applied');
@@ -2158,6 +2219,7 @@ function refreshCouponUI(){
     wrap.style.display = 'block';
     applied.style.display = 'none';
   }
+  renderSuggestedPromoChips();
 }
 
 // ── PAYMENT ACCOUNTS (ถัวเฉลี่ยรายไตรมาส) ────────────────
@@ -2414,6 +2476,7 @@ function updateCartTotals(){
   if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
   if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
   updateQRAmount();
+  if(suggestedPromosLoaded) renderSuggestedPromoChips();
 }
 
 

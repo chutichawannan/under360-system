@@ -566,6 +566,24 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">คำอธิบาย (แสดงให้ลูกค้าเห็น)</label>
           <input id="pc-desc" placeholder="เช่น ส่วนลด ฿50 สำหรับลูกค้าใหม่" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:13px;font-family:inherit">
         </div>
+        <div style="margin-bottom:10px">
+          <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">ใช้ได้กับ</label>
+          <select id="pc-scope-type" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:13px;font-family:inherit" onchange="updatePromoScopeUI()">
+            <option value="all">ทั้งร้าน (ทุกออเดอร์)</option>
+            <option value="sku">เมนูที่เลือก</option>
+            <option value="package">แพคเกจที่เลือก</option>
+            <option value="mp_offer">มีลแพลนที่เลือก</option>
+          </select>
+        </div>
+        <div id="pc-scope-picker" style="display:none;margin-bottom:10px;border:1.5px solid var(--ink-xsoft);border-radius:8px;padding:10px">
+          <input id="pc-scope-search" placeholder="ค้นหาเมนู..." style="display:none;width:100%;padding:7px 9px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:13px;margin-bottom:8px;font-family:inherit" oninput="renderPromoScopeList(this.value)">
+          <div id="pc-scope-list" style="max-height:180px;overflow-y:auto;font-size:13px"></div>
+          <div id="pc-scope-selected-count" style="font-size:11px;color:var(--ink-soft);margin-top:6px"></div>
+        </div>
+        <label style="display:flex;align-items:center;gap:8px;margin-bottom:14px;font-size:13px;font-weight:600;color:var(--ink);cursor:pointer">
+          <input type="checkbox" id="pc-suggested" style="width:16px;height:16px">
+          🌟 แนะนำให้ลูกค้าเห็นตอนเช็คเอาท์ (ไม่ติ๊ก = ลูกค้าต้องพิมพ์โค้ดเอง)
+        </label>
         <div style="display:flex;gap:8px">
           <button class="btn btn-primary" onclick="savePromo()" style="flex:1">💾 บันทึกโค้ด</button>
           <button class="btn" onclick="document.getElementById('promoForm').style.display='none'">ยกเลิก</button>
@@ -753,7 +771,7 @@ function openTab(name,el){
   if(name==="menu")loadMenus();
   if(name==="plan"){buildPlan();loadMpDeliveries();}
   if(name==="messenger")loadMessenger();
-  if(name==="promo")loadPromos();
+  if(name==="promo"){checkPromoScopeCapability().then(loadPromos);}
   if(name==="customer")loadCustomers();
   if(name==="settings")loadGlobalSettings();
   var content=document.querySelector(".content");
@@ -1319,6 +1337,7 @@ async function loadMessenger(){
 // 🎁 PROMO / COUPON MANAGEMENT
 // ══════════════════════════════════════
 var PROMO_TYPE_LABEL={fixed:"ลดเงินสด",percent:"ลด %",free_shipping:"ส่งฟรี"};
+var PROMO_SCOPE_LABEL={all:"ทั้งร้าน",sku:"เมนูที่เลือก",package:"แพคเกจที่เลือก",mp_offer:"มีลแพลนที่เลือก"};
 
 function showCreatePromo(){
   var f=document.getElementById("promoForm");
@@ -1326,7 +1345,11 @@ function showCreatePromo(){
   f.style.display="block";
   ["pc-code","pc-value","pc-min","pc-limit","pc-exp","pc-desc"].forEach(function(id){var e=document.getElementById(id);if(e)e.value="";});
   document.getElementById("pc-type").value="fixed";
+  document.getElementById("pc-scope-type").value="all";
+  document.getElementById("pc-suggested").checked=false;
+  _promoScopeSelected=[];
   updatePromoForm();
+  updatePromoScopeUI();
 }
 
 // type=free_shipping → ซ่อนช่องมูลค่า (ไม่ต้องกรอก)
@@ -1336,13 +1359,95 @@ function updatePromoForm(){
   if(w)w.style.display=(t==="free_shipping")?"none":"block";
 }
 
+// ── 🎯 Promo scope picker (เมนู / แพคเกจ / มีลแพลน ที่โค้ดนี้ใช้ได้) ──
+var _promoScopeCache={sku:null,package:null,mp_offer:null};
+var _promoScopeSelected=[];
+var hasPromoScopeColumns=false; // capability-check: true ถ้ารัน scripts/sql_promo_scope.sql แล้ว
+async function checkPromoScopeCapability(){
+  var sb_=getSB(); if(!sb_)return;
+  try{ var r=await sb_.from("promo_codes").select("scope_type").limit(1); hasPromoScopeColumns=!r.error; }
+  catch(e){ hasPromoScopeColumns=false; }
+}
+
+async function loadPromoScopeOptions(type){
+  if(_promoScopeCache[type])return _promoScopeCache[type];
+  var sb_=getSB(); if(!sb_)return [];
+  var list=[];
+  try{
+    if(type==="sku"){
+      var r1=await sb_.from("menu_items").select("code,name").eq("is_available",true).order("sort_order");
+      list=(r1.data||[]).map(function(m){return{value:m.code,label:m.name+" ("+m.code+")"};});
+    }else if(type==="package"){
+      var r2=await sb_.from("packages").select("id,name,size").eq("is_active",true).order("display_order");
+      list=(r2.data||[]).map(function(p){return{value:p.id,label:p.name+" ("+p.size+")"};});
+    }else if(type==="mp_offer"){
+      var r3=await sb_.from("mp_offer_sets").select("set_key,label").eq("is_active",true).order("display_order");
+      list=(r3.data||[]).map(function(o){return{value:o.set_key,label:o.label};});
+    }
+  }catch(e){ list=[]; }
+  _promoScopeCache[type]=list;
+  return list;
+}
+
+async function updatePromoScopeUI(){
+  var type=document.getElementById("pc-scope-type").value;
+  var picker=document.getElementById("pc-scope-picker");
+  var search=document.getElementById("pc-scope-search");
+  var suggestedBox=document.getElementById("pc-suggested");
+  if(suggestedBox)suggestedBox.disabled=!hasPromoScopeColumns;
+  if(type==="all"){ picker.style.display="none"; return; }
+  if(!hasPromoScopeColumns){
+    picker.style.display="block";
+    search.style.display="none";
+    document.getElementById("pc-scope-list").innerHTML="<div style='padding:8px;color:#DC2626'>⚠️ ต้องรัน SQL ก่อนใช้ฟีเจอร์นี้ (scripts/sql_promo_scope.sql) — ตอนนี้โค้ดจะถูกบันทึกเป็น \"ทั้งร้าน\" ไปก่อน</div>";
+    document.getElementById("pc-scope-selected-count").textContent="";
+    return;
+  }
+  picker.style.display="block";
+  search.style.display=(type==="sku")?"block":"none";
+  search.value="";
+  document.getElementById("pc-scope-list").innerHTML="<div style='padding:8px;color:var(--ink-soft)'>กำลังโหลด...</div>";
+  await loadPromoScopeOptions(type);
+  renderPromoScopeList("");
+}
+
+function renderPromoScopeList(filter){
+  var type=document.getElementById("pc-scope-type").value;
+  var list=_promoScopeCache[type]||[];
+  var f=(filter||"").trim().toLowerCase();
+  if(f)list=list.filter(function(o){return o.label.toLowerCase().indexOf(f)>=0;});
+  var el=document.getElementById("pc-scope-list");
+  if(!list.length){el.innerHTML="<div style='padding:8px;color:var(--ink-soft)'>ไม่พบรายการ</div>";return;}
+  el.innerHTML=list.map(function(o){
+    var checked=_promoScopeSelected.indexOf(o.value)>=0;
+    return "<label style='display:flex;align-items:center;gap:8px;padding:5px 2px;cursor:pointer'>"+
+      "<input type='checkbox' value='"+esc2(o.value)+"' "+(checked?"checked":"")+" onchange=\"togglePromoScopeItem('"+esc2(o.value)+"',this.checked)\">"+
+      "<span>"+esc2(o.label)+"</span></label>";
+  }).join("");
+  updatePromoScopeCount();
+}
+
+function togglePromoScopeItem(value,checked){
+  var i=_promoScopeSelected.indexOf(value);
+  if(checked && i<0)_promoScopeSelected.push(value);
+  else if(!checked && i>=0)_promoScopeSelected.splice(i,1);
+  updatePromoScopeCount();
+}
+
+function updatePromoScopeCount(){
+  var el=document.getElementById("pc-scope-selected-count");
+  if(el)el.textContent=_promoScopeSelected.length?("เลือกแล้ว "+_promoScopeSelected.length+" รายการ"):"ยังไม่ได้เลือก";
+}
+
 async function savePromo(){
   var sb_=getSB(); if(!sb_){alert("Offline");return;}
   var code=(document.getElementById("pc-code").value||"").trim().toUpperCase();
   var type=document.getElementById("pc-type").value;
   var val=parseFloat(document.getElementById("pc-value").value)||0;
+  var scopeType=document.getElementById("pc-scope-type").value;
   if(!code){alert("กรุณากรอกรหัสโค้ด");return;}
   if(type!=="free_shipping" && val<=0){alert("กรุณากรอกมูลค่าส่วนลด");return;}
+  if(hasPromoScopeColumns && scopeType!=="all" && !_promoScopeSelected.length){alert("กรุณาเลือกรายการที่โค้ดนี้ใช้ได้อย่างน้อย 1 รายการ");return;}
   var row={
     code:code,
     discount_type:type,
@@ -1354,6 +1459,11 @@ async function savePromo(){
     description:(document.getElementById("pc-desc").value||"").trim(),
     expires_at:document.getElementById("pc-exp").value||null
   };
+  if(hasPromoScopeColumns){
+    row.scope_type=scopeType;
+    row.scope_value=(scopeType==="all"?[]:_promoScopeSelected.slice());
+    row.show_suggested=document.getElementById("pc-suggested").checked;
+  }
   try{
     var res=await sb_.from("promo_codes").insert(row);
     if(res.error)throw res.error;
@@ -1412,7 +1522,9 @@ async function loadPromos(){
       h+="<div style='background:#fff;border:1px solid var(--ink-xsoft);border-left:4px solid "+(live?"#1F9D55":"#CBD5E1")+";border-radius:10px;padding:12px 14px;margin-bottom:10px'>";
       h+="<div style='display:flex;justify-content:space-between;align-items:flex-start;gap:10px'>";
       h+="<div style='flex:1'>";
-      h+="<div style='font-size:15px;font-weight:800;font-family:var(--mono);letter-spacing:.5px'>"+esc2(p.code)+" <span style='font-size:11px;font-weight:600;color:#1F9D55;background:#E8F5EE;padding:2px 7px;border-radius:6px;margin-left:4px'>"+(PROMO_TYPE_LABEL[p.discount_type]||p.discount_type)+" "+valTxt+"</span></div>";
+      var scopeType=p.scope_type||"all";
+      h+="<div style='font-size:15px;font-weight:800;font-family:var(--mono);letter-spacing:.5px'>"+esc2(p.code)+" <span style='font-size:11px;font-weight:600;color:#1F9D55;background:#E8F5EE;padding:2px 7px;border-radius:6px;margin-left:4px'>"+(PROMO_TYPE_LABEL[p.discount_type]||p.discount_type)+" "+valTxt+"</span>"+(p.show_suggested?" <span style='font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:6px;margin-left:4px'>🌟 แนะนำ</span>":"")+"</div>";
+      if(scopeType!=="all")h+="<div style='font-size:11px;font-weight:600;color:#7C3AED;margin-top:4px'>🎯 "+(PROMO_SCOPE_LABEL[scopeType]||scopeType)+" ("+((p.scope_value||[]).length)+" รายการ)</div>";
       if(p.description)h+="<div style='font-size:12px;color:var(--ink-soft);margin-top:3px'>"+esc2(p.description)+"</div>";
       h+="<div style='font-size:11px;color:var(--ink-soft);margin-top:5px'>";
       h+=(p.min_order>0?("ขั้นต่ำ ฿"+p.min_order+" · "):"")+"ใช้แล้ว "+(p.used_count||0)+(p.usage_limit>0?("/"+p.usage_limit):"")+" ครั้ง";
