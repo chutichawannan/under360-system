@@ -1699,9 +1699,11 @@ function renderCart() {
         </button>
       </div>`;
     }
+    const _mi = menuItems.find(m => m.id === c.id);
+    const _catLbl = _mi && _mi.category ? getCatLabel(_mi.category) : '';
     return `<div class="citem">
       <div style="flex:1">
-        <div class="citem-name">${h(c.name)}</div>
+        <div class="citem-name">${h(c.name)}${_catLbl?` <span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 6px;border-radius:8px;">${h(_catLbl)}</span>`:''}</div>
         <div class="citem-sub">฿${c.price} × ${c.qty}</div>
       </div>
       <div class="qc" style="margin:0 8px">
@@ -1865,7 +1867,14 @@ function renderConfirm(addr) {
   const tot  = cartTotal();
 
   document.getElementById('conf-items').innerHTML =
-    cart.map(c => `<div class="srow"><span class="slbl">${h(c.name)} × ${c.qty}</span><span class="sval">฿${(c.price*c.qty).toLocaleString()}</span></div>`).join('');
+    cart.map(c => {
+      let tag = '';
+      if (c.type === 'meal_plan') tag = c.mp_type === 'hp' ? '🥗 High Protein' : '🥗 Low Carb';
+      else if (c.type === 'package') tag = '📦 แพคเกจ';
+      else { const _mi = menuItems.find(m => m.id === c.id); if (_mi && _mi.category) tag = getCatLabel(_mi.category); }
+      const tagHtml = tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(tag)}</span>` : '';
+      return `<div class="srow"><span class="slbl">${h(c.name)} × ${c.qty}${tagHtml}</span><span class="sval">฿${(c.price*c.qty).toLocaleString()}</span></div>`;
+    }).join('');
 
   document.getElementById('conf-total').textContent = '฿' + tot.toLocaleString();
   document.getElementById('conf-date').textContent  = fmtDate(selDate);
@@ -2567,7 +2576,15 @@ function renderOrders(orders) {
         <span class="sbadge ${st.c}">${st.t}</span>
       </div>
       <div class="ocard-b">
-        ${items.map(i=>`<div class="oline">${h(i.menu_name)} × ${i.quantity}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`).join('')}
+        ${items.map(i=>{
+          const _notes = i.notes || '';
+          let _tag = '';
+          if (_notes.startsWith('pkg:')) _tag = '📦 แพคเกจ';
+          else if (_notes.startsWith('meal_plan:')) _tag = _notes.includes(':hp:') ? '🥗 High Protein' : '🥗 Low Carb';
+          else { const _mi = menuItems.find(m => m.code === i.menu_code); if (_mi && _mi.category) _tag = getCatLabel(_mi.category); }
+          const _tagHtml = _tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(_tag)}</span>` : '';
+          return `<div class="oline">${h(i.menu_name)} × ${i.quantity}${_tagHtml}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`;
+        }).join('')}
       </div>
       <div class="ocard-f">
         <span>📅 ${fmtDate(o.delivery_date)}</span>

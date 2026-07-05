@@ -226,8 +226,10 @@ async function doRegister(){
       line_picture_url:lineProfile.pictureUrl||"",
       phone:document.getElementById("fPhone").value.trim(),
       birth_date:getDob(),
-      gender:_gender,
-      points:0,tier:1
+      gender:_gender
+      // ⚠️ ไม่ใส่ loyalty_points/tier ตรงนี้ตั้งใจ — เดิมเขียน points:0 (คอลัมน์ไม่มีจริง เลยไม่มีผลอะไร)
+      // ถ้าเปลี่ยนเป็น loyalty_points:0 ตรงๆ จะเสี่ยงรีเซ็ตแต้มลูกค้าเดิมเป็น 0 ทุกครั้งที่ upsert ซ้ำ (onConflict:line_uid)
+      // รอนัทตัดสินใจเรื่องระบบแต้มใหม่ก่อน (ดู CLAUDE.md)
     },{onConflict:"line_uid"});
   }
   localStorage.setItem("line_uid",lineProfile.userId);

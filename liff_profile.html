@@ -208,7 +208,7 @@ async function loadProfile(){
     }catch(e){}
   }
   // fallback mock
-  if(!p)p={name:"Test User",phone:"081-234-5678",birth_date:"1992-05-15",line_display_name:"Test User",line_picture_url:"",points:4200,orders:[
+  if(!p)p={name:"Test User",phone:"081-234-5678",birth_date:"1992-05-15",line_display_name:"Test User",line_picture_url:"",loyalty_points:4200,orders:[
     {id:"o1",order_number:"U-0620-003",delivery_date:"2026-06-20",total:495,status:"delivered"},
     {id:"o2",order_number:"U-0618-007",delivery_date:"2026-06-18",total:330,status:"delivered"},
   ]};
@@ -220,7 +220,7 @@ async function loadProfile(){
   document.getElementById("infoDob").textContent=p.birth_date||"—";
   document.getElementById("infoLine").textContent=p.line_display_name||"—";
   if(p.line_picture_url){document.getElementById("hAv").src=p.line_picture_url;document.getElementById("hEmoji").style.display="none";}
-  renderTier(p.points||0);
+  renderTier(p.loyalty_points||0);
   // history
   const orders=p.orders||[];
   if(!orders.length){document.getElementById("histBody").innerHTML='<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:16px">ยังไม่มีประวัติออเดอร์</div>';return;}
