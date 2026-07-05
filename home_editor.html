@@ -57,9 +57,9 @@ input,select,textarea{font-family:inherit;}
    ค่า px เดียวกันเป๊ะกับที่ liff_customer.html ใช้จริง — พรีวิวตรงนี้ = สิ่งที่ลูกค้าเห็นจริง 100% */
 .col-card-he{border-radius:14px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;border:2.5px solid transparent;transition:border-color .15s;}
 .col-card-he img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
-.col-card-he.fmt-square{width:190px;height:190px;}
+.col-card-he.fmt-square{width:230px;height:230px;}
 .col-card-he.fmt-portrait{width:150px;height:230px;}
-.col-card-he.fmt-full{width:360px;height:170px;}
+.col-card-he.fmt-full{width:360px;height:230px;}
 .col-card-he.fmt-tiny{width:110px;height:110px;}
 .col-tiny-stack-he{display:flex;flex-direction:column;gap:10px;flex-shrink:0;} /* จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ สูงรวม 230px เท่าแนวตั้ง */
 .col-card-he.active{border-color:var(--g);}
@@ -480,7 +480,7 @@ function renderEditor(){
           <button class="size-btn${c.size==='full'?' on':''}" onclick="setSize('full')" style="flex:1 1 45%">▬ เต็มผืน</button>
           <button class="size-btn${c.size==='tiny'?' on':''}" onclick="setSize('tiny')" style="flex:1 1 45%">▪ จิ๋ว</button>
         </div>
-        <div class="field-hint">จตุรัส 190×190 · แนวตั้ง 150×230 · เต็มผืน 360×170 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ) · ถ้ามีจิ๋ว 2 การ์ดติดกันในลำดับ จะซ้อนกันเป็นคอลัมน์เดียวอัตโนมัติ (สูงรวม 230px เท่าแนวตั้ง)</div>
+        <div class="field-hint">จตุรัส 230×230 · แนวตั้ง 150×230 · เต็มผืน 360×230 · จิ๋ว 110×110 (px ที่หน้าจอ 390px — ตรงกับที่ลูกค้าเห็นจริงเป๊ะ) — ทุกฟอแมตสูง 230px เท่ากันหมด (ยกเว้นจิ๋วเดี่ยวที่ไม่มีคู่) แถวจะได้เรียบเสมอกัน · ถ้ามีจิ๋ว 2 การ์ดติดกันในลำดับ จะซ้อนกันเป็นคอลัมน์เดียวอัตโนมัติ (สูงรวม 230px)</div>
       </div>
 
       <div class="field">
@@ -501,7 +501,7 @@ function renderEditor(){
           <div class="img-upload-hint" id="uploadHint">
             PNG/JPEG/WebP · ไม่เกิน 1MB · PNG โปร่งใสได้<br>
             <b>จตุรัส:</b> แนะนำ 800×800px (1:1) · <b>แนวตั้ง:</b> 700×1050px (2:3)<br>
-            <b>เต็มผืน:</b> 1200×560px (แนวนอนกว้าง) · <b>จิ๋ว:</b> 600×600px (1:1)
+            <b>เต็มผืน:</b> 1200×770px (แนวนอนกว้าง) · <b>จิ๋ว:</b> 600×600px (1:1)
           </div>
         </div>
         <div class="upload-progress" id="uploadProg"><div class="bar" id="uploadBar" style="width:0"></div></div>
