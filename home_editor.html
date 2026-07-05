@@ -241,14 +241,14 @@ const COLORS=['#1F4D3A','#2D6B53','#3D8B6E','#5B4E2E','#7C3D1E','#2563EB','#6D28
 const CAT_LABELS_STORED = {}; // loaded from Supabase on init
 const DB_CAT_NAMES = {};      // key -> ชื่อหมวดจากหน้า DB (source of truth — ลิ้งกับ DB)
 
-let sb, cards=[], menuItems=[], hePackages=[], activeCat=null, activeCardIdx=null;
+let sb, cards=[], menuItems=[], hePackages=[], heMpOffers=[], activeCat=null, activeCardIdx=null;
 let autoScrollOn=true, autoScrollSpeed=90, autoTimer=null, currentPage=0;
 let dbCats=[], catOrder=[], catDragKey=null, hiddenCats=[];
 
 // ── INIT ──
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
-  await Promise.all([loadCards(), loadMenuItems(), loadHEPackages()]);
+  await Promise.all([loadCards(), loadMenuItems(), loadHEPackages(), loadHEMpOffers()]);
   try{ const {data:td}=await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
     if(td?.data){ const c=(typeof td.data==='string')?{text:td.data}:td.data;
       if(c.text!=null) document.getElementById('sectionTitle').value=c.text;
@@ -267,6 +267,12 @@ async function loadHEPackages(){
     const {data} = await sb.from('packages').select('id,name,size,qty,base_price').eq('is_active',true).order('display_order');
     hePackages = data||[];
   }catch(e){ hePackages=[]; }
+}
+async function loadHEMpOffers(){
+  try{
+    const {data} = await sb.from('mp_offer_sets').select('id,label,boxes,price_hp,price_lc').eq('is_active',true).order('display_order');
+    heMpOffers = data||[];
+  }catch(e){ heMpOffers=[]; } // ยังไม่รัน scripts/sql_mp_offer_sets.sql ก็ไม่เป็นไร แค่ไม่มีตัวเลือกนี้ในลิสต์
 }
 
 async function loadCards(){
@@ -537,7 +543,8 @@ function renderEditor(){
         <select id="c-cat" onchange="liveUpdate()">
           <option value="">— ไม่ลิ้งไปไหน —</option>
           <option value="__anchor__"${c.link_cat==='__anchor__'?' selected':''}>⬇ เลื่อนลงไปที่เมนู</option>
-          <option value="__meal_plan__"${c.link_cat==='__meal_plan__'?' selected':''}>🥗 Meal Plan (HP / LC)</option>
+          <option value="__meal_plan__"${c.link_cat==='__meal_plan__'?' selected':''}>🥗 Meal Plan (HP / LC) — ทุกชุดที่เปิด "โชว์ในหน้าหลัก"</option>
+          ${heMpOffers.map(o=>`<option value="__mpoffer:${o.id}__"${c.link_cat==='__mpoffer:'+o.id+'__'?' selected':''}> 🥗 ${o.label} (${o.boxes} กล่อง HP ฿${Number(o.price_hp).toLocaleString()} / LC ฿${Number(o.price_lc).toLocaleString()})</option>`).join('')}
           ${hePackages.map(p=>`<option value="__pkg:${p.id}__"${c.link_cat==='__pkg:'+p.id+'__'?' selected':''}> 📦 ${p.name} (${p.qty} กล่อง ฿${Number(p.base_price).toLocaleString()})</option>`).join('')}
           ${catOptions}
         </select>

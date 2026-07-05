@@ -866,12 +866,22 @@ let packages = [], pkgItems = {}, currentPkg = null, pkgSelection = {}, pkgSearc
 // ── v0.3.3 Meal Plan state ──
 let mpType = '', mpSetId = '', mpRequest = '', mpReqSel = [];
 let mpRequestMenus = [];  // โหลดจาก kitchen_data 'mp_request_menus' (แอดมิน assign ในหน้าแพลนเมนู)
-// ── Meal Plan config (แก้ราคาที่นี่ก่อน launch) ──
-const MP_SETS = [
+// ── Meal Plan config — default fallback ถ้ายังไม่รัน scripts/sql_mp_offer_sets.sql ──
+// ปกติจะโหลดทับจาก Supabase ตาราง mp_offer_sets ตอน init() (ทำให้แอดมินแก้ราคา/เพิ่มชุดโปรโมชั่นเองได้ที่หน้า DB)
+let MP_SETS = [
   { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1499,  price_lc:1399  },
   { id:'weekly',  label:'1 สัปดาห์',   boxes:21, price_hp:3990,  price_lc:3790  },
   { id:'monthly', label:'1 เดือน',     boxes:84, price_hp:13990, price_lc:13490 },
 ];
+let mpActiveSets = MP_SETS; // ชุดที่ picker ตัวปัจจุบันใช้ — ปกติ = ชุดที่ show_in_default_picker, ถ้าเปิดจากลิ้ง __mpoffer:{id}__ จะเหลือแค่ 1 ชุด
+async function loadMpOfferSets(){
+  try{
+    const { data, error } = await sb.from('mp_offer_sets').select('*').eq('is_active', true).order('display_order');
+    if (error || !data || !data.length) return; // ยังไม่รัน SQL หรือยังไม่มีข้อมูล — ใช้ fallback เดิมต่อไป
+    MP_SETS = data.map(r => ({ id:r.set_key, label:r.label, boxes:r.boxes, price_hp:r.price_hp, price_lc:r.price_lc, showInDefault: r.show_in_default_picker!==false }));
+    mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
+  }catch(e){ console.warn('loadMpOfferSets failed', e); }
+}
 let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
 let selDate = null, selSlot = null;
 let activeCat = null;
@@ -1121,8 +1131,16 @@ function removePkgFromCart(id) {
 // 🥗 MEAL PLAN FLOW — v0.3.3
 // ══════════════════════════════════════
 
-function openMealPlanPicker() {
-  mpType = ''; mpSetId = ''; mpRequest = ''; mpReqSel = [];
+function openMealPlanPicker(offerSetKey) {
+  mpType = ''; mpRequest = ''; mpReqSel = [];
+  if (offerSetKey) {
+    const one = MP_SETS.find(s => s.id === offerSetKey);
+    mpActiveSets = one ? [one] : MP_SETS.filter(s => s.showInDefault!==false);
+    mpSetId = one ? one.id : ''; // ชุดเดียว → เลือกให้อัตโนมัติ ข้ามขั้นตอนเลือกไซส์
+  } else {
+    mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
+    mpSetId = '';
+  }
   renderMealPlanPicker();
   document.getElementById('s-menu').classList.add('on');       // เมนูอยู่ข้างหลัง
   document.getElementById('mp-backdrop').classList.add('on');
@@ -1157,7 +1175,7 @@ function renderMealPlanPicker() {
       <div style="font-size:11.5px;margin-top:3px;opacity:.75;">${cfg.desc}</div>
     </div>`;
   }).join('');
-  const setsHtml = MP_SETS.map(s => {
+  const setsHtml = mpActiveSets.map(s => {
     const price = mpType==='lc' ? s.price_lc : s.price_hp;
     const on = mpSetId===s.id;
     return `<div onclick="selectMPSet('${s.id}')" style="
@@ -1176,7 +1194,7 @@ function renderMealPlanPicker() {
   el.innerHTML = `
     <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">1. เลือกประเภท</div>
     <div style="display:flex;gap:10px;margin-bottom:20px;">${typeHtml}</div>
-    <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">2. เลือกขนาด</div>
+    <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">${mpActiveSets.length===1?'2. แพลนที่เลือก':'2. เลือกขนาด'}</div>
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
     <div style="background:#FEF9E7;border:1px solid #F5E4A8;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px;color:#8A6D1F;line-height:1.6;">
@@ -1205,7 +1223,7 @@ function renderMealPlanPicker() {
   updateMPConfirmBtn();
 }
 
-function selectMPType(t) { mpType=t; mpSetId=''; renderMealPlanPicker(); }
+function selectMPType(t) { mpType=t; mpSetId=(mpActiveSets.length===1?mpActiveSets[0].id:''); renderMealPlanPicker(); }
 function selectMPSet(id)  { mpSetId=id; renderMealPlanPicker(); }
 
 function updateMPConfirmBtn() {
@@ -1421,6 +1439,7 @@ async function init() {
     updateCartUI();
     loadHomeLayout();
     loadPackagesIfNeeded(); // v0.3.2
+    loadMpOfferSets(); // v0.4.10 — โหลดชุด Meal Plan จาก DB ถ้ามี (เผื่อแอดมินเพิ่มชุดโปรโมชั่นเอง)
   } catch(e) { console.warn('Render error', e); }
   const _screenParam = new URLSearchParams(location.search).get('screen');
   if (_screenParam === 'mp-manage') { showScr('s-mp-manage'); renderMpManage(); }
@@ -2540,6 +2559,9 @@ function colCardClick(el) {
     openPackage(pkgId);
   } else if (cat === '__meal_plan__') {
     openMealPlanPicker();
+  } else if (cat.startsWith('__mpoffer:')) {
+    var offerKey = cat.slice(10, -2);
+    openMealPlanPicker(offerKey);
   } else if (cat === '__anchor__') {
     var tgt = document.getElementById('ctabsInner');
     if (tgt) tgt.scrollIntoView({behavior:'smooth'});

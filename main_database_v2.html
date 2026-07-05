@@ -1432,6 +1432,109 @@ function renderMpProdView(){
   return html;
 }
 
+// ── 🎁 Meal Plan Offer Sets — DB-editable version ของ MP_SETS เดิม (liff_customer.html) ──
+// ให้แอดมินแก้ราคา/สร้างชุดโปรโมชั่นเองได้ ไม่ต้องรอ Claude — ต้องรัน scripts/sql_mp_offer_sets.sql ก่อน
+async function loadMpOffers(){
+  const sb = getSB(); if(!sb) return;
+  try{
+    const { data, error } = await sb.from('mp_offer_sets').select('*').order('display_order');
+    if(error) throw error;
+    state.mpOffers = data || [];
+  }catch(e){ console.error('loadMpOffers:', e); state.mpOffers = state.mpOffers || []; }
+}
+
+function renderMpOffersView(){
+  if(!state.mpOffers){ loadMpOffers().then(render); return `<div class="empty" style="padding:40px 0;">⏳ กำลังโหลด...</div>`; }
+  let html = `<div class="toolbar">
+    <button class="btn btn-primary btn-sm" id="newMpOfferBtn">+ สร้างชุดใหม่</button>
+    <span style="font-size:12px;color:var(--ink-soft);margin-left:auto;">${state.mpOffers.length} ชุดในระบบ</span>
+  </div>
+  <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.6;">
+    "โชว์ในหน้าหลัก" เปิด = ลูกค้าเห็นตอนกดการ์ด Meal Plan ปกติ (แสดงรวมกับชุดอื่นที่เปิดไว้) · ปิด = ซ่อนจากหน้าหลัก แต่ยังไปเลือกลิ้งจากการ์ดหน้าแรกของตัวเองได้ที่ Home Editor (ใช้ทำโปรโมชั่นแยก เช่น "Set 2")
+  </div>`;
+  if(!state.mpOffers.length){
+    return html + `<div class="empty">ยังไม่มีชุด Meal Plan ในระบบ (ถ้าเพิ่งรัน scripts/sql_mp_offer_sets.sql ให้กดรีเฟรชหน้า) — กด "+ สร้างชุดใหม่" เพื่อเริ่ม</div>`;
+  }
+  html += `<div style="overflow-x:auto;"><table style="width:100%;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:10px;">
+    <thead><tr style="background:var(--surface-2);">
+      <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--ink-soft);white-space:nowrap;">ชื่อชุด</th>
+      <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--ink-soft);white-space:nowrap;">กล่อง</th>
+      <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--ink-soft);white-space:nowrap;">ราคา HP</th>
+      <th style="padding:8px 10px;text-align:left;font-size:11px;color:var(--ink-soft);white-space:nowrap;">ราคา LC</th>
+      <th style="padding:8px 10px;text-align:center;font-size:11px;color:var(--ink-soft);white-space:nowrap;">โชว์ในหน้าหลัก</th>
+      <th style="padding:8px 10px;text-align:center;font-size:11px;color:var(--ink-soft);white-space:nowrap;">เปิดใช้งาน</th>
+      <th></th>
+    </tr></thead><tbody>
+  ${state.mpOffers.map(o=>`
+    <tr data-offer-id="${o.id}" style="border-top:1px solid var(--line);">
+      <td style="padding:6px 10px;"><input class="mpo-f-label" value="${escapeHtml(o.label)}" style="width:130px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;"></td>
+      <td style="padding:6px 10px;"><input class="mpo-f-boxes" type="number" value="${o.boxes}" style="width:55px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;"></td>
+      <td style="padding:6px 10px;"><input class="mpo-f-hp" type="number" value="${o.price_hp}" style="width:80px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;"></td>
+      <td style="padding:6px 10px;"><input class="mpo-f-lc" type="number" value="${o.price_lc}" style="width:80px;padding:5px 7px;border:1px solid var(--line);border-radius:6px;font-size:13px;font-family:inherit;"></td>
+      <td style="padding:6px 10px;text-align:center;"><input class="mpo-f-default" type="checkbox" ${o.show_in_default_picker!==false?'checked':''} style="width:18px;height:18px;cursor:pointer;"></td>
+      <td style="padding:6px 10px;text-align:center;"><input class="mpo-f-active" type="checkbox" ${o.is_active!==false?'checked':''} style="width:18px;height:18px;cursor:pointer;"></td>
+      <td style="padding:6px 10px;white-space:nowrap;">
+        <button class="btn btn-primary btn-sm mpo-save-btn" style="padding:5px 10px;font-size:12px;">บันทึก</button>
+        <button class="btn btn-warn btn-sm mpo-del-btn" style="padding:5px 10px;font-size:12px;">ลบ</button>
+      </td>
+    </tr>
+  `).join('')}
+  </tbody></table></div>`;
+  return html;
+}
+
+async function saveMpOffer(id){
+  if(!requireUser()) return;
+  const sb = getSB(); if(!sb) return;
+  const tr = document.querySelector('tr[data-offer-id="'+id+'"]'); if(!tr) return;
+  const row = {
+    label: tr.querySelector('.mpo-f-label').value.trim(),
+    boxes: parseInt(tr.querySelector('.mpo-f-boxes').value)||1,
+    price_hp: parseInt(tr.querySelector('.mpo-f-hp').value)||0,
+    price_lc: parseInt(tr.querySelector('.mpo-f-lc').value)||0,
+    show_in_default_picker: tr.querySelector('.mpo-f-default').checked,
+    is_active: tr.querySelector('.mpo-f-active').checked,
+    updated_at: new Date().toISOString()
+  };
+  if(!row.label){ showToast('ใส่ชื่อชุดก่อน'); return; }
+  try{
+    await sb.from('mp_offer_sets').update(row).eq('id', id);
+    const o = state.mpOffers.find(x=>x.id===id);
+    if(o) Object.assign(o, row);
+    logActivity('mp_offer', `แก้ชุด "${row.label}"`);
+    showToast('บันทึกแล้ว ✓');
+  }catch(e){ showToast('บันทึกไม่ได้: '+(e.message||e)); }
+}
+async function deleteMpOffer(id){
+  if(!requireUser()) return;
+  const o = state.mpOffers.find(x=>x.id===id); if(!o) return;
+  showConfirm(`ลบชุด "${o.label}" ถาวร?`, async ()=>{
+    const sb = getSB(); if(!sb) return;
+    try{
+      await sb.from('mp_offer_sets').delete().eq('id', id);
+      state.mpOffers = state.mpOffers.filter(x=>x.id!==id);
+      logActivity('mp_offer', `ลบชุด "${o.label}"`);
+      render();
+    }catch(e){ showToast('ลบไม่ได้: '+(e.message||e)); }
+  });
+}
+async function newMpOffer(){
+  if(!requireUser()) return;
+  const sb = getSB(); if(!sb) return;
+  const setKey = 'set_'+Date.now().toString(36);
+  try{
+    const { data, error } = await sb.from('mp_offer_sets').insert({
+      set_key: setKey, label: 'ชุดใหม่', boxes: 7, price_hp: 1499, price_lc: 1399,
+      is_active: true, show_in_default_picker: false, display_order: (state.mpOffers||[]).length
+    }).select().single();
+    if(error) throw error;
+    if(!state.mpOffers) state.mpOffers = [];
+    state.mpOffers.push(data);
+    logActivity('mp_offer', 'สร้างชุดใหม่');
+    render();
+  }catch(e){ showToast('สร้างไม่ได้: '+(e.message||e)); }
+}
+
 function renderMealPlanTab(){
   if(!state.mpViewDays) state.mpViewDays=7;
   const todayISO  = mpIsoDate(new Date());
@@ -1440,9 +1543,11 @@ function renderMealPlanTab(){
   let html = `<div style="display:flex;gap:6px;margin-bottom:12px;">
     <button class="ing-subtab-btn${state.mpSubView==='plan'?' active':''}" id="mpSubPlan">📅 แผนผลิต</button>
     <button class="ing-subtab-btn${state.mpSubView==='assign'?' active':''}" id="mpSubAssign">🍳 ผลิตวันนี้</button>
+    <button class="ing-subtab-btn${state.mpSubView==='offers'?' active':''}" id="mpSubOffers">🎁 ชุด Meal Plan</button>
   </div>`;
 
   if(state.mpSubView==='assign') return html + renderMpProdView();
+  if(state.mpSubView==='offers') return html + renderMpOffersView();
 
   const allDates  = [...state.mpDates].sort();
   const colW      = MP_COL_W[state.mpViewDays]||190;
@@ -2518,7 +2623,7 @@ const _actLogSessionId = (crypto.randomUUID ? crypto.randomUUID() : ('s'+Date.no
 let _actLogCache = {};      // key: action_type -> {id, count, items:{label:delta}}
 let _actLogFlushTimers = {};
 let activityLogRows = [];
-const ACT_LOG_ICON = {stock:'📦', category:'🏷️', package:'🎁', he_layout:'🏠'};
+const ACT_LOG_ICON = {stock:'📦', category:'🏷️', package:'🎁', he_layout:'🏠', mp_offer:'🥗'};
 const ACT_LOG_SOURCE_LABEL = {db:'DB', he:'Home Editor', oh:'Operation Hub'};
 
 function logActivity(actionType, itemLabel, delta){
@@ -4286,6 +4391,16 @@ function attachHandlers(){
       mpProdLoad(state.mpProdDate);
       render();
     };
+    const mpSubOffersBtn = document.getElementById('mpSubOffers');
+    if(mpSubOffersBtn) mpSubOffersBtn.onclick = ()=>{ state.mpSubView='offers'; loadMpOffers().then(render); render(); };
+    const newMpOfferBtn = document.getElementById('newMpOfferBtn');
+    if(newMpOfferBtn) newMpOfferBtn.onclick = newMpOffer;
+    document.querySelectorAll('.mpo-save-btn').forEach(btn=>{
+      btn.onclick = ()=>{ const tr=btn.closest('tr[data-offer-id]'); if(tr) saveMpOffer(tr.dataset.offerId); };
+    });
+    document.querySelectorAll('.mpo-del-btn').forEach(btn=>{
+      btn.onclick = ()=>{ const tr=btn.closest('tr[data-offer-id]'); if(tr) deleteMpOffer(tr.dataset.offerId); };
+    });
     const mpProdPrevDay = document.getElementById('mpProdPrevDay');
     if(mpProdPrevDay) mpProdPrevDay.onclick = ()=>{ mpProdSetDate(mpProdAddDays(state.mpProdDate,-1)); render(); };
     const mpProdNextDay = document.getElementById('mpProdNextDay');
