@@ -369,6 +369,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <span class="sb-icon">🛵</span><span>แมสเซนเจอร์</span>
       <span class="sb-badge" id="nb-msg"></span>
     </div>
+    <div class="sb-item" onclick="openTab('promo',this)">
+      <span class="sb-icon">🎁</span><span>โปรโมชั่น</span>
+    </div>
     <div class="sb-divider"></div>
     <div class="sb-item" onclick="openApp('kitchen_queue.html','🍳 หน้าครัว (KQ)',this)">
       <span class="sb-icon">🍳</span><span>หน้าครัว (KQ)</span>
@@ -384,7 +387,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <div class="sb-item" onclick="openTab('he',this)">
       <span class="sb-icon">🏠</span><span>หน้าร้าน (HE)</span>
     </div>
-    <div class="sb-item wip" onclick="return false" style="opacity:.45;cursor:default;">
+    <div class="sb-item" onclick="openTab('settings',this)">
       <span class="sb-icon">⚙️</span><span>ตั้งค่า</span>
     </div>
   </nav>
@@ -633,6 +636,32 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       </div>
     </div>
 
+    <!-- TAB: SETTINGS -->
+    <div class="tab-panel" id="panel-settings">
+      <div class="sec-header">
+        <div class="sec-title">⚙️ ตั้งค่า</div>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">🗄️ หน้าหลังบ้าน (DB)</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">จำนวนเมนูที่โชว์ต่อหน้าในแท็บ "เมนูทั้งหมด" — ลดจำนวนลงถ้าหน้าดูรกหรือโหลดช้า</div>
+        <select id="set-db-page-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit" onchange="saveGlobalSettings()">
+          <option value="20">20 เมนู/หน้า</option>
+          <option value="30">30 เมนู/หน้า</option>
+          <option value="50">50 เมนู/หน้า</option>
+          <option value="0">โชว์ทั้งหมด (ไม่จำกัด)</option>
+        </select>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">🍳 หน้าครัว (KQ) — ขนาดช่องช้อนส้อม</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">ตั้งเป็น "ใหญ่พิเศษ" ช่วงที่มีพนักงานใหม่ กันลืมจัดช้อนส้อม</div>
+        <select id="set-utensil-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit" onchange="saveGlobalSettings()">
+          <option value="normal">ปกติ</option>
+          <option value="large">ใหญ่พิเศษ</option>
+        </select>
+      </div>
+      <div id="settingsSaveMsg" style="font-size:12px;color:var(--g);height:16px"></div>
+    </div>
+
     <!-- TAB: HOME EDITOR (seamless iframe) -->
     <div class="tab-panel" id="panel-he" style="padding:0;overflow:hidden;">
       <iframe id="he-frame" src="" style="width:100%;height:calc(100vh - 56px);border:none;display:block;"
@@ -695,7 +724,7 @@ function toggleSidebar(){
   if(fb) fb.classList.toggle("show",sidebarMini);
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",app:"🔗"};
+var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
 
 function _autoCollapseBar(){
   sidebarMini=true;
@@ -726,6 +755,7 @@ function openTab(name,el){
   if(name==="messenger")loadMessenger();
   if(name==="promo")loadPromos();
   if(name==="customer")loadCustomers();
+  if(name==="settings")loadGlobalSettings();
   var content=document.querySelector(".content");
   if(name==="he"){
     content.classList.add("he-mode");
@@ -1333,6 +1363,34 @@ async function savePromo(){
     if((e.message||"").indexOf("duplicate")>=0||e.code==="23505")alert("โค้ดนี้มีอยู่แล้ว ใช้รหัสอื่น");
     else alert("บันทึกไม่ได้: "+(e.message||e.code||e));
   }
+}
+
+// ── ⚙️ Global Settings (kitchen_data key='globalSettings') — ตั้งค่าที่แชร์ข้าม DB/KQ ──
+var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal"};
+async function loadGlobalSettings(){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    var r=await sb_.from("kitchen_data").select("data").eq("key","globalSettings").maybeSingle();
+    var s=Object.assign({},GLOBAL_SETTINGS_DEFAULT,(r.data&&r.data.data)||{});
+    var pageSel=document.getElementById("set-db-page-size");
+    var utSel=document.getElementById("set-utensil-size");
+    if(pageSel)pageSel.value=String(s.dbMenuPageSize);
+    if(utSel)utSel.value=s.kitchenUtensilSize;
+  }catch(e){console.error("loadGlobalSettings:",e);}
+}
+async function saveGlobalSettings(){
+  var sb_=getSB(); if(!sb_)return;
+  var pageSel=document.getElementById("set-db-page-size");
+  var utSel=document.getElementById("set-utensil-size");
+  var data={
+    dbMenuPageSize: parseInt((pageSel&&pageSel.value)||30,10),
+    kitchenUtensilSize: (utSel&&utSel.value)||"normal"
+  };
+  try{
+    await sb_.from("kitchen_data").upsert({key:"globalSettings",data:data,updated_at:new Date().toISOString()},{onConflict:"key"});
+    var msg=document.getElementById("settingsSaveMsg");
+    if(msg){ msg.textContent="✅ บันทึกแล้ว"; setTimeout(function(){msg.textContent="";},2000); }
+  }catch(e){ alert("บันทึกไม่ได้: "+(e.message||e)); }
 }
 
 async function loadPromos(){

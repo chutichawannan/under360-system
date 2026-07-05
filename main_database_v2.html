@@ -667,7 +667,7 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   // ── v0.3.2 packages tab ──
   packages: [], pkgItems: {}, pkgLoaded: false, pkgLoading: false,
   openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: '',
-  showActivityLog: false
+  showActivityLog: false, dbMenuPageSize: 30
 };
 
 // ── Storage Layer: Supabase (shared) + localStorage (private) ────────────
@@ -2128,6 +2128,12 @@ async function init(){
   const cfg      = await getStored('appConfig',   true);
   let lastName; try{ lastName = localStorage.getItem('lastNickname'); }catch(e){ lastName=null; }
 
+  // ── ⚙️ Global Settings (ตั้งค่าจาก Operation Hub → ตั้งค่า, แชร์กับ KQ) ──
+  try{
+    const gs = await getStored('globalSettings', true);
+    state.dbMenuPageSize = (gs && gs.dbMenuPageSize != null) ? gs.dbMenuPageSize : 30;
+  }catch(e){ state.dbMenuPageSize = 30; }
+
   // ── UNPACK CONFIG (with migration from old separate keys) ──────────────────
   let cats, sups, plan, appSettings, initFlags, mpData, mpDates;
   if(cfg){
@@ -2711,7 +2717,19 @@ function renderRecipesTab(){
   const showPTT = state.pinModeEnabled || state.activeCatTab === '__ptt__';
   const pinnedItems = showPTT ? filtered.filter(r=>r.pinned).sort((a,b)=>(a.pinOrder||0)-(b.pinOrder||0)) : [];
   const pinnedIds = new Set(pinnedItems.map(r=>r.id));
-  const restItems = filtered.filter(r=>!pinnedIds.has(r.id));
+  let restItems = filtered.filter(r=>!pinnedIds.has(r.id));
+
+  // ── จำกัดจำนวนที่แสดงต่อหน้า (ตั้งค่าที่ ⚙️ ตั้งค่า ใน Operation Hub) ──
+  const pageSize = state.dbMenuPageSize || 0;
+  const restTotal = restItems.length;
+  let pageLimitNotice = '';
+  if(pageSize > 0 && restTotal > pageSize){
+    restItems = restItems.slice(0, pageSize);
+    pageLimitNotice = `<div class="empty" style="padding:10px 14px;font-size:12.5px;text-align:left;background:var(--surface);border-radius:8px;margin-bottom:10px;">
+      แสดง ${pageSize} จาก ${restTotal} รายการ — ค้นหาหรือกดแท็บหมวดหมู่เพื่อดูรายการที่เหลือ
+      <span style="color:var(--ink-soft);">(ปรับจำนวนต่อหน้าได้ที่ Operation Hub → ⚙️ ตั้งค่า)</span>
+    </div>`;
+  }
 
   // Bulk bar — shows as soon as bulk mode is on; no need to select anything first
   if(state.bulkMode){
@@ -2742,6 +2760,8 @@ function renderRecipesTab(){
   }
 
   if(restItems.length===0) return html;
+
+  html += pageLimitNotice;
 
   if(state.sortMode && state.sortMode!=='category'){
     let sorted = [...restItems];
