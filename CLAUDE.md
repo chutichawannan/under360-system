@@ -47,7 +47,7 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 | ไฟล์ | หน้าที่ | สถานะ |
 |------|--------|-------|
-| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) + ป้อบอัพเมนู/lightbox | ✅ live (v0.4.8) |
+| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) + ป้อบอัพเมนู/lightbox | ✅ live (v0.4.9) |
 | `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง + Activity Log | ✅ live (v0.4.7) — optimize ขนาดไฟล์แล้ว (330KB) |
 | `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
 | `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print | ✅ live |
@@ -197,7 +197,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚦 Current Version: v0.4.8 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `5020fc9` — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
+## 🚦 Current Version: v0.4.9 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `d79272d` — ⚠️ Activity Log ต้องรัน SQL ก่อน ดูหัวข้อ "📜 Activity Log")
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -214,7 +214,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
 | v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
 | v0.4.8 | **แก้บั๊กร้ายแรง:** คลิกเมนูใดๆ ในหน้า liff พังจริง (throw error เงียบๆ — `openProduct()` อ้าง HTML ที่ไม่เคยมีอยู่จริง) + เพิ่มคลิกชื่อเมนู→ป้อบอัพ (ชื่อ/แคลอรี่/คำอธิบาย) และคลิกรูป→lightbox (ของเดิมเขียน JS/CSS ไว้ครบแต่ไม่เคยต่อ onclick) + แก้รูปเมนูไม่เคยโชว์ (`item.image_url`→`item.image_urls[0]`, 6 จุด) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก (โค้ดคนละชุดกับรายการเมนูหลัก) | `5020fc9` |
-| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
+| v0.4.9 | แก้ตามที่นัทเทสจริง: "หมดแล้ว" ต้องขึ้นทันทีที่ลูกค้าใส่ตะกร้าครบสต็อก (ไม่ใช่แค่ตอน stock_total=0 — เปลี่ยน `isOut` ให้เช็คจาก remaining แทน) + lightbox ขึ้นกรอบเปล่าแทนที่จะไม่ทำอะไรเมื่อเมนูยังไม่มีรูป (คลิกไอคอน 🍱 ได้แล้วด้วย ไม่ใช่แค่คลิก `<img>` จริง) | `d79272d` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
 
@@ -233,7 +233,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 📋 What's in liff_customer.html (v0.4.8)
+## 📋 What's in liff_customer.html (v0.4.9)
 
 ### Screens
 `s-menu` · `s-pkg-select` · `s-meal-plan` · `s-cart` · `s-confirm` · `s-ok` · `s-orders` · Meal Plan self-service (จัดการรอบ/เลื่อนวัน/ยกเลิก)
@@ -250,7 +250,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 - **Profile:** redirect ไป `liff_profile.html` พร้อม uid
 - **คลิกชื่อเมนู → ป้อบอัพรายละเอียด** (`openMenuDetail()`, element `#mdOverlay`) — ชื่อ/โค้ด/แคลอรี่/โปรตีน/คำอธิบาย/ราคา + ปุ่มเพิ่มตะกร้า (เคารพ stock limit ผ่าน `addItem()` เดิม)
 - **คลิกรูปเมนู → lightbox ขยายเต็มจอ** (`openItemLightbox(id)` → `openLightbox(urls)`, element `#lbOverlay`) — รองรับหลายรูป เลื่อนดูได้ + จุดบอกตำแหน่ง
-- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก (`renderHomeGrid()`'s Item Grid Sections) — `NULL`=ไม่จำกัด (ต้องตั้งค่าจริงที่หน้า DB ถึงจะเห็น limit/badge "เหลือ N ชิ้นสุดท้าย")
+- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก (`renderHomeGrid()`'s Item Grid Sections) — `NULL`=ไม่จำกัด (ต้องตั้งค่าจริงที่หน้า DB ถึงจะเห็น limit/badge "เหลือ N ชิ้นสุดท้าย") — `isOut` (v0.4.9) เช็คจาก **remaining** (stock−qty ในตะกร้า) ไม่ใช่แค่ `stock_total<=0` ตรงๆ ดังนั้นถ้าสต็อกมี 10 แล้วลูกค้าใส่ตะกร้าครบ 10 การ์ดจะขึ้น "หมดแล้ว" ทันทีแม้ `stock_total` ยังเป็น 10 อยู่ (ไม่ใช่ real-time reserve ข้ามลูกค้า แค่ per-session)
 
 ### Meal Plan Config (⚠️ แก้ราคาก่อน launch — ยังไม่ยืนยัน)
 ```javascript
@@ -466,4 +466,4 @@ const MP_SETS = [
 
 ---
 
-*Last updated: 4 ก.ค. 2026 — v0.4.8 ✅ push แล้ว (commit `5020fc9`) — แก้บั๊กร้ายแรง: คลิกเมนู liff พังจริงมาตลอด (openProduct ไม่มี HTML รองรับ) เปลี่ยนเป็นป้อบอัพชื่อเมนู+lightbox รูป, แก้รูปเมนูไม่เคยโชว์ (image_url→image_urls[0]), แก้ badge/limit สต็อกหายในหน้าแรก — ก่อนหน้า: Activity Log (v0.4.6, ⚠️ รอรัน `scripts/sql_activity_log.sql`) + optimize main_database_v2.html (778KB→330KB) — นัทกำลังเตรียมทริปแคนาดา 7 วัน จะใช้ claude.ai/code จากมือถือแทน Claude Code เดิม — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
+*Last updated: 4 ก.ค. 2026 — v0.4.9 ✅ push แล้ว (commit `d79272d`) — แก้ตามที่นัทเทสจริง: "หมดแล้ว" ขึ้นทันทีที่ลูกค้าใส่ตะกร้าครบสต็อก (ไม่ใช่แค่ตอน stock_total=0) + lightbox ขึ้นกรอบเปล่าเมื่อเมนูยังไม่มีรูปแทนที่จะไม่ทำอะไร — ก่อนหน้า: v0.4.8 แก้บั๊กร้ายแรงคลิกเมนู liff พังจริงมาตลอด, v0.4.6 Activity Log (⚠️ รอรัน `scripts/sql_activity_log.sql`), v0.4.7 optimize main_database_v2.html (778KB→330KB) — นัทกำลังเตรียมทริปแคนาดา 7 วัน จะใช้ claude.ai/code จากมือถือแทน Claude Code เดิม — ถัดไป: รอนัทลองรัน batch_photo_upload.html (จะช่วยทีละขั้นตอน)*
