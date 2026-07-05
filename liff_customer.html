@@ -354,7 +354,7 @@ body{background:#fff!important}
 .mi-v2{display:flex;align-items:center;gap:12px;padding:12px 14px;border-bottom:0.5px solid rgba(0,0,0,.05);}
 .mi-v2:last-child{border-bottom:none;}
 .mi-v2-photo{width:62px;height:62px;border-radius:10px;object-fit:cover;background:#F2F2F2;flex-shrink:0;cursor:pointer;}
-.mi-v2-ph{width:62px;height:62px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;}
+.mi-v2-ph{width:62px;height:62px;border-radius:10px;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;cursor:pointer;}
 /* Smoother card wrapper */
 .mlist-v2{background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 1px 12px rgba(0,0,0,.06);margin:0 12px 12px;}
 .mi-v2-info{flex:1;min-width:0;}
@@ -416,6 +416,7 @@ body{background:#fff!important}
 .lb-strip::-webkit-scrollbar{display:none;}
 .lb-img-wrap{min-width:100vw;display:flex;align-items:center;justify-content:center;scroll-snap-align:start;padding:60px 16px;}
 .lb-img-wrap img{max-width:100%;max-height:80vh;object-fit:contain;border-radius:12px;}
+.lb-ph{width:100%;max-width:320px;height:320px;display:flex;align-items:center;justify-content:center;font-size:96px;background:rgba(255,255,255,.08);border-radius:16px;}
 .lb-dots{position:absolute;bottom:20px;left:0;right:0;display:flex;justify-content:center;gap:6px;}
 .lb-dot{width:7px;height:7px;border-radius:50%;background:rgba(255,255,255,.4);}
 .lb-dot.on{background:#fff;}
@@ -1559,13 +1560,13 @@ function renderMenu() {
                     || /^HP|^LC/i.test(item.code||'');
     const stock = isMealPlan ? 999 : effectiveStock(item);
     const remaining = stock - qty;
-    const isOut     = !isMealPlan && stock <= 0;
+    const isOut     = !isMealPlan && remaining <= 0;
     const isLow     = !isMealPlan && !isOut && remaining > 0 && remaining <= 5;
     const isNextWk  = isNextWeekItem(item);
     const imgUrl = item.image_urls && item.image_urls[0];
     const img = imgUrl
-      ? `<img class="mi-v2-photo" src="${imgUrl}" onerror="imgFallback(this)" onclick="event.stopPropagation();openItemLightbox('${item.id}')">`
-      : `<div class="mi-v2-ph">🍱</div>`;
+      ? `<img class="mi-v2-photo" src="${imgUrl}" onerror="imgFallback(this,'${item.id}')" onclick="event.stopPropagation();openItemLightbox('${item.id}')">`
+      : `<div class="mi-v2-ph" onclick="event.stopPropagation();openItemLightbox('${item.id}')">🍱</div>`;
     const stockBadge = isOut
       ? `<span style="font-size:10px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px">หมดแล้ว</span>`
       : isLow
@@ -2396,7 +2397,7 @@ async function loadHomeLayout() {
   renderHomeGrid();
 }
 
-function imgFallback(el){el.onerror=null;var d=document.createElement("div");d.className="mi-v2-ph";d.textContent="🍱";el.parentNode.replaceChild(d,el);}
+function imgFallback(el,id){el.onerror=null;var d=document.createElement("div");d.className="mi-v2-ph";d.textContent="🍱";if(id)d.onclick=function(e){e.stopPropagation();openItemLightbox(id);};el.parentNode.replaceChild(d,el);}
 
 function renderHomeGrid() {
   var el = document.getElementById('homeGrid');
@@ -2467,12 +2468,12 @@ function renderHomeGrid() {
       var isMealPlan = m.category==='meal_hp' || m.category==='meal_lc' || /^HP|^LC/i.test(m.code||'');
       var stock = isMealPlan ? 999 : effectiveStock(m);
       var remaining = stock - qty;
-      var isOut = !isMealPlan && stock<=0;
+      var isOut = !isMealPlan && remaining<=0;
       var isLow = !isMealPlan && !isOut && remaining>0 && remaining<=5;
       var imgUrl = m.image_urls && m.image_urls[0];
       var img = imgUrl
-        ? '<img class="mi-v2-photo" src="'+imgUrl+'" onerror="imgFallback(this)" onclick="event.stopPropagation();openItemLightbox(\''+m.id+'\')">'
-        : '<div class="mi-v2-ph">🍱</div>';
+        ? '<img class="mi-v2-photo" src="'+imgUrl+'" onerror="imgFallback(this,\''+m.id+'\')" onclick="event.stopPropagation();openItemLightbox(\''+m.id+'\')">'
+        : '<div class="mi-v2-ph" onclick="event.stopPropagation();openItemLightbox(\''+m.id+'\')">🍱</div>';
       var stockBadge = isOut
         ? '<span style="font-size:10px;font-weight:700;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px">หมดแล้ว</span>'
         : isLow
@@ -2875,16 +2876,20 @@ function openItemLightbox(id) {
   openLightbox(urls);
 }
 function openLightbox(urls) {
-  if (!urls || !urls.length) return;
   const strip = document.getElementById('lbStrip');
   const dots = document.getElementById('lbDots');
-  strip.innerHTML = urls.map(u => `<div class="lb-img-wrap"><img src="${u}" alt=""></div>`).join('');
-  dots.innerHTML = urls.length > 1 ? urls.map((_,i) => `<div class="lb-dot${i===0?' on':''}"></div>`).join('') : '';
-  if (urls.length > 1) {
-    strip.addEventListener('scroll', function() {
-      const idx = Math.round(strip.scrollLeft / window.innerWidth);
-      dots.querySelectorAll('.lb-dot').forEach((d,i) => d.classList.toggle('on', i===idx));
-    }, {passive:true});
+  if (!urls || !urls.length) {
+    strip.innerHTML = '<div class="lb-img-wrap"><div class="lb-ph">🍱</div></div>';
+    dots.innerHTML = '';
+  } else {
+    strip.innerHTML = urls.map(u => `<div class="lb-img-wrap"><img src="${u}" alt=""></div>`).join('');
+    dots.innerHTML = urls.length > 1 ? urls.map((_,i) => `<div class="lb-dot${i===0?' on':''}"></div>`).join('') : '';
+    if (urls.length > 1) {
+      strip.addEventListener('scroll', function() {
+        const idx = Math.round(strip.scrollLeft / window.innerWidth);
+        dots.querySelectorAll('.lb-dot').forEach((d,i) => d.classList.toggle('on', i===idx));
+      }, {passive:true});
+    }
   }
   document.getElementById('lbOverlay').classList.add('show');
   document.body.style.overflow = 'hidden';
