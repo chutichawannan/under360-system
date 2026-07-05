@@ -2759,6 +2759,23 @@ function renderRecipesTab(){
     <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
     <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
   </div>`;
+  // ── Category Tabs ── (กดเพื่อแสดงแค่หมวดนั้น ลด render จาก 460 → ~80)
+  // ใช้ r.categories (array — ตัวจริงที่ใช้ทั้งระบบ) ไม่ใช่ r.category (เดี่ยว — ของเก่าเหลือติดอยู่แค่ไม่กี่เมนู)
+  // ย้ายมาไว้เหนือแถบค้นหา (เดิมอยู่ล่าง) ตามที่นัทขอ — หาหมวดสะดวกกว่า ไม่ต้องเลื่อนผ่านแถบค้นหาก่อน
+  const allCats = [...new Set(state.recipes.flatMap(r=>r.categories||[]))];
+  if(allCats.length){
+    html += '<div class="cat-tab-strip">';
+    html += `<button class="cat-tab-db${state.activeCatTab==='__all__'?' on':''}" onclick="setCatTab('__all__')">ทั้งหมด</button>`;
+    html += `<button class="cat-tab-db${state.activeCatTab==='__ptt__'?' on':''}" onclick="setCatTab('__ptt__')">📌 PTT</button>`;
+    allCats.forEach(cat=>{
+      const label = getCategory(cat)?.label || cat;
+      const cnt = state.recipes.filter(r=>(r.categories||[]).includes(cat)&&(r.status==='active'||state.showRetired)).length;
+      if(!cnt) return;
+      html += `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
+    });
+    html += '</div>';
+  }
+
   html += `<div class="toolbar">
     <div class="search-box"><input type="text" id="searchInput" placeholder="ค้นหาชื่อเมนูหรือโค้ด..." value="${escapeHtml(state.search)}"></div>
     ${renderCategoryPicker(state.categoryFilter, 'filter')}
@@ -2777,22 +2794,6 @@ function renderRecipesTab(){
       <input type="checkbox" id="showRetired" ${state.showRetired?'checked':''}> แสดงเมนูที่เลิกขาย
     </label>
   </div>`;
-
-  // ── Category Tabs ── (กดเพื่อแสดงแค่หมวดนั้น ลด render จาก 460 → ~80)
-  // ใช้ r.categories (array — ตัวจริงที่ใช้ทั้งระบบ) ไม่ใช่ r.category (เดี่ยว — ของเก่าเหลือติดอยู่แค่ไม่กี่เมนู)
-  const allCats = [...new Set(state.recipes.flatMap(r=>r.categories||[]))];
-  if(allCats.length){
-    html += '<div class="cat-tab-strip">';
-    html += `<button class="cat-tab-db${state.activeCatTab==='__all__'?' on':''}" onclick="setCatTab('__all__')">ทั้งหมด</button>`;
-    html += `<button class="cat-tab-db${state.activeCatTab==='__ptt__'?' on':''}" onclick="setCatTab('__ptt__')">📌 PTT</button>`;
-    allCats.forEach(cat=>{
-      const label = getCategory(cat)?.label || cat;
-      const cnt = state.recipes.filter(r=>(r.categories||[]).includes(cat)&&(r.status==='active'||state.showRetired)).length;
-      if(!cnt) return;
-      html += `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
-    });
-    html += '</div>';
-  }
 
   const q = state.search.trim().toLowerCase();
   let filtered = state.recipes.filter(r=>{
