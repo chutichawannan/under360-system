@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Under360 — อาหารตามเป้าหมาย โปรตีนเป็นแกน ส่งถึงบ้านทั่วกรุงเทพ</title>
+<meta name="description" content="อาหารสุขภาพเดลิเวอรี่ ปรุงสดทุกวันมากว่า 10 ปี — Meal Plan โปรตีนสูง (HP) และ Low Carb (LC) จัดเมนูตามเป้าหมายของคุณ ตัดของแพ้ให้อัตโนมัติ ส่งฟรีทั่วกรุงเทพ สั่งง่ายจบใน LINE">
+<link rel="canonical" href="https://www.360foodbox.com/">
+<meta property="og:title" content="Under360 — อาหารตามเป้าหมาย โปรตีนเป็นแกน">
+<meta property="og:description" content="Meal Plan HP+LC จัดเมนูตามเป้าหมายของคุณ ปรุงสดทุกวัน ส่งฟรีทั่วกรุงเทพ">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.360foodbox.com/">
+<meta property="og:image" content="https://static.wixstatic.com/media/9bfc29_d7026800b0904e6faa057e066b2146df~mv2.jpg/v1/fill/w_1080,h_1080,al_c/9bfc29_d7026800b0904e6faa057e066b2146df~mv2.jpg">
+
+<!-- ═══ Google Ads tag ═══
+  TODO (Claude Code): หลังสร้าง Conversion Action ใน Google Ads แล้ว
+  1) แทน AW-XXXXXXXXXX ด้วย Conversion ID จริง แล้วปลดคอมเมนต์ block นี้
+  2) แทน CONVERSION_LABEL ใน trackOrder() ด้านล่าง
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-XXXXXXXXXX');
+</script>
+═══════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Under360",
+  "alternateName": "360foodbox",
+  "url": "https://www.360foodbox.com",
+  "telephone": "+66641736519",
+  "servesCuisine": ["Healthy", "Thai"],
+  "priceRange": "฿฿",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "เขตคลองสาน",
+    "addressRegion": "กรุงเทพมหานคร",
+    "addressCountry": "TH"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": 13.7179969, "longitude": 100.5010971 },
+  "areaServed": "กรุงเทพมหานครและปริมณฑล",
+  "sameAs": [
+    "https://www.facebook.com/under360food",
+    "https://www.instagram.com/under360",
+    "https://www.tiktok.com/@under360cleanfood"
+  ]
+}
+</script>
+
+<style>
+:root{
+  --deep:#143823;
+  --green:#2E7D43;
+  --cream:#FAF6EC;
+  --ink:#1F2A1D;
+  --muted:#66705F;
+  --paper:#FFFFFF;
+  --line:#06C755;
+  --line-dark:#05A648;
+  --chili:#D64B2A;
+  --radius:16px;
+  --maxw:1080px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--cream);line-height:1.7;font-size:17px}
+h1,h2,h3,.display{font-family:'Prompt',sans-serif;line-height:1.35}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.eyebrow{font-family:'Prompt';font-weight:600;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+section{padding:64px 0}
+.btn-line{display:inline-flex;align-items:center;gap:10px;background:var(--line);color:#fff;text-decoration:none;font-family:'Prompt';font-weight:600;font-size:1.05rem;padding:14px 28px;border-radius:999px;box-shadow:0 6px 18px rgba(6,199,85,.35);transition:transform .15s,background .15s}
+.btn-line:hover{background:var(--line-dark);transform:translateY(-2px)}
+.btn-line svg{width:22px;height:22px;flex:none}
+.btn-ghost{display:inline-block;font-family:'Prompt';font-weight:600;padding:13px 26px;border-radius:999px;border:2px solid var(--deep);color:var(--deep);text-decoration:none;transition:background .15s,color .15s}
+.btn-ghost:hover{background:var(--deep);color:#fff}
+
+/* ── top bar ── */
+header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(20,56,35,.08)}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.nav .logo{display:flex;align-items:center;gap:10px;font-family:'Prompt';font-weight:700;font-size:1.15rem;color:var(--deep);text-decoration:none}
+.nav .logo img{width:36px;height:36px;border-radius:50%}
+.nav nav{margin-left:auto;display:flex;gap:20px;align-items:center}
+.nav nav a{text-decoration:none;font-family:'Prompt';font-weight:500;font-size:.95rem;color:var(--ink)}
+.nav nav a:hover{color:var(--green)}
+.nav .btn-line{padding:9px 18px;font-size:.92rem;box-shadow:none}
+@media(max-width:760px){.nav nav a.hide-m{display:none}}
+
+/* ── hero ── */
+.hero{background:var(--deep);color:var(--cream);padding:72px 0 84px;position:relative;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(1.9rem,4.2vw,2.9rem);font-weight:700;color:#fff}
+.hero h1 em{font-style:normal;color:#9FE3AE}
+.hero p.lede{margin:18px 0 26px;font-size:1.08rem;color:rgba(250,246,236,.85);max-width:34em}
+.goal-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.goal-chips button{font-family:'Prompt';font-weight:600;font-size:.95rem;padding:9px 20px;border-radius:999px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--cream);cursor:pointer;transition:all .15s}
+.goal-chips button.on{background:var(--cream);color:var(--deep);border-color:var(--cream)}
+.goal-answer{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:var(--radius);padding:18px 22px;min-height:96px;margin-bottom:28px}
+.goal-answer strong{font-family:'Prompt';color:#9FE3AE}
+.hero-img{border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:rotate(1.5deg)}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero .note{font-size:.88rem;color:rgba(250,246,236,.65);margin-top:12px}
+@media(max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero-img{max-width:420px;margin:0 auto}}
+
+/* ── facts strip ── */
+.facts{background:var(--paper);border-bottom:1px solid rgba(20,56,35,.07);padding:28px 0}
+.facts .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;text-align:center}
+.facts b{display:block;font-family:'Prompt';font-size:1.35rem;color:var(--deep)}
+.facts span{font-size:.88rem;color:var(--muted)}
+@media(max-width:760px){.facts .wrap{grid-template-columns:repeat(2,1fr)}}
+
+/* ── products ── */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:34px}
+.card{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 18px rgba(20,56,35,.07);display:flex;flex-direction:column}
+.card img{height:230px;object-fit:cover;width:100%}
+.card .body{padding:22px 22px 26px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h3{font-size:1.2rem;color:var(--deep)}
+.card p{font-size:.95rem;color:var(--muted);flex:1}
+.card .tag{align-self:flex-start;font-family:'Prompt';font-weight:600;font-size:.75rem;letter-spacing:.08em;background:rgba(46,125,67,.1);color:var(--green);padding:4px 12px;border-radius:999px}
+.card .tag.hot{background:rgba(214,75,42,.1);color:var(--chili)}
+.card a.more{font-family:'Prompt';font-weight:600;color:var(--green);text-decoration:none}
+.card a.more:hover{text-decoration:underline}
+@media(max-width:860px){.cards{grid-template-columns:1fr}}
+
+/* ── philosophy ── */
+.philo{background:var(--paper)}
+.philo .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.philo blockquote{font-family:'Prompt';font-weight:600;font-size:clamp(1.25rem,2.6vw,1.7rem);color:var(--deep);border-left:5px solid var(--green);padding-left:22px}
+.philo ul{list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:14px}
+.philo li{padding-left:30px;position:relative}
+.philo li::before{content:"✓";position:absolute;left:0;top:0;font-family:'Prompt';font-weight:700;color:var(--green)}
+.philo li b{font-family:'Prompt';color:var(--deep)}
+@media(max-width:860px){.philo .wrap{grid-template-columns:1fr}}
+
+/* ── delivery ── */
+.deliv .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px}
+.deliv .box{background:var(--paper);border-radius:var(--radius);padding:26px;box-shadow:0 4px 18px rgba(20,56,35,.06)}
+.deliv .box h3{color:var(--deep);margin-bottom:8px;font-size:1.1rem}
+.deliv .box p{font-size:.95rem;color:var(--muted)}
+@media(max-width:760px){.deliv .grid{grid-template-columns:1fr}}
+
+/* ── faq ── */
+.faq details{background:var(--paper);border-radius:12px;padding:16px 20px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,56,35,.05)}
+.faq summary{font-family:'Prompt';font-weight:600;cursor:pointer;color:var(--deep);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::after{content:"+";font-size:1.3rem;color:var(--green)}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin-top:10px;color:var(--muted);font-size:.96rem}
+
+/* ── blog ── */
+.blog-list{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:30px}
+.bpost{background:var(--paper);border-radius:var(--radius);padding:24px;box-shadow:0 4px 18px rgba(20,56,35,.06);text-decoration:none;display:flex;flex-direction:column;gap:8px;transition:transform .15s}
+.bpost:hover{transform:translateY(-4px)}
+.bpost h3{font-size:1.02rem;color:var(--deep)}
+.bpost span{font-size:.85rem;color:var(--muted)}
+@media(max-width:860px){.blog-list{grid-template-columns:1fr}}
+
+/* ── instagram feed ── */
+.ig{background:var(--paper)}
+.ig-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.ig-head .handle{font-family:'Prompt';font-weight:600;color:var(--deep);text-decoration:none;font-size:1.05rem}
+.ig-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.ig-grid a{position:relative;display:block;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:rgba(20,56,35,.06)}
+.ig-grid img{width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.ig-grid a:hover img{transform:scale(1.06)}
+.ig-grid a::after{content:"";position:absolute;inset:0;background:rgba(20,56,35,0);transition:background .2s}
+.ig-grid a:hover::after{background:rgba(20,56,35,.18)}
+@media(max-width:860px){.ig-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* ── final cta ── */
+.final{background:var(--deep);color:var(--cream);text-align:center}
+.final h2{color:#fff;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+.final p{margin:14px auto 28px;max-width:36em;color:rgba(250,246,236,.8)}
+
+footer{background:#0E2718;color:rgba(250,246,236,.7);padding:36px 0;font-size:.9rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center}
+footer a{color:rgba(250,246,236,.85);text-decoration:none;margin-right:16px}
+footer a:hover{text-decoration:underline}
+
+h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <img src="https://static.wixstatic.com/media/9bfc29_a943055f441240e8a374b4d06cea63d6~mv2.jpg/v1/fill/w_93,h_93,al_c,q_80/360Foodbox-Brand-CI-2019.jpg" alt="Under360 logo">
+      Under360
+    </a>
+    <nav>
+      <a href="mealplan.html">Meal Plan</a>
+      <a class="hide-m" href="#products">สินค้าทั้งหมด</a>
+      <a class="hide-m" href="#delivery">การจัดส่ง</a>
+      <a href="blog.html">บทความ</a>
+      <a class="btn-line" href="#" onclick="return orderNow(this)">สั่งใน LINE</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow" style="color:#9FE3AE">ปรุงสดทุกวัน มากว่า 10 ปี</p>
+      <h1>เราไม่ได้ขายอาหารคลีน<br>เราขายอาหารที่<em>เข้ากับเป้าหมายของคุณ</em></h1>
+      <p class="lede">โปรตีนเป็นแกน รสชาติกินได้ทุกวันจริง — บอกเป้าหมายมา แล้วให้ครัวเราจัดเมนูให้ ตัดของแพ้ให้อัตโนมัติ ส่งถึงหน้าบ้านทั่วกรุงเทพ</p>
+
+      <div class="goal-chips" role="tablist" aria-label="เลือกเป้าหมายของคุณ">
+        <button class="on" data-goal="fat" onclick="pickGoal(this)">ลดไขมัน</button>
+        <button data-goal="muscle" onclick="pickGoal(this)">เพิ่มกล้าม</button>
+        <button data-goal="daily" onclick="pickGoal(this)">กินดีทุกวัน</button>
+      </div>
+      <div class="goal-answer" id="goalAnswer" aria-live="polite"></div>
+
+      <div class="hero-cta">
+        <a class="btn-line" href="#" onclick="return orderNow(this)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
+          สั่งใน LINE เลย
+        </a>
+        <a class="btn-ghost" style="border-color:rgba(255,255,255,.5);color:var(--cream)" href="mealplan.html">ดู Meal Plan →</a>
+      </div>
+      <p class="note">สั่งง่าย จบใน LINE · แอดมินตอบไว · แจ้งช่วงเวลาที่สะดวกรับได้</p>
+    </div>
+    <div class="hero-img">
+      <img src="https://static.wixstatic.com/media/9bfc29_642c81922b654bba96c233f751e56e52~mv2.png/v1/fill/w_864,h_1158,al_c,q_85/PXL_20241223_063516269_edited_edited_edi.png" alt="ข้าวกล่องอาหารสุขภาพ Under360 โปรตีนแน่น" loading="eager">
+    </div>
+  </div>
+</div>
+
+<!-- FACTS -->
+<div class="facts">
+  <div class="wrap">
+    <div><b>120–170 g</b><span>โปรตีนต่อกล่อง (LC / HP)</span></div>
+    <div><b>≤ 5 g</b><span>น้ำมันรำข้าวต่อเมนู</span></div>
+    <div><b>90 %</b><span>ของเมนู โซเดียมต่ำกว่าอาหารทั่วไป</span></div>
+    <div><b>10 ปี</b><span>ปรุงสดส่งถึงบ้านในกรุงเทพ</span></div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<section id="products">
+  <div class="wrap">
+    <p class="eyebrow">Product Lines</p>
+    <h2 class="sec">เลือกแบบที่เข้ากับชีวิตคุณ</h2>
+    <div class="cards">
+      <div class="card">
+        <img src="https://static.wixstatic.com/media/9bfc29_642c81922b654bba96c233f751e56e52~mv2.png/v1/fill/w_640,h_480,al_c,q_85/PXL_20241223_063516269_edited_edited_edi.png" alt="Meal Plan โปรตีนสูงและโลว์คาร์บ Under360" loading="lazy">
+        <div class="body">
+          <span class="tag hot">⭐ ตัวชูโรง</span>
+          <h3>Meal Plan — โปรตีนสูง (HP) &amp; Low Carb (LC)</h3>
+          <p>คอร์สอาหารทำสดรายวัน จัดเมนูให้ตามเป้าหมาย ไม่ซ้ำจำเจ ตัดของแพ้อัตโนมัติ เนื้อสัตว์ 170 g (HP) หรือ 120 g (LC) ต่อกล่อง เริ่มทดลอง 7 กล่อง — ส่งฟรีทั่วกรุงเทพ</p>
+          <a class="more" href="mealplan.html">ดูรายละเอียด + ราคา →</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="https://static.wixstatic.com/media/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg/v1/fill/w_640,h_480,al_c,q_80/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg" alt="ข้าวกล่องอาหารสุขภาพพร้อมทาน" loading="lazy">
+        <div class="body">
+          <span class="tag">พร้อมทาน</span>
+          <h3>ข้าวกล่องสุขภาพ</h3>
+          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ มีเมนูพิเศษให้ตามได้เรื่อยๆ สั่งล่วงหน้า 1 วัน ส่งทั่วกรุงเทพ</p>
+          <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="https://static.wixstatic.com/media/9bfc29_ade0979fca9d432596229bb14e937e4e~mv2.jpg/v1/fill/w_640,h_480,al_c,q_80/PXL_20241223_065233365-.jpg" alt="แพ็คกับข้าวฟรีซแพ็คโปรตีนสูง ส่งทั่วไทย" loading="lazy">
+        <div class="body">
+          <span class="tag">ส่งทั่วไทย</span>
+          <h3>แพ็คกับข้าวฟรีซแพ็ค</h3>
+          <p>กับข้าวล้วนโปรตีน 120 g ปรุงเสร็จแช่แข็งทันทีเพื่อคงคุณภาพ เหมาะกับการตุนไว้ทานหรืออยู่ต่างจังหวัด จัดส่งรถควบคุมอุณหภูมิทั่วประเทศ</p>
+          <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section class="philo">
+  <div class="wrap">
+    <blockquote>ไม่ใช่คลีนจนทรมาน ไม่ใช่ตามใจปากจนพัง — แต่คือ "พอดี" ที่กินได้ทุกวันจริงๆ</blockquote>
+    <div>
+      <p class="eyebrow">Why Under360</p>
+      <h2 class="sec">10 ปีของการหาจุดพอดี</h2>
+      <ul>
+        <li><b>โปรตีนเป็นแกนทุกจาน</b> — เนื้อสัตว์ 120–170 g ต่อกล่อง อิ่มจริง ไม่ใช่ผักล้วนโรยไก่</li>
+        <li><b>คุมน้ำมันแบบมีหลัก</b> — ใช้น้ำมันรำข้าว ไม่เกิน 5 g ต่อเมนู เพราะร่างกายต้องการไขมันพอเหมาะ ไม่ใช่ตัดทิ้ง</li>
+        <li><b>โซเดียมต่ำกว่าอาหารทั่วไป</b>ในกว่า 90% ของเมนู — โดยรสชาติยังกลมกล่อม</li>
+        <li><b>ข้าว กข 43</b> — หอมนุ่มเหมือนหอมมะลิ แต่ดัชนีน้ำตาลต่ำกว่า (ใช้ในเมนูส่วนใหญ่)</li>
+        <li><b>ซื่อสัตย์กับคนกิน</b> — เราไม่เคลมว่าสมบูรณ์แบบ แต่เลี่ยงของ ultra-processed ให้มากที่สุด และบอกตรงๆ ว่าแต่ละเมนูคืออะไร</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- DELIVERY -->
+<section id="delivery" class="deliv">
+  <div class="wrap">
+    <p class="eyebrow">Delivery</p>
+    <h2 class="sec">ส่งถึงไหนบ้าง</h2>
+    <div class="grid">
+      <div class="box">
+        <h3>🛵 กรุงเทพ + ปริมณฑล — ปรุงสดรายวัน</h3>
+        <p>ส่งด้วยแมสเซนเจอร์ของร้าน จันทร์–เสาร์ สั่งล่วงหน้า 1 วัน แจ้งช่วงเวลาที่สะดวกรับได้ · ค่าส่งคิดตามระยะทาง ส่วนใหญ่ไม่เกิน ~200 บาทแม้อยู่ไกล เพราะร้านช่วยออกส่วนต่างให้ · <b>Meal Plan รายสัปดาห์/รายเดือน ส่งฟรี</b></p>
+      </div>
+      <div class="box">
+        <h3>🚚 ทั่วประเทศ — ฟรีซแพ็ค</h3>
+        <p>แพ็คกับข้าวปรุงเสร็จแช่แข็งทันที ส่งด้วยรถควบคุมอุณหภูมิถึงหน้าบ้านใน 1–3 วัน จันทร์–เสาร์ · สดกับฟรีซตอบโจทย์คนละแบบ — อยู่กรุงเทพทานสดรายวัน อยู่ไกลหรืออยากตุนเลือกฟรีซแพ็ค</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="wrap">
+    <p class="eyebrow">FAQ</p>
+    <h2 class="sec" style="margin-bottom:26px">คำถามที่พบบ่อย</h2>
+    <details>
+      <summary>สั่งยังไง?</summary>
+      <p>ทักมาใน LINE ของร้านได้เลย แอดมินช่วยแนะนำเมนูและเป้าหมายที่เหมาะกับคุณ สั่งจบในแชทเดียว ชำระผ่านโอน/พร้อมเพย์/บัตรได้</p>
+    </details>
+    <details>
+      <summary>แพ้อาหาร หรือมีของไม่ทาน สั่งได้ไหม?</summary>
+      <p>ได้แน่นอน แจ้งของแพ้และของไม่ทานไว้ครั้งเดียว ระบบครัวจะตัดออกจากเมนูของคุณอัตโนมัติทุกกล่อง</p>
+    </details>
+    <details>
+      <summary>เลือกวันและเวลารับของได้ไหม?</summary>
+      <p>เลือกวันจัดส่งได้ (จันทร์–เสาร์) และแจ้งช่วงเวลาที่สะดวกรับได้ ร้านจะจัดรอบรถให้ใกล้เคียงช่วงที่แจ้งมากที่สุด</p>
+    </details>
+    <details>
+      <summary>Meal Plan ต่างจากข้าวกล่องยังไง?</summary>
+      <p>Meal Plan เป็นคอร์สทำสดรายวัน ครัวจัดเมนูให้ตามเป้าหมาย (โปรตีนสูง หรือ Low Carb) ไม่ต้องเลือกเองทุกวันและไม่ซ้ำจำเจ ส่วนข้าวกล่องคือเมนูพร้อมทานที่เลือกสั่งเป็นกล่องๆ ได้อิสระ</p>
+    </details>
+  </div>
+</section>
+
+<!-- BLOG -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Knowledge</p>
+    <h2 class="sec">บทความสุขภาพ</h2>
+    <div class="blog-list" id="blogList">
+      <!-- โหลดจาก Supabase; fallback ด้านล่างถ้าไม่มีข้อมูล -->
+    </div>
+    <p style="margin-top:22px"><a class="btn-ghost" href="blog.html">อ่านบทความทั้งหมด →</a></p>
+  </div>
+</section>
+
+<!-- INSTAGRAM FEED -->
+<section class="ig">
+  <div class="wrap">
+    <div class="ig-head">
+      <div>
+        <p class="eyebrow">Instagram</p>
+        <h2 class="sec">เมนูจริงจากครัว วันต่อวัน</h2>
+      </div>
+      <a class="handle" href="https://www.instagram.com/under360" target="_blank" rel="noopener">📷 @under360 — Follow</a>
+    </div>
+    <div class="ig-grid" id="igGrid"></div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="wrap">
+    <h2>บอกเป้าหมายของคุณมา<br>ที่เหลือให้ครัวเราจัดการ</h2>
+    <p>เริ่มจากทดลอง Meal Plan 7 กล่อง หรือสั่งข้าวกล่องทีละมื้อก็ได้ — ทักมาคุยกันก่อนได้ ไม่มีข้อผูกมัด</p>
+    <a class="btn-line" href="#" onclick="return orderNow(this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
+      เริ่มสั่งใน LINE
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <b style="font-family:'Prompt';color:#fff">Under360</b> · อาหารตามเป้าหมาย ส่งถึงบ้าน<br>
+      โทร 064-173-6519 · เขตคลองสาน กรุงเทพฯ
+    </div>
+    <div>
+      <a href="mealplan.html">Meal Plan</a>
+      <a href="blog.html">บทความ</a>
+      <a href="https://www.facebook.com/under360food">Facebook</a>
+      <a href="https://www.instagram.com/under360">Instagram</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══ CONFIG ═══ */
+const ORDER_URL = 'https://under360.hatohub.com/brand'; // TODO (Claude Code): เปลี่ยนเป็นลิงก์ LINE OA / LIFF ตัวจริงตอนระบบใหม่พร้อม
+const SB_URL  = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ═══ UTM capture — เก็บ source ไว้ใช้กับ attribution ═══ */
+(function(){
+  try{
+    const p = new URLSearchParams(location.search);
+    if(p.get('utm_source')){
+      const utm = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'), ts:Date.now() };
+      localStorage.setItem('u360_utm', JSON.stringify(utm));
+    }
+  }catch(e){}
+})();
+
+/* ═══ web_events tracking (fire-and-forget — ห้าม await, ห้ามบล็อก UX, catch เงียบ) ═══ */
+function track(event, page){
+  try{
+    const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
+    sb.from('web_events').insert({
+      event, page,
+      utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+      referrer: document.referrer||null, ua: (navigator.userAgent||'').slice(0,200)
+    }).then(()=>{},()=>{});
+  }catch(e){}
+}
+track('pageview','index');
+
+/* ═══ Order CTA + Google Ads conversion ═══ */
+function orderNow(el){
+  track('cta_click','index');
+  try{
+    if(typeof gtag === 'function'){
+      // TODO (Claude Code): แทน CONVERSION_LABEL หลังสร้าง conversion action
+      gtag('event','conversion',{ 'send_to':'AW-XXXXXXXXXX/CONVERSION_LABEL' });
+    }
+  }catch(e){}
+  window.location.href = ORDER_URL;
+  return false;
+}
+
+/* ═══ Goal switcher (signature) ═══ */
+const GOALS = {
+  fat:    '<strong>ลดไขมัน →</strong> แนะนำ Meal Plan <strong>LC (Low Carb)</strong> — คุมคาร์บ โปรตีน 120 g ต่อกล่อง อิ่มโดยไม่ต้องอด เมนูหมุนเวียนไม่จำเจ',
+  muscle: '<strong>เพิ่มกล้าม →</strong> แนะนำ Meal Plan <strong>HP (High Protein)</strong> — โปรตีนแน่น 170 g ต่อกล่อง รองรับสายเวท สายวิ่ง และคนเตรียมแข่ง',
+  daily:  '<strong>กินดีทุกวัน →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์ก็ได้'
+};
+function pickGoal(btn){
+  document.querySelectorAll('.goal-chips button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('goalAnswer').innerHTML = GOALS[btn.dataset.goal];
+}
+document.getElementById('goalAnswer').innerHTML = GOALS.fat;
+
+/* ═══ Instagram Feed ═══
+   โหมดอัตโนมัติ: สมัคร behold.so (ฟรี) → เชื่อม IG @under360 → เอา JSON feed URL มาใส่ BEHOLD_URL
+   ถ้ายังไม่ใส่ = โชว์ grid สำรอง (FALLBACK_IG) ลิงก์ไป IG จริง — งาน connect Behold = delegate พลอย/แอดมิน */
+const BEHOLD_URL = ''; // TODO: ใส่ https://feeds.behold.so/xxxxx เมื่อเชื่อมแล้ว
+const IG_PROFILE = 'https://www.instagram.com/under360';
+const FALLBACK_IG = [
+  'https://static.wixstatic.com/media/9bfc29_642c81922b654bba96c233f751e56e52~mv2.png/v1/fill/w_500,h_500,al_c,q_85/PXL_20241223_063516269_edited_edited_edi.png',
+  'https://static.wixstatic.com/media/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg/v1/fill/w_500,h_500,al_c,q_80/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg',
+  'https://static.wixstatic.com/media/9bfc29_ade0979fca9d432596229bb14e937e4e~mv2.jpg/v1/fill/w_500,h_500,al_c,q_80/PXL_20241223_065233365-.jpg',
+  'https://static.wixstatic.com/media/9bfc29_d9c4553624b347d5805b5af28e97c114~mv2.jpg/v1/fill/w_500,h_500,al_c,q_80/5_edited.jpg',
+  'https://static.wixstatic.com/media/9bfc29_d7026800b0904e6faa057e066b2146df~mv2.jpg/v1/fill/w_500,h_500,al_c/9bfc29_d7026800b0904e6faa057e066b2146df~mv2.jpg',
+  'https://static.wixstatic.com/media/11062b_ae0bbc342ba34cdca3442d5dbe20f64a~mv2.jpg/v1/crop/x_835,y_8,w_3460,h_3460/fill/w_500,h_500,al_c,q_80/11062b_ae0bbc342ba34cdca3442d5dbe20f64a~mv2.jpg'
+];
+(async function loadIG(){
+  const grid = document.getElementById('igGrid');
+  let tiles = [];
+  if(BEHOLD_URL){
+    try{
+      const res = await fetch(BEHOLD_URL);
+      const data = await res.json();
+      const posts = data.posts || data || [];
+      tiles = posts.slice(0,6).map(p=>({
+        img: p.mediaUrl || (p.sizes && (p.sizes.medium?.mediaUrl || p.sizes.small?.mediaUrl)) || p.thumbnailUrl,
+        link: p.permalink || IG_PROFILE
+      })).filter(t=>t.img);
+    }catch(e){}
+  }
+  if(!tiles.length) tiles = FALLBACK_IG.map(img=>({img, link:IG_PROFILE}));
+  grid.innerHTML = tiles.map(t=>
+    `<a href="${t.link}" target="_blank" rel="noopener" aria-label="ดูโพสต์บน Instagram">
+       <img src="${t.img}" alt="เมนูอาหารสุขภาพ Under360 บน Instagram" loading="lazy">
+     </a>`).join('');
+})();
+
+/* ═══ Blog latest 3 จาก Supabase (fallback เป็นลิงก์คงที่) ═══ */
+const FALLBACK_POSTS = [
+  {title:'Meal Plan โปรตีนสูงคืออะไร เหมาะกับใคร (2026)', url:'blog.html'},
+  {title:'อาหารคลีน Delivery กรุงเทพ เจ้าไหนดี? วิธีเลือกให้เหมาะกับเป้าหมาย', url:'blog.html'},
+  {title:'Under360 ส่งถึงไหนบ้าง? ครอบคลุมทั่วกรุงเทพ และส่งได้ทั่วไทย', url:'blog.html'}
+];
+(async function loadBlog(){
+  const box = document.getElementById('blogList');
+  let posts = [];
+  try{
+    const { data, error } = await sb.from('blog_posts')
+      .select('slug,title,created_at').eq('published',true)
+      .order('created_at',{ascending:false}).limit(3);
+    if(!error && data && data.length) posts = data.map(p=>({title:p.title, url:'blog.html?post='+encodeURIComponent(p.slug), date:p.created_at}));
+  }catch(e){}
+  if(!posts.length) posts = FALLBACK_POSTS;
+  box.innerHTML = posts.map(p=>`
+    <a class="bpost" href="${p.url}">
+      <h3>${p.title}</h3>
+      <span>อ่านต่อ →</span>
+    </a>`).join('');
+})();
+</script>
+</body>
+</html>

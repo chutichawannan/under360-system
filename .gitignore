@@ -1,0 +1,10 @@
+# Doc-flow working files — merged into CLAUDE.md, ไม่ push git (ดู CLAUDE.md ระบบเวอร์ชัน doc track)
+UNDER360_MASTERNOTE*.md
+UNDER360_HISTORY.md
+CLAUDE_CODE_HANDOFF.md
+
+# Sensitive — ห้าม commit เด็ดขาด (ข้อมูลส่วนตัว/การเงิน/ครอบครัว)
+nut_personal_profile.md
+
+# Zip archives ไม่เก็บใน git (under360-web.zip แตกเข้า /web แล้ว, ตัวอื่นเป็น artifact ชั่วคราว)
+*.zip

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Blog Admin | Under360</title>
+<meta name="robots" content="noindex,nofollow">
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#143823; --green:#2E7D43; --cream:#FAF6EC; --ink:#1F2A1D;
+  --muted:#66705F; --paper:#FFFFFF; --chili:#D64B2A; --radius:12px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Sarabun',sans-serif;background:var(--cream);color:var(--ink);font-size:16px;line-height:1.6}
+h1,h2,h3,button,label{font-family:'Prompt',sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:20px}
+h1{color:var(--deep);font-size:1.4rem;margin-bottom:4px}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:20px}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:20px}
+@media(max-width:860px){.grid{grid-template-columns:1fr}}
+
+.panel{background:var(--paper);border-radius:var(--radius);padding:18px;box-shadow:0 3px 14px rgba(20,56,35,.07)}
+.panel h2{font-size:1.02rem;color:var(--deep);margin-bottom:12px}
+
+/* post list */
+.plist{display:flex;flex-direction:column;gap:8px;max-height:70vh;overflow:auto}
+.pitem{padding:10px 12px;border:1px solid rgba(20,56,35,.12);border-radius:10px;cursor:pointer;font-size:.92rem}
+.pitem:hover{border-color:var(--green)}
+.pitem.sel{border-color:var(--green);background:rgba(46,125,67,.06)}
+.pitem b{display:block;color:var(--deep)}
+.pitem span{font-size:.78rem;color:var(--muted)}
+.pitem .draft{color:var(--chili);font-family:'Prompt';font-size:.75rem}
+
+/* form */
+label{display:block;font-weight:600;font-size:.85rem;color:var(--deep);margin:14px 0 5px}
+input[type=text],textarea{width:100%;padding:10px 12px;border:1px solid rgba(20,56,35,.2);border-radius:10px;font-family:'Sarabun';font-size:.95rem;background:#fff}
+textarea{resize:vertical}
+#fContent{min-height:340px;font-family:ui-monospace,Menlo,monospace;font-size:.88rem;line-height:1.6}
+input:focus,textarea:focus{outline:2px solid var(--green);border-color:transparent}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+@media(max-width:600px){.row2{grid-template-columns:1fr}}
+.check{display:flex;align-items:center;gap:8px;margin-top:14px;font-weight:600;font-size:.9rem;color:var(--deep)}
+.check input{width:18px;height:18px}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:20px}
+button{padding:11px 22px;border-radius:999px;border:none;font-weight:600;font-size:.95rem;cursor:pointer}
+.b-save{background:var(--green);color:#fff}
+.b-save:hover{background:#256637}
+.b-new{background:var(--deep);color:#fff}
+.b-del{background:transparent;color:var(--chili);border:1.5px solid var(--chili)}
+.b-prev{background:transparent;color:var(--deep);border:1.5px solid var(--deep)}
+button:disabled{opacity:.5;cursor:not-allowed}
+
+#status{margin-top:12px;font-size:.9rem;font-family:'Prompt';min-height:1.4em}
+#status.ok{color:var(--green)}
+#status.err{color:var(--chili)}
+
+/* preview */
+#preview{display:none;margin-top:20px;border-top:2px dashed rgba(20,56,35,.2);padding-top:20px}
+#preview h2{font-size:1.3rem;color:var(--deep);margin:24px 0 10px}
+#preview h3{font-size:1.1rem;color:var(--deep);margin:18px 0 8px}
+#preview p{margin-bottom:12px}
+#preview ul,#preview ol{margin:0 0 12px 24px}
+#preview img{max-width:100%;border-radius:10px;margin:12px 0}
+#preview blockquote{border-left:4px solid var(--green);padding:4px 14px;color:var(--muted);margin:14px 0}
+.hint{font-size:.8rem;color:var(--muted);margin-top:4px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>📝 Blog Admin</h1>
+  <p class="sub">เขียนบทความด้วย Markdown → บันทึกลง Supabase → ขึ้นหน้า blog.html ทันที · หน้านี้ตั้ง noindex แล้ว (Google ไม่เก็บ)</p>
+
+  <div class="grid">
+    <!-- LEFT: post list -->
+    <div class="panel">
+      <h2>บทความทั้งหมด</h2>
+      <button class="b-new" style="width:100%;margin-bottom:12px" onclick="newPost()">＋ เขียนบทความใหม่</button>
+      <div class="plist" id="plist">กำลังโหลด…</div>
+    </div>
+
+    <!-- RIGHT: editor -->
+    <div class="panel">
+      <h2 id="formTitle">เขียนบทความใหม่</h2>
+
+      <label>หัวข้อบทความ *</label>
+      <input type="text" id="fTitle" placeholder="เช่น Meal Plan โปรตีนสูงคืออะไร เหมาะกับใคร (2026)">
+
+      <div class="row2">
+        <div>
+          <label>Slug (URL) *</label>
+          <input type="text" id="fSlug" placeholder="high-protein-meal-plan">
+          <div class="hint">อังกฤษตัวเล็ก คั่นด้วย - เท่านั้น · ห้ามซ้ำกับบทความอื่น</div>
+        </div>
+        <div>
+          <label>ลิงก์รูปหน้าปก (ไม่บังคับ)</label>
+          <input type="text" id="fCover" placeholder="https://...">
+        </div>
+      </div>
+
+      <label>คำโปรย (โชว์ในหน้า list · ไม่บังคับ)</label>
+      <input type="text" id="fExcerpt" placeholder="สรุปสั้นๆ 1-2 ประโยคว่าบทความนี้เกี่ยวกับอะไร">
+
+      <label>เนื้อหา (Markdown) *</label>
+      <textarea id="fContent" placeholder="## หัวข้อย่อย&#10;&#10;เนื้อหาย่อหน้าแรก...&#10;&#10;- ลิสต์ข้อ 1&#10;- ลิสต์ข้อ 2&#10;&#10;**ตัวหนา** และ [ลิงก์](https://...)"></textarea>
+
+      <label class="check"><input type="checkbox" id="fPublished" checked> เผยแพร่ทันที (ติ๊กออก = เก็บเป็น draft)</label>
+
+      <div class="actions">
+        <button class="b-save" id="btnSave" onclick="savePost()">💾 บันทึก</button>
+        <button class="b-prev" onclick="togglePreview()">👁 พรีวิว</button>
+        <button class="b-del" id="btnDel" onclick="delPost()" style="display:none">🗑 ลบบทความนี้</button>
+      </div>
+      <div id="status"></div>
+
+      <div id="preview"></div>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script>
+const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let editingId = null;
+let posts = [];
+
+async function loadList(){
+  const box = document.getElementById('plist');
+  try{
+    const { data, error } = await sb.from('blog_posts')
+      .select('id,slug,title,published,created_at')
+      .order('created_at',{ascending:false}).limit(200);
+    if(error) throw error;
+    posts = data || [];
+    if(!posts.length){ box.innerHTML = '<div style="color:var(--muted);font-size:.9rem">ยังไม่มีบทความ</div>'; return; }
+    box.innerHTML = posts.map(p=>`
+      <div class="pitem ${p.id===editingId?'sel':''}" onclick="editPost('${p.id}')">
+        <b>${esc(p.title)}</b>
+        <span>${p.slug}</span>
+        ${p.published ? '' : '<div class="draft">DRAFT — ยังไม่เผยแพร่</div>'}
+      </div>`).join('');
+  }catch(e){
+    box.innerHTML = '<div style="color:var(--chili);font-size:.88rem">โหลดไม่ได้ — เช็คว่ารัน SQL สร้างตาราง blog_posts แล้วหรือยัง</div>';
+  }
+}
+
+function newPost(){
+  editingId = null;
+  document.getElementById('formTitle').textContent = 'เขียนบทความใหม่';
+  ['fTitle','fSlug','fCover','fExcerpt','fContent'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('fPublished').checked = true;
+  document.getElementById('btnDel').style.display = 'none';
+  setStatus('');
+  loadList();
+}
+
+async function editPost(id){
+  const { data, error } = await sb.from('blog_posts').select('*').eq('id', id).single();
+  if(error || !data){ setStatus('โหลดบทความไม่สำเร็จ','err'); return; }
+  editingId = id;
+  document.getElementById('formTitle').textContent = 'แก้ไข: ' + data.title;
+  document.getElementById('fTitle').value = data.title || '';
+  document.getElementById('fSlug').value = data.slug || '';
+  document.getElementById('fCover').value = data.cover_url || '';
+  document.getElementById('fExcerpt').value = data.excerpt || '';
+  document.getElementById('fContent').value = data.content_md || '';
+  document.getElementById('fPublished').checked = !!data.published;
+  document.getElementById('btnDel').style.display = 'inline-block';
+  setStatus('');
+  loadList();
+}
+
+async function savePost(){
+  const title = document.getElementById('fTitle').value.trim();
+  const slug  = document.getElementById('fSlug').value.trim().toLowerCase();
+  const content = document.getElementById('fContent').value.trim();
+  if(!title || !slug || !content){ setStatus('กรอกหัวข้อ / slug / เนื้อหา ให้ครบก่อน','err'); return; }
+  if(!/^[a-z0-9-]+$/.test(slug)){ setStatus('Slug ใช้ได้แค่ a-z 0-9 และ - เท่านั้น','err'); return; }
+
+  const row = {
+    title, slug,
+    cover_url: document.getElementById('fCover').value.trim() || null,
+    excerpt: document.getElementById('fExcerpt').value.trim() || null,
+    content_md: content,
+    published: document.getElementById('fPublished').checked,
+    updated_at: new Date().toISOString()
+  };
+
+  const btn = document.getElementById('btnSave');
+  btn.disabled = true;
+  try{
+    let res;
+    if(editingId){
+      res = await sb.from('blog_posts').update(row).eq('id', editingId).select().single();
+    }else{
+      res = await sb.from('blog_posts').insert(row).select().single();
+    }
+    if(res.error) throw res.error;
+    editingId = res.data.id;
+    document.getElementById('btnDel').style.display = 'inline-block';
+    setStatus('✓ บันทึกแล้ว — ดูได้ที่ blog.html?post=' + slug, 'ok');
+    loadList();
+  }catch(e){
+    setStatus('บันทึกไม่สำเร็จ: ' + (e.message||'') + (e.code==='23505' ? ' (slug ซ้ำกับบทความอื่น)' : ''), 'err');
+  }
+  btn.disabled = false;
+}
+
+async function delPost(){
+  if(!editingId) return;
+  if(!confirm('ลบบทความนี้ถาวร? กู้คืนไม่ได้')) return;
+  const { error } = await sb.from('blog_posts').delete().eq('id', editingId);
+  if(error){ setStatus('ลบไม่สำเร็จ: '+error.message,'err'); return; }
+  setStatus('ลบแล้ว','ok');
+  newPost();
+}
+
+function togglePreview(){
+  const pv = document.getElementById('preview');
+  if(pv.style.display === 'block'){ pv.style.display='none'; return; }
+  pv.innerHTML = marked.parse(document.getElementById('fContent').value || '*ยังไม่มีเนื้อหา*');
+  pv.style.display = 'block';
+}
+
+/* auto-slug จากหัวข้อ (เฉพาะตอนยังไม่กรอก slug) */
+document.getElementById('fTitle').addEventListener('blur', ()=>{
+  const s = document.getElementById('fSlug');
+  if(s.value.trim()) return;
+  const t = document.getElementById('fTitle').value.toLowerCase()
+    .replace(/[^a-z0-9\s-]/g,'').trim().replace(/\s+/g,'-').slice(0,60);
+  if(t) s.value = t;
+});
+
+function setStatus(msg, cls){ const el=document.getElementById('status'); el.textContent=msg; el.className=cls||''; }
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+loadList();
+</script>
+</body>
+</html>

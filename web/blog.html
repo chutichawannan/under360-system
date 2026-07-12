@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>บทความสุขภาพ | Under360</title>
+<meta name="description" content="บทความความรู้เรื่องอาหารสุขภาพ โปรตีน โภชนาการ และการเลือกอาหารให้เข้ากับเป้าหมาย จากครัว Under360">
+<link rel="canonical" href="https://www.360foodbox.com/blog">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --deep:#143823; --green:#2E7D43; --cream:#FAF6EC; --ink:#1F2A1D;
+  --muted:#66705F; --paper:#FFFFFF; --line:#06C755; --radius:16px; --maxw:860px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--cream);line-height:1.8;font-size:17px}
+h1,h2,h3{font-family:'Prompt',sans-serif;line-height:1.4}
+img{max-width:100%;display:block;border-radius:12px}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(20,56,35,.08)}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.nav .logo{display:flex;align-items:center;gap:10px;font-family:'Prompt';font-weight:700;font-size:1.15rem;color:var(--deep);text-decoration:none}
+.nav .logo img{width:36px;height:36px;border-radius:50%}
+.nav nav{margin-left:auto;display:flex;gap:20px}
+.nav nav a{text-decoration:none;font-family:'Prompt';font-weight:500;font-size:.95rem;color:var(--ink)}
+.nav nav a:hover{color:var(--green)}
+
+.page-h{padding:44px 0 8px}
+.page-h h1{font-size:clamp(1.6rem,3.4vw,2.2rem);color:var(--deep)}
+.page-h p{color:var(--muted);margin-top:6px}
+
+/* list */
+.list{padding:32px 0 64px;display:flex;flex-direction:column;gap:18px}
+.post-card{background:var(--paper);border-radius:var(--radius);padding:26px;box-shadow:0 4px 18px rgba(20,56,35,.06);text-decoration:none;display:block;transition:transform .15s}
+.post-card:hover{transform:translateY(-3px)}
+.post-card h2{font-size:1.15rem;color:var(--deep)}
+.post-card p{color:var(--muted);font-size:.95rem;margin-top:6px}
+.post-card .meta{font-size:.82rem;color:var(--muted);margin-top:10px;font-family:'Prompt'}
+
+/* article */
+article{padding:36px 0 72px;display:none}
+article .cover{margin:22px 0}
+article h1{font-size:clamp(1.5rem,3.2vw,2.1rem);color:var(--deep)}
+article .meta{font-size:.85rem;color:var(--muted);font-family:'Prompt';margin-top:8px}
+.content{margin-top:26px}
+.content h2{font-size:1.35rem;color:var(--deep);margin:34px 0 12px}
+.content h3{font-size:1.12rem;color:var(--deep);margin:26px 0 10px}
+.content p{margin-bottom:16px}
+.content ul,.content ol{margin:0 0 16px 26px}
+.content li{margin-bottom:6px}
+.content a{color:var(--green)}
+.content img{margin:18px 0}
+.content blockquote{border-left:4px solid var(--green);padding:6px 18px;color:var(--muted);margin:18px 0;background:rgba(46,125,67,.05);border-radius:0 8px 8px 0}
+.content table{border-collapse:collapse;width:100%;margin:18px 0;font-size:.95rem}
+.content th,.content td{border:1px solid rgba(20,56,35,.15);padding:8px 12px;text-align:left}
+.content th{background:rgba(46,125,67,.08);font-family:'Prompt'}
+.back{display:inline-block;font-family:'Prompt';font-weight:600;color:var(--green);text-decoration:none;margin-bottom:8px}
+.cta-box{background:var(--deep);color:var(--cream);border-radius:var(--radius);padding:30px;text-align:center;margin-top:44px}
+.cta-box h3{color:#fff;font-size:1.25rem}
+.cta-box p{color:rgba(250,246,236,.8);margin:8px 0 18px}
+.btn-line{display:inline-flex;align-items:center;gap:8px;background:var(--line);color:#fff;text-decoration:none;font-family:'Prompt';font-weight:600;padding:12px 26px;border-radius:999px}
+.empty{padding:44px 0;color:var(--muted);text-align:center}
+footer{background:#0E2718;color:rgba(250,246,236,.7);padding:32px 0;font-size:.9rem;text-align:center}
+footer a{color:rgba(250,246,236,.85)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav" style="max-width:1080px">
+    <a class="logo" href="index.html">
+      <img src="https://static.wixstatic.com/media/9bfc29_a943055f441240e8a374b4d06cea63d6~mv2.jpg/v1/fill/w_93,h_93,al_c,q_80/360Foodbox-Brand-CI-2019.jpg" alt="Under360 logo">
+      Under360
+    </a>
+    <nav>
+      <a href="index.html">หน้าแรก</a>
+      <a href="mealplan.html">Meal Plan</a>
+    </nav>
+  </div>
+</header>
+
+<!-- LIST VIEW -->
+<div id="listView">
+  <div class="wrap page-h">
+    <h1>บทความสุขภาพ</h1>
+    <p>ความรู้เรื่องอาหาร โปรตีน และโภชนาการ — เขียนจากครัวจริง ไม่ใช่แค่ทฤษฎี</p>
+  </div>
+  <div class="wrap list" id="postList">
+    <div class="empty">กำลังโหลดบทความ…</div>
+  </div>
+</div>
+
+<!-- ARTICLE VIEW -->
+<article id="articleView">
+  <div class="wrap">
+    <a class="back" href="blog.html">← บทความทั้งหมด</a>
+    <h1 id="aTitle"></h1>
+    <div class="meta" id="aMeta"></div>
+    <div class="cover" id="aCover"></div>
+    <div class="content" id="aContent"></div>
+    <div class="cta-box">
+      <h3>อยากให้อาหารเข้ากับเป้าหมายของคุณ?</h3>
+      <p>Meal Plan โปรตีนสูง (HP) และ Low Carb (LC) ทำสดรายวัน ส่งฟรีทั่วกรุงเทพ</p>
+      <a class="btn-line" href="mealplan.html">ดู Meal Plan →</a>
+    </div>
+  </div>
+</article>
+
+<footer>
+  <div class="wrap">
+    <b style="font-family:'Prompt';color:#fff">Under360</b> · <a href="index.html">หน้าแรก</a> · <a href="mealplan.html">Meal Plan</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.0/marked.min.js"></script>
+<script>
+const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* UTM capture — เก็บ source ไว้ใช้กับ attribution */
+(function(){
+  try{
+    const p = new URLSearchParams(location.search);
+    if(p.get('utm_source')){
+      localStorage.setItem('u360_utm', JSON.stringify({
+        source:p.get('utm_source'), medium:p.get('utm_medium'),
+        campaign:p.get('utm_campaign'), ts:Date.now()
+      }));
+    }
+  }catch(e){}
+})();
+
+/* web_events tracking (fire-and-forget) */
+function track(event, page){
+  try{
+    const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
+    sb.from('web_events').insert({
+      event, page,
+      utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+      referrer: document.referrer||null, ua: (navigator.userAgent||'').slice(0,200)
+    }).then(()=>{},()=>{});
+  }catch(e){}
+}
+
+const fmtDate = d => new Date(d).toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+
+async function init(){
+  const slug = new URLSearchParams(location.search).get('post');
+  track('pageview', slug ? 'blog:'+slug : 'blog');
+  if(slug){ showArticle(slug); } else { showList(); }
+}
+
+async function showList(){
+  const box = document.getElementById('postList');
+  try{
+    const { data, error } = await sb.from('blog_posts')
+      .select('slug,title,excerpt,created_at').eq('published',true)
+      .order('created_at',{ascending:false}).limit(50);
+    if(error) throw error;
+    if(!data || !data.length){
+      box.innerHTML = '<div class="empty">ยังไม่มีบทความ — กลับมาใหม่เร็วๆ นี้</div>';
+      return;
+    }
+    box.innerHTML = data.map(p=>`
+      <a class="post-card" href="blog.html?post=${encodeURIComponent(p.slug)}">
+        <h2>${esc(p.title)}</h2>
+        ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ''}
+        <div class="meta">${fmtDate(p.created_at)}</div>
+      </a>`).join('');
+  }catch(e){
+    box.innerHTML = '<div class="empty">โหลดบทความไม่สำเร็จ ลองรีเฟรชอีกครั้ง</div>';
+  }
+}
+
+async function showArticle(slug){
+  document.getElementById('listView').style.display = 'none';
+  const art = document.getElementById('articleView');
+  art.style.display = 'block';
+  try{
+    const { data, error } = await sb.from('blog_posts')
+      .select('*').eq('slug', slug).eq('published', true).single();
+    if(error || !data) throw error;
+    document.title = data.title + ' | Under360';
+    document.getElementById('aTitle').textContent = data.title;
+    document.getElementById('aMeta').textContent = fmtDate(data.created_at);
+    if(data.cover_url){
+      document.getElementById('aCover').innerHTML = `<img src="${esc(data.cover_url)}" alt="${esc(data.title)}">`;
+    }
+    document.getElementById('aContent').innerHTML = marked.parse(data.content_md || '');
+    // JSON-LD Article สำหรับ SEO
+    const ld = document.createElement('script');
+    ld.type = 'application/ld+json';
+    ld.textContent = JSON.stringify({
+      "@context":"https://schema.org","@type":"Article",
+      "headline":data.title,"datePublished":data.created_at,
+      "author":{"@type":"Organization","name":"Under360"},
+      "publisher":{"@type":"Organization","name":"Under360"}
+    });
+    document.head.appendChild(ld);
+  }catch(e){
+    document.getElementById('aTitle').textContent = 'ไม่พบบทความนี้';
+    document.getElementById('aContent').innerHTML = '<p>บทความอาจถูกย้ายหรือลบไปแล้ว <a href="blog.html">กลับไปหน้าบทความทั้งหมด</a></p>';
+  }
+}
+
+function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
+init();
+</script>
+</body>
+</html>
