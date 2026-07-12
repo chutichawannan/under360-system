@@ -90,7 +90,8 @@ GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
 | `landing.html` | FB/IG → LINE bridge — 🆕 จะใช้เป็น landing กลาง FB Ads แทนชี้ตรงเข้า LINE (ดู FB Attribution) | deployed |
 | `api/webhook.js` | Meta Webhook scaffold | built, ยังไม่ configure |
 | `api/notify-mp-requests.js` | Cron แจ้งเตือน Meal Plan (เปิด request window / auto no-change / เตือนก่อนส่ง 1 วัน) | ✅ live — รอตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ถึงจะส่ง LINE จริง |
-| `/web` (under360-web.zip — ยังไม่แตก/deploy) | เว็บสาธารณะใหม่แทน Wix: `index.html`/`mealplan.html`/`blog.html`/`blog_admin.html`/`import_blog.html` + `web_dashboard.html` | 🟡 เขียนเสร็จ 11 ก.ค. — ดูหัวข้อ "🌐 เว็บใหม่" ด้านล่าง, คู่มือเต็มใน `HANDOFF_WEB.md` ในซิป |
+| `web/*.html` | เว็บสาธารณะใหม่แทน Wix: `index`/`mealplan`/`blog`/`blog_admin`/`import_blog`/`web_dashboard` + `posts/` | ✅ **live** ที่ `under360-system.vercel.app/web/` (12 ก.ค. — ยังไม่ชี้โดเมน, Wix ยังอยู่) · track() ยิง web_events แล้ว · ดู "🌐 เว็บใหม่" + `WEB_LAUNCH_TODO.md` |
+| `WEB_LAUNCH_TODO.md` | Checklist งานที่นัทต้องกดเอง (SQL/Google Ads/Vercel token/iOS/IG/ชีท HP-LC) | ✅ พร้อมทำตาม |
 
 ---
 
@@ -289,9 +290,16 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚀 Current Version: u0.4.22 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `f2293ef`)
+## 🚀 Current Version: u0.4.23 + เว็บสาธารณะใหม่ live (m0.2) — ✅ push แล้ว
 
-> ✅ ยืนยัน 2026-07-05: SQL ทั้ง 3 ไฟล์ (promo_scope/packages_rls/promo_stack) รันแล้ว ผ่าน REST ตรง **ไม่มี SQL ค้างเลยฝั่งโค้ดที่ deploy อยู่** (SQL ใหม่ที่ยังไม่รันคือ `customer_preferences`/`web_events` ที่เพิ่งเพิ่มจาก masternote — ดูหัวข้อ Supabase Tables ด้านบน)
+> **12 ก.ค. 2026 — เคลียร์ handoff Step 1–4 รอบเดียว (ทุกงานเลนโค้ดที่ทำแทนนัทได้):**
+> - **Step 1/1.5 (m-track):** เว็บสาธารณะใหม่ deploy แล้วที่ `under360-system.vercel.app/web/` (index/mealplan/blog — เทสผ่าน desktop, render + goal switcher + ไม่มี console error) · web_events tracking (pageview+cta_click) ทุกหน้า · Web Dashboard ต่อใน OH sidebar
+> - **Step 2 (m-track):** ดูด 18 บทความจาก Wix sitemap จริง (100% สำเร็จ ผ่าน workflow 18 agents) → `web/import_blog.html` รวม 20 บทความ (6 ตั้ง published=false รอนัทรีวิว)
+> - **Step 4 (u0.4.23):** LIFF Meal Plan สั่งได้ถึง 8:30 น. ของวันส่ง (verify แล้ว cutoff เดิม=18:00 ไม่ใช่ 17:00) · DB ปุ่ม Export เมนู CSV/JSON
+> - **สิ่งที่นัทต้องกดเอง (บัญชี/เครื่อง/ข้อมูล) → ดู `WEB_LAUNCH_TODO.md`:** รัน SQL (blog_posts/web_events/customer_preferences), import blog, Google Ads (conversion action + Brand Defense), Vercel LINE token, iOS test, IG Behold, ชีท HP/LC
+> - Step 3 (Google Ads) = Claude เตรียมครบใน CLAUDE.md/WEB_LAUNCH_TODO แล้ว รอนัทกดในคอนโซล (Claude สร้างแคมเปญเองไม่ได้)
+
+> ✅ ยืนยัน 2026-07-05: SQL 3 ไฟล์ (promo_scope/packages_rls/promo_stack) รันแล้ว **ไม่มี SQL ค้างฝั่งโค้ดเดิม** · **SQL ใหม่ที่ยังไม่รัน (รอนัท): `sql_blog_posts.sql`, `sql_web_events.sql`, `customer_preferences`** — โค้ดทุกจุด catch error รองรับไว้แล้ว (เว็บ/dashboard/tracking ไม่พังถ้ายังไม่รัน)
 
 > v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ทุกจุด ตารางล่างคือสรุปรวมให้ตามทัน:
 
@@ -322,6 +330,8 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.20 | ปรับปรุงหน้า OH "แพลนเมนู" ครั้งใหญ่: panel "เมนูวันนี้" ผูกวันที่จริง + แก้บั๊ก checkbox ค้าง + เพิ่มสรุปรายวัน + วันที่เลยมาแล้วย้ายไป "▼ ดูประวัติ" | `69bf2ca` |
 | v0.4.21 | **เพิ่มฟีเจอร์ "เมนูเฉพาะ" (anchor point)** — `scrollIntoView()` ผูกกับ DOM id ของการ์ดเมนูนั้นตรงๆ | `ff6a5b9` |
 | v0.4.22 | **KQ — งานสุดท้ายก่อน beta test:** วันที่สั่ง/ส่งในการ์ด + ปุ่ม "↩ ยกเลิก" ให้ "ส่งแล้ว" (Meal Plan) + **ระบบ log ทุกครั้งที่กดปุ่มสถานะ** + ปุ่ม "👋 ตั้งชื่อ" | `f2293ef` |
+| v0.4.23 | **Step 4 งานโค้ดค้าง:** LIFF Meal Plan cutoff → 8:30 น. ของวันส่ง (`CUTOFF_HOUR=18` เดิมสำหรับสต็อก + `MP_CUTOFF_HOUR/MIN=8/30` ใหม่, `renderDatePick` แยก startOffset ตาม isMeal, offset 0=วันนี้ได้ถ้าก่อน 8:30 + ตรง จ/พ/ศ) + DB `exportMenuFiles()` ปุ่ม "⬇ Export เมนู" โหลด CSV(BOM)/JSON | `e07fe3b` |
+| m0.2 (web) | **Step 1/1.5/2 (m-track):** เว็บใหม่ /web live (Vercel) + web_events tracking ทุกหน้า + Web Dashboard ใน OH + blog 20 บทความ (`web/import_blog.html`) | `1f69381` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น ใช้ prefix `u` ตามระบบเวอร์ชัน 4 แทร็คใหม่
 
@@ -337,10 +347,10 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | 7 | ✅ แก้แล้ว — สต็อกหลักที่การ์ดเมนูไม่เคย sync ขึ้น `menu_items.stock_total` จริง (ผูกกับ dead code) | ✅ Done |
 | 8 | `mpIsoDate()` ในแท็บ "แผนผลิต" ใช้ `.toISOString().split('T')[0]` — pattern เดียวกับบั๊ก timezone UTC+7 ที่เคยแก้ไปแล้วในไฟล์อื่น แต่ยังไม่มีรายงานปัญหาจริง | 🟡 ระวังไว้ |
 | 9 | ✅ แก้แล้ว — liff คลิกเมนูพังจริงตอนนี้มาตลอด (`openProduct()` อ้าง element ที่ไม่เคยมี) | ✅ Done |
-| 10 | 🆕 **เวลาตัดยอด Meal Plan ในโค้ดจริงคือเท่าไหร่?** เอกสารเขียน 17:00 แต่นัทจำว่า 18:00 — ต้อง verify โค้ด LIFF จริงก่อนแก้เป็น 8:30 น.ของวันส่งตามที่นัทขอ (เพราะส่งบ่ายอยู่แล้ว ยืดได้) | 🔴 Step 4 |
-| 11 | 🆕 LIFF ยังไม่เคยเทสบน iOS Safari เลย ทั้งของเดิมและเว็บใหม่ | 🔴 ก่อน launch |
-| 12 | 🆕 ราคา Meal Plan ในโค้ด vs ราคาที่ประกาศ (masternote) ไม่ตรงกัน — ดูกล่องเตือนในหัวข้อ Product Lines Line 2 | 🔴 ก่อนเปิด Ads แคมเปญ 2 |
-| 13 | 🆕 หน้า DB ยังไม่มีปุ่ม Export เมนู (CSV/JSON) — บล็อกงานลง delivery platform ที่ต้องส่งลิสต์เมนู/ราคาให้แอดมินกรอก | 🟡 Step 4 |
+| 10 | ✅ แก้แล้ว (u0.4.23) — verify แล้วว่า cutoff เดิม = **18:00** (นัทจำถูก, เอกสาร 17:00 ผิด) · Meal Plan เปลี่ยนเป็นสั่งได้ถึง 8:30 น. ของวันส่งแล้ว เมนูสต็อกคงเดิม | ✅ Done |
+| 11 | 🆕 LIFF + เว็บใหม่ ยังไม่เคยเทสบน iOS Safari เลย — 🔴 นัทต้องเทสบน iPhone จริง (ดู WEB_LAUNCH_TODO กลุ่ม 5) | 🔴 ก่อน launch |
+| 12 | 🆕 ราคา Meal Plan ในโค้ด vs ราคาที่ประกาศ (masternote) ไม่ตรงกัน — ดูกล่องเตือนในหัวข้อ Product Lines Line 2 · **เว็บ mealplan.html + ad copy ใช้ราคาโฆษณาแล้ว (LC1399/HP1699…) → เช็ค `mp_offer_sets` ให้ตรงก่อนเปิด Ads** | 🔴 ก่อนเปิด Ads แคมเปญ 2 |
+| 13 | ✅ แก้แล้ว (u0.4.23) — DB มีปุ่ม "⬇ Export เมนู" (CSV/JSON) แล้ว ปลดล็อกงานลง delivery platform | ✅ Done |
 
 ---
 
@@ -702,7 +712,7 @@ Referral program (candidate เด่นสุด — ต่อกับ points/
 
 ## 🌐 เว็บใหม่ (แทน Wix) — เขียนเสร็จ 11 ก.ค. 2026 · รอ deploy
 
-> **ตัดสินใจ: ไม่แตะ/ไม่แก้ Wix อีกแล้ว** — เขียนใหม่หมดเป็น single-file ตาม convention repo · ไฟล์ทั้งชุดอยู่ `under360-web.zip` (ยังไม่แตก/deploy ณ 12 ก.ค.) · คู่มือเต็ม = `HANDOFF_WEB.md` ในซิป (ยังไม่อ่าน — อ่านก่อนเริ่ม Step 1)
+> **ตัดสินใจ: ไม่แตะ/ไม่แก้ Wix อีกแล้ว** — เขียนใหม่หมดเป็น single-file ตาม convention repo · ✅ **แตก + deploy แล้ว 12 ก.ค.** อยู่ที่ `web/` ใน repo → live `under360-system.vercel.app/web/` (ยังไม่ชี้โดเมน 360foodbox.com — ห้ามยกเลิก Wix จนกว่าจะ migrate โดเมนเสร็จ) · งานที่เหลือ (SQL/Ads/token/iOS/IG) = `WEB_LAUNCH_TODO.md`
 
 | ไฟล์ | หน้าที่ | สถานะ |
 |---|---|---|
@@ -716,7 +726,7 @@ Referral program (candidate เด่นสุด — ต่อกับ points/
 
 **จุดสำคัญ:** Conversion tag (gtag)+UTM capture ฝังในโค้ดแล้ว เหลือใส่ AW-ID+label · CTA ชี้ hatohub ตอนนี้ → เปลี่ยนเป็น LINE OA/LIFF ตอน migrate · IG feed ใช้ Behold.so (ฟรี, delegate พลอย/แอดมิน connect) เพราะ IG Basic Display API ปิดถาวรแล้ว (ธ.ค. 2024) · รูปทั้งเว็บยัง hotlink wixstatic ต้องดาวน์โหลดเข้า repo ก่อนยกเลิก Wix · **คงวันที่เผยแพร่เดิมเสมอ (created_at)** ตอน migrate blog · บทความมีราคา/โปรเก่า → published=false รอนัทรีวิว
 
-**Blog migration:** 2 แปลงเสร็จ (heart-rate-zone, fruit-sugar-guide) · 17 ตัวดูดตาม MANIFEST · บทความใหม่ 3 ตัว (2026) มีต้นฉบับ .md ในแชท "Marketing track 1" (7-9 ก.ค.) ใช้อันนั้นดีกว่าดูดจาก Wix
+**Blog migration:** ✅ **เสร็จแล้ว 12 ก.ค.** — ดูด 18 บทความจาก Wix `blog-posts-sitemap.xml` จริง (workflow 18 agents, 18/18 สำเร็จ, แปลงเป็น Markdown สะอาด คงวันที่เผยแพร่เดิม) + ของเดิม 2 = **20 บทความใน `web/import_blog.html`** พร้อม import · 6 บทความที่พูดถึงราคา/โปร/เมนูเฉพาะ ตั้ง `published=false` รอนัทรีวิว (high-protein-meal-plan, protein-pack-guide, healthy-bajang, low-sodium-fish-sauce, clean-food-nutrient-gaps, clean-food-without-exercise) · **นัทแค่รัน `sql_blog_posts.sql` → เปิด `web/import_blog.html` → กด Import**
 
 **Web Backend (Step 1.5 — เพิ่ม 11 ก.ค.):** สถาปัตยกรรมคงเดิม — Supabase = backend หลัก, Vercel serverless เฉพาะจำเป็น ไม่สร้าง server แยก · `web_events` table (SQL ในหัวข้อ Supabase Tables ด้านบน) → เพิ่ม snippet insert pageview ตอนโหลด + cta_click ใน orderNow() (fire-and-forget, catch เงียบ) → ต่อยอด LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order → ปิดลูป "FB/Google = กี่บาทจริง" · SEO render (`api/post.js` — optional, ประเมินก่อนทำ ถ้าซับซ้อนเกิน v1 จด backlog client-side render ที่มีอยู่ยังใช้ได้)
 
@@ -787,4 +797,4 @@ Referral program (candidate เด่นสุด — ต่อกับ points/
 
 ---
 
-*Last updated: 12 ก.ค. 2026 — รวม `UNDER360_MASTERNOTE_v6_7.md` (11 ก.ค.) + `UNDER360_HISTORY.md` (v1, 9 ก.ค.) เข้า CLAUDE.md ตาม Step 0 ของ `CLAUDE_CODE_HANDOFF.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว — ทริปแคนาดาจบ) — โค้ด (u-track) ยังอยู่ที่ **u0.4.22 ✅ live** ไม่มีอะไรเปลี่ยนฝั่งโค้ดในรอบนี้ (merge เอกสารล้วน) — เพิ่มเข้ามาใหม่จาก masternote: 7 เสาหลักโปรเจค, Positioning/Brand voice rules เต็มชุด, ประวัติร้าน 10 ปี, Delivery Reality, Agent Roster ขยายเป็น 5 ตัว (นิว/เก่ง/ฟ้า/เตียง/เอิธ) + น้องนิว v1 locked spec เต็ม + Meal Plan future specs, Marketing Track เต็ม (Google Ads keyword/แคมเปญ/FB attribution/competitor intel/delivery platform strategy), เว็บใหม่ (under360-web.zip รอ deploy), Roadmap เข็มทิศ+กลุ่มงาน 1-3, SQL ใหม่ 2 ตัวที่ยังไม่รัน (`customer_preferences`, `web_events`) — **แก้ไขจุดที่ masternote คลาดเคลื่อน:** SQL 3 ตัว (promo_scope/packages_rls/promo_stack) ที่ masternote เขียนว่า "ยังไม่ได้สร้าง" จริงๆ **รันแล้วตั้งแต่ 5 ก.ค.** (ยืนยันผ่าน REST ตรง) — และตั้งข้อสังเกตราคา Meal Plan ในโค้ดกับราคาที่ masternote อ้างว่า "โฆษณาจริง" ไม่ตรงกัน ต้อง verify ก่อนเปิดแคมเปญ Ads (ดู Known Issues #12) — `nut_personal_profile.md` (ข้อมูลส่วนตัว/ครอบครัวของนัท) **ไม่ได้เอาเข้าไฟล์นี้โดยตั้งใจ** เพราะเป็นไฟล์ cross-project ที่มีข้อมูลอ่อนไหว (การเงิน/ครอบครัว) ไม่เหมาะกับ repo โค้ดที่ push GitHub — เก็บแยกไว้ในเครื่องนัทตามเดิม — **ถัดไปตาม handoff:** Step 1 deploy เว็บใหม่ (แตก `under360-web.zip` → อ่าน `HANDOFF_WEB.md` → Vercel) → Step 2 blog migration → Step 3 Google Ads → Step 4 งานโค้ดค้าง (กลุ่ม 1-3 ด้านบน) — รอนัทสั่งว่าจะเริ่ม Step ไหนต่อ*
+*Last updated: 12 ก.ค. 2026 (รอบ 2 — เคลียร์ handoff Step 1–4 ต่อจาก Step 0): เว็บใหม่ deploy live `/web` + web_events tracking + Web Dashboard ใน OH (Step 1/1.5, commit `1f69381`) · blog 20 บทความพร้อม import — ดูด 18 จาก Wix ผ่าน workflow (Step 2) · LIFF Meal Plan cutoff 8:30 วันส่ง + DB ปุ่ม Export เมนู u0.4.23 (Step 4, commit `e07fe3b`) · Google Ads (Step 3) เตรียมพร้อมรอนัทกดคอนโซล · งานที่นัทต้องทำเอง (SQL/Ads/Vercel token/iOS/IG/ชีท HP-LC) รวมใน `WEB_LAUNCH_TODO.md` · ค้างจริง: localize รูป wixstatic (spawn เป็น task แยก, ตอนนี้ hotlink ใช้ได้), ชี้โดเมน+ยกเลิก Wix (ห้ามทำก่อน migrate). — [Step 0 เดิม] รวม `UNDER360_MASTERNOTE_v6_7.md` (11 ก.ค.) + `UNDER360_HISTORY.md` (v1, 9 ก.ค.) เข้า CLAUDE.md ตาม Step 0 ของ `CLAUDE_CODE_HANDOFF.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว — ทริปแคนาดาจบ) — โค้ด (u-track) ยังอยู่ที่ **u0.4.22 ✅ live** ไม่มีอะไรเปลี่ยนฝั่งโค้ดในรอบนี้ (merge เอกสารล้วน) — เพิ่มเข้ามาใหม่จาก masternote: 7 เสาหลักโปรเจค, Positioning/Brand voice rules เต็มชุด, ประวัติร้าน 10 ปี, Delivery Reality, Agent Roster ขยายเป็น 5 ตัว (นิว/เก่ง/ฟ้า/เตียง/เอิธ) + น้องนิว v1 locked spec เต็ม + Meal Plan future specs, Marketing Track เต็ม (Google Ads keyword/แคมเปญ/FB attribution/competitor intel/delivery platform strategy), เว็บใหม่ (under360-web.zip รอ deploy), Roadmap เข็มทิศ+กลุ่มงาน 1-3, SQL ใหม่ 2 ตัวที่ยังไม่รัน (`customer_preferences`, `web_events`) — **แก้ไขจุดที่ masternote คลาดเคลื่อน:** SQL 3 ตัว (promo_scope/packages_rls/promo_stack) ที่ masternote เขียนว่า "ยังไม่ได้สร้าง" จริงๆ **รันแล้วตั้งแต่ 5 ก.ค.** (ยืนยันผ่าน REST ตรง) — และตั้งข้อสังเกตราคา Meal Plan ในโค้ดกับราคาที่ masternote อ้างว่า "โฆษณาจริง" ไม่ตรงกัน ต้อง verify ก่อนเปิดแคมเปญ Ads (ดู Known Issues #12) — `nut_personal_profile.md` (ข้อมูลส่วนตัว/ครอบครัวของนัท) **ไม่ได้เอาเข้าไฟล์นี้โดยตั้งใจ** เพราะเป็นไฟล์ cross-project ที่มีข้อมูลอ่อนไหว (การเงิน/ครอบครัว) ไม่เหมาะกับ repo โค้ดที่ push GitHub — เก็บแยกไว้ในเครื่องนัทตามเดิม — **ถัดไปตาม handoff:** Step 1 deploy เว็บใหม่ (แตก `under360-web.zip` → อ่าน `HANDOFF_WEB.md` → Vercel) → Step 2 blog migration → Step 3 Google Ads → Step 4 งานโค้ดค้าง (กลุ่ม 1-3 ด้านบน) — รอนัทสั่งว่าจะเริ่ม Step ไหนต่อ*
