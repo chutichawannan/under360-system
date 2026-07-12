@@ -1,13 +1,36 @@
 # Under360 — CLAUDE.md
 > อ่านไฟล์นี้ก่อนทำงานทุกครั้ง — Single source of truth
+> **12 ก.ค. 2026:** รวมจาก `UNDER360_MASTERNOTE_v6_7.md` + `UNDER360_HISTORY.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว) — เก็บรายละเอียดเทคนิค/บั๊กเดิมของ CLAUDE.md ไว้ครบ + เพิ่มชั้น Marketing/Brand/Agent roster จาก masternote
+
+**ระบบเวอร์ชัน 4 แทร็ค (ตั้งแต่ 9 ก.ค. 2026):** **u** = Under System (โค้ดหลังบ้านทั้งหมด รวม FB bot) · **m** = Marketing (GBP/Blog/Ads/Web) · **a** = Agents (นิว→เก่ง→ฟ้า→เตียง→เอิธ) · **doc** = เอกสารกลาง (MASTERNOTE + HISTORY — ไฟล์แชท ไม่ push git, รวมเป็น CLAUDE.md เฉพาะตอนนัทกลับถึงคอม) — Claude เคาะเลขเวอร์ชันตอนปิด session ใหญ่ ถ้านัทส่ง MASTERNOTE+HISTORY ใหม่มาอีกครั้ง ให้ merge เข้าไฟล์นี้แบบเดียวกับที่ทำรอบนี้
+
+---
+
+## 📊 Big-Picture Roadmap — 7 เสาหลัก (อ่านก่อนเสมอ)
+
+> **ภาพรวมทั้งโปรเจคหลังบ้าน ~27%** — เสา 1 (โค้ด) ใกล้เสร็จแล้ว แต่เสา 2–7 แทบยังไม่เริ่ม เป้าหมายโปรเจค: กลับไป **500,000฿/เดือน** (เคย peak 300-500K ก่อนโควิด)
+
+| # | เสาหลัก | % | สถานะสั้น |
+|---|--------|---|----------|
+| 1 | **ระบบ Order & ลูกค้า (Online)** | 70% | โค้ดเกือบครบ (LIFF/DB/KQ/OH live) — เหลือ SQL ค้าง + LINE token + **beta test (0%)** + migrate ลูกค้าเก่า (0%) |
+| 2 | **ปฏิบัติการ & ต้นทุน** (ครัว/ส่ง/ไฟ/แกส/คน) | 15% | ยังไม่เคยวัดว่าประหยัดจริงเท่าไหร่ — พบต้นทุนก้อนใหญ่: **ร้านซับซิไดซ์ค่าส่งให้ลูกค้า 30,000–50,000฿/เดือน** → เป้าหมายแรกของพี่เก่ง |
+| 3 | **Product-Market Fit** (เมนู↔มาเก็ตติ้ง) | 15% | ✅ ตอบแล้ว: หัวหอก = Meal Plan (HP+LC) กรุงเทพ · ตจว./แพ็คกับข้าว = passive · ค้าง: วัดสัดส่วนยอด HP vs LC จริง |
+| 4 | **CRM & Customer Intelligence** | 20% | customers/orders เชื่อมแล้ว ยังไม่มี layer วิเคราะห์/แบ่งกลุ่ม · loyalty รอเคาะ |
+| 5 | **Marketing Engine** (SEO+GEO+Ads+Influencer) | 20% | GBP ✅ · blog 3 ตัวขึ้น Wix ✅ · Google Ads verify ผ่าน ✅ · keyword ทองคำขุดแล้ว · เว็บใหม่เขียนครบรอ deploy |
+| 6 | **AI Agents** (นิว→เก่ง→ฟ้า→เตียง→เอิธ) | 5% | ยังไม่โค้ดสักตัว — มีแค่ดีไซน์ (น้องนิว spec locked) |
+| 7 | **Under360 Base** (virtual office ปลายทาง) | 2% | วิสัยทัศน์ปลายทาง = v1.0 |
+
+**⚙️ Sequencing:** **เลนโค้ด** (LIFF/FB bot/เว็บ Vercel — ต้องนั่งคอม+Claude Code) vs **เลนสมอง** (ออกแบบ agent/marketing/คอนเทนต์/ตั้งค่า platform — ทำผ่านมือถือได้) — ดูหัวข้อ "🧭 Roadmap ที่ถูกต้อง" ด้านล่างสำหรับกฎกันหลงทางแบบเต็ม
+
+**กฎ delegate (นัทสั่ง):** งานไหน AI agent ทำแทนได้ → เสนอ delegate เสมอ อย่าทำมือซ้ำๆ ไปเรื่อยๆ — จดเข้า backlog agent ที่เกี่ยวข้อง
 
 ---
 
 ## 🏪 Project Overview
 
 **Under360** — Healthy food delivery กรุงเทพฯ มา 10 ปี
-- **นัท** = sole back-of-house (ครัว สูตร ต้นทุน inventory + ดูแล IT ทั้งหมดด้วย AI)
-- **ไม่มี coding background** — Claude เขียนโค้ดทั้งหมด แล้ว push GitHub
+- **นัท** = sole back-of-house (ครัว สูตร ต้นทุน inventory + ดูแล IT ทั้งหมดด้วย AI) — ไม่มี coding background, Claude เขียนโค้ดทั้งหมดแล้ว push GitHub
+- **พลอย (Thunyathorn)** = ภรรยา/เจ้าของร่วม — ดูแล marketing + on-ground กรุงเทพทั้งหมด (นัท=หลังบ้าน, พลอย=หน้าบ้าน ไม่แย่ง territory กัน)
 
 ```
 GitHub:  github.com/chutichawannan/under360-system
@@ -27,6 +50,11 @@ LIFF ID:        2010442513-NI3JGTkb
 Google Maps:    AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U
 ครัว LAT/LNG:  13.7179969, 100.5010971
 PROMPTPAY:      0846556601 (ออมสิน 020272500180)
+Omise:          1%/transaction credit card
+Anthropic API:  platform.claude.com (แยกบิลจาก claude.ai subscription)
+เบอร์ร้าน (GBP): 064 173 6519
+Google Ads:     under360food@gmail.com (ocid 202127689) — Active ✅ verified · Customer ID 318-768-6554
+GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
 ```
 
 ---
@@ -40,6 +68,8 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 | Deploy | GitHub → Vercel (auto-deploy) |
 | Customer | LINE LIFF (`2010442513-NI3JGTkb`) |
 | Storage | `menu-images` (Public) · `card-images` (Public) |
+| Web/SEO | 360foodbox.com (ปัจจุบัน Wix — blog live · กำลังย้าย Vercel ดูหัวข้อ "🌐 เว็บใหม่" — **ห้ามยกเลิก Wix ก่อนย้ายโดเมนเสร็จ**) |
+| Marketing | GBP · Google Ads · FB 81.9K followers · IG 68.6K followers · LINE OA (broadcast รายสัปดาห์ผ่าน HatoHub) |
 
 ---
 
@@ -49,21 +79,22 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 |------|--------|-------|
 | `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service (เลื่อน/ยกเลิกรอบ) + ป้อบอัพเมนู/lightbox | ✅ live (v0.4.9) |
 | `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง + Activity Log | ✅ live (v0.4.7) — optimize ขนาดไฟล์แล้ว (330KB) |
-| `home_editor.html` | จัด HomeGrid + routing Package/MP | ✅ live (v0.3.2) |
-| `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print | ✅ live |
+| `home_editor.html` | จัด HomeGrid + routing Package/MP + anchor point เมนูเฉพาะ | ✅ live (v0.4.21) |
+| `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print + วันที่สั่ง/ส่ง + log ทุกคลิกปุ่มสถานะ + ระบบชื่อผู้ใช้ | ✅ live (v0.4.22) |
 | `operation_hub.html` | Admin hub (orders/menu/แพลนเมนู/promo/messenger/customer/HE + เปิด KQ/DB/report ผ่าน iframe) | ✅ live |
 | `customer.html` | ข้อมูลลูกค้า standalone | ✅ live |
 | `batch_photo_upload.html` | Batch upload รูปเมนูจากภาพโบรชัวร์ (AI vision จับตำแหน่ง+ชื่อ, fuzzy match, crop, upload) | 🟡 เขียนเสร็จ ต่อ Supabase/Storage จริงแล้ว — ยังไม่เคยรันจริงสักครั้ง ดูหมวด "Photo Migration" ด้านล่างก่อนรัน |
 | `liff_register.html` | สมัครสมาชิก | ✅ ต่อ Supabase จริง (upsert customers) — ไม่ใช่ mock แล้ว |
 | `liff_profile.html` | โปรไฟล์ลูกค้า | 🟡 ดึงจริงก่อน (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง |
-| `report.html` | รายงาน | deployed (mock data ทั้งหมด) |
-| `landing.html` | FB/IG → LINE bridge | deployed |
+| `report.html` | รายงาน | deployed (mock data ทั้งหมด) — 🆕 นัทอยากได้เร็วขึ้น (ใช้วัด HP vs LC) |
+| `landing.html` | FB/IG → LINE bridge — 🆕 จะใช้เป็น landing กลาง FB Ads แทนชี้ตรงเข้า LINE (ดู FB Attribution) | deployed |
 | `api/webhook.js` | Meta Webhook scaffold | built, ยังไม่ configure |
 | `api/notify-mp-requests.js` | Cron แจ้งเตือน Meal Plan (เปิด request window / auto no-change / เตือนก่อนส่ง 1 วัน) | ✅ live — รอตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ถึงจะส่ง LINE จริง |
+| `/web` (under360-web.zip — ยังไม่แตก/deploy) | เว็บสาธารณะใหม่แทน Wix: `index.html`/`mealplan.html`/`blog.html`/`blog_admin.html`/`import_blog.html` + `web_dashboard.html` | 🟡 เขียนเสร็จ 11 ก.ค. — ดูหัวข้อ "🌐 เว็บใหม่" ด้านล่าง, คู่มือเต็มใน `HANDOFF_WEB.md` ในซิป |
 
 ---
 
-## 🥡 Product Lines
+## 🥗 Product Lines
 
 ### Line 1 — เมนูสต็อค (SKU: No · S · D)
 - ทำล่วงหน้า 1 วัน, สต็อกจริงคือ `menu_items.stock_total` (⚠️ ไม่ใช่ `stock_quantity` — คอลัมน์นั้นไม่มีอยู่จริง เคยพังทั้งเส้นทางเพราะเข้าใจผิด แก้แล้ว commit `9620cc1`)
@@ -72,12 +103,18 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 - ขายทั้ง individual และ Package S/M/L
 - **Pre-order:** เมนูอาทิตย์หน้าตั้ง `available_from` = วันจันทร์ถัดไป → โชว์ badge 📅 + block ผสมตะกร้า
 
-### Line 2 — Meal Plan ทำสด (SKU: HP · LC)
+### Line 2 — Meal Plan ทำสด (SKU: HP · LC) — ⭐ ตัวชูโรง (โปรโมทคู่เสมอ อย่าเรียกแค่ HP)
 - ทำสดวันนั้น ส่งบ่ายเท่านั้น — `no_morning = true` อัตโนมัติ
 - **ไม่มี stock concept** — วางแผนจากวัตถุดิบ
 - **✅ เป็น add-to-cart ปกติ** ลูกค้าเลือก HP/LC + set size → เข้าตะกร้าเลย
-- Admin assign เมนูหลังบ้าน ผ่าน **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) — น้องนิว (v0.4) จะมาช่วย auto-suggest ทีหลัง
-- ⚠️ เมนู HP/LC **ไม่ต้องขึ้นหน้าลูกค้าเลือกเอง** — มีไว้ให้แอดมิน assign หลังบ้านเท่านั้น (ยืนยันแล้วว่าตั้งใจ ไม่ใช่บั๊ก)
+- Admin assign เมนูหลังบ้าน ผ่าน **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) — น้องนิว จะมาช่วย auto-suggest (ดูสเปกล็อกแล้วในหัวข้อ AI Agents)
+- ⚠️ เมนู HP/LC **ไม่ต้องขึ้นหน้าลูกค้าเลือกเอง** — มีไว้ให้แอดมิน assign หลังบ้านเท่านั้น (ยืนยันแล้วว่าตั้งใจ ไม่ใช่บั๊ก) และ **ไม่ลง delivery platform** — เป็น subscription ขายผ่าน LINE OA เท่านั้น (ดู Delivery Platform Strategy)
+- สเปคเนื้อสัตว์: HP 170g/กล่อง · LC 120g/กล่อง
+
+> ⚠️ **ราคาไม่ตรงกัน — ต้อง verify ก่อน launch:** โค้ด `MP_SETS` ใน `liff_customer.html` (ดูหัวข้อ "What's in liff_customer.html") ยังเป็นราคา placeholder เดิม (ทดลอง HP1499/LC1399, weekly HP3990/LC3790, monthly HP13990/LC13490) — แต่ masternote v6.7 (11 ก.ค.) ระบุว่านี่คือ **"ราคาโฆษณาจริง"**: ทดลอง 7 กล่อง LC 1,399/HP 1,699 · Weekly 21 กล่อง LC 3,190/HP 4,190 · Monthly 84 กล่อง LC 12,000/HP 15,900 · ส่งฟรีทุกแพ็ค — ราคาจริงตอนนี้ควรมาจากตาราง `mp_offer_sets` (v0.4.11 ย้ายไปแก้ที่หน้า DB ได้แล้ว ไม่ต้องแก้โค้ด) **ยังไม่ได้เช็คว่า `mp_offer_sets` ปัจจุบันตรงกับราคาโฆษณาจริงหรือไม่ — เช็คก่อนเปิดแคมเปญ Google Ads แคมเปญ 2 (Meal Plan Search) เพราะ ad copy อ้างราคา "เริ่ม 1,399.-" ตรงกันแล้ว**
+
+### Line 3 — แพ็คกับข้าวฟรีซแพ็ค (ตจว. ทั่วไทย) — 🟢 passive
+- ปรุงเสร็จแช่แข็งทันที ส่งทั่วประเทศ — ขายอยู่ ไม่ยุบ แต่ไม่ลงแรงโปรโมทเพิ่ม (ดู Positioning) — **ห้ามเขียนคอนเทนต์ดิสอาหารแช่แข็ง** เป็นสินค้าของร้านเอง
 
 ### Package S/M/L
 - HomeGrid card → `openPackage(pkgId)` → เลือก 9 เมนู → เข้าตะกร้า
@@ -90,9 +127,9 @@ PROMPTPAY:      0846556601 (ออมสิน 020272500180)
 
 ### มีแล้ว
 `orders` · `order_items` · `menu_items` · `customers` · `home_layout` · `kitchen_data`
-`daily_menu_assignments` (ใช้จริงแต่คนละเรื่องกับ Meal Plan รายลูกค้า — เป็นกริดวางแผนผลิตรวมของครัว ดู main_database_v2.html tab "📅 แผนผลิต") · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries` (Meal Plan ระยะยาวรายลูกค้า — คนละตารางกับข้างต้น)
+`daily_menu_assignments` (ใช้จริงแต่คนละเรื่องกับ Meal Plan รายลูกค้า — เป็นกริดวางแผนผลิตรวมของครัว ดู main_database_v2.html tab "📅 แผนผลิต") · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries` (Meal Plan ระยะยาวรายลูกค้า — คนละตารางกับข้างต้น) · `activity_log` · `mp_offer_sets`
 
-### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยกเว้น `day_before_notified_at` ALTER ท้าย sql_mp_deliveries.sql ถ้ายังไม่ได้รัน — เช็คซ้ำได้)
+### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยืนยันผ่าน REST ตรง 2026-07-05 — ถ้าเจอเอกสารอื่นบอกว่ายังไม่รัน ให้เชื่อบรรทัดนี้ ไม่ใช่เอกสารนั้น อาจเป็น snapshot เก่าก่อนนัทรัน)
 
 ### SQL ที่รันแล้ว ✅
 ```sql
@@ -138,6 +175,9 @@ UPDATE menu_items SET stock_total = NULL WHERE stock_total = 0;
 ALTER TABLE menu_items ALTER COLUMN stock_total DROP DEFAULT;
 -- นิยามใหม่: NULL = ไม่จำกัด (default) / 0 = หมดสต็อกจริง / N>0 = เหลือ N ชิ้น
 
+-- v0.4.6 activity log (scripts/sql_activity_log.sql) — รันแล้ว
+-- ตาราง activity_log + RLS policy — ดูหัวข้อ "📜 Activity Log" ด้านล่าง
+
 -- v0.4.10 ช้อนส้อม (scripts/sql_utensils.sql) — รันแล้ว 2026-07-05
 ALTER TABLE orders ADD COLUMN IF NOT EXISTS want_utensils BOOLEAN DEFAULT true;
 
@@ -157,7 +197,38 @@ ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS stackable BOOLEAN NOT NULL DEFA
 ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_mode TEXT NOT NULL DEFAULT 'include';
 ```
 
-### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยกเว้น `day_before_notified_at` ALTER ท้าย sql_mp_deliveries.sql ถ้ายังไม่ได้รัน — เช็คซ้ำได้)
+> เหลือแค่เช็คซ้ำได้ (ไม่แน่ใจว่ารันหรือยัง): `day_before_notified_at` ALTER ท้าย `sql_mp_deliveries.sql` (v0.4.1)
+
+### ⏳ SQL พร้อมรัน ยังไม่รัน — `customer_preferences` (ปลดล็อกน้องนิว กลุ่ม 1 ข้อ 2)
+```sql
+create table if not exists customer_preferences (
+  customer_id     text primary key,       -- ให้ตรงกับ key ตาราง customers
+  dislikes        text        default '',
+  allergies       text        default '',
+  liked_menus     jsonb       default '[]'::jsonb,
+  disliked_menus  jsonb       default '[]'::jsonb,
+  updated_by      text,                    -- 'customer' | 'admin' | 'nong_niw'
+  updated_at      timestamptz default now()
+);
+alter table customer_preferences enable row level security;
+create policy "cp_all_anon" on customer_preferences for all using (true) with check (true);
+```
+⚠️ ปรับ RLS ให้ตรงกับตาราง customers/orders เดิมก่อนรัน · dislikes/allergies เป็น free text (น้องนิวซึ่งเป็น LLM แมตช์กับเมนูเอง ไม่ต้อง tag/dropdown ตายตัว) · allergies treat เข้มกว่า dislikes
+
+### ⏳ SQL พร้อมรัน ยังไม่รัน — `web_events` (attribution เว็บใหม่ — ดูหัวข้อ Marketing Track)
+```sql
+create table if not exists web_events (
+  id uuid primary key default gen_random_uuid(),
+  event text not null,              -- 'pageview' | 'cta_click'
+  page text,                        -- 'index' | 'mealplan' | 'blog:slug'
+  utm_source text, utm_medium text, utm_campaign text,
+  referrer text, ua text,
+  created_at timestamptz default now()
+);
+alter table web_events enable row level security;
+create policy "we_insert_anon" on web_events for insert with check (true);
+-- อ่านผ่าน dashboard/report เท่านั้น — ไม่เปิด select ให้ anon
+```
 
 ### Storage
 - `menu-images` (Public) ✅
@@ -172,10 +243,11 @@ Admin จัดการผ่าน `home_editor.html` — ไม่มี hard
 
 **Card click routing** ใน `colCardClick(el)` อ่าน `data-cat` (= `item_filter.category`):
 ```
-__pkg:{uuid}__   → openPackage(uuid)     — Package picker
-__meal_plan__    → openMealPlanPicker()  — Meal Plan picker
-__anchor__       → scroll to menu list
-{category}       → jumpCat(category)     — scroll to category
+__pkg:{uuid}__        → openPackage(uuid)     — Package picker
+__meal_plan__         → openMealPlanPicker()  — Meal Plan picker
+__anchor__            → scroll to menu list
+__anchoritem:{code}__ → jumpToMenuItem(code)  — เลื่อนตรงไปเมนูใดเมนูหนึ่งเป๊ะๆ (v0.4.21)
+{category}            → jumpCat(category)     — scroll to category
 ```
 
 **HE dropdown "ลิ้งไปที่"** มีตัวเลือก:
@@ -183,6 +255,7 @@ __anchor__       → scroll to menu list
 - ⬇ เลื่อนลงไปที่เมนู (`__anchor__`)
 - 🥗 Meal Plan (`__meal_plan__`)
 - 📦 Package S/M/L (โหลดจาก Supabase `packages` table)
+- 🎯 เมนูเฉพาะ (anchor point — เลื่อนตรงไปเมนูใดเมนูหนึ่ง เช่น S001, เหมาะปักหมุดเมนูประจำสัปดาห์)
 - หมวดหมู่เมนู (จาก menu_items)
 
 ---
@@ -212,13 +285,15 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 > ⚠️ **บั๊กแพทเทิร์นที่เจอซ้ำๆ (4 ครั้งในวันเดียว 2026-07-04) — ระวังไว้เวลาแก้ฟีเจอร์ที่มีจุดแสดงผลซ้ำกันหลายที่:**
 > ไฟล์พวกนี้มักมีโค้ด render เมนู/สต็อกซ้ำกันคนละจุด (เช่น รายการเมนูหลัก vs การ์ดพรีวิวหน้าแรก, ปุ่ม stock ที่การ์ด vs ที่ตาราง pin) — แก้จุดเดียวแล้วคิดว่าจบ มักพลาดอีกจุดที่เหมือนกันทุกประการ (stock sync ผูกกับ dead code, ปุ่ม migrate ไม่มี HTML, badge/limit หายในหน้าแรก, `openProduct()` อ้าง element ที่ไม่เคยสร้างเลย) **ก่อนบอกว่า "แก้แล้ว" ต้อง `grep` หาทุกจุดที่มี pattern เดียวกันในไฟล์ก่อนเสมอ** อย่าเชื่อว่าแก้จุดเดียวพอ
 
+> ⚠️ **เขียนข้อมูลจริงระหว่างทดสอบ:** หลายฟังก์ชัน (`clickMenu()` ใน OH, ปุ่มสถานะใน KQ ฯลฯ) เขียนลง Supabase ทันทีที่คลิก ไม่ใช่แค่ preview เฉยๆ — เคยเผลอเขียนทับแถวทดสอบจริงมาแล้ว (revert คืนผ่าน curl PATCH ได้) ระวังเวลาทดสอบ flow ที่เกี่ยวกับข้อมูลลูกค้า/ออเดอร์จริง
+
 ---
 
-## 🚦 Current Version: v0.4.22 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `f2293ef` — ⚠️ รอรัน 3 SQL: `scripts/sql_promo_scope.sql`, `scripts/sql_packages_rls.sql`, `scripts/sql_promo_stack.sql`)
+## 🚀 Current Version: u0.4.22 (✅ push แล้ว — live บน Vercel, commit ล่าสุด `f2293ef`)
 
-> ✅ อัพเดท 2026-07-05: นัทรัน SQL ทั้ง 3 ไฟล์ข้างต้นแล้ว (ยืนยันผ่าน REST ตรง — scope_type/scope_value/show_suggested/stackable/scope_mode ใน promo_codes มีครบ, packages RLS ให้ anon insert ได้แล้ว) **ไม่มี SQL ค้างเลย** ทุกฟีเจอร์ตั้งแต่ v0.4.12–v0.4.22 เปิดใช้งานได้เต็มที่แล้ว
+> ✅ ยืนยัน 2026-07-05: SQL ทั้ง 3 ไฟล์ (promo_scope/packages_rls/promo_stack) รันแล้ว ผ่าน REST ตรง **ไม่มี SQL ค้างเลยฝั่งโค้ดที่ deploy อยู่** (SQL ใหม่ที่ยังไม่รันคือ `customer_preferences`/`web_events` ที่เพิ่งเพิ่มจาก masternote — ดูหัวข้อ Supabase Tables ด้านบน)
 
-> v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ (ระบบ Meal Plan scheduling ทั้งชุด, คูปอง, แก้สต็อก ฯลฯ) ตารางล่างคือสรุปรวมให้ตามทัน:
+> v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ทุกจุด ตารางล่างคือสรุปรวมให้ตามทัน:
 
 ### ✅ สรุปงานที่ทำไปแล้วตั้งแต่ v0.3.3
 | Version | งาน | Commit |
@@ -230,38 +305,42 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.3 | แก้ระบบสต็อกที่พังทั้งเส้นทาง (`stock_quantity`→`stock_total` จริง, LIFF/KQ/DB ครบ) | `9620cc1` |
 | v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
 | v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
-| v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย ⚠️ รอรัน `scripts/sql_activity_log.sql` | `520aa68` |
-| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด (`INGREDIENT_SEED`/`NO_CODE_RECIPES`/`NUTRITION_SEED`/`SKU_SEED`/`REFERENCE_PRICES` + ฟังก์ชัน migrate ที่ปุ่มหายไปแล้ว) — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบแล้ว) | `93e20ca` |
-| v0.4.8 | **แก้บั๊กร้ายแรง:** คลิกเมนูใดๆ ในหน้า liff พังจริง (throw error เงียบๆ — `openProduct()` อ้าง HTML ที่ไม่เคยมีอยู่จริง) + เพิ่มคลิกชื่อเมนู→ป้อบอัพ (ชื่อ/แคลอรี่/คำอธิบาย) และคลิกรูป→lightbox (ของเดิมเขียน JS/CSS ไว้ครบแต่ไม่เคยต่อ onclick) + แก้รูปเมนูไม่เคยโชว์ (`item.image_url`→`item.image_urls[0]`, 6 จุด) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก (โค้ดคนละชุดกับรายการเมนูหลัก) | `5020fc9` |
-| v0.4.9 | แก้ตามที่นัทเทสจริง: "หมดแล้ว" ต้องขึ้นทันทีที่ลูกค้าใส่ตะกร้าครบสต็อก (ไม่ใช่แค่ตอน stock_total=0 — เปลี่ยน `isOut` ให้เช็คจาก remaining แทน) + lightbox ขึ้นกรอบเปล่าแทนที่จะไม่ทำอะไรเมื่อเมนูยังไม่มีรูป (คลิกไอคอน 🍱 ได้แล้วด้วย ไม่ใช่แค่คลิก `<img>` จริง) | `d79272d` |
-| v0.4.10 | จากผลเทสแอดมิน (คอมเมนต์ 7 ข้อ): แก้ sort_order เมนูทุกหมวดที่ไม่เคยตั้งเลย (80 รายการ ผ่าน REST ตรง) + เจอ**แท็บโปรโมชั่นไม่มีปุ่มนำทางใน OH เลย** (โค้ดมีครบ กดเข้าไม่ได้มาตลอด) + เปิดใช้หน้า "ตั้งค่า" (เดิม disabled) มี 2 setting แรก (จำนวนเมนู/หน้าที่ DB, ขนาดช่องช้อนส้อมที่ KQ) + เพิ่มหมวดหมู่ในหน้าตะกร้า/ยืนยัน/ประวัติ + **แก้บั๊กแต้มลูกค้าโชว์ผิด** (`liff_profile.html` อ้างคอลัมน์ `points` ที่ไม่มีจริง โชว์ 0 แต้มมาตลอดไม่ว่าจะมีจริงเท่าไหร่) + เพิ่มช่องช้อนส้อมที่เช็คเอาท์ + โชว์เด่นๆ ที่บัตรครัว | `8b21320` `de73b82` `dfd7594` |
-| v0.4.11 | ระบบ "ชุด Meal Plan" — ย้าย MP_SETS จาก hardcode ในโค้ดไปเป็นตาราง `mp_offer_sets` แก้ราคาเองได้ที่หน้า DB + สร้าง "Set 2" ชุดโปรโมชั่นแยกลิ้งจากการ์ดหน้าแรกเองได้ (ไม่ต้องรอ Claude) | `fb42370` |
-| v0.4.12 | โปรโมชั่นเจาะจงสินค้า/แพคเกจ/มีลแพลน + โค้ดแนะนำที่เช็คเอาท์ — ดูหัวข้อ "🎁 Promo Scope + โค้ดแนะนำ" ด้านล่าง ⚠️ รอรัน `scripts/sql_promo_scope.sql` | `0be063f` |
-| v0.4.13 | จากฟีดแบ็กนัท: **แก้บั๊ก "สร้างแพคเกจไม่สำเร็จ"** (RLS policy ไม่เคยมีให้ anon เขียน `packages`/`package_items` เลยตั้งแต่สร้างตาราง — ยืนยัน error 42501 ผ่าน curl ตรง ⚠️ รอรัน `scripts/sql_packages_rls.sql`) + **แก้ไขโค้ดโปรโมชั่นได้แล้ว** (เฉพาะโค้ดที่ยังไม่มีคนใช้ `used_count===0`) + **เพิ่มปุ่มลบสินค้าหมดสต็อกออกจากตะกร้า** ที่หน้าเมนู (เดิมกด + ไม่ได้แต่ก็ลบไม่ได้เหมือนกัน ต้องไปตะกร้าเท่านั้น) + **รื้อระบบขนาด Card ใน HE ใหม่ทั้งหมด** จาก 2 แบบ (ใหญ่/เล็ก, มีบั๊กจับกลุ่ม solo ทำการ์ดใหม่เรนเดอร์ผิดขนาด) → 4 ฟอแมตอิสระ (จตุรัส/แนวตั้ง/เต็มผืน/จิ๋ว) ขนาด px ตรงกันเป๊ะระหว่าง HE พรีวิวกับที่ลูกค้าเห็นจริง — ดูหัวข้อ "🖼️ Card Format ใหม่ (HE)" ด้านล่าง | `608b0aa` |
-| v0.4.14 | จากฟีดแบ็กนัทรอบต่อ: **โค้ดซ้อนกันได้ + scope แบบ "ยกเว้น"** (`stackable`/`scope_mode` เพิ่มใน `promo_codes` ⚠️ รอรัน `scripts/sql_promo_stack.sql` — ทับกติกา "1 โค้ดต่อออเดอร์" เดิมของ v0.4.12 ตามที่นัทขอ) + **แก้บั๊กการ์ดหน้าแรก liff ไม่โชว์ scroll** (การ์ด fixed-width ใหม่ของ v0.4.13 ทำให้บางทีผลรวมความกว้างพอดีจอ ไม่เห็น peek ว่าเลื่อนได้ — บังคับ container แคบกว่าจอ 40px เสมอ) + **แก้บั๊กการ์ด "ทดลองสั่ง Mealplan" เปิดเป็นสัปดาห์/เดือนแทนที่จะเป็นทดลอง** (การ์ด HE ลิ้งด้วย uuid จริงของแถว แต่ `MP_SETS` เก็บแค่ `set_key` ไว้เทียบ เลยหาไม่เจอแล้ว fallback ไปหน้า default ที่ซ่อนทดลองไว้พอดี) + ยืนยันเบอร์โทรอัตโนมัติจาก LINE ทำงานถูกอยู่แล้ว (เคสที่นัทเห็นว่างเป็นบัญชีทดสอบที่ไม่มีเบอร์ในระบบจริง ไม่ใช่บั๊ก) | `c07a48c` |
-| v0.4.15 | DB: ย้ายแถบหมวดหมู่ขึ้นเหนือแถบค้นหา (หาสะดวกขึ้นตามที่นัทขอ) + **แก้บั๊กลากเรียงลำดับ PTT (ปักหมุด) ใช้ไม่ได้เลย** — เจอว่าเป็นบั๊กเก่าตั้งแต่ 24 มิ.ย. (commit `fe0eae7`, ไม่เกี่ยวกับงานที่ทำวันนี้): ตอนเพิ่มปุ่ม expand-panel ให้การ์ด โค้ดที่ refactor เผลอลบ attribute `draggable="true"` ออกจาก card ไปเลย + ตั้ง `draggable:false` ที่จุดเรียก จนลากเรียงไม่ได้มาตลอด 11 วัน แก้กลับทั้ง 2 จุดแล้ว ทดสอบลาก-วางจริงผ่าน preview ยืนยัน pinOrder อัพเดทถูกต้อง | `50f6fea` |
-| v0.4.16 | HE: **การ์ด "จิ๋ว" 2 อันติดกันในลำดับ ซ้อนเป็นคอลัมน์เดียวอัตโนมัติ** (สูงรวม 230px เท่าแนวตั้ง) แทนที่จะเรียงแนวนอนเหมือนฟอแมตอื่นตามที่นัทขอ — ทำเหมือนกันทั้ง HE preview และ liff_customer.html จริง ดูหัวข้อ "🖼️ Card Format ใหม่" ด้านล่าง | `c8ea61a` |
-| v0.4.17 | จากฟีดแบ็กนัท: **จตุรัส/เต็มผืน สูงไม่พอดีกับจิ๋วที่ซ้อนคู่/แนวตั้ง** — ปรับจตุรัส 190×190→**230×230** และเต็มผืน 360×170→**360×230** ให้ทุกฟอแมตสูง 230px เท่ากันหมด แถวเรียบเสมอกัน + **แก้บั๊ก liff การ์ดหน้าแรกถูกตัดขาว ไม่สุดจอ** (เกิดจาก `max-width:calc(100vw-40px)` ที่เพิ่มไปแก้บั๊ก scroll เมื่อ v0.4.14 — ทำให้ container แคบกว่าจอจริงจนเหลือช่องว่างขาวตันด้านขวา ไม่มีอะไรมาเติม) เอา max-width นั้นออก ปล่อยเต็มความกว้างจอตามปกติ — การ์ดใหญ่ขึ้นเป็น 230px ทำให้รวมกันเกินความกว้างจอเกือบทุกกรณีอยู่แล้ว จึงเลื่อนได้จริงโดยไม่ต้องบังคับความกว้าง container | `ca1849b` |
-| v0.4.18 | จากฟีดแบ็กนัท: **เต็มผืนกว้างไป** — ปรับสัดส่วนจาก 360×230 (~1.57:1) → **288×230 (5:4)** ตามที่นัทขอ (สูงคงเดิม 230 เท่าฟอแมตอื่น) + **เพิ่มลากเรียงลำดับ Card ใน HomeGrid ได้จริง** (เดิมมีไอคอน "⠿" ในลิสต์การ์ดแต่ไม่เคยผูก event อะไรเลย เป็นแค่ภาพหลอก ไม่เคยลากได้จริงตั้งแต่แรก — ใช้ pattern เดียวกับที่ลากเรียงหมวดเมนู `catDragStart`/`catDrop` ที่มีอยู่แล้วในไฟล์เดียวกัน) ทดสอบลาก-วางจริงผ่าน preview ยืนยันลำดับ `cards` array เปลี่ยนถูกต้อง | `427ba66` |
-| v0.4.19 | **เพิ่ม auto-scroll การ์ด Collage หน้าแรกให้ลูกค้าจริงเห็นด้วย** — เจอว่า feature นี้ (`autoScrollOn`/`startAutoScroll`) มีแค่ใน `home_editor.html` เป็นพรีวิวให้แอดมินดูเฉยๆ ไม่เคยต่อมาที่ `liff_customer.html` เลยตั้งแต่แรก จึงไม่มีวันเห็นบนมือถือลูกค้าจริง — พอร์ตมาใส่ (`startHomeAutoScroll`/`stopHomeAutoScroll`, requestAnimationFrame เลื่อนทีละ 1px วนลูป) หยุดถาวรทันทีที่ลูกค้าแตะ/ลากเอง (ไม่ resume ต่างจาก HE preview ที่ resume หลังปล่อยเมาส์ — กันแย่งโฟกัสตอนลูกค้าตั้งใจดูการ์ดจริงๆ) ยืนยัน logic ถูกต้องผ่านการจำลอง tick ตรงๆ (rAF ในเบราว์เซอร์ preview แบบ headless ถูก throttle เพราะแท็บไม่ visible — ไม่ใช่บั๊ก แค่ข้อจำกัดเครื่องมือทดสอบ มือถือจริงจะ fire ปกติ) | `e312ae5` |
-| v0.4.20 | จากฟีดแบ็กนัท — ปรับปรุงหน้า OH tab "แพลนเมนู" ครั้งใหญ่ (`operation_hub.html`): **(1)** panel "เมนูวันนี้" เดิมเป็น array ตายตัวไม่ผูกวันที่จริงเลย (`todayPlan`) ตัวเลข ×N ก็รวมทุกวันในอนาคตไม่ใช่แค่วันเดียว — เปลี่ยนชื่อ panel เป็นไดนามิกโชว์วันที่ที่กำลังกรองอยู่จริง (คลิกหัวคอลัมน์วันไหนก็เปลี่ยนตาม ฟีเจอร์ `toggleDateFilter` มีอยู่แล้วแค่ไม่เคยผูกกับ panel นี้) ตัวเลข ×N ก็ scope ตามวันที่เลือกด้วย **(2)** แก้บั๊ก "checkbox กดแล้วยังโชว่ค้าง" — `selectedRowIds` ไม่เคยเคลียร์ช่องที่ใส่เมนูครบแล้ว เลยดูเหมือนยังเลือกอยู่ทั้งที่เสร็จแล้ว ตอนนี้เคลียร์อัตโนมัติ **(3)** เพิ่มสรุปรายวัน (รอบทั้งหมด/HP/LC/กำหนดเมนูครบแล้ว) ใน `#menuSummary` ที่เคย placeholder ว่างไว้ **(4)** วันที่เลยมาแล้วไม่โชว์ในตารางหลักอีกต่อไป ย้ายไปเก็บในส่วน "▼ ดูประวัติ" แบบพับเก็บ (มีปุ่มกดขยายดู อ่านอย่างเดียว ไม่มี assign) — ทดสอบผ่าน preview ครบทุกจุด (ระวัง: `clickMenu()` เขียนข้อมูลจริงลง Supabase ทันทีที่เลือกช่อง+คลิกเมนู ไม่ใช่แค่ preview เฉยๆ — เจอระหว่างเทสจริง มีเผลอเขียนทับแถวทดสอบไป 1 แถวแล้ว revert คืนแล้ว) | `69bf2ca` |
-| v0.4.21 | **เพิ่มฟีเจอร์ "เมนูเฉพาะ" (anchor point) ให้การ์ดหน้าแรกเลื่อนตรงไปที่เมนูใดเมนูหนึ่งได้เป๊ะๆ** — ตามที่นัทถามว่าตั้ง anchor point เองได้ไหมกันคลาดเคลื่อน (ใช่ครับ — ใช้ `element.scrollIntoView()` ผูกกับ DOM id ของการ์ดเมนูนั้นตรงๆ แม่นยำกว่าคำนวณระยะพิกเซลเองเยอะ ไม่ขึ้นกับว่าลิสจะยาว/สั้นแค่ไหน) เพิ่ม `id="menu-item-{code}"` ให้ทุกการ์ดเมนูใน `renderMenu()` + ฟังก์ชัน `jumpToMenuItem(code)` (สลับหมวดที่ถูกต้องให้อัตโนมัติก่อน แล้วค่อยเลื่อนไปเป๊ะๆ + กระพริบไฮไลท์ 1.6 วิให้เห็นชัดว่าเป็นอันไหน) — ฝั่ง HE เพิ่ม dropdown "🎯 เมนูเฉพาะ" ในตัวเลือก "ลิ้งไปที่" ของการ์ด เลือกได้จากลิสเมนูทั้งหมด 77 รายการ เหมาะกับปักหมุดเมนู S/D ประจำสัปดาห์ตามที่คุยกันไว้ก่อนหน้านี้ — ทดสอบผ่าน preview ครบ (สลับหมวด+เลื่อน+ไฮไลท์+เคส "หาไม่เจอ" ก็ไม่ error) | `ff6a5b9` |
-| v0.4.22 | **KQ (`kitchen_queue.html`) — งานสุดท้ายก่อน beta test:** (1) เพิ่มวันที่สั่ง+วันที่ส่งในการ์ดออเดอร์ (2) เพิ่มปุ่ม "↩ ยกเลิก" ให้ "✅ ส่งแล้ว" ของ Meal Plan ระยะยาว (เดิมกดแล้วกลับไม่ได้เลย ต่างจาก "จัดกล่องเสร็จ" ปกติที่มีปุ่มยกเลิกอยู่แล้ว) (3) **เพิ่มระบบ log ทุกครั้งที่กดปุ่มสถานะ** (จัดกล่องเสร็จ/ยกเลิก/ส่งแล้ว/ยกเลิกส่งแล้ว) — ตามที่นัทย้ำว่าสำคัญมาก (ครัวมือลั่นกดกันเองบ่อย ต้องรู้ว่าใครกด เพื่อสอบถามได้ถ้าของจริงยังไม่ไปแต่ระบบขึ้นว่าส่งแล้ว) — เพิ่มปุ่ม "👋 ตั้งชื่อ" ที่หัว KQ (เดิมไม่มีระบบชื่อผู้ใช้เลย) ผูก `localStorage['lastNickname']` คีย์เดียวกับ DB/HE, เขียนลง `activity_log` ตัวเดียวกับที่ DB ใช้ (source:'kq', action_type:'kq_status') — **เห็นได้ที่หน้า DB "ประวัติ ▼" เดิมเลยไม่ต้องสร้างหน้าดู log ใหม่** เพราะ query ที่นั่นไม่กรอง source อยู่แล้ว | `f2293ef` |
+| v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย | `520aa68` |
+| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย | `93e20ca` |
+| v0.4.8 | **แก้บั๊กร้ายแรง:** คลิกเมนูใดๆ ในหน้า liff พังจริง (throw error เงียบๆ — `openProduct()` อ้าง HTML ที่ไม่เคยมีอยู่จริง) + เพิ่มคลิกชื่อเมนู→ป้อบอัพ และคลิกรูป→lightbox + แก้รูปเมนูไม่เคยโชว์ (`item.image_url`→`item.image_urls[0]`, 6 จุด) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก | `5020fc9` |
+| v0.4.9 | แก้ตามที่นัทเทสจริง: "หมดแล้ว" ต้องขึ้นทันทีที่ลูกค้าใส่ตะกร้าครบสต็อก (`isOut` เช็คจาก remaining แทน) + lightbox ขึ้นกรอบเปล่าแทนที่จะไม่ทำอะไรเมื่อเมนูยังไม่มีรูป | `d79272d` |
+| v0.4.10 | จากผลเทสแอดมิน (คอมเมนต์ 7 ข้อ): แก้ sort_order เมนูทุกหมวดที่ไม่เคยตั้งเลย + เจอ**แท็บโปรโมชั่นไม่มีปุ่มนำทางใน OH เลย** + เปิดใช้หน้า "ตั้งค่า" + **แก้บั๊กแต้มลูกค้าโชว์ผิด** (`liff_profile.html` อ้างคอลัมน์ `points` ที่ไม่มีจริง) + เพิ่มช่องช้อนส้อมที่เช็คเอาท์ | `8b21320` `de73b82` `dfd7594` |
+| v0.4.11 | ระบบ "ชุด Meal Plan" — ย้าย MP_SETS จาก hardcode ในโค้ดไปเป็นตาราง `mp_offer_sets` แก้ราคาเองได้ที่หน้า DB | `fb42370` |
+| v0.4.12 | โปรโมชั่นเจาะจงสินค้า/แพคเกจ/มีลแพลน + โค้ดแนะนำที่เช็คเอาท์ — ดูหัวข้อ "🎁 Promo Scope + โค้ดแนะนำ" ด้านล่าง | `0be063f` |
+| v0.4.13 | **แก้บั๊ก "สร้างแพคเกจไม่สำเร็จ"** (RLS policy ไม่เคยมีให้ anon เขียน `packages`/`package_items` เลยตั้งแต่สร้างตาราง) + **แก้ไขโค้ดโปรโมชั่นได้แล้ว** (เฉพาะ `used_count===0`) + เพิ่มปุ่มลบสินค้าหมดสต็อกออกจากตะกร้า + **รื้อระบบขนาด Card ใน HE ใหม่ทั้งหมด** → 4 ฟอแมตอิสระ | `608b0aa` |
+| v0.4.14 | **โค้ดซ้อนกันได้ + scope แบบ "ยกเว้น"** + **แก้บั๊กการ์ดหน้าแรก liff ไม่โชว์ scroll** + **แก้บั๊กการ์ด "ทดลองสั่ง Mealplan" เปิดเป็นสัปดาห์/เดือนแทนที่จะเป็นทดลอง** | `c07a48c` |
+| v0.4.15 | DB: ย้ายแถบหมวดหมู่ขึ้นเหนือแถบค้นหา + **แก้บั๊กลากเรียงลำดับ PTT (ปักหมุด) ใช้ไม่ได้เลย** (root-cause: commit `fe0eae7` 24 มิ.ย. ลบ `draggable="true"` ทิ้งโดยไม่ตั้งใจ) | `50f6fea` |
+| v0.4.16 | HE: **การ์ด "จิ๋ว" 2 อันติดกันในลำดับ ซ้อนเป็นคอลัมน์เดียวอัตโนมัติ** | `c8ea61a` |
+| v0.4.17 | **จตุรัส/เต็มผืน สูงไม่พอดีกับจิ๋วที่ซ้อนคู่/แนวตั้ง** — ปรับทุกฟอแมตให้สูง 230px เท่ากันหมด + **แก้บั๊ก liff การ์ดหน้าแรกถูกตัดขาว ไม่สุดจอ** | `ca1849b` |
+| v0.4.18 | **เต็มผืนกว้างไป** — ปรับสัดส่วนเป็น 288×230 (5:4) + **เพิ่มลากเรียงลำดับ Card ใน HomeGrid ได้จริง** (เดิมไอคอน "⠿" ไม่เคยผูก event เลย) | `427ba66` |
+| v0.4.19 | **เพิ่ม auto-scroll การ์ด Collage หน้าแรกให้ลูกค้าจริงเห็นด้วย** (เดิมมีแค่ใน HE preview ไม่เคยพอร์ตมา liff) | `e312ae5` |
+| v0.4.20 | ปรับปรุงหน้า OH "แพลนเมนู" ครั้งใหญ่: panel "เมนูวันนี้" ผูกวันที่จริง + แก้บั๊ก checkbox ค้าง + เพิ่มสรุปรายวัน + วันที่เลยมาแล้วย้ายไป "▼ ดูประวัติ" | `69bf2ca` |
+| v0.4.21 | **เพิ่มฟีเจอร์ "เมนูเฉพาะ" (anchor point)** — `scrollIntoView()` ผูกกับ DOM id ของการ์ดเมนูนั้นตรงๆ | `ff6a5b9` |
+| v0.4.22 | **KQ — งานสุดท้ายก่อน beta test:** วันที่สั่ง/ส่งในการ์ด + ปุ่ม "↩ ยกเลิก" ให้ "ส่งแล้ว" (Meal Plan) + **ระบบ log ทุกครั้งที่กดปุ่มสถานะ** + ปุ่ม "👋 ตั้งชื่อ" | `f2293ef` |
 
-*หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น
+*หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น ใช้ prefix `u` ตามระบบเวอร์ชัน 4 แทร็คใหม่
 
-### ⚠️ Known Issues (อัพเดทล่าสุด — เช็คจาก code จริงรอบนี้)
+### ⚠️ Known Issues
 | # | ปัญหา | Priority |
 |---|-------|----------|
-| 1 | ✅ **แก้แล้ว** — `main_database_v2.html` แท็บ Meal Plan sub-view "👥 กำหนดเมนูลูกค้า" (mock 8 คน) เปลี่ยนเป็น **"🍳 ผลิตวันนี้"** จริงแล้ว ต่อ `mp_deliveries` ตรง ดู [What's in main_database_v2.html](#) หัวข้อ "🍳 ผลิตวันนี้" | ✅ Done |
-| 2 | `report.html` ยัง mock data ทั้งหมด (`genMockData` fallback) | 🟡 Med |
-| 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง — ดีขึ้นกว่าที่เคยบันทึกไว้ | 🟢 ใกล้เสร็จ |
-| 4 | `liff_register.html` ต่อ Supabase จริงแล้ว (upsert customers) — **ไม่ใช่ mock แล้ว** แก้ไขจากที่เคยบันทึกผิดไว้ | ✅ ไม่ใช่ปัญหาแล้ว |
+| 1 | ✅ แก้แล้ว — DB tab "🍳 ผลิตวันนี้" ต่อ `mp_deliveries` จริงแล้ว | ✅ Done |
+| 2 | `report.html` ยัง mock data ทั้งหมด | 🟡 นัทอยากได้เร็วขึ้น — ใช้วัด HP vs LC (เสา 3) |
+| 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว เหลือ mock แค่ fallback ตอน query พัง | 🟢 ใกล้เสร็จ |
+| 4 | `liff_register.html` ต่อ Supabase จริงแล้ว — ไม่ใช่ mock แล้ว | ✅ ไม่ใช่ปัญหาแล้ว |
 | 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — cron ทำงานปกติแต่ไม่ส่ง LINE จริง | 🔴 ก่อน launch |
 | 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
-| 7 | **พบใหม่ 2026-07-04:** หน้า DB สต็อกหลักที่การ์ดเมนู (`.stock-ctrl`) ไม่เคย sync ขึ้น `menu_items.stock_total` จริงมาตลอด (โค้ด sync เดิมผูกกับ `renderPttCard`/`chgStockFast` ที่เป็น dead code ไม่เคยถูกเรียก) — **แก้แล้ว** เพิ่ม `syncStockDebounced()` เข้า `commitStock()` จริง + เพิ่มปุ่ม "+10" | ✅ Done |
-| 8 | **พบใหม่ 2026-07-04 (ยังไม่แก้ ไม่กระทบการใช้งานตอนนี้):** `mpIsoDate()` ในแท็บ "แผนผลิต" ของ Meal Plan ใช้ `.toISOString().split('T')[0]` — เป็น pattern เดียวกับบั๊ก timezone ที่เคยแก้ไปแล้วในไฟล์อื่น (UTC+7 จะเพี้ยนไป 1 วันได้) แต่ยังไม่มีรายงานปัญหาจริง จึงยังไม่แตะ — ถ้าจะแก้ทีหลังใช้ pattern `localYMD()`/`toISO()` แบบเดียวกับที่แก้ไปแล้ว | 🟡 ระวังไว้ |
-| 9 | ✅ **แก้แล้ว** — `liff_customer.html`: คลิกเมนูในหน้า liff **พังจริงตอนนี้มาตลอด** (`openProduct()` อ้าง element ที่ไม่เคยมี HTML รองรับเลย → throw error เงียบๆ ไม่ทำอะไร) ลบทิ้ง เปลี่ยนเป็นคลิกชื่อเมนู→ป้อบอัพ + คลิกรูป→lightbox (ของเดิมมี JS/CSS ครบแต่ไม่เคยต่อ onclick) + แก้รูปเมนูไม่เคยโชว์เลย (`item.image_url`→`item.image_urls[0]`) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก | ✅ Done |
+| 7 | ✅ แก้แล้ว — สต็อกหลักที่การ์ดเมนูไม่เคย sync ขึ้น `menu_items.stock_total` จริง (ผูกกับ dead code) | ✅ Done |
+| 8 | `mpIsoDate()` ในแท็บ "แผนผลิต" ใช้ `.toISOString().split('T')[0]` — pattern เดียวกับบั๊ก timezone UTC+7 ที่เคยแก้ไปแล้วในไฟล์อื่น แต่ยังไม่มีรายงานปัญหาจริง | 🟡 ระวังไว้ |
+| 9 | ✅ แก้แล้ว — liff คลิกเมนูพังจริงตอนนี้มาตลอด (`openProduct()` อ้าง element ที่ไม่เคยมี) | ✅ Done |
+| 10 | 🆕 **เวลาตัดยอด Meal Plan ในโค้ดจริงคือเท่าไหร่?** เอกสารเขียน 17:00 แต่นัทจำว่า 18:00 — ต้อง verify โค้ด LIFF จริงก่อนแก้เป็น 8:30 น.ของวันส่งตามที่นัทขอ (เพราะส่งบ่ายอยู่แล้ว ยืดได้) | 🔴 Step 4 |
+| 11 | 🆕 LIFF ยังไม่เคยเทสบน iOS Safari เลย ทั้งของเดิมและเว็บใหม่ | 🔴 ก่อน launch |
+| 12 | 🆕 ราคา Meal Plan ในโค้ด vs ราคาที่ประกาศ (masternote) ไม่ตรงกัน — ดูกล่องเตือนในหัวข้อ Product Lines Line 2 | 🔴 ก่อนเปิด Ads แคมเปญ 2 |
+| 13 | 🆕 หน้า DB ยังไม่มีปุ่ม Export เมนู (CSV/JSON) — บล็อกงานลง delivery platform ที่ต้องส่งลิสต์เมนู/ราคาให้แอดมินกรอก | 🟡 Step 4 |
 
 ---
 
@@ -280,19 +359,21 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 - **Saved address:** restore จาก `customers.default_address` อัตโนมัติ
 - **Order history:** `s-orders` screen + `goOrders()`
 - **Profile:** redirect ไป `liff_profile.html` พร้อม uid
-- **คลิกชื่อเมนู → ป้อบอัพรายละเอียด** (`openMenuDetail()`, element `#mdOverlay`) — ชื่อ/โค้ด/แคลอรี่/โปรตีน/คำอธิบาย/ราคา + ปุ่มเพิ่มตะกร้า (เคารพ stock limit ผ่าน `addItem()` เดิม)
-- **คลิกรูปเมนู → lightbox ขยายเต็มจอ** (`openItemLightbox(id)` → `openLightbox(urls)`, element `#lbOverlay`) — รองรับหลายรูป เลื่อนดูได้ + จุดบอกตำแหน่ง
-- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก (`renderHomeGrid()`'s Item Grid Sections) — `NULL`=ไม่จำกัด (ต้องตั้งค่าจริงที่หน้า DB ถึงจะเห็น limit/badge "เหลือ N ชิ้นสุดท้าย") — `isOut` (v0.4.9) เช็คจาก **remaining** (stock−qty ในตะกร้า) ไม่ใช่แค่ `stock_total<=0` ตรงๆ ดังนั้นถ้าสต็อกมี 10 แล้วลูกค้าใส่ตะกร้าครบ 10 การ์ดจะขึ้น "หมดแล้ว" ทันทีแม้ `stock_total` ยังเป็น 10 อยู่ (ไม่ใช่ real-time reserve ข้ามลูกค้า แค่ per-session)
+- **คลิกชื่อเมนู → ป้อบอัพรายละเอียด** (`openMenuDetail()`, element `#mdOverlay`) — ชื่อ/โค้ด/แคลอรี่/โปรตีน/คำอธิบาย/ราคา + ปุ่มเพิ่มตะกร้า
+- **คลิกรูปเมนู → lightbox ขยายเต็มจอ** (`openItemLightbox(id)` → `openLightbox(urls)`, element `#lbOverlay`)
+- **Anchor jump:** `id="menu-item-{code}"` ทุกการ์ดเมนู + `jumpToMenuItem(code)` — สลับหมวดอัตโนมัติ + เลื่อนเป๊ะ + ไฮไลท์ 1.6 วิ
+- **Auto-scroll การ์ด Collage หน้าแรก** — `startHomeAutoScroll()`/`stopHomeAutoScroll()` (rAF 1px/frame) หยุดถาวรทันทีที่ลูกค้าแตะ/ลากเอง (ไม่ resume ต่างจาก HE preview)
+- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก — `isOut` เช็คจาก **remaining** (stock−qty ในตะกร้า) ไม่ใช่แค่ `stock_total<=0` ตรงๆ
 
-### Meal Plan Config (⚠️ แก้ราคาก่อน launch — ยังไม่ยืนยัน)
+### Meal Plan Config (⚠️ ราคายังไม่ verify — ดูกล่องเตือนในหัวข้อ Product Lines)
 ```javascript
 const MP_SETS = [
   { id:'trial',   label:'ทดลอง',      boxes:7,  price_hp:1499,  price_lc:1399  },
   { id:'weekly',  label:'1 สัปดาห์',  boxes:21, price_hp:3990,  price_lc:3790  },
   { id:'monthly', label:'1 เดือน',    boxes:84, price_hp:13990, price_lc:13490 },
 ];
-// comment ในโค้ดเปลี่ยนจาก "ราคาเป็น mock" เป็น "แก้ราคาที่นี่ก่อน launch" แล้ว
-// แต่ตัวราคายังไม่เปลี่ยน — นัทยังต้องยืนยันก่อน launch จริงอยู่ดี
+// v0.4.11: MP_SETS ถูกย้ายไปเป็นตาราง mp_offer_sets แล้ว แก้ราคาที่หน้า DB ได้เลย
+// ค่าฮาร์ดโค้ดนี้เหลือเป็น fallback — เช็คว่า mp_offer_sets ตรงกับราคาโฆษณาจริงก่อน launch
 ```
 
 ### Order types
@@ -308,46 +389,31 @@ const MP_SETS = [
 
 ## 📋 What's in main_database_v2.html (v0.4.7)
 
-### ⚡ Optimize ขนาดไฟล์ (v0.4.7) — ลบ seed data ที่ import ครั้งเดียวไปแล้วทิ้ง
-ไฟล์เคย 778KB (~55% เป็น hardcoded seed array ที่ import ครั้งเดียวตอน deploy ครั้งแรกแล้วไม่มีวันรันซ้ำ — auto-gate ด้วย `initFlags` ถาวร หรือปุ่ม migrate ที่ไม่มี HTML element เหลืออยู่แล้ว = dead code) — **ลบแล้ว ไฟล์เหลือ 330KB (-58%)** ไม่กระทบฟีเจอร์ที่ใช้จริงเลย (ทดสอบผ่าน preview ครบ: recipes/ingredients/categories load ปกติ, stock +10, category manager ใช้ได้หมด)
+### ⚡ Optimize ขนาดไฟล์ (v0.4.7)
+ไฟล์เคย 778KB (~55% เป็น hardcoded seed array ที่ import ครั้งเดียวตอน deploy ครั้งแรกแล้วไม่มีวันรันซ้ำ) — **ลบแล้ว ไฟล์เหลือ 330KB (-58%)** ไม่กระทบฟีเจอร์ที่ใช้จริงเลย
 
-**ถ้าเจอสูตรที่ยังไม่ได้ import เข้าระบบในอนาคต** (นัทถามไว้แล้ว ยืนยันวิธีนี้): ส่งไฟล์ Excel ให้ Claude วิเคราะห์แล้วใส่เข้า Supabase ตรงๆ ได้เลย — **ไม่ต้อง**กลับไปฝัง hardcoded array ในโค้ดแบบเดิมอีก (เป็นต้นเหตุที่ทำให้ไฟล์บวมมาตลอด)
+**ถ้าเจอสูตรที่ยังไม่ได้ import เข้าระบบในอนาคต:** ส่งไฟล์ Excel ให้ Claude วิเคราะห์แล้วใส่เข้า Supabase ตรงๆ ได้เลย — **ไม่ต้อง**กลับไปฝัง hardcoded array ในโค้ดแบบเดิมอีก
 
 ### Tabs
 เมนู · วัตถุดิบ · Meal Plan · 📦 แพคเกจ
 
 ### Tab แพคเกจ
-- สร้าง/แก้ Package S/M/L ได้เอง
-- Checkbox เมนู active ทั้งหมด + กำหนด extra_price ต่อ SKU
-- Quick buttons +0 / +40 + custom price input
-- Save = delete + insert ใหม่ใน `package_items`
+- สร้าง/แก้ Package S/M/L ได้เอง · Checkbox เมนู active + extra_price ต่อ SKU · Save = delete + insert ใหม่ใน `package_items`
 
 ### Tab Meal Plan — 2 sub-view คนละเรื่องกัน (ทั้งคู่ต่อข้อมูลจริงแล้ว)
-- **"📅 แผนผลิต"** — กริดวางแผนผลิตหลายวันของครัวโดยรวม (ไม่ผูกกับลูกค้ารายคน) ต่อ `daily_menu_assignments` จริง — คนละเรื่องกับ Meal Plan ระยะยาวรายลูกค้า (`mp_deliveries`) แม้ชื่อตารางจะดูคล้ายกัน
-- **"🍳 ผลิตวันนี้"** (เดิมชื่อ "👥 กำหนดเมนูลูกค้า", commit `12299a4` — เปลี่ยนจาก mock เป็นของจริงแล้ว) — ให้ครัวดูว่าวันนี้ต้องผลิต/แพ็คอะไรบ้างสำหรับ Meal Plan ระยะยาว โดยไม่ต้องสลับไปหน้า KQ:
-  - นำทางวันที่ (‹ › + date picker + ปุ่มวันนี้ + รีเฟรช) — โหลดจาก `mp_deliveries` ตรง (`.eq('delivery_date',...)`, ไม่รวม skipped/cancelled)
-  - Section 1 สรุป: รอบทั้งหมด / นับ HP / นับ LC / นับลูกค้าที่รีเควสเมนูเอง (`customer_request` ไม่ว่าง) / นับรอบที่ยังกำหนดเมนูไม่ครบ
-  - Section 2 "🍳 ต้องผลิต": aggregate `menu_items` ทุกรอบของวันนั้น กลุ่มตาม code (เหมือนหน้าจัดของ KQ แต่ไม่ต้องสลับหน้า) แต่ละเมนูโชว่ลูกค้า/รอบที่ต้องการ + ช่องโน้ตแก้เมนูฉุกเฉินต่อคน (ผูกกับ `menu_items[].note` ตัวเดียวกับที่ OH ใช้ — พิมพ์ที่นี่ก็เห็นที่ OH ด้วย ไม่ใช่ข้อมูลแยกชุด)
-  - Debounce 600ms ต่อโน้ต, ทดสอบผ่าน preview + REST แล้วว่าเซฟถูกแถว/ถูก entry ไม่กระทบเมนูอื่น
+- **"📅 แผนผลิต"** — กริดวางแผนผลิตหลายวันของครัวโดยรวม ต่อ `daily_menu_assignments` จริง — คนละเรื่องกับ Meal Plan ระยะยาวรายลูกค้า (`mp_deliveries`)
+- **"🍳 ผลิตวันนี้"** — ให้ครัวดูว่าวันนี้ต้องผลิต/แพ็คอะไรบ้างสำหรับ Meal Plan ระยะยาว โดยไม่ต้องสลับไปหน้า KQ (นำทางวันที่ + สรุปรอบ/HP/LC + aggregate เมนูต้องผลิต + ช่องโน้ตแก้เมนูฉุกเฉิน)
 
-### จัดการหมวดหมู่ (ใหม่ — commit `edf2eb1`)
-- ปุ่ม **🔗 รวม** ต่อแถวหมวด — ย้ายเมนูทั้งหมดจากหมวดหนึ่งไปอีกหมวด แล้วลบหมวดต้นทางทิ้ง (`mergeCategoryInto`)
-- Rename หมวดชื่อซ้ำกับหมวดอื่น → บล็อกด้วย alert ทันที (กันปัญหาซ้ำแบบ "ข้าวกล่อง" ที่เคยเกิด)
-- แถบหมวด (`.cat-tab-strip`) ลากเลื่อนซ้ายขวาด้วยเมาส์ได้แล้ว (commit `f599c12`)
+### จัดการหมวดหมู่
+- ปุ่ม 🔗 รวม ต่อแถวหมวด · rename ชื่อซ้ำ → บล็อกทันที · แถบหมวดลากเลื่อนซ้ายขวาด้วยเมาส์ได้ (อยู่เหนือแถบค้นหาตั้งแต่ v0.4.15)
 
 ---
 
-## 📋 What's in home_editor.html (v0.4.13)
+## 📋 What's in home_editor.html (v0.4.21)
 
-- dropdown "ลิ้งไปที่" มี 🥗 Meal Plan + 📦 Package options
-- โหลด packages จาก Supabase (`loadHEPackages()`) ก่อน render dropdown
-- เลือก Package → บันทึก `item_filter.category = '__pkg:{uuid}__'`
-- เลือก Meal Plan → บันทึก `item_filter.category = '__meal_plan__'`
+- dropdown "ลิ้งไปที่" มี 🥗 Meal Plan + 📦 Package + 🎯 เมนูเฉพาะ options — โหลด packages/menu items จาก Supabase ก่อน render
 
-### 🖼️ Card Format ใหม่ (v0.4.13) — เลิกจับกลุ่ม large+small แล้ว
-**บั๊กเดิม (แก้แล้ว):** ระบบเก่าจับคู่การ์ด "ใหญ่"+"เล็ก" เข้ากลุ่มเดียวกัน (คอลัมน์ 304px กว้าง) ถ้าการ์ดไหนโดดเดี่ยวไม่มีคู่ (`solo`) จะยืด `flex:1!important;width:100%!important` เต็มช่องทันที — การ์ดใหม่ที่เพิ่งกด "+ เพิ่ม Card ใหม่" มักโดดเดี่ยวเพราะต่อท้าย array เสมอ เลยเรนเดอร์ผิดขนาดไปเลย (ใหญ่ไป/เล็กไปสุดขั้ว) ทั้งที่ตั้งค่าเหมือนการ์ดที่ดูปกติทุกอย่าง — ยืนยันด้วย DOM inspect ตรงว่าการ์ดแบบเดียวกันเคยเรนเดอร์คนละขนาดกันขึ้นกับตำแหน่ง
-
-**แก้แล้ว:** การ์ดแต่ละใบตอนนี้อิสระจากกันสมบูรณ์ ไม่มีระบบจับกลุ่ม/solo อีกต่อไป — เลือกได้ 4 ฟอแมต ขนาดคงที่ตายตัว (v0.4.17 ปรับจตุรัส/เต็มผืนให้สูง 230px เท่าแนวตั้ง/จิ๋วคู่ ตามฟีดแบ็กนัท — ทุกฟอแมตสูงเท่ากันหมด แถวเรียบเสมอกัน):
+### 🖼️ Card Format (v0.4.13–v0.4.18) — 4 ฟอแมตอิสระ ไม่มีระบบจับกลุ่ม/solo อีกต่อไป
 | Format | ขนาด (px, อ้างอิงหน้าจอ 390px) |
 |--------|-------------------------------|
 | ◼ จตุรัส (square) | 230×230 |
@@ -355,13 +421,13 @@ const MP_SETS = [
 | ▬ เต็มผืน (full) | 288×230 (5:4) |
 | ▪ จิ๋ว (tiny) | 110×110 (คู่ที่ซ้อนกัน = 110×230) |
 
-ค่า px เดียวกันเป๊ะทั้งใน HE (`renderPrevCard()`) และ `liff_customer.html` (HomeGrid จริง) — พรีวิวใน HE = สิ่งที่ลูกค้าเห็นจริง 100% (ยืนยันผ่าน DOM inspect ทั้ง 2 ไฟล์แล้ว) การ์ด "จิ๋ว" ไม่โชว์ปุ่ม CTA (พื้นที่เล็กเกินไป) ส่วนอีก 3 ฟอแมตโชว์ตามปกติ
+ค่า px เดียวกันเป๊ะทั้งใน HE (`renderPrevCard()`) และ `liff_customer.html` — พรีวิวใน HE = สิ่งที่ลูกค้าเห็นจริง 100%
 
-**เก็บข้อมูลยังไงไม่ต้องเพิ่มคอลัมน์:** ใช้คอลัมน์ `col_span` เดิม (int) encode เป็นเลข 1-5 แทนชื่อ format ตรงๆ — `tiny=2, portrait=3, square=4, full=5` (ค่าเก่าที่เคยเซฟไว้เป็น 2/4 จาก small/large ยุคก่อน อ่านถูกต้องอัตโนมัติเป็น tiny/square เลย การ์ดเก่าไม่ขยับ ไม่ต้อง migrate ข้อมูล)
+**เก็บข้อมูล:** ใช้คอลัมน์ `col_span` เดิม (int) encode 1-5 แทนชื่อ format — `tiny=2, portrait=3, square=4, full=5` (ค่าเก่า 2/4 จาก small/large ยุคก่อนอ่านถูกต้องอัตโนมัติ ไม่ต้อง migrate)
 
-**ลากเรียงลำดับ Card ในลิสต์ได้แล้ว (v0.4.18):** ไอคอน "⠿" ที่แต่ละแถวในลิสต์การ์ด (`renderCardList()`) เดิมมีแค่ภาพ ไม่เคยผูก drag event จริงเลยตั้งแต่แรก (ลากไม่ได้มาตลอด) — ใช้ pattern เดียวกับที่ลากเรียงหมวดเมนูใช้อยู่แล้ว (`catDragStart`/`catDrop`, mousedown ที่ไอคอน "⠿" ค่อยเปิด `draggable=true` กันลากพลาดตอนคลิกที่อื่นในแถว) เพิ่ม `cardDragStart`/`cardDrop` คู่ใหม่ให้การ์ด — สลับตำแหน่งจริงใน `cards` array แล้ว `renderAll()`
+**ลากเรียงลำดับ Card ได้แล้ว (v0.4.18):** ไอคอน "⠿" ใช้ pattern เดียวกับลากเรียงหมวดเมนู (`catDragStart`/`catDrop`)
 
-**จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ (v0.4.16, ตามที่นัทขอ):** ถ้าการ์ด "จิ๋ว" 2 ใบเรียงติดกันในลำดับ (คนละใบ ไม่ใช่ใบเดียวกัน) จะไม่วางเรียงแนวนอนแบบฟอแมตอื่น แต่**ซ้อนกันเป็นคอลัมน์เดียว** (class `.col-tiny-stack`/`.col-tiny-stack-he`, gap 10px) สูงรวม 230px — พอดีเท่ากับทุกฟอแมตอื่นแล้ว (v0.4.17 ปรับจตุรัส/เต็มผืนให้สูง 230 เท่ากันหมดตามฟีดแบ็กนัท) แถวจะเรียบเสมอกันไม่ว่าจะผสมฟอแมตไหนติดกัน จิ๋วที่อยู่**โดดเดี่ยว**ไม่มีคู่ติดกัน ยังคงเรนเดอร์เดี่ยว 110×110 เหมือนเดิม ไม่ถูกจับซ้อน — logic นี้ทำเหมือนกันทั้ง HE preview และ liff_customer.html จริง
+**จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ (v0.4.16):** class `.col-tiny-stack`/`.col-tiny-stack-he` สูงรวม 230px — โดดเดี่ยวไม่มีคู่ยังคงเดี่ยว 110×110
 
 ---
 
@@ -369,158 +435,326 @@ const MP_SETS = [
 
 | Version | งาน | สถานะ |
 |---------|-----|-------|
-| v0.3.1 | Order flow · Customer migration | ✅ Done |
-| v0.3.2 | Package S/M/L system | ✅ Live |
-| v0.3.3 | Meal Plan flow + Pre-order | ✅ Live |
-| v0.3.4 | Product images (`batch_photo_upload.html`) | 🟡 เขียนเสร็จแล้ว ต่อ Supabase Storage จริง — ยังไม่เคยรัน ดูหมวด "📸 Photo Migration" ด้านล่าง |
-| v0.3.5 | OH Admin Tools (weekly swap, toggle, อัพรูป, package mgmt) | ✅ ทำครบตามที่วางแผนไว้ (แพลนเมนู mp_deliveries ตัวจริง, promo, messenger, DB "🍳 ผลิตวันนี้") |
-| — | KQ (kitchen_queue.html) — หน้าสุดท้ายที่ยังต้อง dev ก่อน beta ได้ | 🟡 กำลังทำ (ดูหัวข้อ KQ ด้านล่างสำหรับสถานะล่าสุด) |
-| — | **Beta test แบบ parallel กับ Hato** (ระบบเดิม) — แอดมินกดออเดอร์จริงลงระบบใหม่ด้วยมือคู่ขนานไปก่อน เพื่อเจอบั๊กก่อนใช้จริง | ⏳ รอ KQ เสร็จก่อน |
-| — | Migrate ข้อมูลลูกค้าเก่า (ต่อจาก beta test) | ⏳ ยังไม่เริ่ม — ดู Backlog เรื่อง Loyalty tier ที่รอ migrate นี้อยู่ |
-| — | ระบบ Facebook (`api/webhook.js` — built, ยังไม่ configure) | ⏳ ต่อจาก migrate |
-| v0.4   | AI Agents: **น้องนิว** (stock/menu, ยังไม่เริ่ม) → **น้องฟ้า** (agent ตัวที่ 2, นัทพูดถึงชื่อนี้ครั้งแรก 2026-07-05 ยังไม่มีสเปกอะไรเลย ถามเพิ่มก่อนออกแบบถ้านัทพูดถึงอีก) + **พี่เก่ง** (route delivery/Lalamove) | 🚀 Beta Launch (ยังไม่เริ่มสักตัว) |
-| v1.0   | ปิด Hato Heart | 🏁 Full Launch |
-
----
-
-## 🔴 Post-push Checklist (v0.3.3 — เหลือ verify บน production)
-
-```
-1. ✅ รัน SQL แล้ว (available_from + delivery_week — verify ผ่าน REST)
-
-2. ⚠️ MP_SETS ยังเป็นราคา mock — live แล้วแต่ต้องยืนยัน:
-   trial 7 กล่อง   HP 1499 / LC 1399
-   weekly 21 กล่อง HP 3990 / LC 3790
-   monthly 84 กล่อง HP 13990 / LC 13490
-
-3. ✅ Push ไฟล์ทั้ง 3 แล้ว (commit 09fcf9f)
-   liff_customer.html · main_database_v2.html · home_editor.html
-
-4. Test checklist liff_customer (รอ test บน production):
-   □ Package S card ใน HomeGrid → เลือก 9 เมนู → ตะกร้า
-   □ Meal Plan card → เลือก HP + weekly → ตะกร้า
-   □ เมนูอาทิตย์หน้า (ใส่ available_from ทดสอบ) → badge 📅
-   □ กด + เมนูอาทิตย์หน้าตอนตะกร้ามีอาทิตย์นี้ → toast block
-
-5. Test checklist main_database_v2:
-   □ Tab แพคเกจ → โหลด Package S
-   □ แก้ไข → เลือกเมนู + +40 → บันทึก → Supabase อัพเดท
-```
-
----
-
-## 🔴 Post-push Checklist (Meal Plan Scheduling — mp_deliveries, commit a0f542c)
-
-```
-1. ✅ SQL รันแล้ว: ตาราง mp_deliveries + RLS policy (verify ผ่าน REST insert/delete)
-2. ⚠️ SQL ค้าง: ALTER TABLE เพิ่ม day_before_notified_at (scripts/sql_mp_deliveries.sql ส่วนท้าย — v0.4.1)
-3. ⚠️ ยังไม่ตั้ง: Vercel env var LINE_CHANNEL_ACCESS_TOKEN (ไม่มีก็ใช้ระบบได้ปกติ แค่ยังไม่ push LINE)
-
-4. Test checklist LIFF (liff_customer.html):
-   □ สั่ง Meal Plan จริง 1 ออเดอร์ (เช่น trial) → เช็คใน Supabase ว่า mp_deliveries มีแถวตามจำนวนรอบ (boxes/7)
-     และ delivery_date ตกวัน จ/พ/ศ ทุกแถว
-   □ เข้าหน้า "ออเดอร์ของฉัน" → เห็น banner "🥗 จัดการ Meal Plan" → กดเข้าหน้าใหม่ได้
-   □ เห็นรายการรอบ + status badge ตรงกับที่ตั้งใน OH
-   □ ตั้งแถวทดสอบ status=request_open ผ่าน OH ก่อน → กลับมา LIFF → เลือก request เมนู → ยืนยัน →
-     เช็ค status เปลี่ยนเป็น request_submitted
-   □ กด "ขอเลื่อน/ข้ามรอบนี้" → confirm → เช็ค status เปลี่ยนเป็น skip_requested
-
-5. Test checklist OH (operation_hub.html):
-   □ แท็บแพลนเมนู → เห็นส่วน "📦 Meal Plan ระยะยาว" โหลดรายการจริง
-   □ กดปุ่มกรอง "🔴 ต้องดำเนินการ" → เห็นเฉพาะแถว request_submitted/skip_requested
-   □ กด "🍽 กำหนดเมนู" → เลือก SKU → บันทึก → status เปลี่ยนเป็น menu_assigned
-   □ แก้วันที่ส่งรายรอบ (date input) → เช็ค Supabase อัพเดทจริง
-   □ พิมพ์โน้ตแอดมิน → รอ debounce 600ms → เช็ค admin_notes บันทึกแล้ว
-
-6. Test checklist KQ (kitchen_queue.html):
-   □ เลือกวันที่ตรงกับ mp_deliveries ที่มี → เห็น section สีม่วง "📦 Meal Plan ระยะยาว" แยกจากออเดอร์ปกติ
-   □ กด "✅ ส่งแล้ว" → เช็ค status เปลี่ยนเป็น delivered + ปุ่มเปลี่ยนเป็น label static
-
-7. Test checklist api/notify-mp-requests.js (หลังตั้ง LINE_CHANNEL_ACCESS_TOKEN):
-   □ เช็คใน Vercel dashboard → Cron Jobs → เห็น job รันสำเร็จรายวัน (schedule 0 1 * * * UTC = 08:00 ไทย)
-   □ ทดสอบ "เปิด request window": ตั้งแถว status=scheduled, request_opens_at=วันนี้หรือก่อนหน้า, notified_at=null
-     → รัน endpoint (เปิด URL /api/notify-mp-requests ตรงๆ หรือรอ cron) → เช็ค status→request_open + ได้ LINE
-   □ ทดสอบ "auto no-change": ตั้งแถว status=request_open, request_deadline=เมื่อวาน → รัน endpoint
-     → เช็ค status→no_change + ได้ LINE ข้อความ "ไม่เปลี่ยนแปลงเมนู"
-   □ ทดสอบ "เตือนก่อนส่ง 1 วัน": ตั้งแถว delivery_date=พรุ่งนี้, day_before_notified_at=null → รัน endpoint
-     → เช็ค day_before_notified_at ถูกเซ็ต + ได้ LINE ข้อความเตือน
-```
+| u0.3.1–0.3.3 | Order flow · Package S/M/L · Meal Plan flow + Pre-order | ✅ Done |
+| u0.3.4 | Product images (`batch_photo_upload.html`) | 🟡 เขียนเสร็จแล้ว ยังไม่เคยรัน ดู "📸 Photo Migration" |
+| u0.3.5 | OH Admin Tools | ✅ ทำครบตามที่วางแผนไว้ |
+| u0.4.22 | KQ (หน้าสุดท้ายก่อน beta) | ✅ ลงแล้ว |
+| — | **Beta test แบบ parallel กับ Hato** — แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน เพื่อเจอบั๊กก่อนใช้จริง | ⏳ รอเริ่ม |
+| — | Migrate ข้อมูลลูกค้าเก่า | ⏳ หลัง beta — ดู Backlog เรื่อง Loyalty tier ที่รอ migrate นี้อยู่ |
+| — | Facebook Chatbot (`api/webhook.js` configure) | ⏳ หลัง migrate |
+| — | 🆕 เว็บ Vercel 5 หน้า + ย้ายโดเมน (Marketing กลุ่ม 3) | ⏳ ตอนกลับถึงคอม — ดู "🌐 เว็บใหม่" |
+| v0.4 | **AI Agents** — นิว→เก่ง→ฟ้า→เตียง→เอิธ (ดูหัวข้อ 🤖 ด้านล่าง) | ⏳ ยังไม่เริ่มสักตัว (น้องนิว spec locked แล้ว) |
+| v1.0 | ปิด Hato Heart = **Under360 Base** | 🏁 Full Launch |
 
 ---
 
 ## 📸 Photo Migration (`batch_photo_upload.html`) — ตรวจสอบแล้ว พร้อมใช้แบบมีคนคุม
 
-**สรุป:** ไฟล์นี้เขียนเสร็จสมบูรณ์แล้ว (ไม่ใช่ stub) — flow: อ่าน `All_menu.xlsx` หา SKU → โหลด `menu_items` จริงจาก Supabase → ลากรูปโบรชัวร์เข้ามา → ส่งรูปให้ Claude Vision หาตำแหน่ง+ชื่อแต่ละเมนู → crop อัตโนมัติ → fuzzy match ชื่อกับเมนูจริง (fuzzy score ≥0.82 = auto-select) → ตารางรีวิวให้เช็ค/แก้ทีละแถวก่อน → อัพโหลดเข้า Storage bucket `menu-images` จริง + PATCH `menu_items.image_urls` จริง (ยืนยันแล้วว่าคอลัมน์/บัคเก็ตตรงกับที่ `main_database_v2.html` ใช้งานอยู่)
+**สรุป:** ไฟล์นี้เขียนเสร็จสมบูรณ์แล้ว — flow: อ่าน `All_menu.xlsx` หา SKU → โหลด `menu_items` จริงจาก Supabase → ลากรูปโบรชัวร์เข้ามา → ส่งรูปให้ Claude Vision หาตำแหน่ง+ชื่อแต่ละเมนู → crop อัตโนมัติ → fuzzy match ชื่อกับเมนูจริง (fuzzy score ≥0.82 = auto-select) → ตารางรีวิวให้เช็ค/แก้ทีละแถวก่อน → อัพโหลดเข้า Storage bucket `menu-images` จริง + PATCH `menu_items.image_urls` จริง
 
-**ต้องมีอะไรก่อนรัน:** เปิดไฟล์ในเบราว์เซอร์ตรงๆ (ไม่ต้อง deploy) แล้วใส่ Anthropic API key ของตัวเองในช่อง (เก็บใน localStorage เครื่องตัวเองเท่านั้น ไม่ขึ้น Supabase) — เหมาะกับรันเองคนเดียว **ไม่ควรแชร์ลิงก์นี้ให้คนนอก** เพราะ key ฝังอยู่ฝั่ง browser ตรงๆ
+**ต้องมีอะไรก่อนรัน:** เปิดไฟล์ในเบราว์เซอร์ตรงๆ ใส่ Anthropic API key ของตัวเอง (เก็บ localStorage เครื่องตัวเองเท่านั้น) — **ไม่ควรแชร์ลิงก์นี้ให้คนนอก** เพราะ key ฝังอยู่ฝั่ง browser ตรงๆ
 
-**⚠️ ความเสี่ยงที่ควรรู้ก่อนรันจริงกับโบรชัวร์ทั้งชุด (ยังไม่ได้แก้ ถ้าอยากให้แก้บอกได้):**
-1. `image_urls` array ไม่มีการจำกัดจำนวน — โค้ดจะ prepend URL ใหม่เข้าไปเรื่อยๆ แต่ `main_database_v2.html` โชว์แค่ 4 ช่องแรก (`.slice(0,4)`) แปลว่าถ้ารันหลายรอบ array จะยาวขึ้นเรื่อยๆ แบบไม่โชว์ผล กินพื้นที่ DB เปล่าๆ
-2. Path อัพโหลดคือ `{sku}.jpg` แบบ upsert=true — ถ้ารูปโบรชัวร์ 2 ใบ map ไปที่ SKU เดียวกัน (เช่น อัพซ้ำ 2 สัปดาห์) รูปเก่าจะถูกทับเงียบๆ ไม่มี confirm ไม่มี versioning
-3. threshold 0.82 ยังไม่เคยทดสอบกับชื่อเมนูจริงของร้าน (ภาษาไทย มีคำซ้ำ/สะกดต่าง) — แนะนำเช็ค auto-selected ทุกแถวก่อนกด upload จริง ไม่ควร trust แบบ batch เต็มๆ ตั้งแต่รอบแรก
+**⚠️ ความเสี่ยงที่ควรรู้ก่อนรันจริงกับโบรชัวร์ทั้งชุด:**
+1. `image_urls` array ไม่มีการจำกัดจำนวน — DB โชว์แค่ 4 ช่องแรก แปลว่าถ้ารันหลายรอบ array จะยาวขึ้นเรื่อยๆ แบบไม่โชว์ผล
+2. Path อัพโหลดคือ `{sku}.jpg` แบบ upsert=true — รูปเก่าจะถูกทับเงียบๆ ไม่มี confirm ไม่มี versioning
+3. threshold 0.82 ยังไม่เคยทดสอบกับชื่อเมนูจริงของร้าน — แนะนำเช็ค auto-selected ทุกแถวก่อนกด upload จริง
 
-**คำแนะนำ:** ลองรัน 1 โบรชัวร์ก่อน (ไม่กี่ SKU) → เช็คว่า `main_database_v2.html` ยังโชว์ 4 ช่องรูปถูกต้อง ไม่พังจากปัญหา #1-2 → ค่อยไล่ทำทั้งชุด
-
----
-
-## 📜 Activity Log — ประวัติการเปลี่ยนแปลง + ประวัติเติมสต็อก (v0.4.6 — ✅ SQL รันแล้ว, ยืนยันผ่าน REST 2026-07-05)
-
-`scripts/sql_activity_log.sql` (ตาราง `activity_log` + RLS policy) — นัทรันแล้ว ใช้งานได้ปกติ
-
-**ดีไซน์ (ตอบโจทย์ "แก้ถี่ไปจะเก็บ log เยอะ"):**
-- **Batch ต่อ (browser session + ประเภทการกระทำ)** — session ใหม่ทุกครั้งที่เปิดหน้า `main_database_v2.html` การกระทำประเภทเดียวกัน (เช่น ปรับสต็อก) ภายใน session เดียวกันจะรวมเข้าแถวเดียว ไม่ insert ใหม่ทุกคลิก
-- **Debounce เขียนจริง 3 วิ** — กด +10/+1 ติดกันหลายครั้ง จะสะสมในหน่วยความจำก่อน แล้วค่อยเขียนขึ้น Supabase ครั้งเดียวตอนหยุดกด 3 วิ (ทดสอบแล้ว: กด 3 ครั้งติดกัน → ยิง request จริงแค่ 1 ครั้ง)
-- **4 action_type:** `stock` (main_database_v2.html, สรุปเป็น "LC02 +2, HP01 +1"), `category` (สร้าง/รวม/ลบ/เปลี่ยนชื่อ), `package` (สร้าง/แก้/ลบแพค), `he_layout` (home_editor.html — 1 คลิกปุ่ม "บันทึก" = 1 log อยู่แล้วโดยธรรมชาติ ไม่ต้อง debounce)
-- **ไม่ครอบคลุม (ตัดสินใจไว้แล้ว กันไม่ over-engineer):** การแก้ field เดี่ยวๆ ในสูตร (ชื่อ/ราคา/วัตถุดิบ) ยังไม่ log เพราะพื้นผิวกว้างเกินไป มีแค่ 4 action_type ข้างบน ถ้าอยากเพิ่มบอกได้
-- **UI:** แถบบางที่หัวหน้า `main_database_v2.html` (เห็นทุกแท็บ) โชว์กิจกรรมล่าสุด 1 บรรทัด กดปุ่ม "ประวัติ ▼" เพื่อขยายดูย้อนหลัง 50 รายการ
-- **ใครแก้:** ใช้ `state.currentUser` (ชื่อเล่นที่กรอกไว้มุมขวาบน) — `home_editor.html` **ยังไม่มีระบบใส่ชื่อของตัวเอง** เลยอ่านจาก `localStorage['lastNickname']` แทน (คีย์เดียวกับที่ DB ใช้จำชื่อ) → **ถ้าอยากให้ log จาก HE โชว์ชื่อถูก ต้องเคยกรอกชื่อที่หน้า DB ในเบราว์เซอร์เครื่องเดียวกันมาก่อนอย่างน้อย 1 ครั้ง** ไม่งั้นจะโชว์ "ไม่ทราบชื่อ"
-- **หมายเหตุ HE:** `saveAll()` เป็นปุ่ม "บันทึกทั้งหมด" อยู่แล้ว (ไม่ diff เทียบก่อน-หลัง) log เลยรายงาน "จำนวนการ์ด/เมนูที่อยู่ในการบันทึกครั้งนี้" ไม่ใช่ "จำนวนที่เปลี่ยนจริง" — ประมาณการเพื่อความเรียบง่าย ไม่ผิดแต่ไม่ได้ precise 100%
+**คำแนะนำ:** ลองรัน 1 โบรชัวร์ก่อน → เช็คว่า DB ยังโชว์ 4 ช่องรูปถูกต้อง → ค่อยไล่ทำทั้งชุด
 
 ---
 
-## 🎁 Promo Scope + โค้ดแนะนำ + ซ้อนโค้ด (v0.4.12–v0.4.14 — เขียนเสร็จ ทดสอบผ่าน preview แล้ว — ⚠️ รอรัน 2 SQL: `scripts/sql_promo_scope.sql`, `scripts/sql_promo_stack.sql`)
+## 📜 Activity Log — ประวัติการเปลี่ยนแปลง + ประวัติเติมสต็อก (v0.4.6 — ✅ SQL รันแล้ว)
 
-**ที่มา:** นัทอยากทำโค้ดส่วนลดที่ใช้ได้เฉพาะสินค้า/แพคเกจ/มีลแพลน (เช่น "สั่งแพคทดลองลด 100 บาท") + อยากมี toggle ว่าโค้ดไหน "แนะนำ" ให้ลูกค้าเห็นเลยที่เช็คเอาท์ (แตะใช้ได้ทันที) ส่วนโค้ดที่ไม่แนะนำ ลูกค้าต้องพิมพ์เองให้ถูก (โค้ดลับ/แจกเฉพาะกลุ่ม) — v0.4.14 ต่อยอด: อยากให้บางโค้ดซ้อนกันได้ + scope แบบ "ยกเว้น" (ใช้ได้กับทุกอย่าง ยกเว้นบางรายการ)
+`scripts/sql_activity_log.sql` — ใช้งานได้ปกติ
+
+**ดีไซน์:**
+- **Batch ต่อ (browser session + ประเภทการกระทำ)** — session ใหม่ทุกครั้งที่เปิดหน้า DB
+- **Debounce เขียนจริง 3 วิ** — กด +10/+1 ติดกันหลายครั้งสะสมในหน่วยความจำก่อน
+- **action_type:** `stock` · `category` · `package` · `he_layout` · `kq_status` (v0.4.22 — ไม่ batch, log ทุกคลิกเพราะเป็นเรื่อง accountability)
+- **ไม่ครอบคลุม (ตัดสินใจไว้แล้ว):** แก้ field เดี่ยวๆ ในสูตร (ชื่อ/ราคา/วัตถุดิบ) ยังไม่ log — พื้นผิวกว้างเกินไป
+- **UI:** แถบบางที่หัว DB โชว์กิจกรรมล่าสุด กดปุ่ม "ประวัติ ▼" ดูย้อนหลัง 50 รายการ — query ไม่กรอง source เลยเห็น log จาก KQ ในหน้าเดียวกันด้วยอัตโนมัติ
+- **ใครแก้:** `state.currentUser` ที่ DB / `localStorage['lastNickname']` ที่ HE+KQ (คีย์เดียวกัน — ต้องเคยกรอกชื่อที่หน้า DB เครื่องเดียวกันมาก่อนอย่างน้อย 1 ครั้ง ไม่งั้น HE จะโชว์ "ไม่ทราบชื่อ")
+
+---
+
+## 🎁 Promo Scope + โค้ดแนะนำ + ซ้อนโค้ด (v0.4.12–v0.4.14 — เขียนเสร็จ ทดสอบผ่าน + SQL รันแล้ว)
+
+**ที่มา:** โค้ดส่วนลดที่ใช้ได้เฉพาะสินค้า/แพคเกจ/มีลแพลน + toggle "แนะนำ" ให้ลูกค้าเห็นเลยที่เช็คเอาท์ (แตะใช้ได้ทันที) + v0.4.14 ต่อยอด: บางโค้ดซ้อนกันได้ + scope แบบ "ยกเว้น"
 
 **Schema (`promo_codes`):**
-- `scope_type` — `'all'` (ค่าเดิม/ทั้งร้าน) · `'sku'` (เมนู) · `'package'` (แพคเกจ) · `'mp_offer'` (ชุด Meal Plan)
-- `scope_value` — jsonb array อ้างอิงตาม scope_type: sku→`menu_items.code`, package→`packages.id`, mp_offer→`mp_offer_sets.set_key`
-- `scope_mode` (v0.4.14) — `'include'` (ค่าเดิม, ใช้ได้เฉพาะรายการที่เลือก) หรือ `'exclude'` (ใช้ได้กับทุกอย่าง ยกเว้นรายการที่เลือก) — มีผลเฉพาะตอน scope_type ไม่ใช่ 'all'
-- `show_suggested` — true = โชว์เป็น chip แนะนำที่หน้าเช็คเอาท์ลูกค้า (LIFF)
-- `stackable` (v0.4.14) — true = ใช้ร่วมกับโค้ด "ซ้อนได้" อันอื่นพร้อมกันได้, false (ค่าเดิม) = ใช้แล้วแทนที่โค้ดอื่นทั้งหมด
+- `scope_type` — `'all'` · `'sku'` · `'package'` · `'mp_offer'`
+- `scope_value` — jsonb array: sku→`menu_items.code`, package→`packages.id`, mp_offer→`mp_offer_sets.set_key`
+- `scope_mode` — `'include'` (เฉพาะที่เลือก) หรือ `'exclude'` (ทุกอย่างยกเว้นที่เลือก)
+- `show_suggested` — true = โชว์เป็น chip แนะนำที่หน้าเช็คเอาท์ลูกค้า
+- `stackable` — true = ใช้ร่วมกับโค้ด "ซ้อนได้" อันอื่นพร้อมกันได้
 
-**Admin (`operation_hub.html` แท็บโปรโมชั่น):** ฟอร์มสร้างโค้ดมีช่อง "ใช้ได้กับ" + picker เลือกเมนู/แพคเกจ/มีลแพลน (มีช่องค้นหาเมื่อเลือก "เมนู" เพราะมี 70+ รายการ) + toggle "✅ เฉพาะรายการที่เลือก / 🚫 ทุกอย่างยกเว้นที่เลือก" + checkbox "🌟 แนะนำ" + checkbox "🔗 ซ้อนกับโค้ดอื่นได้" — การ์ดโค้ดในลิสต์โชว์ badge scope (เฉพาะ/ยกเว้น) + badge แนะนำ + badge ซ้อนได้ — แก้ไขโค้ดได้ (ปุ่ม ✏️) เฉพาะโค้ดที่ `used_count===0` เท่านั้น (กันเปลี่ยนเงื่อนไขย้อนหลังกับออเดอร์ที่ใช้ไปแล้ว)
+**Admin (`operation_hub.html` แท็บโปรโมชั่น):** picker เลือกเมนู/แพคเกจ/มีลแพลน + toggle include/exclude + checkbox แนะนำ/ซ้อนได้ — แก้ไขโค้ดได้เฉพาะ `used_count===0`
 
-**Customer (`liff_customer.html` หน้าตะกร้า):** `appliedPromos` เป็น **array** (v0.4.14 เปลี่ยนจากตัวแปรเดี่ยว) โชว์รายการโค้ดที่ใช้อยู่ทั้งหมด (ลบทีละอันได้) + chip "🎁 โค้ดแนะนำสำหรับคุณ" เหนือช่องกรอกโค้ด (กรองเฉพาะโค้ดที่ `show_suggested=true` + ยังไม่หมดอายุ/โควต้า/ถึงขั้นต่ำ + ตรง scope) แตะ chip = ใช้ทันที ไม่ต้องพิมพ์ ช่องกรอกโค้ดเปิดไว้เสมอ (เพิ่มโค้ดที่ซ้อนได้ต่อได้เรื่อยๆ)
+**Customer (`liff_customer.html`):** `appliedPromos` เป็น array — chip "🎁 โค้ดแนะนำสำหรับคุณ" แตะใช้ทันที
 
-**กติกาซ้อนโค้ด (v0.4.14 — ทับกติกา "1 โค้ดต่อออเดอร์" เดิมของ v0.4.12 ตามที่นัทขอ):**
-- โค้ด `stackable=true` + `stackable=true` อื่นที่ใช้อยู่ → **รวมกัน** (บวกส่วนลดสะสม, กันลดเกินยอดสินค้าด้วย `Math.min(itemDisc, sub)`)
-- โค้ดใดก็ตาม (ซ้อนได้หรือไม่) ที่ apply ตอนมีโค้ด **ไม่ซ้อนได้** ค้างอยู่ → **แทนที่ทั้งหมด** (กันความสับสนว่าทำไมโค้ดเดี่ยวถึงอยู่ร่วมกับตัวอื่นได้)
-- ใช้โค้ดเดิมซ้ำ → reject ("ใช้โค้ดนี้อยู่แล้ว")
-- `free_shipping` ซ้อนกันเองไม่มีผลต่างจากอันเดียว (ฟรีค่าส่งได้แค่ครั้งเดียวโดยธรรมชาติ)
+**กติกาซ้อนโค้ด:** `stackable=true` + `stackable=true` → รวมกัน (กันลดเกินยอดด้วย `Math.min`) · โค้ดไม่ซ้อนได้ apply ทับ → แทนที่ทั้งหมด · โค้ดเดิมซ้ำ → reject
 
-**Capability-check:** ถ้ายังไม่รัน SQL — OH ซ่อน UI ที่เกี่ยวข้อง (picker/toggle/checkbox) และไม่ส่งฟิลด์ใหม่ตอนบันทึก โค้ดแบบเดิมยังสร้าง/ใช้งานได้ปกติทุกอย่าง — ฝั่ง LIFF ก็เช็คแบบเดียวกัน (query พังเงียบๆ ได้ผลลัพธ์ว่างถ้าคอลัมน์ยังไม่มี ไม่กระทบการกรอกโค้ดแบบเดิม)
+**Capability-check:** ถ้ายังไม่รัน SQL — OH ซ่อน UI ที่เกี่ยวข้อง โค้ดแบบเดิมยังใช้งานได้ปกติ
 
 ---
 
 ## 🚚 ลูกค้าสั่ง 2 รอบที่เดียวกัน ไม่คิดค่าส่งซ้ำ — ❌ ยกเลิกแล้ว (2026-07-04)
 
-นัทตัดสินใจไม่ทำ ("อาจจะยากไป") หลังฟังข้อเสนอ (เพิ่ม lat/lng ใน orders + badge เตือนแอดมินที่ OH) — ไม่ต้องทำต่อ ถ้าอนาคตอยากรื้อฟื้นเรื่องนี้ ข้อเสนอเดิมอยู่ใน git history ของไฟล์นี้ (commit `80f1d57`)
+นัทตัดสินใจไม่ทำ ("อาจจะยากไป") — ข้อเสนอเดิมอยู่ใน git history ของไฟล์นี้ (commit `80f1d57`)
 
 ---
 
-## 🤖 AI Agents (v0.4)
+## 🧭 Positioning & Brand Strategy (เคาะแล้ว 8 ก.ค. 2026)
 
-**น้องนิว**
-- Stock: estimate velocity → batch qty → feed KQ
-- Meal Plan: assign 7 เมนู/ลูกค้า/สัปดาห์ → ลูกค้า request ได้ไม่เกิน 2/สัปดาห์
-- **Weekly pain point ของนัท:** เลือก S1–S8 จาก 300+ เมนู (เกณฑ์: ขายดี/อร่อย/กำไร/สวย/ไม่ซ้ำ 2 เดือน)
-  → น้องนิวเสนอ 8 รายการ + นัท approve → S1–S5 กลายเป็น D1–D5 อัตโนมัติ
+> **"ไม่ขายคลีน — ขายอาหารที่เข้ากับเป้าหมายและไลฟ์สไตล์ของคุณ โดยมีโปรตีนเป็นแกน"**
 
-**พี่เก่ง** — route delivery + Lalamove v3 API
-- **วิสัยทัศน์ที่นัทอธิบายไว้ (2026-07-05, ยังไม่เริ่มสร้าง):** หน้าจัดแมสใหม่เป็นแบบ "รายการ" ให้แมส (คนขับ) กดอัพเดทสถานะงานส่งเองได้จากมือถือ + ถ่ายรูปหลักฐานส่งของลงแอพได้เลย (proof of delivery) เพื่อให้แอดมินเห็นว่าตอนนี้แมสอยู่ไหน/ส่งถึงหรือยัง + ต่อ Lalamove API ตรงในหน้านี้เพื่อเรียกรถ/ดูสถานะ realtime จากหน้าเดียว — คนละเรื่องกับ "แมสเซนเจอร์" ที่มีอยู่ตอนนี้ (แค่หน้าดูรายการ ไม่มีปุ่มอัพเดทจริง ไม่มี LINE แจ้งลูกค้าเลย ดู Known Issues)
+- เทรนด์ "อาหารคลีน" จบแล้ว ตลาดแตกเป็น dietary ตามไลฟ์สไตล์ — แต่ทุกสายมีโปรตีนเอี่ยวหมด
+- **2 ชั้นที่ต้องแยก:** ชั้น keyword (คนพิมพ์ "อาหารคลีน delivery") ใช้เป็น SEO doorway เท่านั้น vs ชั้น positioning จริง (Real Food/Balanced Diet/โปรตีนเป็นแกน)
+- **ตัวชูโรง = Meal Plan ทั้งไลน์ (HP+LC) — โปรโมทเป็นคู่เสมอ** อย่าเรียกแค่ HP
+- **กลยุทธ์กำลังพล:** แรง 100% ลง Meal Plan HP+LC กรุงเทพจนกว่ายอดฟื้น · ตจว./แพ็คกับข้าว = passive only
+- **สนามรบ:** ไม่สู้บน Shopee (แพ้เชิงโครงสร้าง) → ย้ายไปสนาม Google Search/บทความ/AI search/รีวิว ที่ชนะด้วยโดเมนอายุ 10 ปี + เนื้อหา ซื้อทางลัดไม่ได้
+- **มุมเล่าที่คู่แข่งเลียนแบบยาก:** ร้านช่วยออกค่าส่งให้ลูกค้า (subsidize 3-5 หมื่น/เดือน) · ปรุงสด 10 ปี · จัดเมนูเฉพาะคน ตัดของแพ้อัตโนมัติ
 
-**Tables ที่ต้องสร้าง:** `menu_history` · `customer_preferences` · `production_plan` · `weekly_assignments`
+### 🍜 ปรัชญาอาหาร + ตัวตนแบรนด์ (วัตถุดิบสำหรับ copy/content ทุกชิ้น)
+> **แก่นเดียว:** "ไม่ใช่คลีนจนทรมาน ไม่ใช่ตามใจปากจนพัง — แต่คือ *พอดี* ที่กินได้ทุกวันจริงๆ อร่อยด้วย สุขภาพดีด้วย โปรตีนแน่นเป็นแกน"
+
+- **การเดินทางแบรนด์:** เริ่มจากคลีนสายแข็ง (อกไก่เท่านั้น ไม่เอา processed food) → บทเรียน: ไม่อร่อย+ไม่ยั่งยืน → ปรับเป็น Balanced Diet/Real Food อร่อยกินได้จริง
+- **คุม 3 ตัวร้ายให้ "พอดี" ไม่ใช่ "ตัดทิ้ง":** น้ำมันรำข้าว add-on ≤5g/เมนู · น้ำตาลพอดี · โซเดียมกว่า 90% ของเมนูต่ำกว่าตลาด/อาหารข้างทาง · ไม่เคลมสมบูรณ์แบบแต่เลี่ยง ultra-processed ให้มากสุด
+- **จุดเด่นวัตถุดิบ:** โปรตีนดิบ LC 120g / HP 170g · ข้าวเปลี่ยนจากไรซ์เบอรี่เป็น **ข้าว กข 43** (อร่อยเหมือนหอมมะลิ ดัชนีน้ำตาลต่ำ — ไม่ใช่ทุกเมนู)
+- ⏳ ค้าง: สัมภาษณ์ไลฟ์สไตล์พลอย (ยังไม่จบ — เก็บไว้ทำตอนมีเวลายาวๆ)
+
+**🖊️ กฎเขียน copy — ใช้ทุกครั้งที่แต่งคอนเทนต์/โฆษณา:**
+- ไม่โม้ว่าดีที่สุด — ให้ความรู้ก่อนแล้วแสดงว่าเราตอบโจทย์
+- โปรโมท **HP+LC คู่เสมอ**
+- ห้ามดิสแช่แข็ง (เราขายฟรีซแพ็คเอง) · **ห้ามเขียน "เลือกเวลาส่งได้"**
+- ใช้จุดจริงได้: น้ำมันรำข้าว/≤5g · โซเดียมต่ำ 90% เมนู · ข้าว กข 43 · โปรตีน 120/170g · เลี่ยง ultra-processed
+
+### 📜 ประวัติร้าน 10 ปี (บริบทสำหรับทุก session)
+1. ยุคแรก: ข้าวกล่องอย่างเดียว หมุนเวียนรายสัปดาห์
+2. ยุคขยาย: เพิ่มเมนูประจำ
+3. ยุคเจาะ ตจว.: สร้างแพ็คกับข้าวฟรีซแพ็ค ส่งทั่วประเทศ
+4. ยุคโดนตี: คู่แข่งชื่อ **"350"** ซื้อคีย์เวิร์ด "360" บน Shopee ทำให้ยอดแพ็คตก
+5. ยุคปัจจุบัน: pivot มา Meal Plan (HP/LC) เป็นเรือธง — จุดที่ยืนอยู่ตอนนี้
+- **ทีม:** นัท+พลอย (Thunyathorn) = สามีภรรยา เจ้าของร่วม — พลอยถนัดลุยเร็ว/หน้าบ้าน, นัทถนัดละเอียด/หลังบ้าน — จุดแข็งคนละแบบ ไม่ใช่ปัญหา
+- นัทกำลังพิสูจน์ให้พลอยเห็นว่า "หลังบ้านใช้ AI ได้ผลจริง" ก่อนดึงพลอยเข้ามาใน workflow เต็มตัว
+
+### 🚚 Delivery Reality (แก้ความเข้าใจเดิม — สำคัญต่อคอนเทนต์ทุกชิ้น)
+- ส่งทั่วกรุงเทพ+ปริมณฑล (ปรุงสดรายวัน) และทั่วไทย (ฟรีซแพ็ค) — **ไม่ใช่ร้านเฉพาะย่าน**
+- ค่าส่งคิดตามระยะทางไม่เกิน ~200฿ แม้ไกล ร้านรับส่วนเกินเอง (subsidize 30-50K฿/เดือน) · Meal Plan Weekly/Monthly ส่งฟรี
+- **ไม่ให้ลูกค้าเลือกเวลาส่ง** — แมสร้านจัดรอบเอง ลูกค้าแค่ "แจ้งช่วงเวลาที่สะดวกรับ" ได้ — ห้ามเขียนคอนเทนต์ว่า "เลือกเวลาส่งได้"
+- ฟรีซแพ็คทำถูกวิธี (ปรุงเสร็จแช่แข็งทันที) — ห้ามดิสอาหารแช่แข็งในคอนเทนต์
+
+---
+
+## 🤖 AI Agents — Roster เต็ม + Roadmap
+
+**หลักการร่วม:** Agent ทุกตัวตั้งชื่อตามพนักงานเก่าตัวจริงของร้าน · วิสัยทัศน์ระยะยาว = pixel-art virtual office · เป้าหมายใหญ่ = แพลตฟอร์ม **"Under360 Base"** แทน Hato Heart เต็มระบบ (= v1.0) · ทั้งหมดยังไม่เริ่มสร้าง — ต้อง dev พฤติกรรมให้นิ่งก่อนต่อเข้าระบบจริง · **ลำดับสร้าง: น้องนิวก่อนเสมอ** (ตัวอื่นพึ่ง output ของน้องนิว)
+
+| Agent | หน้าที่ | Priority | Status |
+|-------|--------|----------|--------|
+| **น้องนิว** | assign เมนูลูกค้า + production planning + ประเมิน sales velocity → feed Kitchen Queue | 🔴 สูงสุด | ⏳ spec locked (v6.3) ยังไม่โค้ด — ดูสเปกเต็มด้านล่าง |
+| **พี่เก่ง** | delivery routing + Lalamove integration — 🆕 เป้าแรก: ลดค่าส่ง subsidize 30-50K/เดือน | 🟡 สูง | ⏳ ยังไม่เริ่ม |
+| **ฟ้า** | kitchen / ingredient planning (ประเมินยอดสั่งวัตถุดิบแม่นขึ้น หลังน้องนิว output พร้อม) | 🟡 สูง | ⏳ ยังไม่เริ่ม |
+| **น้องเตียง** | graphic design/ads/marketing briefs — รีวิว/จัดหน้า blog · ภาพประกอบบทความ+Ads · ออกแบบการ์ดคูปอง/QR | 🟡 ปานกลาง | ⏳ ยังไม่เริ่ม |
+| **น้องเอิธ** | customer service + trend tracking + competitor/market intelligence — ตอบพื้นที่ส่ง/ค่าส่งใน LINE · เก็บฟีดแบครีวิว · ส่งลิงก์รีวิวอัตโนมัติหลัง order · เฝ้าคู่แข่ง + เสนอเมนูกระแส | 🟡 ปานกลาง | ⏳ ยังไม่เริ่ม |
+
+**Flow เมนูกระแส:** เอิธ (เจอเทรนด์+ดูคู่แข่ง) → ฟ้า (ทำได้ไหม/ต้นทุน) → นิว (จัดเข้าผลิต)
+
+### 🤖 น้องนิว v1 — LOCKED SPEC (Meal Plan menu assignment)
+> Codify สมองนัทที่เคย assign เมนูเองในหน้า OH แพลนเมนู — keystone agent ที่ตัวอื่นรอ output · ต้องเสร็จก่อน deadline สั่งวัตถุดิบ (3 ทุ่ม)
+
+**ชั้น 1 — เลือก 14 เมนูผลิตวันนี้ (production pool):**
+- Random 12 เมนู ตามโควตาโปรตีน: ปลา+กุ้ง (ทะเล) = 4 · ไก่+หมู = 8 · bias เมนู 🟢เขียว (rating=3)
+- แบ่ง 12 = **6 hook** (เมนูดัง/เขียว ซ้ำรอบก่อนได้) + **6 fresh** (ไม่ซ้ำ ~3 รอบล่าสุด ปรับได้ 1-5 รอบ)
+  - hook ซ้ำใน "การผลิต" ได้ แต่ชั้น 2 ยังกันไม่ให้ลูกค้าคนเดิมได้ซ้ำถี่
+  - ⏳ ช่วงยังไม่มีคะแนน (v1): hook/fresh ยังไม่แยก → random 12 (ทะเล4/ไก่หมู8) เลี่ยงรอบล่าสุดเฉยๆ เปิด hook/fresh เมื่อมีเขียว
+- คน (นัท/แอดมิน) ใส่เพิ่มเอง 2 เมนู → รวม 14
+- ⚠️ เมนูที่ถูก request สำหรับวันนั้น = reserve เข้า 14 ก่อน แล้วค่อย random ที่เหลือ
+
+**ชั้น 2 — assign เมนูให้ลูกค้าแต่ละคน (จาก 14 เมนู):**
+1. เช็ค request ก่อน (2/14 ที่ลูกค้าตั้งใจ) → ล็อกเข้ากล่องก่อน
+2. เติมช่องที่เหลือ: ตัดของแพ้/ไม่กินออก (กฎเหล็ก) · ลูกค้าใหม่ → เมนู 🟢signature hook ต่อคอร์ส · ลูกค้าเก่า → ไม่ซ้ำ ~10 มื้อล่าสุด คะแนนดีสุด
+3. ซ้ำเลี่ยงไม่ได้ → วน 🟢signature (ยอมซ้ำ) + mark ให้น้องเอิธเก็บฟีดแบค
+4. ของไม่กินตัดหมด → flag "ทำพิเศษ +1 จาน"
+
+**Output:** กล่องของลูกค้าแต่ละคน + flags → แอดมิน confirm → ครัวเห็นใน Kitchen Queue
+
+**ข้อมูลที่ใช้ (ความพร้อม):** ⚪ คะแนนเมนู = deferred v1 (แรนดอมไม่มีเขียวก่อน) · 🟢 ประวัติเมนูลูกค้า = ดึงจาก orders/deliveries ได้แล้ว · 🔴 catalog HP/LC = คนละชุดกับ S/D ต้อง import เข้า DB ก่อน (กลุ่ม 1 ข้อ 1) · 🔴 preference ลูกค้า = ต้องสร้างที่เก็บ (`customer_preferences`, กลุ่ม 1 ข้อ 2)
+
+**ยืนยันแล้ว:** HP/LC = คนละชุดเมนูกับ S/D/No/A → คะแนนเขียวของ S/D ใช้กับ HP/LC ไม่ได้ · v1 = assign ครบ 7 · Request Menu UX ค่อยต่อทีหลัง
+
+### 🍱 Meal Plan — สเปคอนาคต (ยังไม่สร้าง — ต่อหลังน้องนิว v1)
+**Request Menu (2 รายการ/สัปดาห์):** ลูกค้า Meal Plan request เมนูเอง 2 รายการ/สัปดาห์ กระจายลง delivery ไหนก็ได้ อีก 5+ รายการครัวกำหนด — 🤫 surprise factor: ลูกค้าเห็นแค่ 2 เมนูที่ตัวเอง request เท่านั้น — Flow: Admin เลือกรายการจาก catalog → LINE broadcast ทุกสุดสัปดาห์ → ลูกค้า tap เข้า LIFF → tick 1-2 เมนู → confirm → save + แจ้ง admin ใน OH → ครัวเห็นใน daily plan — Deadline อาทิตย์ 20:00 ปิดรับ — Tables ใหม่: `weekly_broadcast` · `customer_requests`
+
+**ครัว 3 Zone + Reservation:** Zone A จัดวันนี้ (ส่งพรุ่งนี้) → กด ✓ ย้ายไป C · Zone B จัดล่วงหน้า (เมนูพิเศษ pre-order แยก panel ต่อ delivery date) · Zone C จัดแล้วรอส่ง (Messenger ยืนยันหยิบ) — ปัญหา advance order: เมนูพิเศษผลิตสัปดาห์นี้ส่งสัปดาห์หน้าไม่มีระบบ reserve อาจถูกขายซ้ำ → ต้องมี `menu_reservations`
+
+**Weekly Menu Plan (คนละตัวกับ Daily Plan):** กำหนดเมนูประจำสัปดาห์ S 8 เมนู + D 5 เมนู/สัปดาห์ — AI เลือกซ้ำน้อยสุด+คะแนนดีสุด → Daily Plan + LINE broadcast + เปิด Request Menu
+
+### 🥬 Freshket Ordering Agent — ยังไม่เริ่ม
+ระบบสั่งวัตถุดิบอัตโนมัติจาก Freshket ด้วย Computer Use — **Deferred: รอน้องนิวเสร็จก่อน** (ต้องมี ingredient output จากแผนผลิตก่อน) · เกี่ยวโยงกับฟ้า · `fah_instructions.md` (ยังไม่เขียน) เก็บ product preference/เกณฑ์เลือกของ
+
+### 🚚 Delivery Design เชิงกติกา (พี่เก่ง)
+**Time windows:** ยืดหยุ่นทั้งวัน = มีส่วนลด (จูงใจ slot จัดรถง่าย) · เช้าก่อน 12:00 · บ่าย 13:00–17:00 — ลูกค้าแจ้งช่วงสะดวกรับได้ แต่ไม่ใช่เลือกเวลาเป๊ะ (คอนเทนต์ห้ามเขียนว่าเลือกเวลาได้)
+
+**Dual-mode:** Real-time monitor (เฝ้าออเดอร์เข้าทันที ลูกค้าต่อรองเวลาได้ไม่เกิน 2 ครั้ง/เดือน — คนละอันกับ request เปลี่ยนเมนู 2 ครั้ง/สัปดาห์) · Route planner (วางแผนเส้นทางรวมประจำวันตอน 17:00)
+
+**Lalamove v3 API:** ขอราคา realtime + auto-booking อนาคต — ช่วง trust-building แรก admin ต้อง approve ก่อนทุกครั้ง
+
+**วิสัยทัศน์ที่นัทอธิบาย (2026-07-05):** หน้าจัดแมสใหม่เป็น "รายการ" ให้แมสกดอัพเดทสถานะเองจากมือถือ + ถ่ายรูปหลักฐานส่งของ (proof of delivery) — คนละเรื่องกับ "แมสเซนเจอร์" ปัจจุบัน (แค่หน้าดูรายการ ไม่มีปุ่มอัพเดทจริง ไม่มี LINE แจ้งลูกค้าเลย)
+
+**Tables ที่ต้องสร้าง:** `menu_history` · `customer_preferences` (SQL พร้อมแล้ว ดูหัวข้อ Supabase Tables) · `production_plan` · `weekly_assignments` · `menu_reservations`
+
+---
+
+## 📣 Marketing Track — สถานะจริง (อัปเดต 11 ก.ค. 2026)
+
+**Scope 4 เครื่องยนต์:** ① SEO เว็บ ② AI Search/GEO ③ Google/FB Ads ④ Influencer
+
+### ✅ เสร็จแล้ว
+1. **Google Business Profile — ✅ verify ผ่าน (9 ก.ค.)** — ขึ้น Google Map แล้ว · dining modes ครบ (Delivery+No-contact=Yes) · Profile strength 65% (ไม่ต้องไล่ 100%) · Advertise setup กด Skip ถูกแล้ว (ทำแคมเปญ manual ดีกว่า Smart Campaign)
+   - ลิงก์รีวิว: `https://g.page/r/CTHTcnneZEtoEBI/review`
+   - การ์ด QR ขอรีวิวทำเสร็จแล้ว (พร้อมพิมพ์แนบกล่อง) → **แอดมินทยอยส่งลูกค้าประจำวันละ 5-10 คน** (ห้ามแลกส่วนลด)
+2. **Blog 3 บทความขึ้น Wix แล้ว** (360foodbox.com): ① "อาหารคลีน Delivery กรุงเทพ เจ้าไหนดี?" (slug: healthy-food-delivery-bangkok) ② "Meal Plan โปรตีนสูงคืออะไร" (slug: high-protein-meal-plan — ธง positioning ใหม่) ③ "ส่งถึงไหนบ้าง" (slug: delivery-areas) — ไฟล์ต้นฉบับ .md เก็บไว้ใช้ซ้ำตอนย้าย Vercel
+3. **Google Ads กู้คืนสำเร็จ + verify ผ่านแล้ว** (เมล 8 ก.ค. · Customer ID 318-768-6554 · ocid 202127689) — บัญชีเก่า canceled→Active
+4. **เคาะเรื่องเว็บ:** ห้ามยกเลิก Wix จนกว่าจะย้ายโดเมนไป Vercel เสร็จ (เนื้อหา/SEO ย้ายได้หมด ทิ้งแค่ดีไซน์)
+
+### 💎 Keyword ทองคำ (บัญชี Ads เก่า — All time: 3.9K clicks · ฿23.4K · 51.3K impr · CTR 7.6% · 256 conv)
+| Keyword | Clicks | CTR | Conv | หมายเหตุ |
+|---------|--------|-----|------|----------|
+| **คอร์สอาหารคลีน** | 1,860 | 10.85% | **127** (฿87/conv) | 🏆 ตัวคุ้มสุด — ตรง Meal Plan เป๊ะ |
+| **อาหารคลีนเดลิเวอรี่** | 1,480 | 8.20% | **95.5** (฿94/conv) | 🏆 ตัวหลักคู่กัน |
+| **Under360 (brand)** | 176 | 49.7% | 32 (฿12/conv) | CPC ฿2.22 ถูกสุด — กัน "350" เสียบชื่อ |
+| อาหาร คลีน เดลิเวอรี่ ใกล้ฉัน | 39 | 11.68% | 1 | พอใช้ |
+| ❌ อาหารสุขภาพ | 105 | 3.53% | 0 (เผา ฿1,120) | คำกว้าง เผาเงิน — ตัดทิ้ง |
+| ❌ อาหารคลีน ลดน้ำหนัก | 15 | 2.07% | 0 (เผา ฿138) | ตัดทิ้ง |
+
+**Insight:** คำมีเจตนาซื้อ (คอร์ส/เดลิเวอรี่/สั่ง) ชนะ · คำหาความรู้เผาเงิน · แคมเปญเก่าหมดอายุ Apr 2025 ตั้ง location ผิด (ทั้งประเทศ) → สร้างใหม่ ไม่ resume ของเก่า
+
+### 🎯 แคมเปญ Google Ads — ออกแบบแล้ว (รอเปิด)
+**โครงสร้าง 2 แคมเปญแยก:**
+- **แคมเปญ 1 — Brand Defense** (~50฿/วัน) — keyword: under360 · under 360 · อันเดอร์360 · 360foodbox · Match Exact+Phrase — **เปิดได้ทันที ไม่ต้องรอเว็บ**
+- **แคมเปญ 2 — Meal Plan Search** (~300฿/วัน) — Match Phrase+Exact เท่านั้น ห้าม Broad — **เปิดหลัง**เว็บ Vercel live + conversion tag ทำงาน
+
+**Negative keywords:** อาหารสุขภาพ · ลดน้ำหนัก · สูตร · วิธีทำ · ฟรี · สมัครงาน · แฟรนไชส์
+**Location:** กรุงเทพ+ปริมณฑล 5 จังหวัด ตั้งเป็น "Presence" (ไม่ใช่ "Interest")
+**Bidding:** เริ่ม Maximize Clicks เพดาน CPC ฿10 → พอมี conversion ~30 ตัว สลับ Maximize Conversions
+**⚠️ ต้องตั้ง conversion tracking ก่อนเปิด** (นับคนกดปุ่ม "สั่งผ่าน LINE")
+
+**Ad copy:** Headlines — คอร์สอาหารคลีน ส่งถึงบ้าน · อาหารคลีนเดลิเวอรี่ กรุงเทพ · คอร์สอาหารคลีน เริ่ม 1,399.- · Meal Plan ส่งฟรีถึงหน้าบ้าน · เมนูไม่ซ้ำ อิ่มไม่จำเจ · จัดเมนูตามเป้าหมายของคุณ · ทดลอง 7 กล่อง ก่อนสมัครยาว · โปรตีนแน่น คุมคาร์บได้ · สั่งง่าย จบใน LINE · อาหารสุขภาพ ส่งทั่วกรุงเทพ (ทุกหัวต้องยืนเดี่ยวได้ — Google สลับเอง) — ❌ ตัดทิ้งแล้ว: "under360" ในหัวทั่วไป · "เลือกได้ทั้ง HP/LC" · "ปรุงสด 10 ปี" (ไม่ตรง) · "ตัดวัตถุดิบที่แพ้"
+
+### 🔑 Keyword ชุดใหม่ (เคาะ 11 ก.ค. — ไทยล้วน, ตัด meal plan/low carb อังกฤษออก)
+| Ad group | Keywords | หมายเหตุ |
+|---|---|---|
+| **A — คอร์สอาหารคลีน** | คอร์สอาหารคลีน · คอร์สอาหารคลีน ราคา · คอร์สอาหารสุขภาพ | พิสูจน์แล้ว 127 conv |
+| **B — เดลิเวอรี่** | อาหารคลีนเดลิเวอรี่ · อาหารคลีนส่งถึงบ้าน · อาหารคลีนรายสัปดาห์ · อาหารคลีนรายเดือน | พิสูจน์แล้ว 95 conv |
+| **C — เพิ่มกล้าม/ฟิตเนส** | อาหารเพิ่มกล้าม · เซ็ตอาหารเพิ่มกล้าม · ข้าวกล่องโปรตีนสูง · อาหารโปรตีนสูงส่งถึงบ้าน · อาหารสำหรับคนออกกำลังกาย · ข้าวกล่องฟิตเนส | ยิง HP ทางอ้อม |
+| **D — คุมแคล** | อาหารคุมแคล · ข้าวกล่องแคลต่ำ · อาหารคลีนคุมแคลอรี่ | ยิง LC ทางอ้อม |
+| **E — นักกีฬา/ก่อนแข่ง (ทดลอง)** | อาหารนักกีฬา · มื้ออาหาร hyrox · อาหารเตรียมแข่ง · อาหารก่อนวิ่งมาราธอน | volume ต่ำ ทิ้งเบ็ดดักเทรนด์ Hyrox |
+
+C vs D = วัด HP vs LC ว่าคนหาอะไรมากกว่า (ตอบ TODO เสา 3 ไปในตัว) — ทุกกลุ่ม Phrase+Exact เท่านั้น
+
+### 📊 Facebook Ads — ปัญหาจริง = Attribution ขาด (ไม่ใช่ ad ห่วย)
+- **สาเหตุ:** เมื่อก่อนปิดการขายจบใน FB → Meta วัดได้ · ตั้งแต่ดันลูกค้าไป LINE (ผ่าน Hato) → Meta เห็นแค่ "คนทัก" ไม่เห็นยอดซื้อ + iOS privacy บังตาเพิ่ม → ลูกค้าจาก FB→LINE ปนกันหมด ไม่รู้เลยว่าใครมาจากไหน
+- **ทางแก้ (งานหลังบ้าน):** FB ad ชี้มา `landing.html` (มีไฟล์แล้ว) แทนชี้ตรง LINE + แปะ UTM (`?utm_source=fb&utm_campaign=xxx`) → LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order → บันทึกลง `orders` → วัด FB เป็นบาทจริงได้
+- **กลยุทธ์:** ไม่แตะแอดพลอย (baseline) → ยิงแทร็คใหม่ของนัทคู่ขนาน → ตัวเลขจากระบบนัทตัดสิน
+- **หลักยิงแอด:** ปล่อยน้อยตัว งบพอผ่าน learning phase (~50 results/สัปดาห์/แอด) ไม่หว่านหลายตัวงบบางๆ
+
+### 🎯 Competitor Intelligence
+> งานเฝ้าคู่แข่ง = ขยาย scope น้องเอิธ (ไม่ตั้ง agent ใหม่)
+
+| ร้าน | จุดแข็ง/ภัยคุกคาม | มุมที่กระทบเรา |
+|------|------------------|----------------|
+| **Calories Killer** | ยิง ad โหดสุด จิกรีทาร์เก็ตไม่ปล่อย หลายเพจ/persona พร้อมกัน | สงคราม ad — ถ้าเราลง FB ต้องระวังโดน retarget แย่งคน |
+| **Passion Food (คุณซอส)** | ⭐ ภัยหลัก — ลอกเมนูเราบ่อย · personal branding เจ้าของโดดเด่นกว่าพลอย · เก่ง Grab/LINEMAN มาก | ตีคู่พลอยเรื่อง personal branding เจ้าของร้านคลีน |
+| **Cleanfit** | โปรดักต์แพ็คกับข้าวเหมือนเราเป๊ะ เมนูเยอะ ฟรีซ+ส่งทั่วประเทศ ยิง FB หนัก | ชนไลน์ฟรีซแพ็คที่เรา passive อยู่ → ยืนยันตัดสินใจ passive ถูกแล้ว |
+| **Ginzy** | โปรดักต์ไม่โดดเด่น แต่เจ้าของเล่น Hyrox | ชนแผน personal branding พลอย (Hyrox) |
+
+**Insight:** 3/4 ร้านแข่งด้วย personal branding เจ้าของ + FB ads หนัก — พลอยต้องเร่งเกม branding
+
+### 🛵 Delivery Platform Strategy (เคาะ 9 ก.ค. — แก้ความเข้าใจผิดเดิม)
+> เดิมเข้าใจว่า "ไม่ควรเปิด platform" — **ผิด** สิ่งที่ควรเลี่ยงคือ "ทุ่มงบ active/แข่งราคา" ไม่ใช่การเปิดทิ้งไว้
+
+- **Passive presence** (เปิดร้านไว้ให้คน+AI ค้นเจอ) = **คุ้มเสมอ** ยากแค่ setup ครั้งเดียว
+- **Active spending** (ทุ่มงบ/แข่งราคา GP 30-35%) = เลี่ยง
+- **⚠️ HP/LC ไม่ลง delivery platform/วงใน** — เป็น subscription ขายผ่าน LINE OA เท่านั้น · ลง platform เฉพาะ Stock menu (No/S/D)
+- เหตุผลที่เคยปิด LINE MAN = man-hour หมด (แอดมินลาออกหมด) **ไม่ใช่ขายไม่ได้** → แก้ด้วย delegate setup ให้แอดมิน
+
+| Platform | สถานะ | ต้องทำ |
+|----------|-------|--------|
+| Wongnai | ✅ OFFICIAL · 4.1★ · #4/124 คลองสาน | อัปเดต 4 จุด: tag Meal Plan · เวลาเปิด-ปิด (เช็คคู่กับ cutoff time) · เพิ่มเมนู Stock No/S/D · แก้ราคา NO12 ให้ตรง (การ์ดเขียน 160 ข้างล่าง 165) — **HP/LC ไม่ลง** |
+| GBP | ✅ verify ผ่าน ขึ้น Map | เก็บรูป/รีวิวดันสู่ 100% |
+| LINE MAN | 🟡 เคยเปิด (LINE MAN Kitchen ปทุมวัน) ตอนนี้ปิด | เปิดใหม่ — ลิสต์เมนู/ราคาให้แอดมินกรอก |
+| Grab/อื่นๆ | ⬜ ยังไม่เช็ค | สำรวจ+เปิด passive |
+
+**⚠️ ติดขัด:** หน้า DB ยังไม่มีปุ่ม Export → **backlog: ทำปุ่ม Export เมนู (CSV/JSON)** ให้ Claude/แอดมินดึงลิสต์ไปกรอก platform ได้
+
+### 📡 ช่องทาง Marketing ที่ยังไม่แตะ (introvert-friendly — นัทลุยออนไลน์ / พลอยลุยออฟไลน์+หน้ากล้อง)
+Referral program (candidate เด่นสุด — ต่อกับ points/promo_codes ที่มีอยู่แล้ว) · CRM/Win-back segmentation (ทำ manual อยู่บ้าง → automate) · Remarketing/GDN (รอ pixel เว็บ) · Demand Gen/YouTube Ads · LINE Ads Platform (น่าสนใจสูงสำหรับตลาดไทย) · Affiliate (โครงเดียวกับ referral) · Pantip/community answering (SEO artifact) · B2B/Corporate lunch (เก็บท้ายสุด พลอยรับช่วงปิดดีล) · YouTube/TikTok หน้ากล้อง/Influencer/Event (เลนพลอย)
+
+### 🤖 งาน marketing ที่จะ delegate ให้ agent (backlog — อย่าทำมือถาวร)
+น้องเตียง: รีวิว/จัดหน้า blog · ผลิตภาพ/โปสเตอร์ Ads · ออกแบบการ์ดคูปอง/QR — น้องเอิธ: ตอบพื้นที่ส่ง/ค่าส่งใน LINE · เก็บฟีดแบครีวิว · ส่งลิงก์ขอรีวิวอัตโนมัติหลัง order
+
+### 🆕 Backlog การตลาด
+- **คูปองออฟไลน์แนบกล่อง (retention):** QR/โค้ดส่วนลดพิมพ์แนบอาหาร → ต่อยอด `promo_codes` — ดีไซน์=น้องเตียง — รวมใบเดียวกับ QR รีวิวได้
+- **Auto-review เข้า LIFF/น้องเอิธ:** ปุ่ม "รีวิวร้าน" ใน LIFF หลังรับของ
+
+---
+
+## 🌐 เว็บใหม่ (แทน Wix) — เขียนเสร็จ 11 ก.ค. 2026 · รอ deploy
+
+> **ตัดสินใจ: ไม่แตะ/ไม่แก้ Wix อีกแล้ว** — เขียนใหม่หมดเป็น single-file ตาม convention repo · ไฟล์ทั้งชุดอยู่ `under360-web.zip` (ยังไม่แตก/deploy ณ 12 ก.ค.) · คู่มือเต็ม = `HANDOFF_WEB.md` ในซิป (ยังไม่อ่าน — อ่านก่อนเริ่ม Step 1)
+
+| ไฟล์ | หน้าที่ | สถานะ |
+|---|---|---|
+| `index.html` | Home — positioning ใหม่ + goal switcher + product 3 ไลน์ + ปรัชญา + delivery + FAQ + IG feed + blog preview | ✅ เขียนเสร็จ ยังไม่เทส |
+| `mealplan.html` | Landing สำหรับ Ads — HP+LC คู่ · ราคา 3 tier · FAQPage schema · sticky CTA มือถือ | ✅ เขียนเสร็จ |
+| `blog.html` + `blog_admin.html` | ระบบบล็อคครบวงจร (Supabase `blog_posts` · Markdown · draft/พรีวิว) | ✅ เขียนเสร็จ |
+| `import_blog.html` | กดปุ่มเดียว import บทความเข้า Supabase (upsert by slug รันซ้ำได้) | ✅ ฝัง 2 บทความแรก |
+| `posts/_MANIFEST.md` | รายชื่อบทความ Wix ทั้งหมด 19 ตัว + URL + slug + กฎ migrate | ✅ |
+| `scripts/sql_blog_posts.sql` | สร้างตาราง blog_posts + RLS | ⏳ รอรัน |
+| `web_dashboard.html` | หลังบ้านดูสถิติ `web_events` — pageviews/CTA rate/แยก source/sparkline | ✅ เขียนเสร็จ ⏳ รอ `sql_web_events.sql` |
+
+**จุดสำคัญ:** Conversion tag (gtag)+UTM capture ฝังในโค้ดแล้ว เหลือใส่ AW-ID+label · CTA ชี้ hatohub ตอนนี้ → เปลี่ยนเป็น LINE OA/LIFF ตอน migrate · IG feed ใช้ Behold.so (ฟรี, delegate พลอย/แอดมิน connect) เพราะ IG Basic Display API ปิดถาวรแล้ว (ธ.ค. 2024) · รูปทั้งเว็บยัง hotlink wixstatic ต้องดาวน์โหลดเข้า repo ก่อนยกเลิก Wix · **คงวันที่เผยแพร่เดิมเสมอ (created_at)** ตอน migrate blog · บทความมีราคา/โปรเก่า → published=false รอนัทรีวิว
+
+**Blog migration:** 2 แปลงเสร็จ (heart-rate-zone, fruit-sugar-guide) · 17 ตัวดูดตาม MANIFEST · บทความใหม่ 3 ตัว (2026) มีต้นฉบับ .md ในแชท "Marketing track 1" (7-9 ก.ค.) ใช้อันนั้นดีกว่าดูดจาก Wix
+
+**Web Backend (Step 1.5 — เพิ่ม 11 ก.ค.):** สถาปัตยกรรมคงเดิม — Supabase = backend หลัก, Vercel serverless เฉพาะจำเป็น ไม่สร้าง server แยก · `web_events` table (SQL ในหัวข้อ Supabase Tables ด้านบน) → เพิ่ม snippet insert pageview ตอนโหลด + cta_click ใน orderNow() (fire-and-forget, catch เงียบ) → ต่อยอด LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order → ปิดลูป "FB/Google = กี่บาทจริง" · SEO render (`api/post.js` — optional, ประเมินก่อนทำ ถ้าซับซ้อนเกิน v1 จด backlog client-side render ที่มีอยู่ยังใช้ได้)
+
+---
+
+## 🧭 Roadmap ที่ถูกต้อง — เข็มทิศกันหลงทาง (นัทขอเอง 9 ก.ค. — สำคัญมาก)
+
+> นัทเรียก session ที่หลงทางว่า **"เลอะเทอะ เตลิด"** (เดินจาก LIFF → FB bot → น้องนิว → marketing → delivery platform ในวันเดียว) — **นัทขอให้ Claude ตบกลับเสมอ**
+
+**ทำไมกระโดดไปมา (ไม่ใช่นัทแย่):** นัทอยู่ต่างประเทศ ทำงานมือถือ → เลนโค้ด park หมด → ไถลไป "เลนสมอง" (marketing/strategy) อัตโนมัติ เพราะเป็นสิ่งเดียวที่ทำได้ — ไม่ผิด แค่ต้องจัดลำดับ
+
+**ลำดับที่ถูก (อย่าข้าม):**
+1. **มือถือ/เดินทาง (เลนโค้ด park):** เลนสมองเท่านั้น — marketing track + ออกแบบ agent spec + setup platform ผ่านแอดมิน
+2. **กลับถึงคอม:** รวม MASTERNOTE+HISTORY → Claude Code (ทำอยู่ตอนนี้) → เคลียร์งานโค้ดค้างทั้งหมด (ดูกลุ่ม 1-3 ด้านล่าง)
+3. **หลังโค้ดนิ่ง:** beta test คู่ Hato → migrate ลูกค้าเก่า → เปิด agent ทีละตัว (นิว→เก่ง→ฟ้า→เตียง→เอิธ)
+4. **ปลายทาง:** ปิด Hato Heart = v1.0
+
+**กฎกันหลงทาง:** ทุกครั้งที่นัทเริ่มพูดเรื่องใหม่กลาง task → Claude ถาม _"อันนี้เลนสมองหรือเลนโค้ด? อยู่ในลำดับไหน?"_ → ถ้าไม่ใช่ของตอนนี้ = จด backlog แล้วดึงกลับ
+
+### กลุ่ม 1 — ปลดล็อกน้องนิว (ทำก่อน)
+1. นำเมนู HP/LC เข้า DB เป็น recipe หมวด meal_lc/meal_hp — import จากชีท (LC01-77/HP01-77) + tag โปรตีน — คะแนนเขียวกดทีหลังได้ ไม่บล็อกลอนช์
+2. สร้างตาราง `customer_preferences` (SQL พร้อมแล้ว — ดูหัวข้อ Supabase Tables)
+3. หน้าสั่ง (LIFF/checkout): เพิ่มช่องให้ลูกค้ากรอก preference เอง
+4. ฟีเจอร์แอดมินกรอก preference ย้อนหลัง — backfill ประวัติลูกค้าเก่าจากชีท/โน้ตแชท
+
+### กลุ่ม 2 — LIFF (cutoff + ความเร็ว/เทส)
+5. แก้เวลาตัดยอด Meal Plan → กดสั่งได้ถึง 8:30 น. ของวันส่ง (⚠️ verify เวลาจริงในโค้ดก่อน — เอกสาร 17:00 vs นัทจำ 18:00 — ดู Known Issues #10) — Stock menu คงเดิม
+6. Optimize LIFF ให้เร็วขึ้น (sequential storage reads/ขนาดรูป/render)
+7. ⚠️ เทสจริงบน iOS Safari ก่อนลอนช์ — ยังไม่เคยเทสเลย (Known Issues #11)
+
+### กลุ่ม 3 — Marketing (โค้ด)
+8. สร้างเว็บสาธารณะบน Vercel (ดูหัวข้อ "🌐 เว็บใหม่")
+9. ย้ายโดเมน 360foodbox.com: Wix → Vercel (เช็คก่อนว่าโดเมนจดผ่าน Wix หรือที่อื่น — ยังไม่ได้เช็ค)
+10. รีวิว LINE OA ทั้งระบบ
+
+### Backlog (ทีหลัง — ฟ้า/cost pillar)
+- Ordering วัตถุดิบปัจจุบันสั่ง ~13-14:00 ประมาณเอาจากยอด+เผื่อยอดดึก = ของเหลือบ่อย → ฟ้าจะช่วยประเมินแม่นขึ้นหลังน้องนิว output พร้อม
+- ค่าส่ง subsidize 30-50K/เดือน → เป้าหมายแรกของพี่เก่ง (route optimization + Lalamove quote เทียบแมสร้าน)
 
 ---
 
@@ -532,8 +766,11 @@ const MP_SETS = [
 | **KQ ดึง order จริง?** | ต้องทดสอบก่อน launch — ครัวต้องเห็น order |
 | **Staging/Preview branch** | ทำหลัง launch — Vercel preview branch |
 | **Package M/L** | หลังขาย S ได้ก่อน |
-| **Loyalty tier threshold** | 🔴 **รอนัท** — มี real legacy data แล้ว (`customers.loyalty_points` มีอยู่ 492/2,160 คน สูงสุด 7,451 แต้ม) แต่ยังไม่มี logic สะสม/ใช้แต้มอัตโนมัติเลยในระบบ + `liff_profile.html`'s TIERS array (เทียร์1-3/VIP) ไม่ตรงกับค่าจริงใน `customers.tier` (bronze/Fit&Fabulous/Wellness Warriors/Healthy Habits) — นัทขอ **หยุดรอก่อน** จนกว่าจะ migrate ข้อมูลจากระบบเก่ามาครบ ("สะสมแต้ม เดี๋ยว migrate ยังไม่ได้ดึงไฟล์จากของเก่าเลยฉันจะทำให้ระบบเสร็จก่อน", 2026-07-04) — ห้ามเริ่มออกแบบ tier ใหม่จนกว่านัทจะแจ้ง |
-| **น้องเตียง (graphic)** | หลัง n้องนิว approve เมนู → auto generate poster |
+| **Loyalty tier threshold** | 🔴 **รอนัท** — มี real legacy data แล้ว (`customers.loyalty_points` มีอยู่ 492/2,160 คน สูงสุด 7,451 แต้ม) แต่ยังไม่มี logic สะสม/ใช้แต้มอัตโนมัติเลย + `liff_profile.html`'s TIERS array ไม่ตรงกับค่าจริงใน `customers.tier` (bronze/Fit&Fabulous/Wellness Warriors/Healthy Habits) — นัทขอหยุดรอก่อนจนกว่าจะ migrate ข้อมูลจากระบบเก่ามาครบ — ห้ามเริ่มออกแบบ tier ใหม่จนกว่านัทจะแจ้ง |
+| **น้องเตียง (graphic)** | หลังน้องนิว approve เมนู → auto generate poster |
+| **Package เงื่อนไขขั้นสูง** | ปัจจุบันมีแค่ extra_price ต่อ SKU — แผนอนาคต `package_conditions` (จำกัดจำนวนต่อคน/รายการบังคับ) ทำหลัง order history migration |
+| **โดเมน 360foodbox.com จดผ่าน Wix หรือที่อื่น?** | ยังไม่ได้เช็ค (Wix → Settings → Domains) ต้องรู้ก่อนวางแผนย้าย |
+| **ยิงคืนใส่ "350" (competitor conquesting)** | ทำได้ถูกกติกา แต่เคาะแล้วยังไม่ทำ — volume ต่ำ งบใหม่ควรลงคำสินค้าก่อน |
 
 ---
 
@@ -541,10 +778,13 @@ const MP_SETS = [
 
 - **นัทส่ง multi-part ในข้อความเดียว** — ตอบให้ครบทุก part
 - **"ปรับได้เลย"** = ทำเลย ไม่ต้องถามซ้ำ
-- **คิดทะลุแผน** = redirect ทันที → "นั่นอยู่ใน backlog โฟกัส [task] ก่อน"
+- **คิดทะลุแผน** = redirect ทันที → "นั่นอยู่ใน backlog โฟกัส [task] ก่อน" (ดู "🧭 Roadmap ที่ถูกต้อง" ด้านบนสำหรับกฎเต็ม)
+- **มือถือ + งานหลายขั้นตอน** = ทีละขั้นตอนเดียว รอสกรีนช็อตยืนยัน ห้ามยัดหลายเรื่องในเทิร์นเดียว
+- **งานที่ agent ทำแทนได้** = เสนอ delegate เสมอ
+- **คอนเทนต์แบรนด์:** ไม่โม้ว่าดีที่สุด — ให้ความรู้ก่อนแล้วแสดงว่าเราตอบโจทย์ · โปรโมท HP+LC คู่เสมอ · ห้ามดิสแช่แข็ง · ห้ามเขียน "เลือกเวลาส่งได้"
 - **Commit message** = ภาษาไทยสั้นๆ เช่น `เพิ่ม Package flow + Meal Plan flow v0.3.2-3`
-- **ทุก session** = อ่าน CLAUDE.md ก่อนเสมอ
+- **ทุก session** = อ่าน CLAUDE.md ก่อนเสมอ (ไฟล์นี้คือผลรวมล่าสุดของ MASTERNOTE+HISTORY — ถ้านัทส่งไฟล์ MASTERNOTE/HISTORY ใหม่มาอีก ให้ทำ merge แบบเดียวกับ 12 ก.ค. รอบนี้)
 
 ---
 
-*Last updated: 5 ก.ค. 2026 — v0.4.22 ✅ push แล้ว (commit `f2293ef`) — **KQ: เพิ่มวันที่สั่ง/ส่งในการ์ด + ปุ่มยกเลิก "ส่งแล้ว" (Meal Plan) + log ทุกคลิกปุ่มสถานะ (ใครกด/เมื่อไหร่ — กันมือลั่นหาไม่เจอ) + ระบบชื่อผู้ใช้ที่ KQ (เดิมไม่มีเลย)** — นี่คืองานสุดท้ายก่อนนัทเริ่ม **beta test แบบ parallel กับ Hato** (แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน) ดูหัวข้อ Roadmap ด้านบนสำหรับลำดับงานถัดจากนี้ (migrate ลูกค้าเก่า → Facebook → AI agents น้องนิว/น้องฟ้า/พี่เก่ง — ยังไม่เริ่มสักตัว) — v0.4.12–v0.4.21 (รายละเอียดเต็มในตารางด้านบน): ระบบ Promo Scope + ซ้อนโค้ด, แก้บั๊กแพคเกจสร้างไม่ได้, รื้อ Card HE เป็น 4 ฟอแมต + anchor point เมนูเฉพาะ, ปรับปรุงหน้าแพลนเมนูครั้งใหญ่ — **✅ นัทรัน SQL ครบทั้ง 3 ไฟล์แล้ว 2026-07-05 (ยืนยันผ่าน REST) ไม่มี SQL ค้างเลย** — เรื่องแต้มสะสม/tier ยัง **หยุดรอนัท** (ดู Backlog) — นัทไปแคนาดาแล้ว (7 วัน) จะใช้ claude.ai มือถือ + อัพโหลดไฟล์ผ่านหน้าเว็บ GitHub แทน Claude Code จนกว่าจะกลับ — ถัดไป: รอนัททดสอบ KQ ให้ครบก่อนเริ่ม beta parallel test (พร้อมทำได้ทันทีที่นัทว่าง ไม่มีอะไรค้างแล้ว)*
+*Last updated: 12 ก.ค. 2026 — รวม `UNDER360_MASTERNOTE_v6_7.md` (11 ก.ค.) + `UNDER360_HISTORY.md` (v1, 9 ก.ค.) เข้า CLAUDE.md ตาม Step 0 ของ `CLAUDE_CODE_HANDOFF.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว — ทริปแคนาดาจบ) — โค้ด (u-track) ยังอยู่ที่ **u0.4.22 ✅ live** ไม่มีอะไรเปลี่ยนฝั่งโค้ดในรอบนี้ (merge เอกสารล้วน) — เพิ่มเข้ามาใหม่จาก masternote: 7 เสาหลักโปรเจค, Positioning/Brand voice rules เต็มชุด, ประวัติร้าน 10 ปี, Delivery Reality, Agent Roster ขยายเป็น 5 ตัว (นิว/เก่ง/ฟ้า/เตียง/เอิธ) + น้องนิว v1 locked spec เต็ม + Meal Plan future specs, Marketing Track เต็ม (Google Ads keyword/แคมเปญ/FB attribution/competitor intel/delivery platform strategy), เว็บใหม่ (under360-web.zip รอ deploy), Roadmap เข็มทิศ+กลุ่มงาน 1-3, SQL ใหม่ 2 ตัวที่ยังไม่รัน (`customer_preferences`, `web_events`) — **แก้ไขจุดที่ masternote คลาดเคลื่อน:** SQL 3 ตัว (promo_scope/packages_rls/promo_stack) ที่ masternote เขียนว่า "ยังไม่ได้สร้าง" จริงๆ **รันแล้วตั้งแต่ 5 ก.ค.** (ยืนยันผ่าน REST ตรง) — และตั้งข้อสังเกตราคา Meal Plan ในโค้ดกับราคาที่ masternote อ้างว่า "โฆษณาจริง" ไม่ตรงกัน ต้อง verify ก่อนเปิดแคมเปญ Ads (ดู Known Issues #12) — `nut_personal_profile.md` (ข้อมูลส่วนตัว/ครอบครัวของนัท) **ไม่ได้เอาเข้าไฟล์นี้โดยตั้งใจ** เพราะเป็นไฟล์ cross-project ที่มีข้อมูลอ่อนไหว (การเงิน/ครอบครัว) ไม่เหมาะกับ repo โค้ดที่ push GitHub — เก็บแยกไว้ในเครื่องนัทตามเดิม — **ถัดไปตาม handoff:** Step 1 deploy เว็บใหม่ (แตก `under360-web.zip` → อ่าน `HANDOFF_WEB.md` → Vercel) → Step 2 blog migration → Step 3 Google Ads → Step 4 งานโค้ดค้าง (กลุ่ม 1-3 ด้านบน) — รอนัทสั่งว่าจะเริ่ม Step ไหนต่อ*
