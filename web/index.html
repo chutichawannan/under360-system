@@ -265,9 +265,9 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
       <div class="card">
         <img src="https://static.wixstatic.com/media/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg/v1/fill/w_640,h_480,al_c,q_80/9bfc29_0ed875684ae14ef2bcf1acb945ff3b42~mv2.jpg" alt="ข้าวกล่องอาหารสุขภาพพร้อมทาน" loading="lazy">
         <div class="body">
-          <span class="tag">พร้อมทาน</span>
-          <h3>ข้าวกล่องสุขภาพ</h3>
-          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ มีเมนูพิเศษให้ตามได้เรื่อยๆ สั่งล่วงหน้า 1 วัน ส่งทั่วกรุงเทพ</p>
+          <span class="tag">พร้อมทาน · เลือกเอง</span>
+          <h3>ข้าวกล่องสุขภาพ &amp; คอร์สเลือกเมนูเอง</h3>
+          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ — สั่งทีละกล่อง หรือจัดเป็น<b>คอร์ส/เซ็ต เลือกเมนูเอง แบ่งส่งหลายรอบ เลือกวันรับเองได้</b> เหมาะกับคนอยากคุมเมนู/ไซส์เอง สั่งล่วงหน้า 1 วัน ส่งทั่วกรุงเทพ</p>
           <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
         </div>
       </div>
@@ -446,7 +446,7 @@ function orderNow(el){
 const GOALS = {
   fat:    '<strong>ลดไขมัน →</strong> แนะนำ Meal Plan <strong>LC (Low Carb)</strong> — คุมคาร์บ โปรตีน 120 g ต่อกล่อง อิ่มโดยไม่ต้องอด เมนูหมุนเวียนไม่จำเจ',
   muscle: '<strong>เพิ่มกล้าม →</strong> แนะนำ Meal Plan <strong>HP (High Protein)</strong> — โปรตีนแน่น 170 g ต่อกล่อง รองรับสายเวท สายวิ่ง และคนเตรียมแข่ง',
-  daily:  '<strong>กินดีทุกวัน →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์ก็ได้'
+  daily:  '<strong>กินดีทุกวัน →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ · จัดเป็น<strong>คอร์ส/เซ็ต เลือกเมนู+วันรับเอง</strong> · หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์'
 };
 function pickGoal(btn){
   document.querySelectorAll('.goal-chips button').forEach(b=>b.classList.remove('on'));
