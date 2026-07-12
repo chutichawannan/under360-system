@@ -1877,6 +1877,11 @@ async function loadPackages(){
     (itemsRes.data || []).forEach(it => {
       (state.pkgItems[it.package_id] = state.pkgItems[it.package_id] || []).push(it);
     });
+    // capability check: มีคอลัมน์ set/course builder (groups/delivery) ไหม — ถ้ายังไม่รัน SQL จะซ่อน UI ส่วนนี้
+    try {
+      const probe = await sb.from('packages').select('groups,delivery_rounds,flexible_delivery').limit(1);
+      state.hasSetBuilderCols = !probe.error;
+    } catch(e){ state.hasSetBuilderCols = false; }
     state.pkgLoaded = true;
   } catch(e){
     showToast('โหลดแพคเกจไม่สำเร็จ');
@@ -1930,6 +1935,7 @@ function renderPackageEditor(pkg){
     (state.pkgItems[pkg.id] || []).forEach(it => {
       state.editingPkgItems[it.sku] = it.extra_price;
     });
+    state.editingGroups = Array.isArray(pkg.groups) ? JSON.parse(JSON.stringify(pkg.groups)) : [];
     state._pkgEditorInit = pkg.id;
     state.pkgMenuSearch  = '';
   }
@@ -1979,6 +1985,34 @@ function renderPackageEditor(pkg){
     </div>`;
   });
 
+  // ── 🧩 กลุ่มการเลือก + การส่ง (เซ็ต/คอร์ส/บันเดิล) ──
+  const catOpts = (selKey) => (state.categories||[]).map(c =>
+    `<option value="${escapeHtml(c.key)}"${c.key===selKey?' selected':''}>${escapeHtml(c.label)}</option>`).join('');
+  const groupRows = (state.editingGroups||[]).map((g,i) => `
+    <div class="pkg-group-row" data-gi="${i}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fff;">
+      <input type="text" class="pg-label" value="${escapeHtml(g.label||'')}" placeholder="ชื่อกลุ่ม เช่น เลือกข้าว" style="flex:1;min-width:110px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
+      <select class="pg-kind" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+        <option value="category"${(g.kind||'category')==='category'?' selected':''}>📂 ตามหมวด</option>
+        <option value="list"${g.kind==='list'?' selected':''}>📋 เจาะจงเมนู</option>
+      </select>
+      <select class="pg-cat" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;${g.kind==='list'?'display:none;':''}">${catOpts(g.category)}</select>
+      <input type="text" class="pg-skus" value="${escapeHtml((g.skus||[]).join(','))}" placeholder="โค้ดเมนู คั่นด้วย , เช่น W01,W02" style="flex:1;min-width:110px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;${g.kind==='list'?'':'display:none;'}">
+      <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">เลือก <input type="number" class="pg-count" value="${g.count||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> กล่อง</label>
+      <button type="button" class="btn btn-warn btn-sm pg-remove" data-gi="${i}" style="padding:3px 8px;">✕</button>
+    </div>`).join('');
+  const groupsSection = !state.hasSetBuilderCols ? '' : `
+    <div style="border:1px dashed var(--turmeric);border-radius:10px;padding:12px;margin-bottom:16px;background:var(--turmeric-soft);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
+        <span style="font-size:13px;font-weight:700;color:var(--turmeric);">🧩 กลุ่มการเลือก <span style="font-weight:400;color:var(--ink-soft);">(ตั้ง = เป็นเซ็ต/คอร์ส/บันเดิล · ว่าง = แพคแบบเดิม)</span></span>
+        <button type="button" class="btn btn-sm" id="pkgAddGroupBtn" style="padding:3px 10px;">+ เพิ่มกลุ่ม</button>
+      </div>
+      ${groupRows || `<div style="font-size:12px;color:var(--ink-soft);padding:4px 2px;">ยังไม่มีกลุ่ม — ถ้าตั้งกลุ่ม ลูกค้าจะเลือกตามที่กำหนด (เช่น ข้าว 7 · กับข้าว 7 · น้ำ 3) · ราคาฐาน = ราคาเหมาต่อเซ็ต · เมนูที่ติ๊กด้านล่างที่มี +เงิน = ค่าบวกเพิ่มเมื่อลูกค้าเลือก</div>`}
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+        <label style="font-size:12.5px;display:flex;align-items:center;gap:5px;">แบ่งส่ง <input type="number" class="pkg-f-rounds" value="${pkg.delivery_rounds||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> รอบ</label>
+        <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="pkg-f-flexdeliv" ${pkg.flexible_delivery?'checked':''}> ลูกค้าเลือกวันส่งเองได้ (ของทำสต็อค)</label>
+      </div>
+    </div>`;
+
   return `<div class="panel" style="background:#fdfbf6;">
     <div class="grid2" style="margin-bottom:12px;">
       <div class="field"><label>ชื่อแพค</label>
@@ -2000,12 +2034,13 @@ function renderPackageEditor(pkg){
       <input type="text" class="pkg-f-desc" value="${escapeHtml(pkg.description||'')}"
         placeholder="เช่น เลือก 9 กล่องจากเมนู online">
     </div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:18px;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;">
       <input type="checkbox" class="pkg-f-active" ${pkg.is_active?'checked':''}> เปิดขายแพคนี้
     </label>
+    ${groupsSection}
     <div style="display:flex;align-items:center;justify-content:space-between;
          margin-bottom:8px;flex-wrap:wrap;gap:6px;">
-      <span style="font-size:13px;font-weight:600;color:var(--forest);">เมนูในแพคนี้</span>
+      <span style="font-size:13px;font-weight:600;color:var(--forest);">เมนู + ราคาบวกเพิ่ม (surcharge)</span>
       <span id="pkgCheckedCount" style="font-size:12px;color:var(--ink-soft);">
         ${checkedCount} เมนูถูกเลือก · active ทั้งหมด ${activeRecipes.length} รายการ
       </span>
@@ -2025,6 +2060,34 @@ function renderPackageEditor(pkg){
         style="margin-left:auto;">🗑 ลบแพค</button>
     </div>
   </div>`;
+}
+
+// อ่านค่ากลุ่มการเลือกจาก DOM → state.editingGroups
+function syncPkgGroupsFromDOM(scope){
+  const root = scope || document;
+  state.editingGroups = Array.from(root.querySelectorAll('.pkg-group-row')).map(row => {
+    const kind = row.querySelector('.pg-kind').value;
+    return {
+      label: (row.querySelector('.pg-label').value||'').trim(),
+      kind,
+      category: kind==='category' ? row.querySelector('.pg-cat').value : '',
+      skus: kind==='list' ? (row.querySelector('.pg-skus').value||'').split(',').map(s=>s.trim()).filter(Boolean) : [],
+      count: Math.max(1, parseInt(row.querySelector('.pg-count').value)||1)
+    };
+  });
+}
+// อัพเดต pkg object ในหน่วยความจำจากค่าที่พิมพ์ค้าง (กัน field รีเซ็ตตอน re-render จากปุ่มเพิ่ม/ลบกลุ่ม)
+function syncPkgBaseFromDOM(scope, pkg){
+  if(!scope||!pkg) return;
+  const g = sel => scope.querySelector(sel);
+  if(g('.pkg-f-name'))      pkg.name = g('.pkg-f-name').value.trim();
+  if(g('.pkg-f-size'))      pkg.size = g('.pkg-f-size').value;
+  if(g('.pkg-f-qty'))       pkg.qty = parseInt(g('.pkg-f-qty').value)||1;
+  if(g('.pkg-f-price'))     pkg.base_price = parseInt(g('.pkg-f-price').value)||0;
+  if(g('.pkg-f-desc'))      pkg.description = g('.pkg-f-desc').value.trim();
+  if(g('.pkg-f-active'))    pkg.is_active = g('.pkg-f-active').checked;
+  if(g('.pkg-f-rounds'))    pkg.delivery_rounds = Math.max(1, parseInt(g('.pkg-f-rounds').value)||1);
+  if(g('.pkg-f-flexdeliv')) pkg.flexible_delivery = g('.pkg-f-flexdeliv').checked;
 }
 
 function attachPackagesHandlers(){
@@ -2054,6 +2117,33 @@ function attachPackagesHandlers(){
     logActivity('package', `สร้างแพค "${data.name}"`);
     render();
   };
+
+  // ── กลุ่มการเลือก (เซ็ต/คอร์ส/บันเดิล): เพิ่ม/ลบ/สลับชนิด ──
+  const pkgAddGroupBtn = document.getElementById('pkgAddGroupBtn');
+  if(pkgAddGroupBtn) pkgAddGroupBtn.onclick = () => {
+    const panel = pkgAddGroupBtn.closest('.panel');
+    const pkg = state.packages.find(p => p.id === state.openPkgId);
+    syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+    state.editingGroups.push({ label:'', kind:'category', category:(state.categories[0]||{}).key||'', skus:[], count:1 });
+    render();
+  };
+  document.querySelectorAll('.pg-remove').forEach(btn => {
+    btn.onclick = () => {
+      const panel = btn.closest('.panel');
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      state.editingGroups.splice(parseInt(btn.dataset.gi), 1);
+      render();
+    };
+  });
+  document.querySelectorAll('.pg-kind').forEach(sel => {
+    sel.onchange = () => {
+      const panel = sel.closest('.panel');
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      render();
+    };
+  });
 
   // Close editor (cancel)
   const closePkgEditorBtn = document.getElementById('closePkgEditorBtn');
@@ -2167,6 +2257,16 @@ function attachPackagesHandlers(){
       const desc   = panel.querySelector('.pkg-f-desc').value.trim();
       const active = panel.querySelector('.pkg-f-active').checked;
       if(!name){ showToast('กรุณาใส่ชื่อแพค'); return; }
+      // set/course builder fields (เฉพาะเมื่อรัน SQL เพิ่มคอลัมน์แล้ว)
+      let setFields = {};
+      if(state.hasSetBuilderCols){
+        syncPkgGroupsFromDOM(panel);
+        setFields = {
+          groups: state.editingGroups || [],
+          delivery_rounds: Math.max(1, parseInt(panel.querySelector('.pkg-f-rounds')?.value)||1),
+          flexible_delivery: !!panel.querySelector('.pkg-f-flexdeliv')?.checked
+        };
+      }
       btn.disabled = true;
       btn.textContent = 'กำลังบันทึก...';
       try {
@@ -2174,6 +2274,7 @@ function attachPackagesHandlers(){
         const { error: pkgErr } = await sb.from('packages').update({
           name, size, qty, base_price: price,
           description: desc, is_active: active,
+          ...setFields,
           updated_at: new Date().toISOString()
         }).eq('id', pkgId);
         if(pkgErr) throw pkgErr;
@@ -2187,7 +2288,7 @@ function attachPackagesHandlers(){
           if(insErr) throw insErr;
         }
         const pkg = state.packages.find(p => p.id === pkgId);
-        if(pkg) Object.assign(pkg, { name, size, qty, base_price: price, description: desc, is_active: active });
+        if(pkg) Object.assign(pkg, { name, size, qty, base_price: price, description: desc, is_active: active, ...setFields });
         state.pkgItems[pkgId] = toInsert;
         state.openPkgId      = null;
         state._pkgEditorInit = null;
