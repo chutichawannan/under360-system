@@ -2438,6 +2438,47 @@ async function exportOnlineMenus(){
     showToast('❌ Sync ล้มเหลว: '+(e.message||'ตรวจสอบ credentials'));
   }
 }
+
+// ── ดาวน์โหลดลิสต์เมนูเป็นไฟล์ (CSV + JSON) สำหรับกรอกลง delivery platform ──
+// (LINE MAN/Grab/Wongnai) — ต่างจาก "☁ Sync → LIFF" ที่อัพขึ้น Supabase; อันนี้โหลดไฟล์มาให้แอดมิน copy
+function downloadBlob(filename, content, mime){
+  const blob = new Blob([content], {type:mime});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); }, 1000);
+}
+function exportMenuFiles(){
+  const items = state.recipes
+    .filter(r => r.status==='active' && (r.code||'').trim())
+    .sort((a,b)=>(a.code||'').localeCompare(b.code||''));
+  if(!items.length){ showToast('ยังไม่มีเมนูที่มีรหัส (code) ให้ export'); return; }
+  const rows = items.map(r=>{
+    const tot = computeTotals(r);
+    return {
+      code:        r.code||'',
+      name:        r.name||'',
+      category:    (r.categories||[]).join('|') || 'other',
+      price:       r.selling_price||0,
+      kcal:        Math.round(tot.kcal)||'',
+      protein_g:   Math.round(tot.protein*10)/10||'',
+      carb_g:      Math.round(tot.carb*10)/10||'',
+      fat_g:       Math.round(tot.fat*10)/10||'',
+      no_morning:  r.no_morning ? 'yes':'',
+      online:      (r.available_online && r.status==='active') ? 'yes':'',
+      description: (r.description||'').replace(/\s+/g,' ').trim(),
+    };
+  });
+  const cols = ['code','name','category','price','kcal','protein_g','carb_g','fat_g','no_morning','online','description'];
+  const esc = v => { v = v==null?'':String(v); return /[",\n]/.test(v) ? '"'+v.replace(/"/g,'""')+'"' : v; };
+  const csv = '﻿' + cols.join(',') + '\n' + rows.map(r=>cols.map(c=>esc(r[c])).join(',')).join('\n');
+  const stamp = new Date().toLocaleDateString('sv').replace(/-/g,''); // YYYYMMDD (เวลาเครื่อง)
+  downloadBlob('under360-menu-'+stamp+'.csv', csv, 'text/csv;charset=utf-8');
+  setTimeout(()=>downloadBlob('under360-menu-'+stamp+'.json', JSON.stringify(rows,null,2), 'application/json'), 300);
+  showToast('⬇ ดาวน์โหลด '+rows.length+' เมนู (CSV + JSON) — เอาไปกรอก delivery platform ได้เลย');
+}
+
 // sync เมนูตัวเดียวเข้า menu_items ทันทีตอนกดเปิด/ปิดออนไลน์ (is_available ตามสถานะ)
 async function syncOnlineMenu(r){
   if(!r) return;
@@ -2749,6 +2790,7 @@ function renderRecipesTab(){
       ${state.showOnlineOnly?'<span style="font-size:11px;background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;margin-left:2px;">เฉพาะออนไลน์ ✕</span>':''}
     </button>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <button class="btn btn-export btn-sm" id="exportMenuFileBtn" style="font-size:12px;padding:5px 12px;" title="ดาวน์โหลดลิสต์เมนู (CSV + JSON) สำหรับกรอกลง delivery platform (LINE MAN/Grab/Wongnai)">⬇ Export เมนู</button>
       <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
     </div>
   </div>`;
@@ -3761,6 +3803,8 @@ function attachHandlers(){
     // 📤 Export button
     const exportOnlineBtn = document.getElementById('exportOnlineBtn');
     if(exportOnlineBtn) exportOnlineBtn.onclick = exportOnlineMenus;
+    const exportMenuFileBtn = document.getElementById('exportMenuFileBtn');
+    if(exportMenuFileBtn) exportMenuFileBtn.onclick = exportMenuFiles;
     // 🛒 Online filter toggle — กดตัวเลข "N ออนไลน์" เพื่อกรองเฉพาะออนไลน์
     const toggleOnlineBtn = document.getElementById('toggleOnlineFilterBtn');
     if(toggleOnlineBtn) toggleOnlineBtn.onclick = (e)=>{

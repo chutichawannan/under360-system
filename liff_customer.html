@@ -1754,8 +1754,10 @@ function renderCart() {
 // 📅 DATE PICKER
 // ══════════════════════════════════════
 // ── ระบบตัดรอบออเดอร์ ──
-// เปลี่ยน CUTOFF_HOUR ได้เลย เช่น 16=บ่าย4, 18=6โมงเย็น
+// เมนูสต็อก: ตัดรอบ CUTOFF_HOUR (18:00) — หลังจากนั้นวันแรกที่ส่งได้ = มะรืน
+// Meal Plan: ปรุงสดเช้าวันส่ง + ส่งบ่าย → สั่งได้ถึง 08:30 น. ของวันส่ง (จ/พ/ศ) เริ่มวันนี้ได้ถ้ายังไม่เลยเวลาตัดรอบ
 const CUTOFF_HOUR = 18;
+const MP_CUTOFF_HOUR = 8, MP_CUTOFF_MIN = 30;
 
 function renderDatePick() {
   const el = document.getElementById('dpick');
@@ -1763,21 +1765,31 @@ function renderDatePick() {
   const now = new Date();
   const DAYS   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const isPastCutoff = now.getHours() >= CUTOFF_HOUR;
-  const baseOffset   = isPastCutoff ? 2 : 1;
-  const startOffset  = isOutOfProvince ? baseOffset + 1 : baseOffset;
   const isMeal = hasMealPlan();
   const isMWF = dow => [1,3,5].includes(dow);
+
+  // เวลาตัดรอบต่างกัน: Meal Plan สั่งได้ถึง 08:30 ของวันส่ง / เมนูสต็อกตัด 18:00
+  const beforeMpCutoff = now.getHours() < MP_CUTOFF_HOUR
+    || (now.getHours() === MP_CUTOFF_HOUR && now.getMinutes() < MP_CUTOFF_MIN);
+  const isPastCutoff = now.getHours() >= CUTOFF_HOUR; // เมนูสต็อกเท่านั้น
+  let startOffset;
+  if (isMeal) {
+    // Meal Plan = ปรุงสดกรุงเทพเท่านั้น ไม่ใช้ offset ต่างจังหวัด · ก่อน 08:30 เริ่มวันนี้ได้ (ถ้าตรง จ/พ/ศ) หลังนั้นเริ่มพรุ่งนี้
+    startOffset = beforeMpCutoff ? 0 : 1;
+  } else {
+    const baseOffset = isPastCutoff ? 2 : 1;
+    startOffset = isOutOfProvince ? baseOffset + 1 : baseOffset;
+  }
 
   // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
   if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
 
-  let noticeHtml = isPastCutoff
+  let noticeHtml = (!isMeal && isPastCutoff)
     ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
     : '';
   if(isMeal){
     noticeHtml += `<div style="padding:6px 14px 4px;font-size:11px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;margin:0 14px 4px;line-height:1.5">
-      🥗 <b>Meal Plan ส่งเฉพาะวันจันทร์/พุธ/ศุกร์</b> — เลือกวันแรกที่จะเริ่มรับได้เลย ระบบจะจัดส่งต่อเนื่องอัตโนมัติทุกรอบ (จ/พ/ศ) จนครบจำนวนกล่อง
+      🥗 <b>Meal Plan ส่งเฉพาะวันจันทร์/พุธ/ศุกร์</b> — เลือกวันแรกที่จะเริ่มรับได้เลย ระบบจะจัดส่งต่อเนื่องอัตโนมัติทุกรอบ (จ/พ/ศ) จนครบจำนวนกล่อง${beforeMpCutoff ? ' · สั่งวันนี้ทันภายใน 08:30 น.' : ' · เลย 08:30 น. ของวันนี้แล้ว เริ่มได้รอบถัดไป'}
     </div>`;
   }
   if(notice) notice.innerHTML = noticeHtml;
