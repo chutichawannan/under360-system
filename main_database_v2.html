@@ -1988,18 +1988,31 @@ function renderPackageEditor(pkg){
   // ── 🧩 กลุ่มการเลือก + การส่ง (เซ็ต/คอร์ส/บันเดิล) ──
   const catOpts = (selKey) => (state.categories||[]).map(c =>
     `<option value="${escapeHtml(c.key)}"${c.key===selKey?' selected':''}>${escapeHtml(c.label)}</option>`).join('');
-  const groupRows = (state.editingGroups||[]).map((g,i) => `
+  const menuOpts = activeRecipes.filter(r=>r.code).map(r=>`<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} · ${escapeHtml(r.name)}</option>`).join('');
+  const groupRows = (state.editingGroups||[]).map((g,i) => {
+    const isList = g.kind==='list';
+    const chips = (g.skus||[]).map(sku => {
+      const rc = activeRecipes.find(r=>r.code===sku);
+      return `<span class="pg-sku-chip" data-sku="${escapeHtml(sku)}" style="display:inline-flex;align-items:center;gap:3px;background:var(--forest-soft);color:var(--forest);border-radius:12px;padding:2px 3px 2px 8px;font-size:11.5px;">${escapeHtml(rc?rc.name:sku)}<span class="pg-chip-x" data-gi="${i}" data-sku="${escapeHtml(sku)}" style="cursor:pointer;font-weight:700;padding:0 3px;">✕</span></span>`;
+    }).join('') || '<span style="font-size:11px;color:var(--ink-soft);">ยังไม่เลือกเมนู — เลือกจากช่องล่าง</span>';
+    return `
     <div class="pkg-group-row" data-gi="${i}" style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:8px;border:1px solid var(--line);border-radius:8px;margin-bottom:6px;background:#fff;">
       <input type="text" class="pg-label" value="${escapeHtml(g.label||'')}" placeholder="ชื่อกลุ่ม เช่น เลือกข้าว" style="flex:1;min-width:110px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12.5px;">
       <select class="pg-kind" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
-        <option value="category"${(g.kind||'category')==='category'?' selected':''}>📂 ตามหมวด</option>
-        <option value="list"${g.kind==='list'?' selected':''}>📋 เจาะจงเมนู</option>
+        <option value="category"${!isList?' selected':''}>📂 ตามหมวด</option>
+        <option value="list"${isList?' selected':''}>📋 เจาะจงเมนู</option>
       </select>
-      <select class="pg-cat" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;${g.kind==='list'?'display:none;':''}">${catOpts(g.category)}</select>
-      <input type="text" class="pg-skus" value="${escapeHtml((g.skus||[]).join(','))}" placeholder="โค้ดเมนู คั่นด้วย , เช่น W01,W02" style="flex:1;min-width:110px;padding:5px 8px;border:1px solid var(--line);border-radius:6px;font-size:12px;${g.kind==='list'?'':'display:none;'}">
+      <select class="pg-cat" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;${isList?'display:none;':''}">${catOpts(g.category)}</select>
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">เลือก <input type="number" class="pg-count" value="${g.count||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> กล่อง</label>
       <button type="button" class="btn btn-warn btn-sm pg-remove" data-gi="${i}" style="padding:3px 8px;">✕</button>
-    </div>`).join('');
+      <div class="pg-list-editor" data-gi="${i}" style="flex:1 1 100%;${isList?'':'display:none;'}">
+        <div class="pg-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">${chips}</div>
+        <select class="pg-add-sku" data-gi="${i}" style="width:100%;padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;">
+          <option value="">＋ เลือกเมนูเพิ่มเข้ากลุ่มนี้...</option>${menuOpts}
+        </select>
+      </div>
+    </div>`;
+  }).join('');
   const groupsSection = !state.hasSetBuilderCols ? '' : `
     <div style="border:1px dashed var(--turmeric);border-radius:10px;padding:12px;margin-bottom:16px;background:var(--turmeric-soft);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
@@ -2071,7 +2084,7 @@ function syncPkgGroupsFromDOM(scope){
       label: (row.querySelector('.pg-label').value||'').trim(),
       kind,
       category: kind==='category' ? row.querySelector('.pg-cat').value : '',
-      skus: kind==='list' ? (row.querySelector('.pg-skus').value||'').split(',').map(s=>s.trim()).filter(Boolean) : [],
+      skus: kind==='list' ? Array.from(row.querySelectorAll('.pg-sku-chip')).map(c=>c.dataset.sku) : [],
       count: Math.max(1, parseInt(row.querySelector('.pg-count').value)||1)
     };
   });
@@ -2141,6 +2154,31 @@ function attachPackagesHandlers(){
       const panel = sel.closest('.panel');
       const pkg = state.packages.find(p => p.id === state.openPkgId);
       syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      render();
+    };
+  });
+  // เพิ่มเมนูเข้ากลุ่ม "เจาะจงเมนู" จาก dropdown
+  document.querySelectorAll('.pg-add-sku').forEach(sel => {
+    sel.onchange = () => {
+      const sku = sel.value; if(!sku) return;
+      const panel = sel.closest('.panel');
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      const gi = parseInt(sel.dataset.gi);
+      const g = state.editingGroups[gi];
+      if(g){ g.skus = g.skus || []; if(!g.skus.includes(sku)) g.skus.push(sku); }
+      render();
+    };
+  });
+  // ลบเมนูออกจากกลุ่ม
+  document.querySelectorAll('.pg-chip-x').forEach(x => {
+    x.onclick = () => {
+      const panel = x.closest('.panel');
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      const gi = parseInt(x.dataset.gi);
+      const g = state.editingGroups[gi];
+      if(g) g.skus = (g.skus||[]).filter(s => s !== x.dataset.sku);
       render();
     };
   });
