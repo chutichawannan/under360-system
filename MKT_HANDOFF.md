@@ -32,5 +32,17 @@
 
 ---
 
+## 🌐 โดเมน + ย้ายออก Wix (เช็คแล้ว 13 ก.ค.)
+- `360foodbox.com` = **Primary domain จดกับ Wix** (Purchased from Wix) · subscription โดเมนแยก renews **9 ธ.ค. 2026** · Premium plan (Core) renews พ.ย. 2027
+- **วิธีย้ายที่ปลอดภัย = ชี้ DNS มา Vercel** (ไม่ต้องโอนโดเมนออก) — ทำตอนเว็บใหม่ครบ 100% + นัทหัวโล่ง
+- 🔴 **blog มีทราฟฟิก Google จริง** (~898 post views/เดือน · ติดคำ "กลูเตนฟรีคือ", "ประโยชน์/โทษข้าวไรซ์เบอร์รี่") → **ต้องทำ 301 redirect URL เก่า→ใหม่ก่อนสลับ** ห้ามให้ SEO 10 ปีหล่น
+- **นัทจะกด upgrade/ย้ายเว็บ "วันที่สะดวก"** (ยังไม่ทำคืนนี้ — ตัดสินใจถูกแล้ว)
+
+## 📌 Backlog — harvest ฟีเจอร์/ข้อมูล Wix ก่อนปิด (นัทเห็นว่า dashboard Wix มีของช่วยขาย)
+- สำรวจฟีเจอร์ Wix ที่อาจช่วยการขาย ก่อนทิ้ง (Analytics/Google Search queries, Inbox, Customers & Leads, Automations, Marketing)
+- **ดึงข้อมูลออกก่อนปิด:** Google Search top queries (ทองคำ SEO), รายชื่อ customers/leads, ข้อความ Inbox (มี 50 ค้าง — เช็คว่ามีลูกค้ารอตอบไหม)
+- แผน redirect map: ทุก URL บทความเก่า Wix → slug ใหม่ (มี `web/posts/_MANIFEST.md` เป็นฐาน)
+
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
+- **13 ก.ค.** ✅ blog บทความคอร์สอาหารคลีน (push `a286058`) · ✅ localize รูป Wix 28 รูป → web/img (push `8ecc389`) · ✅ รัน sql_blog_posts + import 21 บทความเข้า DB (โชว์ 14 · draft 7) · ✅ เช็คโดเมน (จด Wix, ชี้ DNS ไม่ต้องโอน)
