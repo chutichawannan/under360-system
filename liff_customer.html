@@ -649,9 +649,11 @@ body{background:#fff!important}
     </div>
     <div class="divider"></div>
     <!-- date picker -->
-    <div class="sec-head">📅 เลือกวันจัดส่ง</div>
+    <div class="sec-head" id="date-sec-head">📅 เลือกวันจัดส่ง</div>
     <div id="date-notice"></div>
     <div class="dscroll" id="dpick"></div>
+    <!-- multi-round set delivery split (เซ็ตแบ่งส่งหลายรอบ) -->
+    <div id="round-split"></div>
     <div class="divider"></div>
     <!-- time slot -->
     <div class="sec-head">⏰ เลือกช่วงเวลา</div>
@@ -888,6 +890,8 @@ async function loadMpOfferSets(){
 }
 let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
 let selDate = null, selSlot = null;
+// เซ็ตแบ่งส่งหลายรอบ (delivery_rounds>1): เลือกวันรับรอบ 2..N (รอบ 1 = selDate) · setDeliverOnce=รับรวดเดียว
+let setDeliverOnce = false, extraRoundDates = [];
 let activeCat = null;
 
 const SLOTS = [
@@ -1635,7 +1639,7 @@ async function loadPaymentAccount(){
 }
 
 function goCart() {
-  renderCart(); renderDatePick(); renderTimePick(); refreshCouponUI(); showScr('s-cart');
+  renderCart(); renderDatePick(); renderRoundSplit(); renderTimePick(); refreshCouponUI(); showScr('s-cart');
   updateCartTotals();
   loadSuggestedPromosIfNeeded().then(renderSuggestedPromoChips);
   loadPaymentAccount(); // เลือกบัญชีรับเงินที่ถัวเฉลี่ยแล้ว
@@ -1668,6 +1672,7 @@ function goConfirm() {
 function backToMenu() {
   cart = []; saveCart(); updateCartUI();
   selDate = null; selSlot = null;
+  setDeliverOnce = false; extraRoundDates = [];
   showScr('s-menu');
 }
 
@@ -1956,7 +1961,87 @@ function renderDatePick() {
   el.innerHTML = html;
 }
 
-function pickDate(key) { selDate=key; renderDatePick(); }
+function pickDate(key) {
+  selDate=key;
+  extraRoundDates=[];          // เปลี่ยนวันรอบ 1 → รีเซ็ตวันรอบถัดไปให้ default ใหม่ (+7 ต่อรอบ)
+  renderDatePick(); renderRoundSplit();
+}
+
+// ══════════════════════════════════════
+// 📦 MULTI-ROUND SET DELIVERY SPLIT (เซ็ตแบ่งส่งหลายรอบ)
+// เซ็ตที่ตั้ง delivery_rounds>1 → แบ่งกล่องเป็น N รอบ ลูกค้าเลือกวันรับแต่ละรอบ
+// โมเดล: 1 รอบ = 1 order (รอบ 1 = order หลักถือเงินเต็ม, รอบ 2..N = order ยอด 0)
+// ══════════════════════════════════════
+function multiRoundSets(){ return cart.filter(c=>c.type==='package' && (c.delivery_rounds||1)>1); }
+function checkoutSetRounds(){
+  const ms=multiRoundSets();
+  return ms.length ? Math.max(...ms.map(c=>c.delivery_rounds||1)) : 1;
+}
+// แบ่ง array กล่องเป็น n ก้อนเท่าๆ กัน (เศษกระจายก้อนแรกๆ)
+function splitSetItems(items, n){
+  const out=Array.from({length:n},()=>[]);
+  const per=Math.floor(items.length/n), rem=items.length%n;
+  let idx=0;
+  for(let r=0;r<n;r++){ const cnt=per+(r<rem?1:0); out[r]=items.slice(idx,idx+cnt); idx+=cnt; }
+  return out;
+}
+function defaultRoundDate(baseYMD, weeksAhead){
+  const d=new Date(baseYMD+'T00:00:00'); d.setDate(d.getDate()+7*weeksAhead); return localYMD(d);
+}
+function renderRoundSplit(){
+  const el=document.getElementById('round-split');
+  const head=document.getElementById('date-sec-head');
+  const N=checkoutSetRounds();
+  if(N<=1){ if(el) el.innerHTML=''; if(head) head.textContent='📅 เลือกวันจัดส่ง'; extraRoundDates=[]; return; }
+  const ms=multiRoundSets();
+  const setName=ms.map(c=>c.name).join(', ');
+  const totalBoxes=ms.reduce((s,c)=>s+((c.items||[]).length),0);
+  if(!setDeliverOnce){
+    for(let i=0;i<N-1;i++){ if(!extraRoundDates[i] && selDate) extraRoundDates[i]=defaultRoundDate(selDate,i+1); }
+    extraRoundDates.length=N-1;
+  }
+  if(head) head.textContent='📅 เลือกวันจัดส่ง — รอบ 1';
+  const chunkPreview = ms.length===1 ? splitSetItems(ms[0].items||[],N).map(a=>a.length) : null;
+  let html=`<div style="padding:10px 14px 0;">
+      <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px 14px;">
+        <div style="font-size:13.5px;font-weight:800;color:#1D4ED8;">📦 เซ็ตแบ่งส่ง ${N} รอบ</div>
+        <div style="font-size:11.5px;color:#3B4A66;margin-top:2px;line-height:1.4;">${h(setName)} · รวม ${totalBoxes} กล่อง · จ่ายครั้งเดียว แบ่งจัดส่งตามวันด้านล่าง</div>
+        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:700;color:#1A1A1A;cursor:pointer;">
+          <input type="checkbox" ${setDeliverOnce?'checked':''} onchange="toggleSetDeliverOnce(this.checked)" style="width:18px;height:18px;accent-color:#1D4ED8;flex-shrink:0;">
+          รับทั้งหมดรวดเดียว (ส่งครั้งเดียว ${totalBoxes} กล่อง)
+        </label>
+      </div>`;
+  if(setDeliverOnce){
+    html+=`<div style="font-size:12px;color:#6B7280;padding:8px 2px 2px;line-height:1.4;">จะจัดส่งทั้งหมด ${totalBoxes} กล่องในวันเดียว ตามวันที่เลือกด้านบน (รอบ 1)</div>`;
+  } else {
+    html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 2px;">รอบ 1${chunkPreview?` · ${chunkPreview[0]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— ส่งวันที่เลือกด้านบน (${selDate?fmtDate(selDate):'ยังไม่เลือก'})</span></div>`;
+    for(let r=2;r<=N;r++){
+      const idx=r-2;
+      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ</span></div>
+        <div class="dscroll" id="rdpick-${idx}"></div>`;
+    }
+  }
+  html+=`</div>`;
+  el.innerHTML=html;
+  if(!setDeliverOnce){ for(let r=2;r<=N;r++) renderRoundDatePicker(r-2); }
+}
+function renderRoundDatePicker(idx){
+  const el=document.getElementById('rdpick-'+idx); if(!el) return;
+  const DAYS=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const base = selDate ? new Date(selDate+'T00:00:00') : new Date();
+  let html='';
+  for(let i=1;i<=28;i++){
+    const d=new Date(base); d.setDate(base.getDate()+i);
+    const key=localYMD(d);
+    const isOn=extraRoundDates[idx]===key?'on':'';
+    html+=`<div class="dchip ${isOn}" onclick="pickRoundDate(${idx},'${key}')">
+      <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
+  }
+  el.innerHTML=html;
+}
+function pickRoundDate(idx,key){ extraRoundDates[idx]=key; renderRoundSplit(); }
+function toggleSetDeliverOnce(v){ setDeliverOnce=!!v; renderRoundSplit(); }
 
 // ══════════════════════════════════════
 // ⏰ TIME PICKER
@@ -2098,6 +2183,14 @@ async function submitOrder() {
   if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
   if (!selDate)      { toast('กรุณาเลือกวันจัดส่ง'); return; }
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
+  // เซ็ตแบ่งส่งหลายรอบ: ต้องมีวันรับครบทุกรอบ (เว้นแต่เลือก "รับรวดเดียว")
+  const roundCount = checkoutSetRounds();
+  const doSplit    = roundCount > 1 && !setDeliverOnce;
+  if (doSplit) {
+    for (let i = 0; i < roundCount - 1; i++) {
+      if (!extraRoundDates[i]) { toast('กรุณาเลือกวันรับให้ครบทุกรอบ'); return; }
+    }
+  }
   const addr = (document.getElementById('addr-input').value || document.getElementById('addr-search').value || '').trim();
   if (!addr)         { toast('กรุณาใส่หรือค้นหาที่อยู่จัดส่ง'); return; }
   const recipientName  = document.getElementById('recipient-name-input').value.trim();
@@ -2173,15 +2266,20 @@ async function submitOrder() {
     }
 
     // 2. Create order items (expand package items into individual rows)
+    // เซ็ตแบ่งส่งหลายรอบ (doSplit): แตกกล่องของเซ็ตเป็น N ก้อน — order หลักได้ก้อนรอบ 1 เท่านั้น
+    const setChunks = new Map(); // cartId -> [กล่องรอบ1, กล่องรอบ2, ...]
+    if (doSplit) multiRoundSets().forEach(c => setChunks.set(c.id, splitSetItems(c.items || [], roundCount)));
     const items = [];
     cart.forEach(c => {
       if (c.type === 'package') {
-        (c.items || []).forEach(it => {
+        const chunks = setChunks.get(c.id);
+        const list = chunks ? (chunks[0] || []) : (c.items || []);
+        list.forEach(it => {
           const mi = menuItems.find(m => m.code === it.sku);
           items.push({ order_id: ord.id, menu_item_id: mi ? mi.id : null,
             menu_name: it.name, menu_code: it.sku,
             quantity: 1, unit_price: it.extra_price, subtotal: it.extra_price,
-            notes: 'pkg:' + c.package_id });
+            notes: 'pkg:' + c.package_id + (chunks ? ':course:1/' + roundCount : '') });
         });
       } else if (c.type === 'meal_plan') {
         items.push({ order_id: ord.id, menu_item_id: null,
@@ -2200,6 +2298,53 @@ async function submitOrder() {
     // 2b. สร้างตารางส่ง Meal Plan (Mon/Wed/Fri rounds) — ไม่บล็อก flow ถ้าพัง
     for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot, recipientName); }
 
+    // 2c. เซ็ตแบ่งส่งหลายรอบ: สร้าง order แยกรอบ 2..N (ยอด 0 — จ่ายรวมกับ order หลักแล้ว)
+    //     1 รอบ = 1 order (ตรงกับที่แอดมินทำมือ) · KQ อ่าน orders ตาม delivery_date อยู่แล้ว
+    const roundOrderNums = [];
+    if (doSplit) {
+      const setNameJoin = multiRoundSets().map(c => c.name).join(', ');
+      const slotVal = selSlot === 'express' ? expressTime : selSlot;
+      for (let r = 2; r <= roundCount; r++) {
+        const rDate = extraRoundDates[r - 2];
+        const rItems = [];
+        multiRoundSets().forEach(c => {
+          const chunk = (setChunks.get(c.id) || [])[r - 1] || [];
+          chunk.forEach(it => {
+            const mi = menuItems.find(m => m.code === it.sku);
+            rItems.push({ menu_item_id: mi ? mi.id : null, menu_name: it.name, menu_code: it.sku,
+              quantity: 1, unit_price: 0, subtotal: 0,
+              notes: 'pkg:' + c.package_id + ':course:' + r + '/' + roundCount });
+          });
+        });
+        if (!rItems.length) continue;
+        const rmmdd = rDate.slice(5,7) + rDate.slice(8,10);
+        let rNext = 1;
+        try {
+          const c2 = await sb.from('orders').select('id', {count:'exact',head:true}).like('order_number', 'U-' + rmmdd + '-%');
+          rNext = (c2.count || 0) + 1;
+        } catch(e){ rNext = Math.floor(1 + Math.random()*99); }
+        const rOrderNum = 'U-' + rmmdd + '-' + String(rNext).padStart(3,'0');
+        const rPayload = {
+          order_number: rOrderNum, customer_id: customer?.id || null, line_uid: lineProfile.userId,
+          customer_name: recipientName, line_display_name: lineProfile.displayName, customer_phone: recipientPhone,
+          delivery_date: rDate, time_slot: slotVal, time_slot_label: slot?.time || '',
+          delivery_address: addrFinal, delivery_fee: 0, subtotal: 0, discount_amount: 0, total: 0,
+          status: 'confirmed', payment_method: payMethod || 'qr',
+          payment_account: selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
+          delivery_type: selSlot === 'express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
+          delivery_week: 'current',
+          notes: 'คอร์ส ' + setNameJoin + ' รอบ ' + r + '/' + roundCount + ' — จ่ายรวมกับออเดอร์ ' + orderNum
+        };
+        if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); rPayload.want_utensils = utEl ? utEl.checked : true; }
+        try {
+          const { data: rOrd, error: rErr } = await sb.from('orders').insert(rPayload).select().single();
+          if (rErr) throw rErr;
+          await sb.from('order_items').insert(rItems.map(it => ({ ...it, order_id: rOrd.id })));
+          roundOrderNums.push({ num: rOrderNum, date: rDate });
+        } catch(e) { console.error('round order create failed (non-blocking):', e); }
+      }
+    }
+
     // 3. Save default address + phone for next time (ชื่อไม่เซฟทับ — ให้ auto-fill จาก LINE เหมือนเดิมทุกครั้ง)
     if (customer?.id) {
       await sb.from('customers').update({ default_address: addr, phone: recipientPhone }).eq('id', customer.id);
@@ -2207,10 +2352,15 @@ async function submitOrder() {
 
     // 4. Show success + reset cart
     document.getElementById('ok-num').textContent = orderNum;
+    const roundLines = roundOrderNums.length
+      ? '<br>📦 แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
+        + roundOrderNums.map((r,i)=>'<br>&nbsp;&nbsp;• รอบ ' + (i+2) + ' — ' + fmtDate(r.date) + ' (' + r.num + ')').join('')
+      : '';
     document.getElementById('ok-detail').innerHTML =
-      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}`;
+      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
+    setDeliverOnce = false; extraRoundDates = [];
     appliedPromos = []; refreshCouponUI();
     if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     showScr('s-ok');
