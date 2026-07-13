@@ -1989,6 +1989,7 @@ function renderPackageEditor(pkg){
   const catOpts = (selKey) => (state.categories||[]).map(c =>
     `<option value="${escapeHtml(c.key)}"${c.key===selKey?' selected':''}>${escapeHtml(c.label)}</option>`).join('');
   const menuOpts = activeRecipes.filter(r=>r.code).map(r=>`<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} · ${escapeHtml(r.name)}</option>`).join('');
+  const onlineInCat = (catKey) => (state.recipes||[]).filter(r=>r.status==='active'&&r.available_online&&(r.categories||[]).includes(catKey)).length;
   const groupRows = (state.editingGroups||[]).map((g,i) => {
     const isList = g.kind==='list';
     const chips = (g.skus||[]).map(sku => {
@@ -2004,6 +2005,8 @@ function renderPackageEditor(pkg){
       </select>
       <select class="pg-cat" style="padding:5px 6px;border:1px solid var(--line);border-radius:6px;font-size:12px;${isList?'display:none;':''}">${catOpts(g.category)}</select>
       <label style="font-size:12px;display:flex;align-items:center;gap:4px;white-space:nowrap;">เลือก <input type="number" class="pg-count" value="${g.count||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> กล่อง</label>
+      <label style="font-size:11.5px;display:flex;align-items:center;gap:3px;white-space:nowrap;cursor:pointer;" title="เปิด = ลูกค้ากดเมนูเดิมซ้ำได้ (ปุ่ม +/-) · ปิด = เลือกได้เมนูละ 1 (ติ๊ก)"><input type="checkbox" class="pg-repeat" ${g.allow_repeat!==false?'checked':''}> 🔁 กดซ้ำ</label>
+      ${!isList?`<span style="font-size:10.5px;color:${(g.count||1)>onlineInCat(g.category)?'#D64B2A':'#9AA894'};white-space:nowrap;">ออนไลน์ ${onlineInCat(g.category)}${(g.count||1)>onlineInCat(g.category)?' ⚠️เกิน':''}</span>`:''}
       <button type="button" class="btn btn-warn btn-sm pg-remove" data-gi="${i}" style="padding:3px 8px;">✕</button>
       <div class="pg-list-editor" data-gi="${i}" style="flex:1 1 100%;${isList?'':'display:none;'}">
         <div class="pg-chips" style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:4px;">${chips}</div>
@@ -2085,7 +2088,8 @@ function syncPkgGroupsFromDOM(scope){
       kind,
       category: kind==='category' ? row.querySelector('.pg-cat').value : '',
       skus: kind==='list' ? Array.from(row.querySelectorAll('.pg-sku-chip')).map(c=>c.dataset.sku) : [],
-      count: Math.max(1, parseInt(row.querySelector('.pg-count').value)||1)
+      count: Math.max(1, parseInt(row.querySelector('.pg-count').value)||1),
+      allow_repeat: !!(row.querySelector('.pg-repeat') && row.querySelector('.pg-repeat').checked)
     };
   });
 }
@@ -2137,7 +2141,7 @@ function attachPackagesHandlers(){
     const panel = pkgAddGroupBtn.closest('.panel');
     const pkg = state.packages.find(p => p.id === state.openPkgId);
     syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
-    state.editingGroups.push({ label:'', kind:'category', category:(state.categories[0]||{}).key||'', skus:[], count:1 });
+    state.editingGroups.push({ label:'', kind:'category', category:(state.categories[0]||{}).key||'', skus:[], count:1, allow_repeat:true });
     render();
   };
   document.querySelectorAll('.pg-remove').forEach(btn => {
