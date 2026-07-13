@@ -138,7 +138,8 @@ GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
 
 **🔴 ต้องสร้าง — OH "set/course builder" (นัทขอ, ยังไม่มี):** ให้แอดมิน "กำหนดเองได้เลยว่าจะขายอะไร ตั้งชื่อเซ็ต ตั้งราคาเซ็ต แล้วคลิกสินค้าใส่เข้าเซ็ตได้เลย" — รองรับทั้ง (1) คอร์สสต็อค multi-round + ลูกค้าเลือกวันส่ง (2) บันเดิลผสมราคาเหมา · เป้า **"กินลูกค้าทุกความต้องการ"** (บางคนไม่สะดวก จ/พ/ศ อยากเลือกเมนู/ไซส์เอง)
   - ✅ **v1 ฝั่งแอดมินสร้างแล้ว** (commit `9ae4607`, รอรัน `scripts/sql_package_sets.sql`): DB Package editor มีส่วน "🧩 กลุ่มการเลือก" — ตั้งกลุ่มได้กี่กลุ่มก็ได้ (เลือกตามหมวด N กล่อง / เจาะจงรายเมนู) + ราคาเหมา (base_price) + `delivery_rounds` + `flexible_delivery` (เลือกวันเอง) · surcharge ใช้ `package_items.extra_price` เดิม · เก็บ `packages.groups` (jsonb) · capability-check ซ่อน UI ถ้ายังไม่รัน SQL
-  - 🔴 **ยังไม่ทำ (สเต็ปถัดไป):** ฝั่งลูกค้า LIFF สั่งซื้อเซ็ต (เลือกตามกลุ่ม + แบ่งรอบส่ง + เลือกวันเอง) + สร้าง mp_deliveries-style สำหรับคอร์สสต็อค multi-round
+  - 🟡 **LIFF v1 สร้างแล้ว** (commit `db88de5`): `openPackage` ตรวจ groups → `renderPkgSelectGrouped` ลูกค้าเลือกตามกลุ่ม (หมวด/รายเมนู) + surcharge (`package_items.extra_price`) + ราคาเหมา → เข้าตะกร้า (type `package`) · ทางเดิม pick-N ไม่กระทบ (แยก branch)
+  - 🔴 **ยังไม่ทำ (สเต็ปถัดไป):** **multi-round delivery split** — v1 ส่งรอบเดียวผ่าน date picker สต็อกเดิม (เลือกวันได้) · เซ็ตที่ตั้ง `delivery_rounds>1` ยังไม่แบ่งส่งจริง (เก็บค่าในตะกร้าแล้ว รอสร้าง mp_deliveries-style สำหรับคอร์สสต็อค + เลือกวันแต่ละรอบ) · **นัทเทสเซ็ตรอบเดียว/บันเดิลก่อนได้**
 
 **กระทบอะไร (ต้องแก้ตามความเข้าใจใหม่ — จัดลำดับ ไม่ทำรวดเดียว):**
 - **เว็บ/บล็อค:** ✅ WS2 เสร็จ (commit `f65f033`) — index card + goal switcher เพิ่มคอร์ส/เซ็ตเลือกเมนู+วันรับเอง (สต็อค) · mealplan แก้ Meal Plan ส่ง จ/พ/ศ (เดิมเขียน จันทร์–เสาร์ ผิด) · บทความ `high-protein-meal-plan` แก้ conflation แล้ว + published (บล็อคครบ 20/20 published) · เหลือ: เว็บยังไม่มี flow สั่งเซ็ตจริง (รอ LIFF side)
