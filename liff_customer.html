@@ -38,6 +38,13 @@ input,textarea{font-family:inherit}
   width:calc(100% - 36px);max-width:460px;min-height:0;height:auto;max-height:84vh;
   background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.34);z-index:320;}
 #s-meal-plan.on .scroll{background:#fff;}
+/* เซ็ต/คอร์ส/แพค — popup sheet (เหมือน Meal Plan) */
+#pkg-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:310;display:none;}
+#pkg-backdrop.on{display:block;}
+#s-pkg-select.on{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;top:auto;
+  width:calc(100% - 36px);max-width:460px;min-height:0;height:auto;max-height:84vh;
+  background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.34);z-index:320;}
+#s-pkg-select.on .scroll{background:#fff;}
 
 /* ═══════════ LOADING ═══════════ */
 #s-load{align-items:center;justify-content:center;background:var(--g);color:#fff;gap:20px}
@@ -577,9 +584,10 @@ body{background:#fff!important}
 <!-- ══════════════════════════════════════
      SCREEN: PACKAGE MENU SELECTION (v0.3.2)
 ══════════════════════════════════════ -->
+<div id="pkg-backdrop" onclick="closePkgSheet()"></div>
 <div class="scr" id="s-pkg-select">
   <div class="hdr">
-    <button class="hdr-back" onclick="showScr('s-menu')">←</button>
+    <button class="hdr-back" onclick="closePkgSheet()">←</button>
     <div class="hdr-title" id="pkg-hdr-title">เลือกเมนูในแพค</div>
   </div>
   <div class="scroll pb-btn">
@@ -993,7 +1001,12 @@ function openPackage(pkgId) {
   if (inp) inp.value = '';
   document.getElementById('pkg-hdr-title').textContent = currentPkg.name;
   renderPkgSelect();
-  showScr('s-pkg-select');
+  document.getElementById('pkg-backdrop').classList.add('on');
+  document.getElementById('s-pkg-select').classList.add('on');
+}
+function closePkgSheet(){
+  document.getElementById('s-pkg-select').classList.remove('on');
+  document.getElementById('pkg-backdrop').classList.remove('on');
 }
 
 function renderPkgSelect() {
@@ -1118,7 +1131,7 @@ function addPkgToCart() {
   });
   saveCart(); updateCartUI();
   toast(`เพิ่ม ${currentPkg.name} เข้าตะกร้าแล้ว ✓`);
-  showScr('s-menu');
+  closePkgSheet();
 }
 
 // ── เซ็ต/คอร์ส/บันเดิล (groups) — ลูกค้าเลือกตามกลุ่ม ──
@@ -1243,7 +1256,7 @@ function addGroupedPkgToCart(){
   });
   saveCart(); updateCartUI();
   toast(`เพิ่ม ${currentPkg.name} เข้าตะกร้าแล้ว ✓`);
-  showScr('s-menu');
+  closePkgSheet();
 }
 
 function removePkgFromCart(id) {
@@ -1586,6 +1599,7 @@ function showScr(id) {
   document.querySelectorAll('.scr').forEach(s => s.classList.remove('on'));
   document.getElementById(id).classList.add('on');
   var bd=document.getElementById('mp-backdrop'); if(bd) bd.classList.remove('on');
+  var pb=document.getElementById('pkg-backdrop'); if(pb) pb.classList.remove('on');
   window.scrollTo(0,0);
 }
 
