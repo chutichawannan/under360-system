@@ -1147,6 +1147,7 @@ function pkgSurcharge(sku){
 }
 function pkgGroupEligible(g){
   if(g.kind==='list') return (g.skus||[]).map(code=>menuItems.find(m=>m.code===code)).filter(Boolean);
+  if(g.kind==='multicat'){ const cs=g.categories||[]; return menuItems.filter(m => cs.includes(m.category)); } // รวมหลายหมวด count เดียว
   return menuItems.filter(m => m.category === g.category);
 }
 function pkgGroupQtySum(gi){
