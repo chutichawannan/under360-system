@@ -138,8 +138,9 @@ GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
 
 **🔴 ต้องสร้าง — OH "set/course builder" (นัทขอ, ยังไม่มี):** ให้แอดมิน "กำหนดเองได้เลยว่าจะขายอะไร ตั้งชื่อเซ็ต ตั้งราคาเซ็ต แล้วคลิกสินค้าใส่เข้าเซ็ตได้เลย" — รองรับทั้ง (1) คอร์สสต็อค multi-round + ลูกค้าเลือกวันส่ง (2) บันเดิลผสมราคาเหมา · เป้า **"กินลูกค้าทุกความต้องการ"** (บางคนไม่สะดวก จ/พ/ศ อยากเลือกเมนู/ไซส์เอง)
   - ✅ **v1 ฝั่งแอดมินสร้างแล้ว** (commit `9ae4607`, รอรัน `scripts/sql_package_sets.sql`): DB Package editor มีส่วน "🧩 กลุ่มการเลือก" — ตั้งกลุ่มได้กี่กลุ่มก็ได้ (เลือกตามหมวด N กล่อง / เจาะจงรายเมนู) + ราคาเหมา (base_price) + `delivery_rounds` + `flexible_delivery` (เลือกวันเอง) · surcharge ใช้ `package_items.extra_price` เดิม · เก็บ `packages.groups` (jsonb) · capability-check ซ่อน UI ถ้ายังไม่รัน SQL
-  - 🟡 **LIFF v1 สร้างแล้ว** (commit `db88de5`): `openPackage` ตรวจ groups → `renderPkgSelectGrouped` ลูกค้าเลือกตามกลุ่ม (หมวด/รายเมนู) + surcharge (`package_items.extra_price`) + ราคาเหมา → เข้าตะกร้า (type `package`) · ทางเดิม pick-N ไม่กระทบ (แยก branch)
-  - 🔴 **ยังไม่ทำ (สเต็ปถัดไป):** **multi-round delivery split** — v1 ส่งรอบเดียวผ่าน date picker สต็อกเดิม (เลือกวันได้) · เซ็ตที่ตั้ง `delivery_rounds>1` ยังไม่แบ่งส่งจริง (เก็บค่าในตะกร้าแล้ว รอสร้าง mp_deliveries-style สำหรับคอร์สสต็อค + เลือกวันแต่ละรอบ) · **นัทเทสเซ็ตรอบเดียว/บันเดิลก่อนได้**
+  - ✅ **แอดมิน builder ครบ** (u0.4.24): กลุ่มการเลือก (ตามหมวด/เจาะจงเมนูจาก dropdown+chips) + `count` ต่อกลุ่ม + **`allow_repeat` (🔁 กดซ้ำ) ต่อกลุ่ม** + เตือนถ้า count เกินเมนูออนไลน์ในหมวด + ราคาเหมา + `delivery_rounds`/`flexible_delivery`
+  - ✅ **LIFF ลูกค้าสั่งเซ็ต v1** (u0.4.24): `renderPkgSelectGrouped` เป็น **popup sheet** (เหมือน Meal Plan, `#pkg-backdrop`+`#s-pkg-select.on`) · เลือกตามกลุ่ม · `allow_repeat=true`→ปุ่ม **+/- (qty)** · false→ติ๊กเมนูละ 1 · surcharge (`package_items.extra_price`, ปุ่ม +40) · ราคา=base+Σ(qty×surcharge) · โชว์ **subcode** (รหัสตัดตัวอักษรนำหน้า เหมือน KQ) · cart type `package` แตกเป็นกล่องตาม qty · ทางเดิม pick-N ไม่กระทบ (แยก branch)
+  - 🔴 **ยังไม่ทำ (ก้อนสุดท้าย workstream 1):** **multi-round delivery split** — v1 ส่งรอบเดียวผ่าน date picker สต็อกเดิม (เลือกวันได้) · เซ็ตที่ตั้ง `delivery_rounds>1` เก็บค่าในตะกร้าแล้วแต่ยังไม่แบ่งส่งจริง (รอสร้าง mp_deliveries-style + เลือกวันแต่ละรอบ)
 
 **กระทบอะไร (ต้องแก้ตามความเข้าใจใหม่ — จัดลำดับ ไม่ทำรวดเดียว):**
 - **เว็บ/บล็อค:** ✅ WS2 เสร็จ (commit `f65f033`) — index card + goal switcher เพิ่มคอร์ส/เซ็ตเลือกเมนู+วันรับเอง (สต็อค) · mealplan แก้ Meal Plan ส่ง จ/พ/ศ (เดิมเขียน จันทร์–เสาร์ ผิด) · บทความ `high-protein-meal-plan` แก้ conflation แล้ว + published (บล็อคครบ 20/20 published) · เหลือ: เว็บยังไม่มี flow สั่งเซ็ตจริง (รอ LIFF side)
@@ -314,7 +315,10 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚀 Current Version: u0.4.23 + เว็บสาธารณะใหม่ live (m0.2) — ✅ push แล้ว
+## 🚀 Current Version: u0.4.24 (OH set/course builder ครบวงจร v1) + เว็บ live (m0.2) — ✅ push แล้ว
+
+> **13 ก.ค. 2026 — OH set/course builder v1 (ตอบ requirement "กินลูกค้าทุกความต้องการ"):** แอดมินสร้างเซ็ต/คอร์ส/บันเดิลเองในหน้า DB (กลุ่มการเลือก + กดซ้ำได้ + ราคาเหมา + แบ่งรอบส่ง/เลือกวัน) → ลูกค้าสั่งใน LIFF (popup + ปุ่ม +/- + subcode) · เหลือ multi-round delivery split (ก้อนสุดท้าย) · **แก้ความเข้าใจใหญ่: 2 แกนการผลิต (ทำสด vs ทำสต็อค) — ดูหัวข้อ "⚠️ 2 แกนการผลิต"** · เว็บ/บล็อค copy ปรับให้ครอบคลุมคอร์สสต็อก (WS2)
+> **🔀 ช่วงนี้นัทรัน 2 session ขนาน:** **u-track** (แชทนี้ — โค้ดหลังบ้าน `main_database_v2`/`liff_*`/OH/KQ/HE + ดูแล CLAUDE.md) · **m-track** (`web/`, `report.html`, blog, รูป, CTA — เขียน `MKT_HANDOFF.md` มาให้ merge) · กติกากันทับ: add เฉพาะไฟล์ตัวเอง (ห้าม `git add -A`) + pull ก่อน push ทุกครั้ง
 
 > **12 ก.ค. 2026 — เคลียร์ handoff Step 1–4 รอบเดียว (ทุกงานเลนโค้ดที่ทำแทนนัทได้):**
 > - **Step 1/1.5 (m-track):** เว็บสาธารณะใหม่ deploy แล้วที่ `under360-system.vercel.app/web/` (index/mealplan/blog — เทสผ่าน desktop, render + goal switcher + ไม่มี console error) · web_events tracking (pageview+cta_click) ทุกหน้า · Web Dashboard ต่อใน OH sidebar
@@ -356,6 +360,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | v0.4.22 | **KQ — งานสุดท้ายก่อน beta test:** วันที่สั่ง/ส่งในการ์ด + ปุ่ม "↩ ยกเลิก" ให้ "ส่งแล้ว" (Meal Plan) + **ระบบ log ทุกครั้งที่กดปุ่มสถานะ** + ปุ่ม "👋 ตั้งชื่อ" | `f2293ef` |
 | v0.4.23 | **Step 4 งานโค้ดค้าง:** LIFF Meal Plan cutoff → 8:30 น. ของวันส่ง (`CUTOFF_HOUR=18` เดิมสำหรับสต็อก + `MP_CUTOFF_HOUR/MIN=8/30` ใหม่, `renderDatePick` แยก startOffset ตาม isMeal, offset 0=วันนี้ได้ถ้าก่อน 8:30 + ตรง จ/พ/ศ) + DB `exportMenuFiles()` ปุ่ม "⬇ Export เมนู" โหลด CSV(BOM)/JSON | `e07fe3b` |
 | m0.2 (web) | **Step 1/1.5/2 (m-track):** เว็บใหม่ /web live (Vercel) + web_events tracking ทุกหน้า + Web Dashboard ใน OH + blog 20 บทความ (`web/import_blog.html`) | `1f69381` |
+| u0.4.24 | **OH set/course builder ครบวงจร v1** — แอดมินตั้งเซ็ต/คอร์ส/บันเดิล (กลุ่มการเลือก หมวด/รายเมนู + กดซ้ำได้ + ราคาเหมา + แบ่งรอบ/เลือกวัน) → ลูกค้าสั่งใน LIFF (popup sheet + ปุ่ม +/- qty + surcharge + subcode) · เหลือ multi-round delivery split · SQL: `scripts/sql_package_sets.sql` | `9ae4607`→`0517fcd` |
 
 *หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น ใช้ prefix `u` ตามระบบเวอร์ชัน 4 แทร็คใหม่
 
