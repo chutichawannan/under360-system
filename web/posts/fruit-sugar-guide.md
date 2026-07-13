@@ -3,7 +3,7 @@ slug: fruit-sugar-guide
 title: เลือกทานผลไม้ยังไงไม่ให้อ้วน!
 excerpt: กินผลไม้แทนข้าวเย็น = ความเชื่อผิดๆ ที่ทำให้โยโย่ มารู้จักน้ำตาลฟรุกโตส และวิธีเลือกผลไม้หวานน้อยให้ถูกหลัก
 created_at: 2017-03-12
-cover_url: https://static.wixstatic.com/media/9bfc29_db34181591ac47c4b817d89f1c455d3c~mv2.jpg/v1/fill/w_1000,h_663,al_c,q_85/9bfc29_db34181591ac47c4b817d89f1c455d3c~mv2.jpg
+cover_url: img/img27.jpg
 tags: ลดความอ้วน, ผลไม้
 author: พลอย
 source: https://www.360foodbox.com/single-post/howtopickthebestfruits
