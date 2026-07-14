@@ -825,7 +825,7 @@ Referral program (candidate เด่นสุด — ต่อกับ points/
 - **งานที่ agent ทำแทนได้** = เสนอ delegate เสมอ
 - **คอนเทนต์แบรนด์:** ไม่โม้ว่าดีที่สุด — ให้ความรู้ก่อนแล้วแสดงว่าเราตอบโจทย์ · โปรโมท HP+LC คู่เสมอ · ห้ามดิสแช่แข็ง · ห้ามเขียน "เลือกเวลาส่งได้"
 - **Commit message** = ภาษาไทยสั้นๆ เช่น `เพิ่ม Package flow + Meal Plan flow v0.3.2-3`
-- **ทุก session** = อ่าน CLAUDE.md ก่อนเสมอ (ไฟล์นี้คือผลรวมล่าสุดของ MASTERNOTE+HISTORY — ถ้านัทส่งไฟล์ MASTERNOTE/HISTORY ใหม่มาอีก ให้ทำ merge แบบเดียวกับ 12 ก.ค. รอบนี้)
+- **อัปเดต HISTORY ทุกแทร็ค (บังคับ)** = ทุก session ที่มี milestone/decision ของแทร็คไหน (u/m/a/doc) → จดลงตาราง Timeline ของแทร็คนั้นใน `UNDER360_HISTORY.md` + bump เลขเวอร์ชัน + เขียน changelog ท้าย CLAUDE.md — **ห้ามจดแค่แทร็คที่กำลังทำ ต้องเก็บครบทุกแทร็คที่ขยับ** (a-track spec-only ก็นับ เช่น `a0.2-spec`) · Claude เคาะเลขเอง เรียก skill `under360-masternote` ตอนปิด session
 
 ---
 
