@@ -46,6 +46,12 @@
 - 🤖 **[delegate → น้องเตียง]** จัดการรูปปก blog ในอนาคต: เลือก/ย่อ/อัปโหลด Storage/ลิงก์ cover_url ให้อัตโนมัติ (ตอนนี้ทำมือ + มีปุ่ม "วิธีอัปรูป" ใน blog_admin ให้แอดมินทำเองได้)
 - 📚 **บทความเก่า Wix ~44 ตัวที่ยังไม่ย้าย** (จาก sitemap 65 − ย้ายแล้ว 21): หลายอันเป็น evergreen มีค่า SEO (glutenfree, ketogenicdiet, drinkingwater, durians ฯลฯ) บางอันเก่า/นอก positioning — **รีวิว+ย้ายเฉพาะตัวมีค่า** เป็นคอนเทนต์เพิ่ม (งานเลนคอนเทนต์ ทำได้เมื่อนัทพร้อม)
 
+## ⏰ ทวงนัท (pending)
+- **[รอบหน้า] harvest keyword จาก Wix** — นัทจะแคป Top Queries (Home → Search Performance on Google) มาให้ Claude ทำแผน keyword/คอนเทนต์ (นัทบอก "ทำพรุ่งนี้ ทวงด้วย")
+
+## 🔄 กำลังรัน (background workflow)
+- **migrate-wix-blog** (Run `wf_a87f65d2-07c`) — ย้าย ~42 บทความเก่า Wix verbatim · เสร็จแล้ว Claude เอาเข้า import_blog (published=false) → นัท import + รีวิว · **ยังไม่ปรับคอนเทนต์** (นัทเลือกย้ายก่อน ค่อยให้ agent รีวิวแก้ทีหลังถ้าจำเป็น)
+
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
 - **13 ก.ค.** ✅ blog บทความคอร์สอาหารคลีน (push `a286058`) · ✅ localize รูป Wix 28 รูป → web/img (push `8ecc389`) · ✅ รัน sql_blog_posts + import 21 บทความเข้า DB (โชว์ 14 · draft 7) · ✅ เช็คโดเมน (จด Wix, ชี้ DNS ไม่ต้องโอน)
