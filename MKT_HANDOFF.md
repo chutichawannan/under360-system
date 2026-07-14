@@ -42,6 +42,7 @@
 - สำรวจฟีเจอร์ Wix ที่อาจช่วยการขาย ก่อนทิ้ง (Analytics/Google Search queries, Inbox, Customers & Leads, Automations, Marketing)
 - **ดึงข้อมูลออกก่อนปิด:** Google Search top queries (ทองคำ SEO), รายชื่อ customers/leads, ข้อความ Inbox (มี 50 ค้าง — เช็คว่ามีลูกค้ารอตอบไหม)
 - แผน redirect map: ทุก URL บทความเก่า Wix → slug ใหม่ (มี `web/posts/_MANIFEST.md` เป็นฐาน)
+- 🎨 **[เฟสเค้นรายละเอียดเว็บ — ทำทีหลัง ไม่ใช่ตอนนี้]** blog list: view toggle "รูปด้านข้าง" (list view) สลับกับการ์ดปกบน · นัทอยากได้แต่ยืนยันเองว่าเป็นเฟส polish หลังเร่งมาเก็ตติ้ง/ย้าย Wix เสร็จ
 
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
