@@ -94,8 +94,18 @@ button:disabled{opacity:.5;cursor:not-allowed}
           <div class="hint">อังกฤษตัวเล็ก คั่นด้วย - เท่านั้น · ห้ามซ้ำกับบทความอื่น</div>
         </div>
         <div>
-          <label>ลิงก์รูปหน้าปก (ไม่บังคับ)</label>
+          <label>ลิงก์รูปหน้าปก (ไม่บังคับ)
+            <button type="button" onclick="var g=document.getElementById('coverGuide');g.style.display=g.style.display==='block'?'none':'block'" style="font-family:inherit;font-size:.78rem;background:#e8f0e8;border:1px solid rgba(20,56,35,.2);border-radius:6px;padding:2px 8px;cursor:pointer;color:#143823;margin-left:6px">❓ วิธีอัปรูป</button>
+          </label>
+          <div id="coverGuide" style="display:none;background:#f3f7f2;border:1px solid rgba(20,56,35,.15);border-radius:10px;padding:12px 14px;margin:6px 0;font-size:.86rem;line-height:1.75;color:#143823">
+            <b>อัปรูปปกเอง 4 ขั้น:</b><br>
+            1. เปิด <b>Supabase → Storage → bucket <code>card-images</code></b><br>
+            2. กด <b>Upload</b> เลือกรูปจากเครื่อง<br>
+            3. คลิกไฟล์ที่อัปแล้ว → <b>Copy URL</b><br>
+            4. วางลิงก์ในช่องด้านล่าง → เห็นรูป preview → กด <b>บันทึก</b>
+          </div>
           <input type="text" id="fCover" placeholder="https://... หรือ img/covers/xxx.jpg" oninput="updateCoverPreview()">
+          <div class="hint">📐 แนะนำ: JPG แนวนอน กว้าง ~1200px · <b>ไม่เกิน 500 KB</b> (ใหญ่ไปเว็บโหลดช้า)</div>
           <img id="fCoverPreview" alt="ตัวอย่างรูปหน้าปก" style="display:none;margin-top:8px;width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid rgba(20,56,35,.15)">
           <div id="fCoverErr" class="hint" style="display:none;color:#c0392b">⚠️ โหลดรูปนี้ไม่ได้ — เช็คลิงก์อีกที</div>
         </div>
