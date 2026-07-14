@@ -48,6 +48,17 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
 .spark div{flex:1;background:rgba(46,125,67,.35);border-radius:3px 3px 0 0;min-height:2px}
 .spark div.today{background:var(--green)}
 .hint{font-size:.8rem;color:var(--muted);margin-top:10px}
+.live h2{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.livedot{width:10px;height:10px;border-radius:50%;background:var(--chili);flex:none;animation:pulse 1.4s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(214,75,42,.5)}70%{box-shadow:0 0 0 8px rgba(214,75,42,0)}100%{box-shadow:0 0 0 0 rgba(214,75,42,0)}}
+.livefeed{display:flex;flex-direction:column;gap:2px;max-height:340px;overflow-y:auto}
+.liverow{display:grid;grid-template-columns:66px 130px 1fr auto;gap:10px;align-items:center;padding:9px 8px;border-radius:8px;font-size:.9rem}
+.liverow:nth-child(odd){background:rgba(20,56,35,.03)}
+.liverow .lt{font-family:'Prompt';font-weight:600;color:var(--deep);font-size:.85rem}
+.liverow .ls{display:flex;align-items:center;gap:7px;color:var(--ink)}
+.liverow .lp{color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.liverow .lago{color:var(--muted);font-size:.78rem;text-align:right;white-space:nowrap}
+@media(max-width:640px){.liverow{grid-template-columns:58px 1fr}.liverow .lp,.liverow .lago{grid-column:2}}
 </style>
 </head>
 <body>
@@ -69,6 +80,11 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
     <div class="kpi cta"><b id="kCta">–</b><span>กดปุ่มสั่งใน LINE</span></div>
     <div class="kpi rate"><b id="kRate">–</b><span>อัตรากดปุ่ม (CTA rate)</span></div>
     <div class="kpi"><b id="kTop">–</b><span>ช่องทางที่พาคนมามากสุด</span></div>
+  </div>
+
+  <div class="card live">
+    <h2><span class="livedot"></span> คลิก "สั่งใน LINE" เรียลไทม์ <span id="liveUpd" class="hint" style="margin:0;font-weight:400"></span></h2>
+    <div class="livefeed" id="liveFeed"><div class="empty">กำลังโหลด…</div></div>
   </div>
 
   <div class="card">
@@ -198,7 +214,40 @@ async function load(){
   document.getElementById('sparkLabel').textContent =
     keys.length ? `${keys[0]} → ${keys[keys.length-1]} · สูงสุด ${maxV} ครั้ง/วัน` : '';
 }
+
+function fmtTime(iso){ return new Date(iso).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function timeAgo(iso){
+  const s = Math.floor((Date.now()-new Date(iso))/1000);
+  if(s<60) return 'เมื่อสักครู่';
+  if(s<3600) return 'เมื่อ '+Math.floor(s/60)+' นาทีที่แล้ว';
+  if(s<86400) return 'เมื่อ '+Math.floor(s/3600)+' ชม.ที่แล้ว';
+  return new Date(iso).toLocaleDateString('th-TH');
+}
+async function loadLive(){
+  try{
+    const { data, error } = await sb.from('web_events')
+      .select('page,utm_source,utm_campaign,created_at')
+      .eq('event','cta_click').order('created_at',{ascending:false}).limit(25);
+    if(error) throw error;
+    const rows = data||[];
+    document.getElementById('liveFeed').innerHTML = rows.length ? rows.map(r=>{
+      const color = SRC_COLOR[(r.utm_source||'').toLowerCase()]||'#9AA894';
+      return `<div class="liverow">
+        <span class="lt">${fmtTime(r.created_at)}</span>
+        <span class="ls"><span class="dot" style="background:${color}"></span>${esc(srcLabel(r.utm_source))}</span>
+        <span class="lp">${esc(r.page||'')}${r.utm_campaign?' · '+esc(r.utm_campaign):''}</span>
+        <span class="lago">${timeAgo(r.created_at)}</span>
+      </div>`;
+    }).join('') : '<div class="empty">ยังไม่มีคลิก — เมื่อมีคนกดปุ่ม “สั่งใน LINE” จะโชว์ที่นี่ทันที</div>';
+    document.getElementById('liveUpd').textContent = '· อัปเดตล่าสุด '+fmtTime(new Date().toISOString());
+  }catch(e){
+    document.getElementById('liveFeed').innerHTML = '<div class="err">อ่านข้อมูลไม่ได้ — เช็ค web_events</div>';
+  }
+}
+
 load();
+loadLive();
+setInterval(loadLive, 10000);
 </script>
 </body>
 </html>
