@@ -38,6 +38,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 .post-card h2{font-size:1.15rem;color:var(--deep)}
 .post-card p{color:var(--muted);font-size:.95rem;margin-top:6px}
 .post-card .meta{font-size:.82rem;color:var(--muted);margin-top:10px;font-family:'Prompt'}
+.post-card .post-cover{width:100%;height:190px;object-fit:cover;border-radius:12px;margin-bottom:16px;display:block}
 
 /* article */
 article{padding:36px 0 72px;display:none}
@@ -158,7 +159,7 @@ async function showList(){
   const box = document.getElementById('postList');
   try{
     const { data, error } = await sb.from('blog_posts')
-      .select('slug,title,excerpt,created_at').eq('published',true)
+      .select('slug,title,excerpt,cover_url,created_at').eq('published',true)
       .order('created_at',{ascending:false}).limit(50);
     if(error) throw error;
     if(!data || !data.length){
@@ -167,6 +168,7 @@ async function showList(){
     }
     box.innerHTML = data.map(p=>`
       <a class="post-card" href="blog.html?post=${encodeURIComponent(p.slug)}">
+        ${p.cover_url ? `<img class="post-cover" src="${esc(p.cover_url)}" alt="${esc(p.title)}" loading="lazy">` : ''}
         <h2>${esc(p.title)}</h2>
         ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ''}
         <div class="meta">${fmtDate(p.created_at)}</div>
