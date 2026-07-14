@@ -482,7 +482,7 @@ const MP_SETS = [
 | u0.3.5 | OH Admin Tools | ✅ ทำครบตามที่วางแผนไว้ |
 | u0.4.22 | KQ (หน้าสุดท้ายก่อน beta) | ✅ ลงแล้ว |
 | — | **Beta test แบบ parallel กับ Hato** — แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน เพื่อเจอบั๊กก่อนใช้จริง | ⏳ รอเริ่ม |
-| — | Migrate ข้อมูลลูกค้าเก่า | ⏳ หลัง beta — ดู Backlog เรื่อง Loyalty tier ที่รอ migrate นี้อยู่ |
+| — | Migrate ข้อมูลลูกค้าเก่า + **ประวัติสั่งซื้อ** | ⏳ หลัง beta — **นัทจะรวบรวมไฟล์เอง 10 ปี (รวม pre-Hato)** มาให้ import เข้า `customers`/`orders`/`order_items` · ยังไม่มีไฟล์/สเปก/field mapping — เมื่อไฟล์มา = งานเลนโค้ด (เขียน import script แบบเดียวกับ blog import) · ปลดล็อก Loyalty tier + น้องนิว (ประวัติเมนูลูกค้าเก่า) + CRM win-back |
 | — | Facebook Chatbot (`api/webhook.js` configure) | ⏳ หลัง migrate |
 | — | 🆕 เว็บ Vercel 5 หน้า + ย้ายโดเมน (Marketing กลุ่ม 3) | ⏳ ตอนกลับถึงคอม — ดู "🌐 เว็บใหม่" |
 | v0.4 | **AI Agents** — นิว→เก่ง→ฟ้า→เตียง→เอิธ (ดูหัวข้อ 🤖 ด้านล่าง) | ⏳ ยังไม่เริ่มสักตัว (น้องนิว spec locked แล้ว) |
