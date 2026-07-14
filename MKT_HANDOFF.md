@@ -49,8 +49,10 @@
 ## ⏰ ทวงนัท (pending)
 - **[รอบหน้า] harvest keyword จาก Wix** — นัทจะแคป Top Queries (Home → Search Performance on Google) มาให้ Claude ทำแผน keyword/คอนเทนต์ (นัทบอก "ทำพรุ่งนี้ ทวงด้วย")
 
-## 🔄 กำลังรัน (background workflow)
-- **migrate-wix-blog** (Run `wf_a87f65d2-07c`) — ย้าย ~42 บทความเก่า Wix verbatim · เสร็จแล้ว Claude เอาเข้า import_blog (published=false) → นัท import + รีวิว · **ยังไม่ปรับคอนเทนต์** (นัทเลือกย้ายก่อน ค่อยให้ agent รีวิวแก้ทีหลังถ้าจำเป็น)
+## ✅ workflow เสร็จ — ย้ายบทความเก่า Wix
+- **migrate-wix-blog** ดึงสำเร็จ 40/41 บทความ (1 error) → เข้า `import_blog.html` แล้ว (commit `e424408`) · **รวม 61 บทความ** (เดิม 21 + ใหม่ 40) · ทั้ง 40 ใหม่ = `published:false` คงวันที่เดิม · 21 ตัว flag ราคา/โปรเก่า
+- 🔴 **นัทต้องทำ:** เปิด `web/import_blog.html` → กด **Import** อีกครั้ง (บทความใหม่เข้า DB เป็น draft) → รีวิว+publish ใน`blog_admin.html`
+- 🟡 **งานต่อก่อน cutover Wix:** localize รูป cover + รูปในเนื้อหาของ 40 บทความใหม่ (ยัง hotlink wixstatic อยู่) — ทำก่อนปิด Wix ไม่งั้นรูปหาย
 
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
