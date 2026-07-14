@@ -95,7 +95,9 @@ button:disabled{opacity:.5;cursor:not-allowed}
         </div>
         <div>
           <label>ลิงก์รูปหน้าปก (ไม่บังคับ)</label>
-          <input type="text" id="fCover" placeholder="https://...">
+          <input type="text" id="fCover" placeholder="https://... หรือ img/covers/xxx.jpg" oninput="updateCoverPreview()">
+          <img id="fCoverPreview" alt="ตัวอย่างรูปหน้าปก" style="display:none;margin-top:8px;width:100%;max-height:180px;object-fit:cover;border-radius:10px;border:1px solid rgba(20,56,35,.15)">
+          <div id="fCoverErr" class="hint" style="display:none;color:#c0392b">⚠️ โหลดรูปนี้ไม่ได้ — เช็คลิงก์อีกที</div>
         </div>
       </div>
 
@@ -159,6 +161,17 @@ function newPost(){
   loadList();
 }
 
+function updateCoverPreview(){
+  const url = document.getElementById('fCover').value.trim();
+  const img = document.getElementById('fCoverPreview');
+  const err = document.getElementById('fCoverErr');
+  err.style.display = 'none';
+  if(!url){ img.style.display='none'; img.removeAttribute('src'); return; }
+  img.onload = ()=>{ img.style.display='block'; err.style.display='none'; };
+  img.onerror = ()=>{ img.style.display='none'; err.style.display='block'; };
+  img.src = url;
+}
+
 async function editPost(id){
   const { data, error } = await sb.from('blog_posts').select('*').eq('id', id).single();
   if(error || !data){ setStatus('โหลดบทความไม่สำเร็จ','err'); return; }
@@ -167,6 +180,7 @@ async function editPost(id){
   document.getElementById('fTitle').value = data.title || '';
   document.getElementById('fSlug').value = data.slug || '';
   document.getElementById('fCover').value = data.cover_url || '';
+  updateCoverPreview();
   document.getElementById('fExcerpt').value = data.excerpt || '';
   document.getElementById('fContent').value = data.content_md || '';
   document.getElementById('fPublished').checked = !!data.published;
