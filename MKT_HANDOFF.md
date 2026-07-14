@@ -46,6 +46,10 @@
 - 🤖 **[delegate → น้องเตียง]** จัดการรูปปก blog ในอนาคต: เลือก/ย่อ/อัปโหลด Storage/ลิงก์ cover_url ให้อัตโนมัติ (ตอนนี้ทำมือ + มีปุ่ม "วิธีอัปรูป" ใน blog_admin ให้แอดมินทำเองได้)
 - 📚 **บทความเก่า Wix ~44 ตัวที่ยังไม่ย้าย** (จาก sitemap 65 − ย้ายแล้ว 21): หลายอันเป็น evergreen มีค่า SEO (glutenfree, ketogenicdiet, drinkingwater, durians ฯลฯ) บางอันเก่า/นอก positioning — **รีวิว+ย้ายเฉพาะตัวมีค่า** เป็นคอนเทนต์เพิ่ม (งานเลนคอนเทนต์ ทำได้เมื่อนัทพร้อม)
 
+## 📌 Backlog เพิ่ม (15 ก.ค.)
+- **[เฟสหลัง] รีวิว 21 บทความเก่าที่ flag ราคา/โปร** — ตอนนี้ publish ไปแล้วเพื่อเอา traffic (นัทตัดสินใจ) แต่เนื้อห��มีราคา/โปรเก่า/เมนูเลิกขาย → กลับมาแก้ให้ตรงปัจจุบัน (ดู review_note ในผล workflow / เนื้อหาบทความ)
+- **[item 3] real-time click tracking + attribution** — มี `web_events` + `cta_click` (timestamp) แล้ว · ต้องทำเพิ่ม: (1) จอ real-time ดูคลิกสด (ต่อยอด `web_dashboard.html`) (2) ปิดลูป click→order ผ่าน LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order (u-track, หลัง CTA→LIFF) · cookies: ยังไม่ต้อง (ใช้ UTM+localStorage) — ต้องมี consent banner ก็ต่อเมื่อใส่ FB/Google pixel
+
 ## ⏰ ทวงนัท (pending)
 - **[รอบหน้า] harvest keyword จาก Wix** — นัทจะแคป Top Queries (Home → Search Performance on Google) มาให้ Claude ทำแผน keyword/คอนเทนต์ (นัทบอก "ทำพรุ่งนี้ ทวงด้วย")
 
