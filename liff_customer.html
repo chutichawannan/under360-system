@@ -1269,7 +1269,7 @@ function addGroupedPkgToCart(){
 
 function removePkgFromCart(id) {
   cart = cart.filter(c => c.id !== id);
-  saveCart(); updateCartUI(); renderCart();
+  saveCart(); updateCartUI(); renderCart(); syncCartDeps();
 }
 
 
@@ -1810,7 +1810,14 @@ function chgQty(id, delta) {
   if (cart[idx].qty <= 0) cart.splice(idx,1);
   saveCart(); renderMenu(); updateCartUI();
   // re-render if cart screen is visible
-  if (document.getElementById('s-cart').classList.contains('on')) renderCart();
+  if (document.getElementById('s-cart').classList.contains('on')) { renderCart(); syncCartDeps(); }
+}
+// หลังตะกร้าเปลี่ยนบนหน้า s-cart: date/time/round picker อาจต้องปลดล็อก
+// (เช่น ลบ Meal Plan ออก → วันที่ต้องเปิดให้เลือกทุกวัน ไม่บล็อก จ/พ/ศ อีก)
+function syncCartDeps(){
+  if(document.getElementById('s-cart') && document.getElementById('s-cart').classList.contains('on')){
+    renderDatePick(); renderTimePick(); renderRoundSplit();
+  }
 }
 
 function saveCart() { localStorage.setItem('u360_cart', JSON.stringify(cart)); }
@@ -1859,7 +1866,7 @@ function renderCart() {
           </div>
           <div class="citem-sub" style="color:#1F4D3A;font-weight:700;">฿${c.price.toLocaleString()}</div>
         </div>
-        <button onclick="cart=cart.filter(x=>x.id!=='${c.id}');saveCart();renderCart();updateCartUI();"
+        <button onclick="cart=cart.filter(x=>x.id!=='${c.id}');saveCart();renderCart();updateCartUI();syncCartDeps();"
           style="background:#FDF0ED;color:#C9573F;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;flex-shrink:0;">
           ลบ
         </button>

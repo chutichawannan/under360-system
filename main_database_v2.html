@@ -471,6 +471,18 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
   .panel-actions button{flex:1;min-width:110px;}
 }
 
+/* แถวเมนู: บังคับ "ชื่อเมนูอยู่บรรทัดเต็มของตัวเอง" ครอบถึง ~860px (มือถือ+tablet เล็ก)
+   กันเคสจอกว้างกว่า 520px แล้ว media compact ไม่ทำงาน → ชื่อถูกบีบเป็นคอลัมน์แคบ ตัดทีละคำ (regression) */
+@media (max-width:860px){
+  .recipe-row{flex-wrap:wrap;}
+  .row-toggles{order:1;flex-shrink:0;}
+  .code-col{order:2;flex-shrink:0;}
+  .stock-ctrl,.online-toggle-btn,.meta,.expand-btn{order:3;}
+  .name-wrap{order:10;flex:1 1 100%;width:100%;min-width:100%;}
+  /* ชื่อ PTT ที่ยังไม่ expand: 1-2 บรรทัดเต็มความกว้าง อ่านง่าย ไม่ตัดทีละคำ */
+  .ptt-group .card:not(.is-open) .name-line .name{white-space:normal;word-break:break-word;}
+}
+
 
 /* ── Category Tabs (DB page) ── */
 .cat-tab-strip{overflow-x:auto;display:flex;align-items:center;gap:6px;padding:8px 14px;
@@ -1986,12 +1998,13 @@ function renderPackageEditor(pkg){
   });
 
   // ── 🧩 กลุ่มการเลือก + การส่ง (เซ็ต/คอร์ส/บันเดิล) ──
-  const catOpts = (selKey) => (state.categories||[]).map(c =>
-    `<option value="${escapeHtml(c.key)}"${c.key===selKey?' selected':''}>${escapeHtml(c.label)}</option>`).join('');
-  const menuOpts = activeRecipes.filter(r=>r.code).map(r=>`<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} · ${escapeHtml(r.name)}</option>`).join('');
   const onlineInCat = (catKey) => (state.recipes||[]).filter(r=>r.status==='active'&&r.available_online&&(r.categories||[]).includes(catKey)).length;
+  // โชว์จำนวนเมนูออนไลน์ต่อหมวดใน dropdown → เห็น "(0)" ทันทีถ้าเลือกหมวดว่าง (กันเลือกผิดหมวดที่ลูกค้าจะเห็นเมนูไม่ครบ)
+  const catOpts = (selKey) => (state.categories||[]).map(c =>
+    `<option value="${escapeHtml(c.key)}"${c.key===selKey?' selected':''}>${escapeHtml(c.label)} (${onlineInCat(c.key)})</option>`).join('');
+  const menuOpts = activeRecipes.filter(r=>r.code).map(r=>`<option value="${escapeHtml(r.code)}">${escapeHtml(r.code)} · ${escapeHtml(r.name)}</option>`).join('');
   const catAddOpts = `<option value="">＋ เพิ่มหมวดเข้ากลุ่มนี้...</option>` + (state.categories||[]).map(c =>
-    `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)}</option>`).join('');
+    `<option value="${escapeHtml(c.key)}">${escapeHtml(c.label)} (${onlineInCat(c.key)})</option>`).join('');
   const groupRows = (state.editingGroups||[]).map((g,i) => {
     const isList = g.kind==='list';
     const isMulti = g.kind==='multicat';
@@ -2055,9 +2068,14 @@ function renderPackageEditor(pkg){
           ${['S','M','L'].map(s=>`<option value="${s}"${pkg.size===s?' selected':''}>${s}</option>`).join('')}
         </select>
       </div>
+      ${(state.editingGroups||[]).length ? `
+      <div class="field" style="display:none;"><input type="number" class="pkg-f-qty" value="${(state.editingGroups||[]).reduce((s,g)=>s+(g.count||1),0)}"></div>
+      <div class="field"><label>จำนวนกล่อง (นับจากกลุ่มอัตโนมัติ)</label>
+        <input type="number" value="${(state.editingGroups||[]).reduce((s,g)=>s+(g.count||1),0)}" disabled style="background:var(--surface-2);color:var(--ink-soft);" title="เซ็ตนี้มีกลุ่มการเลือกแล้ว — จำนวนกล่องนับจากผลรวม count ของทุกกลุ่ม (ลูกค้าเห็น 0/N ในหน้าเลือกอยู่แล้ว)">
+      </div>` : `
       <div class="field"><label>จำนวนกล่อง</label>
         <input type="number" class="pkg-f-qty" value="${pkg.qty}" min="1">
-      </div>
+      </div>`}
       <div class="field"><label>ราคาฐาน (฿)</label>
         <input type="number" class="pkg-f-price" value="${pkg.base_price}" min="0">
       </div>
