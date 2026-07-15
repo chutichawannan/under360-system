@@ -1481,11 +1481,30 @@ function cartWeekType() {
 // 🚀 INIT
 // ══════════════════════════════════════
 let hasUtensilColumn = false;
+
+// 📡 Live presence heartbeat — m-track dashboard นับคนเปิดแอป real-time
+const _presSid = 'liff_' + Math.random().toString(36).slice(2) + Date.now();
+let _presTimer = null;
+async function _pingPresence(){
+  try{ await sb.from('live_presence').upsert({ sid:_presSid, area:'liff', page:'liff_customer', last_seen:new Date().toISOString() }); }catch(e){}
+}
+function startPresence(){
+  const tick = ()=>{ if(document.visibilityState === 'visible') _pingPresence(); };
+  tick();                                    // ping ทันทีตอนเปิด
+  _presTimer = setInterval(tick, 15000);     // ทุก 15 วิ (ข้ามถ้าแท็บถูกพับ → ไม่เขียนทิ้ง)
+  document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') _pingPresence(); }); // กลับมาดู → ping ทันที
+}
+
 async function init() {
   // Init Supabase
   try {
     sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
   } catch(e) { showErr('ไม่สามารถเชื่อมต่อ database ได้'); return; }
+
+  // 📡 Live presence heartbeat (ให้ dashboard m-track นับคนเปิดแอป real-time)
+  // เบามาก: upsert ทุก 15 วิ + catch เงียบ (ตาราง live_presence ยังไม่รัน SQL ก็ไม่พัง)
+  // ปรับ: ping เฉพาะตอนแอปโชว์อยู่จริง — พับ/สลับแท็บ = หยุด (ลด write ทิ้ง + ตรงความจริง)
+  startPresence();
 
   // Init LIFF
   try {
