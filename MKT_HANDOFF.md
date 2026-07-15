@@ -64,6 +64,14 @@
 - verified สดผ่าน: web ping จริงเข้า + liff count เด้ง + หมดอายุ 30 วิทำงาน
 - 🔵 option ค้าง: เพิ่ม `line_uid` ใน presence เพื่อดู "ลูกค้าคนไหน" กำลังดู (ไม่ใช่แค่จำนวน) — u-track เติมให้ได้ แต่มี PII/PDPA ต้องชั่งใจก่อน · noti เข้ามือถือ (LINE) รอ LINE token
 
+## 🔭 Competitor watch — เพิ่มใหม่ (merge เข้า CLAUDE.md "Competitor Intelligence" + มอบ น้องเอิธ)
+**EasyHealth (eh!)** — `easyhealth.asia` · 🟠 **เฝ้าระวัง** (ยังไม่ชนตรง แต่ทับไลน์สูงมาก นัทประเมินว่าซักวันกระทบแน่)
+- **ทำไมต้องจับตา:** overlap เรือธงเราเต็มๆ — meal plans keto/low-carb เน้นโปรตีน+ไขมันดี · "Build Your Own" (จัดเมนูเอง) · "Easy plus" (น่าจะ subscription)
+- **จุดแข็งที่น่ากลัว (นัทชี้):** ① **มีแอปมือถือจริง** (iOS App Store + Google Play) ② **ยิงแอดดี + ภาพ/ดีไซน์สวย** ③ omnichannel — มีหน้าร้าน ("Find a store"/Locations) ④ **multi-language** (จับ expat/ต่างชาติ) ⑤ positioning "Gourmet Innovation" พรีเมียม
+- **ราคาอ้างอิง:** Keto Plan C = 3,499/5 วัน (~700/วัน = segment พรีเมียมกว่าเรา)
+- **งานให้ น้องเอิธ (เมื่อสร้างแล้ว):** เฝ้า ad ของเขา (angle/ภาพ) · ติดตามราคา+ฟีเจอร์ meal plan · ดูฟีเจอร์แอป (เผื่อเป็น benchmark ถ้าเราทำ Under360 Base) · จับ move ที่เริ่มชนกรุงเทพ/LC-HP ตรงๆ
+- *(อิงจากสกรีน 2 หน้าที่นัทส่ง: หน้า Meal plans + หน้าแอป/ขอ location — ถ้ามีข้อมูลเพิ่มจากหน้าอื่นบอกได้)*
+
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
 - **13 ก.ค.** ✅ blog บทความคอร์สอาหารคลีน (push `a286058`) · ✅ localize รูป Wix 28 รูป → web/img (push `8ecc389`) · ✅ รัน sql_blog_posts + import 21 บทความเข้า DB (โชว์ 14 · draft 7) · ✅ เช็คโดเมน (จด Wix, ชี้ DNS ไม่ต้องโอน)
