@@ -429,6 +429,11 @@ function track(event, page){
 }
 track('pageview','index');
 
+/* ═══ presence heartbeat — นับคนออนไลน์ real-time (fire-and-forget) ═══ */
+const _presSid = 'web_' + Math.random().toString(36).slice(2) + Date.now();
+function _pingPresence(){ try{ sb.from('live_presence').upsert({ sid:_presSid, area:'web', page:'index', last_seen:new Date().toISOString() }).then(()=>{},()=>{}); }catch(e){} }
+_pingPresence(); setInterval(_pingPresence, 15000);
+
 /* ═══ Order CTA + Google Ads conversion ═══ */
 function orderNow(el){
   track('cta_click','index');

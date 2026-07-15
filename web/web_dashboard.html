@@ -59,6 +59,8 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
 .liverow .lp{color:var(--muted);font-size:.82rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .liverow .lago{color:var(--muted);font-size:.78rem;text-align:right;white-space:nowrap}
 @media(max-width:640px){.liverow{grid-template-columns:58px 1fr}.liverow .lp,.liverow .lago{grid-column:2}}
+.live.flash{animation:flashbg 1s ease}
+@keyframes flashbg{0%{background:#FFF1DE}45%{background:#FFF1DE}100%{background:var(--paper)}}
 </style>
 </head>
 <body>
@@ -82,8 +84,9 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
     <div class="kpi"><b id="kTop">–</b><span>ช่องทางที่พาคนมามากสุด</span></div>
   </div>
 
-  <div class="card live">
+  <div class="card live" id="liveCard">
     <h2><span class="livedot"></span> คลิก "สั่งใน LINE" เรียลไทม์ <span id="liveUpd" class="hint" style="margin:0;font-weight:400"></span></h2>
+    <div id="presLine" class="hint" style="margin:0 0 12px;font-size:.9rem">กำลังเช็คคนออนไลน์…</div>
     <div class="livefeed" id="liveFeed"><div class="empty">กำลังโหลด…</div></div>
   </div>
 
@@ -230,6 +233,9 @@ async function loadLive(){
       .eq('event','cta_click').order('created_at',{ascending:false}).limit(25);
     if(error) throw error;
     const rows = data||[];
+    const newest = rows[0]?.created_at || null;
+    if(_lastClickTs && newest && newest > _lastClickTs) notifyNewClick();
+    if(newest) _lastClickTs = newest;
     document.getElementById('liveFeed').innerHTML = rows.length ? rows.map(r=>{
       const color = SRC_COLOR[(r.utm_source||'').toLowerCase()]||'#9AA894';
       return `<div class="liverow">
@@ -245,9 +251,27 @@ async function loadLive(){
   }
 }
 
+let _lastClickTs = null;
+function beep(){ try{ const A=window.AudioContext||window.webkitAudioContext; if(!A) return; const a=new A(); const o=a.createOscillator(), g=a.createGain(); o.connect(g); g.connect(a.destination); o.type='sine'; o.frequency.value=880; g.gain.value=0.08; o.start(); setTimeout(()=>{o.stop();a.close();},220);}catch(e){} }
+function notifyNewClick(){ beep(); const c=document.getElementById('liveCard'); if(c){ c.classList.remove('flash'); void c.offsetWidth; c.classList.add('flash'); } }
+
+async function loadPresence(){
+  try{
+    const since = new Date(Date.now()-30000).toISOString();
+    const { data, error } = await sb.from('live_presence').select('area,last_seen').gte('last_seen', since);
+    if(error) throw error;
+    const liff=(data||[]).filter(r=>r.area==='liff').length, web=(data||[]).filter(r=>r.area==='web').length;
+    document.getElementById('presLine').innerHTML = `🟢 ออนไลน์ตอนนี้: <b style="color:var(--line)">${liff}</b> ในแอปสั่งของ · <b style="color:var(--green)">${web}</b> ดูเว็บ`;
+  }catch(e){
+    document.getElementById('presLine').innerHTML = '<span style="color:var(--muted)">คนออนไลน์: ยังไม่พร้อม (รอรัน sql_live_presence.sql + LIFF heartbeat)</span>';
+  }
+}
+
 load();
 loadLive();
+loadPresence();
 setInterval(loadLive, 10000);
+setInterval(loadPresence, 12000);
 </script>
 </body>
 </html>
