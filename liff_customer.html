@@ -1216,7 +1216,7 @@ function renderPkgSelectGrouped(){
       const qy = sel[mi.code]||0;
       const isChk = qy>0;
       const sur=pkgSurcharge(mi.code);
-      const img=(mi.image_urls&&mi.image_urls[0])?`<img src="${mi.image_urls[0]}" onerror="imgFallback(this)" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;">`:`<div style="width:44px;height:44px;border-radius:8px;background:#E8F0EC;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🍱</div>`;
+      const img=(mi.image_urls&&mi.image_urls[0])?`<img src="${mi.image_urls[0]}" onerror="imgFallback(this)" onclick="event.stopPropagation();openItemLightbox('${mi.id}')" style="width:44px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0;cursor:zoom-in;">`:`<div style="width:44px;height:44px;border-radius:8px;background:#E8F0EC;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">🍱</div>`;
       const nameCol=`<div style="flex:1;min-width:0;">
           ${mi.code?`<div style="font-size:10px;color:#999;font-weight:600;margin-bottom:1px;font-family:monospace;">${h(subCode(mi.code))}</div>`:''}
           <div style="font-size:13px;font-weight:${isChk?'700':'500'};color:${isChk?'#1F4D3A':'#1A1A1A'};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${h(mi.name)}</div>
@@ -2016,8 +2016,12 @@ function renderRoundSplit(){
   const ms=multiRoundSets();
   const setName=ms.map(c=>c.name).join(', ');
   const totalBoxes=ms.reduce((s,c)=>s+((c.items||[]).length),0);
-  if(!setDeliverOnce){
-    for(let i=0;i<N-1;i++){ if(!extraRoundDates[i] && selDate) extraRoundDates[i]=defaultRoundDate(selDate,i+1); }
+  // วันแต่ละรอบต้องเพิ่มขึ้นเสมอ (รอบ r > รอบ r-1) — default = รอบก่อนหน้า +7 วัน · แก้ค่าที่ก่อน/เท่ารอบก่อนหน้าให้ถูก
+  if(!setDeliverOnce && selDate){
+    for(let i=0;i<N-1;i++){
+      const prev = i===0 ? selDate : extraRoundDates[i-1];
+      if(!extraRoundDates[i] || extraRoundDates[i] <= prev) extraRoundDates[i]=defaultRoundDate(prev,1);
+    }
     extraRoundDates.length=N-1;
   }
   if(head) head.textContent='📅 เลือกวันจัดส่ง — รอบ 1';
@@ -2034,10 +2038,15 @@ function renderRoundSplit(){
   if(setDeliverOnce){
     html+=`<div style="font-size:12px;color:#6B7280;padding:8px 2px 2px;line-height:1.4;">จะจัดส่งทั้งหมด ${totalBoxes} กล่องในวันเดียว ตามวันที่เลือกด้านบน (รอบ 1)</div>`;
   } else {
+    // มีสินค้าอื่นในตะกร้านอกเซ็ตแบ่งรอบ → บอกลูกค้าว่ารวบไปกับรอบ 1
+    const hasOther = cart.some(c => !(c.type==='package' && (c.delivery_rounds||1)>1));
     html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 2px;">รอบ 1${chunkPreview?` · ${chunkPreview[0]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— ส่งวันที่เลือกด้านบน (${selDate?fmtDate(selDate):'ยังไม่เลือก'})</span></div>`;
+    if(hasOther){
+      html+=`<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:6px 10px;margin:2px 2px 4px;line-height:1.4;">🛒 สินค้าอื่นในตะกร้า (นอกเซ็ต) จะจัดส่ง<b>รวมไปกับรอบที่ 1</b></div>`;
+    }
     for(let r=2;r<=N;r++){
       const idx=r-2;
-      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ</span></div>
+      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ (ต้องหลังรอบ ${r-1})</span></div>
         <div class="dscroll" id="rdpick-${idx}"></div>`;
     }
   }
@@ -2049,14 +2058,22 @@ function renderRoundDatePicker(idx){
   const el=document.getElementById('rdpick-'+idx); if(!el) return;
   const DAYS=['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  // วันของรอบนี้ต้อง "หลัง" วันของรอบก่อนหน้า (รอบ 1 = selDate) → วันก่อน/เท่ารอบก่อน = เทา กดไม่ได้
+  const prevDate = idx===0 ? selDate : extraRoundDates[idx-1];
   const base = selDate ? new Date(selDate+'T00:00:00') : new Date();
   let html='';
   for(let i=1;i<=28;i++){
     const d=new Date(base); d.setDate(base.getDate()+i);
     const key=localYMD(d);
-    const isOn=extraRoundDates[idx]===key?'on':'';
-    html+=`<div class="dchip ${isOn}" onclick="pickRoundDate(${idx},'${key}')">
-      <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
+    const disabled = prevDate && key <= prevDate;
+    if(disabled){
+      html+=`<div class="dchip disabled" style="opacity:.35;cursor:not-allowed;">
+        <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
+    } else {
+      const isOn=extraRoundDates[idx]===key?'on':'';
+      html+=`<div class="dchip ${isOn}" onclick="pickRoundDate(${idx},'${key}')">
+        <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
+    }
   }
   el.innerHTML=html;
 }
@@ -2372,12 +2389,17 @@ async function submitOrder() {
 
     // 4. Show success + reset cart
     document.getElementById('ok-num').textContent = orderNum;
+    // หัวรายการที่สั่ง (แพคเกจ/Meal Plan/เมนู) — ให้ลูกค้าเห็นชัดว่าสั่งอะไรไป
+    const orderNames = cart.map(c => {
+      const ico = c.type==='package' ? '📦' : (c.type==='meal_plan' ? '🥗' : '🍱');
+      return `${ico} ${h(c.name)}${(c.qty>1 && c.type==='individual')?` ×${c.qty}`:''}`;
+    }).join('<br>');
     const roundLines = roundOrderNums.length
       ? '<br>📦 แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
         + roundOrderNums.map((r,i)=>'<br>&nbsp;&nbsp;• รอบ ' + (i+2) + ' — ' + fmtDate(r.date) + ' (' + r.num + ')').join('')
       : '';
     document.getElementById('ok-detail').innerHTML =
-      `📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
+      `<div style="font-weight:700;color:#1F4D3A;margin-bottom:6px;text-align:left;line-height:1.5;">${orderNames}</div>📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
     setDeliverOnce = false; extraRoundDates = [];
