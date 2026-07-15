@@ -58,6 +58,12 @@
 - 🔴 **นัทต้องทำ:** เปิด `web/import_blog.html` → กด **Import** อีกครั้ง (บทความใหม่เข้า DB เป็น draft) → รีวิว+publish ใน`blog_admin.html`
 - 🟡 **งานต่อก่อน cutover Wix:** localize รูป cover + รูปในเนื้อหาของ 40 บทความใหม่ (ยัง hotlink wixstatic อยู่) — ทำก่อนปิด Wix ไม่งั้นรูปหาย
 
+## ✅ Real-time presence + Noti (15 ก.ค. — เสร็จ verified)
+- **นับคนออนไลน์สด** (เว็บ + LIFF) + **noti เด้ง/เสียงเมื่อมี cta_click ใหม่** บน Web Dashboard
+- ตาราง `live_presence` (นัทรัน SQL แล้ว) · เว็บ heartbeat (index/mealplan/blog, m-track) + LIFF heartbeat (u-track commit `9420c93`, ping เฉพาะตอน tab visible) upsert ทุก 15 วิ · dashboard นับ last_seen < 30 วิ
+- verified สดผ่าน: web ping จริงเข้า + liff count เด้ง + หมดอายุ 30 วิทำงาน
+- 🔵 option ค้าง: เพิ่ม `line_uid` ใน presence เพื่อดู "ลูกค้าคนไหน" กำลังดู (ไม่ใช่แค่จำนวน) — u-track เติมให้ได้ แต่มี PII/PDPA ต้องชั่งใจก่อน · noti เข้ามือถือ (LINE) รอ LINE token
+
 ## 📝 Log
 - **13 ก.ค.** เริ่มไฟล์ + ตกลงแบ่งงาน 2 แชท + ร่าง ad copy A–E + flag ข้อ 5 (CTA) รอนัทเคาะ
 - **13 ก.ค.** ✅ blog บทความคอร์สอาหารคลีน (push `a286058`) · ✅ localize รูป Wix 28 รูป → web/img (push `8ecc389`) · ✅ รัน sql_blog_posts + import 21 บทความเข้า DB (โชว์ 14 · draft 7) · ✅ เช็คโดเมน (จด Wix, ชี้ DNS ไม่ต้องโอน)
