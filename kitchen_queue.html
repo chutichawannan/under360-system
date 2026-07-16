@@ -507,7 +507,8 @@ function renderCard(o){
   return "<div class='"+cardCls+"'>"
     +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
     +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
-    +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div></div>"
+    +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
+    +"<span style='font-size:10px;font-weight:700;padding:1px 7px;border-radius:7px;"+(o.payment_status==="paid"?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span></div>"
     +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div>"
     +"<div class='oc-meta' style='font-size:10px;color:var(--soft)'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
     +"<div class='items-grid'>"+itemsHtml+"</div>"
