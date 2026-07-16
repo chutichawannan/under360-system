@@ -25,6 +25,7 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,                              // ให้ preload อ่าน fs (status.json) ได้
       preload: path.join(__dirname, 'preload.js')
     }
   });
