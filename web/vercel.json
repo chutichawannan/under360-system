@@ -1,0 +1,119 @@
+{
+  "redirects": [
+    {
+      "source": "/single-post/อาหารคลีน-delivery-กรุงเทพ-เจ้าไหนดี-วิธีเลือกให้เหมาะกับเป้าหมายของคุณ-2026",
+      "destination": "/blog.html?post=healthy-food-delivery-bangkok",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/meal-plan-โปรตีนสูงคืออะไร-เหมาะกับใคร-แล้วทำไมใครๆ-ก็หันมากินโปรตีน-2026",
+      "destination": "/blog.html?post=high-protein-meal-plan",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/under360-ส่งถึงไหนบ้าง-อาหารสุขภาพเดลิเวอรี่-ครอบคลุมทั่วกรุงเทพ-และส่งได้ทั่วไทย",
+      "destination": "/blog.html?post=delivery-areas",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/ไขมันดี-vs-ไขมันเลว-คู่มือสมบูรณ์เลือกไขมันเพื่อสุขภาพในอาหารคลีน",
+      "destination": "/blog.html?post=good-fat-vs-bad-fat",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/อาหารสุขภาพและอาหารคลีน-เคล็ดลับการกินดีเพื่อชีวิตที่ดีกว่า",
+      "destination": "/blog.html?post=healthy-vs-clean-food",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/สารอาหารจากอาหารคลีน-คู่มือฉบับสมบูรณ์เพื่อสุขภาพที่ดีขึ้น",
+      "destination": "/blog.html?post=clean-food-nutrients",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/ข้อดีและข้อเสียของข้าวไรซ์เบอร์รี่-สิ่งที่คุณควรรู้ก่อนเปลี่ยนมาทานข้าวสีม่วง",
+      "destination": "/blog.html?post=riceberry-pros-cons",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/ประโยชน์ของปลากระพง-อาหารทะเลสุดคุ้มค่าที่ควรมีในครัวของคุณ",
+      "destination": "/blog.html?post=seabass-benefits",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/น้ำตาลหล่อฮังก๊วย-ความหวานจากธรรมชาติที่มีประโยชน์ต่อสุขภาพ",
+      "destination": "/blog.html?post=monk-fruit-sweetener",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/โปรตีนแพคแบบเป็นกับข้าวล้วน-ทางเลือกสุดสะดวกเพื่อสุขภาพที่ดี",
+      "destination": "/blog.html?post=protein-pack-guide",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/น้ำตาลดอกมะพร้าว-ความหวานจากธรรมชาติที่มีเอกลักษณ์ไทย",
+      "destination": "/blog.html?post=coconut-flower-sugar",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/บ๊ะจ่างเฮลตี้-อร่อยได้ไร้กังวล-เมื่ออาหารจีนโบราณพบกับเทรนด์สุขภาพยุคใหม่",
+      "destination": "/blog.html?post=healthy-bajang",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/น้ำปลา-low-sodium-vs-น้ำปลาธรรมดา-เลือกแบบไหนดีต่อสุขภาพ",
+      "destination": "/blog.html?post=low-sodium-fish-sauce",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/กินแต่อาหารคลีนอย่างเดียวขาดสารอาหารมั้ย-คำตอบที่คุณต้องรู้",
+      "destination": "/blog.html?post=clean-food-nutrient-gaps",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/กินแต่อาหารคลีน-โดยไม่ต้องออกกำลังกาย-แค่นี้ก็สุขภาพดีได้จริงหรือ",
+      "destination": "/blog.html?post=clean-food-without-exercise",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/โทษของการใส่รสดี-สิ่งที่คุณควรรู้ก่อนปรุงอาหารครั้งต่อไป",
+      "destination": "/blog.html?post=msg-seasoning-risks",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/chitosan",
+      "destination": "/blog.html?post=chitosan-review",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/chiaseed",
+      "destination": "/blog.html?post=chia-seed",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/howtopickthebestfruits",
+      "destination": "/blog.html?post=fruit-sugar-guide",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/heartratezone",
+      "destination": "/blog.html?post=heart-rate-zone",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/glutenfree",
+      "destination": "/blog.html?post=gluten-free",
+      "permanent": true
+    },
+    {
+      "source": "/content",
+      "destination": "/blog.html",
+      "permanent": true
+    },
+    {
+      "source": "/single-post/:rest*",
+      "destination": "/blog.html",
+      "permanent": true
+    }
+  ]
+}
