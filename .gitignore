@@ -8,3 +8,8 @@ nut_personal_profile.md
 
 # Zip archives ไม่เก็บใน git (under360-web.zip แตกเข้า /web แล้ว, ตัวอื่นเป็น artifact ชั่วคราว)
 *.zip
+
+# 🔒 PII / customer exports — ห้าม commit เด็ดขาด (PDPA)
+contacts.csv
+/*.csv
+*contacts*.csv
