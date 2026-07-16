@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8" />
+<title>เอิธ</title>
+<style>
+  html,body{ margin:0; height:100%; background:transparent; overflow:hidden;
+    font-family:ui-monospace,"Cascadia Code",Consolas,Menlo,monospace;
+    -webkit-user-select:none; user-select:none; }
+  .wrap{ height:100%; display:flex; flex-direction:column; align-items:center;
+    justify-content:flex-end; gap:6px; padding:8px;
+    -webkit-app-region:drag; }                 /* ลากทั้งกล่องเพื่อย้าย */
+  .close{ position:fixed; top:5px; right:7px; width:16px; height:16px;
+    -webkit-app-region:no-drag; cursor:pointer; border:none; border-radius:4px;
+    background:rgba(40,34,60,.55); color:#fff; font-size:11px; line-height:16px;
+    text-align:center; opacity:0; transition:opacity .15s; }
+  body:hover .close{ opacity:1; }
+  .close:hover{ background:#e0655a; }
+  .sprite{ display:block; width:132px; height:auto; image-rendering:pixelated; }
+  .cap{ font-size:11px; letter-spacing:.04em; color:#ded9f5;
+    text-shadow:0 1px 3px rgba(0,0,0,.55); display:flex; align-items:center; gap:6px; }
+  .pulse{ width:7px; height:7px; border-radius:50%; background:#3fc47a;
+    box-shadow:0 0 6px #3fc47a; animation:blink 1.7s infinite; }
+  .ell::after{ content:""; animation:ell 1.5s steps(1,end) infinite; }
+  @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
+  @keyframes ell{ 0%{content:""} 25%{content:"."} 50%{content:".."} 75%{content:"..."} }
+  @media (prefers-reduced-motion:reduce){ .pulse{animation:none} .ell::after{animation:none;content:"…"} }
+</style>
+</head>
+<body>
+  <button class="close" title="ปิด (Esc)" onclick="window.close()">×</button>
+  <div class="wrap">
+    <canvas class="sprite" id="s" width="64" height="60"
+      role="img" aria-label="น้องเอิธ นั่งเขียนหนังสือบนโต๊ะ สไตล์ Dragon Quest"></canvas>
+    <div class="cap"><span class="pulse"></span> เอิธ กำลังทำงาน<span class="ell"></span></div>
+  </div>
+<script>
+  addEventListener('keydown', e => { if(e.key === 'Escape') window.close(); });
+  (function(){
+    const c = document.getElementById('s'), x = c.getContext('2d');
+    x.imageSmoothingEnabled = false;
+    const OL='#241a10';
+    const P={
+      skin:'#f4caa0', skinSh:'#dcac80', hair:'#4a3526', hairHi:'#5e4534',
+      shirt:'#46c17e', shirtSh:'#2f9d63', eye:'#241a10', wht:'#ffffff', mouth:'#b06a4a',
+      deskT:'#c0894f', deskF:'#7a5028', paper:'#f4edda', ink:'#7c7362',
+      pen:'#e4533f', penHi:'#ffd36b'
+    };
+    const r=(px,py,w,h,col)=>{ x.fillStyle=col; x.fillRect(px,py,w,h); };
+    const clr=(px,py,w,h)=>x.clearRect(px,py,w,h);
+    const ob=(px,py,w,h,fill)=>{ r(px,py,w,h,OL); r(px+1,py+1,w-2,h-2,fill); };
+
+    function draw(f){
+      clr(0,0,64,60);
+      const blink = (f % 48) < 3;
+      const wob = (f % 6 < 3) ? 0 : 1;
+      const lines = Math.floor((f % 40)/13);
+
+      ob(23,25,18,16,P.shirt);
+      r(24,35,16,5,P.shirtSh);
+
+      ob(10,44,44,14,P.deskF);
+      ob(7,39,50,6,P.deskT);
+      r(8,40,48,1,'#d9a266');
+
+      ob(26,37,17,6,P.paper);
+      for(let i=0;i<lines;i++) r(29,39+i*2,11,1,P.ink);
+      if(lines<2){ r(29,39+lines*2, 3+((f%13)), 1, P.ink); }
+
+      ob(23,35,6,4,P.skin);
+      ob(36,34+wob,8,4,P.shirt);
+      ob(42,36+wob,5,4,P.skin);
+      r(45,34+wob,2,5,P.pen);
+      r(45,39+wob,1,1,OL);
+      if(f%6<2) r(44,39+wob,1,1,P.penHi);
+
+      ob(20,6,24,21,P.skin);
+      clr(20,6,1,1); clr(43,6,1,1); clr(20,26,1,1); clr(43,26,1,1);
+      r(41,10,2,14,P.skinSh);
+      r(20,4,24,6,P.hair); r(20,3,24,1,OL);
+      r(21,10,5,3,P.hair); r(38,10,5,3,P.hair);
+      r(30,1,3,4,P.hair); r(30,1,3,1,OL);
+      r(24,5,3,1,P.hairHi);
+      if(blink){ r(26,17,3,1,P.eye); r(35,17,3,1,P.eye); }
+      else{
+        r(26,14,3,4,P.eye); r(35,14,3,4,P.eye);
+        r(26,14,1,1,P.wht); r(35,14,1,1,P.wht);
+      }
+      r(30,22,5,1,P.mouth); r(29,21,1,1,P.mouth); r(35,21,1,1,P.mouth);
+    }
+
+    if(matchMedia('(prefers-reduced-motion:reduce)').matches){ draw(14); return; }
+    let f=0, last=0;
+    (function loop(t){
+      if(t-last>120){ draw(f++); last=t; }
+      requestAnimationFrame(loop);
+    })(0);
+  })();
+</script>
+</body>
+</html>

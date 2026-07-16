@@ -1,0 +1,12 @@
+{
+  "name": "eath-widget",
+  "version": "1.0.0",
+  "description": "น้องเอิธ desktop widget — ตัวการ์ตูน pixel นั่งทำงาน ลอยมุมจอ (always-on-top)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^32.0.0"
+  }
+}
