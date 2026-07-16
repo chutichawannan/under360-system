@@ -1,10 +1,11 @@
 const { app, BrowserWindow, screen } = require('electron');
+const path = require('path');
 
 let win;
 
 function createWindow() {
   const { workArea } = screen.getPrimaryDisplay();
-  const W = 168, H = 214;
+  const W = 168, H = 228;
 
   win = new BrowserWindow({
     width: W,
@@ -23,7 +24,8 @@ function createWindow() {
     minimizable: false,
     webPreferences: {
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      preload: path.join(__dirname, 'preload.js')
     }
   });
 
