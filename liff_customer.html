@@ -1131,7 +1131,8 @@ function addPkgToCart() {
     base_price: currentPkg.base_price,
     price:      pkgCurrentPrice(),
     qty:        1,
-    items
+    items,
+    free_shipping: !!currentPkg.free_shipping
   });
   saveCart(); updateCartUI();
   toast(`เพิ่ม ${currentPkg.name} เข้าตะกร้าแล้ว ✓`);
@@ -1260,7 +1261,8 @@ function addGroupedPkgToCart(){
     id:'pkg_'+currentPkg.id, type:'package', package_id:currentPkg.id,
     name:currentPkg.name, code:'SET-'+(currentPkg.size||''), base_price:currentPkg.base_price,
     price:pkgGroupedPrice(), qty:1, items,
-    delivery_rounds:(currentPkg.delivery_rounds||1), flexible_delivery:!!currentPkg.flexible_delivery
+    delivery_rounds:(currentPkg.delivery_rounds||1), flexible_delivery:!!currentPkg.flexible_delivery,
+    free_shipping:!!currentPkg.free_shipping
   });
   saveCart(); updateCartUI();
   toast(`เพิ่ม ${currentPkg.name} เข้าตะกร้าแล้ว ✓`);
@@ -2514,6 +2516,9 @@ function computeOrder(){
     else if(p.discount_type==='free_shipping') shipDisc = fee; // ส่งฟรีเป็นได้แค่ฟรีทั้งหมด ไม่ทบซ้อน
   });
   itemDisc = Math.min(itemDisc, sub); // กันลดเกินยอดสินค้าเวลาซ้อนหลายโค้ด fixed รวมกัน
+  // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
+  const pkgFreeShip = cart.some(c => c.type==='package' && c.free_shipping);
+  if(pkgFreeShip) shipDisc = fee;
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDisc + shipDisc;
   const total = Math.max(0, sub - itemDisc + feeAfter);

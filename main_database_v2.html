@@ -1894,6 +1894,11 @@ async function loadPackages(){
       const probe = await sb.from('packages').select('groups,delivery_rounds,flexible_delivery').limit(1);
       state.hasSetBuilderCols = !probe.error;
     } catch(e){ state.hasSetBuilderCols = false; }
+    // capability แยก: คอลัมน์ free_shipping (ติ๊กแพค = ส่งฟรี) — กันกระทบ set builder เดิมถ้ายังไม่รัน SQL ตัวนี้
+    try {
+      const fsProbe = await sb.from('packages').select('free_shipping').limit(1);
+      state.hasFreeShipCol = !fsProbe.error;
+    } catch(e){ state.hasFreeShipCol = false; }
     state.pkgLoaded = true;
   } catch(e){
     showToast('โหลดแพคเกจไม่สำเร็จ');
@@ -2087,6 +2092,9 @@ function renderPackageEditor(pkg){
     <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;">
       <input type="checkbox" class="pkg-f-active" ${pkg.is_active?'checked':''}> เปิดขายแพคนี้
     </label>
+    ${state.hasFreeShipCol ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;color:var(--forest);font-weight:600;">
+      <input type="checkbox" class="pkg-f-freeship" ${pkg.free_shipping?'checked':''}> 🚚 ซื้อแพคนี้ = ส่งฟรี (ยกเว้นค่าส่งทั้งออเดอร์)
+    </label>` : ''}
     ${groupsSection}
     <div style="display:flex;align-items:center;justify-content:space-between;
          margin-bottom:8px;flex-wrap:wrap;gap:6px;">
@@ -2369,6 +2377,7 @@ function attachPackagesHandlers(){
           flexible_delivery: !!panel.querySelector('.pkg-f-flexdeliv')?.checked
         };
       }
+      if(state.hasFreeShipCol){ setFields.free_shipping = !!panel.querySelector('.pkg-f-freeship')?.checked; }
       btn.disabled = true;
       btn.textContent = 'กำลังบันทึก...';
       try {
