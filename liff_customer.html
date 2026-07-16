@@ -1481,6 +1481,7 @@ function cartWeekType() {
 // 🚀 INIT
 // ══════════════════════════════════════
 let hasUtensilColumn = false;
+let hasPaymentStatusColumn = false;   // มีคอลัมน์ orders.payment_status ไหม (รัน SQL แล้วถึงส่ง)
 
 // 📡 Live presence heartbeat — m-track dashboard นับคนเปิดแอป real-time
 const _presSid = 'liff_' + Math.random().toString(36).slice(2) + Date.now();
@@ -1524,16 +1525,18 @@ async function init() {
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
   const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus'];
-  const [utR, custR, menuR, cfgR] = await Promise.allSettled([
+  const [utR, custR, menuR, cfgR, payR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
     sb.from('menu_items').select('*').eq('is_available', true).order('sort_order'),
-    sb.from('kitchen_data').select('key,data').in('key', CFG_KEYS)
+    sb.from('kitchen_data').select('key,data').in('key', CFG_KEYS),
+    sb.from('orders').select('payment_status').limit(1)                                        // capability: มีคอลัมน์ payment_status ไหม
   ]);
   const val = r => (r.status === 'fulfilled' ? r.value : {});
 
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
+  hasPaymentStatusColumn = !val(payR).error;
 
   // customer + auto-fill (ที่อยู่/ชื่อ/เบอร์)
   try {
@@ -2292,6 +2295,10 @@ async function submitOrder() {
     if (hasUtensilColumn) {
       const utEl = document.getElementById('utensil-input');
       orderPayload.want_utensils = utEl ? utEl.checked : true;
+    }
+    // payment_status: อัพสลิปแล้ว = assume "โอนแล้ว" (paid) · ไม่อัพ = "รอโอน" (unpaid) — แอดมินไล่เช็คสลิปจริงทีหลัง
+    if (hasPaymentStatusColumn) {
+      orderPayload.payment_status = slipBase64 ? 'paid' : 'unpaid';
     }
     const { data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single();
     // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
