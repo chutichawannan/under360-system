@@ -2746,17 +2746,45 @@ function setCusPin(lat,lng,addr){
   if(cusPin)cusPin.setMap(null);
   cusPin=new google.maps.Marker({position:{lat,lng},map:cusMap,draggable:true,title:'ที่อยู่จัดส่ง'});
   cusPin.addListener('dragend',e=>{const p=e.latLng;setCusPin(p.lat(),p.lng());});
-  distKm=haversineKm(KITCHEN_POS.lat,KITCHEN_POS.lng,lat,lng);
+  distKm=haversineKm(KITCHEN_POS.lat,KITCHEN_POS.lng,lat,lng);  // ค่าประมาณเส้นตรง — โชว์ทันที
   const fee=calcDeliveryFee(distKm, selSlot);
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
-  const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว';
+  const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
   const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent='฿'+fee;
   if(addr){
     const ai=document.getElementById('addr-input');if(ai&&!ai.value)ai.value=addr;
     const as=document.getElementById('addr-search');if(as)as.value=addr.split(',').slice(0,2).join(',');
   }
-  detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด
+  detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด (ใช้เส้นตรง = รัศมีภูมิศาสตร์ ถูกต้องแล้ว)
+  updateRoadDistance(lat, lng);     // ← ยิง Google วัดระยะขับจริง มาแทนค่าส่ง (async, fallback = haversine)
   updateCartTotals();
+}
+
+// วัดระยะ "ขับจริง" ด้วย Google Distance Matrix (มากับ Maps JS ที่โหลดแล้ว) → ค่าส่งแม่นกว่าเส้นตรง
+// ถ้า API ใช้ไม่ได้ (ไม่ enable / เกินโควตา) → เงียบ คง distKm เดิม (haversine) ไว้
+let _distSeq = 0;
+function updateRoadDistance(lat, lng){
+  if(typeof google==='undefined' || !google.maps || !google.maps.DistanceMatrixService) return;
+  const seq = ++_distSeq;  // กัน race: ปักหมุดใหม่ระหว่างรอผล → ทิ้งผลเก่า
+  try{
+    new google.maps.DistanceMatrixService().getDistanceMatrix({
+      origins:[KITCHEN_POS], destinations:[{lat,lng}],
+      travelMode: google.maps.TravelMode.DRIVING,
+      unitSystem: google.maps.UnitSystem.METRIC
+    }, (res, status)=>{
+      if(seq !== _distSeq) return;                     // มีปักหมุดใหม่แล้ว
+      const el = res && res.rows && res.rows[0] && res.rows[0].elements && res.rows[0].elements[0];
+      if(status !== 'OK' || !el || el.status !== 'OK' || !el.distance){
+        const fD=document.getElementById('fee-dist'); if(fD && distKm) fD.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว'; // คง haversine เงียบๆ
+        return;
+      }
+      distKm = el.distance.value/1000;                 // ระยะขับจริง (กม.)
+      const fee = calcDeliveryFee(distKm, selSlot);
+      const fD=document.getElementById('fee-dist'); if(fD) fD.textContent='🚗 '+distKm.toFixed(1)+' กม. (ระยะขับจริง)';
+      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent='฿'+fee;
+      updateCartTotals();
+    });
+  }catch(e){ const fD=document.getElementById('fee-dist'); if(fD && distKm) fD.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว'; }
 }
 
 function useMyLocation(){
