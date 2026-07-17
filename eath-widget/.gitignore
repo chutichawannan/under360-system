@@ -1,4 +1,6 @@
 node_modules/
 package-lock.json
 status.json
+prompt.json
+config.json
 _debug_cutout.png

@@ -11,11 +11,21 @@
     justify-content:flex-end; gap:6px; padding:4px 4px 12px; -webkit-app-region:drag; }
   .close{ position:fixed; top:5px; right:7px; width:16px; height:16px;
     -webkit-app-region:no-drag; cursor:pointer; border:none; border-radius:4px;
-    background:rgba(40,34,60,.6); color:#fff; font-size:11px; line-height:16px;
-    text-align:center; opacity:0; transition:opacity .15s; }
+    background:rgba(40,34,60,.6); color:#fff; font-size:11px; line-height:16px; text-align:center;
+    opacity:0; transition:opacity .15s; }
+  .autochip{ -webkit-app-region:no-drag; cursor:pointer; border:none; border-radius:6px;
+    padding:3px 8px; margin-left:3px; font:inherit; font-size:10px; font-weight:700; letter-spacing:.03em;
+    background:rgba(80,74,110,.7); color:#c9c3e6; }
+  .autochip.on{ background:#2f9d63; color:#eafff2; }
   body:hover .close{ opacity:1; }
   .close:hover{ background:#e0655a; }
-  canvas.char{ display:block; width:154px; height:154px; image-rendering:pixelated; }
+  .auto.on{ color:#4ee08a; border-color:#2f7d55; background:rgba(20,45,32,.7); }
+  canvas.char{ display:block; width:154px; height:154px; image-rendering:pixelated;
+    -webkit-app-region:drag; cursor:move; }
+  .cmdbtn{ -webkit-app-region:no-drag; cursor:pointer; border:none; border-radius:6px;
+    padding:2px 6px; margin-left:2px; background:#46c17e; color:#0e2417;
+    font:inherit; font-size:11px; font-weight:700; }
+  .cmdbtn:hover{ background:#5ed894; }
   #fallback{ display:none; }
   body.nofile #stage{ display:none; }
   body.nofile #fallback{ display:block; width:132px; height:auto; }
@@ -28,92 +38,99 @@
   body.idle .pulse{ background:#9089b5; box-shadow:none; }
   .ell::after{ content:""; }
   body.working .ell::after{ animation:ell 1.5s steps(1,end) infinite; }
+  /* กล่องพิมพ์ */
+  .bar{ display:none; -webkit-app-region:no-drag; align-items:center; gap:4px;
+    background:rgba(18,15,32,.92); padding:4px 5px; border-radius:10px;
+    box-shadow:0 3px 12px rgba(0,0,0,.45); }
+  .bar.show{ display:flex; }
+  .bar input{ width:118px; border:none; outline:none; border-radius:6px; padding:5px 7px;
+    font:inherit; font-size:11px; background:#2a2540; color:#fff; }
+  .bar button{ border:none; border-radius:6px; padding:5px 8px; cursor:pointer;
+    background:#46c17e; color:#0e2417; font-size:11px; font-weight:700; }
+  .bar button:hover{ background:#5ed894; }
+  .hint{ font-size:9px; color:#9089b5; }
   @keyframes blink{ 0%,100%{opacity:1} 50%{opacity:.3} }
   @keyframes ell{ 0%{content:""} 25%{content:"."} 50%{content:".."} 75%{content:"..."} }
 </style>
 </head>
-<body class="working">
+<body class="idle">
   <button class="close" title="ปิด (Esc)" onclick="window.close()">×</button>
   <div class="wrap">
-    <canvas class="char" id="stage" width="154" height="154" aria-label="น้องเอิธ"></canvas>
+    <canvas class="char" id="stage" width="154" height="154" title="คลิกเพื่อสั่งงาน" aria-label="น้องเอิธ"></canvas>
     <canvas class="char" id="fallback" width="64" height="60" aria-hidden="true"></canvas>
-    <div class="cap"><span class="pulse"></span> <span id="txt">เอิธ กำลังทำงาน</span><span class="ell"></span></div>
+    <div class="bar" id="bar">
+      <input id="cmd" type="text" placeholder="สั่งเอิธ… (Enter)" />
+      <button id="send">ส่ง</button>
+    </div>
+    <div class="cap"><span class="pulse"></span> <span id="txt">เอิธ · ว่างอยู่</span><span class="ell"></span><button class="cmdbtn" id="cmdBtn" title="สั่งงาน">✎</button><button class="autochip" id="autoBtn" title="โหมดอัตโนมัติ">AUTO ○</button></div>
   </div>
 <script>
-  addEventListener('keydown', e => { if(e.key === 'Escape') window.close(); });
+  addEventListener('keydown', e => { if(e.key === 'Escape') { if(bar.classList.contains('show')) hideBar(); else window.close(); } });
 
-  const SIZE = 154, TARGET_H = 140, FPS_W = 8, FPS_I = 6;
-  const stage = document.getElementById('stage'), sx = stage.getContext('2d');
-  sx.imageSmoothingEnabled = false;
-  let writeF = [], sleepF = [], scale = 1, ready = false;
+  const SIZE=154, TARGET_H=140, FPS_W=8, FPS_I=6;
+  const stage=document.getElementById('stage'), sx=stage.getContext('2d'); sx.imageSmoothingEnabled=false;
+  let writeF=[], sleepF=[], scale=1, ready=false;
 
-  function loadSeq(prefix){
-    return new Promise(res => {
-      const arr = []; let i = 0;
-      (function nx(){
-        const im = new Image();
-        im.onload = () => { arr.push(im); i++; nx(); };
-        im.onerror = () => res(arr);
-        im.src = 'frames/' + prefix + '_' + i + '.png';
-      })();
-    });
-  }
-  Promise.all([loadSeq('write'), loadSeq('sleep')]).then(([w, s]) => {
-    writeF = w; sleepF = s;
-    if (w.length >= 1 && s.length >= 1) {
-      let maxH = 1;
-      w.concat(s).forEach(im => { if (im.naturalHeight > maxH) maxH = im.naturalHeight; });
-      scale = TARGET_H / maxH;
-      ready = true;
-    } else {
-      document.body.classList.add('nofile');
-    }
+  function loadSeq(prefix){ return new Promise(res=>{ const a=[]; let i=0;
+    (function nx(){ const im=new Image(); im.onload=()=>{a.push(im);i++;nx();}; im.onerror=()=>res(a); im.src='frames/'+prefix+'_'+i+'.png'; })(); }); }
+  Promise.all([loadSeq('write'),loadSeq('sleep')]).then(([w,s])=>{
+    writeF=w; sleepF=s;
+    if(w.length&&s.length){ let mx=1; w.concat(s).forEach(im=>{if(im.naturalHeight>mx)mx=im.naturalHeight;}); scale=TARGET_H/mx; ready=true; }
+    else document.body.classList.add('nofile');
   });
+  function paint(im){ sx.clearRect(0,0,SIZE,SIZE); const w=im.naturalWidth*scale,h=im.naturalHeight*scale; sx.drawImage(im,(SIZE-w)/2,SIZE-h-4,w,h); }
 
-  function paint(im){
-    sx.clearRect(0,0,SIZE,SIZE);
-    const w = im.naturalWidth * scale, h = im.naturalHeight * scale;
-    sx.drawImage(im, (SIZE - w)/2, SIZE - h - 4, w, h);   // กลาง-ชิดล่าง
-  }
-
-  // ---- สถานะจริงจาก status.json ----
-  let working = true;
-  const body = document.body, txtEl = document.getElementById('txt');
+  // ---- สถานะ ----
+  let working=false;
+  const body=document.body, txtEl=document.getElementById('txt');
   function poll(){
-    let st = { state:'idle' };   // ถ้าอ่านสถานะไม่ได้ → หลับ (ไม่แกล้งทำงาน)
-    try{ if(window.eath && window.eath.getStatus) st = window.eath.getStatus() || st; }catch(e){}
-    working = (st.state === 'working');
-    body.classList.toggle('working', working);
-    body.classList.toggle('idle', !working);
-    txtEl.textContent = working ? ('เอิธ ' + (st.task || 'กำลังทำงาน')) : 'เอิธ · หลับอยู่ 💤';
+    let st={state:'idle'};
+    try{ if(window.eath&&window.eath.getStatus) st=window.eath.getStatus()||st; }catch(e){}
+    working=(st.state==='working');
+    body.classList.toggle('working',working); body.classList.toggle('idle',!working);
+    txtEl.textContent = working ? ('เอิธ '+(st.task||'กำลังทำงาน')) : 'เอิธ · ว่างอยู่';
   }
-  poll(); setInterval(poll, 1200);
+  poll(); setInterval(poll,1200);
 
-  // ---- animation loop ----
-  let idx = 0, lastT = 0;
-  (function loop(t){
-    requestAnimationFrame(loop);
-    if (document.body.classList.contains('nofile') || !ready) return;
-    const frames = working ? writeF : sleepF;
-    if (!frames.length) return;
-    const fps = working ? FPS_W : FPS_I;
-    if (t - lastT < 1000/fps) return; lastT = t;
-    idx = (idx + 1) % frames.length;
-    paint(frames[idx]);
+  // ---- animation ----
+  let idx=0,lastT=0;
+  (function loop(t){ requestAnimationFrame(loop);
+    if(document.body.classList.contains('nofile')||!ready) return;
+    const fr=working?writeF:sleepF; if(!fr.length)return;
+    if(t-lastT < 1000/(working?FPS_W:FPS_I))return; lastT=t;
+    idx=(idx+1)%fr.length; paint(fr[idx]);
   })(0);
 
-  // ---- fallback pixel sprite (เฉพาะตอนโหลดเฟรมไม่ได้) ----
-  (function(){
-    const c=document.getElementById('fallback'), x=c.getContext('2d'); x.imageSmoothingEnabled=false;
-    const OL='#241a10',P={skin:'#f4caa0',hair:'#4a3526',shirt:'#46c17e',shirtSh:'#2f9d63',eye:'#241a10',mouth:'#b06a4a',deskT:'#c0894f',deskF:'#7a5028',paper:'#f4edda',ink:'#7c7362',pen:'#e4533f',skinSh:'#dcac80'};
+  // ---- คลิก→กล่องพิมพ์ ----
+  const bar=document.getElementById('bar'), cmd=document.getElementById('cmd');
+  function showBar(){ bar.classList.add('show'); cmd.focus(); }
+  function hideBar(){ bar.classList.remove('show'); cmd.value=''; }
+  document.getElementById('cmdBtn').addEventListener('click', ()=> bar.classList.contains('show') ? hideBar() : showBar());
+  function send(){
+    const t=cmd.value.trim(); if(!t)return;
+    let ok=false; try{ ok=window.eath&&window.eath.sendPrompt&&window.eath.sendPrompt(t); }catch(e){}
+    txtEl.textContent = ok ? 'เอิธ · รับคำสั่งแล้ว ✓' : 'เอิธ · ส่งไม่สำเร็จ';
+    hideBar();
+  }
+  document.getElementById('send').addEventListener('click', send);
+  cmd.addEventListener('keydown', e=>{ if(e.key==='Enter') send(); e.stopPropagation(); });
+
+  // ---- ปุ่ม Auto ----
+  const autoBtn=document.getElementById('autoBtn');
+  function refreshAuto(){ let a=false; try{ a=(window.eath&&window.eath.getConfig&&window.eath.getConfig().auto)||false; }catch(e){}
+    autoBtn.classList.toggle('on',a); autoBtn.textContent = a ? 'AUTO ●' : 'AUTO ○'; }
+  autoBtn.addEventListener('click', ()=>{ let a=false; try{ a=(window.eath&&window.eath.getConfig&&window.eath.getConfig().auto)||false; }catch(e){}
+    try{ window.eath&&window.eath.setAuto&&window.eath.setAuto(!a); }catch(e){} refreshAuto(); });
+  refreshAuto(); setInterval(refreshAuto,1500);
+
+  // ---- fallback sprite ----
+  (function(){ const c=document.getElementById('fallback'),x=c.getContext('2d'); x.imageSmoothingEnabled=false;
+    const OL='#241a10',P={skin:'#f4caa0',hair:'#4a3526',shirt:'#46c17e',shirtSh:'#2f9d63',eye:'#241a10',mouth:'#b06a4a',deskT:'#c0894f',deskF:'#7a5028',paper:'#f4edda',pen:'#e4533f',skinSh:'#dcac80'};
     const r=(a,b,w,h,col)=>{x.fillStyle=col;x.fillRect(a,b,w,h);},clr=(a,b,w,h)=>x.clearRect(a,b,w,h),ob=(a,b,w,h,f)=>{r(a,b,w,h,OL);r(a+1,b+1,w-2,h-2,f);};
     let f=0,last=0;
-    function draw(w){clr(0,0,64,60);const bob=w?0:((f%40)<20?0:1);
-      ob(23,25+bob,18,16,P.shirt);r(24,35+bob,16,5,P.shirtSh);ob(10,44,44,14,P.deskF);ob(7,39,50,6,P.deskT);
-      if(w){const wob=(f%6<3)?0:1;ob(26,37,17,6,P.paper);ob(23,35,6,4,P.skin);ob(36,34+wob,8,4,P.shirt);ob(42,36+wob,5,4,P.skin);r(45,34+wob,2,5,P.pen);}
-      else{ob(26,38,17,6,P.paper);ob(23,39+bob,6,3,P.skin);ob(36,39+bob,6,3,P.skin);}
-      ob(20,6,24,21,P.skin);r(20,4,24,6,P.hair);r(21,10,5,3,P.hair);r(38,10,5,3,P.hair);r(30,1,3,4,P.hair);
-      const bl=(f%48)<3;if(bl){r(26,17,3,1,P.eye);r(35,17,3,1,P.eye);}else{r(26,14,3,4,P.eye);r(35,14,3,4,P.eye);}r(30,22,5,1,P.mouth);}
+    function draw(w){clr(0,0,64,60);const bob=w?0:((f%40)<20?0:1);ob(23,25+bob,18,16,P.shirt);r(24,35+bob,16,5,P.shirtSh);ob(10,44,44,14,P.deskF);ob(7,39,50,6,P.deskT);
+      if(w){const wob=(f%6<3)?0:1;ob(26,37,17,6,P.paper);ob(23,35,6,4,P.skin);ob(36,34+wob,8,4,P.shirt);ob(42,36+wob,5,4,P.skin);r(45,34+wob,2,5,P.pen);}else{ob(26,38,17,6,P.paper);ob(23,39+bob,6,3,P.skin);ob(36,39+bob,6,3,P.skin);}
+      ob(20,6,24,21,P.skin);r(20,4,24,6,P.hair);r(21,10,5,3,P.hair);r(38,10,5,3,P.hair);r(30,1,3,4,P.hair);const bl=(f%48)<3;if(bl){r(26,17,3,1,P.eye);r(35,17,3,1,P.eye);}else{r(26,14,3,4,P.eye);r(35,14,3,4,P.eye);}r(30,22,5,1,P.mouth);}
     (function fl(t){requestAnimationFrame(fl);if(!document.body.classList.contains('nofile'))return;if(t-last>120){draw(working);f++;last=t;}})(0);
   })();
 </script>
