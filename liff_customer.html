@@ -1003,7 +1003,8 @@ function openPackage(pkgId) {
   pkgSearch = '';
   const inp = document.getElementById('pkg-search-inp');
   if (inp) inp.value = '';
-  document.getElementById('pkg-hdr-title').textContent = currentPkg.name;
+  document.getElementById('pkg-hdr-title').innerHTML = h(currentPkg.name) +
+    (currentPkg.free_shipping ? ' <span style="font-size:11px;font-weight:800;background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:9px;white-space:nowrap;">🚚 ส่งฟรี</span>' : '');
   renderPkgSelect();
   document.getElementById('pkg-backdrop').classList.add('on');
   document.getElementById('s-pkg-select').classList.add('on');
@@ -1895,7 +1896,7 @@ function renderCart() {
       ).join('');
       return `<div class="citem" style="border-left:4px solid #D98C2B;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div style="flex:1;min-width:0;">
-          <div class="citem-name" style="color:#7c4f10;">📦 ${h(c.name)}</div>
+          <div class="citem-name" style="color:#7c4f10;">📦 ${h(c.name)}${c.free_shipping?' <span style="font-size:10px;font-weight:800;background:#D1FAE5;color:#065F46;padding:1px 7px;border-radius:8px;">🚚 ส่งฟรี</span>':''}</div>
           <div style="margin:6px 0 4px;">${ilist}</div>
           <div class="citem-sub" style="color:#D98C2B;font-weight:700;">฿${c.price.toLocaleString()}</div>
         </div>
