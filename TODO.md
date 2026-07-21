@@ -23,6 +23,7 @@
 - [ ] ⭐ **ส่งไฟล์โบรชัวร์รูปเมนู** ให้ u → เดี๋ยว u ครอป+อัพเข้า menu_items ให้ (รูป LIFF ยังว่าง โชว์ 🍱) `[u]`
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
+- [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -37,6 +38,10 @@
 - [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
 
 ## 🟣 A-track / เอิธ (agents / competitor intel / marketing ops)
+- [ ] ⭐ **บัญชี (เสา 2/4) — โฟกัสใหม่ นัทสั่ง 20 ก.ค.:** ขาย=`orders` มีครบ (subtotal/total/payment_account/order_items → report.html ต่อจริง) · **ซื้อ/ต้นทุน=ไม่มีที่จดเลย** (ทุกตาราง expense 404) → สร้าง `expenses` table + หน้าจดต้นทุน (มือถือ, หมวด วัตถุดิบ/ส่ง/แกส/ไฟ/คน) + report กำไร-ขาดทุน · รอนัทตอบว่าจดต้นทุนไว้ที่ไหน `[a]`
+- [ ] เตียง JD (agent กราฟิก) — พร้อมร่าง: คูปอง/QR/ปกบล็อก/infographic/widget ทำเองได้ · ภาพ Ads static/video = ร่างบรีฟให้ AI อื่น (park หลังบัญชี) `[a]`
+- [ ] เอิธ routine job (weekly competitor+trend+digest อัตโนมัติ) — รอเคาะ 3 ข้อ (ทำอะไร/เมื่อไหร่/ผลไปไหน) · โยงกับ weekly digest ของ [e] `[a]`
+- [x] เอิธ subagent (a0.3) + desktop widget interactive (คลิก✎สั่ง/AUTO toggle/ลากย้าย) commit `a2c4026` — สั่งจาก widget รันได้จริง `[a]`
 - [ ] (รอ FB พลอย พรุ่งนี้) วิเคราะห์แอดพลอยฝั่ง Meta + benchmark การยิงคู่แข่ง `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
 - [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
