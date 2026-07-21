@@ -50,6 +50,12 @@
 - **[เฟสหลัง] รีวิว 21 บทความเก่าที่ flag ราคา/โปร** — ตอนนี้ publish ไปแล้วเพื่อเอา traffic (นัทตัดสินใจ) แต่เนื้อห��มีราคา/โปรเก่า/เมนูเลิกขาย → กลับมาแก้ให้ตรงปัจจุบัน (ดู review_note ในผล workflow / เนื้อหาบทความ)
 - **[item 3] real-time click tracking + attribution** — มี `web_events` + `cta_click` (timestamp) แล้ว · ต้องทำเพิ่ม: (1) จอ real-time ดูคลิกสด (ต่อยอด `web_dashboard.html`) (2) ปิดลูป click→order ผ่าน LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order (u-track, หลัง CTA→LIFF) · cookies: ยังไม่ต้อง (ใช้ UTM+localStorage) — ต้องมี consent banner ก็ต่อเมื่อใส่ FB/Google pixel
 
+## 📌 Backlog — FB Ad revenue attribution (นัทสั่ง 20 ก.ค. ผ่านเอิธ · ทำหลัง migration)
+- **บริบท:** FB Ads บัญชีนัท (463330657546428) ตายสนิท (133 แคมเปญ active 0) · บัญชีพลอยไม่อยู่ใน login นัท · หลัก: วัดแอดที่ **ยอดขายจริงต่อแอด** ไม่ใช่ reach/คนทักของ Meta
+- **M-track ต้องทำ:** landing.html ติด UTM (source/medium/campaign/content=ชื่อแอด) → `localStorage.u360_utm` → ส่งเข้า LIFF ตอนสั่ง · web report ต่อ web_events แสดง "แต่ละ utm/campaign/ad = กี่บาท"
+- **รอก่อน:** ① UTM taxonomy จากเอิธ (จะมาใน web/eath/) ② u-track เก็บ utm ลง orders + report.html (เอิธบรีฟ U แล้ว) ③ CTA→LIFF (item 5) ต้องปิดลูปก่อน
+- **ไม่ด่วน** เพราะ FB Ads ยังไม่มี traffic live · รายละเอียด audit: web/eath/fb_ads_audit.md
+
 ## ⏰ ทวงนัท (pending)
 - **[รอบหน้า] harvest keyword จาก Wix** — นัทจะแคป Top Queries (Home → Search Performance on Google) มาให้ Claude ทำแผน keyword/คอนเทนต์ (นัทบอก "ทำพรุ่งนี้ ทวงด้วย")
 
