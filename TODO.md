@@ -17,6 +17,10 @@
 - [ ] ⭐ **re-import blog** (เปิด web/import_blog.html กด Import) — ให้ค่าส่งใหม่ + ปก 61 บทความเข้า DB · ง่าย ~2 นาที `[m]`
 - [ ] เปิด **Google Ads Brand Defense** ในคอนโซล (เปิดได้เลย ไม่ต้องรอเว็บ) `[m]`
 - [ ] เทส **iOS Safari** (LIFF + เว็บ) ก่อน launch `[u/m]`
+- [ ] ⭐ **Enable "Distance Matrix API"** ใน Google Cloud Console (เพิ่มบน key เดิม) → เทสปักหมุดว่าขึ้น "🚗 ระยะขับจริง" · ปลดล็อกค่าส่งแม่น (ถ้าค้าง 📍 = ยังไม่เปิด) `[u]`
+- [ ] ⭐ **ส่งไฟล์โบรชัวร์รูปเมนู** ให้ u → เดี๋ยว u ครอป+อัพเข้า menu_items ให้ (รูป LIFF ยังว่าง โชว์ 🍱) `[u]`
+- [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
+- [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -25,7 +29,10 @@
 - [x] harvest SEO Wix ครบ (WIX_SEO_HARVEST.md) · แก้ copy "ปรุงสด 10 ปี" + ค่าส่ง · localize รูป · gen web/vercel.json `[m]`
 
 ## 🔵 U-track (code / LIFF / DB / หลังบ้าน)
-- _(U เติมลิสของตัวเองที่นี่)_
+- [ ] ⭐ **รูปเมนู LIFF** — รอโบรชัวร์จากนัท → ครอป+อัพ `menu-images` + PATCH `image_urls` (จับคู่โค้ด, โชว์ mapping ให้เช็คก่อน) — *ด่านสุดท้ายก่อนเปิดรับออเดอร์*
+- [ ] (หลัง beta) **build FB attribution dual-track** — spec lock แล้ว: orders `utm_source/medium/campaign/content` + `attr_method`('auto'/'manual'/'both') + `attr_tagged_by` · LIFF อ่าน `localStorage.u360_utm` (auto) · OH dropdown แคมเปญ (manual) · report รวม 2 แหล่ง dedup `DISTINCT orders.id` เรียงด้วยบาท · **park จนกว่ามี ad traffic จริง** (ตอนนี้ funnel ไม่มีคนวิ่งผ่าน)
+- [ ] (session close) log `u0.4.29–34` → HISTORY + attribution spec → CLAUDE.md หมวด FB Attribution
+- [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
 
 ## 🟣 A-track / เอิธ (agents / competitor intel / marketing ops)
 - _(A/เอิธ เติมลิสของตัวเองที่นี่)_
