@@ -17,6 +17,8 @@
 - [ ] ⭐ **re-import blog** (เปิด web/import_blog.html กด Import) — ให้ค่าส่งใหม่ + ปก 61 บทความเข้า DB · ง่าย ~2 นาที `[m]`
 - [ ] เปิด **Google Ads Brand Defense** ในคอนโซล (เปิดได้เลย ไม่ต้องรอเว็บ) `[m]`
 - [ ] เทส **iOS Safari** (LIFF + เว็บ) ก่อน launch `[u/m]`
+- [ ] ⭐ **ล็อกอิน FB พลอย** (พรุ่งนี้) → main/เอิธ วิเคราะห์แอดพลอยฝั่ง Meta ต่อ `[e]`
+- [ ] (ไม่ด่วน) เคาะ **บัญชีแอด under360** (463330657546428) ที่ตาย — 133 แคมเปญ, ตัวเปิดอยู่ error หมด, 2 ร่างค้าง → รื้อ/แก้ หรือปล่อยหลัง beta `[e]`
 - [ ] ⭐ **Enable "Distance Matrix API"** ใน Google Cloud Console (เพิ่มบน key เดิม) → เทสปักหมุดว่าขึ้น "🚗 ระยะขับจริง" · ปลดล็อกค่าส่งแม่น (ถ้าค้าง 📍 = ยังไม่เปิด) `[u]`
 - [ ] ⭐ **ส่งไฟล์โบรชัวร์รูปเมนู** ให้ u → เดี๋ยว u ครอป+อัพเข้า menu_items ให้ (รูป LIFF ยังว่าง โชว์ 🍱) `[u]`
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
@@ -35,11 +37,19 @@
 - [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
 
 ## 🟣 A-track / เอิธ (agents / competitor intel / marketing ops)
-- _(A/เอิธ เติมลิสของตัวเองที่นี่)_
+- [ ] (รอ FB พลอย พรุ่งนี้) วิเคราะห์แอดพลอยฝั่ง Meta + benchmark การยิงคู่แข่ง `[e]`
+- [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
+- [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
+- [ ] พลอย: verify engagement ตัว 🟡 ใน influencer_master ก่อนทาบ (เปิด IG เช็คคอมเมนต์จริง) `[e]`
+- [x] ชีท master พร้อมใช้: `web/eath/influencer_master.csv` (44 คน, WARM LEAD 5) + `competitor_master.csv` (42 ราย เรียงตามภัย) `[e]`
+- [x] verify influencer A (Social Blade/TikTok) + B (IG via Chrome นัท) — ยอดจริง + ธง warm-lead `[e]`
+- [x] FB ads audit + ad-measurement framework (utm_taxonomy/kpi_roas/digest/competitor_ad_benchmark) `[e]`
+- [x] delivery fee benchmark (เคลมได้/ห้ามเคลม ค่าส่ง) — web/eath/delivery_fee_benchmark `[e]`
+- [x] แก้ brand copy (ปรุงสด 10 ปี / ค่าส่ง) ส่ง U+M แล้ว · UTM taxonomy spec lock ให้ M+U `[e]`
 
 ---
 
 ## ✅ เพิ่งเสร็จ (ล่าสุด — เก็บสั้นๆ กันซ้ำ)
 - `[m]` real-time presence + noti · blog ปก 61 · redirect plan+vercel.json · gitignore contacts/eath (กัน PII/intel หลุด)
 
-*อัปเดตล่าสุด: 20 ก.ค. 2026 (m-track สร้างไฟล์)*
+*อัปเดตล่าสุด: 20 ก.ค. 2026 (เอิธ/A-track เติม section ตัวเอง + งานนัท [e])*
