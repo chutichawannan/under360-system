@@ -50,11 +50,13 @@
 - **[เฟสหลัง] รีวิว 21 บทความเก่าที่ flag ราคา/โปร** — ตอนนี้ publish ไปแล้วเพื่อเอา traffic (นัทตัดสินใจ) แต่เนื้อห��มีราคา/โปรเก่า/เมนูเลิกขาย → กลับมาแก้ให้ตรงปัจจุบัน (ดู review_note ในผล workflow / เนื้อหาบทความ)
 - **[item 3] real-time click tracking + attribution** — มี `web_events` + `cta_click` (timestamp) แล้ว · ต้องทำเพิ่ม: (1) จอ real-time ดูคลิกสด (ต่อยอด `web_dashboard.html`) (2) ปิดลูป click→order ผ่าน LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order (u-track, หลัง CTA→LIFF) · cookies: ยังไม่ต้อง (ใช้ UTM+localStorage) — ต้องมี consent banner ก็ต่อเมื่อใส่ FB/Google pixel
 
-## 📌 Backlog — FB Ad revenue attribution (นัทสั่ง 20 ก.ค. ผ่านเอิธ · ทำหลัง migration)
-- **บริบท:** FB Ads บัญชีนัท (463330657546428) ตายสนิท (133 แคมเปญ active 0) · บัญชีพลอยไม่อยู่ใน login นัท · หลัก: วัดแอดที่ **ยอดขายจริงต่อแอด** ไม่ใช่ reach/คนทักของ Meta
-- **M-track ต้องทำ:** landing.html ติด UTM (source/medium/campaign/content=ชื่อแอด) → `localStorage.u360_utm` → ส่งเข้า LIFF ตอนสั่ง · web report ต่อ web_events แสดง "แต่ละ utm/campaign/ad = กี่บาท"
-- **รอก่อน:** ① UTM taxonomy จากเอิธ (จะมาใน web/eath/) ② u-track เก็บ utm ลง orders + report.html (เอิธบรีฟ U แล้ว) ③ CTA→LIFF (item 5) ต้องปิดลูปก่อน
-- **ไม่ด่วน** เพราะ FB Ads ยังไม่มี traffic live · รายละเอียด audit: web/eath/fb_ads_audit.md
+## 📌 Backlog — FB Ad revenue attribution (🅿️ PARK หลัง beta — เอิธ finalize 20 ก.ค.)
+- **สถานะ: park ทั้งก้อนหลัง beta** (beta essentials มาก่อน · ตอนนี้ไม่มี ad traffic วิ่งผ่าน landing/LIFF: under360 acct ตาย + แอดพลอยเข้า LINE ตรง) · แค่ lock spec ไว้ join กับ U ตอน build
+- **บริบท:** วัดแอดที่ **ยอดขายจริงต่อแอด** ไม่ใช่ reach/คนทัก Meta · audit: web/eath/fb_ads_audit.md
+- **UTM field set ที่ LOCK แล้ว (M ใช้ชื่อนี้ตอนทำ landing):**
+  - `utm_source` = fb|ig|line|google|tiktok · `utm_medium` = paid_social|organic_social|paid_search|influencer · `utm_campaign` = ตรงชื่อใน Ads Manager · `utm_content` = 1 ครีเอทีฟ 1 ค่า
+  - landing เก็บ 4 ตัว → `localStorage.u360_utm` → LIFF อ่านเขียน orders (U ใช้ชื่อเดียวกัน + `attr_method`/`attr_tagged_by`) · vocab เต็ม: web/eath/utm_taxonomy.md
+- **M-track ทำตอน build:** landing.html capture UTM → localStorage · web report ต่อ web_events แสดง "utm/campaign/ad = กี่บาท" · ต้อง sync schema/SQL ส่งนัทรอบเดียวกับ U
 
 ## ⏰ ทวงนัท (pending)
 - **[รอบหน้า] harvest keyword จาก Wix** — นัทจะแคป Top Queries (Home → Search Performance on Google) มาให้ Claude ทำแผน keyword/คอนเทนต์ (นัทบอก "ทำพรุ่งนี้ ทวงด้วย")
