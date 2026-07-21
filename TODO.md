@@ -24,6 +24,7 @@
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
+- [ ] (ไม่ด่วน — เวลาว่าง) **ฟอเวิด Hato report ที่เหลือ** เข้า flidty.c@ (เก่ากว่า 2 ปี + ยุค pre-Hato) → migrate เติม batch ต่อ · ลิงก์อายุ 24 ชม. สร้างวันไหนฟอเวิดวันนั้น `[migrate]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -52,9 +53,15 @@
 - [x] delivery fee benchmark (เคลมได้/ห้ามเคลม ค่าส่ง) — web/eath/delivery_fee_benchmark `[e]`
 - [x] แก้ brand copy (ปรุงสด 10 ปี / ค่าส่ง) ส่ง U+M แล้ว · UTM taxonomy spec lock ให้ M+U `[e]`
 
+## 🟠 Migrate-track (ลูกค้า+ประวัติออเดอร์ Hato → customers/orders)
+- [x] **Pilot ส.ค. 2024 สำเร็จ** (21 ก.ค.): 565 ออเดอร์ + 33 ลูกค้าใหม่ + เติม 204 คน (hato_id/ที่อยู่) · verify แล้ว: วันที่จริง+ลิงก์ลูกค้าถูก · **ไม่ทับ tier/loyalty เดิม** · idempotent (order_number=HT-)
+- [ ] **import ที่เหลือ 24 เดือน** (07/2024–07/2026 = 2 ปีเต็ม ~14k ออเดอร์) — subagent กำลังโหลด xlsx อยู่ → build รวม → import · *กำลังทำ*
+- [ ] **order_items (รายเมนู)** — report "ออเดอร์ทั้งหมด" ไม่มีรายเมนู → ต้องหา report ชนิดอื่น (รายสินค้า/transaction) ทำหลัง orders/customers · ปลดล็อกน้องนิว
+- pipeline + วิธีดึงไฟล์ Hato (email→Drive→curl) จดใน memory `migrate-customer-order-history`
+
 ---
 
 ## ✅ เพิ่งเสร็จ (ล่าสุด — เก็บสั้นๆ กันซ้ำ)
 - `[m]` real-time presence + noti · blog ปก 61 · redirect plan+vercel.json · gitignore contacts/eath (กัน PII/intel หลุด)
 
-*อัปเดตล่าสุด: 20 ก.ค. 2026 (เอิธ/A-track เติม section ตัวเอง + งานนัท [e])*
+*อัปเดตล่าสุด: 21 ก.ค. 2026 (migrate-track เพิ่ม section: pilot ส.ค.2024 เสร็จ + งานนัทฟอเวิด report ที่เหลือ)*
