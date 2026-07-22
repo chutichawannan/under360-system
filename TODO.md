@@ -50,6 +50,8 @@
 - [x] เอิธ subagent (a0.3) + desktop widget interactive (คลิก✎สั่ง/AUTO toggle/ลากย้าย) commit `a2c4026` — สั่งจาก widget รันได้จริง `[a]`
 - [ ] (รอ FB พลอย พรุ่งนี้) วิเคราะห์แอดพลอยฝั่ง Meta + benchmark การยิงคู่แข่ง `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
+- [ ] **Ad รอบ 1 (กำลังทำ):** ยิง 2 ตัว ฿300/วัน — A) FB 15 แพคกับข้าว ฿1,099 · B) IG เซ็ตทดลอง MP ลด 100 · ปลายทาง LINE OA + log มือ `[e]`
+- [ ] **Ad รอบ 2 (หลังพิสูจน์รอบ 1):** ① MP ต่อคอร์ส ลด 10% (IG retention) ② 9 ข้าวกล่อง ฿1,099 (FB) · 🎯 **สำคัญ: จัดจังหวะเทสต์ ข้าวกล่อง vs แพคกับข้าว head-to-head** — ดูว่าแต่ละตัว audience/แอดไหน target โดนคนละกลุ่มไหม `[e]`
 - [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
 - [ ] พลอย: verify engagement ตัว 🟡 ใน influencer_master ก่อนทาบ (เปิด IG เช็คคอมเมนต์จริง) `[e]`
 - [x] ชีท master พร้อมใช้: `web/eath/influencer_master.csv` (44 คน, WARM LEAD 5) + `competitor_master.csv` (42 ราย เรียงตามภัย) `[e]`
