@@ -36,7 +36,8 @@
 - [x] harvest SEO Wix ครบ (WIX_SEO_HARVEST.md) · แก้ copy "ปรุงสด 10 ปี" + ค่าส่ง · localize รูป · gen web/vercel.json `[m]`
 
 ## 🔵 U-track (code / LIFF / DB / หลังบ้าน)
-- [ ] 💡 **Agent monitoring** (นัทสนใจ 22 ก.ค.) — หน้า/ระบบให้นัท "มอนิเตอร์" สิ่งที่ agent ทำ (ดู action ที่ agent เสนอ · approve ก่อนรันจริง · log ย้อนหลัง) — รอสเปก/ทิศทางจากนัท (ยังพิมพ์ไม่จบ) · โยงกับการเลือก agent ตัวถัดไป (นิว/เก่ง/เตียง)
+- [ ] 💡 **Agent QA แอดมิน LINE OA** (นัทเลือก 22 ก.ค. = agent ตัวถัดไป · ขยาย scope เอิธ) — อ่านแชทแอดมิน↔ลูกค้าย้อนหลัง ~1 อาทิตย์ → flag ตอบ error/ตอบไม่ครบ/ลูกค้าถามแล้วเงียบ → สรุปตารางให้นัทตรวจงาน · **⛔ ติด: เข้าถึงแชทยังไง** (LINE OA ไม่มี API token — รอนัทบอกว่าแชทอยู่ chat.line.biz/Hato + login ยังไง → น่าจะ browser scrape เหมือน Drive)
+- [ ] 💡 **Agent monitoring (ทั่วไป)** — หน้าให้นัทดู action ที่ agent เสนอ + approve ก่อนรันจริง + log — รอสเปก
 - [x] ✅ **รูปเมนู LIFF (22 ก.ค.)** — อ่านโบรชัวร์ Drive 7 โฟลเดอร์ (browser DOM ดึง file ID) → จับคู่ code เป๊ะ 70 เมนู → download→Storage `menu-images`→image_urls · SQL bucket+policy (นัทรัน) · ชื่อตรง verified (BB ไก่/หมูไม่สลับ) · เหลือ 7 เมนูไม่มีรูป (BJ/D061/LC34) + กราฟิก info/offer ยังไม่ได้ใช้
 - [ ] (หลัง beta) **build FB attribution dual-track** — spec lock แล้ว: orders `utm_source/medium/campaign/content` + `attr_method`('auto'/'manual'/'both') + `attr_tagged_by` · LIFF อ่าน `localStorage.u360_utm` (auto) · OH dropdown แคมเปญ (manual) · report รวม 2 แหล่ง dedup `DISTINCT orders.id` เรียงด้วยบาท · **park จนกว่ามี ad traffic จริง** (ตอนนี้ funnel ไม่มีคนวิ่งผ่าน)
 - [ ] (session close) log `u0.4.29–34` → HISTORY + attribution spec → CLAUDE.md หมวด FB Attribution
