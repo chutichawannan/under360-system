@@ -14,7 +14,7 @@
 
 ## 🔴 นัทต้องทำ (ACTION REQUIRED) — ดูตรงนี้ที่เดียว
 - [ ] **สร้าง Vercel project ใหม่** (Root Directory = `web`) → ส่ง URL ให้ m `[m · migration Step 3]`
-- [ ] ⭐ **re-import blog** (เปิด web/import_blog.html กด Import) — ให้ค่าส่งใหม่ + ปก 61 บทความเข้า DB · ง่าย ~2 นาที `[m]`
+- [x] ⭐ **re-import blog** — ✅ m ทำให้แล้วผ่าน REST (ค่าส่งใหม่ + ปก 61 บทความเข้า DB · verify ผ่าน) `[m]`
 - [ ] เปิด **Google Ads Brand Defense** ในคอนโซล (เปิดได้เลย ไม่ต้องรอเว็บ) `[m]`
 - [ ] เทส **iOS Safari** (LIFF + เว็บ) ก่อน launch `[u/m]`
 - [ ] ⭐ **ล็อกอิน FB พลอย** (พรุ่งนี้) → main/เอิธ วิเคราะห์แอดพลอยฝั่ง Meta ต่อ `[e]`
