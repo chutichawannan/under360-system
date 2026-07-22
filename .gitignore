@@ -16,3 +16,6 @@ contacts.csv
 
 # 🔒 เอิธ competitor intel — internal only ห้าม deploy สาธารณะ
 web/eath/
+
+# 🔒 FB Ads / financial exports — ข้อมูลการเงินธุรกิจ ห้าม commit เด็ดขาด
+download/
