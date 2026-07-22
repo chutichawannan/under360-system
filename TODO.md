@@ -24,7 +24,9 @@
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
-- [ ] (ไม่ด่วน — เวลาว่าง) **ฟอเวิด Hato report ที่เหลือ** เข้า flidty.c@ (เก่ากว่า 2 ปี + ยุค pre-Hato) → migrate เติม batch ต่อ · ลิงก์อายุ 24 ชม. สร้างวันไหนฟอเวิดวันนั้น `[migrate]`
+- [ ] **สร้าง Hato "รายงานออร์เดอร์ทั้งหมด" อีก 19 เดือน** (LIFF ที่ยังขาด) → ฟอเวิด flidty.c@ + เพิ่มเข้า Drive **วันเดียวกับที่สร้าง** (ลิงก์ 24 ชม.) แล้วบอก Claude โหลดทันที · เดือนที่ขาด: 2024=ก.ค./ก.ย./ต.ค./พ.ย./ธ.ค. · 2025=ก.พ./มี.ค./เม.ย./พ.ค./มิ.ย./ส.ค./ต.ค./พ.ย./ธ.ค. · 2026=ม.ค./มี.ค./เม.ย./มิ.ย./ก.ค. `[migrate]`
+- [ ] ⭐ **สร้าง Hato "รายงานรายสินค้า"** (per-menu) สักเดือน → เช็คว่ามีรายเมนูต่อออเดอร์ไหม → ปลดล็อก order_items (น้องนิว) `[migrate]`
+- [ ] (ไม่ด่วน) ฟอเวิด Hato ที่เก่ากว่า 2 ปี + ยุค pre-Hato → migrate เติม batch ต่อ `[migrate]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -54,14 +56,16 @@
 - [x] แก้ brand copy (ปรุงสด 10 ปี / ค่าส่ง) ส่ง U+M แล้ว · UTM taxonomy spec lock ให้ M+U `[e]`
 
 ## 🟠 Migrate-track (ลูกค้า+ประวัติออเดอร์ Hato → customers/orders)
-- [x] **Pilot ส.ค. 2024 สำเร็จ** (21 ก.ค.): 565 ออเดอร์ + 33 ลูกค้าใหม่ + เติม 204 คน (hato_id/ที่อยู่) · verify แล้ว: วันที่จริง+ลิงก์ลูกค้าถูก · **ไม่ทับ tier/loyalty เดิม** · idempotent (order_number=HT-)
-- [ ] **import ที่เหลือ 24 เดือน** (07/2024–07/2026 = 2 ปีเต็ม ~14k ออเดอร์) — subagent กำลังโหลด xlsx อยู่ → build รวม → import · *กำลังทำ*
-- [ ] **order_items (รายเมนู)** — report "ออเดอร์ทั้งหมด" ไม่มีรายเมนู → ต้องหา report ชนิดอื่น (รายสินค้า/transaction) ทำหลัง orders/customers · ปลดล็อกน้องนิว
-- pipeline + วิธีดึงไฟล์ Hato (email→Drive→curl) จดใน memory `migrate-customer-order-history`
+- [x] **เข้าระบบแล้ว 22 ก.ค.: 7,577 ออเดอร์เก่า** (2,304 ลูกค้า, 1,116 มี hato_id) · verify ครบ · ไม่ทับ tier/loyalty · idempotent
+  - [x] LIFF (HT-) **6 เดือน 2,638 ออเดอร์**: ส.ค.24 · ม.ค./ก.ค./ก.ย.25 · ก.พ./พ.ค.26 (ข้อมูลครบ: ที่อยู่/พิกัด/line_uid)
+  - [x] HatoStore ช่องทางเก่า (HS-) **23 เดือน 4,939 ออเดอร์** (การเงิน+สมาชิก+วันสมัคร · ไม่มีที่อยู่/เมนู) — จากโฟลเดอร์ "migrate customer data" (นัทโหลดไว้) → ย้าย Recycle Bin แล้ว
+- [ ] **LIFF เหลือ 19 เดือน** — 🔴 รอนัทสร้าง report ใหม่ (ดู "นัทต้องทำ")
+- [ ] **order_items (รายเมนู)** — ยังไม่มีใน report ไหนเลย (order+transaction ไม่มีรายเมนู) → ต้องขอ **"รายงานรายสินค้า"** จาก Hato · ปลดล็อกน้องนิว
+- pipeline + วิธีดึงไฟล์ (email→Drive→curl/unzip→parser xlsx เอง) จดใน memory `migrate-customer-order-history`
 
 ---
 
 ## ✅ เพิ่งเสร็จ (ล่าสุด — เก็บสั้นๆ กันซ้ำ)
 - `[m]` real-time presence + noti · blog ปก 61 · redirect plan+vercel.json · gitignore contacts/eath (กัน PII/intel หลุด)
 
-*อัปเดตล่าสุด: 21 ก.ค. 2026 (migrate-track เพิ่ม section: pilot ส.ค.2024 เสร็จ + งานนัทฟอเวิด report ที่เหลือ)*
+*อัปเดตล่าสุด: 22 ก.ค. 2026 (migrate: import ออเดอร์เก่า 7,577 — LIFF 6ด. + HatoStore 23ด. · เหลือ LIFF 19ด. รอนัทสร้าง report)*
