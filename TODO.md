@@ -20,7 +20,7 @@
 - [ ] ⭐ **ล็อกอิน FB พลอย** (พรุ่งนี้) → main/เอิธ วิเคราะห์แอดพลอยฝั่ง Meta ต่อ `[e]`
 - [ ] (ไม่ด่วน) เคาะ **บัญชีแอด under360** (463330657546428) ที่ตาย — 133 แคมเปญ, ตัวเปิดอยู่ error หมด, 2 ร่างค้าง → รื้อ/แก้ หรือปล่อยหลัง beta `[e]`
 - [ ] ⭐ **Enable "Distance Matrix API"** ใน Google Cloud Console (เพิ่มบน key เดิม) → เทสปักหมุดว่าขึ้น "🚗 ระยะขับจริง" · ปลดล็อกค่าส่งแม่น (ถ้าค้าง 📍 = ยังไม่เปิด) `[u]`
-- [ ] ⭐ **ส่งไฟล์โบรชัวร์รูปเมนู** ให้ u → เดี๋ยว u ครอป+อัพเข้า menu_items ให้ (รูป LIFF ยังว่าง โชว์ 🍱) `[u]`
+- [x] ✅ **รูปเมนู LIFF เสร็จ** — อัพ 70 รูปจากโบรชัวร์ (Drive) เข้า Storage + image_urls ครบ · เหลือ 7 เมนูไม่มีรูป (BJ บ๊ะจ่าง/D061/LC34) ถ้ามีรูปส่งเพิ่มได้ `[u]`
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
@@ -35,7 +35,7 @@
 - [x] harvest SEO Wix ครบ (WIX_SEO_HARVEST.md) · แก้ copy "ปรุงสด 10 ปี" + ค่าส่ง · localize รูป · gen web/vercel.json `[m]`
 
 ## 🔵 U-track (code / LIFF / DB / หลังบ้าน)
-- [ ] ⭐ **รูปเมนู LIFF** — รอโบรชัวร์จากนัท → ครอป+อัพ `menu-images` + PATCH `image_urls` (จับคู่โค้ด, โชว์ mapping ให้เช็คก่อน) — *ด่านสุดท้ายก่อนเปิดรับออเดอร์*
+- [x] ✅ **รูปเมนู LIFF (22 ก.ค.)** — อ่านโบรชัวร์ Drive 7 โฟลเดอร์ (browser DOM ดึง file ID) → จับคู่ code เป๊ะ 70 เมนู → download→Storage `menu-images`→image_urls · SQL bucket+policy (นัทรัน) · ชื่อตรง verified (BB ไก่/หมูไม่สลับ) · เหลือ 7 เมนูไม่มีรูป (BJ/D061/LC34) + กราฟิก info/offer ยังไม่ได้ใช้
 - [ ] (หลัง beta) **build FB attribution dual-track** — spec lock แล้ว: orders `utm_source/medium/campaign/content` + `attr_method`('auto'/'manual'/'both') + `attr_tagged_by` · LIFF อ่าน `localStorage.u360_utm` (auto) · OH dropdown แคมเปญ (manual) · report รวม 2 แหล่ง dedup `DISTINCT orders.id` เรียงด้วยบาท · **park จนกว่ามี ad traffic จริง** (ตอนนี้ funnel ไม่มีคนวิ่งผ่าน)
 - [ ] (session close) log `u0.4.29–34` → HISTORY + attribution spec → CLAUDE.md หมวด FB Attribution
 - [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
