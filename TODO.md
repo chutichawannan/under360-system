@@ -52,7 +52,13 @@
 - [ ] (รอ FB พลอย พรุ่งนี้) วิเคราะห์แอดพลอยฝั่ง Meta + benchmark การยิงคู่แข่ง `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
 - [ ] **Ad รอบ 1 (กำลังทำ):** ยิง 2 ตัว ฿300/วัน — A) FB 15 แพคกับข้าว ฿1,099 · B) IG เซ็ตทดลอง MP ลด 100 · ปลายทาง LINE OA + log มือ `[e]`
-- [ ] 🔥 **Custom Audience จากลูกค้า migrate (2,304 คน/7,577 ออเดอร์)** — export เบอร์โทรจาก DB (ลิสต์อัพเดตปัจจุบัน แทนที่ลิสต์โบราณที่พลอยเคยอัพ = ที่ทำ ฿76/แชท) → main ทำไฟล์ → **นัทอัพเข้า Meta เอง** (PII, ไฟล์ gitignore) → ใช้เป็น ad set 1 (retarget) + **Lookalike** (หาลูกค้าใหม่คล้ายของจริง = ad set 2 cold) · ปลดล็อกทั้ง 2 ad set ด้วย data สด `[e]`
+- [ ] 🔥 **Custom Audience "ลูกค้าเก่าสด" (step-by-step)** — ลิสต์อัพเดตแทนลิสต์โบราณของพลอย (ที่ทำ ฿76/แชท) → ปลดล็อก ad set 1 (retarget) + Lookalike (ad set 2 cold) `[e]`
+  - [ ] S1. **นัทให้ไฟเขียว export PII** → main รัน `build_ca.js` → `download/meta_custom_audience.csv` (DB 2,157 เบอร์/2,079 อีเมล · gitignore) — *classifier บล็อก auto รอนัทเคาะ*
+  - [ ] S2. **นัทส่งไฟล์ customer จากพลอย** (เบอร์อัพเดตเพิ่ม นอกเหนือ Hato) → บอก main ว่าอยู่ไหน/ฟอร์แมตอะไร
+  - [ ] S3. main **merge + dedupe** (DB + ไฟล์พลอย) → ไฟล์รวมไฟล์เดียว
+  - [ ] S4. **นัทอัพไฟล์รวมเข้า Meta** → สร้าง Custom Audience "Under360 ลูกค้าสด" (Meta hash ให้)
+  - [ ] S5. **นัทสร้าง Lookalike 1-3%** จาก audience สด (cold acquisition)
+  - [ ] S6. targeting: ad set 1 = Custom สด **+ รวม(union) audience เก่าพลอย** (reach กว้าง · ดึงเบอร์เก่าออกมาไม่ได้ แต่ union ใน targeting ได้) · ad set 2 = Lookalike
 - [ ] **Ad รอบ 2 (หลังพิสูจน์รอบ 1):** ① MP ต่อคอร์ส ลด 10% (IG retention) ② 9 ข้าวกล่อง ฿1,099 (FB) · 🎯 **สำคัญ: จัดจังหวะเทสต์ ข้าวกล่อง vs แพคกับข้าว head-to-head** — ดูว่าแต่ละตัว audience/แอดไหน target โดนคนละกลุ่มไหม `[e]`
 - [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
 - [ ] พลอย: verify engagement ตัว 🟡 ใน influencer_master ก่อนทาบ (เปิด IG เช็คคอมเมนต์จริง) `[e]`
