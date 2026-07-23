@@ -1,119 +1,119 @@
 {
   "redirects": [
     {
-      "source": "/single-post/อาหารคลีน-delivery-กรุงเทพ-เจ้าไหนดี-วิธีเลือกให้เหมาะกับเป้าหมายของคุณ-2026",
+      "source": "/single-post/%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99-delivery-%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E-%E0%B9%80%E0%B8%88%E0%B9%89%E0%B8%B2%E0%B9%84%E0%B8%AB%E0%B8%99%E0%B8%94%E0%B8%B5-%E0%B8%A7%E0%B8%B4%E0%B8%98%E0%B8%B5%E0%B9%80%E0%B8%A5%E0%B8%B7%E0%B8%AD%E0%B8%81%E0%B9%83%E0%B8%AB%E0%B9%89%E0%B9%80%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%B0%E0%B8%81%E0%B8%B1%E0%B8%9A%E0%B9%80%E0%B8%9B%E0%B9%89%E0%B8%B2%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%A2%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%84%E0%B8%B8%E0%B8%93-2026",
       "destination": "/blog.html?post=healthy-food-delivery-bangkok",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/meal-plan-โปรตีนสูงคืออะไร-เหมาะกับใคร-แล้วทำไมใครๆ-ก็หันมากินโปรตีน-2026",
+      "source": "/single-post/meal-plan-%E0%B9%82%E0%B8%9B%E0%B8%A3%E0%B8%95%E0%B8%B5%E0%B8%99%E0%B8%AA%E0%B8%B9%E0%B8%87%E0%B8%84%E0%B8%B7%E0%B8%AD%E0%B8%AD%E0%B8%B0%E0%B9%84%E0%B8%A3-%E0%B9%80%E0%B8%AB%E0%B8%A1%E0%B8%B2%E0%B8%B0%E0%B8%81%E0%B8%B1%E0%B8%9A%E0%B9%83%E0%B8%84%E0%B8%A3-%E0%B9%81%E0%B8%A5%E0%B9%89%E0%B8%A7%E0%B8%97%E0%B8%B3%E0%B9%84%E0%B8%A1%E0%B9%83%E0%B8%84%E0%B8%A3%E0%B9%86-%E0%B8%81%E0%B9%87%E0%B8%AB%E0%B8%B1%E0%B8%99%E0%B8%A1%E0%B8%B2%E0%B8%81%E0%B8%B4%E0%B8%99%E0%B9%82%E0%B8%9B%E0%B8%A3%E0%B8%95%E0%B8%B5%E0%B8%99-2026",
       "destination": "/blog.html?post=high-protein-meal-plan",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/under360-ส่งถึงไหนบ้าง-อาหารสุขภาพเดลิเวอรี่-ครอบคลุมทั่วกรุงเทพ-และส่งได้ทั่วไทย",
+      "source": "/single-post/under360-%E0%B8%AA%E0%B9%88%E0%B8%87%E0%B8%96%E0%B8%B6%E0%B8%87%E0%B9%84%E0%B8%AB%E0%B8%99%E0%B8%9A%E0%B9%89%E0%B8%B2%E0%B8%87-%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B9%80%E0%B8%94%E0%B8%A5%E0%B8%B4%E0%B9%80%E0%B8%A7%E0%B8%AD%E0%B8%A3%E0%B8%B5%E0%B9%88-%E0%B8%84%E0%B8%A3%E0%B8%AD%E0%B8%9A%E0%B8%84%E0%B8%A5%E0%B8%B8%E0%B8%A1%E0%B8%97%E0%B8%B1%E0%B9%88%E0%B8%A7%E0%B8%81%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B9%80%E0%B8%97%E0%B8%9E-%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%AA%E0%B9%88%E0%B8%87%E0%B9%84%E0%B8%94%E0%B9%89%E0%B8%97%E0%B8%B1%E0%B9%88%E0%B8%A7%E0%B9%84%E0%B8%97%E0%B8%A2",
       "destination": "/blog.html?post=delivery-areas",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/ไขมันดี-vs-ไขมันเลว-คู่มือสมบูรณ์เลือกไขมันเพื่อสุขภาพในอาหารคลีน",
+      "source": "/single-post/%E0%B9%84%E0%B8%82%E0%B8%A1%E0%B8%B1%E0%B8%99%E0%B8%94%E0%B8%B5-vs-%E0%B9%84%E0%B8%82%E0%B8%A1%E0%B8%B1%E0%B8%99%E0%B9%80%E0%B8%A5%E0%B8%A7-%E0%B8%84%E0%B8%B9%E0%B9%88%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C%E0%B9%80%E0%B8%A5%E0%B8%B7%E0%B8%AD%E0%B8%81%E0%B9%84%E0%B8%82%E0%B8%A1%E0%B8%B1%E0%B8%99%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B9%83%E0%B8%99%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99",
       "destination": "/blog.html?post=good-fat-vs-bad-fat",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/อาหารสุขภาพและอาหารคลีน-เคล็ดลับการกินดีเพื่อชีวิตที่ดีกว่า",
+      "source": "/single-post/%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99-%E0%B9%80%E0%B8%84%E0%B8%A5%E0%B9%87%E0%B8%94%E0%B8%A5%E0%B8%B1%E0%B8%9A%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B8%81%E0%B8%B4%E0%B8%99%E0%B8%94%E0%B8%B5%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%8A%E0%B8%B5%E0%B8%A7%E0%B8%B4%E0%B8%95%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%94%E0%B8%B5%E0%B8%81%E0%B8%A7%E0%B9%88%E0%B8%B2",
       "destination": "/blog.html?post=healthy-vs-clean-food",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/สารอาหารจากอาหารคลีน-คู่มือฉบับสมบูรณ์เพื่อสุขภาพที่ดีขึ้น",
+      "source": "/single-post/%E0%B8%AA%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%88%E0%B8%B2%E0%B8%81%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99-%E0%B8%84%E0%B8%B9%E0%B9%88%E0%B8%A1%E0%B8%B7%E0%B8%AD%E0%B8%89%E0%B8%9A%E0%B8%B1%E0%B8%9A%E0%B8%AA%E0%B8%A1%E0%B8%9A%E0%B8%B9%E0%B8%A3%E0%B8%93%E0%B9%8C%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%94%E0%B8%B5%E0%B8%82%E0%B8%B6%E0%B9%89%E0%B8%99",
       "destination": "/blog.html?post=clean-food-nutrients",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/ข้อดีและข้อเสียของข้าวไรซ์เบอร์รี่-สิ่งที่คุณควรรู้ก่อนเปลี่ยนมาทานข้าวสีม่วง",
+      "source": "/single-post/%E0%B8%82%E0%B9%89%E0%B8%AD%E0%B8%94%E0%B8%B5%E0%B9%81%E0%B8%A5%E0%B8%B0%E0%B8%82%E0%B9%89%E0%B8%AD%E0%B9%80%E0%B8%AA%E0%B8%B5%E0%B8%A2%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%82%E0%B9%89%E0%B8%B2%E0%B8%A7%E0%B9%84%E0%B8%A3%E0%B8%8B%E0%B9%8C%E0%B9%80%E0%B8%9A%E0%B8%AD%E0%B8%A3%E0%B9%8C%E0%B8%A3%E0%B8%B5%E0%B9%88-%E0%B8%AA%E0%B8%B4%E0%B9%88%E0%B8%87%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%84%E0%B8%B8%E0%B8%93%E0%B8%84%E0%B8%A7%E0%B8%A3%E0%B8%A3%E0%B8%B9%E0%B9%89%E0%B8%81%E0%B9%88%E0%B8%AD%E0%B8%99%E0%B9%80%E0%B8%9B%E0%B8%A5%E0%B8%B5%E0%B9%88%E0%B8%A2%E0%B8%99%E0%B8%A1%E0%B8%B2%E0%B8%97%E0%B8%B2%E0%B8%99%E0%B8%82%E0%B9%89%E0%B8%B2%E0%B8%A7%E0%B8%AA%E0%B8%B5%E0%B8%A1%E0%B9%88%E0%B8%A7%E0%B8%87",
       "destination": "/blog.html?post=riceberry-pros-cons",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/ประโยชน์ของปลากระพง-อาหารทะเลสุดคุ้มค่าที่ควรมีในครัวของคุณ",
+      "source": "/single-post/%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B9%82%E0%B8%A2%E0%B8%8A%E0%B8%99%E0%B9%8C%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%9B%E0%B8%A5%E0%B8%B2%E0%B8%81%E0%B8%A3%E0%B8%B0%E0%B8%9E%E0%B8%87-%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%97%E0%B8%B0%E0%B9%80%E0%B8%A5%E0%B8%AA%E0%B8%B8%E0%B8%94%E0%B8%84%E0%B8%B8%E0%B9%89%E0%B8%A1%E0%B8%84%E0%B9%88%E0%B8%B2%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%84%E0%B8%A7%E0%B8%A3%E0%B8%A1%E0%B8%B5%E0%B9%83%E0%B8%99%E0%B8%84%E0%B8%A3%E0%B8%B1%E0%B8%A7%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%84%E0%B8%B8%E0%B8%93",
       "destination": "/blog.html?post=seabass-benefits",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/น้ำตาลหล่อฮังก๊วย-ความหวานจากธรรมชาติที่มีประโยชน์ต่อสุขภาพ",
+      "source": "/single-post/%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B8%95%E0%B8%B2%E0%B8%A5%E0%B8%AB%E0%B8%A5%E0%B9%88%E0%B8%AD%E0%B8%AE%E0%B8%B1%E0%B8%87%E0%B8%81%E0%B9%8A%E0%B8%A7%E0%B8%A2-%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1%E0%B8%AB%E0%B8%A7%E0%B8%B2%E0%B8%99%E0%B8%88%E0%B8%B2%E0%B8%81%E0%B8%98%E0%B8%A3%E0%B8%A3%E0%B8%A1%E0%B8%8A%E0%B8%B2%E0%B8%95%E0%B8%B4%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%A1%E0%B8%B5%E0%B8%9B%E0%B8%A3%E0%B8%B0%E0%B9%82%E0%B8%A2%E0%B8%8A%E0%B8%99%E0%B9%8C%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E",
       "destination": "/blog.html?post=monk-fruit-sweetener",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/โปรตีนแพคแบบเป็นกับข้าวล้วน-ทางเลือกสุดสะดวกเพื่อสุขภาพที่ดี",
+      "source": "/single-post/%E0%B9%82%E0%B8%9B%E0%B8%A3%E0%B8%95%E0%B8%B5%E0%B8%99%E0%B9%81%E0%B8%9E%E0%B8%84%E0%B9%81%E0%B8%9A%E0%B8%9A%E0%B9%80%E0%B8%9B%E0%B9%87%E0%B8%99%E0%B8%81%E0%B8%B1%E0%B8%9A%E0%B8%82%E0%B9%89%E0%B8%B2%E0%B8%A7%E0%B8%A5%E0%B9%89%E0%B8%A7%E0%B8%99-%E0%B8%97%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%A5%E0%B8%B7%E0%B8%AD%E0%B8%81%E0%B8%AA%E0%B8%B8%E0%B8%94%E0%B8%AA%E0%B8%B0%E0%B8%94%E0%B8%A7%E0%B8%81%E0%B9%80%E0%B8%9E%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%94%E0%B8%B5",
       "destination": "/blog.html?post=protein-pack-guide",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/น้ำตาลดอกมะพร้าว-ความหวานจากธรรมชาติที่มีเอกลักษณ์ไทย",
+      "source": "/single-post/%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B8%95%E0%B8%B2%E0%B8%A5%E0%B8%94%E0%B8%AD%E0%B8%81%E0%B8%A1%E0%B8%B0%E0%B8%9E%E0%B8%A3%E0%B9%89%E0%B8%B2%E0%B8%A7-%E0%B8%84%E0%B8%A7%E0%B8%B2%E0%B8%A1%E0%B8%AB%E0%B8%A7%E0%B8%B2%E0%B8%99%E0%B8%88%E0%B8%B2%E0%B8%81%E0%B8%98%E0%B8%A3%E0%B8%A3%E0%B8%A1%E0%B8%8A%E0%B8%B2%E0%B8%95%E0%B8%B4%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%A1%E0%B8%B5%E0%B9%80%E0%B8%AD%E0%B8%81%E0%B8%A5%E0%B8%B1%E0%B8%81%E0%B8%A9%E0%B8%93%E0%B9%8C%E0%B9%84%E0%B8%97%E0%B8%A2",
       "destination": "/blog.html?post=coconut-flower-sugar",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/บ๊ะจ่างเฮลตี้-อร่อยได้ไร้กังวล-เมื่ออาหารจีนโบราณพบกับเทรนด์สุขภาพยุคใหม่",
+      "source": "/single-post/%E0%B8%9A%E0%B9%8A%E0%B8%B0%E0%B8%88%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%AE%E0%B8%A5%E0%B8%95%E0%B8%B5%E0%B9%89-%E0%B8%AD%E0%B8%A3%E0%B9%88%E0%B8%AD%E0%B8%A2%E0%B9%84%E0%B8%94%E0%B9%89%E0%B9%84%E0%B8%A3%E0%B9%89%E0%B8%81%E0%B8%B1%E0%B8%87%E0%B8%A7%E0%B8%A5-%E0%B9%80%E0%B8%A1%E0%B8%B7%E0%B9%88%E0%B8%AD%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%88%E0%B8%B5%E0%B8%99%E0%B9%82%E0%B8%9A%E0%B8%A3%E0%B8%B2%E0%B8%93%E0%B8%9E%E0%B8%9A%E0%B8%81%E0%B8%B1%E0%B8%9A%E0%B9%80%E0%B8%97%E0%B8%A3%E0%B8%99%E0%B8%94%E0%B9%8C%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%A2%E0%B8%B8%E0%B8%84%E0%B9%83%E0%B8%AB%E0%B8%A1%E0%B9%88",
       "destination": "/blog.html?post=healthy-bajang",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/น้ำปลา-low-sodium-vs-น้ำปลาธรรมดา-เลือกแบบไหนดีต่อสุขภาพ",
+      "source": "/single-post/%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B8%9B%E0%B8%A5%E0%B8%B2-low-sodium-vs-%E0%B8%99%E0%B9%89%E0%B8%B3%E0%B8%9B%E0%B8%A5%E0%B8%B2%E0%B8%98%E0%B8%A3%E0%B8%A3%E0%B8%A1%E0%B8%94%E0%B8%B2-%E0%B9%80%E0%B8%A5%E0%B8%B7%E0%B8%AD%E0%B8%81%E0%B9%81%E0%B8%9A%E0%B8%9A%E0%B9%84%E0%B8%AB%E0%B8%99%E0%B8%94%E0%B8%B5%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E",
       "destination": "/blog.html?post=low-sodium-fish-sauce",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/กินแต่อาหารคลีนอย่างเดียวขาดสารอาหารมั้ย-คำตอบที่คุณต้องรู้",
+      "source": "/single-post/%E0%B8%81%E0%B8%B4%E0%B8%99%E0%B9%81%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99%E0%B8%AD%E0%B8%A2%E0%B9%88%E0%B8%B2%E0%B8%87%E0%B9%80%E0%B8%94%E0%B8%B5%E0%B8%A2%E0%B8%A7%E0%B8%82%E0%B8%B2%E0%B8%94%E0%B8%AA%E0%B8%B2%E0%B8%A3%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%A1%E0%B8%B1%E0%B9%89%E0%B8%A2-%E0%B8%84%E0%B8%B3%E0%B8%95%E0%B8%AD%E0%B8%9A%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%84%E0%B8%B8%E0%B8%93%E0%B8%95%E0%B9%89%E0%B8%AD%E0%B8%87%E0%B8%A3%E0%B8%B9%E0%B9%89",
       "destination": "/blog.html?post=clean-food-nutrient-gaps",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/กินแต่อาหารคลีน-โดยไม่ต้องออกกำลังกาย-แค่นี้ก็สุขภาพดีได้จริงหรือ",
+      "source": "/single-post/%E0%B8%81%E0%B8%B4%E0%B8%99%E0%B9%81%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A5%E0%B8%B5%E0%B8%99-%E0%B9%82%E0%B8%94%E0%B8%A2%E0%B9%84%E0%B8%A1%E0%B9%88%E0%B8%95%E0%B9%89%E0%B8%AD%E0%B8%87%E0%B8%AD%E0%B8%AD%E0%B8%81%E0%B8%81%E0%B8%B3%E0%B8%A5%E0%B8%B1%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A2-%E0%B9%81%E0%B8%84%E0%B9%88%E0%B8%99%E0%B8%B5%E0%B9%89%E0%B8%81%E0%B9%87%E0%B8%AA%E0%B8%B8%E0%B8%82%E0%B8%A0%E0%B8%B2%E0%B8%9E%E0%B8%94%E0%B8%B5%E0%B9%84%E0%B8%94%E0%B9%89%E0%B8%88%E0%B8%A3%E0%B8%B4%E0%B8%87%E0%B8%AB%E0%B8%A3%E0%B8%B7%E0%B8%AD",
       "destination": "/blog.html?post=clean-food-without-exercise",
-      "permanent": true
+      "statusCode": 301
     },
     {
-      "source": "/single-post/โทษของการใส่รสดี-สิ่งที่คุณควรรู้ก่อนปรุงอาหารครั้งต่อไป",
+      "source": "/single-post/%E0%B9%82%E0%B8%97%E0%B8%A9%E0%B8%82%E0%B8%AD%E0%B8%87%E0%B8%81%E0%B8%B2%E0%B8%A3%E0%B9%83%E0%B8%AA%E0%B9%88%E0%B8%A3%E0%B8%AA%E0%B8%94%E0%B8%B5-%E0%B8%AA%E0%B8%B4%E0%B9%88%E0%B8%87%E0%B8%97%E0%B8%B5%E0%B9%88%E0%B8%84%E0%B8%B8%E0%B8%93%E0%B8%84%E0%B8%A7%E0%B8%A3%E0%B8%A3%E0%B8%B9%E0%B9%89%E0%B8%81%E0%B9%88%E0%B8%AD%E0%B8%99%E0%B8%9B%E0%B8%A3%E0%B8%B8%E0%B8%87%E0%B8%AD%E0%B8%B2%E0%B8%AB%E0%B8%B2%E0%B8%A3%E0%B8%84%E0%B8%A3%E0%B8%B1%E0%B9%89%E0%B8%87%E0%B8%95%E0%B9%88%E0%B8%AD%E0%B9%84%E0%B8%9B",
       "destination": "/blog.html?post=msg-seasoning-risks",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/chitosan",
       "destination": "/blog.html?post=chitosan-review",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/chiaseed",
       "destination": "/blog.html?post=chia-seed",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/howtopickthebestfruits",
       "destination": "/blog.html?post=fruit-sugar-guide",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/heartratezone",
       "destination": "/blog.html?post=heart-rate-zone",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/glutenfree",
       "destination": "/blog.html?post=gluten-free",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/content",
       "destination": "/blog.html",
-      "permanent": true
+      "statusCode": 301
     },
     {
       "source": "/single-post/:rest*",
       "destination": "/blog.html",
-      "permanent": true
+      "statusCode": 301
     }
   ]
 }
