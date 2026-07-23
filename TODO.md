@@ -15,7 +15,7 @@
 ## 🔴 นัทต้องทำ (ACTION REQUIRED) — ดูตรงนี้ที่เดียว
 - [x] ✅ **Publish LIFF** (LINE Login channel) — นัททำแล้ว 22 ก.ค. → เปิดจากเครื่องนอกได้ `[u]`
 - [ ] ⭐ **อัพ Custom Audience เข้า Meta** — `download/meta_custom_audience.csv` (2,746 เบอร์+อีเมล: DB 2,154 + เจพลอย 592 ใหม่) → สร้าง Custom Audience + Lookalike 1-3% (ปลดล็อก ad รอบ 1 warm+cold) `[e]`
-- [ ] **แชร์ 2 ลิงก์ชีทเบอร์ที่เหลือ** ให้บัญชี Drive ที่เชื่อม (ตอนนี้ not found — id `1gT7j…` / `1c0dhoBH…`) · หรือถ้าเป็นไฟล์ซ้ำ/subset ของ "ลูกค้าเจ" บอกได้ จะข้าม `[e]`
+- [ ] **แชร์ให้ `flidty.c@gmail.com`** (= บัญชีที่ Drive connector ผูกอยู่ · Viewer พอ): ① 🔴 ชีท **"เบอร์โทรลูกค้า +66"** (`1c0dhoBH…`) → +9,541 เบอร์เข้า CA ② 🟡 โฟลเดอร์รูปอาหาร/โบรชัวร์ → ครีเอทีฟ IG/MP รอบหน้า + ภาพฟรีซแพ็ค · *File A (`1gT7j…`) ดึงครบแล้ว = subset ของเจ ไม่ต้องแชร์* `[e]`
 - [x] ✅ **สร้าง Vercel project (under360-web, Root=web)** — deploy สำเร็จ + redirect verified (riceberry ไป article ถูก) `[m]`
 - [x] ⭐ **re-import blog** — ✅ m ทำให้แล้วผ่าน REST (ค่าส่งใหม่ + ปก 61 บทความเข้า DB · verify ผ่าน) `[m]`
 - [ ] เปิด **Google Ads Brand Defense** ในคอนโซล (เปิดได้เลย ไม่ต้องรอเว็บ) `[m]`
@@ -23,15 +23,18 @@
 - [ ] ⭐ **เทส LIFF ข้ามเครื่อง** (iPhone + Android เครื่องอื่น) — เช็ครูปเมนูขึ้นครบ/thumb โหลดไว · flow สั่ง+payment+ปักหมุด บนจอจริง `[u]`
 - [x] ⭐ **ล็อกอิน FB พลอย** ✅ นัท login แล้ว (22 ก.ค.) → เอิธ/main เข้าวิเคราะห์แอดพลอย Meta ได้เลย (ปลดล็อกแล้ว) `[e]`
 - [ ] (ไม่ด่วน) เคาะ **บัญชีแอด under360** (463330657546428) ที่ตาย — 133 แคมเปญ, ตัวเปิดอยู่ error หมด, 2 ร่างค้าง → รื้อ/แก้ หรือปล่อยหลัง beta `[e]`
-- [ ] ⭐ **Enable "Distance Matrix API"** ใน Google Cloud Console (เพิ่มบน key เดิม) → เทสปักหมุดว่าขึ้น "🚗 ระยะขับจริง" · ปลดล็อกค่าส่งแม่น (ถ้าค้าง 📍 = ยังไม่เปิด) `[u]`
+- [~] ⭐ **Google Cloud APIs (07 · 22 ก.ค.)** — ปลดล็อก **ค่าส่งแม่น + ช่องเสิชที่อยู่ใน checkout** `[u]`
+  - [x] Distance Matrix API = เปิดแล้ว ✅ (แต่ dashboard ขึ้น **error 100%** → สงสัย key ถูก restrict)
+  - [ ] **เปิด Places API** (ช่องเสิชที่อยู่ — ตอนนี้พิมพ์แล้วไม่มี dropdown = ยังไม่เปิด) · ⚠️ Claude กดผ่าน Chrome ไม่ผ่าน (ปุ่ม Enable ไม่ตอบสนอง สงสัยสิทธิ์บัญชี) → **นัทกดเอง**
+  - [ ] **เปิด Geocoding API** (ปักหมุดแล้วที่อยู่เด้งเอง)
+  - [ ] 🔑 **แก้ API key restriction** (น่าจะเป็นต้นเหตุจริงของทั้ง error 100% + เสิชตาย): Credentials → key → "API restrictions" → เพิ่ม 4 ตัว (Maps JS/Places/Geocoding/Distance Matrix) หรือ "Don't restrict key" → SAVE
 - [x] ✅ **รูปเมนู LIFF เสร็จ** — อัพ 70 รูปจากโบรชัวร์ (Drive) เข้า Storage + image_urls ครบ · เหลือ 7 เมนูไม่มีรูป (BJ บ๊ะจ่าง/D061/LC34) ถ้ามีรูปส่งเพิ่มได้ `[u]`
 - [ ] **สั่งเทส 1 ออเดอร์จริง** (อัพสลิป) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
 - [ ] ⭐ **ยืนยันราคาเซ็ตทดลอง MP กับ main ก่อนลง ad copy** — DB=HP 1,499/LC 1,399 · masternote เคยเขียน HP 1,699 → จะใช้เลขไหน? (LIFF ขายจาก DB=1,499) `[e]`
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
-- [ ] **สร้าง Hato "รายงานออร์เดอร์ทั้งหมด" อีก 19 เดือน** (LIFF ที่ยังขาด) → ฟอเวิด flidty.c@ + เพิ่มเข้า Drive **วันเดียวกับที่สร้าง** (ลิงก์ 24 ชม.) แล้วบอก Claude โหลดทันที · เดือนที่ขาด: 2024=ก.ค./ก.ย./ต.ค./พ.ย./ธ.ค. · 2025=ก.พ./มี.ค./เม.ย./พ.ค./มิ.ย./ส.ค./ต.ค./พ.ย./ธ.ค. · 2026=ม.ค./มี.ค./เม.ย./มิ.ย./ก.ค. `[migrate]`
-- [ ] ⭐ **สร้าง Hato "รายงานรายสินค้า"** (per-menu) สักเดือน → เช็คว่ามีรายเมนูต่อออเดอร์ไหม → ปลดล็อก order_items (น้องนิว) `[migrate]`
-- [ ] (ไม่ด่วน) ฟอเวิด Hato ที่เก่ากว่า 2 ปี + ยุค pre-Hato → migrate เติม batch ต่อ `[migrate]`
+- [x] ✅ **Hato report ครบ 25 เดือน + รายสินค้า** — นัทสร้าง+ฟอเวิดแล้ว → import ครบ (ดู 🟠 Migrate-track) `[migrate]`
+- [ ] (ไม่ด่วน) ฟอเวิด Hato ที่**เก่ากว่า 2 ปี + ยุค pre-Hato** → migrate เติม batch ต่อ (pipeline พร้อม รันซ้ำได้) `[migrate]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -78,15 +81,15 @@
 - [x] delivery fee benchmark (เคลมได้/ห้ามเคลม ค่าส่ง) — web/eath/delivery_fee_benchmark `[e]`
 - [x] แก้ brand copy (ปรุงสด 10 ปี / ค่าส่ง) ส่ง U+M แล้ว · UTM taxonomy spec lock ให้ M+U `[e]`
 
-## 🟠 Migrate-track (ลูกค้า+ประวัติออเดอร์ Hato → customers/orders)
-- [x] **เข้าระบบแล้ว 22 ก.ค.: 7,577 ออเดอร์เก่า** (2,304 ลูกค้า, 1,116 มี hato_id) · verify ครบ · ไม่ทับ tier/loyalty · idempotent
-  - [x] LIFF (HT-) **6 เดือน 2,638 ออเดอร์**: ส.ค.24 · ม.ค./ก.ค./ก.ย.25 · ก.พ./พ.ค.26 (ข้อมูลครบ: ที่อยู่/พิกัด/line_uid)
-  - [x] HatoStore ช่องทางเก่า (HS-) **23 เดือน 4,939 ออเดอร์** (การเงิน+สมาชิก+วันสมัคร · ไม่มีที่อยู่/เมนู) — จากโฟลเดอร์ "migrate customer data" (นัทโหลดไว้) → ย้าย Recycle Bin แล้ว
+## 🟠 Migrate-track — ✅ **HATO 2 ปี เสร็จ/HANDOFF** (ลูกค้า+ประวัติออเดอร์ → customers/orders/order_items)
+- [x] ✅ **HATO 2 ปี = เสร็จสมบูรณ์ (verify 24 ก.ค.)** — ลูกค้า **3,217** (ผูก hato_id 1,315 · มีที่อยู่ 2,455) · ออเดอร์ **15,801** (**เลขซ้ำ 0 ตัว**) · รายเมนู **40,845** · ยอด **฿16.75M** · คงวันที่จริง · **ไม่ทับ tier/loyalty** · idempotent
+  - [x] LIFF (HT-) **10,834 ออเดอร์ ครบ 25/25 เดือน** (07/2024–07/2026) — **มีรายเมนูครบ 100%** → ปลดล็อกน้องนิว
+  - [x] HatoStore ช่องทางเก่า (HS-) **4,939 ออเดอร์** (23 ด. 08/2024–06/2026) — การเงิน+สมาชิก+วันสมัคร · ⚠️ **ไม่มีรายเมนู** (report ชนิดนี้ไม่มีคอลัมน์เมนู) · ขาด 07/2024+07/2026
 - [~] 🆕 **เจพลอย (ลูกค้า 2562-2566) แกะแล้ว → ส่งงานให้ u** (นัทสั่ง 22 ก.ค.): `download/migrate_legacy_customers_ploy_je.csv` = **491 ราย** (มีชื่อ+ที่อยู่+เบอร์ 462 + เบอร์ล้วน 29 · 634 มือถือ unique จาก 13 แท็บ · ซ้ำ DB แค่ 42 → **592 คนใหม่**) · คอลัมน์ `display_name,phone,phone_backup,default_address,line_fb_name,source,segment` (ฟอร์แมตลูกค้าเก่า) · **ยังไม่ import ตามนัทสั่ง** → u map เข้า `customers` + **upsert idempotent by phone** (กันทับ 42 ที่ซ้ำ) + tag segment "ลูกค้าเก่ามาก" · ⚠️ รอ 2 ลิงก์ที่เหลือ (นัท re-share) ก่อนปิด batch `[u]`
   - [~] **u dry-run เสร็จ (07 · 22 ก.ค.):** 491 แถว → **454 ใหม่ / 37 ซ้ำ DB** (normalize +66→0 แล้ว dedup by phone · 0 bad) · map: `source_first=legacy` · `source_campaign=ploy_je_2562_2566` · `tier=bronze` · address→`addresses` jsonb · backup+FB→`admin_notes` · แผน: insert 454 ใหม่ + **skip 37 ซ้ำ (ไม่ทับ tier/loyalty)** · **รอ GO เขียนจริง**
-- [ ] **LIFF เหลือ 19 เดือน** — 🔴 รอนัทสร้าง report ใหม่ (ดู "นัทต้องทำ")
-- [ ] **order_items (รายเมนู)** — ยังไม่มีใน report ไหนเลย (order+transaction ไม่มีรายเมนู) → ต้องขอ **"รายงานรายสินค้า"** จาก Hato · ปลดล็อกน้องนิว
-- pipeline + วิธีดึงไฟล์ (email→Drive→curl/unzip→parser xlsx เอง) จดใน memory `migrate-customer-order-history`
+- [ ] ⏭️ **เหลืออย่างเดียว (ไม่ด่วน): ยุคเก่ากว่า 2 ปี + pre-Hato** — นัทส่งไฟล์เมื่อไหร่ รันซ้ำ pipeline เดิมได้เลย (idempotent ไม่ทับของเดิม)
+- **ปลดล็อกแล้ว:** น้องนิว (ประวัติเมนูรายคน) · พี่เก่ง (ที่อยู่+พิกัด 2,455) · CRM/RFM win-back · Loyalty (มี data จริง — รอนัทเคาะ tier logic)
+- pipeline + scripts (parser xlsx เอง/build/import/header-diff) + วิธีดึงไฟล์ (Hato→email ลิงก์ 24ชม.→Drive→curl→unzip) จดใน memory `migrate-customer-order-history`
 
 ---
 
