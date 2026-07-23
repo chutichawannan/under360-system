@@ -49,7 +49,7 @@
 - [ ] เตียง JD (agent กราฟิก) — พร้อมร่าง: คูปอง/QR/ปกบล็อก/infographic/widget ทำเองได้ · ภาพ Ads static/video = ร่างบรีฟให้ AI อื่น (park หลังบัญชี) `[a]`
 - [ ] เอิธ routine job (weekly competitor+trend+digest อัตโนมัติ) — รอเคาะ 3 ข้อ (ทำอะไร/เมื่อไหร่/ผลไปไหน) · โยงกับ weekly digest ของ [e] `[a]`
 - [x] เอิธ subagent (a0.3) + desktop widget interactive (คลิก✎สั่ง/AUTO toggle/ลากย้าย) commit `a2c4026` — สั่งจาก widget รันได้จริง `[a]`
-- [ ] (รอ FB พลอย พรุ่งนี้) วิเคราะห์แอดพลอยฝั่ง Meta + benchmark การยิงคู่แข่ง `[e]`
+- [x] ✅ **วิเคราะห์แอดพลอยฝั่ง Meta เสร็จ (22 ก.ค.)** — โกยครบ campaign/ad-set/ad (฿41,840/3ปี) + ถอดวิธี "แปลกแต่ได้ผล" + benchmark คู่แข่ง → `web/eath/fb_ads_ploy_history.md` · ส่งต่อ 06 แล้ว `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
 - [ ] **Ad รอบ 1 (กำลังทำ):** ยิง 2 ตัว ฿300/วัน — A) FB 15 แพคกับข้าว ฿1,099 · B) IG เซ็ตทดลอง MP ลด 100 · ปลายทาง LINE OA + log มือ `[e]`
 - [ ] 🔥 **Custom Audience "ลูกค้าเก่าสด" (step-by-step)** — ลิสต์อัพเดตแทนลิสต์โบราณของพลอย (ที่ทำ ฿76/แชท) → ปลดล็อก ad set 1 (retarget) + Lookalike (ad set 2 cold) `[e]`
