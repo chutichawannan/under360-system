@@ -112,7 +112,7 @@
     },
     {
       "source": "/single-post/:rest*",
-      "destination": "/blog.html",
+      "destination": "/blog.html?legacy=:rest*",
       "statusCode": 301
     }
   ]
