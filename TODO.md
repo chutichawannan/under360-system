@@ -13,7 +13,10 @@
 ---
 
 ## 🔴 นัทต้องทำ (ACTION REQUIRED) — ดูตรงนี้ที่เดียว
-- [ ] **สร้าง Vercel project ใหม่** (Root Directory = `web`) → ส่ง URL ให้ m `[m · migration Step 3]`
+- [x] ✅ **Publish LIFF** (LINE Login channel) — นัททำแล้ว 22 ก.ค. → เปิดจากเครื่องนอกได้ `[u]`
+- [ ] ⭐ **อัพ Custom Audience เข้า Meta** — `download/meta_custom_audience.csv` (2,746 เบอร์+อีเมล: DB 2,154 + เจพลอย 592 ใหม่) → สร้าง Custom Audience + Lookalike 1-3% (ปลดล็อก ad รอบ 1 warm+cold) `[e]`
+- [ ] **แชร์ 2 ลิงก์ชีทเบอร์ที่เหลือ** ให้บัญชี Drive ที่เชื่อม (ตอนนี้ not found — id `1gT7j…` / `1c0dhoBH…`) · หรือถ้าเป็นไฟล์ซ้ำ/subset ของ "ลูกค้าเจ" บอกได้ จะข้าม `[e]`
+- [x] ✅ **สร้าง Vercel project (under360-web, Root=web)** — deploy สำเร็จ + redirect verified (riceberry ไป article ถูก) `[m]`
 - [x] ⭐ **re-import blog** — ✅ m ทำให้แล้วผ่าน REST (ค่าส่งใหม่ + ปก 61 บทความเข้า DB · verify ผ่าน) `[m]`
 - [ ] เปิด **Google Ads Brand Defense** ในคอนโซล (เปิดได้เลย ไม่ต้องรอเว็บ) `[m]`
 - [ ] เทส **iOS Safari** (LIFF + เว็บ) ก่อน launch `[u/m]`
@@ -37,14 +40,21 @@
 - [x] harvest SEO Wix ครบ (WIX_SEO_HARVEST.md) · แก้ copy "ปรุงสด 10 ปี" + ค่าส่ง · localize รูป · gen web/vercel.json `[m]`
 
 ## 🔵 U-track (code / LIFF / DB / หลังบ้าน)
-- [ ] 💡 **Agent QA แอดมิน LINE OA** (นัทเลือก 22 ก.ค. = agent ตัวถัดไป · ขยาย scope เอิธ) — อ่านแชทแอดมิน↔ลูกค้าย้อนหลัง ~1 อาทิตย์ → flag ตอบ error/ตอบไม่ครบ/ลูกค้าถามแล้วเงียบ → สรุปตารางให้นัทตรวจงาน · **⛔ ติด: เข้าถึงแชทยังไง** (LINE OA ไม่มี API token — รอนัทบอกว่าแชทอยู่ chat.line.biz/Hato + login ยังไง → น่าจะ browser scrape เหมือน Drive)
+- [ ] 💡 **Agent QA แอดมิน LINE OA** (agent ตัวถัดไป · scope เอิธ) — อ่านแชทแอดมิน↔ลูกค้า → flag ตอบ error/ตอบไม่ครบ/ลูกค้าเงียบ → สรุปตารางให้นัท · ✅ **22 ก.ค. ปลดล็อกแล้ว (session 05)!** chat.line.biz เข้าถึงได้ (นัท login Chrome) + `get_page_text` อ่านบทสนทนาเต็ม+รายชื่อแชทได้ scale (ที่ว่าอ่านไม่ได้=ผิด) → **พร้อม build** (ดู `web/eath/line_oa_deep_dive.md`) `[a/e]`
 - [ ] 💡 **Agent monitoring (ทั่วไป)** — หน้าให้นัทดู action ที่ agent เสนอ + approve ก่อนรันจริง + log — รอสเปก
 - [x] ✅ **รูปเมนู LIFF (22 ก.ค.)** — อ่านโบรชัวร์ Drive 7 โฟลเดอร์ (browser DOM ดึง file ID) → จับคู่ code เป๊ะ 70 เมนู → download→Storage `menu-images`→image_urls · SQL bucket+policy (นัทรัน) · ชื่อตรง verified (BB ไก่/หมูไม่สลับ) · เหลือ 7 เมนูไม่มีรูป (BJ/D061/LC34) + กราฟิก info/offer ยังไม่ได้ใช้
-- [ ] (หลัง beta) **build FB attribution dual-track** — spec lock แล้ว: orders `utm_source/medium/campaign/content` + `attr_method`('auto'/'manual'/'both') + `attr_tagged_by` · LIFF อ่าน `localStorage.u360_utm` (auto) · OH dropdown แคมเปญ (manual) · report รวม 2 แหล่ง dedup `DISTINCT orders.id` เรียงด้วยบาท · **park จนกว่ามี ad traffic จริง** (ตอนนี้ funnel ไม่มีคนวิ่งผ่าน)
+- [ ] 🔥 **build FB attribution dual-track — UN-PARK (นัทสั่ง 22 ก.ค. "ใกล้เสร็จแล้ว ไม่ต้อง park")** · ยิงแอดรอบ 1 แล้ว (log มือ) → **ต้องมีทันรอบ 2** · 3 ชิ้น:
+  - ① **แก้ `landing.html`** (m/u): ตัดรีวิวปลอม "ลด 3 กิโล" (ผิดกฎ+เสี่ยง Meta reject) + ใส่ web_events (pageview/cta_click) + capture UTM → `localStorage.u360_utm` + เนื้อหาให้ตรง Stock/MP (ตอนนี้โชว์ราคา MP เก่า+"จ/พ/ศ" ผิดบริบท)
+  - ② **LIFF อ่าน `u360_utm` ตอน checkout → เขียน orders** (u): `utm_source/medium/campaign/content` + `attr_method`('auto'/'manual'/'both') + `attr_tagged_by`
+  - ③ **SQL เพิ่มคอลัมน์ utm/attr ใน orders** (นัทรัน) + OH dropdown แคมเปญ (manual) + report รวม 2 แหล่ง dedup `DISTINCT orders.id` เรียงด้วยบาท
+  - spec เต็ม: `web/eath/utm_taxonomy.md` · **ที่มา: ห้อง 06 Ads-track**
 - [ ] (session close) log `u0.4.29–36` → HISTORY + CLAUDE.md: attribution spec (park) · **Platform↔Product mapping** (เอิธ 22 ก.ค.: MP/HP-LC→IG กลุ่มมีฐานะไลฟ์สไตล์เมือง · Stock/แพคกับข้าว→FB กลุ่มคุ้มเงินสะดวก · เลือก platform ตามโปรดักต์↔กลุ่ม ไม่ใช่ "platform ไหนไม่เวิร์ค") · payment_status/free_shipping/ระยะขับจริง/รูปเมนู 70/thumb
 - [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
 
 ## 🟣 A-track / เอิธ (agents / competitor intel / marketing ops)
+- [x] ✅ **LINE OA/CRM deep dive (a0.4 · session 05 · 22 ก.ค.)** — เข้า manager.line.biz+chat.line.biz จริง (นัท login Chrome) → verify เลข (reach 23,246/block 25,911>reach) · **พลิก 3 เข้าใจ:** audience=native LINE OA ไม่ใช่ Hato · segment 10k=active-user ไม่ใช่ mealplan · แชทอ่านได้เต็ม→Agent QA ปลดล็อก · **Segment framework=RFM จาก order data** (never-bought 1,034+หาย 904=84% inactive · line_uid 2,300 ยิงได้) · tag พึ่งไม่ได้(95% มั่ว)→ใช้ order data · `web/eath/line_oa_deep_dive.md` `[a/e]`
+- [x] ✅ **skill `under360-catchup`** — ย่อยให้ตามทัน + กัน open-loops หล่น (นัท pain: พิมพ์ทิ้งเยอะแล้วลืม/Claude พิมพ์ 10 ตอบ 1) `[a]`
+- [ ] **LINE OA broadcast แข็งขึ้น (กำลังทำ · session 05 → ปลายทาง handoff เอิธ routine):** ① segment RFM (สร้าง audience จาก order data) ② rulebook ยิง (เลิกกว้าง/CTA/deadline) ③ message templates ต่อ segment ④ calendar · **ค้าง: เช็ค LINE upload audience จาก uid** · MP/เซ็ต/ข้าวกล่อง รอ Hato รายงานรายสินค้า · verify catch-all 560k outlier `[e]`
 - [ ] ⭐ **บัญชี (เสา 2/4) — โฟกัสใหม่ นัทสั่ง 20 ก.ค.:** ขาย=`orders` มีครบ (subtotal/total/payment_account/order_items → report.html ต่อจริง) · **ซื้อ/ต้นทุน=ไม่มีที่จดเลย** (ทุกตาราง expense 404) → สร้าง `expenses` table + หน้าจดต้นทุน (มือถือ, หมวด วัตถุดิบ/ส่ง/แกส/ไฟ/คน) + report กำไร-ขาดทุน · รอนัทตอบว่าจดต้นทุนไว้ที่ไหน `[a]`
 - [ ] เตียง JD (agent กราฟิก) — พร้อมร่าง: คูปอง/QR/ปกบล็อก/infographic/widget ทำเองได้ · ภาพ Ads static/video = ร่างบรีฟให้ AI อื่น (park หลังบัญชี) `[a]`
 - [ ] เอิธ routine job (weekly competitor+trend+digest อัตโนมัติ) — รอเคาะ 3 ข้อ (ทำอะไร/เมื่อไหร่/ผลไปไหน) · โยงกับ weekly digest ของ [e] `[a]`
@@ -52,13 +62,13 @@
 - [x] ✅ **วิเคราะห์แอดพลอยฝั่ง Meta เสร็จ (22 ก.ค.)** — โกยครบ campaign/ad-set/ad (฿41,840/3ปี) + ถอดวิธี "แปลกแต่ได้ผล" + benchmark คู่แข่ง → `web/eath/fb_ads_ploy_history.md` · ส่งต่อ 06 แล้ว `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
 - [ ] **Ad รอบ 1 (กำลังทำ):** ยิง 2 ตัว ฿300/วัน — A) FB 15 แพคกับข้าว ฿1,099 · B) IG เซ็ตทดลอง MP ลด 100 · ปลายทาง LINE OA + log มือ `[e]`
-- [ ] 🔥 **Custom Audience "ลูกค้าเก่าสด" (step-by-step)** — ลิสต์อัพเดตแทนลิสต์โบราณของพลอย (ที่ทำ ฿76/แชท) → ปลดล็อก ad set 1 (retarget) + Lookalike (ad set 2 cold) `[e]`
-  - [ ] S1. **นัทให้ไฟเขียว export PII** → main รัน `build_ca.js` → `download/meta_custom_audience.csv` (DB 2,157 เบอร์/2,079 อีเมล · gitignore) — *classifier บล็อก auto รอนัทเคาะ*
-  - [ ] S2. **นัทส่งไฟล์ customer จากพลอย** (เบอร์อัพเดตเพิ่ม นอกเหนือ Hato) → บอก main ว่าอยู่ไหน/ฟอร์แมตอะไร
-  - [ ] S3. main **merge + dedupe** (DB + ไฟล์พลอย) → ไฟล์รวมไฟล์เดียว
-  - [ ] S4. **นัทอัพไฟล์รวมเข้า Meta** → สร้าง Custom Audience "Under360 ลูกค้าสด" (Meta hash ให้)
-  - [ ] S5. **นัทสร้าง Lookalike 1-3%** จาก audience สด (cold acquisition)
-  - [ ] S6. targeting: ad set 1 = Custom สด **+ รวม(union) audience เก่าพลอย** (reach กว้าง · ดึงเบอร์เก่าออกมาไม่ได้ แต่ union ใน targeting ได้) · ad set 2 = Lookalike
+- [~] 🔥 **Custom Audience "ลูกค้าเก่าสด"** — S1-S3 เสร็จ (06 · 22 ก.ค.) · เหลือ S4-S6 = นัทอัพ Meta `[e]`
+  - [x] S1. ไฟเขียว PII ✅ (นัทส่งไฟล์มาเอง) · S2. ไฟล์พลอย = "ลูกค้าเจ 2562-2566" (3 ลิงก์ · เปิดได้ 1 · อีก 2 not found รอ re-share)
+  - [x] S3. **merge+dedupe เสร็จ** → `download/meta_custom_audience.csv` = **2,746 แถว** (DB 2,154 + เจใหม่ 592 · เจซ้ำ DB แค่ 42) · gitignore · สคริปต์ `download/build_audience.js`
+  - [ ] S4. **นัทอัพ `meta_custom_audience.csv` เข้า Meta** → Custom Audience "Under360 ลูกค้าสด"
+  - [ ] S5. **นัทสร้าง Lookalike 1-3%** จาก audience นั้น (cold)
+  - [ ] S6. targeting: ad set 1 = Custom สด + union audience เก่าพลอย · ad set 2 = Lookalike
+  - [ ] (ค้าง) 2 ลิงก์เบอร์ที่เหลือ (re-share) → รันซ้ำเติมเข้า CA + migration ได้เลย
 - [ ] **Ad รอบ 2 (หลังพิสูจน์รอบ 1):** ① MP ต่อคอร์ส ลด 10% (IG retention) ② 9 ข้าวกล่อง ฿1,099 (FB) · 🎯 **สำคัญ: จัดจังหวะเทสต์ ข้าวกล่อง vs แพคกับข้าว head-to-head** — ดูว่าแต่ละตัว audience/แอดไหน target โดนคนละกลุ่มไหม `[e]`
 - [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
 - [ ] พลอย: verify engagement ตัว 🟡 ใน influencer_master ก่อนทาบ (เปิด IG เช็คคอมเมนต์จริง) `[e]`
@@ -72,6 +82,8 @@
 - [x] **เข้าระบบแล้ว 22 ก.ค.: 7,577 ออเดอร์เก่า** (2,304 ลูกค้า, 1,116 มี hato_id) · verify ครบ · ไม่ทับ tier/loyalty · idempotent
   - [x] LIFF (HT-) **6 เดือน 2,638 ออเดอร์**: ส.ค.24 · ม.ค./ก.ค./ก.ย.25 · ก.พ./พ.ค.26 (ข้อมูลครบ: ที่อยู่/พิกัด/line_uid)
   - [x] HatoStore ช่องทางเก่า (HS-) **23 เดือน 4,939 ออเดอร์** (การเงิน+สมาชิก+วันสมัคร · ไม่มีที่อยู่/เมนู) — จากโฟลเดอร์ "migrate customer data" (นัทโหลดไว้) → ย้าย Recycle Bin แล้ว
+- [~] 🆕 **เจพลอย (ลูกค้า 2562-2566) แกะแล้ว → ส่งงานให้ u** (นัทสั่ง 22 ก.ค.): `download/migrate_legacy_customers_ploy_je.csv` = **491 ราย** (มีชื่อ+ที่อยู่+เบอร์ 462 + เบอร์ล้วน 29 · 634 มือถือ unique จาก 13 แท็บ · ซ้ำ DB แค่ 42 → **592 คนใหม่**) · คอลัมน์ `display_name,phone,phone_backup,default_address,line_fb_name,source,segment` (ฟอร์แมตลูกค้าเก่า) · **ยังไม่ import ตามนัทสั่ง** → u map เข้า `customers` + **upsert idempotent by phone** (กันทับ 42 ที่ซ้ำ) + tag segment "ลูกค้าเก่ามาก" · ⚠️ รอ 2 ลิงก์ที่เหลือ (นัท re-share) ก่อนปิด batch `[u]`
+  - [~] **u dry-run เสร็จ (07 · 22 ก.ค.):** 491 แถว → **454 ใหม่ / 37 ซ้ำ DB** (normalize +66→0 แล้ว dedup by phone · 0 bad) · map: `source_first=legacy` · `source_campaign=ploy_je_2562_2566` · `tier=bronze` · address→`addresses` jsonb · backup+FB→`admin_notes` · แผน: insert 454 ใหม่ + **skip 37 ซ้ำ (ไม่ทับ tier/loyalty)** · **รอ GO เขียนจริง**
 - [ ] **LIFF เหลือ 19 เดือน** — 🔴 รอนัทสร้าง report ใหม่ (ดู "นัทต้องทำ")
 - [ ] **order_items (รายเมนู)** — ยังไม่มีใน report ไหนเลย (order+transaction ไม่มีรายเมนู) → ต้องขอ **"รายงานรายสินค้า"** จาก Hato · ปลดล็อกน้องนิว
 - pipeline + วิธีดึงไฟล์ (email→Drive→curl/unzip→parser xlsx เอง) จดใน memory `migrate-customer-order-history`
@@ -79,6 +91,7 @@
 ---
 
 ## ✅ เพิ่งเสร็จ (ล่าสุด — เก็บสั้นๆ กันซ้ำ)
+- `[a]` **22 ก.ค.: master (CLAUDE.md) up a0.4 แล้ว** (LINE OA/CRM deep dive · session 05 · นัทให้ permit ไม่รอปิด session) — track อื่น log ส่วนตัวเองต่อได้ **ไม่ต้องทำ LINE OA ซ้ำ** · u เหลือ log u0.4.29-36 (โค้ด u-track)
 - `[m]` real-time presence + noti · blog ปก 61 · redirect plan+vercel.json · gitignore contacts/eath (กัน PII/intel หลุด)
 
 *อัปเดตล่าสุด: 22 ก.ค. 2026 (migrate: import ออเดอร์เก่า 7,577 — LIFF 6ด. + HatoStore 23ด. · เหลือ LIFF 19ด. รอนัทสร้าง report)*
