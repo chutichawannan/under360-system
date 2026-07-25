@@ -36,6 +36,8 @@
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
 - [x] ✅ **Hato report ครบ 25 เดือน + รายสินค้า** — นัทสร้าง+ฟอเวิดแล้ว → import ครบ (ดู 🟠 Migrate-track) `[migrate]`
 - [ ] (ไม่ด่วน) ฟอเวิด Hato ที่**เก่ากว่า 2 ปี + ยุค pre-Hato** → migrate เติม batch ต่อ (pipeline พร้อม รันซ้ำได้) `[migrate]`
+- [ ] 🔴🔥 **CUTOVER Hato → LIFF 360 ก่อนหมดอายุรายปี (นัทเตือน 24 ก.ค. — รอบจ่ายใกล้ · ปีนี้จะไม่ต่อ Hato)** — broadcast 01-05 + ริชเมนู ทั้งหมดชี้ลิงก์ Hato (`2005639551-QgP5rNdW`) · **ถ้าไม่ต่อรายปี = ลิงก์ตาย → broadcast ที่ยิงไป ~1,809 คน กดไม่เข้าเลย พังหมด** · ต้อง ① LIFF 360 พร้อม (beta ผ่าน) ② ย้ายริชเมนู+ลิงก์ broadcast → LIFF ใหม่ ③ ค่อยทิ้ง Hato · **timing ผูกรอบจ่าย — เคาะวัน deadline ก่อน commit** `[u]`
+- [x] ✅ **ส่งสคริปต์แอดมินให้กิ๊ฟ/เพอรี่ — นัทส่งแล้ว 24 ก.ค.** — ไฟล์ `web/eath/admin_script_salmon.md` (ตอบคนทักจากโค้ด 01-05 + ถามรสแซลมอน 05 + ⚠️ ติด tag เหตุผลไม่ซื้อทุกคน) `[e→นัท]`
 
 ## 🟢 M-track (marketing / web / blog)
 - [ ] **Migration** ย้าย Wix→Vercel: Step 3 (project) → 4 (DNS) → 5 (เทส redirect) → ทิ้ง Wix — *กำลังทำ*
@@ -96,7 +98,8 @@
 - [~] 🆕 **เจพลอย (ลูกค้า 2562-2566) แกะแล้ว → ส่งงานให้ u** (นัทสั่ง 22 ก.ค.): `download/migrate_legacy_customers_ploy_je.csv` = **491 ราย** (มีชื่อ+ที่อยู่+เบอร์ 462 + เบอร์ล้วน 29 · 634 มือถือ unique จาก 13 แท็บ · ซ้ำ DB แค่ 42 → **592 คนใหม่**) · คอลัมน์ `display_name,phone,phone_backup,default_address,line_fb_name,source,segment` (ฟอร์แมตลูกค้าเก่า) · **ยังไม่ import ตามนัทสั่ง** → u map เข้า `customers` + **upsert idempotent by phone** (กันทับ 42 ที่ซ้ำ) + tag segment "ลูกค้าเก่ามาก" · ⚠️ รอ 2 ลิงก์ที่เหลือ (นัท re-share) ก่อนปิด batch `[u]`
   - [~] **u dry-run เสร็จ (07 · 22 ก.ค.):** 491 แถว → **454 ใหม่ / 37 ซ้ำ DB** (normalize +66→0 แล้ว dedup by phone · 0 bad) · map: `source_first=legacy` · `source_campaign=ploy_je_2562_2566` · `tier=bronze` · address→`addresses` jsonb · backup+FB→`admin_notes` · แผน: insert 454 ใหม่ + **skip 37 ซ้ำ (ไม่ทับ tier/loyalty)** · **รอ GO เขียนจริง**
 - [ ] 🍽️ **เมนูของ HS- 4,939 (ช่องเก่า)** — report transaction ไม่มีคอลัมน์เมนู → 🔴 นัทลองสร้าง **"รายงานรายสินค้า" ของช่องเก่า (LineHatoStore/hatoheart) 1 เดือน** ส่งมา → Claude เช็คว่า key ผูกกับ `HS-`(transaction_id) ได้ไหมก่อนลุยทั้งชุด
-- [ ] 🆕 **pre-Hato + เก่ากว่า 2 ปี** — นัทกำลังส่งประวัติลูกค้ายุคก่อน Hato มา → import เติม (pipeline เดิม idempotent)
+- [x] ✅ **pre-Hato 2020-2022 เข้าแล้ว (25 ก.ค.)** — แกะชีทมือ 18 ไฟล์ (Google Sheets รายสัปดาห์ · parser detect ฟอร์แมตเอง ข้ามปีได้) → **2,135 ลูกค้าใหม่** ลง `customers` (source=`pre_hato`) พร้อม**โปรไฟล์เมนูโปรด**ใน `admin_notes` (`[PRE-HATO 2020-22] สั่ง N ครั้ง · ล่าสุด · ชอบ:เมนู`) → **เอิธ query win-back ตรง preference ได้** · 240 คน "ตามมา Hato" (เบอร์ตรง DB) เก็บ `prehato_existing_240.json` merge ทีหลัง (ไม่แตะ กันชน 05) · ตัด ฿ (parser noise) + คนไม่มีเบอร์ 947 · **ไม่ลงออเดอร์ดิบ** (นัทเลือก customers+preference)
+- [ ] 🆕 **pre-Hato ปีเก่ากว่า: 2017 · 2018 · 2019 + ก่อน 2017** — pipeline พร้อม (parser+subagent) · รอนัทสั่งลุยต่อ · ⚠️ บางไฟล์ 2020 (เม.ย.-มิ.ย.) ถูกลบเข้าถึงไม่ได้
 - **ปลดล็อกแล้ว:** น้องนิว (ประวัติเมนูรายคน) · พี่เก่ง (ที่อยู่+พิกัด 2,455) · CRM/RFM win-back · Loyalty (มี data จริง — รอนัทเคาะ tier logic)
 - pipeline + scripts (parser xlsx เอง/build/import/header-diff) + วิธีดึงไฟล์ (Hato→email ลิงก์ 24ชม.→Drive→curl→unzip) จดใน memory `migrate-customer-order-history`
 
