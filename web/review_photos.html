@@ -65,7 +65,7 @@ textarea{position:absolute;left:-9999px}
   <div id="mid"></div>
   <div class="sec">🔵 บ๊ะจ่างไส้พิเศษ — รูปดิบไม่ระบุไส้ (เปิดโฟลเดอร์เลือกเอง)</div>
   <div id="bj"></div>
-  <div class="sec">🔍 กำลังหา — agent สแกนโฟลเดอร์เมนูเก่าอยู่</div>
+  <div class="sec">❌ ไม่พบรูปในไดรฟ์ — สแกนคลัง 2019-2023 ครบแล้ว (เมนูใหม่ ต้องถ่ายรูปใหม่)</div>
   <div id="pending"></div>
 </div>
 <div class="bar">
@@ -94,11 +94,11 @@ const bj45=[
 ];
 const bjFolder='12jTCYI9zH5Mc1ljf6AF-uLFbHmNi8Rsi';
 const pending=[
- {code:'S060',name:'หมูย่างราดกระเทียมพริกไทยดำสไตล์จีน'},
+ {code:'S060',name:'หมูย่างราดกระเทียมพริกไทยดำสไตล์จีน',nm:'มี A6 หมูย่างน้ำยำมะนาว (คนละซอส)'},
  {code:'S076',name:'สเต็กไก่อบเนยซอสปาปริก้า+ซุปฟักทอง'},
- {code:'S085',name:'ข้าวสันในหมูผัดกะปิ'},
+ {code:'S085',name:'ข้าวสันในหมูผัดกะปิ',nm:'มี A4 สันในหมูผัดกระเทียม (คนละซอส)'},
  {code:'S091',name:'คาราเมนอกไก่ไข่ออนเซน'},
- {code:'S170',name:'ข้าวแฮมเบิร์กซอสกะเพรา เห็ดออรินจิ'},
+ {code:'S170',name:'ข้าวแฮมเบิร์กซอสกะเพรา เห็ดออรินจิ',nm:'มี A17 แฮมเบิร์กหมูไก่ซอส bbq (คนละซอส)'},
  {code:'D061',name:'ผัดผักกาดขาวกุ้งแห้งราดไก่สับผัดกระเทียม'},
  {code:'(code ว่าง)',name:'บ๊ะจ่าง หมู — code ว่างใน DB น่าจะซ้ำ BJ1',void:true},
 ];
@@ -129,7 +129,7 @@ function render(){
  document.getElementById('high').innerHTML=candidates.filter(c=>c.conf==='high').map(cardHtml).join('');
  document.getElementById('mid').innerHTML=candidates.filter(c=>c.conf==='mid').map(cardHtml).join('');
  document.getElementById('bj').innerHTML=bj45.map(c=>`<div class="pending"><span class="code">${c.code}</span><div class="txt"><div class="mname">${c.name}</div><div class="st">📁 เปิดโฟลเดอร์บ๊ะจ่าง 38 รูป เลือกอันที่ใช่</div></div><a href="${FOLDER(bjFolder)}" target="_blank" style="background:#f08c00;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">เปิดโฟลเดอร์</a></div>`).join('');
- document.getElementById('pending').innerHTML=pending.map(c=>`<div class="pending"><span class="code ${c.void?'void':''}">${c.code}</span><div class="txt"><div class="mname">${c.name}</div><div class="st">${c.void?'⚠️ ให้เช็ค/ลบตอน import':'🔍 กำลังหาในโฟลเดอร์เมนูเก่า...'}</div></div></div>`).join('');
+ document.getElementById('pending').innerHTML=pending.map(c=>`<div class="pending"><span class="code ${c.void?'void':''}">${c.code}</span><div class="txt"><div class="mname">${c.name}</div><div class="st">${c.void?'⚠️ ให้เช็ค/ลบตอน import':c.nm?('❌ ไม่มีรูปตรง · ใกล้เคียง: '+c.nm):'❌ ยังไม่มีรูป — ต้องถ่ายใหม่'}</div></div></div>`).join('');
  updateCnt();
 }
 function updateCnt(){
