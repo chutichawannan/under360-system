@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>ตรวจรูปเมนู Under360</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f5f7;color:#1a1a1a;line-height:1.5;padding-bottom:90px}
+header{background:#2b8a3e;color:#fff;padding:16px 18px;position:sticky;top:0;z-index:10}
+header h1{font-size:17px;font-weight:700}
+header p{font-size:12.5px;opacity:.9;margin-top:3px}
+.wrap{max-width:640px;margin:0 auto;padding:14px}
+.legend{background:#fff;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px;border:1px solid #e5e7eb}
+.legend b{color:#2b8a3e}
+.sec{font-size:13px;font-weight:700;color:#555;margin:18px 4px 8px;text-transform:uppercase;letter-spacing:.3px}
+.card{background:#fff;border-radius:14px;overflow:hidden;margin-bottom:12px;border:1px solid #e5e7eb;box-shadow:0 1px 3px rgba(0,0,0,.04)}
+.card.done-yes{border-color:#2b8a3e;box-shadow:0 0 0 2px #2b8a3e33}
+.card.done-no{border-color:#e03131;opacity:.7}
+.imgbox{width:100%;aspect-ratio:4/3;background:#eceef0;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+.imgbox img{width:100%;height:100%;object-fit:cover;display:block}
+.imgfail{display:none;flex-direction:column;align-items:center;gap:8px;color:#868e96;font-size:13px;padding:20px;text-align:center}
+.imgfail a{background:#2b8a3e;color:#fff;padding:9px 16px;border-radius:8px;text-decoration:none;font-weight:600;font-size:13px}
+.info{padding:12px 14px}
+.code{display:inline-block;background:#2b8a3e;color:#fff;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px;margin-bottom:6px}
+.code.void{background:#e8590c}
+.mname{font-size:15px;font-weight:600;margin-bottom:3px}
+.src{font-size:11.5px;color:#868e96;word-break:break-all}
+.conf{font-size:11px;margin-top:4px;font-weight:600}
+.conf.high{color:#2b8a3e}.conf.mid{color:#e8590c}
+.viewlink{font-size:12px;color:#1971c2;text-decoration:none;display:inline-block;margin-top:6px}
+.btns{display:flex;gap:8px;margin-top:11px}
+.btns button{flex:1;padding:10px;border:1.5px solid #dee2e6;background:#fff;border-radius:9px;font-size:14px;font-weight:600;cursor:pointer;transition:.12s}
+.btns button.yes.on{background:#2b8a3e;color:#fff;border-color:#2b8a3e}
+.btns button.no.on{background:#e03131;color:#fff;border-color:#e03131}
+.btns button.maybe.on{background:#f08c00;color:#fff;border-color:#f08c00}
+.pending{background:#fff;border-radius:12px;padding:13px 15px;margin-bottom:10px;border:1px dashed #ced4da;display:flex;align-items:center;gap:10px}
+.pending .code{margin-bottom:0}
+.pending .txt{flex:1}
+.pending .mname{font-size:14px}
+.pending .st{font-size:11.5px;color:#f08c00;font-weight:600;margin-top:2px}
+.bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #dee2e6;padding:12px 16px;display:flex;gap:10px;align-items:center;z-index:20}
+.bar .cnt{font-size:13px;color:#555;flex:1}
+.bar button{background:#2b8a3e;color:#fff;border:none;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
+.bar button:active{transform:scale(.97)}
+.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:#212529;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
+.toast.show{opacity:1}
+textarea{position:absolute;left:-9999px}
+</style>
+</head>
+<body>
+<header>
+  <h1>🍱 ตรวจรูปเมนู Under360</h1>
+  <p>17 เมนูที่ยังไม่มีรูปใน DB · กดดูรูป → ✓ ถ้าตรง / ✗ ถ้าไม่ตรง → กด "คัดลอกผล" ส่งกลับในแชท</p>
+</header>
+<div class="wrap">
+  <div class="legend">
+    ผมหารูปที่น่าจะตรงจาก Google Drive มาให้ — <b>ช่วยดูว่าใช่เมนูนั้นจริงไหม</b><br>
+    ถ้ารูปไม่ขึ้น (โหลดไม่ได้) กดปุ่ม "เปิดรูปใน Drive" ดูแทนได้
+  </div>
+  <div class="sec">🟢 มั่นใจสูง — ชื่อไฟล์/โฟลเดอร์ตรงเป๊ะ</div>
+  <div id="high"></div>
+  <div class="sec">🟡 ต้องยืนยัน — ชื่อโฟลเดอร์กว้าง อาจไม่ตรงสูตร</div>
+  <div id="mid"></div>
+  <div class="sec">🔵 บ๊ะจ่างไส้พิเศษ — รูปดิบไม่ระบุไส้ (เปิดโฟลเดอร์เลือกเอง)</div>
+  <div id="bj"></div>
+  <div class="sec">🔍 กำลังหา — agent สแกนโฟลเดอร์เมนูเก่าอยู่</div>
+  <div id="pending"></div>
+</div>
+<div class="bar">
+  <div class="cnt" id="cnt">ตอบแล้ว 0 / 7</div>
+  <button onclick="copyResult()">📋 คัดลอกผล</button>
+</div>
+<div class="toast" id="toast"></div>
+<textarea id="ta"></textarea>
+<script>
+const THUMB=id=>`https://drive.google.com/thumbnail?id=${id}&sz=w500`;
+const VIEW=id=>`https://drive.google.com/file/d/${id}/view`;
+const FOLDER=id=>`https://drive.google.com/drive/folders/${id}`;
+const candidates=[
+ {code:'BJ1',name:'บ๊ะจ่างไรซ์เบอร์รี่ ไส้หมู',id:'1h2UpZfZZKzMLJNBsm7WdlddBpfDBYOs7',src:'aw/ภาพบ้ะจ่าง/บ้ะจ่าง/ไส้หมู.JPG',conf:'high'},
+ {code:'BJ2',name:'บ๊ะจ่างไรซ์เบอร์รี่ ไส้แซลมอน',id:'1A7-0Q9QfsqmjzpILO9kEJMtJC6HQspd2',src:'aw/ภาพบ้ะจ่าง/บ้ะจ่าง/ไส่แซลมอน.JPG',conf:'high'},
+ {code:'BJ3',name:'บ๊ะจ่างไรซ์เบอร์รี่ ไส้มังสวิรัติ',id:'1IKkDJVtk3_G_J2BA46Mcn0pio2zK1v5P',src:'aw/ภาพบ้ะจ่าง/บ้ะจ่าง/ไส้มัง.JPG',conf:'high'},
+ {code:'S181',name:'ข้าวปลากระพงนึ่งราดซอสไข่เค็ม',id:'1ZhN1pcpMx6A2dDhF3t9xQntPNOdVCRfl',src:'Wongnai/เมนูใหม่พย2021/ข้าวปลากระพงนึ่งราดซอสไข่เค็ม/ (โฟลเดอร์ชื่อตรงเป๊ะ)',conf:'high'},
+ {code:'S095',name:'ข้าวไก่สับนึ่งไข่เค็ม+น้ำจิ้มซีอิ๊วงา',id:'1zE6cMJOaDHz8B4u_DzKURKk0ufbjxghy',src:'Menu2020/No8..ข้าวไก่สับนึ่งไข่เค็ม+น้ำจิ้มซีอิ๊วงา.jpg',conf:'high'},
+ {code:'LC34',name:'เนื้อสับกิมจิ ครีมมี่ซอส',id:'1DSGyfDZTPBgqXjXsTbFHuNeTSkgRKA9z',src:'aw/ภาพกิมจิ/DSC02651.JPG',conf:'mid',note:'โฟลเดอร์แค่ "ภาพกิมจิ" อาจเป็นเมนูกิมจิอื่น'},
+ {code:'S020',name:'ข้าวน้ำพริกอ่องอกไก่',id:'1hlQucwYNW9ykV5cMEDsmSRV3H8pkRjRD',src:'aw/น้ำพริกอกไก่/edit-set-bg-white-1.jpg',conf:'mid'},
+ {code:'S175',name:'โจ๊กเห็ดหอมอกไก่ก้อน',id:'1MbiQTtDQRYvZm_S7teRylCNU5rzWuSL2',src:'aw/เมนูต่างๆ/โจ๊ก.JPG',conf:'mid',note:'มีโจ๊กฟักทอง+โจ๊กผักโขมด้วย — อันนี้คือ "โจ๊ก.JPG" เฉยๆ'},
+];
+const bj45=[
+ {code:'BJ4',name:'บ๊ะจ่างไรซ์เบอร์รี่ ไส้จักรพรรดิ เพิ่มเป๋าฮื้อ กังป๋วย'},
+ {code:'BJ5',name:'บ๊ะจ่างรสลาบ หมูย่างเตาถ่าน'},
+];
+const bjFolder='12jTCYI9zH5Mc1ljf6AF-uLFbHmNi8Rsi';
+const pending=[
+ {code:'S060',name:'หมูย่างราดกระเทียมพริกไทยดำสไตล์จีน'},
+ {code:'S076',name:'สเต็กไก่อบเนยซอสปาปริก้า+ซุปฟักทอง'},
+ {code:'S085',name:'ข้าวสันในหมูผัดกะปิ'},
+ {code:'S091',name:'คาราเมนอกไก่ไข่ออนเซน'},
+ {code:'S170',name:'ข้าวแฮมเบิร์กซอสกะเพรา เห็ดออรินจิ'},
+ {code:'D061',name:'ผัดผักกาดขาวกุ้งแห้งราดไก่สับผัดกระเทียม'},
+ {code:'(code ว่าง)',name:'บ๊ะจ่าง หมู — code ว่างใน DB น่าจะซ้ำ BJ1',void:true},
+];
+const state=JSON.parse(localStorage.getItem('u360rv')||'{}');
+function save(){localStorage.setItem('u360rv',JSON.stringify(state));updateCnt()}
+function set(code,v){state[code]=v;save();render()}
+function cardHtml(c){
+ const st=state[c.code]||'';
+ return `<div class="card ${st==='yes'?'done-yes':st==='no'?'done-no':''}">
+   <div class="imgbox">
+     <img src="${THUMB(c.id)}" loading="lazy" onerror="this.style.display='none';this.parentNode.querySelector('.imgfail').style.display='flex'">
+     <div class="imgfail"><span>รูปโหลดไม่ขึ้น (ต้อง login Google)</span><a href="${VIEW(c.id)}" target="_blank">เปิดรูปใน Drive</a></div>
+   </div>
+   <div class="info">
+     <span class="code">${c.code}</span>
+     <div class="mname">${c.name}</div>
+     <div class="src">📁 ${c.src}</div>
+     ${c.note?`<div class="conf mid">⚠️ ${c.note}</div>`:''}
+     <a class="viewlink" href="${VIEW(c.id)}" target="_blank">🔍 เปิดรูปเต็มใน Drive</a>
+     <div class="btns">
+       <button class="yes ${st==='yes'?'on':''}" onclick="set('${c.code}','yes')">✓ ใช่</button>
+       <button class="maybe ${st==='maybe'?'on':''}" onclick="set('${c.code}','maybe')">❓ ไม่ชัด</button>
+       <button class="no ${st==='no'?'on':''}" onclick="set('${c.code}','no')">✗ ไม่ใช่</button>
+     </div>
+   </div></div>`;
+}
+function render(){
+ document.getElementById('high').innerHTML=candidates.filter(c=>c.conf==='high').map(cardHtml).join('');
+ document.getElementById('mid').innerHTML=candidates.filter(c=>c.conf==='mid').map(cardHtml).join('');
+ document.getElementById('bj').innerHTML=bj45.map(c=>`<div class="pending"><span class="code">${c.code}</span><div class="txt"><div class="mname">${c.name}</div><div class="st">📁 เปิดโฟลเดอร์บ๊ะจ่าง 38 รูป เลือกอันที่ใช่</div></div><a href="${FOLDER(bjFolder)}" target="_blank" style="background:#f08c00;color:#fff;padding:8px 12px;border-radius:8px;text-decoration:none;font-size:12px;font-weight:600;white-space:nowrap">เปิดโฟลเดอร์</a></div>`).join('');
+ document.getElementById('pending').innerHTML=pending.map(c=>`<div class="pending"><span class="code ${c.void?'void':''}">${c.code}</span><div class="txt"><div class="mname">${c.name}</div><div class="st">${c.void?'⚠️ ให้เช็ค/ลบตอน import':'🔍 กำลังหาในโฟลเดอร์เมนูเก่า...'}</div></div></div>`).join('');
+ updateCnt();
+}
+function updateCnt(){
+ const n=candidates.filter(c=>state[c.code]).length;
+ document.getElementById('cnt').textContent=`ตอบแล้ว ${n} / ${candidates.length}`;
+}
+function copyResult(){
+ let t='📋 ผลตรวจรูปเมนู Under360\n\n';
+ candidates.forEach(c=>{
+   const v=state[c.code];
+   const m={yes:'✅ ใช่ ใช้รูปนี้',no:'❌ ไม่ใช่',maybe:'❓ ไม่ชัด'}[v]||'⬜ ยังไม่ตอบ';
+   t+=`${c.code} ${c.name} → ${m}\n`;
+ });
+ t+='\n(บ๊ะจ่าง BJ4/BJ5 + เมนูที่เหลือ จะดูรอบหน้า)';
+ const ta=document.getElementById('ta');ta.value=t;ta.select();
+ try{navigator.clipboard.writeText(t);}catch(e){document.execCommand('copy');}
+ toast('คัดลอกแล้ว! วางในแชทส่งกลับได้เลย');
+}
+function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600);}
+render();
+</script>
+</body>
+</html>
