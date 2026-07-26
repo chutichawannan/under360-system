@@ -95,7 +95,7 @@ async function buildMessage(dateIso) {
   }
 
   let msg = `${head}\n\nรวม ${orders.length} ออเดอร์ · ${boxAll} กล่อง`;
-  msg += `\nMeal Plan: HP ${hpN} / LC ${lcN} · สต็อค-เซ็ต ${stN}`;
+  msg += hpN || lcN ? `\nMeal Plan: HP ${hpN} / LC ${lcN} · สต็อค-เซ็ต ${stN}` : `\n(ไม่มี Meal Plan · สต็อค-เซ็ต ${stN})`;
   if (unpaid) msg += `\nรอโอน ${unpaid} ออเดอร์`;
   if (mpLines.length) msg += `\n\n[Meal Plan ทำสด]\n${mpLines.join("\n")}`;
   if (stLines.length) msg += `\n\n[สต็อค / เซ็ต-แพคเกจ]\n${stLines.join("\n")}`;
