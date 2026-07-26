@@ -266,8 +266,10 @@ function render(){
   Array.prototype.forEach.call(document.querySelectorAll(".dchip"), function(el){
     el.addEventListener("click", function(){ jump(el.getAttribute("data-d")); });
   });
-  // default = พรุ่งนี้ (หน่วง 1 เฟรม — บนมือถือถ้าเลื่อนทันทีตอน render มักโดน layout ทับ แล้วค้างที่วันนี้)
-  requestAnimationFrame(function(){ setTimeout(function(){ jump(dates[1], true); }, 60); });
+  // default = "วันแรกที่มีออเดอร์" (วันนี้ก่อนถ้ามี · ไม่งั้นข้ามวันว่างไปวันที่มีของจริง)
+  // หน่วง 1 เฟรม — บนมือถือถ้าเลื่อนทันทีตอน render มักโดน layout ทับแล้วค้างที่บนสุด
+  var firstDay = dates.filter(function(d){ return byDate[d].length; })[0] || dates[1];
+  requestAnimationFrame(function(){ setTimeout(function(){ jump(firstDay, true); }, 60); });
 }
 
 function grp(title, list){
