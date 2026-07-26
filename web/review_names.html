@@ -7,47 +7,55 @@
 <title>ระบุชื่อเมนู — Under360</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f5f7;color:#1a1a1a;padding-bottom:90px}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f4f5f7;color:#1a1a1a;padding-bottom:92px}
 header{background:#2b8a3e;color:#fff;padding:16px 18px;position:sticky;top:0;z-index:10}
 header h1{font-size:17px}header p{font-size:12.5px;opacity:.92;margin-top:3px}
 .wrap{max-width:820px;margin:0 auto;padding:14px}
-.note{background:#fff;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px;border:1px solid #e5e7eb}
+.note{background:#fff;border-radius:12px;padding:12px 14px;font-size:13px;margin-bottom:14px;border:1px solid #e5e7eb;line-height:1.6}
 .note b{color:#2b8a3e}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:12px}
+.note .p{color:#e8590c}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}
 .card{background:#fff;border-radius:12px;overflow:hidden;border:1px solid #e5e7eb}
-.card.filled{border-color:#2b8a3e;box-shadow:0 0 0 2px rgba(43,138,62,.25)}
+.card.m{border-color:#2b8a3e;box-shadow:0 0 0 2px rgba(43,138,62,.25)}
+.card.p{border-color:#e8590c;box-shadow:0 0 0 2px rgba(232,89,12,.25)}
 .imgbox{width:100%;aspect-ratio:1;background:#eceef0;position:relative;display:flex;align-items:center;justify-content:center}
 .imgbox img{width:100%;height:100%;object-fit:cover}
 .imgbox .fb{display:none;font-size:12px;color:#fff;background:#2b8a3e;padding:8px 14px;border-radius:8px;text-decoration:none}
 .imgbox.fail img{display:none}.imgbox.fail .fb{display:block}
 .tag{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.55);color:#fff;font-size:10px;padding:2px 6px;border-radius:5px}
-.inp{padding:9px 10px}
+.inp{padding:9px 10px 4px}
 .inp input{width:100%;border:1.5px solid #dee2e6;border-radius:8px;padding:9px 10px;font-size:14px;font-family:inherit}
 .inp input:focus{outline:none;border-color:#2b8a3e}
+.inp input:disabled{background:#f1f3f5;color:#adb5bd}
+.row2{display:flex;gap:6px;padding:0 10px 10px}
+.row2 button{flex:1;padding:7px;border:1.5px solid #dee2e6;background:#fff;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer;color:#666}
+.row2 button.proc.on{background:#e8590c;color:#fff;border-color:#e8590c}
+.row2 button.skip.on{background:#868e96;color:#fff;border-color:#868e96}
 .bar{position:fixed;bottom:0;left:0;right:0;background:#fff;border-top:1px solid #dee2e6;padding:12px 16px;display:flex;gap:10px;align-items:center;z-index:20}
-.bar .cnt{font-size:13px;color:#555;flex:1}
+.bar .cnt{font-size:12.5px;color:#555;flex:1;line-height:1.4}
 .bar button{background:#2b8a3e;color:#fff;border:none;padding:12px 18px;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer}
-.toast{position:fixed;bottom:82px;left:50%;transform:translateX(-50%);background:#212529;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
+.toast{position:fixed;bottom:84px;left:50%;transform:translateX(-50%);background:#212529;color:#fff;padding:11px 20px;border-radius:10px;font-size:13px;opacity:0;transition:.25s;pointer-events:none;z-index:30;max-width:90%;text-align:center}
 .toast.show{opacity:1}
 textarea{position:absolute;left:-9999px}
 </style>
 </head>
 <body>
 <header>
-  <h1>✏️ ระบุชื่อเมนู (รูปไม่มีชื่อ)</h1>
-  <p>PROOF ทดสอบ · 15 รูปจากโฟลเดอร์ photo shoot (Wongnai) — ลองพิมพ์ชื่อดูว่าสะดวกไหม</p>
+  <h1>✏️ แยกประเภทรูป + ตั้งชื่อเมนู</h1>
+  <p>PROOF · 15 รูป photo shoot (Wongnai) — ลองดูว่าสะดวกไหม</p>
 </header>
 <div class="wrap">
   <div class="note">
-    รูปพวกนี้ชื่อไฟล์เป็น DSC (ไม่บอกเมนู) — <b>นัทดูรูปแล้วพิมพ์ชื่อเมนูในช่องใต้รูป</b><br>
-    • รูปไหนไม่รู้/ไม่ใช่เมนู = เว้นว่างไว้ (ข้าม)<br>
-    • รูปมุมซ้ำจานเดิม = พิมพ์ชื่อเดิมได้ (ผมจะรวมให้)<br>
-    • เสร็จกด <b>"คัดลอกที่กรอก"</b> ล่างจอ → วางในแชทส่งกลับ → ผม copy เข้าคลัง+ตั้งชื่อให้
+    ดูรูปแล้วเลือก 3 อย่าง:<br>
+    • <b>เป็นเมนู</b> → พิมพ์ชื่อเมนูในช่อง<br>
+    • <span class="p"><b>🍳 ขั้นตอนการทำ</b></span> (ไว้โปรโมท) → กดปุ่มส้ม<br>
+    • <b>ไม่ใช่เมนู</b> (คน/บรรยากาศ/ซ้ำ) → กด "คัดออก" (ปุ่มเทา)<br>
+    เสร็จกด <b>"คัดลอกที่กรอก"</b> → วางในแชทส่งกลับ → ผมแยกเข้าคลังเมนู / โฟลเดอร์ขั้นตอนทำ ให้
   </div>
   <div class="grid" id="grid"></div>
 </div>
 <div class="bar">
-  <div class="cnt" id="cnt">กรอกแล้ว 0 / 15</div>
+  <div class="cnt" id="cnt">เมนู 0 · ขั้นตอน 0 · คัด 0</div>
   <button onclick="copyResult()">📋 คัดลอกที่กรอก</button>
 </div>
 <div class="toast" id="toast"></div>
@@ -72,35 +80,51 @@ const imgs=[
  {id:'1CWm8uFkitu7GYwWb8QeZNvwAYceniXqn',t:'DSC02726'},
  {id:'13tkU-sa0IJlvcWArpRIcHZyMbbFHPypf',t:'DSC02712'},
 ];
-const state=JSON.parse(localStorage.getItem('u360names')||'{}');
+// state[id] = {k:'menu',name:'...'} | {k:'proc'} | {k:'skip'}
+const state=JSON.parse(localStorage.getItem('u360names2')||'{}');
+function save(){localStorage.setItem('u360names2',JSON.stringify(state));updateCnt();}
+function cls(id){const s=state[id];return s?(s.k==='menu'?'m':s.k==='proc'?'p':''):'';}
 function render(){
- document.getElementById('grid').innerHTML=imgs.map(m=>`
-  <div class="card ${state[m.id]?'filled':''}" id="c-${m.id}">
+ document.getElementById('grid').innerHTML=imgs.map(m=>{
+  const s=state[m.id]||{};
+  return `<div class="card ${cls(m.id)}" id="c-${m.id}">
     <div class="imgbox">
       <img loading="lazy" src="${THUMB(m.id)}" onerror="this.parentNode.classList.add('fail')">
       <a class="fb" href="${VIEW(m.id)}" target="_blank">เปิดรูป</a>
       <span class="tag">${m.t}</span>
     </div>
-    <div class="inp"><input type="text" placeholder="ชื่อเมนู…" value="${(state[m.id]||'').replace(/"/g,'&quot;')}"
-      oninput="upd('${m.id}',this.value)"></div>
-  </div>`).join('');
+    <div class="inp"><input type="text" placeholder="ชื่อเมนู…" ${s.k==='proc'||s.k==='skip'?'disabled':''}
+      value="${(s.name||'').replace(/"/g,'&quot;')}" oninput="setName('${m.id}',this.value)"></div>
+    <div class="row2">
+      <button class="proc ${s.k==='proc'?'on':''}" onclick="toggle('${m.id}','proc')">🍳 ขั้นตอนทำ</button>
+      <button class="skip ${s.k==='skip'?'on':''}" onclick="toggle('${m.id}','skip')">✕ คัดออก</button>
+    </div></div>`;
+ }).join('');
  updateCnt();
 }
-function upd(id,v){
+function setName(id,v){
  v=v.trim();
- if(v)state[id]=v; else delete state[id];
- localStorage.setItem('u360names',JSON.stringify(state));
- document.getElementById('c-'+id).classList.toggle('filled',!!v);
- updateCnt();
+ if(v)state[id]={k:'menu',name:v}; else delete state[id];
+ document.getElementById('c-'+id).className='card '+cls(id);
+ save();
 }
-function updateCnt(){document.getElementById('cnt').textContent=`กรอกแล้ว ${Object.keys(state).length} / ${imgs.length}`;}
+function toggle(id,k){
+ if(state[id]&&state[id].k===k){delete state[id];} else {state[id]={k};}
+ save();render();
+}
+function updateCnt(){
+ let m=0,p=0,s=0;
+ Object.values(state).forEach(v=>{if(v.k==='menu')m++;else if(v.k==='proc')p++;else if(v.k==='skip')s++;});
+ document.getElementById('cnt').textContent=`เมนู ${m} · ขั้นตอน ${p} · คัด ${s} (จาก ${imgs.length})`;
+}
 function copyResult(){
- const rows=imgs.filter(m=>state[m.id]).map(m=>`${state[m.id]} | ${m.id}`);
- if(!rows.length){toast('ยังไม่ได้กรอกชื่อเลย');return;}
- const t='📋 ชื่อเมนูที่ระบุ (proof)\n'+rows.join('\n');
+ const menu=[],proc=[];
+ imgs.forEach(m=>{const s=state[m.id];if(!s)return;if(s.k==='menu')menu.push(`${s.name} | ${m.id}`);else if(s.k==='proc')proc.push(m.id);});
+ if(!menu.length&&!proc.length){toast('ยังไม่ได้เลือกอะไรเลย');return;}
+ let t='📋 ผลแยกรูป (proof)\n\n=== เมนู ('+menu.length+') ===\n'+(menu.join('\n')||'-')+'\n\n=== ขั้นตอนทำ ('+proc.length+') ===\n'+(proc.join('\n')||'-');
  const ta=document.getElementById('ta');ta.value=t;ta.select();
  try{navigator.clipboard.writeText(t);}catch(e){document.execCommand('copy');}
- toast('คัดลอก '+rows.length+' รายการแล้ว! วางในแชทส่งกลับ');
+ toast('คัดลอกแล้ว! วางในแชทส่งกลับ');
 }
 function toast(m){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2600);}
 render();
