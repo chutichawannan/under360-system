@@ -8,9 +8,13 @@ description: ใช้ทุกครั้งที่เริ่มงาน�
 **กฎเหล็ก: ห้ามแก้โค้ด/ตอบเรื่อง state ของระบบ ก่อนอ่าน context ครบ**
 
 ## 1. อ่านไฟล์ context ก่อนเสมอ (ตามลำดับ)
-1. `CLAUDE.md` (root ของ repo) — single source of truth
-2. `UNDER360_MASTERNOTE_v*.md` (ถ้ามีในโฟลเดอร์ / นัทแนบมา) — เอาเวอร์ชันสูงสุด
-3. `UNDER360_HISTORY.md` — timeline ความสำเร็จ + เลขเวอร์ชันปัจจุบัน (u/m/a/doc)
+1. `CLAUDE.md` (root ของ repo) — **กฎถาวร** (conventions/stack/credentials/แบรนด์/ตาราง DB)
+2. `PRD.md` (root) — **สเปคงานที่กำลังทำอยู่ตอนนี้แผ่นเดียว** · อะไรที่ไม่อยู่ในแผ่นนี้ = ไม่ทำ (เปลี่ยนงาน = เขียนทับแผ่นนี้)
+3. `TODO.md` (root) — งานค้างทุก track + หัวข้อ "🔴 นัทต้องทำ"
+4. `docs/UNDER360_MASTERNOTE_v*.md` — ยุทธศาสตร์/backlog (เอาเวอร์ชันสูงสุด · **ไม่ใช่ไฟล์สั่งงาน**)
+5. `docs/UNDER360_HISTORY.md` — timeline ความสำเร็จ + เลขเวอร์ชันปัจจุบัน (u/m/a/doc)
+
+> 📁 ไฟล์ตระกูล MASTERNOTE/HISTORY อยู่ใน `docs/` และ **ถูก gitignore** (doc-flow working files) — ไม่เจอใน GitHub เป็นเรื่องปกติ
 
 ถ้าไม่เจอไฟล์เหล่านี้ → **ถามหา 1 ครั้ง แล้วหยุดรอ** อย่าเริ่มงานโดยเดา
 
