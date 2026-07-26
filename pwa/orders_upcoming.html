@@ -74,8 +74,15 @@ main{padding:16px 14px 0}
 .c3{margin-top:7px;font-size:13px;color:var(--soft);display:flex;gap:8px}
 .c3 .addr{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 a.tel{color:var(--tx);text-decoration:none;font-variant-numeric:tabular-nums}
-.menus{margin-top:7px;font-size:13px;color:var(--soft);line-height:1.5}
-.ono{margin-top:7px;font-size:11px;color:#6C8175;letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.more{margin-left:auto;font-size:12px;color:#6C8175}
+.card.open .more{color:var(--g)}
+.detail{display:none;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.card.open .detail{display:block}
+.mlist{margin-top:8px}
+.mlist .m{font-size:15px;color:var(--tx);padding:6px 0;border-bottom:1px solid rgba(42,58,50,.5)}
+.mlist .m:last-child{border-bottom:none}
+.addr2{margin-top:9px;font-size:13px;color:var(--soft);line-height:1.5}
+.ono{margin-top:8px;font-size:11px;color:#6C8175;letter-spacing:.3px;font-variant-numeric:tabular-nums}
 .empty{color:var(--soft);font-size:14px;padding:10px 2px}
 .state{text-align:center;color:var(--soft);padding:50px 20px;font-size:15px}
 .err{color:var(--warn)}
@@ -259,7 +266,8 @@ function render(){
   Array.prototype.forEach.call(document.querySelectorAll(".dchip"), function(el){
     el.addEventListener("click", function(){ jump(el.getAttribute("data-d")); });
   });
-  jump(dates[1], true); // default = พรุ่งนี้
+  // default = พรุ่งนี้ (หน่วง 1 เฟรม — บนมือถือถ้าเลื่อนทันทีตอน render มักโดน layout ทับ แล้วค้างที่วันนี้)
+  requestAnimationFrame(function(){ setTimeout(function(){ jump(dates[1], true); }, 60); });
 }
 
 function grp(title, list){
@@ -288,16 +296,22 @@ function card(o){
   if(src) chips.push('<span class="chip">'+esc(src)+'</span>');
 
   var addr = o.delivery_address_text || o.delivery_address || "";
-  var menus = c.names.length ? c.names.slice(0,6).join(" · ") + (c.names.length>6? " …(+"+(c.names.length-6)+")":"") : "";
+  var menus = c.names.length
+    ? c.names.map(function(n){ return '<div class="m">'+esc(n)+'</div>'; }).join("")
+    : '<div class="m" style="opacity:.6">(ไม่มีรายการเมนูในระบบ)</div>';
 
+  // การ์ดปิดไว้ = ชื่อ · จำนวนกล่อง · เบอร์ เท่านั้น — แตะแล้วค่อยกางรายละเอียด
   return '<div class="card">'
     + '<div class="c1"><div class="cname">'+esc(name)+'</div>'
     + '<div class="cbox">'+(c.boxes||0)+' กล่อง</div></div>'
-    + '<div class="c2">'+chips.join("")+'</div>'
     + '<div class="c3"><a class="tel" href="tel:'+esc((o.customer_phone||"").replace(/[^0-9+]/g,""))+'">'+esc(fmtPhone(o.customer_phone))+'</a>'
-    + '<span class="addr">'+esc(addr)+'</span></div>'
-    + (menus ? '<div class="menus">'+esc(menus)+'</div>' : "")
-    + '<div class="ono">'+esc(o.order_number||"")+(o.total? " · "+Number(o.total).toLocaleString("th-TH")+" ฿":"")+'</div>'
+    + '<span class="more">แตะดูเมนู</span></div>'
+    + '<div class="detail">'
+      + '<div class="c2">'+chips.join("")+'</div>'
+      + '<div class="mlist">'+menus+'</div>'
+      + (addr ? '<div class="addr2">'+esc(addr)+'</div>' : "")
+      + '<div class="ono">'+esc(o.order_number||"")+(o.total? " · "+Number(o.total).toLocaleString("th-TH")+" ฿":"")+'</div>'
+    + '</div>'
     + '</div>';
 }
 
@@ -311,6 +325,17 @@ function jump(d, instant){
 
 /* ── EVENTS ─────────────────────────────────────────────── */
 document.getElementById("btnRefresh").addEventListener("click", function(){ loadAll(); });
+
+// แตะการ์ด = กาง/พับรายละเอียด (กดที่เบอร์ = โทรออก ไม่ใช่กาง)
+document.getElementById("main").addEventListener("click", function(e){
+  if(!e.target.closest) return;
+  if(e.target.closest("a.tel")) return;
+  var el = e.target.closest(".card");
+  if(!el) return;
+  el.classList.toggle("open");
+  var m = el.querySelector(".more");
+  if(m) m.textContent = el.classList.contains("open") ? "ซ่อน" : "แตะดูเมนู";
+});
 document.addEventListener("visibilitychange", function(){
   if(document.visibilityState==="visible"){
     var t = bkkToday();
