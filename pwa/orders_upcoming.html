@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Under360 — ออเดอร์ล่วงหน้า</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#10221A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ออเดอร์">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#0E1512; --panel:#16211C; --panel2:#1D2A24; --line:#2A3A32;
+  --tx:#EAF2ED; --soft:#93A79B; --g:#35D07F; --g-dim:#1F7A4D;
+  --hp:#5AA9FF; --lc:#F2B33D; --warn:#FF6B6B;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai","Helvetica Neue",sans-serif;
+  font-size:17px; line-height:1.45;
+  padding-bottom:40px;
+  padding-top:env(safe-area-inset-top);
+}
+header{
+  position:sticky; top:0; z-index:20; background:rgba(14,21,18,.96);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 0;
+}
+.hrow{display:flex;align-items:center;gap:10px}
+.htitle{font-size:19px;font-weight:700;letter-spacing:.2px}
+.hsub{font-size:12px;color:var(--soft);margin-top:2px}
+.btn{
+  margin-left:auto; background:var(--panel2); color:var(--tx); border:1px solid var(--line);
+  border-radius:10px; padding:10px 14px; font-size:15px; font-weight:600; cursor:pointer;
+}
+.btn:active{background:var(--g-dim)}
+.datebar{display:flex;gap:8px;overflow-x:auto;padding:12px 0 10px;scrollbar-width:none}
+.datebar::-webkit-scrollbar{display:none}
+.dchip{
+  flex:0 0 auto; background:var(--panel); border:1px solid var(--line); border-radius:12px;
+  padding:8px 12px; min-width:74px; text-align:center; cursor:pointer;
+}
+.dchip .dd{font-size:12px;color:var(--soft)}
+.dchip .dn{font-size:17px;font-weight:700;margin-top:1px}
+.dchip .dc{font-size:11px;color:var(--soft);margin-top:2px}
+.dchip.on{border-color:var(--g);background:var(--panel2)}
+.dchip.on .dc{color:var(--g)}
+main{padding:16px 14px 0}
+.day{margin-bottom:26px;scroll-margin-top:132px}
+.dayhead{display:flex;align-items:baseline;gap:10px;padding:0 2px 10px;border-bottom:1px solid var(--line);margin-bottom:12px}
+.dayhead .t{font-size:20px;font-weight:700}
+.dayhead .n{font-size:13px;color:var(--soft);margin-left:auto}
+.badge-tm{background:var(--g);color:#08130D;border-radius:999px;padding:2px 9px;font-size:11px;font-weight:800}
+.grp{margin-bottom:14px}
+.grphead{font-size:13px;font-weight:700;color:var(--soft);letter-spacing:.6px;margin:0 2px 8px;text-transform:uppercase}
+.card{
+  background:var(--panel); border:1px solid var(--line); border-radius:14px;
+  padding:12px 13px; margin-bottom:9px;
+}
+.c1{display:flex;align-items:center;gap:8px}
+.cname{font-size:18px;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cbox{font-size:15px;font-weight:700;color:var(--g);white-space:nowrap}
+.c2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.chip{font-size:12px;border-radius:8px;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--soft)}
+.chip.hp{color:var(--hp);border-color:#2B4A6B}
+.chip.lc{color:var(--lc);border-color:#6B5622}
+.chip.paid{color:var(--g);border-color:var(--g-dim)}
+.chip.unpaid{color:var(--warn);border-color:#5C2B2B}
+.c3{margin-top:7px;font-size:13px;color:var(--soft);display:flex;gap:8px}
+.c3 .addr{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+a.tel{color:var(--tx);text-decoration:none;font-variant-numeric:tabular-nums}
+.menus{margin-top:7px;font-size:13px;color:var(--soft);line-height:1.5}
+.ono{margin-top:7px;font-size:11px;color:#6C8175;letter-spacing:.3px;font-variant-numeric:tabular-nums}
+.empty{color:var(--soft);font-size:14px;padding:10px 2px}
+.state{text-align:center;color:var(--soft);padding:50px 20px;font-size:15px}
+.err{color:var(--warn)}
+.foot{text-align:center;color:var(--soft);font-size:12px;padding:14px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div>
+      <div class="htitle">ออเดอร์ล่วงหน้า</div>
+      <div class="hsub" id="stamp">กำลังโหลด…</div>
+    </div>
+    <button class="btn" id="btnRefresh" type="button">รีเฟรช</button>
+  </div>
+  <div class="datebar" id="datebar"></div>
+</header>
+
+<main id="main"><div class="state">กำลังโหลดออเดอร์…</div></main>
+<div class="foot">อ่านอย่างเดียว · แก้ไขออเดอร์ที่ Operation Hub</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Under360 — orders_upcoming (PWA) · u-track
+   read-only: ดูออเดอร์ล่วงหน้า 7 วันจากมือถือ · ไม่มีปุ่มแก้ไข/ลบ */
+var DEV_MODE = false;
+var SB_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
+var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+var sb = supabase.createClient(SB_URL, SB_KEY);
+
+var DAYS_AHEAD = 7;
+var TH_DAY = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
+var TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+
+/* ── วันที่: ยึดเวลาไทยเสมอ (นัทอาจเปิดจากโซนเวลาอื่น) ───────── */
+function bkkToday(){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+}
+function addDays(iso,n){
+  var d = new Date(iso+"T00:00:00Z");
+  d.setUTCDate(d.getUTCDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function dObj(iso){ return new Date(iso+"T00:00:00Z"); }
+function fmtDay(iso){ var d=dObj(iso); return TH_DAY[d.getUTCDay()]; }
+function fmtDM(iso){ var d=dObj(iso); return d.getUTCDate()+" "+TH_MON[d.getUTCMonth()]; }
+function fmtStamp(){
+  return new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit"}).format(new Date());
+}
+function fmtPhone(p){
+  var s=(p||"").replace(/[^0-9]/g,"");
+  if(s.length===9) s="0"+s;
+  if(s.length===10) return s.slice(0,3)+"-"+s.slice(3,6)+"-"+s.slice(6);
+  return s||"—";
+}
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+}); }
+
+/* ── STATE ─────────────────────────────────────────────── */
+var today = bkkToday();
+var dates = [];
+var orders = [];
+var itemsBy = {};
+var loading = false;
+
+for (var i=0;i<=DAYS_AHEAD;i++) dates.push(addDays(today,i));
+
+/* ── LOAD (sequential เท่านั้น — ห้าม Promise.all) ─────── */
+async function loadAll(){
+  if(loading) return;
+  loading = true;
+  document.getElementById("stamp").textContent = "กำลังโหลด…";
+  try{
+    var from = dates[0], to = dates[dates.length-1];
+    var r1 = await sb.from("orders")
+      .select("id,order_number,customer_name,customer_phone,delivery_date,time_slot,time_slot_label,delivery_address_text,delivery_address,delivery_type,status,payment_status,total,notes,line_display_name")
+      .gte("delivery_date", from).lte("delivery_date", to)
+      .order("delivery_date").order("time_slot")
+      .limit(2000);
+    if(r1.error) throw r1.error;
+    orders = (r1.data||[]).filter(function(o){ return (o.status||"") !== "cancelled"; });
+
+    itemsBy = {};
+    var ids = orders.map(function(o){ return o.id; });
+    for(var s=0; s<ids.length; s+=120){
+      var part = ids.slice(s,s+120);
+      var r2 = await sb.from("order_items")
+        .select("order_id,menu_code,menu_name,quantity,notes")
+        .in("order_id", part).limit(4000);
+      if(r2.error) throw r2.error;
+      (r2.data||[]).forEach(function(it){
+        (itemsBy[it.order_id] = itemsBy[it.order_id] || []).push(it);
+      });
+    }
+    document.getElementById("stamp").textContent = "ข้อมูล ณ "+fmtStamp()+" น. (เวลาไทย)";
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById("stamp").innerHTML = '<span class="err">โหลดไม่สำเร็จ — กดรีเฟรช</span>';
+    document.getElementById("main").innerHTML = '<div class="state err">ดึงข้อมูลไม่ได้<br>'+esc(e.message||e)+'</div>';
+  }
+  loading = false;
+}
+
+/* ── จำแนกประเภทออเดอร์ ─────────────────────────────────
+   Meal Plan = code ขึ้นต้น HP/LC หรือ notes 'meal_plan:'  (ทำสด จ/พ/ศ)
+   Package/เซ็ต = notes 'pkg:'                              (ทำสต็อค)
+   ที่เหลือ = เมนูสต็อคชิ้นเดียว                                    */
+function classify(o){
+  var its = itemsBy[o.id] || [];
+  var boxes = 0, hp=false, lc=false, pkg=false, names=[];
+  its.forEach(function(it){
+    var q = it.quantity||1; boxes += q;
+    var code = (it.menu_code||"").toUpperCase();
+    var nt = it.notes||"";
+    if(/^HP/.test(code) || /^meal_plan:hp/i.test(nt)) hp = true;
+    if(/^LC/.test(code) || /^meal_plan:lc/i.test(nt)) lc = true;
+    if(/^meal_plan:/i.test(nt) && !hp && !lc) hp = true;
+    if(/^pkg:/i.test(nt)) pkg = true;
+    names.push((it.menu_name||it.menu_code||"—") + (q>1 ? " x"+q : ""));
+  });
+  return {
+    boxes: boxes,
+    isMP: hp||lc,
+    hp: hp, lc: lc, pkg: pkg,
+    names: names,
+    count: its.length
+  };
+}
+var ST_TH = {pending:"รอยืนยัน", confirmed:"ยืนยันแล้ว", preparing:"กำลังทำ", ready:"พร้อมส่ง",
+             delivering:"กำลังส่ง", delivered:"ส่งแล้ว", scheduled:"นัดไว้"};
+function stTh(s){ return ST_TH[s] || s || ""; }
+function srcOf(o){
+  var n = o.order_number||"";
+  if(/^HT-/i.test(n)) return "Hato LIFF";
+  if(/^HS-/i.test(n)) return "Hato ช่องเก่า";
+  if(/^U-/i.test(n))  return "360";
+  return "";
+}
+
+/* ── RENDER ─────────────────────────────────────────────── */
+function render(){
+  var byDate = {};
+  dates.forEach(function(d){ byDate[d] = []; });
+  orders.forEach(function(o){ if(byDate[o.delivery_date]) byDate[o.delivery_date].push(o); });
+
+  // แถบวันที่ด้านบน
+  var bar = dates.map(function(d,i){
+    var n = byDate[d].length;
+    return '<div class="dchip'+(i===1?" on":"")+'" data-d="'+d+'">'
+      + '<div class="dd">'+fmtDay(d)+(i===0?" (วันนี้)":i===1?" (พรุ่งนี้)":"")+'</div>'
+      + '<div class="dn">'+fmtDM(d)+'</div>'
+      + '<div class="dc">'+(n? n+" ออเดอร์" : "—")+'</div></div>';
+  }).join("");
+  document.getElementById("datebar").innerHTML = bar;
+
+  var html = dates.map(function(d,i){
+    var list = byDate[d];
+    var mp = [], st = [];
+    var boxAll = 0;
+    list.forEach(function(o){
+      var c = classify(o); o._c = c; boxAll += c.boxes;
+      (c.isMP ? mp : st).push(o);
+    });
+    var head = '<div class="dayhead"><div class="t">'+fmtDay(d)+" "+fmtDM(d)+'</div>'
+      + (i===0? '<span class="badge-tm">วันนี้</span>' : i===1? '<span class="badge-tm">พรุ่งนี้</span>' : "")
+      + '<div class="n">'+list.length+' ออเดอร์'+(boxAll? " · "+boxAll+" กล่อง":"")+'</div></div>';
+    var body = "";
+    if(!list.length){
+      body = '<div class="empty">ยังไม่มีออเดอร์</div>';
+    }else{
+      if(mp.length) body += grp("Meal Plan (ทำสด)", mp);
+      if(st.length) body += grp("สต็อค / เซ็ต-แพคเกจ", st);
+    }
+    return '<section class="day" id="day-'+d+'">'+head+body+'</section>';
+  }).join("");
+  document.getElementById("main").innerHTML = html;
+
+  Array.prototype.forEach.call(document.querySelectorAll(".dchip"), function(el){
+    el.addEventListener("click", function(){ jump(el.getAttribute("data-d")); });
+  });
+  jump(dates[1], true); // default = พรุ่งนี้
+}
+
+function grp(title, list){
+  var sub = "";
+  var hp = list.filter(function(o){return o._c.hp;}).length;
+  var lc = list.filter(function(o){return o._c.lc;}).length;
+  if(hp||lc) sub = " · HP "+hp+" / LC "+lc;
+  return '<div class="grp"><div class="grphead">'+esc(title)+" ("+list.length+")"+esc(sub)+'</div>'
+    + list.map(card).join("") + '</div>';
+}
+
+function card(o){
+  var c = o._c;
+  var name = o.customer_name || o.line_display_name || "(ไม่ระบุชื่อ)";
+  var chips = [];
+  if(c.hp) chips.push('<span class="chip hp">HP</span>');
+  if(c.lc) chips.push('<span class="chip lc">LC</span>');
+  if(c.pkg) chips.push('<span class="chip">เซ็ต/แพค</span>');
+  if(!c.hp && !c.lc && !c.pkg) chips.push('<span class="chip">สต็อค</span>');
+  if(o.time_slot_label) chips.push('<span class="chip">'+esc(o.time_slot_label)+'</span>');
+  chips.push(o.payment_status==="paid"
+    ? '<span class="chip paid">โอนแล้ว</span>'
+    : '<span class="chip unpaid">รอโอน</span>');
+  if(o.status) chips.push('<span class="chip">'+esc(stTh(o.status))+'</span>');
+  var src = srcOf(o);
+  if(src) chips.push('<span class="chip">'+esc(src)+'</span>');
+
+  var addr = o.delivery_address_text || o.delivery_address || "";
+  var menus = c.names.length ? c.names.slice(0,6).join(" · ") + (c.names.length>6? " …(+"+(c.names.length-6)+")":"") : "";
+
+  return '<div class="card">'
+    + '<div class="c1"><div class="cname">'+esc(name)+'</div>'
+    + '<div class="cbox">'+(c.boxes||0)+' กล่อง</div></div>'
+    + '<div class="c2">'+chips.join("")+'</div>'
+    + '<div class="c3"><a class="tel" href="tel:'+esc((o.customer_phone||"").replace(/[^0-9+]/g,""))+'">'+esc(fmtPhone(o.customer_phone))+'</a>'
+    + '<span class="addr">'+esc(addr)+'</span></div>'
+    + (menus ? '<div class="menus">'+esc(menus)+'</div>' : "")
+    + '<div class="ono">'+esc(o.order_number||"")+(o.total? " · "+Number(o.total).toLocaleString("th-TH")+" ฿":"")+'</div>'
+    + '</div>';
+}
+
+function jump(d, instant){
+  var el = document.getElementById("day-"+d);
+  Array.prototype.forEach.call(document.querySelectorAll(".dchip"), function(x){
+    x.classList.toggle("on", x.getAttribute("data-d")===d);
+  });
+  if(el) el.scrollIntoView({behavior: instant? "auto":"smooth", block:"start"});
+}
+
+/* ── EVENTS ─────────────────────────────────────────────── */
+document.getElementById("btnRefresh").addEventListener("click", function(){ loadAll(); });
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="visible"){
+    var t = bkkToday();
+    if(t !== today){ // ข้ามวันแล้ว → คำนวณช่วงวันใหม่
+      today = t; dates = [];
+      for (var i=0;i<=DAYS_AHEAD;i++) dates.push(addDays(today,i));
+    }
+    loadAll();
+  }
+});
+
+loadAll();
+
+/* ── PWA: cache เฉพาะ shell · ข้อมูลออเดอร์ fetch สดเสมอ ── */
+if("serviceWorker" in navigator){
+  window.addEventListener("load", function(){
+    navigator.serviceWorker.register("./sw.js").catch(function(e){ console.warn("sw", e); });
+  });
+}
+</script>
+</body>
+</html>

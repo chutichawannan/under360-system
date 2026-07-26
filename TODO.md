@@ -32,6 +32,14 @@
 - [x] ✅ **รูปเมนู LIFF เสร็จ** — อัพ 70 รูปจากโบรชัวร์ (Drive) เข้า Storage + image_urls ครบ · เหลือ 7 เมนูไม่มีรูป (BJ บ๊ะจ่าง/D061/LC34) ถ้ามีรูปส่งเพิ่มได้ `[u]`
 - [~] **สั่งเทส 1 ออเดอร์จริง** — ✅ **สั่งผ่านแล้ว U-0724-001** (23 ก.ค. · ฿1,551 · ค่าส่ง 22 · เข้า DB ครบ status=confirmed) · **เหลือ: อัพสลิป** เพื่อเทส payment badge (ตอนนี้ payment_status=unpaid เพราะยังไม่อัพ) → เช็ค OH ขึ้น 💰โอนแล้ว + กดสลับได้ + KQ เห็นออเดอร์+badge `[u]`
 - [ ] (ก่อนเปิด Ads) เช็คราคา `mp_offer_sets` ตรง ad copy "เริ่ม 1,399.-" · ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ใน Vercel (noti MP) `[u]`
+- [ ] ⭐ **เทส PWA "ออเดอร์ล่วงหน้า" บนมือถือ + เพิ่มลงหน้าโฮม (u0.4.37 · อยู่บน branch `feature/orders-upcoming`)** `[u]`
+  - Vercel → Deployments → หา branch `feature/orders-upcoming` → เปิด **Preview URL** ต่อท้าย `/pwa/orders_upcoming.html` บน **iPhone** (Safari → แชร์ → เพิ่มลงหน้าจอโฮม) และ Android Chrome (เมนู → ติดตั้งแอป)
+  - เช็ค: เปิดมาเจอ **ออเดอร์พรุ่งนี้** ก่อน · ชื่อ/เบอร์/กล่อง/ช่วงเวลาถูก · กดเบอร์แล้วโทรออกได้ · ปุ่มรีเฟรชทำงาน
+  - ผ่านแล้วบอกผม → merge เข้า main (ของจริงยังไม่ขยับจนกว่าจะ merge)
+- [ ] ⭐ **ตั้ง 2 ค่าใน Vercel env → ปลดล็อก LINE เด้งสรุปออเดอร์ทุก 3 ทุ่ม (u0.4.37)** `[u]`
+  - `LINE_CHANNEL_ACCESS_TOKEN` = token ของ **Messaging API channel** (OA ร้าน) — ตัวเดียวกับที่ค้างมาตั้งแต่ noti Meal Plan
+  - `ORDERS_NOTIFY_TO` = LINE **userId ของนัท** (หรือ groupId ของกลุ่มทีม) — จะส่งเข้าใคร บอกผมได้ ผมเตรียมวิธีดึง uid ให้
+  - เทสก่อนได้ไม่ต้องรอ token: เปิด `…/api/notify-daily-orders?dry=1` → เห็นข้อความที่จะส่ง
 - [ ] ⭐ **ยืนยันราคาเซ็ตทดลอง MP กับ main ก่อนลง ad copy** — DB=HP 1,499/LC 1,399 · masternote เคยเขียน HP 1,699 → จะใช้เลขไหน? (LIFF ขายจาก DB=1,499) `[e]`
 - [ ] ⭐ **ตอบ: ตอนนี้จดค่าใช้จ่าย/ยอดซื้อ(ต้นทุน)ไว้ที่ไหน** (สมุด/Excel/บิล Freshket/ไม่จด?) → ออกแบบหน้าจดบัญชีให้ตรงพฤติกรรม `[a]`
 - [x] ✅ **Hato report ครบ 25 เดือน + รายสินค้า** — นัทสร้าง+ฟอเวิดแล้ว → import ครบ (ดู 🟠 Migrate-track) `[migrate]`
@@ -46,6 +54,8 @@
 - [x] harvest SEO Wix ครบ (WIX_SEO_HARVEST.md) · แก้ copy "ปรุงสด 10 ปี" + ค่าส่ง · localize รูป · gen web/vercel.json `[m]`
 
 ## 🔵 U-track (code / LIFF / DB / หลังบ้าน)
+- [x] ✅ **u0.4.37 — PWA ออเดอร์ล่วงหน้า + LINE push 3 ทุ่ม + branch workflow + PRD.md** (บรีฟมือถือ 26 ก.ค. ครบทั้งใบ) · เหลือ 2 ข้อที่นัทกดเอง (ดูหัวข้อ 🔴 ด้านบน) `[u]`
+- [ ] (v2 ถ้าใช้แล้วอยากได้เพิ่ม) PWA: ดึงรอบ Meal Plan จาก `mp_deliveries` มารวมด้วย · ปุ่มโทร/เปิดแผนที่ · กรองเฉพาะ 360 vs Hato `[u]`
 - [ ] 🔥 **ปุ่ม "สั่งแทนลูกค้า" ใน OH — นัทอนุมัติแล้ว 23 ก.ค. (ส่งจาก session 05 LINE OA/CRM)** · **ปัญหาที่แก้:** แอดมินกดสั่งแทนลูกค้าที่ไม่สะดวกกดเอง → ออเดอร์ไปกองในชื่อแอดมิน → ข้อมูลลูกค้าเพี้ยนสะสมทุกครั้งที่แอดมินเปลี่ยน (เพิ่งเสียเวลาทั้งวันแกะย้อนหลัง 2,640 ออเดอร์) · **ต้องมี:** ตอนสร้างออเดอร์ใน OH ให้เลือก/กรอก **"ลูกค้าตัวจริง" แยกจาก "คนกด"** → เก็บ 2 ฟิลด์ (`customer_id` = ลูกค้าจริง · `created_by` = แอดมินที่กด) ไม่ใช่ยัดรวมช่องเดียว `[a→u]`
 - [ ] **ป้ายประเภทลูกค้าในหน้า customer ของ OH** — แสดง badge จาก `customers.admin_notes` ที่ขึ้นต้น `[ADMIN:...]` / `[B2B:...]` (session 05 จะติดป้ายให้ใน DB) → แอดมินเปิดดูลูกค้าแล้วรู้ทันทีว่าคนนี้ไม่ใช่ลูกค้าปลายทาง `[a→u]`
   - 🆕 **เพิ่ม: โชว์บรรทัด `[PRE-HATO 2020-22]` ใน admin_notes ด้วย** (migrate ลงให้ 2,135 คน) — เป็น**ไซส์ซิ่งกำลังซื้อ**: `{ลูกค้าตัวใหญ่/สม่ำเสมอ/ขาจร} · สั่ง N ครั้ง · รวม X กล่อง (เฉลี่ย Y/ครั้ง) · {ซื้อเป็นเซต(คอร์ส)/รายครั้ง} · {เน้นข้าวกล่อง/กับข้าว/ผสม} · ล่าสุด` → แอดมิน/OH เห็นทันทีว่าลูกค้าคนนี้ซื้อมาก/น้อย ซื้อแบบไหน `[migrate→u]`
@@ -67,23 +77,36 @@
 - [x] **u0.4.25–34** (16–20 ก.ค.): multi-round split · multicat · perf init batch · payment_status 3 หน้า (LIFF/OH/KQ) · ระยะขับจริง (Distance Matrix) · แพคเกจส่งฟรี + badge · live presence · master ค่าส่ง/brand rules `[u]`
 
 ## 🟣 A-track / เอิธ (agents / competitor intel / marketing ops)
+- [ ] 🔴 **บทเรียน broadcast wave 1 — 3 อย่างที่ Claude หลุด (นัทสอน 25 ก.ค. · แก้ก่อนยิงรอบหน้า)** `[e]`
+  - ① **timing ไม่เช็ค** — ยิง PST 24 ก.ค. 20:00 = **ไทย 10:00 เช้า วันอาทิตย์** (+14 ชม.) → เปิดน้อย เสียโอกาส · **แก้: ทุกครั้งแปลงเวลาไทยก่อน + เลี่ยงอาทิตย์ + ใช้ "ตั้งเวลาส่ง" ของ LINE เล็งเย็นวันธรรมดาไทย** (memory `broadcast-timing-thai-vs-pst`)
+  - ② **audience แคบเกิน** — ยิงแค่คนมี uid ใน Hato (1,809 / 23,244 followers = 8%) · นัทเพิ่ม target เอง (อิมเพรสชัน 10,644 · เปิด 2,487 · คลิก 81) แล้ว subtract 01-05 → **ยังเหลือ ~2,000 คนที่อ่าน/คลิกเราแต่ไม่มีใน Hato** = ใบ 06 ยิงได้เลย
+  - ③ **ไม่เคยเข้าดู `/insight/broadcast` เอง** ทั้งที่มีสิทธิ์ — นัทต้องแคปมาให้ · **แก้: Claude/เอิธ เข้าดู data เองก่อนเสนอ + ตามผลหลังยิงเอง** (memory `check-oa-data-before-proposing`)
+- [ ] 📅 **เอิธ routine ทุกวันจันทร์: เข้า LINE OA `ข้อมูลเชิงลึก → บรอดแคสต์` เช็คผลเอง** (`manager.line.biz/account/@rwc2010a/insight/broadcast`) — ดู ส่ง/เปิด/คลิก ต่อใบ → สรุปให้นัท + เสนอปรับรอบหน้า · **ตัวเลข wave 1 (24 ก.ค.):** 01 ส่ง138/เปิด44 (32%) · 02 329/55 (17%) · 05 164/25 (15%) · 03 568/70 (12%) · 04 582/37 (6%) → **เปิด% ไล่ตามความอุ่นเป๊ะ = segment order data ทำงานจริง** · เทียบ: ยิงกว้าง 16 ก.ค. 10,644 คน เปิด 2,487 (23%) คลิก 81 `[e]`
 - [x] ✅ **LINE OA/CRM deep dive (a0.4 · session 05 · 22 ก.ค.)** — เข้า manager.line.biz+chat.line.biz จริง (นัท login Chrome) → verify เลข (reach 23,246/block 25,911>reach) · **พลิก 3 เข้าใจ:** audience=native LINE OA ไม่ใช่ Hato · segment 10k=active-user ไม่ใช่ mealplan · แชทอ่านได้เต็ม→Agent QA ปลดล็อก · **Segment framework=RFM จาก order data** (never-bought 1,034+หาย 904=84% inactive · line_uid 2,300 ยิงได้) · tag พึ่งไม่ได้(95% มั่ว)→ใช้ order data · `web/eath/line_oa_deep_dive.md` `[a/e]`
 - [x] ✅ **skill `under360-catchup`** — ย่อยให้ตามทัน + กัน open-loops หล่น (นัท pain: พิมพ์ทิ้งเยอะแล้วลืม/Claude พิมพ์ 10 ตอบ 1) `[a]`
 - [ ] **LINE OA broadcast แข็งขึ้น (กำลังทำ · session 05 → ปลายทาง handoff เอิธ routine):** ① segment RFM (สร้าง audience จาก order data) ② rulebook ยิง (เลิกกว้าง/CTA/deadline) ③ message templates ต่อ segment ④ calendar · **ค้าง: เช็ค LINE upload audience จาก uid** · MP/เซ็ต/ข้าวกล่อง รอ Hato รายงานรายสินค้า · verify catch-all 560k outlier `[e]`
 - [ ] ⭐ **บัญชี (เสา 2/4) — โฟกัสใหม่ นัทสั่ง 20 ก.ค.:** ขาย=`orders` มีครบ (subtotal/total/payment_account/order_items → report.html ต่อจริง) · **ซื้อ/ต้นทุน=ไม่มีที่จดเลย** (ทุกตาราง expense 404) → สร้าง `expenses` table + หน้าจดต้นทุน (มือถือ, หมวด วัตถุดิบ/ส่ง/แกส/ไฟ/คน) + report กำไร-ขาดทุน · รอนัทตอบว่าจดต้นทุนไว้ที่ไหน `[a]`
+- [ ] 🆕 **`ploy_workspace.html` v1 (นัทเคาะ 26 ก.ค. · ทำได้เลย ไม่พึ่งอะไร)** — หน้าเดียวให้พลอยเปิด URL ใช้ได้เลยไม่ต้องล็อกอิน · **มีแค่ 2 อย่าง ห้ามเกิน:** ① ลิสต์สินค้าที่อยากโปรโมท (`promo_list` — นัทใส่จากมุมครัว/ต้นทุน · พลอยใส่จากมุมที่เห็นคนสนใจ · ดึงชื่อ+รูปจาก `menu_items`) ② ช่องถาม Claude ที่รู้จักร้าน (system prompt = กฎ copy 4 ข้อ + ปรัชญาอาหาร + positioning) · ⚠️ **ห้ามใส่ Anthropic key ใน HTML** → ต้องมี `api/ploy-chat.js` + env `ANTHROPIC_API_KEY` + จำกัด max_tokens/rate limit/PIN · **เหตุผลที่เล็ก:** พลอยยังไม่ได้ขอ + ยังไม่ไว้ใจ AI marketing → ต้องมีประโยชน์วันแรกโดยเธอไม่ต้องเปลี่ยนวิธีทำงาน `[a]`
+- [ ] 🆕 **`content_plan.html` (ทำเมื่อพลอยใช้ v1 จริงแล้วเท่านั้น)** — คลัง HOOK (`content_hooks`) + ปฏิทินคอนเทนต์ (`content_plan`) + ปุ่ม **Export รายการส่งพลอย** (copy ลง LINE ได้เลย) + validate กฎ copy อัตโนมัติ (เตือน ไม่บล็อก) + **auto-feed "กฎเกิน 2 เท่า"** (โพสต์ที่ engagement เกินค่าเฉลี่ย 30 วัน 2 เท่า → ดูดประโยคเปิดเข้าคลัง · ต้องขอ permission Meta ตอนตั้ง app เดียวกับ FB webhook) + โครงเปล่า "เทรนด์วันนี้" (`content_trends` · กรอกมือได้ · **ห้ามต่อ API ข่าว/cron/scraper**) · เจ้าของระยะยาว = **น้องเตียง** `[a]`
 - [ ] เตียง JD (agent กราฟิก) — พร้อมร่าง: คูปอง/QR/ปกบล็อก/infographic/widget ทำเองได้ · ภาพ Ads static/video = ร่างบรีฟให้ AI อื่น (park หลังบัญชี) `[a]`
 - [ ] เอิธ routine job (weekly competitor+trend+digest อัตโนมัติ) — รอเคาะ 3 ข้อ (ทำอะไร/เมื่อไหร่/ผลไปไหน) · โยงกับ weekly digest ของ [e] `[a]`
 - [x] เอิธ subagent (a0.3) + desktop widget interactive (คลิก✎สั่ง/AUTO toggle/ลากย้าย) commit `a2c4026` — สั่งจาก widget รันได้จริง `[a]`
 - [x] ✅ **วิเคราะห์แอดพลอยฝั่ง Meta เสร็จ (22 ก.ค.)** — โกยครบ campaign/ad-set/ad (฿41,840/3ปี) + ถอดวิธี "แปลกแต่ได้ผล" + benchmark คู่แข่ง → `web/eath/fb_ads_ploy_history.md` · ส่งต่อ 06 แล้ว `[e]`
 - [ ] (หลัง beta, รอ attribution มี data) ทำ weekly ad digest จริง — template พร้อมแล้ว `[e]`
 - [ ] **Ad รอบ 1 (กำลังทำ):** ยิง 2 ตัว ฿300/วัน — A) FB 15 แพคกับข้าว ฿1,099 · B) IG เซ็ตทดลอง MP ลด 100 · ปลายทาง LINE OA + log มือ `[e]`
-- [~] 🔥 **Custom Audience "ลูกค้าเก่าสด"** — S1-S3 เสร็จ (06 · 22 ก.ค.) · เหลือ S4-S6 = นัทอัพ Meta `[e]`
-  - [x] S1. ไฟเขียว PII ✅ (นัทส่งไฟล์มาเอง) · S2. ไฟล์พลอย = "ลูกค้าเจ 2562-2566" (3 ลิงก์ · เปิดได้ 1 · อีก 2 not found รอ re-share)
-  - [x] S3. **merge+dedupe เสร็จ** → `download/meta_custom_audience.csv` = **2,746 แถว** (DB 2,154 + เจใหม่ 592 · เจซ้ำ DB แค่ 42) · gitignore · สคริปต์ `download/build_audience.js`
-  - [ ] S4. **นัทอัพ `meta_custom_audience.csv` เข้า Meta** → Custom Audience "Under360 ลูกค้าสด"
-  - [ ] S5. **นัทสร้าง Lookalike 1-3%** จาก audience นั้น (cold)
-  - [ ] S6. targeting: ad set 1 = Custom สด + union audience เก่าพลอย · ad set 2 = Lookalike
-  - [ ] (ค้าง) 2 ลิงก์เบอร์ที่เหลือ (re-share) → รันซ้ำเติมเข้า CA + migration ได้เลย
+- [x] ✅ **Custom Audience + Lookalike เสร็จแล้วใน Meta (25 ก.ค. · ห้อง 06)** `[e]`
+  - [x] S1-S3 build ไฟล์ · **แก้ 2 รอบตามที่นัททักท้วง (ถูกทั้งคู่):** ① **แยกเจออก** (คนละ product → `download/meta_ca_je.csv` 634 คน เก็บไว้ยิงเทศกาลเจ ต.ค.) ② **subtract never-bought** (1,159 คนแอดแต่ไม่เคยซื้อ) → CA ใหม่ = **เบอร์คนเคยสั่งจริงล้วน 2,807** (ดึงจาก `orders.customer_phone` เลี่ยง catch-all outlier ที่ 1 id ถือ 1,806 ออเดอร์)
+  - [x] S4. อัพเข้า Meta สำเร็จ **100% (2,807 แถว)** → audience **"Under360 ลูกค้าสั่งจริง 2807"** = พร้อมใช้งาน · Meta จับคอลัมน์ 5/5 (email/phone/fn/gen/dob) แก้ 0
+  - [x] S5. **Lookalike 1% สร้างแล้ว** → "กลุ่มเป้าหมายที่คล้ายกัน (1%) – Under360 ลูกค้าสั่งจริง 2807"
+  - [ ] S6. targeting ในแคมเปญ: ad set warm = CA 2807 (+union audience เก่าพลอย) · ad set cold = Lookalike 1%
+  - [ ] (ค้าง) ชีท "เบอร์โทร +66" 9,541 เบอร์ — รอ re-share ให้ `flidty.c@` → ใช้เป็น **retarget แยก** (ไม่ปนใน Lookalike seed · ยังไม่รู้ที่มา)
+- [~] 🔥 **แคมเปญ FB รอบ 1 — ต่อพรุ่งนี้ (26 ก.ค.)** `[e]`
+  - **ยิงอะไร:** แพคกับข้าวคละรส **15 กล่อง ฿1,099** (กทม.ส่งฟรี/ตจว.+99) · FB · Traffic objective (ไม่ใช่ Messages — Messages ของ Meta = Messenger/IG DM คนละแอปกับ LINE) · ฿300/วัน (warm 150 + cold 150) · ปลายทาง `line.me/R/ti/p/@under360` + log มือ
+  - **บัญชี:** `463330657546428` (@under360 · พอร์ต "🍴 Line ID @under360") — ใช้ได้ปกติ score 100 · ⚠️ แคมเปญเก่าที่เปิดค้าง error หมด (stale เมิน) · ⚠️ **มี "รอเผยแพร่ 2 รายการ" ค้างอยู่ (ไม่ใช่ของเรา) — ตอนกด Publish ระวังอย่าเผยแพร่ 2 ตัวนั้นไปด้วย**
+  - **ค้างตรงไหน:** 👤 นัทเลือกวิธี **B = ครอปรูป** (Win+Shift+S ครอบกรอบ 1080×1080 ในไฟล์ `web/eath/ad_creative_maker.html` → ได้ภาพมีราคา ฿1,099 ทับ) · เอา 3 ตัว: A1 กริดแพค · A2 มือถือแพค · A3 กริด+ป้ายราคา → เซฟ Desktop `ad1/ad2/ad3.png`
+  - **แล้วต่อ:** 🤖 ผมสร้างแคมเปญ/ad set/targeting/copy ให้ครบ → 👤 นัทอัพ 3 รูป + กด Publish
+  - ชีทอ้างอิง: `web/eath/ad_sheet_fb_stock_round1.md` (โครง+copy 3 ชุด) · `web/eath/ad_images_brief_fb_round1.md`
+- [x] ✅ **skill `under360-sbs`** — งานเทคนิคที่นัทกดเอง = เดินทีละ 1 ขั้น รอ confirm ก่อนไปต่อ (นัท: "ทำเองไม่เป็น ขอช้าๆ ทีละขั้นจริงๆ") `[a]`
 - [ ] **Ad รอบ 2 (หลังพิสูจน์รอบ 1):** ① MP ต่อคอร์ส ลด 10% (IG retention) ② 9 ข้าวกล่อง ฿1,099 (FB) · 🎯 **สำคัญ: จัดจังหวะเทสต์ ข้าวกล่อง vs แพคกับข้าว head-to-head** — ดูว่าแต่ละตัว audience/แอดไหน target โดนคนละกลุ่มไหม `[e]`
 - [ ] ⭐ (option) ร่าง template ข้อความทาบทาม influencer + ข้อเสนอ gifting/ค่าตัว ให้พลอย `[e]`
 - [ ] พลอย: verify engagement ตัว 🟡 ใน influencer_master ก่อนทาบ (เปิด IG เช็คคอมเมนต์จริง) `[e]`
