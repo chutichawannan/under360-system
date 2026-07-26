@@ -150,6 +150,7 @@ input,textarea{font-family:inherit}
 .btn-p:active{opacity:.84}
 .btn-p:disabled{background:var(--soft);cursor:not-allowed}
 .btn-s{background:var(--gl);color:var(--g);padding:13px;border-radius:var(--r14);font-size:16px;font-weight:700;width:100%;margin-top:8px}
+#sub-btn{background:var(--g)}
 
 /* ═══════════ CONFIRM ═══════════ */
 .srow{display:flex;justify-content:space-between;align-items:flex-start;padding:12px 14px;border-bottom:1px solid var(--line);gap:12px}
@@ -160,15 +161,18 @@ input,textarea{font-family:inherit}
 .stot-v{font-size:22px;font-weight:800;color:var(--r)}
 
 /* ═══════════ SUCCESS ═══════════ */
-#s-ok{align-items:center;justify-content:center;background:var(--bg)}
-.ok-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;gap:14px;max-width:320px;margin:0 auto}
-.ok-icon{width:80px;height:80px;border-radius:50%;background:var(--gl);display:flex;align-items:center;justify-content:center;font-size:42px}
-.ok-h{font-size:24px;font-weight:800;color:var(--g)}
+#s-ok{align-items:center;justify-content:center;background:#fff}
+.ok-wrap{display:flex;flex-direction:column;align-items:center;text-align:center;padding:32px 24px;gap:12px;max-width:340px;margin:0 auto;width:100%}
+.ok-icon{display:flex;align-items:center;justify-content:center;margin-bottom:4px}
+.ok-h{font-size:26px;font-weight:800;color:var(--ink)}
 .ok-sub{font-size:15px;color:var(--soft);line-height:1.6}
-.ok-box{background:#fff;border:2px solid var(--line);border-radius:var(--r16);padding:16px 28px;text-align:center;width:100%}
-.ok-lbl{font-size:11px;font-weight:700;color:var(--soft);letter-spacing:.08em;text-transform:uppercase;margin-bottom:4px}
-.ok-num{font-size:20px;font-weight:800;color:var(--g);letter-spacing:1px}
-.ok-detail{font-size:13px;color:var(--soft);margin-top:6px;line-height:1.7}
+.ok-box{background:transparent;border:0;padding:10px 0 0;text-align:center;width:100%}
+.ok-lbl{font-size:11px;font-weight:600;color:var(--soft);letter-spacing:.12em;text-transform:uppercase;margin-bottom:4px}
+.ok-num{font-size:26px;font-weight:800;color:var(--ink);letter-spacing:.5px}
+.ok-detail{font-size:14px;color:var(--soft);margin-top:10px;line-height:1.9}
+#s-ok .btn-p{border-radius:999px;margin-top:16px}
+#s-ok .btn-s{border-radius:999px;background:#fff;border:1.5px solid var(--line);color:var(--soft);margin-top:12px}
+.ok-sep{width:100%;height:1px;background:var(--line);opacity:.7;margin:16px 0 0}
 
 /* ═══════════ ORDER HISTORY ═══════════ */
 .ocard{background:#fff;border-radius:var(--r12);margin:8px 14px;overflow:hidden;box-shadow:0 1px 4px rgba(0,0,0,.06)}
@@ -649,18 +653,18 @@ body{background:#fff!important}
     </div>
     <div class="divider"></div>
     <!-- date picker -->
-    <div class="sec-head" id="date-sec-head">📅 เลือกวันจัดส่ง</div>
+    <div class="sec-head" id="date-sec-head">เลือกวันจัดส่ง</div>
     <div id="date-notice"></div>
     <div class="dscroll" id="dpick"></div>
     <!-- multi-round set delivery split (เซ็ตแบ่งส่งหลายรอบ) -->
     <div id="round-split"></div>
     <div class="divider"></div>
     <!-- time slot -->
-    <div class="sec-head">⏰ เลือกช่วงเวลา</div>
+    <div class="sec-head">เลือกช่วงเวลา</div>
     <div class="tgrid" id="tpick"></div>
     <div class="divider"></div>
     <!-- address compact -->
-    <div class="sec-head">📍 ที่อยู่จัดส่ง</div>
+    <div class="sec-head">ที่อยู่จัดส่ง</div>
     <div class="igrp">
       <div style="display:flex;gap:8px">
         <input id="recipient-name-input" class="ifield" type="text" placeholder="ชื่อผู้รับ" style="flex:1">
@@ -668,12 +672,12 @@ body{background:#fff!important}
       </div>
       <div style="display:flex;gap:8px;align-items:flex-start">
         <textarea id="addr-input" class="ifield" rows="2" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด" style="flex:1;resize:none"></textarea>
-        <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px">🗺️<br><span style="font-size:9px;color:var(--soft);font-weight:600">ปักหมุด</span></button>
+        <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px"><span style="font-size:12px;color:var(--g);font-weight:700;line-height:1.2">ปักหมุด</span></button>
       </div>
       <input id="notes-input" class="ifield" type="text" placeholder="รายละเอียดเพิ่ม เช่น ชั้น 3, ไม่เผ็ด">
-      <label style="display:flex;align-items:center;gap:8px;padding:8px 2px 2px;font-size:14px;color:var(--ink);cursor:pointer;">
-        <input type="checkbox" id="utensil-input" checked style="width:20px;height:20px;accent-color:var(--g);cursor:pointer;flex-shrink:0;">
-        🥄 ต้องการช้อนส้อม
+      <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 2px 2px;font-size:12px;color:var(--soft);cursor:pointer;">
+        <input type="checkbox" id="utensil-input" style="width:14px;height:14px;accent-color:var(--g);cursor:pointer;flex-shrink:0;">
+        ต้องการรับช้อนส้อมพลาสติก
       </label>
     </div>
 
@@ -683,7 +687,7 @@ body{background:#fff!important}
         <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
         <div style="display:flex;gap:8px">
           <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
-          <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">📍 ตำแหน่งฉัน</button>
+          <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">ตำแหน่งฉัน</button>
         </div>
       </div>
       <div id="customer-map"></div>
@@ -703,7 +707,7 @@ body{background:#fff!important}
     <div class="divider" style="margin-top:6px"></div>
 
     <!-- ═══ PAYMENT ═══ -->
-    <div class="sec-head">💳 วิธีชำระเงิน</div>
+    <div class="sec-head">วิธีชำระเงิน</div>
     <div class="pay-compact-row" onclick="openPayPopup()">
       <span id="pay-compact-ico">📱</span>
       <span id="pay-compact-lbl">เลือกวิธีชำระเงิน</span>
@@ -739,7 +743,7 @@ body{background:#fff!important}
     <div class="divider"></div>
 
     <!-- ═══ COUPON ═══ -->
-    <div class="sec-head">🎟️ คูปอง / โค้ดส่วนลด</div>
+    <div class="sec-head">คูปอง / โค้ดส่วนลด</div>
     <div id="promo-suggest-wrap" style="padding:0 14px 8px;display:none"></div>
     <div id="coupon-applied" style="display:none;padding:0 14px 4px"></div>
     <div id="coupon-wrap" style="padding:0 14px 4px">
@@ -761,7 +765,7 @@ body{background:#fff!important}
     </div>
   </div>
   <div class="fixbot nonav">
-    <button class="btn-p" id="sub-btn" onclick="submitOrder()">✅ ยืนยันและสั่งอาหาร</button>
+    <button class="btn-p" id="sub-btn" onclick="submitOrder()">ยืนยันและสั่งอาหาร</button>
   </div>
 </div>
 
@@ -790,7 +794,7 @@ body{background:#fff!important}
     <div class="hdr-title">ยืนยันออเดอร์</div>
   </div>
   <div class="scroll pb-btn">
-    <div class="sec-head">🍱 รายการที่สั่ง</div>
+    <div class="sec-head">รายการที่สั่ง</div>
     <div class="card-wrap" id="conf-items"></div>
     <div class="stot">
       <div class="stot-l">รวมทั้งหมด</div>
@@ -798,14 +802,14 @@ body{background:#fff!important}
     </div>
     <div class="divider"></div>
     <div class="card-wrap">
-      <div class="srow"><span class="slbl">📅 วันจัดส่ง</span><span class="sval" id="conf-date">-</span></div>
-      <div class="srow"><span class="slbl">⏰ ช่วงเวลา</span><span class="sval" id="conf-slot">-</span></div>
-      <div class="srow"><span class="slbl">📍 ที่อยู่</span><span class="sval" id="conf-addr">-</span></div>
+      <div class="srow"><span class="slbl">วันจัดส่ง</span><span class="sval" id="conf-date">-</span></div>
+      <div class="srow"><span class="slbl">ช่วงเวลา</span><span class="sval" id="conf-slot">-</span></div>
+      <div class="srow"><span class="slbl">ที่อยู่</span><span class="sval" id="conf-addr">-</span></div>
       <div class="srow" id="conf-notes-row"><span class="slbl">📝 หมายเหตุ</span><span class="sval" id="conf-notes">-</span></div>
     </div>
   </div>
   <div class="fixbot nonav">
-    <button class="btn-p" id="sub-btn-confirm" onclick="submitOrder()">✅ ยืนยันและส่งออเดอร์</button>
+    <button class="btn-p" id="sub-btn-confirm" onclick="submitOrder()">ยืนยันและส่งออเดอร์</button>
   </div>
 </div>
 
@@ -814,15 +818,21 @@ body{background:#fff!important}
 ══════════════════════════════════════ -->
 <div class="scr" id="s-ok">
   <div class="ok-wrap">
-    <div class="ok-icon">✅</div>
+    <div class="ok-icon">
+      <svg viewBox="0 0 64 64" width="92" height="92" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+        <circle cx="32" cy="32" r="27" stroke="#4E9E5F" stroke-width="2.5"/>
+        <path d="M20 33.5 L28.5 42 L45 24" stroke="#4E9E5F" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
     <div class="ok-h">ส่งออเดอร์แล้ว!</div>
-    <div class="ok-sub">ทีมงานรับทราบออเดอร์แล้ว<br>เราจะเตรียมอาหารให้คุณ 🍱</div>
+    <div class="ok-sub">ทีมงานรับทราบออเดอร์แล้ว<br>เราจะเตรียมอาหารให้คุณ</div>
     <div class="ok-box">
-      <div class="ok-lbl">เลขออเดอร์</div>
+      <div class="ok-lbl">Order Number</div>
       <div class="ok-num" id="ok-num">U-MMDD-NNN</div>
       <div class="ok-detail" id="ok-detail"></div>
     </div>
-    <button class="btn-p" onclick="backToMenu()" style="margin-top:8px">สั่งเพิ่มอีกครั้ง</button>
+    <button class="btn-p" onclick="backToMenu()">สั่งเพิ่มอีกครั้ง</button>
+    <div class="ok-sep"></div>
     <button class="btn-s" onclick="goOrders()">ดูออเดอร์ทั้งหมด</button>
   </div>
 </div>
@@ -898,7 +908,7 @@ const SLOTS = [
   { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท', mealPlanDisabled:true },
   { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
   { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
-  { key:'express',   label:'🚗 ส่งด่วน กำหนดเวลาเอง', time:'Lalamove', isExpress:true, mealPlanDisabled:true },
+  { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
 ];
 
 const CAT_LABELS = {
@@ -2018,7 +2028,7 @@ function renderRoundSplit(){
   const el=document.getElementById('round-split');
   const head=document.getElementById('date-sec-head');
   const N=checkoutSetRounds();
-  if(N<=1){ if(el) el.innerHTML=''; if(head) head.textContent='📅 เลือกวันจัดส่ง'; extraRoundDates=[]; return; }
+  if(N<=1){ if(el) el.innerHTML=''; if(head) head.textContent='เลือกวันจัดส่ง'; extraRoundDates=[]; return; }
   const ms=multiRoundSets();
   const setName=ms.map(c=>c.name).join(', ');
   const totalBoxes=ms.reduce((s,c)=>s+((c.items||[]).length),0);
@@ -2030,7 +2040,7 @@ function renderRoundSplit(){
     }
     extraRoundDates.length=N-1;
   }
-  if(head) head.textContent='📅 เลือกวันจัดส่ง — รอบ 1';
+  if(head) head.textContent='เลือกวันจัดส่ง — รอบ 1';
   const chunkPreview = ms.length===1 ? splitSetItems(ms[0].items||[],N).map(a=>a.length) : null;
   let html=`<div style="padding:10px 14px 0;">
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px 14px;">
@@ -2137,9 +2147,9 @@ function renderTimePick() {
       }
       let priceLabel = '';
       if(selSlot==='express'){
-        if(lalamovePrice==='loading') priceLabel='<span style="color:#666;font-size:11px">⏳ กำลังเช็คราคา...</span>';
-        else if(lalamovePrice!=null)  priceLabel=`<span style="color:#C8922A;font-weight:700;font-size:13px">฿${lalamovePrice} <span style="font-size:10px;font-weight:400">(Lalamove)</span></span>`;
-        else                          priceLabel='<span style="color:#999;font-size:11px">ปักหมุดที่อยู่เพื่อดูราคา</span>';
+        if(lalamovePrice==='loading') priceLabel='<span style="color:#666;font-size:11px">กำลังเช็คเรท Lalamove...</span>';
+        else if(lalamovePrice!=null)  priceLabel=`<span style="color:#C8922A;font-weight:700;font-size:13px">฿${lalamovePrice} <span style="font-size:10px;font-weight:400">เรท Lalamove</span></span>`;
+        else                          priceLabel='<span style="color:#999;font-size:11px">ปักหมุดที่อยู่เพื่อดูเรท Lalamove</span>';
       }
       return `<div class="tchip${isOn?' on':''}" onclick="pickSlot('express')"
         style="flex-direction:column;align-items:flex-start;gap:6px">
@@ -2297,7 +2307,7 @@ async function submitOrder() {
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
       const utEl = document.getElementById('utensil-input');
-      orderPayload.want_utensils = utEl ? utEl.checked : true;
+      orderPayload.want_utensils = utEl ? utEl.checked : false;
     }
     // payment_status: อัพสลิปแล้ว = assume "โอนแล้ว" (paid) · ไม่อัพ = "รอโอน" (unpaid) — แอดมินไล่เช็คสลิปจริงทีหลัง
     if (hasPaymentStatusColumn) {
@@ -2382,7 +2392,7 @@ async function submitOrder() {
           delivery_week: 'current',
           notes: 'คอร์ส ' + setNameJoin + ' รอบ ' + r + '/' + roundCount + ' — จ่ายรวมกับออเดอร์ ' + orderNum
         };
-        if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); rPayload.want_utensils = utEl ? utEl.checked : true; }
+        if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); rPayload.want_utensils = utEl ? utEl.checked : false; }
         try {
           const { data: rOrd, error: rErr } = await sb.from('orders').insert(rPayload).select().single();
           if (rErr) throw rErr;
@@ -2401,27 +2411,26 @@ async function submitOrder() {
     document.getElementById('ok-num').textContent = orderNum;
     // หัวรายการที่สั่ง (แพคเกจ/Meal Plan/เมนู) — ให้ลูกค้าเห็นชัดว่าสั่งอะไรไป
     const orderNames = cart.map(c => {
-      const ico = c.type==='package' ? '📦' : (c.type==='meal_plan' ? '🥗' : '🍱');
-      return `${ico} ${h(c.name)}${(c.qty>1 && c.type==='individual')?` ×${c.qty}`:''}`;
+      return `${h(c.name)}${(c.qty>1 && c.type==='individual')?` ×${c.qty}`:''}`;
     }).join('<br>');
     const roundLines = roundOrderNums.length
-      ? '<br>📦 แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
+      ? '<br>แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
         + roundOrderNums.map((r,i)=>'<br>&nbsp;&nbsp;• รอบ ' + (i+2) + ' — ' + fmtDate(r.date) + ' (' + r.num + ')').join('')
       : '';
     document.getElementById('ok-detail').innerHTML =
-      `<div style="font-weight:700;color:#1F4D3A;margin-bottom:6px;text-align:left;line-height:1.5;">${orderNames}</div>📅 ${fmtDate(selDate)}<br>⏰ ${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>💰 ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
+      `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(selDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
     setDeliverOnce = false; extraRoundDates = [];
     appliedPromos = []; refreshCouponUI();
-    if (btn) { btn.disabled = false; btn.textContent = '✅ ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
+    if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     showScr('s-ok');
 
   } catch(e) {
     console.error(e);
     toast('Error: ' + (e?.message || e?.code || JSON.stringify(e) || 'unknown'));
     btn.disabled = false;
-    btn.textContent = '✅ ยืนยันและส่งออเดอร์';
+    btn.textContent = 'ยืนยันและส่งออเดอร์';
   }
 }
 
@@ -2885,7 +2894,7 @@ function updateCartTotals(){
     else feeEl.textContent = o.feeKnown ? '฿'+o.fee.toLocaleString() : 'ยังไม่ได้ปักหมุด';
   }
   if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
-  if(subBtn)subBtn.textContent='✅ ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
+  if(subBtn)subBtn.textContent='ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
   updateQRAmount();
   if(suggestedPromosLoaded) renderSuggestedPromoChips();
 }

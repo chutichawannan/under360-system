@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Under360 — Command Center</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  :root{
+    --ink:#1A1A1A; --soft:#6B7280; --faint:#9CA3AF; --line:#E5E7EB;
+    --bg:#F7F7F5; --card:#FFFFFF; --nut:#1F4D3A; --nutl:#E8F0EC;
+    --idle:#9CA3AF; --work:#16A34A; --block:#DC2626;
+  }
+  html,body{height:100%}
+  body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
+  #app{display:flex;height:100dvh;overflow:hidden}
+
+  /* ── Sidebar (rooms) ── */
+  #side{width:320px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
+  .side-h{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
+  .side-h b{font-size:17px;font-weight:800;letter-spacing:.2px}
+  .side-h .sub{font-size:11px;color:var(--faint);margin-top:2px}
+  .rooms{flex:1;overflow-y:auto;padding:8px}
+  .grp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:12px 10px 6px}
+  .room{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:12px;cursor:pointer;transition:background .12s}
+  .room:hover{background:#F3F4F6}
+  .room.active{background:var(--nutl)}
+  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px}
+  .room-b{flex:1;min-width:0}
+  .room-t{display:flex;align-items:center;justify-content:space-between;gap:6px}
+  .room-n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .badge{background:var(--nut);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0}
+  .room-d{font-size:12px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .room-s{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+
+  /* ── Chat pane ── */
+  #chat{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
+  .chat-h{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);flex-shrink:0}
+  .back{display:none;background:none;border:none;font-size:22px;color:var(--nut);cursor:pointer;padding:0 4px 0 0;line-height:1}
+  .chat-h .ch-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+  .chat-h b{font-size:16px;font-weight:800}
+  .chat-h .ch-cur{font-size:12px;color:var(--soft);margin-top:1px}
+  .chat-h .ch-info{flex:1;min-width:0}
+  .msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
+  .empty{margin:auto;text-align:center;color:var(--faint);font-size:14px;max-width:280px}
+  .m{max-width:78%;padding:9px 13px;border-radius:15px;font-size:14.5px;word-wrap:break-word;white-space:pre-wrap}
+  .m .who{font-size:11px;font-weight:700;opacity:.7;margin-bottom:2px}
+  .m .t{font-size:10px;opacity:.5;margin-top:3px;text-align:right}
+  .m.nut{align-self:flex-end;background:var(--nut);color:#fff;border-bottom-right-radius:5px}
+  .m.claude{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
+  .m.system{align-self:center;background:#FEF3C7;color:#92400E;font-size:12.5px;max-width:90%;text-align:center;border-radius:10px}
+  .compose{display:flex;gap:8px;padding:12px 14px;background:var(--card);border-top:1px solid var(--line);flex-shrink:0;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .compose textarea{flex:1;resize:none;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;font-family:inherit;font-size:14.5px;max-height:120px;outline:none}
+  .compose textarea:focus{border-color:var(--nut)}
+  .send{background:var(--nut);color:#fff;border:none;border-radius:14px;padding:0 20px;font-weight:700;font-size:14.5px;cursor:pointer;flex-shrink:0}
+  .send:disabled{opacity:.4;cursor:default}
+
+  .banner{background:#FEF2F2;color:#991B1B;font-size:13px;padding:10px 16px;text-align:center;border-bottom:1px solid #FECACA}
+
+  @media(max-width:720px){
+    #side{width:100%}
+    #chat{display:none}
+    body.chat-open #side{display:none}
+    body.chat-open #chat{display:flex}
+    .back{display:block}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <aside id="side">
+    <div class="side-h"><b>Command Center</b><div class="sub">ทุก track · ทุก agent · คุยแยกห้อง</div></div>
+    <div id="banner"></div>
+    <div class="rooms" id="roomList"></div>
+  </aside>
+  <main id="chat">
+    <div class="chat-h">
+      <button class="back" onclick="closeRoom()">‹</button>
+      <span class="ch-dot" id="chDot" style="background:var(--idle)"></span>
+      <div class="ch-info"><b id="chName">เลือกห้อง</b><div class="ch-cur" id="chCur"></div></div>
+    </div>
+    <div class="msgs" id="msgs"><div class="empty">เลือกห้องทางซ้ายเพื่อเริ่มคุย</div></div>
+    <div class="compose">
+      <textarea id="input" rows="1" placeholder="พิมพ์ข้อความถึงห้องนี้..." oninput="growBox(this)" onkeydown="onKey(event)"></textarea>
+      <button class="send" id="sendBtn" onclick="send()" disabled>ส่ง</button>
+    </div>
+  </main>
+</div>
+
+<script>
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+
+const ROOMS=[
+  {id:'u',      label:'U-track',   desc:'โค้ด / LIFF / DB / หลังบ้าน', color:'#2563EB', kind:'track'},
+  {id:'m',      label:'M-track',   desc:'เว็บ / บล็อก / SEO',          color:'#16A34A', kind:'track'},
+  {id:'a',      label:'A-track',   desc:'agents infra / บัญชี เสา 2',  color:'#9333EA', kind:'track'},
+  {id:'migrate',label:'Migrate',   desc:'Hato → customers / orders',   color:'#EA580C', kind:'track'},
+  {id:'f',      label:'F-track',   desc:'การเงิน / P&L',               color:'#0891B2', kind:'track'},
+  {id:'eath',   label:'เอิธ',      desc:'คู่แข่ง / แอด / CRM / อินฟลู', color:'#DB2777', kind:'agent'},
+  {id:'niw',    label:'น้องนิว',   desc:'จัดเมนู Meal Plan',           color:'#65A30D', kind:'agent'},
+  {id:'keng',   label:'พี่เก่ง',   desc:'จัดส่ง / Lalamove',           color:'#CA8A04', kind:'agent'},
+  {id:'fah',    label:'ฟ้า',       desc:'วัตถุดิบ / ครัว',             color:'#0D9488', kind:'agent'},
+  {id:'tiang',  label:'น้องเตียง', desc:'กราฟิก / โซเชียล',           color:'#E11D48', kind:'agent'},
+];
+const RMAP=Object.fromEntries(ROOMS.map(r=>[r.id,r]));
+const STCOL={idle:'var(--idle)',working:'var(--work)',blocked:'var(--block)'};
+
+let active=null, allMsgs=[], statusMap={}, tablesOk=true;
+const seen=JSON.parse(localStorage.getItem('cc_seen')||'{}');
+
+function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function fmtTime(iso){const d=new Date(iso);const now=new Date();const sameDay=d.toDateString()===now.toDateString();
+  const t=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  return sameDay?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
+
+async function loadAll(){
+  // ข้อความล่าสุดทุกห้อง (ใช้ทำ sidebar + ห้องที่เปิด)
+  const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(400);
+  if(error){ tablesOk=false; renderBanner(); return; }
+  tablesOk=true; renderBanner();
+  allMsgs=(data||[]).slice().reverse();  // เก่า→ใหม่
+  const {data:st}=await sb.from('track_status').select('*');
+  statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
+  renderRooms();
+  if(active) renderMsgs();
+}
+
+function renderBanner(){
+  document.getElementById('banner').innerHTML = tablesOk ? '' :
+    '<div class="banner">ยังไม่ได้รัน SQL — เปิด <b>scripts/sql_command_center.sql</b> ใน Supabase ก่อน</div>';
+}
+
+function unreadOf(room){
+  const s=seen[room]||'1970';
+  return allMsgs.filter(m=>m.room===room && m.role!=='nut' && m.created_at>s).length;
+}
+function lastOf(room){const a=allMsgs.filter(m=>m.room===room);return a[a.length-1];}
+
+function renderRooms(){
+  const el=document.getElementById('roomList');
+  let html='';
+  for(const kind of ['track','agent']){
+    html+=`<div class="grp">${kind==='track'?'Tracks (session)':'Agents'}</div>`;
+    for(const r of ROOMS.filter(x=>x.kind===kind)){
+      const st=statusMap[r.id]; const unread=unreadOf(r.id);
+      const dotc=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
+      const last=lastOf(r.id);
+      const line = st&&st.current ? st.current : (last?(last.role==='nut'?'คุณ: ':'')+last.text:'ยังไม่มีข้อความ');
+      html+=`<div class="room${active===r.id?' active':''}" onclick="openRoom('${r.id}')">
+        <span class="dot" style="background:${dotc}"></span>
+        <div class="room-b">
+          <div class="room-t"><span class="room-n" style="color:${r.color}">${esc(r.label)}</span>${unread?`<span class="badge">${unread}</span>`:''}</div>
+          <div class="room-d">${esc(r.desc)}</div>
+          <div class="room-s">${esc(line).slice(0,60)}</div>
+        </div></div>`;
+    }
+  }
+  el.innerHTML=html;
+}
+
+function openRoom(id){
+  active=id; const r=RMAP[id]; const st=statusMap[id];
+  document.body.classList.add('chat-open');
+  document.getElementById('chName').textContent=r.label;
+  document.getElementById('chName').style.color=r.color;
+  document.getElementById('chDot').style.background=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
+  const cur=[]; if(st&&st.version)cur.push(st.version); if(st&&st.current)cur.push(st.current);
+  if(st&&st.open_loops)cur.push('ค้าง '+st.open_loops);
+  document.getElementById('chCur').textContent=cur.join(' · ');
+  document.getElementById('sendBtn').disabled=false;
+  renderMsgs();
+  // mark seen
+  const last=lastOf(id); seen[id]=last?last.created_at:new Date().toISOString();
+  localStorage.setItem('cc_seen',JSON.stringify(seen));
+  renderRooms();
+}
+function closeRoom(){document.body.classList.remove('chat-open');}
+
+function renderMsgs(){
+  const box=document.getElementById('msgs');
+  const list=allMsgs.filter(m=>m.room===active);
+  if(!list.length){box.innerHTML='<div class="empty">ยังไม่มีข้อความในห้องนี้ — พิมพ์ด้านล่างเพื่อเริ่ม</div>';return;}
+  const nearBottom = box.scrollHeight-box.scrollTop-box.clientHeight < 120;
+  box.innerHTML=list.map(m=>{
+    if(m.role==='system')return `<div class="m system">${esc(m.text)}</div>`;
+    const who=m.role==='nut'?'':`<div class="who">${esc(m.sender)}</div>`;
+    return `<div class="m ${m.role==='nut'?'nut':'claude'}">${who}${esc(m.text)}<div class="t">${fmtTime(m.created_at)}</div></div>`;
+  }).join('');
+  if(nearBottom||list.length)box.scrollTop=box.scrollHeight;
+  // update seen to newest shown
+  seen[active]=list[list.length-1].created_at;
+  localStorage.setItem('cc_seen',JSON.stringify(seen));
+}
+
+async function send(){
+  const inp=document.getElementById('input'); const text=inp.value.trim();
+  if(!text||!active)return;
+  inp.value=''; growBox(inp);
+  const row={room:active,sender:'nut',role:'nut',text};
+  // optimistic
+  allMsgs.push({...row,created_at:new Date().toISOString()}); renderMsgs();
+  const {error}=await sb.from('session_messages').insert(row);
+  if(error){alert('ส่งไม่สำเร็จ: '+error.message); return;}
+  await loadAll();
+}
+
+function growBox(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px';}
+function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
+
+loadAll();
+setInterval(loadAll,4000);
+</script>
+</body>
+</html>
