@@ -884,9 +884,9 @@ let mpRequestMenus = [];  // โหลดจาก kitchen_data 'mp_request_menu
 // ── Meal Plan config — default fallback ถ้ายังไม่รัน scripts/sql_mp_offer_sets.sql ──
 // ปกติจะโหลดทับจาก Supabase ตาราง mp_offer_sets ตอน init() (ทำให้แอดมินแก้ราคา/เพิ่มชุดโปรโมชั่นเองได้ที่หน้า DB)
 let MP_SETS = [
-  { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1499,  price_lc:1399  },
-  { id:'weekly',  label:'1 สัปดาห์',   boxes:21, price_hp:3990,  price_lc:3790  },
-  { id:'monthly', label:'1 เดือน',     boxes:84, price_hp:13990, price_lc:13490 },
+  { id:'trial',   label:'ทดลอง',       boxes:7,  price_hp:1699,  price_lc:1399  },
+  { id:'weekly',  label:'1 สัปดาห์',   boxes:21, price_hp:4190,  price_lc:3190  },
+  { id:'monthly', label:'1 เดือน',     boxes:84, price_hp:15900, price_lc:12000 },
 ];
 let mpActiveSets = MP_SETS; // ชุดที่ picker ตัวปัจจุบันใช้ — ปกติ = ชุดที่ show_in_default_picker, ถ้าเปิดจากลิ้ง __mpoffer:{id}__ จะเหลือแค่ 1 ชุด
 async function loadMpOfferSets(){
@@ -2695,6 +2695,8 @@ function haversineKm(a,b,c,d){
 
 // อัตราค่าส่ง: เริ่มต้น 10 บาท + คิดตามระยะทาง
 // 0-5 km: ฿4/km | 5-10 km: ฿5/km | 10-15 km: ฿7/km | 15-30 km: ฿9/km
+// เพดาน 200 บาท — ไกลแค่ไหนก็ไม่เกินนี้ (ร้านช่วยออกส่วนที่เกินให้) · ไม่ใช้กับ "ส่งระบุเวลา" ที่เป็นเรท Lalamove จริง
+const MAX_DELIVERY_FEE = 200;
 function calcDeliveryFee(km, slotKey){
   const sk = slotKey||selSlot;
   if(sk==='express'){
@@ -2715,6 +2717,7 @@ function calcDeliveryFee(km, slotKey){
     if(km<=t.to) break;
   }
   if(km>30) fee += (km-30)*9;
+  fee = Math.min(fee, MAX_DELIVERY_FEE);          // เพดานค่าส่ง — กันลูกค้าต่างจังหวัดโดนคิดหลักพัน
   const slot = SLOTS.find(s=>s.key===sk);
   if(slot&&slot.discount) fee = Math.max(0, fee - slot.discount);
   return Math.round(fee);
