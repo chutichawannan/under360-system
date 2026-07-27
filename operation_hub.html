@@ -2346,7 +2346,7 @@ async function obSubmit(){
       if(nphone){ var ex=await sb_.from('customers').select('id').eq('phone',nphone).limit(1); if(ex.data&&ex.data[0])custId=ex.data[0].id; }
       if(!custId){ var ins=await sb_.from('customers').insert({display_name:nname||null,phone:nphone||null,source_first:'admin_manual',tier:'bronze',addresses:addr?[{address:addr,label:'ที่อยู่'}]:[]}).select('id').single(); if(ins.error)throw ins.error; custId=ins.data.id; }
     } else { throw new Error('เลือกลูกค้า หรือกด "+ ลูกค้าใหม่"'); }
-    var ymd=obBkkYMD(); var mmdd=ymd.slice(5,7)+ymd.slice(8,10); /* เวลาไทยเสมอ ไม่ใช่เวลาเครื่อง */
+    var mmdd=date.slice(5,7)+date.slice(8,10); /* ยึด "วันส่ง" ที่เลือก (เหมือน LIFF ใช้ selDate) ไม่ใช่วันสร้าง/เวลาเครื่อง = timezone-proof + เลขตรงกับ LIFF */
     var cnt=await sb_.from('orders').select('id',{count:'exact',head:true}).like('order_number','U-'+mmdd+'-%');
     var orderNum='U-'+mmdd+'-'+String((cnt.count||0)+1).padStart(3,'0');
     var sub=obSubtotal(); var fee=parseInt(document.getElementById('ob-fee').value)||0;
