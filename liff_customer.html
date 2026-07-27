@@ -2293,6 +2293,9 @@ async function submitOrder() {
       time_slot_label: slot?.time || '',
       delivery_address: addrFinal,
       delivery_fee:    deliveryFee,
+      delivery_lat:    cusPin ? cusPin.getPosition().lat() : null,   // เก็บพิกัดที่ลูกค้าปักหมุด — แมส/พี่เก่งใช้หาบ้าน + วางแผนเส้นทาง (เดิมทิ้งทุกใบ)
+      delivery_lng:    cusPin ? cusPin.getPosition().lng() : null,
+      delivery_distance_km: (distKm!=null) ? Number(distKm.toFixed(3)) : null,
       subtotal:         o.sub,
       discount_amount:  o.discount,
       promotion_code:   appliedPromos.length ? appliedPromos.map(p=>p.code).join(',') : null, // ซ้อนหลายโค้ด → คั่นด้วย , (ใช้เก็บรายงานเท่านั้น ไม่ใช่ FK)
@@ -2387,6 +2390,7 @@ async function submitOrder() {
           customer_name: recipientName, line_display_name: lineProfile.displayName, customer_phone: recipientPhone,
           delivery_date: rDate, time_slot: slotVal, time_slot_label: slot?.time || '',
           delivery_address: addrFinal, delivery_fee: 0, subtotal: 0, discount_amount: 0, total: 0,
+          delivery_lat: cusPin ? cusPin.getPosition().lat() : null, delivery_lng: cusPin ? cusPin.getPosition().lng() : null, delivery_distance_km: (distKm!=null) ? Number(distKm.toFixed(3)) : null,
           status: 'confirmed', payment_method: payMethod || 'qr',
           payment_account: selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
           delivery_type: selSlot === 'express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
