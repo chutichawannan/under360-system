@@ -727,6 +727,14 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
             <input type="number" id="ob-fee" value="0" oninput="obRenderCart()" style="width:110px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;text-align:right">
           </div>
           <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">ส่วนลด (บาท)</label>
+            <input type="number" id="ob-disc" value="0" oninput="obRenderCart()" style="width:110px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;text-align:right">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">โค้ดโปรฯ (เก็บอ้างอิง)</label>
+            <input id="ob-promo" placeholder="เช่น FREESHIP" style="width:150px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
             <label style="font-size:13px;color:#6B7280;flex:1">วิธีชำระ</label>
             <select id="ob-pay" style="width:150px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
               <option value="qr">QR/PromptPay</option>
@@ -2254,10 +2262,11 @@ function showToastOH(msg){
 /* ═══ สั่งแทนลูกค้า (order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน ═══ */
 var obMenus=[],obCart=[],obCust=null,obNewMode=false,obHasCreatedBy=false,obInit=false,obCustResults=[];
 function obEsc(s){return (''+(s==null?'':s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function obBkkYMD(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});} /* "2026-07-28" ยึดเวลาไทยเสมอ กัน order_number เพี้ยนตอนเครื่องอยู่คนละ timezone */
 async function initOnbehalf(){
   var sb_=getSB(); if(!sb_)return;
   var a=document.getElementById('ob-admin'); if(a&&!a.value)a.value=localStorage.getItem('lastNickname')||'';
-  var d=document.getElementById('ob-date'); if(d&&!d.value)d.value=new Date(Date.now()+864e5).toISOString().slice(0,10);
+  var d=document.getElementById('ob-date'); if(d&&!d.value)d.value=obBkkYMD();
   if(obInit)return; obInit=true;
   try{ await sb_.from('orders').select('created_by').limit(1); obHasCreatedBy=true; }catch(e){ obHasCreatedBy=false; }
   var r=await sb_.from('menu_items').select('id,code,name,price').eq('is_available',true).order('sort_order');
@@ -2288,7 +2297,8 @@ function obRenderCart(){
     return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:14px"><span>'+obEsc(c.name)+'</span><span style="display:flex;align-items:center;gap:8px"><button onclick="obCartQty(\''+c.code+'\',-1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">-</button>'+c.qty+'<button onclick="obCartQty(\''+c.code+'\',1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">+</button><span style="width:70px;text-align:right;font-weight:700">฿'+(c.price*c.qty)+'</span></span></div>';
   }).join(''):'<div style="color:#9CA3AF;font-size:13px;padding:6px 0">ยังไม่มีรายการ</div>';
   var fee=parseInt((document.getElementById('ob-fee')||{}).value)||0;
-  var t=document.getElementById('ob-total'); if(t)t.textContent='฿'+(obSubtotal()+fee).toLocaleString();
+  var disc=parseInt((document.getElementById('ob-disc')||{}).value)||0;
+  var t=document.getElementById('ob-total'); if(t)t.textContent='฿'+Math.max(0,obSubtotal()+fee-disc).toLocaleString();
 }
 async function obSearchCust(q){
   var box=document.getElementById('ob-cust-results'); if(!box)return;
@@ -2336,15 +2346,17 @@ async function obSubmit(){
       if(nphone){ var ex=await sb_.from('customers').select('id').eq('phone',nphone).limit(1); if(ex.data&&ex.data[0])custId=ex.data[0].id; }
       if(!custId){ var ins=await sb_.from('customers').insert({display_name:nname||null,phone:nphone||null,source_first:'admin_manual',tier:'bronze',addresses:addr?[{address:addr,label:'ที่อยู่'}]:[]}).select('id').single(); if(ins.error)throw ins.error; custId=ins.data.id; }
     } else { throw new Error('เลือกลูกค้า หรือกด "+ ลูกค้าใหม่"'); }
-    var dt=new Date(); var mmdd=String(dt.getMonth()+1).padStart(2,'0')+String(dt.getDate()).padStart(2,'0');
+    var ymd=obBkkYMD(); var mmdd=ymd.slice(5,7)+ymd.slice(8,10); /* เวลาไทยเสมอ ไม่ใช่เวลาเครื่อง */
     var cnt=await sb_.from('orders').select('id',{count:'exact',head:true}).like('order_number','U-'+mmdd+'-%');
     var orderNum='U-'+mmdd+'-'+String((cnt.count||0)+1).padStart(3,'0');
     var sub=obSubtotal(); var fee=parseInt(document.getElementById('ob-fee').value)||0;
+    var disc=parseInt(document.getElementById('ob-disc').value)||0;
+    var promo=(document.getElementById('ob-promo').value||'').trim();
     var slot=document.getElementById('ob-slot').value;
     var slotLabels={all_day:'8:00 – 18:00',morning:'8:00 – 13:00',afternoon:'13:00 – 18:00'};
     var payload={ order_number:orderNum, customer_id:custId, customer_name:rname||null, customer_phone:rphone||null,
       delivery_date:date, time_slot:slot, time_slot_label:slotLabels[slot]||'', delivery_address:addr||null,
-      delivery_fee:fee, subtotal:sub, discount_amount:0, total:sub+fee, status:'confirmed',
+      delivery_fee:fee, subtotal:sub, discount_amount:disc, promotion_code:promo||null, total:Math.max(0,sub+fee-disc), status:'confirmed',
       payment_method:document.getElementById('ob-pay').value, delivery_type:'messenger', slip_image:false,
       delivery_week:'current', source:'admin_manual', notes:'สั่งแทนโดย '+admin,
       payment_status:document.getElementById('ob-paid').checked?'paid':'unpaid' };
@@ -2354,7 +2366,7 @@ async function obSubmit(){
     var it=await sb_.from('order_items').insert(items); if(it.error)throw it.error;
     msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin);
     obCart=[]; obRenderCart(); obClearCust();
-    document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-paid').checked=false;
+    document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-disc').value='0'; document.getElementById('ob-promo').value=''; document.getElementById('ob-paid').checked=false;
   }catch(e){ err('พลาด: '+(e.message||e)); }
   btn.disabled=false; btn.textContent='บันทึกออเดอร์แทนลูกค้า';
 }
