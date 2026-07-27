@@ -908,7 +908,8 @@ const SLOTS = [
   { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท', mealPlanDisabled:true },
   { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
   { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
-  { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
+  // ⏸️ ซ่อนชั่วคราว รอต่อ Lalamove API จริง — เรทปัจจุบันเป็น placeholder (30+8×กม.) = คิดเงินผิด/เคลมเท็จ · เปิดคืนเมื่อต่อ Lalamove จริง (พี่เก่ง)
+  // { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
 ];
 
 const CAT_LABELS = {
