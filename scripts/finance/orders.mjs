@@ -136,8 +136,11 @@ async function main() {
   //    ถ้านับจากช่วงที่ query: เดือนแรกทุกคนจะเป็น "ลูกค้าใหม่" หมด แล้วลดลงเองทุกเดือน
   //    = bias เชิงโครงสร้าง ได้กราฟ "ลูกค้าใหม่ลดลง" เสมอ ไม่ว่าความจริงเป็นยังไง
   const firstSeen = await loadFirstOrderMonths();
-  console.log('\nเดือน   | ลูกค้า | ซื้อซ้ำ |  repeat | ยอดลูกค้าใหม่ | ยอดลูกค้าเก่า');
-  console.log('--------|-------:|--------:|--------:|--------------:|-------------:');
+  // ⚠️ ต้องโชว์ทั้ง "จำนวนคน" และ "ยอดเงิน" — 2 อันนี้ขยับคนละอัตรา
+  //    (เคยสับสนกับห้องเอิธ: ยอดเงินลูกค้าใหม่ −71% vs จำนวนคนใหม่ −20% = ทั้งคู่ถูก คนละ metric)
+  //    เวลารายงานต้องบอกเสมอว่า "ยอดเงิน" หรือ "จำนวนคน" + เทียบช่วงไหน
+  console.log('\nเดือน   | ลูกค้า | ซื้อซ้ำ |  repeat | ใหม่(คน) | ยอดลูกค้าใหม่ | ยอดลูกค้าเก่า | ยอด/คนใหม่');
+  console.log('--------|-------:|--------:|--------:|---------:|--------------:|-------------:|----------:');
   for (const m of months) {
     const inM = liff.filter((o) => monthKey(o) === m);
     const per = new Map();
@@ -145,14 +148,19 @@ async function main() {
     const repeat = [...per.values()].filter((n) => n >= 2).length;
     const isNew = (o) => firstSeen.get(o.customer_id) === m;
     const rev = (f) => sum(inM.filter(f));
+    const newHeads = new Set(inM.filter(isNew).map((o) => o.customer_id)).size;
+    const newRev = rev(isNew);
     console.log(
       `${m} | ${String(per.size).padStart(6)} | ${String(repeat).padStart(7)} | ` +
         `${(per.size ? (repeat / per.size) * 100 : 0).toFixed(1).padStart(6)}% | ` +
-        `${baht(rev(isNew)).padStart(13)} | ${baht(rev((o) => !isNew(o))).padStart(12)}`
+        `${String(newHeads).padStart(8)} | ${baht(newRev).padStart(13)} | ` +
+        `${baht(rev((o) => !isNew(o))).padStart(12)} | ` +
+        `${(newHeads ? baht(newRev / newHeads) : '-').padStart(9)}`
     );
   }
   console.log('\n"ลูกค้าใหม่" = เดือนที่ซื้อครั้งแรกจริง คิดจากประวัติ LIFF ทั้งหมด ไม่ใช่แค่ช่วงที่ query');
-  console.log('⚠️  บางคนที่ดู "ซื้อครั้งเดียว" อาจซื้อซ้ำที่สาขา (HS-) → รอ HS- 2026 ครบก่อนล็อกเลข');
+  console.log('⚠️  รายงานตัวเลขพวกนี้ต้อง label ทุกครั้ง: "ยอดเงิน" หรือ "จำนวนคน" + เทียบช่วงไหน');
+  console.log('    (ยอดเงินลูกค้าใหม่ ม.ค.→มิ.ย.2026 = −71% · จำนวนคนใหม่ H1 YoY = −20% — ทั้งคู่ถูก คนละ metric)');
 }
 
 import { pathToFileURL } from 'node:url';
