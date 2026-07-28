@@ -367,10 +367,17 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚀 Current Version: **u0.4.37 · a0.6 · f0.1 · doc v6.10** — 🌿 อยู่บน branch `feature/orders-upcoming`
+## 🚀 Current Version: **u0.4.39 · a0.6 · f0.1 · doc v6.10** — 🌿 branch `feature/orders-upcoming` (⚠️ **main ขยับไปไกลกว่า** — ดูหมายเหตุ merge ท้ายหัวข้อ)
+
+> **u0.4.38–39 (26-27 ก.ค. · อยู่บน main แล้ว):** **u0.4.38** command center (ศูนย์รวมทุก track/agent คุยแยกห้องผ่าน Supabase `session_messages`/`track_status`) + แก้ UI จากผลเทส iPhone (ส่งด่วน→ระบุเวลา/เรท Lalamove · ช้อนส้อม default off · ตัด emoji หน้า checkout/สำเร็จ) `686e515` · **u0.4.39** แก้ราคา fallback `MP_SETS` ให้ตรงราคาขายจริง (HP 1699/4190/15900 · LC 1399/3190/12000) `53edf31` **→ ปิด Known Issue #12 ราคา MP ไม่ตรง** · + ซ่อน slot ส่งด่วน/express ชั่วคราว (เรท placeholder = คิดเงินผิด รอต่อ Lalamove API จริง) `edfd1d7` · + **LIFF เก็บ `delivery_lat/lng` + `delivery_distance_km` ตอน submit** (เดิมทิ้งทุกใบทั้งที่ลูกค้าปักหมุดแล้ว — แมส/พี่เก่ง/export ใช้วางเส้นทาง) `365aa97`
+
+> ⚠️ **หมายเหตุ merge (27 ก.ค.):** งานวันนี้กองบน branch หลายเส้น — `feature/orders-upcoming` (PWA + master นี้) · `feature/oh-order-onbehalf` (สั่งแทนลูกค้า) · **main ไปถึง u0.4.39 + express/geo แล้ว** → **ตอน merge ต้องเช็คลำดับ** (branch นี้ base เก่ากว่า main)
 
 > **27 ก.ค. 2026 — เปิดแทร็ค `f` (การเงิน) + เกือบสรุปยอดขายผิดทั้งโปรเจค:** ระบบเวอร์ชันเป็น **5 แทร็ค** แล้ว (u/m/a/**f**/doc) · f-track ตั้งโครง `finance/` + `scripts/finance/orders.mjs` (ตัวกรองยอดขายกลาง) + เจอ **ช่องขายส่ง B2B 15+ ร้าน ที่ไม่เคยมีในเอกสารไหน** + ยืนยัน **ฝั่งต้นทุนไม่มีที่จดเลย → statement ธนาคารคือแหล่งเดียว** · **🔴 จับได้ว่าตัวเลข "ยอดตก 37–49%" ที่ทั้งโปรเจคสรุปกันทั้งวันมาจากฐานที่ขาดข้อมูล (HS- ปี 2026 หาย 6 เดือน) → ถอนทั้งหมด** · **บทเรียนถาวร: ก่อนสรุปเทรนด์ใดๆ ต้องเช็คความครบของข้อมูล "รายช่องทาง × รายเดือน" ก่อนเสมอ — ข้อมูลที่หายไม่ส่งเสียง error** · **a0.6** = eath-widget (Electron) + เอิธเป็น subagent + น้องเตียง agent ใหม่ + broadcast wave 1 ยิงจริง **6 ใบ** (ไม่ใช่ 5) ผลเปิด% ไล่ตามความอุ่นเป๊ะ 32%→6% = **พิสูจน์ว่า segment จาก order data ทำงานจริง**
-> ⏳ **ยังไม่ได้เก็บเข้ารอบนี้ (3 แทร็คไม่ตอบตอนเช็ค):** 06 FB Ads · 02 M-track · เตียง/Social — เติมรอบหน้า
+> **3 แทร็คที่ไม่ตอบตอนเช็ค — สรุปผ่าน Command Center แทน (ยังไม่ verify กับห้องเจ้าของ):**
+> · **02 M-track (~m0.3):** migration Wix→Vercel **ถึง Step 4 = DNS cutover** กำลังทำกับนัท · เว็บใหม่ live · blog 61 · CTA ชี้ LINE แล้ว · redirect verified
+> · **10 เตียง (นับรวมใน a0.6):** subagent `nong-tiang.md` + ชีท 7 โพสต์ใน `web/tiang/` (5/7 พร้อมตั้งเวลา) · เพจไม่ร้าง (FB โพสต์ล่าสุด 1 วันก่อน) · **ติด: ไม่มีรูป Meal Plan ใน Storage**
+> · **06 FB Ads:** 🔴 **ค้างรายงาน — ไม่ตอบทั้งวันแม้ถาม 2 รอบ** · สถานะล่าสุดที่รู้ = ad รอบ 1 (Traffic objective · ฿300/วัน · CA 2807+LAL) รอนัทกด Publish + เคาะรูป A/B · **Hyrox ไม่ใช่งานห้องนี้** (นัทสั่งไม่ยิงแอด)
 
 > **26 ก.ค. 2026 — u0.4.37 (PWA ออเดอร์ล่วงหน้า + LINE push 3 ทุ่ม + branch workflow + PRD.md)**
 
