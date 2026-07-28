@@ -362,6 +362,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <div class="sb-item" onclick="openTab('onbehalf',this)">
       <span class="sb-icon">➕</span><span>สั่งแทนลูกค้า</span>
     </div>
+    <div class="sb-item" onclick="openTab('route',this)">
+      <span class="sb-icon">🗺️</span><span>วางแผนส่ง</span>
+    </div>
     <div class="sb-item" onclick="openTab('menu',this)">
       <span class="sb-icon">🛒</span><span>เมนูออนไลน์</span>
     </div>
@@ -672,6 +675,25 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     </div>
 
     <!-- TAB: SETTINGS -->
+    <!-- TAB: วางแผนส่ง (route/export) — ออเดอร์รายวัน copy ไป Excel + CSV + ลิงก์แผนที่ ให้แอดมิน/พี่เก่งวางเส้นทาง -->
+    <div class="tab-panel" id="panel-route">
+      <div style="max-width:1100px;margin:0 auto;padding:4px 2px 40px">
+        <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+          <label style="font-size:13px;font-weight:700;color:#6B7280">วันส่ง</label>
+          <input type="date" id="rt-date" onchange="loadRoute()" style="padding:8px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          <button class="btn" onclick="loadRoute()" style="padding:8px 14px">🔄 โหลด</button>
+          <span style="flex:1"></span>
+          <button class="btn" onclick="rtCopy()" id="rt-copy" style="padding:8px 14px;background:#1F4D3A;color:#fff;border:none;border-radius:9px;cursor:pointer;font-weight:700">📋 คัดลอกตาราง (วาง Excel)</button>
+          <button class="btn" onclick="rtCsv()" style="padding:8px 14px;border:1.5px solid #E5E7EB;border-radius:9px;background:#fff;cursor:pointer">⬇ CSV</button>
+        </div>
+        <div id="rt-summary" style="font-size:13px;color:#6B7280;margin-bottom:8px"></div>
+        <div style="overflow-x:auto;border:1px solid #E5E7EB;border-radius:10px">
+          <table id="rt-table" style="width:100%;border-collapse:collapse;font-size:12.5px;white-space:nowrap"></table>
+        </div>
+        <div style="font-size:11px;color:#9CA3AF;margin-top:6px">พิกัด = ลูกค้าปักหมุดตอนสั่ง (ออเดอร์ใหม่) · ตัดออเดอร์เทส/ยกเลิกออกแล้ว</div>
+      </div>
+    </div>
+
     <!-- TAB: สั่งแทนลูกค้า (admin order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน -->
     <div class="tab-panel" id="panel-onbehalf">
       <div style="max-width:760px;margin:0 auto;padding:4px 2px 40px">
@@ -837,7 +859,7 @@ function toggleSidebar(){
   if(fb) fb.classList.toggle("show",sidebarMini);
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",onbehalf:"➕ สั่งแทนลูกค้า",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
+var TAB_TITLES={orders:"📋 ออเดอร์",onbehalf:"➕ สั่งแทนลูกค้า",route:"🗺️ วางแผนส่ง",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
 
 function _autoCollapseBar(){
   sidebarMini=true;
@@ -864,6 +886,7 @@ function openTab(name,el){
   document.getElementById("topTitle").textContent=TAB_TITLES[name]||name;
   if(name==="orders")loadAll();
   if(name==="onbehalf")initOnbehalf();
+  if(name==="route")initRoute();
   if(name==="menu")loadMenus();
   if(name==="plan"){buildPlan();loadMpDeliveries();}
   if(name==="messenger")loadMessenger();
@@ -2370,6 +2393,38 @@ async function obSubmit(){
   }catch(e){ err('พลาด: '+(e.message||e)); }
   btn.disabled=false; btn.textContent='บันทึกออเดอร์แทนลูกค้า';
 }
+
+/* ═══ วางแผนส่ง (route/export) — ออเดอร์รายวัน copy→Excel + CSV + ลิงก์แผนที่ · กรองเทส/ยกเลิกออก ═══ */
+var rtRows=[];
+async function initRoute(){var d=document.getElementById('rt-date');if(d&&!d.value)d.value=obBkkYMD();loadRoute();}
+async function loadRoute(){
+  var sb_=getSB(),date=document.getElementById('rt-date').value; if(!date)return;
+  var tb=document.getElementById('rt-table'),sm=document.getElementById('rt-summary'); sm.textContent='กำลังโหลด...'; tb.innerHTML='';
+  var r=await sb_.from('orders').select('order_number,customer_name,customer_phone,delivery_address,delivery_lat,delivery_lng,delivery_distance_km,time_slot_label,time_slot,total,payment_status').eq('delivery_date',date).not('status','eq','cancelled').not('source','in','("test","parallel_test")').order('time_slot').order('created_at');
+  var data=(r.data||[]); rtRows=data;
+  if(!data.length){ sm.textContent='ไม่มีออเดอร์วันส่งนี้'; return; }
+  var total=data.reduce(function(s,o){return s+(+o.total||0);},0);
+  sm.innerHTML='<b>'+data.length+'</b> ออเดอร์ · รวม <b>฿'+total.toLocaleString()+'</b> · วันส่ง '+date;
+  var cols=['#','เลขออเดอร์','ชื่อ','เบอร์','ที่อยู่','แผนที่','ช่วงเวลา','ยอด','โอน'];
+  var th='<thead><tr>'+cols.map(function(c){return '<th style="text-align:left;padding:8px 10px;background:#F9FAFB;border-bottom:1px solid #E5E7EB;position:sticky;top:0">'+c+'</th>';}).join('')+'</tr></thead>';
+  var tr=data.map(function(o,i){
+    var map=(o.delivery_lat&&o.delivery_lng)?('<a href="https://www.google.com/maps?q='+o.delivery_lat+','+o.delivery_lng+'" target="_blank" style="color:#2563EB">เปิด</a>'):'<span style="color:#D1D5DB">–</span>';
+    var pay=o.payment_status==='paid'?'<span style="color:#059669">โอนแล้ว</span>':'<span style="color:#DC2626">รอโอน</span>';
+    return '<tr style="border-bottom:1px solid #F3F4F6"><td style="padding:7px 10px">'+(i+1)+'</td><td style="padding:7px 10px">'+obEsc(o.order_number)+'</td><td style="padding:7px 10px">'+obEsc(o.customer_name||'-')+'</td><td style="padding:7px 10px">'+obEsc(o.customer_phone||'-')+'</td><td style="padding:7px 10px;white-space:normal;max-width:340px">'+obEsc(o.delivery_address||'-')+'</td><td style="padding:7px 10px">'+map+'</td><td style="padding:7px 10px">'+obEsc(o.time_slot_label||o.time_slot||'-')+'</td><td style="padding:7px 10px;text-align:right">฿'+(+o.total||0).toLocaleString()+'</td><td style="padding:7px 10px">'+pay+'</td></tr>';
+  }).join('');
+  tb.innerHTML=th+'<tbody>'+tr+'</tbody>';
+}
+function rtTSV(){
+  var head=['เลขออเดอร์','ชื่อ','เบอร์','ที่อยู่','พิกัด','ลิงก์แผนที่','ช่วงเวลา','ระยะกม.','ยอด','สถานะโอน'];
+  var lines=[head.join('\t')];
+  rtRows.forEach(function(o){
+    var coord=(o.delivery_lat&&o.delivery_lng)?(o.delivery_lat+','+o.delivery_lng):'';
+    lines.push([o.order_number,o.customer_name||'',o.customer_phone||'',(o.delivery_address||'').replace(/[\t\n]/g,' '),coord,coord?('https://www.google.com/maps?q='+coord):'',o.time_slot_label||o.time_slot||'',o.delivery_distance_km||'',(+o.total||0),o.payment_status==='paid'?'โอนแล้ว':'รอโอน'].join('\t'));
+  });
+  return lines.join('\n');
+}
+function rtCopy(){navigator.clipboard.writeText(rtTSV()).then(function(){var b=document.getElementById('rt-copy'),o=b.textContent;b.textContent='✓ คัดลอกแล้ว';setTimeout(function(){b.textContent=o;},1500);}).catch(function(){alert('คัดลอกไม่ได้ — ลากเลือกในตารางแล้ว Ctrl+C');});}
+function rtCsv(){var csv=rtTSV().split('\n').map(function(l){return l.split('\t').map(function(c){return '"'+(''+c).replace(/"/g,'""')+'"';}).join(',');}).join('\n');var blob=new Blob(['﻿'+csv],{type:'text/csv;charset=utf-8'}),url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download='route_'+document.getElementById('rt-date').value+'.csv';a.click();URL.revokeObjectURL(url);}
 </script>
 </body>
 </html>
