@@ -44,11 +44,21 @@ export function isTestOrder(o) {
   return TEST_NAMES.includes((o.customer_name || '').trim().toLowerCase());
 }
 
-/** ช่องทาง: liff = HT- (LIFF ลูกค้าสั่งเอง) · store = HS- (สาขากรุงธนบุรี) · own = U- (ระบบ 360) */
+/**
+ * `HS-` = **log ระบบเก็บแต้ม ไม่ใช่ยอดขาย** (นัทยืนยันเอง 28 ก.ค. · "สังขกร" = บัญชีแอดมิน)
+ * P-track re-source เป็น `hato_loyalty_log` แล้ว → ต้องตัดออกจากทุกการคำนวณยอดขาย
+ *
+ * ⚠️ ประวัติ: เคยเข้าใจผิดว่าเป็น "ช่องขายสาขากรุงธนบุรี" แล้วไล่ forensics กันทั้งคืน
+ * (นับใบ/จับคู่ dedup/สั่ง migrate ดึงใหม่) — เสียเวลาเพราะไปตั้งคำถามว่า "ยังขายอยู่ไหม"
+ * แทนที่จะถามว่า "HS- คืออะไร" → **อย่าใส่สมมติฐานลงไปในคำถาม**
+ */
+export const isLoyaltyLog = (o) =>
+  o.source === 'hato_loyalty_log' || (o.order_number || '').startsWith('HS-');
+
+/** ช่องทาง: liff = HT- (LIFF ลูกค้าสั่งเอง) · own = U- (ระบบ 360) */
 export function channelOf(o) {
   const n = o.order_number || '';
   if (n.startsWith('HT-')) return 'liff';
-  if (n.startsWith('HS-')) return 'store';
   if (n.startsWith('U-')) return 'own';
   return 'other';
 }
@@ -58,17 +68,36 @@ export function channelOf(o) {
  * ยอด 0 มี 3 แบบ (ดู finance/HANDOFF.md): แยกวันส่ง · prepaid ทยอยส่ง · อาหารพนักงาน
  * ทั้ง 3 แบบ "ไม่ใช่ยอดขายของเดือนนั้น" → ตัดออกจากทั้งยอดเงินและ order count
  */
-export const isSale = (o) => Number(o.total) > 0;
+export const isSale = (o) => Number(o.total) > 0 && !isLoyaltyLog(o);
 
 /** โหลดออเดอร์ในช่วง แล้วกรองของปนออกให้เรียบร้อย */
 export async function loadOrders(fromISO, toISO) {
-  const sel = 'select=order_number,total,created_at,source,created_by,customer_name,notes,status';
+  const sel =
+    'select=order_number,total,created_at,source,created_by,customer_name,customer_id,notes,status';
   const raw = await fetchAll(
     `orders?${sel}&created_at=gte.${fromISO}&created_at=lt.${toISO}&order=created_at.asc`
   );
   const tests = raw.filter(isTestOrder);
   const clean = raw.filter((o) => !isTestOrder(o));
   return { raw, clean, tests, sales: clean.filter(isSale) };
+}
+
+/**
+ * เดือนที่ลูกค้าแต่ละคนซื้อ "ครั้งแรกจริง" จากประวัติทั้งหมดที่มีในระบบ
+ * ต้องกวาดทั้งตาราง ห้ามคำนวณจากช่วงที่ query (ดูคอมเมนต์ตรงที่เรียกใช้)
+ */
+export async function loadFirstOrderMonths() {
+  const rows = await fetchAll(
+    'orders?select=customer_id,created_at,total,order_number,source,created_by,customer_name,notes' +
+      '&order=created_at.asc'
+  );
+  const first = new Map();
+  for (const o of rows) {
+    if (!o.customer_id || !isSale(o) || isTestOrder(o) || channelOf(o) !== 'liff') continue;
+    const m = o.created_at.slice(0, 7);
+    if (!first.has(o.customer_id)) first.set(o.customer_id, m);
+  }
+  return first;
 }
 
 const monthKey = (o) => o.created_at.slice(0, 7);
@@ -86,22 +115,44 @@ async function main() {
   console.log(`ตัดใบยอด 0 ออก ${clean.length - sales.length} ใบ  ← แยกวันส่ง / prepaid / อาหารพนักงาน\n`);
 
   const months = [...new Set(sales.map(monthKey))].sort();
-  console.log('เดือน   |   LIFF (HT-) ใบ |     ยอด | Store (HS-) ใบ |     ยอด');
-  console.log('--------|----------------:|--------:|---------------:|--------:');
+  console.log('เดือน   | LIFF (HT-) ใบ |     ยอด |  360 (U-) ใบ |    ยอด');
+  console.log('--------|--------------:|--------:|-------------:|-------:');
   for (const m of months) {
     const inM = sales.filter((o) => monthKey(o) === m);
     const l = inM.filter((o) => channelOf(o) === 'liff');
-    const s = inM.filter((o) => channelOf(o) === 'store');
+    const u = inM.filter((o) => channelOf(o) === 'own');
     console.log(
-      `${m} | ${String(l.length).padStart(15)} | ${baht(sum(l)).padStart(7)} | ` +
-        `${String(s.length).padStart(14)} | ${baht(sum(s)).padStart(7)}`
+      `${m} | ${String(l.length).padStart(13)} | ${baht(sum(l)).padStart(7)} | ` +
+        `${String(u.length).padStart(12)} | ${baht(sum(u)).padStart(6)}`
     );
   }
 
-  console.log(
-    '\n⚠️  ห้ามบวก 2 คอลัมน์เป็น "ยอดร้าน" — HS- ซ้ำกับ HT- ~26% และปี 2026 ขาดข้อมูล 6 เดือน'
-  );
-  console.log('    ดูเหตุผลเต็มใน finance/HANDOFF.md ก่อนใช้ตัวเลขนี้ตัดสินใจ');
+  console.log('\n✅ HS- (ระบบเก็บแต้ม) ถูกตัดออกแล้ว — ไม่ใช่ยอดขาย · ยอดจริง = LIFF + 360');
+
+  // ── repeat rate / new vs returning (ฐาน LIFF เท่านั้น) ──────────────────
+  // ตอบว่า "ยอดตกเพราะลูกค้าใหม่น้อยลง หรือลูกค้าเก่าไม่กลับ" = คนละทางแก้
+  const liff = sales.filter((o) => channelOf(o) === 'liff' && o.customer_id);
+  // ⚠️ ต้องหาเดือนที่ซื้อ "ครั้งแรกจริง" จากประวัติทั้งหมด ไม่ใช่จากช่วงที่ query
+  //    ถ้านับจากช่วงที่ query: เดือนแรกทุกคนจะเป็น "ลูกค้าใหม่" หมด แล้วลดลงเองทุกเดือน
+  //    = bias เชิงโครงสร้าง ได้กราฟ "ลูกค้าใหม่ลดลง" เสมอ ไม่ว่าความจริงเป็นยังไง
+  const firstSeen = await loadFirstOrderMonths();
+  console.log('\nเดือน   | ลูกค้า | ซื้อซ้ำ |  repeat | ยอดลูกค้าใหม่ | ยอดลูกค้าเก่า');
+  console.log('--------|-------:|--------:|--------:|--------------:|-------------:');
+  for (const m of months) {
+    const inM = liff.filter((o) => monthKey(o) === m);
+    const per = new Map();
+    for (const o of inM) per.set(o.customer_id, (per.get(o.customer_id) || 0) + 1);
+    const repeat = [...per.values()].filter((n) => n >= 2).length;
+    const isNew = (o) => firstSeen.get(o.customer_id) === m;
+    const rev = (f) => sum(inM.filter(f));
+    console.log(
+      `${m} | ${String(per.size).padStart(6)} | ${String(repeat).padStart(7)} | ` +
+        `${(per.size ? (repeat / per.size) * 100 : 0).toFixed(1).padStart(6)}% | ` +
+        `${baht(rev(isNew)).padStart(13)} | ${baht(rev((o) => !isNew(o))).padStart(12)}`
+    );
+  }
+  console.log('\n"ลูกค้าใหม่" = เดือนที่ซื้อครั้งแรกจริง คิดจากประวัติ LIFF ทั้งหมด ไม่ใช่แค่ช่วงที่ query');
+  console.log('⚠️  บางคนที่ดู "ซื้อครั้งเดียว" อาจซื้อซ้ำที่สาขา (HS-) → รอ HS- 2026 ครบก่อนล็อกเลข');
 }
 
 import { pathToFileURL } from 'node:url';
