@@ -19,3 +19,8 @@ web/eath/
 
 # 🔒 FB Ads / financial exports — ข้อมูลการเงินธุรกิจ ห้าม commit เด็ดขาด
 download/
+
+# 🔒 f-track (การเงิน/บัญชี) — statement ธนาคาร/บัตร + ผลรวม P&L ห้าม commit เด็ดขาด
+# ⚠️ ต้องมี / นำหน้า = เฉพาะโฟลเดอร์ราก ไม่งั้นจะดักโดน scripts/finance/ (โค้ด) ไปด้วย
+# โค้ด parser อยู่ที่ scripts/finance/ (commit ได้ ไม่มีข้อมูล) · ข้อมูลดิบ+ผลลัพธ์อยู่ใน /finance/ (local เท่านั้น)
+/finance/
