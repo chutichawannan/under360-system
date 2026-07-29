@@ -695,6 +695,7 @@ body{background:#fff!important}
         <span class="fee-km" id="fee-dist">—</span>
         <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
       </div>
+      <button onclick="clearCusAddr()" style="width:100%;margin-top:8px;padding:9px;border:1.5px solid var(--line);border-radius:10px;background:#fff;color:var(--r);cursor:pointer;font-size:13px;font-weight:600">🗑 ล้างที่อยู่ / ค้นหาใหม่</button>
       <div class="zone-notice bkk" id="zone-bkk">
         <span class="zone-ico">🏍️</span>พื้นที่จัดส่งปกติ — ส่งด้วยรถมอเตอร์ไซค์ในวันที่เลือก
       </div>
@@ -2781,12 +2782,30 @@ function setCusPin(lat,lng,addr){
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
   const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent='฿'+fee;
-  if(addr){
-    const ai=document.getElementById('addr-input');if(ai&&!ai.value)ai.value=addr;
-    const as=document.getElementById('addr-search');if(as)as.value=addr.split(',').slice(0,2).join(',');
+  if(addr){ _setAddrFields(addr); }
+  else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → reverse geocode มาอัปเดตช่องที่อยู่ (หมุดเปลี่ยน = ช่องบนเปลี่ยนตาม)
+    new google.maps.Geocoder().geocode({location:{lat,lng},language:'th'},(res,st)=>{ if(st==='OK'&&res[0]) _setAddrFields(res[0].formatted_address); });
   }
   detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด (ใช้เส้นตรง = รัศมีภูมิศาสตร์ ถูกต้องแล้ว)
   updateRoadDistance(lat, lng);     // ← ยิง Google วัดระยะขับจริง มาแทนค่าส่ง (async, fallback = haversine)
+  updateCartTotals();
+}
+
+// อัปเดตช่องที่อยู่ตามหมุดเสมอ (ไม่เช็ค !value แล้ว — หมุดเปลี่ยน = ช่องเปลี่ยนตาม)
+function _setAddrFields(a){
+  const ai=document.getElementById('addr-input'); if(ai) ai.value=a;
+  const as=document.getElementById('addr-search'); if(as) as.value=a.split(',').slice(0,2).join(',');
+}
+
+// ล้างหมุด+ที่อยู่ เพื่อค้นใหม่ (ปุ่มลบทิ้ง)
+function clearCusAddr(){
+  if(cusPin){ cusPin.setMap(null); cusPin=null; }
+  distKm=null;
+  const ai=document.getElementById('addr-input'); if(ai) ai.value='';
+  const as=document.getElementById('addr-search'); if(as){ as.value=''; as.focus(); }
+  const fRow=document.getElementById('fee-row'); if(fRow) fRow.style.display='none';
+  const bkk=document.getElementById('zone-bkk'), cold=document.getElementById('zone-cold');
+  if(bkk)bkk.style.display=''; if(cold)cold.style.display='none';
   updateCartTotals();
 }
 
