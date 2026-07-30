@@ -73,6 +73,7 @@ input,textarea{font-family:inherit}
 /* ═══════════ SCROLL ═══════════ */
 .scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
 .pb-nav{padding-bottom:calc(var(--nav) + 16px)}
+body.has-fcart #s-menu .pb-nav{padding-bottom:calc(var(--nav) + 96px)} /* มีของในตะกร้า → บาร์ส้มโผล่เหนือ nav เผื่อพื้นที่ไม่ให้ทับเมนูตัวท้าย */
 .pb-btn{padding-bottom:80px}
 
 /* ═══════════ CAT TABS ═══════════ */
@@ -1868,6 +1869,7 @@ function updateCartUI() {
     document.getElementById('fcart-cnt').textContent = cnt + ' รายการ';
     document.getElementById('fcart-tot').textContent = '฿' + tot.toLocaleString();
   } else { fc.classList.add('hide'); }
+  document.body.classList.toggle('has-fcart', cnt > 0); // เพิ่มพื้นที่ล่างเมนูตอนบาร์ตะกร้าโผล่ (กันทับเมนูตัวท้าย)
 }
 
 function renderCart() {
