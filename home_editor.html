@@ -907,9 +907,10 @@ function setupItemDrag(){
       e.preventDefault();row.style.background='';
       if(dragSrc2===row) return;
       const si=menuItems.findIndex(m=>m.id==dragSrc2.dataset.id);
-      const ti=menuItems.findIndex(m=>m.id==row.dataset.id);
-      if(si<0||ti<0) return;
-      [menuItems[si],menuItems[ti]]=[menuItems[ti],menuItems[si]];
+      if(si<0) return;
+      const moved=menuItems.splice(si,1)[0];                    // เอาตัวที่ลากออกก่อน
+      const ti2=menuItems.findIndex(m=>m.id==row.dataset.id);   // หาตำแหน่งแถวเป้าหมายใหม่ (หลังเอาออกแล้ว)
+      menuItems.splice(ti2<0?menuItems.length:ti2, 0, moved);   // แทรกก่อนแถวเป้าหมาย (ไม่ใช่สลับ) — ลาก 4→1 = 4 แทรกบน 1, ตัวอื่นเลื่อนลง
       menuItems.filter(m=>m.category===activeCat).forEach((m,j)=>{m.sort_order=j+1;});
       renderCatItems();
     });
