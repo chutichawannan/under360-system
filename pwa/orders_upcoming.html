@@ -85,6 +85,20 @@ a.tel{color:var(--tx);text-decoration:none;font-variant-numeric:tabular-nums}
 .ono{margin-top:8px;font-size:11px;color:#6C8175;letter-spacing:.3px;font-variant-numeric:tabular-nums}
 .empty{color:var(--soft);font-size:14px;padding:10px 2px}
 .state{text-align:center;color:var(--soft);padding:50px 20px;font-size:15px}
+/* ปุ่มกรองแหล่งที่มา */
+.srcbar{display:flex;gap:8px;padding:0 0 12px}
+.sbtn{flex:1;background:var(--panel);border:1px solid var(--line);color:var(--soft);border-radius:10px;padding:8px 0;font-size:14px;font-weight:600;cursor:pointer}
+.sbtn.on{border-color:var(--g);color:var(--tx);background:var(--panel2)}
+/* ล็อกหน้าด้วย PIN (กันคนหลงเข้า — ไม่ใช่ระบบความปลอดภัยจริง) */
+.lock{position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.lock.off{display:none}
+.lockbox{width:100%;max-width:300px;text-align:center}
+.lockbox .lt{font-size:20px;font-weight:700}
+.lockbox .ls{font-size:14px;color:var(--soft);margin:6px 0 18px}
+#pin{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--tx);
+  font-size:30px;text-align:center;letter-spacing:14px;padding:14px 0 14px 14px;font-variant-numeric:tabular-nums}
+#pin:focus{outline:none;border-color:var(--g)}
+.pinerr{color:var(--warn);font-size:13px;height:18px;margin-top:10px}
 .err{color:var(--warn)}
 .foot{text-align:center;color:var(--soft);font-size:12px;padding:14px}
 </style>
@@ -100,7 +114,21 @@ a.tel{color:var(--tx);text-decoration:none;font-variant-numeric:tabular-nums}
     <button class="btn" id="btnRefresh" type="button">รีเฟรช</button>
   </div>
   <div class="datebar" id="datebar"></div>
+  <div class="srcbar">
+    <button class="sbtn on" data-src="all" type="button">ทั้งหมด</button>
+    <button class="sbtn" data-src="360" type="button">360</button>
+    <button class="sbtn" data-src="hato" type="button">Hato</button>
+  </div>
 </header>
+
+<div class="lock" id="lock">
+  <div class="lockbox">
+    <div class="lt">ออเดอร์ล่วงหน้า</div>
+    <div class="ls">ใส่รหัส 4 ตัว</div>
+    <input id="pin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="รหัสผ่าน">
+    <div class="pinerr" id="pinerr"></div>
+  </div>
+</div>
 
 <main id="main"><div class="state">กำลังโหลดออเดอร์…</div></main>
 <div class="foot">อ่านอย่างเดียว · แก้ไขออเดอร์ที่ Operation Hub</div>
@@ -149,6 +177,7 @@ var dates = [];
 var orders = [];
 var itemsBy = {};
 var loading = false;
+var srcFilter = "all";   // all | 360 | hato — ช่วง beta คีย์คู่ขนานกับ Hato จะเห็นซ้ำ กรองได้
 
 for (var i=0;i<=DAYS_AHEAD;i++) dates.push(addDays(today,i));
 
@@ -226,10 +255,16 @@ function srcOf(o){
 }
 
 /* ── RENDER ─────────────────────────────────────────────── */
+function passSrc(o){
+  if(srcFilter === "all") return true;
+  var n = o.order_number || "";
+  return srcFilter === "360" ? /^U-/i.test(n) : /^H[TS]-/i.test(n);
+}
+
 function render(){
   var byDate = {};
   dates.forEach(function(d){ byDate[d] = []; });
-  orders.forEach(function(o){ if(byDate[o.delivery_date]) byDate[o.delivery_date].push(o); });
+  orders.filter(passSrc).forEach(function(o){ if(byDate[o.delivery_date]) byDate[o.delivery_date].push(o); });
 
   // แถบวันที่ด้านบน
   var bar = dates.map(function(d,i){
@@ -340,6 +375,7 @@ document.getElementById("main").addEventListener("click", function(e){
 });
 document.addEventListener("visibilitychange", function(){
   if(document.visibilityState==="visible"){
+    if(!document.getElementById("lock").classList.contains("off")) return; // ยังไม่ปลดล็อก = ไม่ดึงข้อมูล
     var t = bkkToday();
     if(t !== today){ // ข้ามวันแล้ว → คำนวณช่วงวันใหม่
       today = t; dates = [];
@@ -349,7 +385,46 @@ document.addEventListener("visibilitychange", function(){
   }
 });
 
-loadAll();
+// ปุ่มกรองแหล่งที่มา (ทั้งหมด / 360 / Hato)
+Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function(b){
+  b.addEventListener("click", function(){
+    srcFilter = b.getAttribute("data-src");
+    Array.prototype.forEach.call(document.querySelectorAll(".sbtn"), function(x){
+      x.classList.toggle("on", x === b);
+    });
+    render();
+  });
+});
+
+/* ── PIN ล็อกหน้า ───────────────────────────────────────────
+   กันคนหลงเข้า/ลิงก์หลุด — ไม่ใช่ระบบความปลอดภัยจริง (โค้ดฝั่ง browser เปิดดูได้)
+   ถ้าวันหลังต้องคุมจริงจัง → เปลี่ยนเป็น Google login (Supabase Auth) + ตารางรายชื่ออีเมลที่อนุญาต */
+var PIN = "0360";
+var PIN_KEY = "u360_orders_pin";
+var lockEl = document.getElementById("lock");
+
+function unlock(){
+  lockEl.classList.add("off");
+  loadAll();
+}
+if(localStorage.getItem(PIN_KEY) === PIN){
+  unlock();
+}else{
+  var pinIn = document.getElementById("pin");
+  setTimeout(function(){ try{ pinIn.focus(); }catch(e){} }, 200);
+  pinIn.addEventListener("input", function(){
+    var v = pinIn.value.replace(/[^0-9]/g,"");
+    pinIn.value = v;
+    if(v.length < 4) { document.getElementById("pinerr").textContent = ""; return; }
+    if(v === PIN){
+      try{ localStorage.setItem(PIN_KEY, PIN); }catch(e){}
+      unlock();
+    }else{
+      document.getElementById("pinerr").textContent = "รหัสไม่ถูก";
+      pinIn.value = "";
+    }
+  });
+}
 
 /* ── PWA: cache เฉพาะ shell · ข้อมูลออเดอร์ fetch สดเสมอ ── */
 if("serviceWorker" in navigator){
