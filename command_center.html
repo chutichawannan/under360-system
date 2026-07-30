@@ -26,15 +26,19 @@
   .room{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:12px;cursor:pointer;transition:background .12s}
   .room:hover{background:#F3F4F6}
   .room.active{background:var(--nutl)}
+  .room.dash{background:var(--nut);margin:4px 4px 8px}
+  .room.dash .room-n,.room.dash .room-d{color:#fff!important}
+  .room.dash .room-d{opacity:.8}
   .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px}
   .room-b{flex:1;min-width:0}
   .room-t{display:flex;align-items:center;justify-content:space-between;gap:6px}
   .room-n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .badge{background:var(--nut);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0}
+  .room.dash .badge{background:#fff;color:var(--nut)}
   .room-d{font-size:12px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .room-s{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
 
-  /* ── Chat pane ── */
+  /* ── Main pane ── */
   #chat{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
   .chat-h{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);flex-shrink:0}
   .back{display:none;background:none;border:none;font-size:22px;color:var(--nut);cursor:pointer;padding:0 4px 0 0;line-height:1}
@@ -55,8 +59,32 @@
   .compose textarea:focus{border-color:var(--nut)}
   .send{background:var(--nut);color:#fff;border:none;border-radius:14px;padding:0 20px;font-weight:700;font-size:14.5px;cursor:pointer;flex-shrink:0}
   .send:disabled{opacity:.4;cursor:default}
-
   .banner{background:#FEF2F2;color:#991B1B;font-size:13px;padding:10px 16px;text-align:center;border-bottom:1px solid #FECACA}
+
+  /* ── Dashboard ── */
+  .dash-wrap{flex:1;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
+  .dsec{margin-bottom:22px}
+  .dsec>h3{font-size:13px;font-weight:800;color:var(--nut);letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
+  .dgrp{font-size:11px;font-weight:700;color:var(--faint);margin:12px 2px 6px}
+  .lnk{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:8px;text-decoration:none;color:var(--ink);font-size:15px;font-weight:600;transition:background .12s}
+  .lnk:active{background:#F3F4F6}
+  .lnk .ic{font-size:20px;width:26px;text-align:center;flex-shrink:0}
+  .lnk .lt{flex:1;min-width:0}
+  .lnk .ld{font-size:11.5px;color:var(--faint);font-weight:400;margin-top:1px}
+  .lnk .arw{color:var(--faint);font-size:18px}
+  .lnk.note{background:#FFFBEB;border-color:#FDE68A;font-weight:500;font-size:13px;color:#92400E}
+  .pill{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px}
+  .prow{margin-bottom:12px}
+  .prow:last-child{margin-bottom:0}
+  .prow .pl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
+  .prow .pl b{font-weight:700}
+  .bar{height:8px;background:#EFEFEC;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--nut);border-radius:5px}
+  .overall{text-align:center;padding:6px 0 14px}
+  .overall .big{font-size:38px;font-weight:800;color:var(--nut);line-height:1}
+  .overall .cap{font-size:12px;color:var(--soft);margin-top:2px}
+  .cctxt{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px;font-size:14px;white-space:pre-wrap;line-height:1.6}
+  .cctxt .cct{font-size:11px;color:var(--faint);margin-top:8px;text-align:right}
 
   @media(max-width:720px){
     #side{width:100%}
@@ -70,7 +98,7 @@
 <body>
 <div id="app">
   <aside id="side">
-    <div class="side-h"><b>Command Center</b><div class="sub">ทุก track · ทุก agent · คุยแยกห้อง</div></div>
+    <div class="side-h"><b>Command Center</b><div class="sub">ทุก track · ทุก agent · หน้ารวม</div></div>
     <div id="banner"></div>
     <div class="rooms" id="roomList"></div>
   </aside>
@@ -81,7 +109,8 @@
       <div class="ch-info"><b id="chName">เลือกห้อง</b><div class="ch-cur" id="chCur"></div></div>
     </div>
     <div class="msgs" id="msgs"><div class="empty">เลือกห้องทางซ้ายเพื่อเริ่มคุย</div></div>
-    <div class="compose">
+    <div class="dash-wrap" id="dashView" style="display:none"></div>
+    <div class="compose" id="compose">
       <textarea id="input" rows="1" placeholder="พิมพ์ข้อความถึงห้องนี้..." oninput="growBox(this)" onkeydown="onKey(event)"></textarea>
       <button class="send" id="sendBtn" onclick="send()" disabled>ส่ง</button>
     </div>
@@ -92,6 +121,7 @@
 const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const sb=supabase.createClient(SB_URL,SB_KEY);
+const BASE='https://under360-system.vercel.app';
 
 const ROOMS=[
   {id:'u',      label:'U-track',   desc:'โค้ด / LIFF / DB / หลังบ้าน', color:'#2563EB', kind:'track'},
@@ -108,7 +138,40 @@ const ROOMS=[
 const RMAP=Object.fromEntries(ROOMS.map(r=>[r.id,r]));
 const STCOL={idle:'var(--idle)',working:'var(--work)',blocked:'var(--block)'};
 
-let active=null, allMsgs=[], statusMap={}, tablesOk=true;
+// ── Link hub (แก้ตรงนี้เพิ่ม/ลบลิงก์ได้เลย) ──
+const LINKS=[
+  {grp:'ลูกค้า / แอดมิน (ใช้บ่อย)', items:[
+    {ic:'🍱', t:'LIFF ลูกค้า (สั่งอาหาร)', d:'หน้าที่ลูกค้าเห็น', u:'https://liff.line.me/2010442513-NI3JGTkb'},
+    {ic:'🗂️', t:'Operation Hub (แอดมิน)', d:'จัดออเดอร์/เมนู/โปร/สั่งแทนลูกค้า', u:BASE+'/operation_hub.html'},
+    {ic:'👨‍🍳', t:'ครัว (Kitchen Queue)', d:'ออเดอร์ที่ต้องทำวันนี้', u:BASE+'/kitchen_queue.html'},
+    {ic:'📆', t:'ออเดอร์ล่วงหน้า 7 วัน', d:'PWA · PIN 0360 · เพิ่มลงหน้าโฮมได้', u:BASE+'/pwa/orders_upcoming.html'},
+  ]},
+  {grp:'จัดการหลังบ้าน', items:[
+    {ic:'📋', t:'ฐานข้อมูลเมนู (DB)', d:'เมนู/วัตถุดิบ/แพคเกจ/สต็อก', u:BASE+'/main_database_v2.html'},
+    {ic:'🏠', t:'จัดหน้าแรก (Home Editor)', d:'จัดการ์ด HomeGrid', u:BASE+'/home_editor.html'},
+    {ic:'👥', t:'ข้อมูลลูกค้า', d:'', u:BASE+'/customer.html'},
+    {ic:'📊', t:'รายงาน', d:'', u:BASE+'/report.html'},
+  ]},
+  {grp:'เว็บ / มาร์เก็ตติ้ง', items:[
+    {ic:'🌐', t:'เว็บสาธารณะใหม่', d:'under360-system.vercel.app/web', u:BASE+'/web/'},
+    {ic:'⭐', t:'ลิงก์ขอรีวิว Google', d:'ส่งให้ลูกค้าประจำ', u:'https://g.page/r/CTHTcnneZEtoEBI/review'},
+  ]},
+];
+const NOTE='ปุ่ม "สั่งแทนลูกค้า" ยังอยู่บน preview (รอเทส 1 ใบ แล้วขึ้น main) → พอ merge จะโผล่ในแท็บของ Operation Hub อัตโนมัติ';
+
+// ── 7 เสาหลัก (อัปเดตเลข % ที่นี่) ──
+const PILLARS=[
+  {n:'1. ระบบ Order & ลูกค้า', p:90},
+  {n:'2. ปฏิบัติการ & ต้นทุน', p:20},
+  {n:'3. Product-Market Fit', p:15},
+  {n:'4. CRM & Customer Intel', p:20},
+  {n:'5. Marketing Engine', p:20},
+  {n:'6. AI Agents', p:20},
+  {n:'7. Under360 Base', p:2},
+];
+const OVERALL=27;
+
+let active=null, allMsgs=[], statusMap={}, tablesOk=true, ccPosts=[];
 const seen=JSON.parse(localStorage.getItem('cc_seen')||'{}');
 
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
@@ -117,15 +180,17 @@ function fmtTime(iso){const d=new Date(iso);const now=new Date();const sameDay=d
   return sameDay?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
 
 async function loadAll(){
-  // ข้อความล่าสุดทุกห้อง (ใช้ทำ sidebar + ห้องที่เปิด)
-  const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(400);
+  const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(500);
   if(error){ tablesOk=false; renderBanner(); return; }
   tablesOk=true; renderBanner();
-  allMsgs=(data||[]).slice().reverse();  // เก่า→ใหม่
+  const all=(data||[]).slice().reverse();
+  allMsgs=all.filter(m=>m.room!=='cc');
+  ccPosts=all.filter(m=>m.room==='cc');
   const {data:st}=await sb.from('track_status').select('*');
   statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
   renderRooms();
-  if(active) renderMsgs();
+  if(active==='__dash__') renderDash();
+  else if(active) renderMsgs();
 }
 
 function renderBanner(){
@@ -141,7 +206,11 @@ function lastOf(room){const a=allMsgs.filter(m=>m.room===room);return a[a.length
 
 function renderRooms(){
   const el=document.getElementById('roomList');
-  let html='';
+  // pinned dashboard
+  let html=`<div class="room dash${active==='__dash__'?' active':''}" onclick="openDash()">
+      <span class="dot" style="background:#fff"></span>
+      <div class="room-b"><div class="room-t"><span class="room-n">📊 หน้ารวม (Dashboard)</span></div>
+      <div class="room-d">ลิงก์ทุกอัน · ความคืบหน้า · สรุปล่าสุด</div></div></div>`;
   for(const kind of ['track','agent']){
     html+=`<div class="grp">${kind==='track'?'Tracks (session)':'Agents'}</div>`;
     for(const r of ROOMS.filter(x=>x.kind===kind)){
@@ -161,6 +230,58 @@ function renderRooms(){
   el.innerHTML=html;
 }
 
+function showView(which){ // 'chat' | 'dash'
+  document.getElementById('msgs').style.display   = which==='chat'?'flex':'none';
+  document.getElementById('compose').style.display= which==='chat'?'flex':'none';
+  document.getElementById('dashView').style.display= which==='dash'?'block':'none';
+}
+
+function openDash(){
+  active='__dash__';
+  document.body.classList.add('chat-open');
+  document.getElementById('chName').textContent='หน้ารวม';
+  document.getElementById('chName').style.color='var(--nut)';
+  document.getElementById('chDot').style.background='var(--nut)';
+  document.getElementById('chCur').textContent='ลิงก์ · ความคืบหน้า · สรุป';
+  showView('dash'); renderDash(); renderRooms();
+}
+
+function renderDash(){
+  const el=document.getElementById('dashView');
+  let h='';
+  // links
+  h+='<div class="dsec"><h3>🔗 ลิงก์ด่วน — กดเปิดได้เลย</h3>';
+  for(const g of LINKS){
+    h+=`<div class="dgrp">${esc(g.grp)}</div>`;
+    for(const it of g.items){
+      h+=`<a class="lnk" href="${it.u}" target="_blank" rel="noopener">
+        <span class="ic">${it.ic}</span>
+        <span class="lt">${esc(it.t)}${it.d?`<div class="ld">${esc(it.d)}</div>`:''}</span>
+        <span class="arw">›</span></a>`;
+    }
+  }
+  h+=`<div class="lnk note">⚠️ ${esc(NOTE)}</div>`;
+  h+='</div>';
+  // progress
+  h+='<div class="dsec"><h3>📈 ความคืบหน้าโปรเจค (7 เสาหลัก)</h3><div class="pill">';
+  h+=`<div class="overall"><div class="big">${OVERALL}%</div><div class="cap">ภาพรวมทั้งโปรเจค · เป้า 500,000฿/เดือน</div></div>`;
+  for(const p of PILLARS){
+    h+=`<div class="prow"><div class="pl"><span>${esc(p.n)}</span><b>${p.p}%</b></div><div class="bar"><i style="width:${p.p}%"></i></div></div>`;
+  }
+  h+='</div></div>';
+  // catchup
+  h+='<div class="dsec"><h3>📝 สรุปล่าสุด (Catchup)</h3>';
+  if(!ccPosts.length){
+    h+='<div class="cctxt" style="color:var(--faint)">ยังไม่มีสรุป — เลขา (CC) จะโพสต์สรุปความคืบหน้าไว้ที่นี่</div>';
+  }else{
+    for(const c of ccPosts.slice(-3).reverse()){
+      h+=`<div class="cctxt" style="margin-bottom:10px">${esc(c.text)}<div class="cct">${fmtTime(c.created_at)}</div></div>`;
+    }
+  }
+  h+='</div>';
+  el.innerHTML=h;
+}
+
 function openRoom(id){
   active=id; const r=RMAP[id]; const st=statusMap[id];
   document.body.classList.add('chat-open');
@@ -171,8 +292,7 @@ function openRoom(id){
   if(st&&st.open_loops)cur.push('ค้าง '+st.open_loops);
   document.getElementById('chCur').textContent=cur.join(' · ');
   document.getElementById('sendBtn').disabled=false;
-  renderMsgs();
-  // mark seen
+  showView('chat'); renderMsgs();
   const last=lastOf(id); seen[id]=last?last.created_at:new Date().toISOString();
   localStorage.setItem('cc_seen',JSON.stringify(seen));
   renderRooms();
@@ -190,17 +310,15 @@ function renderMsgs(){
     return `<div class="m ${m.role==='nut'?'nut':'claude'}">${who}${esc(m.text)}<div class="t">${fmtTime(m.created_at)}</div></div>`;
   }).join('');
   if(nearBottom||list.length)box.scrollTop=box.scrollHeight;
-  // update seen to newest shown
   seen[active]=list[list.length-1].created_at;
   localStorage.setItem('cc_seen',JSON.stringify(seen));
 }
 
 async function send(){
   const inp=document.getElementById('input'); const text=inp.value.trim();
-  if(!text||!active)return;
+  if(!text||!active||active==='__dash__')return;
   inp.value=''; growBox(inp);
   const row={room:active,sender:'nut',role:'nut',text};
-  // optimistic
   allMsgs.push({...row,created_at:new Date().toISOString()}); renderMsgs();
   const {error}=await sb.from('session_messages').insert(row);
   if(error){alert('ส่งไม่สำเร็จ: '+error.message); return;}
@@ -210,7 +328,8 @@ async function send(){
 function growBox(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px';}
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 
-loadAll();
+// เปิดมา = โชว์หน้ารวมก่อน (มือถือ = เห็น dashboard ทันที)
+loadAll().then(()=>{ if(window.innerWidth>720) openDash(); });
 setInterval(loadAll,4000);
 </script>
 </body>
