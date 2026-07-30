@@ -367,7 +367,9 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚀 Current Version: **u0.4.39 · a0.6 · f0.1 · doc v6.10** — 🌿 branch `feature/orders-upcoming` (⚠️ **main ขยับไปไกลกว่า** — ดูหมายเหตุ merge ท้ายหัวข้อ)
+## 🚀 Current Version: **u0.4.40 · a0.6 · f0.1 · doc v6.10** — ✅ **merge เข้า main แล้ว (28 ก.ค.)**
+
+> **u0.4.40 = PWA ออเดอร์ล่วงหน้า live บน main** — งาน u0.4.37 (`pwa/orders_upcoming.html` + cron LINE 21:00) merge เข้า main เรียบร้อย + เพิ่มตามผลเทสมือถือของนัท: การ์ดพับเหลือ **ชื่อ/กล่อง/เบอร์** แตะกางดูเมนูทีละบรรทัด · default = **วันแรกที่มีออเดอร์** (ไม่ใช่ "พรุ่งนี้" ตรงๆ เพราะวันไทยเร็วกว่านัท 1 วัน เลยเคยเปิดมาเจอวันว่าง) · **ปุ่มกรอง ทั้งหมด/360/Hato** (ช่วง beta คีย์คู่ขนานจะเห็นซ้ำ) · **PIN 4 ตัว `0360`** (localStorage · กันคนหลงเข้า ไม่ใช่ security จริง — โค้ดฝั่ง browser เปิดดูได้ · ถ้าต้องคุมจริงค่อยเปลี่ยนเป็น Google login + ตารางอีเมลที่อนุญาต) · **เมนู "ออเดอร์ล่วงหน้า" ใน OH** (`app-frame` iframe) · URL จริง: `under360-system.vercel.app/pwa/orders_upcoming.html`
 
 > **u0.4.38–39 (26-27 ก.ค. · อยู่บน main แล้ว):** **u0.4.38** command center (ศูนย์รวมทุก track/agent คุยแยกห้องผ่าน Supabase `session_messages`/`track_status`) + แก้ UI จากผลเทส iPhone (ส่งด่วน→ระบุเวลา/เรท Lalamove · ช้อนส้อม default off · ตัด emoji หน้า checkout/สำเร็จ) `686e515` · **u0.4.39** แก้ราคา fallback `MP_SETS` ให้ตรงราคาขายจริง (HP 1699/4190/15900 · LC 1399/3190/12000) `53edf31` **→ ปิด Known Issue #12 ราคา MP ไม่ตรง** · + ซ่อน slot ส่งด่วน/express ชั่วคราว (เรท placeholder = คิดเงินผิด รอต่อ Lalamove API จริง) `edfd1d7` · + **LIFF เก็บ `delivery_lat/lng` + `delivery_distance_km` ตอน submit** (เดิมทิ้งทุกใบทั้งที่ลูกค้าปักหมุดแล้ว — แมส/พี่เก่ง/export ใช้วางเส้นทาง) `365aa97`
 
