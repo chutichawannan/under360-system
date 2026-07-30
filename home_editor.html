@@ -302,7 +302,7 @@ async function loadCards(){
 
 async function loadMenuItems(){
   try{
-    const {data} = await sb.from('menu_items').select('id,name,code,price,calories,category,is_available,sort_order').eq('is_available',true).order('sort_order');
+    const {data} = await sb.from('menu_items').select('id,name,code,price,calories,category,is_available,sort_order,is_weekly_special').eq('is_available',true).order('sort_order');
     menuItems = data||[];
   }catch(e){ menuItems=[]; }
   // Load custom labels (legacy override) from Supabase
@@ -890,6 +890,7 @@ function renderCatItems(){
         <div class="item-name-he">${esc(m.name)}</div>
         ${m.calories?`<div class="item-kcal-he">${m.calories} kcal</div>`:''}
       </div>
+      <button onclick="event.stopPropagation();toggleSpecial('${m.id}')" title="ติ๊ก = เมนูพิเศษประจำสัปดาห์ (ลูกค้าเห็นป้ายใต้ชื่อ)" style="background:none;border:none;font-size:20px;cursor:pointer;padding:0 8px;line-height:1;${m.is_weekly_special?'':'opacity:.28;filter:grayscale(1)'}">${m.is_weekly_special?'⭐':'☆'}</button>
       <div class="item-price-he">฿${m.price}</div>
     </div>`).join('');
   setupItemDrag();
@@ -915,6 +916,15 @@ function setupItemDrag(){
       renderCatItems();
     });
   });
+}
+
+// ── ติ๊กเมนูพิเศษประจำสัปดาห์ (บันทึกทันที) ──
+async function toggleSpecial(id){
+  const m=menuItems.find(x=>x.id==id); if(!m)return;
+  const nv=!m.is_weekly_special; m.is_weekly_special=nv;
+  renderCatItems();
+  try{ const {error}=await sb.from('menu_items').update({is_weekly_special:nv}).eq('id',id); if(error)throw error; }
+  catch(e){ m.is_weekly_special=!nv; renderCatItems(); alert('บันทึกไม่สำเร็จ: '+(e.message||e)); }
 }
 
 // ── SAVE ──

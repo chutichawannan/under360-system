@@ -1787,7 +1787,9 @@ function renderMenu() {
       : isNextWk
       ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 อาทิตย์หน้า</span>`
       : '';
-    const tags = (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'')
+    const specialBadge = item.is_weekly_special ? `<span style="font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:8px;white-space:nowrap">⭐ เมนูพิเศษสัปดาห์นี้</span>` : '';
+    const tags = (specialBadge?`<span>${specialBadge}</span>`:'')
+      + (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'')
       + (item.protein?`<span class="mi-v2-pro">โปรตีน ${item.protein}g</span>`:'')
       + (stockBadge?`<span>${stockBadge}</span>`:'');
     // Fix 3: HP/LC block add-to-cart (รอ Meal Plan flow ใหม่)
