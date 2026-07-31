@@ -91,6 +91,17 @@
   .bar{height:7px;background:#EEF1EE;border-radius:5px;overflow:hidden}
   .bar>i{display:block;height:100%;background:var(--nut);border-radius:5px}
 
+  /* bar chart (hover ขึ้นยอด) */
+  .bars{display:flex;align-items:flex-end;gap:8px;height:104px;padding-top:24px}
+  .barcol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;cursor:default}
+  .bwrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;position:relative}
+  .bwrap>i{width:78%;max-width:40px;min-height:3px;background:linear-gradient(180deg,#2E6B4F,#1F4D3A);border-radius:5px 5px 0 0;transition:.15s}
+  .barcol:hover .bwrap>i{background:linear-gradient(180deg,#41946E,#2E6B4F)}
+  .btip{position:absolute;bottom:calc(100% + 5px);left:50%;transform:translateX(-50%) translateY(4px);background:#111827;color:#fff;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;white-space:nowrap;opacity:0;pointer-events:none;transition:.12s;z-index:6;box-shadow:0 4px 12px rgba(0,0,0,.22)}
+  .btip:after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);border:5px solid transparent;border-top-color:#111827}
+  .barcol:hover .btip{opacity:1;transform:translateX(-50%) translateY(0)}
+  .blab{font-size:10.5px;color:var(--faint);margin-top:6px;white-space:nowrap}
+
   /* team grid */
   .team{display:grid;grid-template-columns:1fr 1fr;gap:9px}
   .tc{border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer;transition:background .12s}
@@ -334,11 +345,18 @@ function cardBiz(){
         <div class="stat"><div class="v">${biz.tmrwCount}</div><div class="k">ออเดอร์พรุ่งนี้</div></div>
       </div>
     </div>
-    <div class="spark">${sparkline(series,labels)}</div>
+    <div class="bars-wrap">${barsChart(HIST)}</div>
     ${fresh}
   </div>`;
 }
 function thDisp(ymd){if(!ymd)return '-';const[a,b,c]=ymd.split('-');return `${+c} ${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][+b]}`;}
+function barsChart(data){
+  const max=Math.max(...data.map(d=>d[1]))||1;
+  return '<div class="bars">'+data.map(([lab,v])=>{
+    const pct=Math.max(5,Math.round(v/max*100));
+    return `<div class="barcol"><div class="bwrap"><span class="btip">${baht(v)}</span><i style="height:${pct}%"></i></div><span class="blab">${lab}</span></div>`;
+  }).join('')+'</div>';
+}
 function sparkline(vals,labels){
   const w=612,h=64,pad=6,max=Math.max(...vals),min=Math.min(...vals);
   const rng=max-min||1;
