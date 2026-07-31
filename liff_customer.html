@@ -2290,6 +2290,8 @@ async function submitOrder() {
     const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
     const grandTotal  = o.total;             // ยอดสุทธิ
     const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5)
+    // กันลูกค้าซ้ำ: ถ้าเบอร์นี้เป็นลูกค้าเดิม (migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า ใช้เป็น customer_id (เก็บประวัติ ไม่สร้างซ้ำ) · พลาด=ใช้ customer เดิม
+    customer = (await resolveCanonicalCustomer(recipientPhone, lineProfile.userId, lineProfile.displayName)) || customer;
     const orderPayload = {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
@@ -2416,9 +2418,11 @@ async function submitOrder() {
       }
     }
 
-    // 3. Save default address + phone for next time (ชื่อไม่เซฟทับ — ให้ auto-fill จาก LINE เหมือนเดิมทุกครั้ง)
+    // 3. Save default address + phone + ชื่อไลน์ (best-effort — ห่อ try กันพังทับ success ถ้าคอลัมน์ line_display_name ยังไม่มี/สิทธิ์)
+    // display_name (ชื่อจริง) ไม่เซฟทับ — เก็บ line_display_name แยกไว้ (นัทขอเก็บทั้งชื่อไลน์+ชื่อจริง)
     if (customer?.id) {
-      await sb.from('customers').update({ default_address: addr, phone: recipientPhone }).eq('id', customer.id);
+      try{ await sb.from('customers').update({ default_address: addr, phone: recipientPhone }).eq('id', customer.id); }catch(e){}
+      try{ await sb.from('customers').update({ line_display_name: lineProfile.displayName }).eq('id', customer.id); }catch(e){} // แยก update กันคอลัมน์ใหม่ทำ address/phone พังก่อนรัน SQL
     }
 
     // 4. Show success + reset cart
@@ -2485,6 +2489,35 @@ function autoPromos(sub){
   if(customer && (customer.tier||'')==='Wellness Warriors')
     list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
   return list;
+}
+
+// normalize เบอร์ให้เทียบกันได้ (DB เก็บเป็น 0xxxxxxxxx)
+function normalizePhone(p){ if(!p) return ''; let s=String(p).replace(/\D/g,''); if(s.startsWith('66')) s='0'+s.slice(2); if(s.length===9) s='0'+s; return s; }
+
+// ── กันลูกค้าซ้ำ + ผูกประวัติเก่า (เรียกตอน checkout ที่รู้เบอร์) ──
+// ถ้าเบอร์นี้มีลูกค้าเดิมอยู่แล้ว (คนละแถวกับ line_uid เรา = migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า (canonical)
+// เก็บประวัติ/แต้ม/source เดิมครบ · stub ที่ liff เปิดสร้างไว้ = ปลด line_uid + tombstone (anon ลบไม่ได้)
+// พลาดทุกกรณี = คืน customer เดิม (ไม่บล็อกการสั่ง) · ต้องรัน sql_customer_identity ก่อน (line_display_name) ไม่งั้น update fail → ข้าม
+async function resolveCanonicalCustomer(phone, uid, lineName){
+  try{
+    const norm = normalizePhone(phone);
+    if(!norm || !uid) return customer;
+    const { data, error } = await sb.from('customers').select('id,line_uid,source_first,admin_notes').eq('phone', norm).limit(10);
+    if(error || !data || !data.length) return customer;
+    // แถวเก่า = เบอร์นี้ที่ line_uid "ว่าง" เท่านั้น (migrate/keyed-by-phone) — ไม่แตะแถวที่มี line_uid ของคนอื่นอยู่ (กัน hijack เบอร์แชร์)
+    const old = data.find(r => !r.line_uid && r.id !== (customer && customer.id));
+    if(!old) return customer;                          // ไม่มีของเก่า = ไม่ต้อง merge (ลูกค้าใหม่ปกติ)
+    // ปลด line_uid จาก stub ของเรา (ถ้าเป็นคนละแถวกับ old) + tombstone
+    if(customer && customer.id !== old.id && customer.line_uid === uid){
+      await sb.from('customers').update({ line_uid:null, is_blocked:true, admin_notes:((customer.admin_notes||'')+' [รวมเข้า '+old.id.slice(0,8)+']').trim() }).eq('id', customer.id);
+    }
+    // ผูก line_uid + ชื่อไลน์ เข้าแถวเก่า (canonical) + ป้าย "กลับมา"
+    const upd = { line_uid: uid, line_display_name: lineName };
+    if(!(old.admin_notes||'').includes('กลับมาสั่ง')) upd.admin_notes = ((old.admin_notes||'')+' [🔄 กลับมาสั่ง '+localYMD(new Date())+']').trim();
+    const { error: uErr } = await sb.from('customers').update(upd).eq('id', old.id);
+    if(uErr) return customer;                          // เช่น ยังไม่รัน SQL (ไม่มีคอลัมน์ line_display_name) → ใช้ customer เดิม
+    return Object.assign({}, old, upd);
+  }catch(e){ return customer; }
 }
 
 // โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง (include)
