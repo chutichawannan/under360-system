@@ -625,9 +625,15 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <!-- TAB: MESSENGER -->
     <div class="tab-panel" id="panel-messenger">
       <div class="sec-header">
-        <div class="sec-title">งานส่งทั้งหมด</div>
+        <div class="sec-title">แผนส่งของ — จัดเขต</div>
         <button class="btn" onclick="loadMessenger()">🔄 รีเฟรช</button>
       </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-bottom:8px">
+        <button class="btn" onclick="msgSetDay(0)">วันนี้</button>
+        <button class="btn" onclick="msgSetDay(1)">พรุ่งนี้</button>
+        <input type="date" id="msg-date" onchange="loadMessenger()" style="padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:13px">
+      </div>
+      <div id="msg-summary" style="margin-bottom:10px"></div>
       <div class="messenger-list" id="messengerList">
         <div style="padding:40px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
       </div>
@@ -1422,30 +1428,65 @@ function renderPlanHistory(pastDates,subs){
 }
 
 // ── MESSENGER ─────────────────────────────────────────
+// ── แผนส่งของ + จัดเขตกรุงเทพจากพิกัด (ทิศ+ระยะจากครัว ช่วยแมสจัดรอบ) ──
+var MSG_KITCHEN={lat:13.7179969,lng:100.5010971};
+function msgSetDay(offset){ var d=new Date(); d.setDate(d.getDate()+offset); var e=document.getElementById("msg-date"); if(e) e.value=toISO(d); loadMessenger(); }
+function msgZone(o){
+  if(o.delivery_lat==null||o.delivery_lng==null) return {key:"none",label:"❓ ไม่มีพิกัด (เช็คที่อยู่เอง)",dist:99999,ord:99};
+  var dLat=Number(o.delivery_lat)-MSG_KITCHEN.lat, dLng=Number(o.delivery_lng)-MSG_KITCHEN.lng;
+  var dist=Math.round(Math.sqrt(dLat*dLat+dLng*dLng)*111); // กม.โดยประมาณ (เส้นตรง)
+  var brg=(Math.atan2(dLng,dLat)*180/Math.PI+360)%360;      // 0=เหนือ · 90=ตะวันออก
+  var S=[["เหนือ","⬆️"],["ตะวันออกเฉียงเหนือ","↗️"],["ตะวันออก","➡️"],["ตะวันออกเฉียงใต้","↘️"],["ใต้","⬇️"],["ตะวันตกเฉียงใต้","↙️"],["ตะวันตก","⬅️"],["ตะวันตกเฉียงเหนือ","↖️"]];
+  var i=Math.round(brg/45)%8;
+  return {key:"s"+i,label:S[i][1]+" "+S[i][0],dist:dist,ord:i};
+}
 async function loadMessenger(){
   var el=document.getElementById("messengerList"); if(!el)return;
   var sb_=getSB();
   if(!sb_){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>Offline</div>";return;}
+  var dEl=document.getElementById("msg-date");
+  var date=(dEl&&dEl.value)||tomorrow2();      // default = พรุ่งนี้ (แผนล่วงหน้า)
+  if(dEl&&!dEl.value) dEl.value=date;
+  el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>กำลังโหลด...</div>";
   try{
-    var res=await sb_.from("orders").select("*").in("status",["ready","delivered"]).eq("delivery_date",today2()).order("created_at",{ascending:false});
-    if(res.error)throw res.error; var data=res.data||[];
+    // ออเดอร์ต้องส่งวันนั้น (filter ด้วย delivery_date = ไม่ติด cap 1000) · ตัดยกเลิก/เทส
+    var res=await sb_.from("orders").select("*").eq("delivery_date",date).order("time_slot").order("created_at");
+    if(res.error)throw res.error;
+    var data=(res.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
+    // สรุปต่อช่วงเวลา
+    var slots={}; data.forEach(function(o){var s=o.time_slot_label||o.time_slot||"ไม่ระบุ";slots[s]=(slots[s]||0)+1;});
+    var sumEl=document.getElementById("msg-summary");
+    if(sumEl){
+      var slotStr=Object.keys(slots).map(function(s){return esc2(s)+" <b>"+slots[s]+"</b>";}).join(" · ")||"—";
+      sumEl.innerHTML="<div style='background:#EBF3EF;border-radius:10px;padding:11px 13px'>"
+        +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>📅 "+date+" — ส่ง "+data.length+" ราย</div>"
+        +"<div style='font-size:12px;color:#374151;margin-top:3px'>ช่วงเวลา: "+slotStr+"</div></div>";
+    }
     if(!data.length){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>ไม่มีงานส่งวันนี้</div>";return;}
+    // จัดกลุ่มตามเขต (ทิศ) → เรียงใกล้→ไกลในเขต (แมสไล่รอบง่าย)
+    data.forEach(function(o){o._z=msgZone(o);});
+    var zones={}; data.forEach(function(o){(zones[o._z.key]=zones[o._z.key]||{label:o._z.label,ord:o._z.ord,items:[]}).items.push(o);});
     var h="";
-    data.forEach(function(o){
-      h+="<div class='msg-card'><div><div class='msg-order'>"+(o.order_number||"—")+"</div>";
-      h+="<div style='font-size:11px;color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
-      h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
-      h+="<div class='msg-addr'>📍 "+(o.delivery_address||"—")+"</div>";
-      h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:4px'>"+fmtB(o.total)+"</div></div>";
-      h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-      h+="<select class='driver-select'><option value=''>เลือกผู้ส่ง...</option><option value='store'>🛵 แมสร้าน</option><option value='lalamove'>🟠 Lalamove</option><option value='grab'>🟢 Grab</option></select>";
-      h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+(o.status==="delivered"?"ส่งแล้ว":"พร้อมส่ง")+"</span></div></div>";
+    Object.keys(zones).sort(function(a,b){return zones[a].ord-zones[b].ord;}).forEach(function(zk){
+      var z=zones[zk]; z.items.sort(function(a,b){return a._z.dist-b._z.dist;});
+      h+="<div style='font-size:13px;font-weight:800;color:#1F4D3A;margin:14px 0 6px;border-bottom:2px solid #EBF3EF;padding-bottom:3px'>"+z.label+" ("+z.items.length+" ราย)</div>";
+      z.items.forEach(function(o){
+        var addr=o.delivery_address_text||o.delivery_address||"—";
+        var maploc=(o.delivery_lat!=null&&o.delivery_lng!=null)?("https://www.google.com/maps?q="+o.delivery_lat+","+o.delivery_lng):"";
+        h+="<div class='msg-card'>";
+        h+="<div><div class='msg-order'>"+(o.order_number||"—")+"</div><div style='font-size:11px;color:#6B7280'>"+esc2(o.time_slot_label||o.time_slot||"")+(o._z.dist<99999?" · ~"+o._z.dist+" กม.":"")+"</div></div>";
+        h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
+        h+="<div class='msg-addr'>📍 "+esc2(addr)+(maploc?" <a href='"+maploc+"' target='_blank' style='color:#1D4ED8;font-weight:600'>🗺️แผนที่</a>":"")+"</div>";
+        h+=(o.customer_phone?"<div style='font-size:12px;margin-top:2px'>📞 <a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a></div>":"");
+        h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:2px'>"+fmtB(o.total)+"</div></div>";
+        h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
+        h+="<select class='driver-select'><option value=''>เลือกผู้ส่ง...</option><option value='store'>🛵 แมสร้าน</option><option value='lalamove'>🟠 Lalamove</option><option value='grab'>🟢 Grab</option></select>";
+        h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+statusTh(o.status)+"</span></div></div>";
+      });
     });
     el.innerHTML=h;
-    el.querySelectorAll(".driver-select").forEach(function(sel){
-      sel.addEventListener("change",function(){sel.classList.toggle("assigned",sel.value!=="");});
-    });
-  }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้</div>";}
+    el.querySelectorAll(".driver-select").forEach(function(sel){sel.addEventListener("change",function(){sel.classList.toggle("assigned",sel.value!=="");});});
+  }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้: "+esc2(e.message||"")+"</div>";}
 }
 
 // ══════════════════════════════════════
