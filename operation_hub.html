@@ -35,6 +35,17 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .cust-layout{display:grid;grid-template-columns:300px 1fr;gap:12px;height:calc(100vh - 140px)}
 .cust-list-panel{overflow-y:auto}
 .cust-detail-panel{overflow-y:auto;background:#fff;border-radius:var(--radius);border:1px solid var(--ink-xsoft)}
+.cust-detail-back{display:none;align-items:center;gap:6px;background:#fff;border:none;color:var(--forest,#1F4D3A);font-size:14px;font-weight:800;padding:12px 14px;cursor:pointer;width:100%;text-align:left;border-bottom:1px solid var(--ink-xsoft)}
+.crm-row{display:flex;justify-content:space-between;gap:12px;padding:6px 0;border-bottom:1px dashed var(--ink-xsoft);font-size:12.5px}
+.crm-k{color:var(--ink-soft);flex-shrink:0}
+.crm-v{color:var(--ink);font-weight:600;text-align:right;word-break:break-word}
+@media(max-width:720px){
+  .cust-layout{grid-template-columns:1fr;height:auto}
+  .cust-detail-panel{position:fixed;inset:0;z-index:3000;border-radius:0;border:none;display:none}
+  .cust-layout.showing-detail .cust-detail-panel{display:block}
+  .cust-layout.showing-detail .cust-list-panel{display:none}
+  .cust-detail-back{display:flex}
+}
 /* list row */
 .cust-row{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:10px;border:1px solid var(--ink-xsoft);margin-bottom:6px;cursor:pointer;background:#fff;transition:.15s}
 .cust-row:hover,.cust-row.active{border-color:var(--forest);background:var(--forest-soft)}
@@ -1915,6 +1926,33 @@ function planTagOH(type){
   return "<span class='tag "+cls+"'>"+type.toUpperCase()+"</span>";
 }
 function statusTh(s){ return {confirmed:"ยืนยัน",preparing:"เตรียม",ready:"พร้อมส่ง",delivered:"ส่งแล้ว",cancelled:"ยกเลิก"}[s]||s||"—"; }
+function fmtDateTh(d){ if(!d) return "—"; var s=String(d).slice(0,10); var p=s.split("-"); return p.length===3?(p[2]+"/"+p[1]+"/"+p[0]):s; }
+// ป้าย "มาจากไหน" (attribution) — source_first + campaign + ad_id (พร้อมรองรับ FB ad ในอนาคต)
+function srcLabel(c){
+  var m={line:"LINE (สมัครเอง)",hato:"Hato (ลูกค้าเก่า)",pre_hato:"ก่อน Hato (2016–22)",legacy:"เจพลอย (2562–66)",admin_manual:"แอดมินสร้างให้"};
+  var base=m[c.source_first||""]||c.source_first||"—";
+  if(c.source_campaign) base+=" · "+c.source_campaign;
+  if(c.source_ad_id)    base+=" · ad:"+c.source_ad_id;
+  return base;
+}
+function crmRow(label,val){ return "<div class='crm-row'><span class='crm-k'>"+esc2(label)+"</span><span class='crm-v'>"+esc2(val)+"</span></div>"; }
+
+// ดึงข้อมูลครบทุกหน้า — Supabase คืนสูงสุด 1000 แถว/ครั้ง → วน .range จนหมด (sequential ตาม convention)
+async function fetchAllRows(sb_, table, select, mod){
+  var all=[], from=0, size=1000;
+  while(true){
+    var q=sb_.from(table).select(select).range(from, from+size-1);
+    if(mod) q=mod(q);
+    var r=await q;
+    if(r.error) throw r.error;
+    var d=r.data||[];
+    all=all.concat(d);
+    if(d.length<size) break;
+    from+=size;
+    if(from>80000) break; // safety กันวนไม่จบ
+  }
+  return all;
+}
 
 async function loadCustomers(){
   var el=document.getElementById("custList"); if(!el) return;
@@ -1922,20 +1960,24 @@ async function loadCustomers(){
   var sb_=getSB();
   if(!sb_){ el.innerHTML="<div style='padding:20px;text-align:center;color:var(--ink-soft)'>Offline</div>"; return; }
   try{
-    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true}).limit(10000);
-    if(res.error) throw res.error;
-    allCustomers=(res.data||[]).map(function(c,i){ return Object.assign({},c,{member_id:c.member_id||genMemberId(i),_oc:0,_ot:0}); });
+    // customers: ดึงครบทุกหน้า (Supabase คืน 1000/หน้า → ต้อง paginate ไม่งั้นได้แค่ 1000/8,016)
+    var custData=await fetchAllRows(sb_,"customers","*",function(q){return q.order("created_at",{ascending:true});});
+    allCustomers=custData.map(function(c,i){ return Object.assign({},c,{member_id:c.member_id||genMemberId(i),_oc:0,_ot:0}); });
 
-    var oRes=await sb_.from("orders").select("customer_line_uid,total_price,id,status");
+    // orders: ดึงครบทุกหน้า (15,844 ใบ) แล้ว aggregate ต่อ customer_id — ไม่งั้นนับได้แค่ 1000 ใบแรก
+    var ordData=await fetchAllRows(sb_,"orders","customer_id,customer_name,total,status,source",null);
     var oMap={};
-    (oRes.data||[]).forEach(function(o){
-      var k=o.customer_line_uid; if(!k) return;
-      if(!oMap[k]) oMap[k]={count:0,total:0};
-      oMap[k].count++; oMap[k].total+=Number(o.total_price||0);
+    ordData.forEach(function(o){
+      var k=o.customer_id; if(!k) return;
+      if(o.status==='cancelled') return;              // ไม่นับใบยกเลิก
+      if(o.source==='parallel_test') return;          // ไม่นับออเดอร์เทส P-track
+      if(!oMap[k]) oMap[k]={count:0,total:0,name:''};
+      oMap[k].count++; oMap[k].total+=Number(o.total||0);
+      if(o.customer_name && !oMap[k].name) oMap[k].name=o.customer_name; // ชื่อจากออเดอร์ (customers.display_name มักว่างสำหรับลูกค้า LIFF)
     });
     allCustomers.forEach(function(c){
-      var om=oMap[c.line_uid||""]||{count:0,total:0};
-      c._oc=om.count; c._ot=om.total;
+      var om=oMap[c.id]||{count:0,total:0,name:''};    // ผูกด้วย customer_id (99.99% ออเดอร์มี · line_uid ว่าง 5,378 คน migrate)
+      c._oc=om.count; c._ot=om.total; c._oname=om.name;
     });
 
     filteredCustomers=[].concat(allCustomers);
@@ -2016,7 +2058,7 @@ function renderCustList(){
   }
 
   var rows=pageItems.map(function(c){
-    var name=c.name||c.display_name||c.line_display_name||"ไม่ระบุ";
+    var name=c.display_name||c._oname||c.line_display_name||"ไม่ระบุ";
     var loyal=c._oc>=10;
     var pic=c.line_picture_url
       ?"<div class='cust-avatar'><img src='"+esc2(c.line_picture_url)+"' onerror=\"this.parentNode.textContent='👤'\"></div>"
@@ -2054,31 +2096,39 @@ function custGoPage(p){
   renderCustList();
   document.getElementById("custList").scrollTop=0;
 }
+// ปิดหน้า detail กลับไปลิสต์ (มือถือ: ปลด overlay เต็มจอ)
+function closeCustDetail(){
+  selectedCustId=null;
+  var layout=document.querySelector('.cust-layout'); if(layout) layout.classList.remove('showing-detail');
+  renderCustList();
+}
 
 async function selectCustomer(id){
   selectedCustId=id;
   renderCustList();
+  var layout=document.querySelector('.cust-layout'); if(layout) layout.classList.add('showing-detail'); // มือถือ: เปิด detail เต็มจอ
   var c=allCustomers.find(function(x){return x.id===id;}); if(!c) return;
   var det=document.getElementById("custDetail"); if(!det) return;
   det.innerHTML="<div style='padding:40px;text-align:center;color:var(--ink-soft)'>⏳ กำลังโหลด...</div>";
 
   var orders=custOrderCache[id]||[];
-  if(!custOrderCache[id]&&c.line_uid){
+  if(!custOrderCache[id]){
     try{
       var sb_=getSB();
-      var r=await sb_.from("orders").select("*").eq("customer_line_uid",c.line_uid).order("created_at",{ascending:false}).limit(50);
+      var r=await sb_.from("orders").select("*").eq("customer_id",c.id).order("created_at",{ascending:false}).limit(50); // ผูก customer_id ครอบคลุมลูกค้า migrate ที่ line_uid ว่าง
       orders=r.data||[]; custOrderCache[id]=orders;
     }catch(e){}
   }
 
   var addrs=[].concat(c.addresses||[]);
-  orders.forEach(function(o){ if(o.delivery_address&&!addrs.includes(o.delivery_address)) addrs.push(o.delivery_address); });
+  orders.forEach(function(o){ if(o.delivery_address_text&&!addrs.includes(o.delivery_address_text)) addrs.push(o.delivery_address_text); });
 
-  var name=c.name||c.display_name||c.line_display_name||"ไม่ระบุ";
+  var name=c.display_name||c._oname||c.line_display_name||"ไม่ระบุ";
   var pts=c.loyalty_points||0;
 
   det.innerHTML=
-    "<div class='p-header'>"
+    "<button class='cust-detail-back' onclick='closeCustDetail()'>← กลับไปรายชื่อลูกค้า</button>"
+    +"<div class='p-header'>"
     +(c.line_picture_url?"<div class='p-avatar'><img src='"+esc2(c.line_picture_url)+"' onerror=\"this.parentNode.innerHTML='👤'\"></div>":"<div class='p-avatar'>👤</div>")
     +"<div style='flex:1;min-width:0'>"
     +"<div class='p-name'>"+esc2(name)+"</div>"
@@ -2094,6 +2144,18 @@ async function selectCustomer(id){
     +"<div class='p-stat'><div class='pn'>"+c._oc+"</div><div class='pl'>ออเดอร์</div></div>"
     +"<div class='p-stat'><div class='pn'>"+fmtB2(Math.round(c._ot))+"</div><div class='pl'>ยอดรวม</div></div>"
     +"<div class='p-stat'><div class='pn' id='oh-pts-show-"+id+"'>"+pts+"</div><div class='pl'>แต้มสะสม</div></div>"
+    +"</div>"
+    // ── ข้อมูลสมาชิก / CRM (สำหรับทำการตลาด/CRM ในอนาคต) ──
+    +"<div class='p-section'><div class='p-sec-title'>👤 ข้อมูลสมาชิก / CRM</div>"
+    +crmRow("รหัสสมาชิก", c.member_id||"—")
+    +crmRow("สมัครเมื่อ", fmtDateTh(c.created_at))
+    +crmRow("ระดับ (Tier)", (c.tier&&c.tier!=='bronze')?c.tier:"—")
+    +crmRow("มาจาก (ที่มา)", srcLabel(c))
+    +crmRow("LINE UID", c.line_uid||"—")
+    +(c.hato_id?crmRow("Hato ID", c.hato_id):"")
+    +(c.phone?crmRow("เบอร์โทร", fmtPhone(c.phone)):"")
+    +(c.date_of_birth?crmRow("วันเกิด", fmtDateTh(c.date_of_birth)):"")
+    +(c.gender?crmRow("เพศ", c.gender):"")
     +"</div>"
     // Points
     +"<div class='p-section'><div class='p-sec-title'>🌟 แต้มสะสม <button class='p-sec-btn' onclick=\"document.getElementById('oh-pts-"+id+"').style.display=document.getElementById('oh-pts-"+id+"').style.display==='none'?'block':'none'\">± ปรับแต้ม</button></div>"
@@ -2116,7 +2178,7 @@ async function selectCustomer(id){
         +"<span class='ord-num'>"+(o.order_number||"#"+o.id.slice(0,6))+"</span>"
         +"<span style='color:var(--ink-soft);font-size:12px'>"+(o.delivery_date||o.created_at||"").slice(0,10)+"</span>"
         +"<span class='ord-status'>"+statusTh(o.status)+"</span>"
-        +"<span class='ord-price'>"+fmtB2(o.total_price||0)+"</span>"
+        +"<span class='ord-price'>"+fmtB2(o.total||0)+"</span>"
         +"</div>";
     }).join(""):"<div style='font-size:12px;color:var(--ink-soft)'>ยังไม่มีประวัติ</div>")
     +"</div>"
