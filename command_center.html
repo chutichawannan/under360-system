@@ -222,7 +222,7 @@ const PILLARS=[
 ];
 const OVERALL=27;
 // ยอดขายจริง HT- (บาท) — เดือนที่ผ่านมา (แก้ที่นี่รายเดือน) · เดือนปัจจุบันดึงสด
-const HIST=[['ก.พ.',539476],['มี.ค.',513167],['เม.ย.',480153],['พ.ค.',399759],['มิ.ย.',365694]];
+const HIST=[['ก.พ.',539476],['มี.ค.',513167],['เม.ย.',480153],['พ.ค.',399759],['มิ.ย.',365694],['ก.ค.',217352]];
 
 // งานประจำวัน "วันนี้ต้องทำ"
 const ROUTINE=[
@@ -266,19 +266,17 @@ async function loadAll(manual){
 
 async function loadBiz(){
   const today=thaiDate(); const tmrw=addDays(today,1);
-  const ms=today.slice(0,7)+'-01';
-  const pm=today.slice(0,4)+'-'+String(Math.max(1,+today.slice(5,7)-1)).padStart(2,'0')+'-01';
-  const lmStart = +today.slice(5,7)===1 ? (+today.slice(0,4)-1)+'-12-01' : pm;
+  const d30=addDays(today,-30), d60=addDays(today,-60);
   try{
-    const q=await sb.from('orders').select('total,created_at').like('order_number','HT-%').gt('total',0).gte('created_at',lmStart).limit(2000);
-    let cur=0,last=0,latest='';
+    const q=await sb.from('orders').select('total,created_at').like('order_number','HT-%').gt('total',0).gte('created_at',d60).limit(3000);
+    let cur=0,prev=0,latest='';
     for(const o of (q.data||[])){
       const d=(o.created_at||'').slice(0,10);
-      if(d>=ms)cur+=+o.total; else last+=+o.total;
+      if(d>=d30)cur+=+o.total; else prev+=+o.total;
       if(o.created_at>latest)latest=o.created_at;
     }
     const tq=await sb.from('orders').select('total').eq('delivery_date',tmrw).like('order_number','HT-%').limit(500);
-    biz={cur,last,latest:latest?latest.slice(0,10):'',today,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
+    biz={cur,prev,latest:latest?latest.slice(0,10):'',today,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
   }catch(e){biz={err:1};}
 }
 
@@ -303,21 +301,22 @@ function renderHome(){
 
 function cardBiz(){
   if(biz.err) return '<div class="card"><h3>💰 ธุรกิจ ณ ตอนนี้</h3><div class="muted">ดึงข้อมูลไม่ได้</div></div>';
-  const diff=biz.last?((biz.cur-biz.last)/biz.last*100):0;
-  const cmp=biz.last?`<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff).toFixed(0)}%</span> เทียบเดือนก่อน (${baht(biz.last)})`:'';
-  // spark
-  const series=HIST.map(x=>x[1]).concat([biz.cur]);
-  const labels=HIST.map(x=>x[0]).concat(['เดือนนี้']);
-  const stale = biz.latest && biz.latest<biz.today;
+  const diff=biz.prev?((biz.cur-biz.prev)/biz.prev*100):0;
+  const cmp=biz.prev?`<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff).toFixed(0)}%</span> เทียบ 30 วันก่อนหน้า`:'';
+  // spark = เดือนที่จบแล้ว (ไม่รวมเดือนปัจจุบันที่ยังไม่จบ กันเส้นดิ่ง)
+  const series=HIST.map(x=>x[1]);
+  const labels=HIST.map(x=>x[0]);
+  const yst=addDays(biz.today,-1);
+  const stale = biz.latest && biz.latest<yst;
   const daysBehind = stale? Math.round((new Date(biz.today+'T00:00:00Z')-new Date(biz.latest+'T00:00:00Z'))/86400000):0;
   const fresh = stale
     ? `<div class="fresh bad">⚠️ ข้อมูลค้าง ${daysBehind} วัน (ล่าสุด ${thDisp(biz.latest)}) — ให้ P-track sync</div>`
-    : `<div class="fresh ok">✓ ข้อมูลอัปเดตถึงวันนี้ (${thDisp(biz.latest||biz.today)})</div>`;
+    : `<div class="fresh ok">✓ ข้อมูลอัปเดตล่าสุด ${thDisp(biz.latest||biz.today)}</div>`;
   return `<div class="card">
     <h3>💰 ธุรกิจ ณ ตอนนี้ <span class="r">ช่องออนไลน์ (LIFF)</span></h3>
     <div class="biz-top">
       <div class="biz-main">
-        <div class="biz-lbl">ยอดขายเดือนนี้</div>
+        <div class="biz-lbl">ยอดขาย 30 วันล่าสุด</div>
         <div class="biz-num">${baht(biz.cur)}</div>
         <div class="biz-cmp">${cmp}</div>
       </div>
@@ -347,7 +346,7 @@ function cardRoutine(){
   let rows='';
   for(const j of ROUTINE){
     let done=false,status='',scls='';
-    if(j.auto==='fresh'){ done = biz.latest && biz.latest>=biz.today; status=done?'sync แล้ววันนี้':'ยังไม่ sync วันนี้'; scls=done?'okc':'due'; }
+    if(j.auto==='fresh'){ done = biz.latest && biz.latest>=addDays(biz.today,-1); status=done?('sync ล่าสุด '+thDisp(biz.latest)):'ข้อมูลค้าง — ยังไม่ sync'; scls=done?'okc':'due'; }
     else if(j.auto==='tmrw'){ done = rdone[j.key]===biz.today; status=`มี ${biz.tmrwCount} ออเดอร์พรุ่งนี้`+(done?' · ดูแล้ว':''); scls=done?'okc':''; }
     else { done = j.weekly? (rdone[j.key] && weekOf(rdone[j.key])===weekOf(biz.today)) : rdone[j.key]===biz.today;
       status = done?'ทำแล้ว':(j.weekly?'สัปดาห์นี้ยังไม่ได้ทำ':'ยังไม่ได้ทำวันนี้'); scls=done?'okc':(j.weekly?'':'due'); }
@@ -360,7 +359,7 @@ function cardRoutine(){
       </div></div>`;
   }
   const doneN=ROUTINE.filter(j=>{
-    if(j.auto==='fresh')return biz.latest&&biz.latest>=biz.today;
+    if(j.auto==='fresh')return biz.latest&&biz.latest>=addDays(biz.today,-1);
     if(j.weekly)return rdone[j.key]&&weekOf(rdone[j.key])===weekOf(biz.today);
     return rdone[j.key]===biz.today;
   }).length;
