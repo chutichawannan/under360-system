@@ -1,0 +1,177 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>เซ็ต Hyrox — Under360 | มื้อสำหรับสายเทรน & เตรียมแข่ง</title>
+<meta name="description" content="เซ็ต Hyrox จาก Under360 — มีลแพลนปรุงสดออกแบบเฉพาะสายเทรน 7 วัน 21 กล่อง โปรตีน 35–40g คาร์บเติมพลังงาน ข้าว กข43 แบ่งส่ง 3 รอบตรงจังหวะเตรียมแข่ง">
+<style>
+  :root{
+    --bg:#0B1120; --panel:#111A2E; --card:#16213B; --ink:#F1F5F9; --soft:#94A3B8;
+    --line:#26324D; --hy:#2DD4BF; --hyd:#0F766E; --gold:#FBBF24; --red:#F87171;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",sans-serif;
+    font-size:15.5px;line-height:1.55}
+  .wrap{max-width:760px;margin:0 auto;padding:0 16px 70px}
+  /* hero */
+  .hero{background:radial-gradient(120% 120% at 50% 0%,#134E4A 0%,#0B1120 62%);
+    padding:40px 16px 30px;text-align:center;border-bottom:1px solid var(--line)}
+  .hero .kick{display:inline-block;font-size:12px;font-weight:800;letter-spacing:.12em;
+    color:var(--hy);border:1px solid var(--hyd);border-radius:999px;padding:5px 13px;text-transform:uppercase}
+  .hero h1{margin:14px 0 6px;font-size:34px;font-weight:900;letter-spacing:-.5px}
+  .hero h1 span{color:var(--hy)}
+  .hero .lead{max-width:540px;margin:8px auto 0;color:var(--soft);font-size:15.5px}
+  .hero .evt{margin-top:14px;font-size:13px;color:var(--gold);font-weight:700}
+  section{max-width:760px;margin:0 auto}
+  h2{font-size:20px;font-weight:800;margin:34px 16px 4px}
+  .h2sub{margin:0 16px;color:var(--soft);font-size:13px}
+  /* spec */
+  .spec{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:16px 16px 0}
+  .sp{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px 8px;text-align:center}
+  .sp .v{font-size:20px;font-weight:900;color:var(--hy)}
+  .sp .l{font-size:11.5px;color:var(--soft);margin-top:2px}
+  .specnote{margin:11px 16px 0;font-size:12.5px;color:var(--soft);text-align:center;line-height:1.6}
+  .specnote b{color:var(--ink)}
+  /* why */
+  .why{margin:14px 16px 0;display:grid;gap:9px}
+  .w{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:13px 14px;display:flex;gap:11px;align-items:flex-start}
+  .w .i{font-size:20px;flex:none}
+  .w b{font-size:15px}
+  .w p{margin:3px 0 0;color:var(--soft);font-size:13px}
+  /* menu */
+  .mgrid{margin:14px 16px 0;display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .mg{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:12px 13px}
+  .mg .t{font-weight:800;font-size:14px;color:var(--hy)}
+  .mg .d{color:var(--soft);font-size:12.5px;margin-top:4px;line-height:1.55}
+  .mnote{margin:11px 16px 0;font-size:12.5px;color:var(--soft);text-align:center}
+  .mlist{margin:14px 16px 0;display:grid;gap:7px}
+  .mprot{font-size:12.5px;font-weight:800;color:var(--hy);margin:12px 0 1px}
+  .mprot:first-child{margin-top:0}
+  .mrow{background:var(--card);border:1px solid var(--line);border-radius:11px;padding:10px 13px}
+  .mrow .t{font-weight:800;font-size:14.5px}
+  .mrow .i{color:var(--soft);font-size:12.5px;margin-top:2px;line-height:1.5}
+  /* rounds */
+  .rounds{margin:14px 16px 0;display:grid;gap:8px}
+  .rd{display:flex;align-items:center;gap:12px;background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:11px 14px}
+  .rd .d{font-weight:800;color:var(--hy);font-size:14px;white-space:nowrap}
+  .rd .x{color:var(--soft);font-size:13px}
+  .rd.load{border-color:var(--hyd);background:#0E2A28}
+  /* price */
+  .price{margin:16px 16px 0;background:linear-gradient(135deg,#134E4A,#16213B);
+    border:1px solid var(--hyd);border-radius:18px;padding:22px 18px;text-align:center}
+  .price .was{color:var(--soft);text-decoration:line-through;font-size:16px}
+  .price .now{font-size:40px;font-weight:900;color:#fff;line-height:1.1;margin:2px 0}
+  .price .now small{font-size:17px;font-weight:700;color:var(--soft)}
+  .price .eb{display:inline-block;background:var(--gold);color:#3b2a00;font-weight:900;font-size:12.5px;
+    border-radius:999px;padding:5px 13px;margin-top:6px}
+  .price .gift{margin-top:12px;color:var(--ink);font-size:13.5px}
+  .price .gift b{color:var(--gold)}
+  .price .cond{margin-top:6px;color:var(--soft);font-size:12px}
+  /* cta */
+  .cta{margin:20px 16px 0;text-align:center}
+  .cta a{display:block;background:var(--hy);color:#062925;font-weight:900;font-size:17px;
+    text-decoration:none;border-radius:14px;padding:16px;box-shadow:0 8px 24px rgba(45,212,191,.22)}
+  .cta .alt{margin-top:10px;color:var(--soft);font-size:13px}
+  .cta .alt b{color:var(--ink)}
+  .foot{margin:26px 16px 0;color:var(--soft);font-size:11.5px;text-align:center;line-height:1.7}
+  @media(max-width:520px){ .hero h1{font-size:28px} .spec{grid-template-columns:repeat(2,1fr)} }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <span class="kick">Under360 · ปรุงสดรายวัน</span>
+  <h1>เซ็ต <span>Hyrox</span></h1>
+  <div class="lead">มื้อสำหรับคนที่เทรนหนักและเตรียมลงแข่ง — ออกแบบมาเพื่อเติมพลังงานให้พอกับที่ร่างกายใช้จริง ไม่ใช่กล่องคลีนเปลี่ยนชื่อ</div>
+  <div class="evt">🗓️ กินครบ 7–13 ส.ค. · แบ่งส่ง 3 รอบตรงจังหวะเตรียมแข่ง</div>
+</div>
+
+<div class="wrap">
+
+  <section>
+    <h2>กล่องนี้ให้อะไร</h2>
+    <p class="h2sub">สูตรเดียวมาตรฐานทั้ง 21 กล่อง</p>
+    <div class="spec">
+      <div class="sp"><div class="v">35–40<small>g</small></div><div class="l">โปรตีน</div></div>
+      <div class="sp"><div class="v">55–65<small>g</small></div><div class="l">คาร์บ</div></div>
+      <div class="sp"><div class="v">12–18<small>g</small></div><div class="l">ไขมัน</div></div>
+      <div class="sp"><div class="v">~500<small>+</small></div><div class="l">kcal</div></div>
+    </div>
+    <div class="specnote">คาร์บสูงกว่ากล่องคลีนทั่วไป <b>ตั้งใจ</b> — เพื่อเติมไกลโคเจนสำหรับเทรน/แข่งต่อเนื่อง (ไม่ใช่สูตรลดน้ำหนัก)<br>ข้าว <b>กข 43</b> ดัชนีน้ำตาลต่ำ · น้ำมัน<b>รำข้าว</b> · <b>มีผักทุกกล่อง</b> · คุมโซเดียม</div>
+  </section>
+
+  <section>
+    <h2>ทำไมต้องเป็นเซ็ตนี้</h2>
+    <div class="why">
+      <div class="w"><span class="i">🎯</span><div><b>ออกแบบเฉพาะสาย Hyrox</b><p>เมนูและจังหวะส่งวางตาม fueling timeline — ไม่ต้องมานั่งคำนวณเอง</p></div></div>
+      <div class="w"><span class="i">🍳</span><div><b>ปรุงสดรายวัน · ประสบการณ์ 10 ปี</b><p>ทำใหม่ทุกวันส่ง ไม่ใช่ทำกองไว้ล่วงหน้าทั้งอาทิตย์</p></div></div>
+      <div class="w"><span class="i">🔄</span><div><b>7 โปรตีนหมุนเวียน</b><p>วัว · ไก่ · หมู · กุ้ง · ทูน่า · แซลมอน · กระพง — กินไม่จำเจ + ปรับตามชนิดที่คุณไม่ทาน</p></div></div>
+      <div class="w"><span class="i">🚚</span><div><b>แบ่งส่ง 3 รอบเพื่อความสด</b><p>รอบสุดท้ายตรงช่วง carb-load ก่อนวันแข่งพอดี</p></div></div>
+      <div class="w"><span class="i">🎁</span><div><b>แถม Maurten Gel 100</b><p>เจลพลังงาน Hydrogel แบรนด์นักกีฬาระดับโลก (สำหรับผู้จองช่วง Early Bird)</p></div></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>เมนูที่จะได้รับ</h2>
+    <p class="h2sub">หมุนเวียน 7 โปรตีน · ทุกกล่องมีข้าว กข43 + ผักเคียง · ปรับตามชนิดเนื้อที่ไม่ทาน</p>
+    <div class="mlist">
+      <div class="mprot">🐔 ไก่</div>
+      <div class="mrow"><div class="t">อกไก่ Piri Piri</div><div class="i">อกไก่ย่างซอสพิริพิริ · มันฝรั่งอบ · พริกหยวก/ซูกินีย่าง</div></div>
+      <div class="mrow"><div class="t">อกไก่ย่างตะไคร้</div><div class="i">อกไก่หมักตะไคร้ · ข้าว กข43 · น้ำพริกย่าง · ผักสด</div></div>
+      <div class="mrow"><div class="t">อกไก่เทริยากิ</div><div class="i">อกไก่ย่างซอสเทริยากิ · ข้าว กข43 · บรอกโคลี/แครอท/ข้าวโพดอ่อน</div></div>
+      <div class="mprot">🐄 เนื้อวัว</div>
+      <div class="mrow"><div class="t">กะเพราเนื้อไข่ดาว</div><div class="i">เนื้อวัวผัดกะเพรา · ไข่ดาว · ข้าว กข43 · ถั่วฝักยาว/ข้าวโพดอ่อน</div></div>
+      <div class="mprot">🐷 หมู</div>
+      <div class="mrow"><div class="t">หมูบุลโกกิ</div><div class="i">สันในหมูสไตล์เกาหลี · ข้าว กข43 · ถั่วงอก/แครอท/ผักกาดหอม</div></div>
+      <div class="mrow"><div class="t">หมูย่างเกลือ</div><div class="i">สันในหมูย่างเกลือ · มันหวานอบ · แตงกวา/มะเขือเทศ/สลัด</div></div>
+      <div class="mprot">🦐 กุ้ง</div>
+      <div class="mrow"><div class="t">กาลิคบัตเตอร์กุ้ง</div><div class="i">กุ้งผัดเนยกระเทียม · ควินัว · หน่อไม้ฝรั่ง/บรอกโคลี</div></div>
+      <div class="mrow"><div class="t">กุ้งอบวุ้นเส้น</div><div class="i">กุ้ง · วุ้นเส้น · บ็อกฉ่อย/เห็ด · ขิง/ต้นหอม</div></div>
+      <div class="mprot">🐟 ทูน่า</div>
+      <div class="mrow"><div class="t">ทูน่าสเต๊กซีร์</div><div class="i">ทูน่าจี่ · มันฝรั่งอบ · สลัด/มะเขือเทศเชอร์รี่ · ซอสเลมอน</div></div>
+      <div class="mprot">🍣 แซลมอน</div>
+      <div class="mrow"><div class="t">แซลมอนอบเลมอนดิล</div><div class="i">แซลมอนอบ · มันฝรั่งอบ · หน่อไม้ฝรั่ง/ถั่วแขก · เลมอน/ดิล</div></div>
+      <div class="mrow"><div class="t">แซลมอนซอสมิโสะ</div><div class="i">แซลมอนย่างมิโสะ · ข้าว กข43 · หน่อไม้ฝรั่ง/เห็ด</div></div>
+      <div class="mprot">🐠 กระพง</div>
+      <div class="mrow"><div class="t">กระพงนึ่งมะนาว</div><div class="i">กระพงนึ่ง · ข้าว กข43 · บรอกโคลี/กะหล่ำ · น้ำยำมะนาว</div></div>
+      <div class="mrow"><div class="t">กระพงย่างเขียวหวาน</div><div class="i">กระพงย่างราดซอสแกงเขียวหวาน · ข้าว กข43 · มะเขือ/ถั่วฝักยาว</div></div>
+    </div>
+    <div class="mnote">เมนูหมุนเวียนตามวัตถุดิบสดในแต่ละรอบ · แจ้งชนิดเนื้อที่ไม่ทานได้ตอนสั่ง</div>
+  </section>
+
+  <section>
+    <h2>ตารางส่ง</h2>
+    <p class="h2sub">7 วัน 21 กล่อง (วันละ ~3 กล่อง) · แบ่งส่ง 3 รอบ</p>
+    <div class="rounds">
+      <div class="rd"><span class="d">รอบ 1 · พฤ 6 ส.ค.</span><span class="x">9 กล่อง (กิน 7–9 ส.ค.)</span></div>
+      <div class="rd"><span class="d">รอบ 2 · อา 9 ส.ค.</span><span class="x">6 กล่อง (กิน 10–11 ส.ค.)</span></div>
+      <div class="rd load"><span class="d">รอบ 3 · พ 12 ส.ค.</span><span class="x">6 กล่อง (กิน 12–13 ส.ค.) · ช่วง carb-load ก่อนแข่ง</span></div>
+    </div>
+    <div class="mnote">ส่งเฉพาะกรุงเทพฯ + ปริมณฑล</div>
+  </section>
+
+  <section>
+    <div class="price">
+      <div class="was">ปกติ 4,500 บาท</div>
+      <div class="now">4,275<small> บาท</small></div>
+      <span class="eb">EARLY BIRD −5% · 12 คนแรก</span>
+      <div class="gift">🎁 แถม <b>Maurten Gel 100</b> (มูลค่า ~200 บาท)</div>
+      <div class="cond">เงื่อนไข Early Bird: สั่งก่อน 5 ส.ค. หรือจนกว่าของแถมจะหมด</div>
+    </div>
+  </section>
+
+  <section class="cta">
+    <a href="https://forms.gle/XdPyPZynj2jfhx9D8" target="_blank" rel="noopener">📋 จองเซ็ต Hyrox — Early Bird</a>
+    <div class="alt">มีคำถามก่อนสั่ง? ทักไลน์ OA ของร้าน <b>@under360</b> ได้เลย</div>
+  </section>
+
+  <div class="foot">
+    Under360 — อาหารสุขภาพส่งกรุงเทพฯ กว่า 10 ปี<br>
+    ราคา ของแถม และรอบส่งเป็นไปตามเงื่อนไขแคมเปญ · เมนูอาจปรับตามวัตถุดิบสดและชนิดเนื้อที่ไม่ทาน
+  </div>
+
+</div>
+</body>
+</html>

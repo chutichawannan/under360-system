@@ -15,50 +15,49 @@
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",sans-serif;
     font-size:15px;line-height:1.5;padding:0 0 60px}
   .wrap{max-width:820px;margin:0 auto;padding:14px}
-  /* header */
   header{position:sticky;top:0;z-index:5;background:var(--bg);padding:12px 14px 8px;
     border-bottom:1px solid var(--line);max-width:820px;margin:0 auto}
   h1{margin:0;font-size:19px;font-weight:800}
   .sub{font-size:12.5px;color:var(--soft);margin-top:2px}
   .disc{margin:10px 0 0;background:var(--warnl);color:var(--warn);border:1px solid #FDE68A;
     border-radius:10px;padding:8px 11px;font-size:12.5px;font-weight:600}
-  /* box frame */
   .frame{background:var(--hyl);border:1px solid #B7E0D9;border-radius:14px;padding:12px 13px;margin:12px 0}
   .frame h2{margin:0 0 8px;font-size:14px;color:var(--hy);font-weight:800}
   .chips{display:flex;flex-wrap:wrap;gap:6px}
   .chip{background:#fff;border:1px solid #B7E0D9;color:var(--hy);border-radius:999px;
     padding:4px 10px;font-size:12.5px;font-weight:700}
   .frame .fx{font-size:12px;color:#0B5A54;margin-top:8px;line-height:1.5}
-  /* pipeline */
   .pipe{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:var(--card);
     border:1px solid var(--line);border-radius:14px;padding:11px 13px;margin:12px 0;font-size:12.5px}
-  .pipe b{font-weight:800}
   .pstep{background:#F3F4F6;border-radius:8px;padding:3px 9px;font-weight:700;white-space:nowrap}
   .pstep.rd{background:var(--nutl);color:var(--nut)}
   .pstep.niw{background:#F0FDE4;color:#4D7C0F}
   .pstep.tiang{background:#FCE7F0;color:#BE185D}
   .arw{color:var(--faint);font-weight:800}
   .ctx{font-size:11.5px;color:var(--soft);margin-top:8px}
-  /* progress */
   .prog{display:flex;align-items:center;gap:10px;margin:12px 2px}
   .bar{flex:1;height:9px;background:var(--line);border-radius:999px;overflow:hidden}
   .bar > i{display:block;height:100%;background:var(--hy);width:0;transition:width .3s}
   .prog .n{font-size:12.5px;font-weight:800;color:var(--hy);white-space:nowrap}
-  /* section titles */
-  .st{font-size:13px;font-weight:800;color:var(--soft);margin:20px 2px 8px;
-    text-transform:none;letter-spacing:.02em}
-  /* menu cards */
+  /* day header */
+  .day{display:flex;align-items:center;gap:9px;margin:22px 2px 10px}
+  .day .dn{font-size:16px;font-weight:800}
+  .day .db{font-size:11.5px;font-weight:800;background:var(--hy);color:#fff;border-radius:999px;padding:3px 10px}
+  .day .dd{font-size:11.5px;color:var(--soft)}
+  .st{font-size:13px;font-weight:800;color:var(--soft);margin:20px 2px 8px}
   .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
+  .card.tbd{border-style:dashed;background:#FafafA}
   .ch{display:flex;align-items:flex-start;gap:9px}
-  .num{flex:none;width:26px;height:26px;border-radius:8px;background:var(--nut);color:#fff;
-    font-weight:800;font-size:13px;display:flex;align-items:center;justify-content:center}
+  .num{flex:none;width:30px;height:26px;border-radius:8px;background:var(--nut);color:#fff;
+    font-weight:800;font-size:11.5px;display:flex;align-items:center;justify-content:center}
+  .card.tbd .num{background:var(--faint)}
   .ct{flex:1;min-width:0}
   .nm{font-weight:800;font-size:15.5px}
   .tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:3px}
   .tg{font-size:11px;font-weight:700;border-radius:6px;padding:2px 7px;background:#F3F4F6;color:var(--soft)}
   .tg.prot{background:var(--nutl);color:var(--nut)}
   .tg.res{background:#EEF2FF;color:#4338CA}
-  .tg.add{background:#FFF7ED;color:#C2410C}
+  .tg.old{background:#ECFDF5;color:#047857}
   .macro{font-size:12.5px;color:#374151;margin-top:8px;background:#F9FAFB;border-radius:9px;
     padding:7px 9px;border:1px solid var(--line)}
   .macro b{color:var(--hy)}
@@ -67,7 +66,6 @@
   .veg{color:#15803D}
   .note{font-size:12px;color:var(--warn);margin-top:6px;font-weight:600}
   .deep{font-size:12px;color:var(--nut);margin-top:6px;font-weight:700}
-  /* status button */
   .stbtn{margin-top:11px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
   .badge{border:none;border-radius:999px;padding:6px 13px;font-size:12.5px;font-weight:800;
     color:#fff;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
@@ -77,23 +75,29 @@
     color:var(--faint);background:#fff}
   .hchip.on.niw{border-style:solid;background:#F0FDE4;color:#4D7C0F;border-color:#BEF264}
   .hchip.on.tiang{border-style:solid;background:#FCE7F0;color:#BE185D;border-color:#FBCFE8}
-  /* sauce / extra blocks */
   .blk{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
   .blk h3{margin:0 0 6px;font-size:14.5px;font-weight:800}
   .blk .lead{font-size:12.5px;color:var(--nut);font-weight:700;margin-bottom:6px}
   .blk p{margin:6px 0;font-size:13px}
   .blk .k{font-weight:700;color:var(--soft)}
+  .linkbar{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 2px}
+  .linkbar a{font-size:12.5px;font-weight:700;text-decoration:none;background:#fff;border:1px solid var(--line);
+    border-radius:10px;padding:7px 11px;color:var(--hy)}
   .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:22px}
 </style>
 </head>
 <body>
 <header>
   <h1>🔬 R&D 01 — เซ็ต Hyrox</h1>
-  <div class="sub">พัฒนาสูตร batch แรก 11 เมนู · โปรเจคแม่ = ห้องพลอย · แตะป้ายสถานะเพื่ออัปเดต</div>
+  <div class="sub">พัฒนาสูตร 3 วัน (อาทิตย์/อังคาร/พฤหัส) · แตะป้ายสถานะเพื่ออัปเดต</div>
 </header>
 <div class="wrap">
 
   <div class="disc">⚠️ ทุกสูตร = คร่าวๆ ยังไม่เทสจริง — ห้องนี้คือที่ครัวลองทำ/ชิม/ปรับให้นิ่งก่อน · ตัวเลขมาโคร = ค่าประมาณวางแผน ไม่ใช่ผลแล็บ</div>
+
+  <div class="linkbar">
+    <a href="hyrox_set.html">👀 หน้าลูกค้า (เซ็ต Hyrox) →</a>
+  </div>
 
   <div class="frame">
     <h2>📦 กรอบกล่อง Hyrox (ห้ามหลุด)</h2>
@@ -103,7 +107,7 @@
       <span class="chip">ไขมัน 12–18g</span>
       <span class="chip">~500–550 kcal</span>
     </div>
-    <div class="fx">ข้าว = <b>กข 43</b> · น้ำมัน = <b>รำข้าว</b> (คุม ≤5–12g) · ทุกจานมี <b>ผักคู่</b> · โซเดียมต่ำ · น้ำตาลพอดี · เลี่ยง ultra-processed<br>กล่องปลา (แซลมอน/กระพง) โปรตีนลงมา ~30–33g ตามธรรมชาติ — นับข้าวรวมแตะ 35+ · เลี่ยงเคลมตัวเลขเป๊ะกับกล่องปลา</div>
+    <div class="fx">ข้าว = <b>กข 43</b> · น้ำมัน = <b>รำข้าว</b> (คุม ≤5–12g) · ทุกจานมี <b>ผักคู่</b> · โซเดียมต่ำ · น้ำตาลพอดี · เลี่ยง ultra-processed<br>กล่องปลา (แซลมอน/กระพง/ทูน่า) โปรตีนลงมา ~30–33g ตามธรรมชาติ — นับข้าวรวมแตะ 35+ · เลี่ยงเคลมตัวเลขเป๊ะกับกล่องปลา</div>
   </div>
 
   <div class="pipe">
@@ -117,52 +121,43 @@
   </div>
 
   <div class="prog">
-    <span class="n" id="progN">0 / 11 สูตรนิ่ง</span>
+    <span class="n" id="progN">0 / 0 สูตรนิ่ง</span>
     <div class="bar"><i id="progBar"></i></div>
   </div>
 
-  <div class="st">🍳 11 เมนู batch แรก (9 หลัก + 2 สำรอง)</div>
   <div id="menuList"></div>
 
-  <div class="st">🔧 3 จุดที่นัทขอเจาะเป็นพิเศษ</div>
+  <div class="st">🔧 3 จุดที่นัทขอเจาะเป็นพิเศษ (เมนูวันอาทิตย์)</div>
 
   <div class="blk">
-    <h3>A) ซอส Piri Piri <span style="font-size:12px;color:var(--soft)">(เมนู 1)</span></h3>
+    <h3>A) ซอส Piri Piri <span style="font-size:12px;color:var(--soft)">(อาทิตย์ #1)</span></h3>
     <div class="lead">⚠️ สูตรลับ The Stand ไม่เปิดเผย — นี่คือ piri piri คลาสสิก (โปรตุเกส/แอฟริกัน) รสใกล้ ปรับให้เข้ากรอบ (คุมน้ำมัน/เกลือ)</div>
     <p><span class="k">ปั่นรวม:</span> พริกแดง/พริกขี้หนูสวน 4–6 เม็ด · กระเทียม 4 กลีบ · พาปริก้า (ปกติ/รมควัน) 1 ชต. · น้ำมะนาว + น้ำส้มสายชูไวน์แดง อย่างละ 2 ชต. · ออริกาโนแห้ง 1 ชช. · เกลือ · พริกไทย · น้ำมันมะกอก/รำข้าว 1 ชต. (± น้ำนิดให้เนียน)</p>
-    <p><span class="k">ใช้:</span> แบ่งครึ่ง — ครึ่งหมักไก่ ครึ่งราดเสิร์ฟ · เผ็ด/เปรี้ยวปรับที่พริก+มะนาว · ถ้ามี The Stand เป็นรสอ้างอิง บอกโปรไฟล์ (เผ็ด/เปรี้ยว/รมควัน/หวานแค่ไหน) ครัวจูนต่อได้</p>
+    <p><span class="k">ใช้:</span> แบ่งครึ่ง — ครึ่งหมักไก่ ครึ่งราดเสิร์ฟ · เผ็ด/เปรี้ยวปรับที่พริก+มะนาว</p>
   </div>
 
   <div class="blk">
-    <h3>B) ซอสพริกไทยดำ แก้ไก่แห้ง <span style="font-size:12px;color:var(--soft)">(เมนู 2)</span></h3>
+    <h3>B) ซอสพริกไทยดำ แก้ไก่แห้ง <span style="font-size:12px;color:var(--soft)">(อาทิตย์ #2)</span></h3>
     <p><span class="k">กันแห้งที่ตัวไก่ก่อน:</span> brine อกไก่ในน้ำเกลือเจือจาง 15–20 นาที · ย่างพอสุก (อุณหภูมิใน ~72°C) อย่าเกิน · พักเนื้อ 3–5 นาทีก่อนตัด</p>
-    <p><span class="k">ซอส (เยิ้ม เคลือบเนื้อ):</span> พริกไทยดำบดหยาบ 1–2 ชช. · กระเทียม+หัวหอมสับ · ซีอิ๊วขาว 1 ชต. + ซีอิ๊วดำนิด · น้ำมันหอย 1 ชต. · น้ำสต็อกไก่ 3–4 ชต. · เนย/น้ำมันนิด · แป้งข้าวโพดละลายน้ำ (slurry) นิด ทำให้ข้นเคลือบ → ราดตอนเสิร์ฟ</p>
-    <p><span class="k">กินกับ:</span> ข้าว กข43 + ผักย่าง (บรอกโคลี/พริกหยวก) หรือมันบด = จานไม่แห้ง</p>
+    <p><span class="k">ซอส (เยิ้ม เคลือบเนื้อ):</span> พริกไทยดำบดหยาบ 1–2 ชช. · กระเทียม+หัวหอมสับ · ซีอิ๊วขาว 1 ชต. + ซีอิ๊วดำนิด · น้ำมันหอย 1 ชต. · น้ำสต็อกไก่ 3–4 ชต. · เนย/น้ำมันนิด · แป้งข้าวโพดละลายน้ำ (slurry) นิด → ราดตอนเสิร์ฟ</p>
   </div>
 
   <div class="blk">
-    <h3>C) ปลาทับทิม กี่กรัม ถึงได้โปรตีน 35–40 <span style="font-size:12px;color:var(--soft)">(เมนู 9)</span></h3>
+    <h3>C) ปลาทับทิม กี่กรัม ถึงได้โปรตีน 35–40 <span style="font-size:12px;color:var(--soft)">(อาทิตย์ #9)</span></h3>
     <p>ทับทิมโปรตีน ~<span class="k">20g/100g</span> (USDA) → 35g ต้องใช้ ~175g · 40g ต้องใช้ ~200g</p>
-    <p>→ <span class="k">แนะนำ ~185–190g</span> (≈ โปรตีนจากปลา 37–38g) · นับข้าว กข43 อีก ~5–6g → รวมทั้งกล่อง <b>~42–44g</b> สบายเป้า · (อยากคุมพอดี 35–40 รวมข้าว → ใช้ปลา ~160–170g)</p>
-  </div>
-
-  <div class="st">➕ ตัวเลือกเสริม (park — ยังไม่ดึงเข้า R&D)</div>
-  <div class="blk">
-    <div class="lead">นัทเคาะ 31 ก.ค.: เก็บเป็นตัวเลือกเสริมไว้ในลิสก่อน ยังไม่เลือกมา R&D</div>
-    <p><span class="k">ทับทิม + หมูสับ</span> — ไม่อยู่ในบรีฟพลอย (7 โปรตีน: วัว/ไก่/หมูสันใน/กุ้ง/ทูน่า/แซลมอน/กระพง) · มาจากไฟล์ f2 · batch นี้ลองทับทิมที่เมนู 9 แล้ว · หมูสับยังไม่เข้า</p>
+    <p>→ <span class="k">แนะนำ ~185–190g</span> (≈ โปรตีนจากปลา 37–38g) · นับข้าว กข43 อีก ~5–6g → รวมทั้งกล่อง <b>~42–44g</b> สบายเป้า</p>
   </div>
 
   <div class="st">📌 ยังค้าง (เคาะกับนัท)</div>
   <div class="blk">
-    <p>• เอาทับทิม + หมูสับ เป็นโปรตีนเสริม<b>ถาวร</b>ไหม (ตอนนี้ = เสริม/park)</p>
-    <p>• โครง DB สำหรับเมนู Hyrox (หมวด/โค้ด เช่น HX01…) — <b>เคาะกับ U-track ก่อน</b>จดลง <span class="k">menu_items</span> · Hyrox ขายมือผ่านฟอร์ม/LINE ยังไม่เข้า LIFF → DB = ไว้อ้างอิง/อนาคต ไม่บล็อกการขาย</p>
+    <p>• <b>พฤหัส 3 ช่อง (HX20–22)</b> = รอนัทคุ้ยเมนูเก่า LC/HP มาใส่</p>
+    <p>• ทับทิม + หมูสับ = โปรตีนเสริม <b>ถาวร</b>ไหม (ตอนนี้ = park) · โครง DB เมนู Hyrox (หมวด/โค้ด HX) — เคาะกับ U-track</p>
   </div>
 
   <div class="foot">R&D 01 · Under360 · สถานะเก็บในเครื่องนี้ (localStorage) — อยากให้ sync ข้ามเครื่อง/หลายห้อง ต่อ Supabase ทีหลังได้</div>
 </div>
 
 <script>
-// ── สถานะ pipeline (แตะป้ายเพื่อเลื่อน) ──
 var ST=[
   {ic:'🔬', t:'ยังไม่เทส',        c:'#94A3B8'},
   {ic:'🧪', t:'กำลังปรับ',        c:'#F59E0B'},
@@ -171,112 +166,168 @@ var ST=[
   {ic:'💾', t:'เสร็จ (DB+รูป)',     c:'#7C3AED'}
 ];
 
-// ── 11 เมนู batch แรก (จาก docs/rnd/RND_01_hyrox_brief.md) ──
-var DATA=[
-  {code:'HX01', name:'ไก่ Piri Piri', prot:'อกไก่ 170g', kind:'หลัก',
-   macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ มันฝรั่งอบ 320g · น้ำมัน ~8g · ~500–550 kcal',
-   cook:'หมักไก่ด้วยซอสพิริพิริ 2–4 ชม. → ย่าง/อบ · ราดซอสอีกนิด · มันฝรั่งหั่นชิ้นคลุกเกลือ/พริกไทย/พาปริก้าอบ',
-   veg:'พริกหยวกคละสี + ซูกินี/บวบย่าง', deep:'มีสูตรซอส Piri Piri (จุด A ด้านล่าง)'},
+var DAYS=[
+  {key:'อาทิตย์', badge:'batch 1', note:'11 เมนู · คัดแล้ว'},
+  {key:'อังคาร',  badge:'batch 2', note:'7 เมนู'},
+  {key:'พฤหัส',   badge:'batch 3', note:'7 เมนู (3 ช่องรอเลือก)'}
+];
 
-  {code:'HX02', name:'สเต๊กไก่พริกไทยดำ', prot:'อกไก่ 170g', kind:'หลัก',
+// day · code · name · prot · kind(หลัก/สำรอง/เสริม) · macro · cook · veg · note? · deep? · old?(เมนูเก่า LC/HP) · tbd?
+var DATA=[
+  // ===== อาทิตย์ (batch 1) =====
+  {day:'อาทิตย์', code:'HX01', name:'ไก่ Piri Piri', prot:'อกไก่ 170g', kind:'หลัก',
+   macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ มันฝรั่งอบ 320g · น้ำมัน ~8g · ~500–550 kcal',
+   cook:'หมักไก่ด้วยซอสพิริพิริ 2–4 ชม. → ย่าง/อบ · ราดซอสอีกนิด · มันฝรั่งหั่นคลุกเกลือ/พริกไทย/พาปริก้าอบ',
+   veg:'พริกหยวกคละสี + ซูกินี/บวบย่าง', deep:'มีสูตรซอส Piri Piri (จุด A)'},
+  {day:'อาทิตย์', code:'HX02', name:'สเต๊กไก่พริกไทยดำ', prot:'อกไก่ 170g', kind:'หลัก',
    macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ กข43 210g · น้ำมัน ~10g · ~500–550 kcal',
    cook:'อกไก่ brine + ย่างไม่สุกเกิน → ราดซอสพริกไทยดำเยิ้ม · กินกับข้าว + ผักย่าง/สลัด',
-   veg:'บรอกโคลีลวก + แครอทนึ่ง', note:'นัทว่ามันแห้ง → แก้ด้วยซอส + brine (จุด B)', deep:'มีสูตรซอสพริกไทยดำ + วิธีกันแห้ง (จุด B)'},
-
-  {code:'HX03', name:'หมูย่างเกลือ', prot:'สันในหมู 180g', kind:'หลัก',
+   veg:'บรอกโคลีลวก + แครอทนึ่ง', note:'นัทว่ามันแห้ง → แก้ด้วยซอส + brine (จุด B)', deep:'มีสูตรซอส + วิธีกันแห้ง (จุด B)'},
+  {day:'อาทิตย์', code:'HX03', name:'หมูย่างเกลือ', prot:'สันในหมู 180g', kind:'หลัก',
    macro:'โปรตีน สันในหมู 180g (≈38g) · คาร์บ มันหวานอบ 280g · น้ำมัน ~5g · ~500–550 kcal',
    cook:'หมักเกลือ · พริกไทย · กระเทียมบด · โรสแมรีนิด · น้ำมันนิด 1–2 ชม. → ย่าง · มันหวานหั่นอบ',
    veg:'แตงกวา + มะเขือเทศสด + ผักสลัด (ตัดเค็ม)'},
-
-  {code:'HX04', name:'หมูผัดกิมจิ', prot:'สันในหมู 180g', kind:'หลัก',
+  {day:'อาทิตย์', code:'HX04', name:'หมูผัดกิมจิ', prot:'สันในหมู 180g', kind:'หลัก',
    macro:'โปรตีน สันในหมู 180g สไลซ์ (≈38g) · คาร์บ กข43 220g · น้ำมัน ~7g · ~500–550 kcal',
    cook:'ผัดหมูกับกิมจิ · หัวหอม · ต้นหอม · ซีอิ๊ว · น้ำกิมจินิด · หยดน้ำมันงา',
    veg:'ถั่วงอก + ผักกวางตุ้ง/บ็อกฉ่อยผัด', note:'⚠️ เกลือจากกิมจิ = โซเดียมสูง ระวังคุม'},
-
-  {code:'HX05', name:'ไก่โรสต์มะนาวโรสแมรี', prot:'อกไก่ 170g', kind:'หลัก',
+  {day:'อาทิตย์', code:'HX05', name:'ไก่โรสต์มะนาวโรสแมรี', prot:'อกไก่ 170g', kind:'หลัก',
    macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ มันฝรั่งอบ 340g · น้ำมัน ~10g · ~500–550 kcal',
-   cook:'หมักเลมอน (น้ำ+ผิว) · โรสแมรีสด · กระเทียม · เกลือ/พริกไทย · น้ำมันนิด → อบ · ราดน้ำเลมอน-โรสแมรีจากถาดอบ',
+   cook:'หมักเลมอน (น้ำ+ผิว) · โรสแมรีสด · กระเทียม · เกลือ/พริกไทย · น้ำมันนิด → อบ · ราดน้ำเลมอน-โรสแมรีจากถาด',
    veg:'หน่อไม้ฝรั่ง + มะเขือเทศเชอร์รี่ย่าง'},
-
-  {code:'HX06', name:'กุ้งอบวุ้นเส้น', prot:'กุ้ง 160g', kind:'หลัก',
+  {day:'อาทิตย์', code:'HX06', name:'กุ้งอบวุ้นเส้น', prot:'กุ้ง 160g', kind:'หลัก',
    macro:'โปรตีน กุ้ง 160g (≈38g) · คาร์บ วุ้นเส้น 250g สุก · น้ำมัน ~5g · ~500–550 kcal',
    cook:'อบหม้อ กุ้ง+วุ้นเส้น · ขิงแว่น · ต้นหอม/ผักชี · รากผักชี · ซีอิ๊ว · พริกไทย · กระเทียม · น้ำมันงานิด',
    veg:'บ็อกฉ่อย/ผักกาดขาวรองหม้อ + เห็ด'},
-
-  {code:'HX07', name:'แซลมอนอบเลมอนดิล', prot:'แซลมอน 160g', kind:'หลัก', fish:true,
-   macro:'โปรตีน แซลมอน 160g (~30–33g) · คาร์บ มันฝรั่งอบ 320g · น้ำมัน ~3g (แซลมอนมันเยอะแล้ว) · ~500–560 kcal',
+  {day:'อาทิตย์', code:'HX07', name:'แซลมอนอบเลมอนดิล', prot:'แซลมอน 160g', kind:'หลัก',
+   macro:'โปรตีน แซลมอน 160g (~30–33g) · คาร์บ มันฝรั่งอบ 320g · น้ำมัน ~3g · ~500–560 kcal',
    cook:'แซลมอนวางเลมอนสไลซ์ + ดิลสด + กระเทียม + เกลือ/พริกไทย → อบ',
    veg:'หน่อไม้ฝรั่ง + ถั่วแขก', note:'กล่องปลา — เลี่ยงเคลมโปรตีน 35–40 เป๊ะ'},
-
-  {code:'HX08', name:'กระพงนึ่งมะนาว', prot:'กระพง 185g', kind:'หลัก', fish:true,
+  {day:'อาทิตย์', code:'HX08', name:'กระพงนึ่งมะนาว', prot:'กระพง 185g', kind:'หลัก',
    macro:'โปรตีน กระพง 185g (~33g) · คาร์บ กข43 210g · น้ำมัน ~3g · ~500–550 kcal',
    cook:'นึ่งกระพง → ราดน้ำยำ (มะนาว · พริกขี้หนู · กระเทียม · น้ำปลา · น้ำตาลนิด) · โรยผักชี/ขึ้นฉ่าย',
-   veg:'บรอกโคลี/กะหล่ำลวก (หรือผักกาดขาวรองนึ่ง)', note:'เมนูเซฟ · กล่องปลา — เลี่ยงเคลมเป๊ะ'},
-
-  {code:'HX09', name:'ปลาทับทิมทอดซอสพริกสามรส', prot:'ทับทิม ~185–190g', kind:'เสริม', fish:true,
+   veg:'บรอกโคลี/กะหล่ำลวก', note:'เมนูเซฟ · กล่องปลา — เลี่ยงเคลมเป๊ะ'},
+  {day:'อาทิตย์', code:'HX09', name:'ปลาทับทิมทอดซอสพริกสามรส', prot:'ทับทิม ~185–190g', kind:'เสริม',
    macro:'โปรตีน ทับทิม ~185–190g (~37–38g) · คาร์บ กข43 210g · น้ำมัน ~10g · ~500–550 kcal',
-   cook:'ทับทิมทอดกรอบ (ทอดน้อยน้ำมัน/อบทอด) → ราดซอสสามรส (พริกแห้ง · กระเทียม · หอมแดง · น้ำมะขามเปียก · น้ำตาลคุม · น้ำปลา เคี่ยวข้น)',
+   cook:'ทับทิมทอดกรอบ (น้อยน้ำมัน/อบทอด) → ราดซอสสามรส (พริกแห้ง · กระเทียม · หอมแดง · น้ำมะขาม · น้ำตาลคุม · น้ำปลา)',
    veg:'ยำผักสด (แตงกวา/หอมแดง/ผักกาดหอม) ตัดความมัน', deep:'มีสูตรคำนวณกรัมทับทิม (จุด C)'},
-
-  {code:'HX10', name:'แซลมอนเพสโต้', prot:'แซลมอน 160g', kind:'สำรอง', fish:true,
+  {day:'อาทิตย์', code:'HX10', name:'แซลมอนเพสโต้', prot:'แซลมอน 160g', kind:'สำรอง',
    macro:'โปรตีน แซลมอน 160g (~30–33g) · คาร์บ ควินัวสุก 285g · น้ำมัน ~3g · ~560 kcal',
    cook:'แซลมอนย่าง/อบ → ทา/ราดเพสโต้ (เบซิล · กระเทียม · พาร์เมซาน · ถั่วสน · น้ำมันมะกอกนิด · เลมอน)',
    veg:'มะเขือเทศเชอร์รี่ + ร็อกเก็ต/สลัด + ถั่วแขก', note:'สำรอง (ถ้าไม่เอาทับทิม)'},
-
-  {code:'HX11', name:'กะเพราเนื้อไข่ดาว', prot:'เนื้อวัวไม่ติดมัน 180g', kind:'สำรอง',
+  {day:'อาทิตย์', code:'HX11', name:'กะเพราเนื้อไข่ดาว', prot:'เนื้อวัว 180g', kind:'สำรอง',
    macro:'โปรตีน เนื้อวัว 180g (≈38g) + ไข่ดาว 1 ฟอง · คาร์บ กข43 210g · น้ำมัน ~10g · ~500–550 kcal',
    cook:'ผัดเนื้อกับกะเพรา · พริก · กระเทียม · น้ำปลา/ซีอิ๊ว → ราดข้าว + ไข่ดาว (ทอดน้ำมันน้อย)',
    veg:'ถั่วฝักยาว + ข้าวโพดอ่อน (ในผัด) + แตงกวาเคียง', note:'สำรอง (สัตว์บก)'},
+
+  // ===== อังคาร (batch 2) =====
+  {day:'อังคาร', code:'HX12', name:'อกไก่ย่างตะไคร้ + น้ำพริกย่าง', prot:'อกไก่ 170g', kind:'หลัก',
+   macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ กข43 210g · น้ำมัน ~6g · ~500–550 kcal',
+   cook:'หมักตะไคร้ซอย · กระเทียม · รากผักชี · ซีอิ๊ว/น้ำปลา · พริกไทย → ย่าง · เสิร์ฟกับน้ำพริกย่างเคียง (คุมเค็ม)',
+   veg:'แตงกวา + ถั่วฝักยาวลวก + ผักสลัด (ตัดเผ็ด/เค็มจากน้ำพริกย่าง)'},
+  {day:'อังคาร', code:'HX13', name:'หมูบุลโกกิ', prot:'สันในหมู 180g', kind:'หลัก',
+   macro:'โปรตีน สันในหมู 180g (≈38g) · คาร์บ กข43 210g · น้ำมัน ~6g · ~500–550 kcal',
+   cook:'หมักบุลโกกิ (ซีอิ๊ว · สาลี่ปั่น/น้ำตาลนิด · กระเทียม · งา · น้ำมันงานิด · หัวหอม) → ผัด/ย่าง',
+   veg:'ถั่วงอกลวก + แครอทเส้น + ผักกาดหอม (ห่อ)', note:'บุลโกกิเดิมอยู่หมวดเนื้อ → นัทเลือกทำหมู'},
+  {day:'อังคาร', code:'HX14', name:'บิบิมบับ', prot:'ตามเมนูเดิม', kind:'หลัก', old:true,
+   macro:'ดึงมาโครจากเมนูเดิม LC/HP → สเกลเข้ากรอบ Hyrox (คาร์บ กข43 ~210g · โปรตีน 35–40g)',
+   cook:'เมนูเก่า LC/HP ที่มีอยู่แล้ว — ผักรวม (ถั่วงอก/แครอท/ผักโขม) · โคชูจังนิด · งา · ไข่ · ซีอิ๊ว',
+   veg:'ผักรวมมากับจาน (ถั่วงอก/แครอท/ผักโขม/เห็ด) + ผักกาดหอมเพิ่ม', note:'เมนูเก่า LC/HP → ใช้สูตรเดิม + เพิ่มคาร์บให้ถึงกรอบ Hyrox'},
+  {day:'อังคาร', code:'HX15', name:'อกไก่บอล ซอสมะเขือเทศ', prot:'อกไก่บด', kind:'หลัก', old:true,
+   macro:'ดึงมาโครจากเมนู "อกไก่บอล" เดิม → สเกลเข้ากรอบ Hyrox · คาร์บ เพนเน่/กข43 · น้ำมัน ~9g',
+   cook:'อกไก่บอล (เมนูเก่า) + ซอสมะเขือเทศ (มะเขือเทศ · กระเทียม · หัวหอม · เบซิล · น้ำตาลนิด · พาร์เมซานนิด)',
+   veg:'บรอกโคลีลวก + แครอทนึ่ง + ซูกินีย่าง', note:'นัทเลือกใช้เมนูเก่า "อกไก่บอล" แทน อกไก่ซอสมะเขือเทศ'},
+  {day:'อังคาร', code:'HX16', name:'กาลิคบัตเตอร์กุ้ง', prot:'กุ้ง 160g', kind:'หลัก',
+   macro:'โปรตีน กุ้ง 160g (≈38g) · คาร์บ ควินัว 285g · น้ำมัน ~10g · ~500–550 kcal',
+   cook:'ผัด/อบ กุ้ง กับ กระเทียม · เนย/น้ำมันนิด · พาร์สลีย์ · เลมอน (คุมเนย)',
+   veg:'หน่อไม้ฝรั่ง + บรอกโคลี + มะเขือเทศเชอร์รี่'},
+  {day:'อังคาร', code:'HX17', name:'กระพงย่าง ราดซอสแกงเขียวหวาน', prot:'กระพง 185g', kind:'หลัก',
+   macro:'โปรตีน กระพง 185g (~33g) · คาร์บ กข43 210g · น้ำมัน ~6g · ~500–550 kcal',
+   cook:'กระพงย่าง → ราดซอสเขียวหวานคุมกะทิ (พริกแกงเขียวหวาน · กะทิคุมปริมาณ · ใบโหระพา · น้ำปลานิด)',
+   veg:'มะเขือเปราะ/มะเขือพวง + ถั่วฝักยาว + ใบโหระพา', note:'กล่องปลา — เลี่ยงเคลมเป๊ะ · คุมกะทิรวมไขมัน ≤18g'},
+  {day:'อังคาร', code:'HX18', name:'กระพงย่าง ซอสพริกสามรส', prot:'กระพง 185g', kind:'สำรอง',
+   macro:'โปรตีน กระพง 185g (~33g) · คาร์บ กข43 210–240g · น้ำมัน ~10g · ~500–550 kcal',
+   cook:'กระพงย่าง → ราดซอสสามรสคุมน้ำตาล (พริกแห้ง · กระเทียม · หอมแดง · น้ำมะขาม · น้ำตาลคุม · น้ำปลา)',
+   veg:'ยำผักสด (แตงกวา/หอมแดง/ผักกาดหอม) ตัดความจัด', note:'สำรอง · กล่องปลา'},
+
+  // ===== พฤหัส (batch 3) =====
+  {day:'พฤหัส', code:'HX19', name:'อกไก่ย่างซอสเทริยากิ', prot:'อกไก่ 170g', kind:'หลัก',
+   macro:'โปรตีน อกไก่ 170g (≈39g) · คาร์บ กข43 210g · น้ำมัน ~8g · ~500–550 kcal',
+   cook:'ย่างอกไก่ → ราดซอสเทริยากิ (ซีอิ๊วญี่ปุ่น · มิริน · น้ำตาลนิด · ขิง · กระเทียม · งาขาว)',
+   veg:'บรอกโคลีลวก + แครอท + ข้าวโพดอ่อน'},
+  {day:'พฤหัส', code:'HX20', name:'รอเลือกจากเมนูเก่า LC/HP', prot:'—', kind:'หลัก', tbd:true,
+   macro:'', cook:'', veg:''},
+  {day:'พฤหัส', code:'HX21', name:'รอเลือกจากเมนูเก่า LC/HP', prot:'—', kind:'หลัก', tbd:true,
+   macro:'', cook:'', veg:''},
+  {day:'พฤหัส', code:'HX22', name:'รอเลือกจากเมนูเก่า LC/HP', prot:'—', kind:'หลัก', tbd:true,
+   macro:'', cook:'', veg:''},
+  {day:'พฤหัส', code:'HX23', name:'กุ้งผัดพริกขี้หนู', prot:'กุ้ง 160g', kind:'หลัก',
+   macro:'โปรตีน กุ้ง 160g (≈38g) · คาร์บ กข43/ข้าวกล้อง 220g · น้ำมัน ~10g · ~500–550 kcal',
+   cook:'ผัดกุ้งกับพริกขี้หนู · กระเทียม · หัวหอม · ซีอิ๊ว/น้ำปลา · ใบกะเพรา/โหระพา (เผ็ดตามชอบ)',
+   veg:'ถั่วฝักยาว + พริกหยวก + ใบกะเพรา'},
+  {day:'พฤหัส', code:'HX24', name:'แซลมอนย่างซอสมิโสะ', prot:'แซลมอน 160g', kind:'หลัก',
+   macro:'โปรตีน แซลมอน 160g (~30–33g) · คาร์บ กข43 210g · น้ำมัน ~2g · ~500–550 kcal',
+   cook:'ทามิโสะ (มิโสะ · มิริน · ซีอิ๊ว · น้ำตาลนิด · ขิง) → ย่าง/อบ',
+   veg:'หน่อไม้ฝรั่ง + ถั่วแขก + เห็ด', note:'กล่องปลา — เลี่ยงเคลมเป๊ะ'},
+  {day:'พฤหัส', code:'HX25', name:'ทูน่าสเต๊ก (seared)', prot:'ทูน่า 160g', kind:'สำรอง',
+   macro:'โปรตีน ทูน่า 160g (~35–38g) · คาร์บ มันฝรั่งอบ 350g · น้ำมัน ~8g · ~500–550 kcal',
+   cook:'ทูน่าซีร์ (จี่ผิวนอกสุก ในชมพู) · พริกไทยดำ · ซอสเลมอน-เคเปอร์ · งาโรย',
+   veg:'ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่ + หน่อไม้ฝรั่ง', note:'สำรอง · = Seared Steak · กล่องปลา'}
 ];
 
 function stKey(code){return 'rnd01_st_'+code;}
 function getSt(code){return parseInt(localStorage.getItem(stKey(code))||'0',10)||0;}
-function cycleSt(code){
-  var i=(getSt(code)+1)%ST.length;
-  localStorage.setItem(stKey(code), i);
-  render();
-}
+function cycleSt(code){localStorage.setItem(stKey(code),(getSt(code)+1)%ST.length);render();}
 
 function kindTag(k){
   if(k==='สำรอง') return '<span class="tg res">สำรอง</span>';
-  if(k==='เสริม') return '<span class="tg add">โปรตีนเสริม</span>';
+  if(k==='เสริม') return '<span class="tg" style="background:#FFF7ED;color:#C2410C">โปรตีนเสริม</span>';
   return '<span class="tg">หลัก</span>';
+}
+
+function cardHtml(m,idx){
+  if(m.tbd){
+    return '<div class="card tbd">'
+      + '<div class="ch"><div class="num">'+m.code.replace('HX','')+'</div>'
+      + '<div class="ct"><div class="nm" style="color:var(--faint)">'+m.name+'</div>'
+      + '<div class="tags"><span class="tg">'+m.code+'</span></div></div></div>'
+      + '<div class="row" style="color:var(--faint)">รอนัทคุ้ยเมนูเก่า LC/HP มาใส่ (บอกชื่อ → ผมเติมสูตร+ผักคู่ให้)</div>'
+      + '</div>';
+  }
+  var si=getSt(m.code), s=ST[si], on=si>=3;
+  return '<div class="card">'
+    + '<div class="ch"><div class="num">'+m.code.replace('HX','')+'</div>'
+    +   '<div class="ct"><div class="nm">'+m.name+'</div>'
+    +     '<div class="tags"><span class="tg prot">'+m.prot+'</span>'+kindTag(m.kind)
+    +        (m.old?'<span class="tg old">เมนูเก่า LC/HP</span>':'')+'<span class="tg">'+m.code+'</span></div>'
+    +   '</div></div>'
+    + '<div class="macro">'+m.macro+'</div>'
+    + '<div class="row"><span class="lb">วิธี:</span> '+m.cook+'</div>'
+    + '<div class="row"><span class="lb">🥗 ผักคู่:</span> <span class="veg">'+m.veg+'</span></div>'
+    + (m.note?'<div class="note">'+m.note+'</div>':'')
+    + (m.deep?'<div class="deep">🔧 '+m.deep+'</div>':'')
+    + '<div class="stbtn"><button class="badge" style="background:'+s.c+'" onclick="cycleSt(\''+m.code+'\')">'+s.ic+' '+s.t+'</button>'
+    +   '<span class="hint">แตะเพื่อเลื่อนสถานะ</span></div>'
+    + '<div class="ho"><span class="hchip niw'+(on?' on':'')+'">→ นิว (กรอก DB)</span>'
+    +   '<span class="hchip tiang'+(on?' on':'')+'">→ เตียง (รูป)</span></div>'
+    + '</div>';
 }
 
 function render(){
   var html='';
-  for(var i=0;i<DATA.length;i++){
-    var m=DATA[i], si=getSt(m.code), s=ST[si];
-    var niwOn = si>=3, tiangOn = si>=3;
-    html+='<div class="card">'
-      + '<div class="ch">'
-      +   '<div class="num">'+(i+1)+'</div>'
-      +   '<div class="ct">'
-      +     '<div class="nm">'+m.name+'</div>'
-      +     '<div class="tags"><span class="tg prot">'+m.prot+'</span>'+kindTag(m.kind)+'<span class="tg">'+m.code+'</span></div>'
-      +   '</div>'
-      + '</div>'
-      + '<div class="macro">'+m.macro+'</div>'
-      + '<div class="row"><span class="lb">วิธี:</span> '+m.cook+'</div>'
-      + '<div class="row"><span class="lb">🥗 ผักคู่:</span> <span class="veg">'+m.veg+'</span></div>'
-      + (m.note?'<div class="note">'+m.note+'</div>':'')
-      + (m.deep?'<div class="deep">🔧 '+m.deep+'</div>':'')
-      + '<div class="stbtn">'
-      +   '<button class="badge" style="background:'+s.c+'" onclick="cycleSt(\''+m.code+'\')">'+s.ic+' '+s.t+'</button>'
-      +   '<span class="hint">แตะเพื่อเลื่อนสถานะ</span>'
-      + '</div>'
-      + '<div class="ho">'
-      +   '<span class="hchip niw'+(niwOn?' on':'')+'">→ นิว (กรอก DB)</span>'
-      +   '<span class="hchip tiang'+(tiangOn?' on':'')+'">→ เตียง (รูป)</span>'
-      + '</div>'
-      + '</div>';
+  for(var d=0;d<DAYS.length;d++){
+    var day=DAYS[d];
+    var items=DATA.filter(function(x){return x.day===day.key;});
+    html+='<div class="day"><span class="dn">📅 '+day.key+'</span><span class="db">'+day.badge+'</span><span class="dd">'+day.note+'</span></div>';
+    for(var i=0;i<items.length;i++){ html+=cardHtml(items[i],i); }
   }
   document.getElementById('menuList').innerHTML=html;
 
+  var real=DATA.filter(function(x){return !x.tbd;});
   var ready=0;
-  for(var j=0;j<DATA.length;j++){ if(getSt(DATA[j].code)>=2) ready++; }
-  document.getElementById('progN').textContent = ready+' / '+DATA.length+' สูตรนิ่ง';
-  document.getElementById('progBar').style.width = (ready/DATA.length*100)+'%';
+  for(var j=0;j<real.length;j++){ if(getSt(real[j].code)>=2) ready++; }
+  document.getElementById('progN').textContent = ready+' / '+real.length+' สูตรนิ่ง';
+  document.getElementById('progBar').style.width = (ready/real.length*100)+'%';
 }
 
 render();
