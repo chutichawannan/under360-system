@@ -761,7 +761,8 @@ body{background:#fff!important}
     <!-- ═══ ORDER TOTAL ═══ -->
     <div class="order-total">
       <div class="ot-row"><span class="ot-l">ยอดสินค้า</span><span class="ot-v" id="cart-sub">฿0</span></div>
-      <div class="ot-row" id="ot-discount-row" style="display:none"><span class="ot-l" style="color:var(--g)">ส่วนลด</span><span class="ot-v" id="cart-discount" style="color:var(--g)">-฿0</span></div>
+      <div id="ot-auto-rows" style="display:none"></div>
+      <div class="ot-row" id="ot-discount-row" style="display:none"><span class="ot-l" style="color:var(--g)">ส่วนลดโค้ด</span><span class="ot-v" id="cart-discount" style="color:var(--g)">-฿0</span></div>
       <div class="ot-row"><span class="ot-l">ค่าจัดส่ง</span><span class="ot-v" id="cart-fee">—</span></div>
       <div class="stot"><div class="stot-l">รวมทั้งหมด</div><div class="stot-v" id="cart-total-display">฿0</div></div>
     </div>
@@ -1541,18 +1542,20 @@ async function init() {
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
   const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus'];
-  const [utR, custR, menuR, cfgR, payR] = await Promise.allSettled([
+  const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
     sb.from('menu_items').select('*').eq('is_available', true).order('sort_order'),
     sb.from('kitchen_data').select('key,data').in('key', CFG_KEYS),
-    sb.from('orders').select('payment_status').limit(1)                                        // capability: มีคอลัมน์ payment_status ไหม
+    sb.from('orders').select('payment_status').limit(1),                                       // capability: มีคอลัมน์ payment_status ไหม
+    sb.from('orders').select('id', { count:'exact', head:true }).eq('line_uid', lineProfile.userId)  // นับออเดอร์ลูกค้า → guard โปร "ลูกค้าใหม่"
   ]);
   const val = r => (r.status === 'fulfilled' ? r.value : {});
 
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
   hasPaymentStatusColumn = !val(payR).error;
+  customerOrderCount = (ocR.status==='fulfilled' && typeof ocR.value.count==='number') ? ocR.value.count : null; // นับออเดอร์เก่า → guard โปรลูกค้าใหม่
 
   // customer + auto-fill (ที่อยู่/ชื่อ/เบอร์)
   try {
@@ -2286,6 +2289,7 @@ async function submitOrder() {
     const o = computeOrder();
     const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
     const grandTotal  = o.total;             // ยอดสุทธิ
+    const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5)
     const orderPayload = {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
@@ -2303,7 +2307,7 @@ async function submitOrder() {
       delivery_distance_km: (distKm!=null) ? Number(distKm.toFixed(3)) : null,
       subtotal:         o.sub,
       discount_amount:  o.discount,
-      promotion_code:   appliedPromos.length ? appliedPromos.map(p=>p.code).join(',') : null, // ซ้อนหลายโค้ด → คั่นด้วย , (ใช้เก็บรายงานเท่านั้น ไม่ใช่ FK)
+      promotion_code:   allPromoCodes.length ? allPromoCodes.join(',') : null, // โค้ดกรอกเอง + โปรอัตโนมัติ (คั่นด้วย , · เก็บรายงาน parity เท่านั้น ไม่ใช่ FK)
       total:            grandTotal,
       status:           'confirmed',
       payment_method:   payMethod || 'qr',
@@ -2458,6 +2462,30 @@ const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
 let appliedPromos = [];   // array of {id,code,discount_type,discount_value,min_order,used_count,description,stackable,scope_mode,...}
 let suggestedPromos = [];
 let suggestedPromosLoaded = false;
+let customerOrderCount = null; // จำนวนออเดอร์ของลูกค้า (นับตอน init จาก line_uid) → guard โปร "ลูกค้าใหม่" · null = ยังไม่รู้ = ไม่แจกโปร
+
+// ── โปรอัตโนมัติตามสถานะสมาชิก (ยกกติกาจาก Hato · docs/PTRACK_HATO_LOYALTY_RULES.md) ──
+// ลูกค้าไม่ต้องกรอกโค้ด — LIFF คิดให้เองตอน checkout (ปิด gap ราคา parallel-run: 5 ใบเราแพงกว่า Hato เพราะขาด 2 ตัวนี้)
+//   • Welcome สมาชิกใหม่ : ลูกค้าใหม่จริง + ยอดสินค้า ≥ 500 → ลด ฿50
+//   • Wellness Warriors  : ลด 5% (tier อื่น/bronze = ไม่ลด)
+function isNewMemberCustomer(){
+  if(!customer) return false;
+  if(customerOrderCount===null) return false;               // ยังนับออเดอร์ไม่เสร็จ = ไม่แจก (กันแจกผิด)
+  if(customerOrderCount>0) return false;                     // เคยสั่งแล้ว = ไม่ใช่ลูกค้าใหม่
+  const src = (customer.source_first||'line').toLowerCase(); // ลูกค้าใหม่ organic = 'line' (null → treat as line)
+  if(src!=='line') return false;                            // whitelist 'line' เท่านั้น: กัน hato/pre_hato/legacy/admin_manual (ลูกค้าเก่า 5,854 คน)
+  const notes = (customer.admin_notes||'').toUpperCase();
+  if(notes.includes('[PRE-HATO')||notes.includes('[B2B')||notes.includes('[ADMIN')) return false;
+  return true;
+}
+function autoPromos(sub){
+  const list = [];
+  if(isNewMemberCustomer() && sub>=500)
+    list.push({ kind:'welcome', code:'WELCOME50', label:'ส่วนลดสมาชิกใหม่ (ครบ ฿500)', type:'fixed',   value:50 });
+  if(customer && (customer.tier||'')==='Wellness Warriors')
+    list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
+  return list;
+}
 
 // โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง (include)
 // หรือตะกร้าต้องไม่มีสินค้านั้นเลย (exclude — v0.4.14 "ทุกอย่างยกเว้นที่เลือก")
@@ -2535,14 +2563,18 @@ function computeOrder(){
     else if(p.discount_type==='percent')  itemDisc += Math.round(sub * p.discount_value/100);
     else if(p.discount_type==='free_shipping') shipDisc = fee; // ส่งฟรีเป็นได้แค่ฟรีทั้งหมด ไม่ทบซ้อน
   });
-  itemDisc = Math.min(itemDisc, sub); // กันลดเกินยอดสินค้าเวลาซ้อนหลายโค้ด fixed รวมกัน
+  // โปรอัตโนมัติตามสถานะสมาชิก (ลูกค้าไม่ต้องกรอกโค้ด) — คิดจากยอดสินค้า · แยกจากโค้ดกรอกเอง
+  const autoList = autoPromos(sub);
+  let autoDisc = 0;
+  autoList.forEach(a => { a.amount = (a.type==='fixed') ? a.value : Math.round(sub * a.value/100); autoDisc += a.amount; });
+  const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
   // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
   const pkgFreeShip = cart.some(c => c.type==='package' && c.free_shipping);
   if(pkgFreeShip) shipDisc = fee;
   const feeAfter = Math.max(0, fee - shipDisc);
-  const discount = itemDisc + shipDisc;
-  const total = Math.max(0, sub - itemDisc + feeAfter);
-  return {sub, fee, feeKnown, feeAfter, itemDisc, shipDisc, discount, total};
+  const discount = itemDiscTotal + shipDisc;
+  const total = Math.max(0, sub - itemDiscTotal + feeAfter);
+  return {sub, fee, feeKnown, feeAfter, itemDisc, autoDisc, autoList, shipDisc, discount, total};
 }
 
 function promoLabel(p){
@@ -2914,9 +2946,18 @@ function updateCartTotals(){
   const discRow=document.getElementById('ot-discount-row');
   const discEl=document.getElementById('cart-discount');
   if(subEl)subEl.textContent='฿'+o.sub.toLocaleString();
-  // แถวส่วนลด
+  // แถวโปรอัตโนมัติ (สมาชิก) — โชว์ทีละบรรทัดพร้อม label ให้ลูกค้าเห็นว่าลดจากอะไร
+  const autoWrap=document.getElementById('ot-auto-rows');
+  if(autoWrap){
+    if(o.autoList && o.autoList.length){
+      autoWrap.style.display='block';
+      autoWrap.innerHTML=o.autoList.map(a=>`<div class="ot-row"><span class="ot-l" style="color:var(--g)">${h(a.label)}</span><span class="ot-v" style="color:var(--g)">-฿${a.amount.toLocaleString()}</span></div>`).join('');
+    } else { autoWrap.style.display='none'; autoWrap.innerHTML=''; }
+  }
+  // แถวส่วนลดโค้ด (เฉพาะโค้ด/คูปองที่กรอกเอง — โปรอัตโนมัติแยกไปแถวบนแล้ว)
   if(discRow&&discEl){
-    if(o.discount>0){ discRow.style.display='flex'; discEl.textContent='-฿'+o.discount.toLocaleString(); }
+    const manualDisc=o.discount-o.autoDisc;
+    if(manualDisc>0){ discRow.style.display='flex'; discEl.textContent='-฿'+manualDisc.toLocaleString(); }
     else discRow.style.display='none';
   }
   // ค่าส่ง: ส่งฟรี → ฟรี, ยังไม่ปักหมุด → ข้อความ, ปกติ → ตัวเลข
