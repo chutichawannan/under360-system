@@ -148,6 +148,14 @@
     <p>→ <span class="k">แนะนำ ~185–190g</span> (≈ โปรตีนจากปลา 37–38g) · นับข้าว กข43 อีก ~5–6g → รวมทั้งกล่อง <b>~42–44g</b> สบายเป้า</p>
   </div>
 
+  <div class="st">🍠 หลัก Carb Boost (2 วันสุดท้าย · ก่อนแข่ง 14 ส.ค.)</div>
+  <div class="blk">
+    <p>• กล่องหลัก 3/วัน ≈ คาร์บ ~180g → carb-load ต้องการ <b>+150–300g/วัน</b> → เสริมด้วย Carb Boost ในรอบ 3 (12–13 ส.ค.)</p>
+    <p>• 2 วันสุดท้าย: <b>ดันคาร์บ ~2 เท่า · ลดไฟเบอร์+ไขมัน</b> (กันท้องอืดวันแข่ง) · สลับ กข43 → คาร์บย่อยง่าย/GI สูงขึ้นได้ = ข้อยกเว้นตั้งใจ</p>
+    <p>• กระจายมื้อเล็กบ่อยๆ · ดื่มน้ำเยอะ (คาร์บเก็บพร้อมน้ำ)</p>
+    <p class="note">⚠️ ไม่ส่งวันแข่ง (14 ส.ค.) → ตัดโจ๊ก/มื้อเช้าวันแข่งออก · เช้าวันแข่งลูกค้าจัดเอง</p>
+  </div>
+
   <div class="st">📌 ยังค้าง (เคาะกับนัท)</div>
   <div class="blk">
     <p>• <b>พฤหัส 3 ช่อง (HX20–22)</b> = รอนัทคุ้ยเมนูเก่า LC/HP มาใส่</p>
@@ -169,7 +177,8 @@ var ST=[
 var DAYS=[
   {key:'อาทิตย์', badge:'batch 1', note:'11 เมนู · คัดแล้ว'},
   {key:'อังคาร',  badge:'batch 2', note:'7 เมนู'},
-  {key:'พฤหัส',   badge:'batch 3', note:'7 เมนู (3 ช่องรอเลือก)'}
+  {key:'พฤหัส',   badge:'batch 3', note:'7 เมนู (3 ช่องรอเลือก)'},
+  {key:'Carb Boost', badge:'2 วันสุดท้าย', note:'เสริมรอบ 3 (12–13 ส.ค.) · คาร์บย่อยง่าย · ไม่ส่งวันแข่ง'}
 ];
 
 // day · code · name · prot · kind(หลัก/สำรอง/เสริม) · macro · cook · veg · note? · deep? · old?(เมนูเก่า LC/HP) · tbd?
@@ -272,7 +281,21 @@ var DATA=[
   {day:'พฤหัส', code:'HX25', name:'ทูน่าสเต๊ก (seared)', prot:'ทูน่า 160g', kind:'สำรอง',
    macro:'โปรตีน ทูน่า 160g (~35–38g) · คาร์บ มันฝรั่งอบ 350g · น้ำมัน ~8g · ~500–550 kcal',
    cook:'ทูน่าซีร์ (จี่ผิวนอกสุก ในชมพู) · พริกไทยดำ · ซอสเลมอน-เคเปอร์ · งาโรย',
-   veg:'ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่ + หน่อไม้ฝรั่ง', note:'สำรอง · = Seared Steak · กล่องปลา'}
+   veg:'ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่ + หน่อไม้ฝรั่ง', note:'สำรอง · = Seared Steak · กล่องปลา'},
+
+  // ===== Carb Boost (2 วันสุดท้าย · เสริมรอบ 3 · ไม่ส่งวันแข่ง) =====
+  {day:'Carb Boost', code:'HXC01', name:'มันหวานนึ่ง', prot:'คาร์บ ~70g', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~70g (มันหวาน ~350g) · ไขมันต่ำ · ย่อยง่าย', cook:'นึ่ง โรยเกลือนิด · เสิร์ฟเป็นของเสริมคาร์บ', veg:''},
+  {day:'Carb Boost', code:'HXC02', name:'มันฝรั่งบด/อบ', prot:'คาร์บ ~55–65g', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~55–65g · เบาท้อง ย่อยง่าย', cook:'บด (นมพร่องมันเนยนิด) หรืออบ · คุมเนย/น้ำมัน', veg:''},
+  {day:'Carb Boost', code:'HXC03', name:'ข้าวปั้น (onigiri)', prot:'คาร์บ ~65g', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~65g (ข้าวขาว/เหนียว ~200g) · พกกินง่าย', cook:'ปั้นก้อน · สาหร่าย/งานิด · กินระหว่างวันได้', veg:''},
+  {day:'Carb Boost', code:'HXC04', name:'กล้วยหอม', prot:'คาร์บ ~27g/ลูก', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~27g/ลูก (แนะนำ 1–2 ลูก) · โพแทสเซียม กันตะคริว', cook:'เสิร์ฟสด · สุกกำลังดี (ย่อยง่าย)', veg:''},
+  {day:'Carb Boost', code:'HXC05', name:'ขนมปังทาน้ำผึ้ง/แยม', prot:'คาร์บ ~40–55g', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~40–55g (2 แผ่น) · ไขมันต่ำ · มื้อเบา', cook:'ทาน้ำผึ้ง/แยม (คุมปริมาณ) · เลี่ยงเนยเยอะ', veg:''},
+  {day:'Carb Boost', code:'HXC06', name:'ข้าวโพดหวานต้ม', prot:'คาร์บ ~30g/ฝัก', kind:'หลัก', boost:true,
+   macro:'คาร์บ ~30g/ฝัก · ของว่างเบาๆ', cook:'ต้ม/นึ่ง · เสิร์ฟทั้งฝักหรือแกะเมล็ด', veg:''}
 ];
 
 function stKey(code){return 'rnd01_st_'+code;}
@@ -298,12 +321,12 @@ function cardHtml(m,idx){
   return '<div class="card">'
     + '<div class="ch"><div class="num">'+m.code.replace('HX','')+'</div>'
     +   '<div class="ct"><div class="nm">'+m.name+'</div>'
-    +     '<div class="tags"><span class="tg prot">'+m.prot+'</span>'+kindTag(m.kind)
+    +     '<div class="tags"><span class="tg prot">'+m.prot+'</span>'+(m.boost?'<span class="tg" style="background:#FEF6E7;color:#B7791F">คาร์บเสริม</span>':kindTag(m.kind))
     +        (m.old?'<span class="tg old">เมนูเก่า LC/HP</span>':'')+'<span class="tg">'+m.code+'</span></div>'
     +   '</div></div>'
     + '<div class="macro">'+m.macro+'</div>'
     + '<div class="row"><span class="lb">วิธี:</span> '+m.cook+'</div>'
-    + '<div class="row"><span class="lb">🥗 ผักคู่:</span> <span class="veg">'+m.veg+'</span></div>'
+    + (m.veg?'<div class="row"><span class="lb">🥗 ผักคู่:</span> <span class="veg">'+m.veg+'</span></div>':'')
     + (m.note?'<div class="note">'+m.note+'</div>':'')
     + (m.deep?'<div class="deep">🔧 '+m.deep+'</div>':'')
     + '<div class="stbtn"><button class="badge" style="background:'+s.c+'" onclick="cycleSt(\''+m.code+'\')">'+s.ic+' '+s.t+'</button>'
