@@ -4,17 +4,17 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>เซ็ต Hyrox — เมนูที่จะได้รับ | Under360</title>
-<meta name="description" content="เซ็ต Hyrox จาก Under360 — เมนูที่จะได้รับแบ่งตาม 3 รอบส่ง ปรุงสด ข้าว กข43 มีผักทุกกล่อง + มีเมนูสำรองให้เปลี่ยนหากไม่รับเมนูในรายการ">
+<meta name="description" content="เซ็ต Hyrox จาก Under360 — เมนูที่จะได้รับแบ่งตาม 3 รอบส่ง (9/6/6 กล่อง) ปรุงสด ข้าว กข43 มีผักทุกกล่อง + เมนูสำรองในแต่ละรอบสำหรับเปลี่ยนหากไม่รับเมนูในรายการ">
 <style>
   :root{
     --bg:#FFFFFF; --soft-bg:#F6F8F7; --ink:#1A2027; --soft:#6B7280; --faint:#9AA3AF;
-    --line:#E7EAE8; --hy:#0F766E; --hyl:#E8F5F2; --gold:#B7791F; --goldl:#FEF6E7;
+    --line:#E7EAE8; --hy:#0F766E; --hyl:#E8F5F2; --gold:#B7791F; --goldl:#FCF3E2;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   body{margin:0;background:var(--bg);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Sarabun","Noto Sans Thai",sans-serif;
     font-size:15.5px;line-height:1.5}
-  .wrap{max-width:720px;margin:0 auto;padding:0 14px 60px}
+  .wrap{max-width:760px;margin:0 auto;padding:0 12px 60px}
   .top{text-align:center;padding:24px 14px 14px;border-bottom:1px solid var(--line)}
   .top .k{display:inline-block;font-size:11.5px;font-weight:800;letter-spacing:.1em;color:var(--hy);
     background:var(--hyl);border-radius:999px;padding:4px 12px;text-transform:uppercase}
@@ -22,28 +22,27 @@
   .top .s{color:var(--soft);font-size:13.5px;max-width:460px;margin:0 auto}
   .facts{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:13px 0 2px}
   .fc{font-size:11.5px;font-weight:700;color:var(--hy);background:var(--hyl);border-radius:999px;padding:4px 10px}
-  .sec{font-size:17px;font-weight:900;margin:24px 0 4px}
+  .sec{font-size:17px;font-weight:900;margin:24px 0 3px}
   .sec .hint{font-size:12.5px;font-weight:600;color:var(--soft)}
+  .starnote{font-size:12px;color:var(--gold);font-weight:700;margin:2px 0 9px;background:var(--goldl);
+    border-radius:9px;padding:7px 10px}
   /* 3 columns = 3 rounds */
-  .rounds3{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-top:8px}
+  .rounds3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
   .rcol{border:1px solid var(--line);border-radius:13px;overflow:hidden;display:flex;flex-direction:column}
-  .rh{background:var(--hy);color:#fff;padding:9px 8px;text-align:center}
+  .rh{background:var(--hy);color:#fff;padding:9px 6px;text-align:center}
   .rh .n{font-weight:900;font-size:13.5px}
-  .rh .d{font-size:11px;opacity:.9;margin-top:1px}
+  .rh .d{font-size:10.5px;opacity:.9;margin-top:1px}
   .rh .b{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:800;background:rgba(255,255,255,.2);border-radius:999px;padding:2px 8px}
-  .rb{padding:8px;display:flex;flex-direction:column;gap:7px;flex:1}
-  .rm{background:var(--soft-bg);border-radius:9px;padding:8px 9px}
-  .rm .t{font-weight:800;font-size:12.5px;line-height:1.3}
-  .rm .i{color:var(--soft);font-size:10.5px;margin-top:2px;line-height:1.4}
   .rload .rh{background:#0B5A54}
-  .rload .rh .load{font-size:10px;margin-top:3px;color:#CFF3ED}
-  /* backup */
-  .backup{background:var(--goldl);border:1px solid #F5E4BE;border-radius:14px;padding:13px 14px 9px;margin-top:8px}
-  .backup .note{font-size:12.5px;color:var(--gold);font-weight:700;margin:-2px 0 10px}
-  .bgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
-  .bm{background:#fff;border:1px solid #F0E6CE;border-radius:10px;padding:9px 11px}
-  .bm .t{font-weight:800;font-size:13px}
-  .bm .i{color:var(--soft);font-size:11px;margin-top:2px;line-height:1.4}
+  .rload .rh .load{font-size:9.5px;margin-top:3px;color:#CFF3ED}
+  .rb{padding:7px;display:flex;flex-direction:column;gap:6px;flex:1}
+  .rm{background:var(--soft-bg);border-radius:8px;padding:7px 8px}
+  .rm .t{font-weight:800;font-size:12px;line-height:1.25}
+  .rm .i{color:var(--soft);font-size:10px;margin-top:2px;line-height:1.35}
+  /* per-round backup */
+  .rsub{margin-top:2px;border-top:1px dashed var(--line);padding-top:7px}
+  .rsub .lb{font-size:10.5px;font-weight:800;color:var(--gold);margin-bottom:5px}
+  .rsub .rm{background:var(--goldl)}
   /* order */
   .order{margin-top:24px;border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .order .head{background:var(--hy);color:#fff;padding:12px 16px;font-weight:800;font-size:15px}
@@ -62,7 +61,6 @@
   .cta2{text-align:center;color:var(--soft);font-size:12.5px;margin-top:9px}
   .cta2 b{color:var(--ink)}
   .foot{text-align:center;color:var(--faint);font-size:11.5px;margin-top:20px;line-height:1.7}
-  @media(max-width:380px){ .rm .t{font-size:12px} .rm .i{font-size:10px} .bgrid{grid-template-columns:1fr} }
 </style>
 </head>
 <body>
@@ -82,54 +80,66 @@
 <div class="wrap">
 
   <div class="sec">เมนูที่จะได้รับ <span class="hint">· แบ่งตาม 3 รอบส่ง · แจ้งเนื้อที่ไม่ทานได้</span></div>
+  <div class="starnote">* เมนูสำรอง (กล่องสีเหลืองท้ายแต่ละรอบ) มีไว้สำหรับเปลี่ยนหากไม่รับเมนูในรายการ — สลับได้ในรอบเดียวกัน แจ้งแอดมินตอนสั่ง</div>
+
   <div class="rounds3">
 
     <div class="rcol">
-      <div class="rh"><div class="n">รอบ 1</div><div class="d">พฤ 6 ส.ค. · กิน 7–9</div><span class="b">9 กล่อง</span></div>
+      <div class="rh"><div class="n">รอบ 1</div><div class="d">พฤ 6 ส.ค.<br>กิน 7–9 ส.ค.</div><span class="b">9 กล่อง</span></div>
       <div class="rb">
-        <div class="rm"><div class="t">🐔 อกไก่ Piri Piri</div><div class="i">อกไก่ · มันฝรั่งอบ · ผักย่าง</div></div>
-        <div class="rm"><div class="t">🐷 หมูบุลโกกิ</div><div class="i">สันในหมู · ข้าว กข43 · ผักเกาหลี</div></div>
-        <div class="rm"><div class="t">🦐 กาลิคบัตเตอร์กุ้ง</div><div class="i">กุ้ง · ควินัว · หน่อไม้ฝรั่ง</div></div>
-        <div class="rm"><div class="t">🍣 แซลมอนอบเลมอนดิล</div><div class="i">แซลมอน · มันฝรั่ง · ถั่วแขก</div></div>
-        <div class="rm"><div class="t">🐠 กระพงนึ่งมะนาว</div><div class="i">กระพง · ข้าว กข43 · ยำมะนาว</div></div>
+        <div class="rm"><div class="t">🐔 อกไก่ Piri Piri</div><div class="i">อกไก่ · มันฝรั่ง</div></div>
+        <div class="rm"><div class="t">🐔 อกไก่ย่างตะไคร้</div><div class="i">อกไก่ · ข้าว · น้ำพริกย่าง</div></div>
+        <div class="rm"><div class="t">🐔 อกไก่บอล ซอสมะเขือเทศ</div><div class="i">อกไก่บอล · เพนเน่</div></div>
+        <div class="rm"><div class="t">🐄 บิบิมบับ</div><div class="i">เนื้อวัว · ข้าว · ไข่</div></div>
+        <div class="rm"><div class="t">🐷 หมูบุลโกกิ</div><div class="i">สันในหมู · ข้าว</div></div>
+        <div class="rm"><div class="t">🦐 กาลิคบัตเตอร์กุ้ง</div><div class="i">กุ้ง · ควินัว</div></div>
+        <div class="rm"><div class="t">🦐 กุ้งอบวุ้นเส้น</div><div class="i">กุ้ง · วุ้นเส้น</div></div>
+        <div class="rm"><div class="t">🍣 แซลมอนอบเลมอนดิล</div><div class="i">แซลมอน · มันฝรั่ง</div></div>
+        <div class="rm"><div class="t">🐠 กระพงนึ่งมะนาว</div><div class="i">กระพง · ข้าว</div></div>
+        <div class="rsub">
+          <div class="lb">🔁 สำรองรอบ 1 *</div>
+          <div class="rm"><div class="t">🐔 อกไก่ Honey Mustard</div><div class="i">อกไก่ · มันฝรั่ง</div></div>
+          <div class="rm"><div class="t">🐷 หมูย่างน้ำผึ้งกระเทียม</div><div class="i">สันในหมู · ข้าว</div></div>
+        </div>
       </div>
     </div>
 
     <div class="rcol">
-      <div class="rh"><div class="n">รอบ 2</div><div class="d">อา 9 ส.ค. · กิน 10–11</div><span class="b">6 กล่อง</span></div>
+      <div class="rh"><div class="n">รอบ 2</div><div class="d">อา 9 ส.ค.<br>กิน 10–11 ส.ค.</div><span class="b">6 กล่อง</span></div>
       <div class="rb">
-        <div class="rm"><div class="t">🐔 อกไก่ย่างตะไคร้</div><div class="i">อกไก่ · ข้าว กข43 · น้ำพริกย่าง</div></div>
-        <div class="rm"><div class="t">🐄 บิบิมบับ</div><div class="i">เนื้อวัว · ข้าว กข43 · ผัก + ไข่</div></div>
-        <div class="rm"><div class="t">🦐 กุ้งอบวุ้นเส้น</div><div class="i">กุ้ง · วุ้นเส้น · เห็ด/ต้นหอม</div></div>
-        <div class="rm"><div class="t">🍣 แซลมอนซอสมิโสะ</div><div class="i">แซลมอน · ข้าว กข43 · หน่อไม้ฝรั่ง</div></div>
+        <div class="rm"><div class="t">🐔 อกไก่เทริยากิ</div><div class="i">อกไก่ · ข้าว</div></div>
+        <div class="rm"><div class="t">🐄 กะเพราเนื้อไข่ดาว</div><div class="i">เนื้อวัว · ไข่ดาว · ข้าว</div></div>
+        <div class="rm"><div class="t">🐷 หมูย่างเกลือ</div><div class="i">สันในหมู · มันหวาน</div></div>
+        <div class="rm"><div class="t">🐟 ทูน่าสเต๊กซีร์</div><div class="i">ทูน่า · มันฝรั่ง</div></div>
+        <div class="rm"><div class="t">🍣 แซลมอนซอสมิโสะ</div><div class="i">แซลมอน · ข้าว</div></div>
+        <div class="rm"><div class="t">🐠 กระพงย่างเขียวหวาน</div><div class="i">กระพง · ข้าว</div></div>
+        <div class="rsub">
+          <div class="lb">🔁 สำรองรอบ 2 *</div>
+          <div class="rm"><div class="t">🦐 กุ้งผัดพริกขี้หนู</div><div class="i">กุ้ง · ข้าว</div></div>
+          <div class="rm"><div class="t">🐠 กระพง Herb Butter</div><div class="i">กระพง · มันบด</div></div>
+        </div>
       </div>
     </div>
 
     <div class="rcol rload">
-      <div class="rh"><div class="n">รอบ 3</div><div class="d">พ 12 ส.ค. · กิน 12–13</div><span class="b">6 กล่อง</span><div class="load">ช่วง carb-load ก่อนแข่ง</div></div>
+      <div class="rh"><div class="n">รอบ 3</div><div class="d">พ 12 ส.ค.<br>กิน 12–13 ส.ค.</div><span class="b">6 กล่อง</span><div class="load">carb-load ก่อนแข่ง</div></div>
       <div class="rb">
-        <div class="rm"><div class="t">🐔 อกไก่เทริยากิ</div><div class="i">อกไก่ · ข้าว กข43 · บรอกโคลี</div></div>
-        <div class="rm"><div class="t">🐷 หมูย่างเกลือ</div><div class="i">สันในหมู · มันหวานอบ · สลัด</div></div>
-        <div class="rm"><div class="t">🐟 ทูน่าสเต๊กซีร์</div><div class="i">ทูน่า · มันฝรั่งอบ · สลัด</div></div>
-        <div class="rm"><div class="t">🐠 กระพงย่างเขียวหวาน</div><div class="i">กระพง · ข้าว กข43 · มะเขือ</div></div>
+        <div class="rm"><div class="t">🐔 ไก่โรสต์มะนาวโรสแมรี</div><div class="i">อกไก่ · มันฝรั่ง</div></div>
+        <div class="rm"><div class="t">🐔 สเต๊กไก่พริกไทยดำ</div><div class="i">อกไก่ · ข้าว</div></div>
+        <div class="rm"><div class="t">🐄 เนื้อ Herb-Roasted</div><div class="i">เนื้อวัว · มันบด</div></div>
+        <div class="rm"><div class="t">🐷 หมูผัดกิมจิ</div><div class="i">สันในหมู · ข้าว</div></div>
+        <div class="rm"><div class="t">🍣 แซลมอนเพสโต้</div><div class="i">แซลมอน · ควินัว</div></div>
+        <div class="rm"><div class="t">🐠 กระพงย่าง ซอสสามรส</div><div class="i">กระพง · ข้าว</div></div>
+        <div class="rsub">
+          <div class="lb">🔁 สำรองรอบ 3 *</div>
+          <div class="rm"><div class="t">🐄 เนื้อบูลโกกิ</div><div class="i">เนื้อวัว · ข้าว</div></div>
+          <div class="rm"><div class="t">🐔 ไก่ผัดกระเทียมพริกไทย</div><div class="i">อกไก่ · ข้าว</div></div>
+        </div>
       </div>
     </div>
 
   </div>
-  <div style="font-size:11.5px;color:var(--soft);margin-top:8px">เมนูหมุนเวียนตามวัตถุดิบสดในแต่ละรอบ</div>
-
-  <div class="sec">เมนูสำรอง <span style="color:var(--gold)">*</span></div>
-  <div class="backup">
-    <div class="note">* เมนูสำรอง มีไว้สำหรับเปลี่ยนหากไม่รับเมนูในรายการ — แจ้งแอดมินตอนสั่งได้เลย</div>
-    <div class="bgrid">
-      <div class="bm"><div class="t">🐔 อกไก่บอล ซอสมะเขือเทศ</div><div class="i">อกไก่บอล · เพนเน่/ข้าว · ซอสมะเขือเทศ</div></div>
-      <div class="bm"><div class="t">🐔 สเต๊กไก่พริกไทยดำ</div><div class="i">อกไก่ · ข้าว กข43 · ซอสพริกไทยดำ</div></div>
-      <div class="bm"><div class="t">🐄 กะเพราเนื้อไข่ดาว</div><div class="i">เนื้อวัว · ไข่ดาว · ข้าว กข43</div></div>
-      <div class="bm"><div class="t">🐷 หมูผัดกิมจิ</div><div class="i">สันในหมู · ข้าว กข43 · กิมจิ</div></div>
-      <div class="bm"><div class="t">🦐 กุ้งผัดพริกขี้หนู</div><div class="i">กุ้ง · ข้าว กข43 · ถั่วฝักยาว/กะเพรา</div></div>
-      <div class="bm"><div class="t">🐠 กระพงย่าง ซอสสามรส</div><div class="i">กระพง · ข้าว กข43 · ยำผักสด</div></div>
-    </div>
-  </div>
+  <div style="font-size:11.5px;color:var(--soft);margin-top:8px">ทุกกล่องมีข้าว กข43 + ผักเคียง · เมนูหมุนเวียนตามวัตถุดิบสดในแต่ละรอบ</div>
 
   <div class="order">
     <div class="head">🏋️ รายละเอียดเซ็ต</div>
