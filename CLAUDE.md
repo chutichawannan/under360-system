@@ -92,7 +92,7 @@ GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
 | `api/notify-mp-requests.js` | Cron แจ้งเตือน Meal Plan (เปิด request window / auto no-change / เตือนก่อนส่ง 1 วัน) | ✅ live — รอตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ถึงจะส่ง LINE จริง |
 | `PRD.md` | **สเปคงานที่กำลังทำอยู่ตอนนี้เท่านั้น** (1 งาน 1 แผ่น) — เขียนทับทุกครั้งที่เปลี่ยนงาน · Claude อ่านก่อนลงมือ | ✅ ใช้แล้ว (u0.4.37) |
 | `pwa/orders_upcoming.html` | **PWA ดูออเดอร์ล่วงหน้า 7 วันจากมือถือ** (อ่านอย่างเดียว · แยก MP ทำสด vs สต็อค/เซ็ต · default=พรุ่งนี้ · เวลาไทยเสมอ) + `manifest.webmanifest`/`sw.js`/ไอคอน | ✅ u0.4.37 — เทส desktop ผ่าน · รอเทส iOS/Android หน้าโฮม |
-| `api/notify-daily-orders.js` | Cron 21:00 น. เวลาไทย — สรุปออเดอร์พรุ่งนี้เข้า LINE (Messaging API) · `?dry=1` = พรีวิวไม่ส่งจริง | ✅ u0.4.37 — รอ `LINE_CHANNEL_ACCESS_TOKEN` + `ORDERS_NOTIFY_TO` |
+| `api/notify-daily-orders.js` | สรุปออเดอร์พรุ่งนี้เข้า LINE · `?dry=1` = พรีวิวไม่ส่งจริง | ⏸️ **ปิด cron แล้ว (นัทสั่ง 28 ก.ค.: "ไม่ต้องการให้เด้ง — ต้องการเข้าถึงข้อมูลสะดวก")** · โค้ดยังอยู่ เปิดคืนได้ด้วยการเติม 1 บรรทัดใน `vercel.json` |
 | `web/*.html` | เว็บสาธารณะใหม่แทน Wix: `index`/`mealplan`/`blog`/`blog_admin`/`import_blog`/`web_dashboard` + `posts/` | ✅ **live** ที่ `under360-system.vercel.app/web/` (12 ก.ค. — ยังไม่ชี้โดเมน, Wix ยังอยู่) · track() ยิง web_events แล้ว · ดู "🌐 เว็บใหม่" + `WEB_LAUNCH_TODO.md` |
 | `docs/WEB_LAUNCH_TODO.md` | Checklist งานที่นัทต้องกดเอง (SQL/Google Ads/Vercel token/iOS/IG/ชีท HP-LC) | ✅ พร้อมทำตาม |
 
@@ -369,7 +369,8 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ## 🚀 Current Version: **u0.4.40 · a0.6 · f0.1 · doc v6.10** — ✅ **merge เข้า main แล้ว (28 ก.ค.)**
 
-> **u0.4.40 = PWA ออเดอร์ล่วงหน้า live บน main** — งาน u0.4.37 (`pwa/orders_upcoming.html` + cron LINE 21:00) merge เข้า main เรียบร้อย + เพิ่มตามผลเทสมือถือของนัท: การ์ดพับเหลือ **ชื่อ/กล่อง/เบอร์** แตะกางดูเมนูทีละบรรทัด · default = **วันแรกที่มีออเดอร์** (ไม่ใช่ "พรุ่งนี้" ตรงๆ เพราะวันไทยเร็วกว่านัท 1 วัน เลยเคยเปิดมาเจอวันว่าง) · **ปุ่มกรอง ทั้งหมด/360/Hato** (ช่วง beta คีย์คู่ขนานจะเห็นซ้ำ) · **PIN 4 ตัว `0360`** (localStorage · กันคนหลงเข้า ไม่ใช่ security จริง — โค้ดฝั่ง browser เปิดดูได้ · ถ้าต้องคุมจริงค่อยเปลี่ยนเป็น Google login + ตารางอีเมลที่อนุญาต) · **เมนู "ออเดอร์ล่วงหน้า" ใน OH** (`app-frame` iframe) · URL จริง: `under360-system.vercel.app/pwa/orders_upcoming.html`
+> **u0.4.40 = PWA ออเดอร์ล่วงหน้า live บน main** — งาน u0.4.37 (`pwa/orders_upcoming.html` + cron LINE 21:00) merge เข้า main เรียบร้อย + เพิ่มตามผลเทสมือถือของนัท: การ์ดพับเหลือ **ชื่อ/กล่อง/เบอร์** แตะกางดูเมนูทีละบรรทัด · default = **วันแรกที่มีออเดอร์** (ไม่ใช่ "พรุ่งนี้" ตรงๆ เพราะวันไทยเร็วกว่านัท 1 วัน เลยเคยเปิดมาเจอวันว่าง) · **ปุ่มกรอง ทั้งหมด/360/Hato** (ช่วง beta คีย์คู่ขนานจะเห็นซ้ำ) · **PIN 4 ตัว `0360`** (localStorage · กันคนหลงเข้า ไม่ใช่ security จริง — โค้ดฝั่ง browser เปิดดูได้ · ถ้าต้องคุมจริงค่อยเปลี่ยนเป็น Google login + ตารางอีเมลที่อนุญาต) · **เมนู "ออเดอร์ล่วงหน้า" ใน OH** (`app-frame` iframe) · **ดูย้อนหลังได้** (ปุ่มขยายช่วงทีละ 7 วัน · วันที่ผ่านมาแล้วขึ้นป้ายกำกับ ไม่ดีดหน้ากลับตอนกด) · URL จริง: `under360-system.vercel.app/pwa/orders_upcoming.html`
+> ⏸️ **LINE เด้งสรุปออเดอร์ 3 ทุ่ม = ปิดตามที่นัทสั่ง (28 ก.ค.)** — *"ไม่ต้องการให้เด้ง ที่ต้องการคือความสะดวกในการเข้าถึงข้อมูล"* → ถอด cron ออกจาก `vercel.json` แล้ว โค้ดยังอยู่ · **ทิศทาง: ทำ "ที่ให้เปิดดูง่าย" ไม่ใช่ "ระบบยิงแจ้งเตือนใส่นัท"**
 
 > 🧭 **ทิศทางระยะยาว — นัทเคาะเอง 28 ก.ค. 2026: "PWA = widget ของนัท"**
 > เลิกไล่ทำ native widget (KWGT+Tasker / APK / Play Store) — **เครื่องมือมือถือทุกตัวต่อจากนี้ = PWA หน้าเดียวใน `pwa/`** ใช้ `pwa/orders_upcoming.html` เป็นแม่แบบ
@@ -458,7 +459,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | 2 | `report.html` ยัง mock data ทั้งหมด | 🟡 นัทอยากได้เร็วขึ้น — ใช้วัด HP vs LC (เสา 3) |
 | 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว เหลือ mock แค่ fallback ตอน query พัง | 🟢 ใกล้เสร็จ |
 | 4 | `liff_register.html` ต่อ Supabase จริงแล้ว — ไม่ใช่ mock แล้ว | ✅ ไม่ใช่ปัญหาแล้ว |
-| 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — **บล็อก cron 2 ตัว**: แจ้งเตือน Meal Plan + สรุปออเดอร์พรุ่งนี้ 21:00 น. (u0.4.37) · ตัวหลังต้องมี `ORDERS_NOTIFY_TO` (LINE userId นัท / groupId ทีม) ด้วย | 🔴 ก่อน launch |
+| 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — **บล็อก cron แจ้งเตือน Meal Plan ที่ส่งหาลูกค้า** (เปิด request window / เตือนก่อนส่ง 1 วัน) · *(สรุปออเดอร์เข้าไลน์นัท = ปิดแล้ว ไม่นับเป็นบล็อกเกอร์)* | 🔴 ก่อน launch |
 | 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
 | 7 | ✅ แก้แล้ว — สต็อกหลักที่การ์ดเมนูไม่เคย sync ขึ้น `menu_items.stock_total` จริง (ผูกกับ dead code) | ✅ Done |
 | 8 | `mpIsoDate()` ในแท็บ "แผนผลิต" ใช้ `.toISOString().split('T')[0]` — pattern เดียวกับบั๊ก timezone UTC+7 ที่เคยแก้ไปแล้วในไฟล์อื่น แต่ยังไม่มีรายงานปัญหาจริง | 🟡 ระวังไว้ |
