@@ -671,6 +671,16 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
               <option value="Wellness Warriors">Wellness Warriors</option>
               <option value="Fit&amp;Fabulous">Fit&Fabulous</option>
             </select>
+            <select id="custTypeSel" onchange="filterCustomers()"
+              style="flex:1;padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:12px;background:#fff;cursor:pointer">
+              <option value="">ทุกประเภท</option>
+              <option value="new">🟢 ใหม่/LINE</option>
+              <option value="hato">🔵 Hato</option>
+              <option value="old">🟡 ก่อน Hato</option>
+              <option value="b2b">🟣 ร้านค้า B2B</option>
+              <option value="vip">⭐ VIP</option>
+              <option value="admin">⚫ แอดมินสร้าง</option>
+            </select>
           </div>
           <div id="custList"><div style="padding:20px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div></div>
         </div>
@@ -1936,6 +1946,32 @@ function srcLabel(c){
   return base;
 }
 function crmRow(label,val){ return "<div class='crm-row'><span class='crm-k'>"+esc2(label)+"</span><span class='crm-v'>"+esc2(val)+"</span></div>"; }
+// ── ประเภทลูกค้า (สี) — override ด้วย customer_type ถ้ามี ไม่งั้นอนุมานจาก source_first ──
+function custCategory(c){
+  var t=c.customer_type||"";
+  if(t==="b2b") return {key:"b2b", label:"ร้านค้า B2B", bg:"#EDE9FE", fg:"#6D28D9"};
+  if(t==="vip") return {key:"vip", label:"VIP",         bg:"#FEF3C7", fg:"#B45309"};
+  var s=c.source_first||"";
+  if(s==="hato")         return {key:"hato",  label:"Hato",        bg:"#DBEAFE", fg:"#1E40AF"};
+  if(s==="pre_hato"||s==="legacy") return {key:"old", label:"ก่อน Hato", bg:"#FEF3C7", fg:"#92400E"};
+  if(s==="admin_manual") return {key:"admin", label:"แอดมินสร้าง", bg:"#F3F4F6", fg:"#6B7280"};
+  return {key:"new", label:"ใหม่/LINE", bg:"#D1FAE5", fg:"#065F46"};
+}
+function catBadge(c){ var g=custCategory(c); return "<span class='tag' style='background:"+g.bg+";color:"+g.fg+"' title='ประเภท: "+g.label+"'>"+esc2(g.label)+"</span>"; }
+// ลูกค้าเก่ากลับมา active = ก่อน Hato + (มี line_uid / เคยสั่ง / โน้ต "กลับมาสั่ง")
+function isReactivated(c){ return (c.source_first==="pre_hato"||c.source_first==="legacy") && (!!c.line_uid || (c._oc||0)>0 || (c.admin_notes||"").indexOf("กลับมาสั่ง")>=0); }
+function custTypeBtn(id,c,type,label){
+  var active=(c.customer_type||"")===type;
+  return "<button onclick=\"setCustomerType('"+id+"','"+type+"')\" style='border:1.5px solid "+(active?"#1F4D3A":"var(--ink-xsoft)")+";background:"+(active?"#1F4D3A":"#fff")+";color:"+(active?"#fff":"var(--ink)")+";border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer'>"+esc2(label)+"</button>";
+}
+async function setCustomerType(id,type){
+  var c=allCustomers.find(function(x){return x.id===id;}); if(!c) return;
+  var sb_=getSB();
+  if(sb_){ try{ await sb_.from("customers").update({customer_type:type||null,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }
+  c.customer_type=type||null;
+  showToastOH(type?("ตั้งเป็น "+custCategory(c).label+" ✓"):"ล้างประเภท (อนุมานเอง) ✓");
+  selectCustomer(id); renderCustList();  // re-render detail + badge ในลิสต์
+}
 
 // ดึงข้อมูลครบทุกหน้า — Supabase คืนสูงสุด 1000 แถว/ครั้ง → วน .range จนหมด (sequential ตาม convention)
 async function fetchAllRows(sb_, table, select, mod){
@@ -2004,14 +2040,16 @@ function filterCustomers(){
   var q=(document.getElementById("custSearch")||{}).value;
   q=(q||"").trim().toLowerCase();
   var tierSel=(document.getElementById("custTierSel")||{}).value||"";
+  var typeSel=(document.getElementById("custTypeSel")||{}).value||"";
   var sortSel=(document.getElementById("custSortSel")||{}).value||"name";
 
   filteredCustomers=allCustomers.filter(function(c){
     if(q){
-      var n=(c.name||c.display_name||c.line_display_name||"").toLowerCase();
+      var n=(c.display_name||c._oname||c.line_display_name||"").toLowerCase();
       if(!n.includes(q)&&!(c.phone||"").includes(q)&&!(c.member_id||"").toLowerCase().includes(q)) return false;
     }
     if(tierSel && (c.tier||"")!==tierSel) return false;
+    if(typeSel && custCategory(c).key!==typeSel) return false;
     return true;
   });
 
@@ -2068,8 +2106,9 @@ function renderCustList(){
       +"<div class='cust-info'>"
       +"<div class='cust-name'>"+esc2(name)+(loyal?" ⭐":"")+"</div>"
       +"<div class='cust-mid'>"+esc2(c.member_id||"")+"</div>"
-      +"<div class='cust-meta'>"+planTagOH(c.plan_type||c.type||"")+tierBadge(c.tier||"")
-      +(c._oc<=2?"<span class='tag tag-new'>ใหม่</span>":"")
+      +"<div class='cust-meta'>"+catBadge(c)
+      +(isReactivated(c)?"<span class='tag' style='background:#FEE2E2;color:#B91C1C' title='ลูกค้าเก่ากลับมาสั่ง'>🔄 กลับมา</span>":"")
+      +tierBadge(c.tier||"")
       +(c.phone?"<span>📞 "+fmtPhone(c.phone)+"</span>":"")
       +"<span>"+c._oc+" ออเดอร์</span></div></div>"
       +"<div class='cust-total-col'><div class='cust-total-num'>"+(c._ot>0?fmtB2(Math.round(c._ot)):"—")+"</div>"
@@ -2132,7 +2171,8 @@ async function selectCustomer(id){
     +(c.line_picture_url?"<div class='p-avatar'><img src='"+esc2(c.line_picture_url)+"' onerror=\"this.parentNode.innerHTML='👤'\"></div>":"<div class='p-avatar'>👤</div>")
     +"<div style='flex:1;min-width:0'>"
     +"<div class='p-name'>"+esc2(name)+"</div>"
-    +"<div class='p-meta-line'>"+(c.phone?fmtPhone(c.phone):"")+(c.plan_type?" · "+c.plan_type.toUpperCase():"")+"</div>"
+    +"<div style='display:flex;gap:4px;flex-wrap:wrap;margin:3px 0'>"+catBadge(c)+(isReactivated(c)?"<span class='tag' style='background:#FEE2E2;color:#B91C1C'>🔄 กลับมา</span>":"")+"</div>"
+    +((c.line_display_name && c.line_display_name!==name)?"<div style='font-size:11px;color:rgba(255,255,255,.6)'>LINE: "+esc2(c.line_display_name)+"</div>":"")
     +"<div class='member-badge-ph'>🆔 "+(c.member_id||"—")+"</div>"
     +(c.line_uid?"<div class='uid-chip'>"+esc2(c.line_uid)+"</div>":"")
     +"</div>"
@@ -2148,14 +2188,23 @@ async function selectCustomer(id){
     // ── ข้อมูลสมาชิก / CRM (สำหรับทำการตลาด/CRM ในอนาคต) ──
     +"<div class='p-section'><div class='p-sec-title'>👤 ข้อมูลสมาชิก / CRM</div>"
     +crmRow("รหัสสมาชิก", c.member_id||"—")
+    +crmRow("ประเภท", custCategory(c).label + (isReactivated(c)?" · 🔄 กลับมา":""))
     +crmRow("สมัครเมื่อ", fmtDateTh(c.created_at))
     +crmRow("ระดับ (Tier)", (c.tier&&c.tier!=='bronze')?c.tier:"—")
     +crmRow("มาจาก (ที่มา)", srcLabel(c))
     +crmRow("LINE UID", c.line_uid||"—")
+    +(c.line_display_name?crmRow("ชื่อไลน์", c.line_display_name):"")
     +(c.hato_id?crmRow("Hato ID", c.hato_id):"")
     +(c.phone?crmRow("เบอร์โทร", fmtPhone(c.phone)):"")
     +(c.date_of_birth?crmRow("วันเกิด", fmtDateTh(c.date_of_birth)):"")
     +(c.gender?crmRow("เพศ", c.gender):"")
+    +"</div>"
+    // ── ตั้งประเภทลูกค้า (แอดมิน override — เช่น ร้านค้า B2B) ──
+    +"<div class='p-section'><div class='p-sec-title'>🏷️ ตั้งประเภท (override)</div>"
+    +"<div style='display:flex;gap:6px;flex-wrap:wrap'>"
+    +custTypeBtn(id,c,'b2b','🏪 ร้านค้า B2B')+custTypeBtn(id,c,'vip','⭐ VIP')+custTypeBtn(id,c,'','↺ อนุมานเอง')
+    +"</div>"
+    +"<div style='font-size:11px;color:var(--ink-soft);margin-top:6px'>ตั้งเอง = override การอนุมานจากที่มา (เช่น ร้านค้าที่ลูกเลือกเป็นลูกค้า → กรองออกจากสถิติผู้บริโภคได้)</div>"
     +"</div>"
     // Points
     +"<div class='p-section'><div class='p-sec-title'>🌟 แต้มสะสม <button class='p-sec-btn' onclick=\"document.getElementById('oh-pts-"+id+"').style.display=document.getElementById('oh-pts-"+id+"').style.display==='none'?'block':'none'\">± ปรับแต้ม</button></div>"
