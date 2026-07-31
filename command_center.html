@@ -8,113 +8,173 @@
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   :root{
-    --ink:#1A1A1A; --soft:#6B7280; --faint:#9CA3AF; --line:#E5E7EB;
-    --bg:#F7F7F5; --card:#FFFFFF; --nut:#1F4D3A; --nutl:#E8F0EC;
-    --idle:#9CA3AF; --work:#16A34A; --block:#DC2626;
+    --ink:#14201B; --soft:#5F6B64; --faint:#9AA5A0; --line:#E7EAE7;
+    --bg:#F4F6F3; --card:#FFFFFF; --nut:#1F4D3A; --nut2:#2E6B50; --nutl:#E8F0EC;
+    --gold:#C69A3A; --idle:#9CA3AF; --work:#16A34A; --block:#DC2626; --warn:#D97706;
+    --radius:16px;
   }
   html,body{height:100%}
   body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",Roboto,sans-serif;background:var(--bg);color:var(--ink);font-size:15px;line-height:1.5}
-  #app{display:flex;height:100dvh;overflow:hidden}
+  #app{min-height:100dvh}
+  .page{display:none;min-height:100dvh}
+  .page.on{display:block}
+  .wrap{max-width:680px;margin:0 auto}
 
-  /* ── Sidebar (rooms) ── */
-  #side{width:320px;flex-shrink:0;background:var(--card);border-right:1px solid var(--line);display:flex;flex-direction:column;overflow:hidden}
-  .side-h{padding:16px 18px 12px;border-bottom:1px solid var(--line)}
-  .side-h b{font-size:17px;font-weight:800;letter-spacing:.2px}
-  .side-h .sub{font-size:11px;color:var(--faint);margin-top:2px}
-  .rooms{flex:1;overflow-y:auto;padding:8px}
-  .grp{font-size:10px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:12px 10px 6px}
-  .room{display:flex;align-items:flex-start;gap:10px;padding:10px 10px;border-radius:12px;cursor:pointer;transition:background .12s}
-  .room:hover{background:#F3F4F6}
-  .room.active{background:var(--nutl)}
-  .room.dash{background:var(--nut);margin:4px 4px 8px}
-  .room.dash .room-n,.room.dash .room-d{color:#fff!important}
-  .room.dash .room-d{opacity:.8}
-  .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px}
+  /* top bar */
+  .top{position:sticky;top:0;z-index:20;background:var(--nut);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:center;gap:12px}
+  .top .bk{background:rgba(255,255,255,.16);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:19px;cursor:pointer;flex-shrink:0}
+  .top .tt{flex:1;min-width:0}
+  .top .tt b{font-size:17px;font-weight:800;display:block;letter-spacing:.2px}
+  .top .tt .s{font-size:11.5px;opacity:.8}
+  .top .rf{background:rgba(255,255,255,.16);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0}
+
+  .body{padding:14px 14px calc(28px + env(safe-area-inset-bottom))}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:13px;box-shadow:0 1px 2px rgba(20,32,27,.03)}
+  .card>h3{font-size:12px;font-weight:800;color:var(--nut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:12px;display:flex;align-items:center;gap:7px}
+  .card>h3 .r{margin-left:auto;font-size:11px;font-weight:600;color:var(--faint);text-transform:none;letter-spacing:0}
+
+  /* business hero */
+  .biz-top{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap}
+  .biz-main{flex:1;min-width:150px}
+  .biz-lbl{font-size:12px;color:var(--soft)}
+  .biz-num{font-size:34px;font-weight:800;color:var(--nut);line-height:1.05;letter-spacing:-.5px}
+  .biz-cmp{font-size:12.5px;margin-top:3px}
+  .up{color:var(--work)} .down{color:var(--block)}
+  .biz-side{display:flex;gap:18px}
+  .stat .v{font-size:22px;font-weight:800;color:var(--ink)}
+  .stat .k{font-size:11px;color:var(--faint)}
+  .spark{margin-top:14px}
+  .fresh{margin-top:12px;font-size:12px;padding:8px 11px;border-radius:10px;display:flex;align-items:center;gap:7px}
+  .fresh.ok{background:#EAF6EF;color:#166534} .fresh.bad{background:#FEF2F2;color:#991B1B}
+
+  /* action list */
+  .act{display:flex;gap:10px;padding:11px 0;border-top:1px solid var(--line)}
+  .act:first-of-type{border-top:none;padding-top:2px}
+  .act .n{width:22px;height:22px;border-radius:50%;background:var(--nutl);color:var(--nut);font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .act .x{flex:1;font-size:14px}
+  .act .x .sub{font-size:12px;color:var(--faint);margin-top:1px}
+
+  /* routine */
+  .rj{display:flex;align-items:flex-start;gap:11px;padding:11px 0;border-top:1px solid var(--line);cursor:pointer}
+  .rj:first-of-type{border-top:none;padding-top:2px}
+  .rj .ck{width:24px;height:24px;border-radius:50%;border:2px solid var(--line);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;font-size:14px;color:#fff;transition:.12s}
+  .rj.done .ck{background:var(--work);border-color:var(--work)}
+  .rj.due .ck{border-color:var(--block)}
+  .rj .rx{flex:1;min-width:0}
+  .rj .rt{font-size:14.5px;font-weight:600}
+  .rj.done .rt{color:var(--faint);text-decoration:line-through;font-weight:500}
+  .rj .rs{font-size:12px;margin-top:1px}
+  .rj .rs.due{color:var(--block);font-weight:600} .rj .rs.okc{color:var(--work)}
+  .badge-auto{font-size:10px;font-weight:700;background:#EEF2FF;color:#4F46E5;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:1px}
+  .badge-wk{font-size:10px;font-weight:700;background:#FEF3C7;color:#92400E;padding:1px 6px;border-radius:6px;margin-left:6px;vertical-align:1px}
+  .complink{margin:6px 0 2px;display:flex;gap:7px}
+  .complink input{flex:1;border:1px solid var(--line);border-radius:9px;padding:8px 11px;font-family:inherit;font-size:13px;outline:none}
+  .complink input:focus{border-color:var(--nut)}
+  .complink button{background:var(--nut);color:#fff;border:none;border-radius:9px;padding:0 13px;font-weight:700;font-size:13px;cursor:pointer}
+
+  /* progress */
+  .ring-row{display:flex;align-items:center;gap:16px;margin-bottom:6px}
+  .ring{flex-shrink:0}
+  .prow{margin-bottom:9px}
+  .prow:last-child{margin-bottom:0}
+  .prow .pl{display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:4px}
+  .prow .pl b{font-weight:700}
+  .bar{height:7px;background:#EEF1EE;border-radius:5px;overflow:hidden}
+  .bar>i{display:block;height:100%;background:var(--nut);border-radius:5px}
+
+  /* team grid */
+  .team{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .tc{border:1px solid var(--line);border-radius:12px;padding:10px 11px;cursor:pointer;transition:background .12s}
+  .tc:active{background:#F3F4F6}
+  .tc .th{display:flex;align-items:center;gap:7px}
+  .tc .dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .tc .tn{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tc .ts{font-size:11px;color:var(--faint);margin-top:4px;line-height:1.35;height:29px;overflow:hidden}
+
+  /* links */
+  .lnk{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:8px;text-decoration:none;color:var(--ink);font-size:14.5px;font-weight:600}
+  .lnk:active{background:#F3F4F6}
+  .lnk .ic{font-size:19px;width:24px;text-align:center;flex-shrink:0}
+  .lnk .ld{font-size:11px;color:var(--faint);font-weight:400;margin-top:1px}
+  .lnk .arw{margin-left:auto;color:var(--faint)}
+  .dgrp{font-size:11px;font-weight:700;color:var(--faint);margin:10px 2px 6px}
+  .cctxt{font-size:13.5px;white-space:pre-wrap;line-height:1.6;color:var(--ink)}
+  .cct{font-size:11px;color:var(--faint);margin-top:8px}
+
+  /* big chat button */
+  .chatbtn{width:100%;background:var(--nut);color:#fff;border:none;border-radius:var(--radius);padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:13px}
+  .chatbtn .cb-badge{background:#fff;color:var(--nut);border-radius:10px;font-size:12px;padding:1px 8px}
+
+  /* chat list */
+  .room{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--card)}
+  .room:active{background:#F3F4F6}
+  .room .dot{width:9px;height:9px;border-radius:50%;flex-shrink:0;margin-top:6px}
   .room-b{flex:1;min-width:0}
-  .room-t{display:flex;align-items:center;justify-content:space-between;gap:6px}
-  .room-n{font-weight:700;font-size:14.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .badge{background:var(--nut);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;flex-shrink:0}
-  .room.dash .badge{background:#fff;color:var(--nut)}
-  .room-d{font-size:12px;color:var(--soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .room-s{font-size:11.5px;color:var(--faint);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
+  .room-t{display:flex;align-items:center;gap:6px}
+  .room-n{font-weight:700;font-size:15px}
+  .badge{background:var(--nut);color:#fff;font-size:11px;font-weight:700;min-width:19px;height:19px;border-radius:10px;display:flex;align-items:center;justify-content:center;padding:0 5px;margin-left:auto}
+  .room-d{font-size:12.5px;color:var(--soft)}
+  .room-s{font-size:12px;color:var(--faint);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .grp{font-size:10px;font-weight:800;letter-spacing:.1em;text-transform:uppercase;color:var(--faint);padding:14px 15px 6px}
 
-  /* ── Main pane ── */
-  #chat{flex:1;display:flex;flex-direction:column;min-width:0;background:var(--bg)}
-  .chat-h{display:flex;align-items:center;gap:10px;padding:14px 18px;background:var(--card);border-bottom:1px solid var(--line);flex-shrink:0}
-  .back{display:none;background:none;border:none;font-size:22px;color:var(--nut);cursor:pointer;padding:0 4px 0 0;line-height:1}
-  .chat-h .ch-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
-  .chat-h b{font-size:16px;font-weight:800}
-  .chat-h .ch-cur{font-size:12px;color:var(--soft);margin-top:1px}
-  .chat-h .ch-info{flex:1;min-width:0}
-  .msgs{flex:1;overflow-y:auto;padding:18px;display:flex;flex-direction:column;gap:10px}
-  .empty{margin:auto;text-align:center;color:var(--faint);font-size:14px;max-width:280px}
-  .m{max-width:78%;padding:9px 13px;border-radius:15px;font-size:14.5px;word-wrap:break-word;white-space:pre-wrap}
+  /* chat */
+  #chatMsgs{padding:16px;display:flex;flex-direction:column;gap:10px;min-height:calc(100dvh - 190px)}
+  .m{max-width:82%;padding:9px 13px;border-radius:15px;font-size:14.5px;word-wrap:break-word;white-space:pre-wrap}
   .m .who{font-size:11px;font-weight:700;opacity:.7;margin-bottom:2px}
   .m .t{font-size:10px;opacity:.5;margin-top:3px;text-align:right}
   .m.nut{align-self:flex-end;background:var(--nut);color:#fff;border-bottom-right-radius:5px}
   .m.claude{align-self:flex-start;background:var(--card);border:1px solid var(--line);border-bottom-left-radius:5px}
-  .m.system{align-self:center;background:#FEF3C7;color:#92400E;font-size:12.5px;max-width:90%;text-align:center;border-radius:10px}
-  .compose{display:flex;gap:8px;padding:12px 14px;background:var(--card);border-top:1px solid var(--line);flex-shrink:0;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+  .m.system{align-self:center;background:#FEF3C7;color:#92400E;font-size:12.5px;max-width:92%;text-align:center;border-radius:10px}
+  .compose{position:sticky;bottom:0;display:flex;gap:8px;padding:12px 14px;background:var(--card);border-top:1px solid var(--line);padding-bottom:calc(12px + env(safe-area-inset-bottom))}
   .compose textarea{flex:1;resize:none;border:1.5px solid var(--line);border-radius:14px;padding:10px 14px;font-family:inherit;font-size:14.5px;max-height:120px;outline:none}
   .compose textarea:focus{border-color:var(--nut)}
-  .send{background:var(--nut);color:#fff;border:none;border-radius:14px;padding:0 20px;font-weight:700;font-size:14.5px;cursor:pointer;flex-shrink:0}
-  .send:disabled{opacity:.4;cursor:default}
-  .banner{background:#FEF2F2;color:#991B1B;font-size:13px;padding:10px 16px;text-align:center;border-bottom:1px solid #FECACA}
-
-  /* ── Dashboard ── */
-  .dash-wrap{flex:1;overflow-y:auto;padding:16px 16px calc(24px + env(safe-area-inset-bottom))}
-  .dsec{margin-bottom:22px}
-  .dsec>h3{font-size:13px;font-weight:800;color:var(--nut);letter-spacing:.02em;margin-bottom:10px;display:flex;align-items:center;gap:7px}
-  .dgrp{font-size:11px;font-weight:700;color:var(--faint);margin:12px 2px 6px}
-  .lnk{display:flex;align-items:center;gap:11px;background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 15px;margin-bottom:8px;text-decoration:none;color:var(--ink);font-size:15px;font-weight:600;transition:background .12s}
-  .lnk:active{background:#F3F4F6}
-  .lnk .ic{font-size:20px;width:26px;text-align:center;flex-shrink:0}
-  .lnk .lt{flex:1;min-width:0}
-  .lnk .ld{font-size:11.5px;color:var(--faint);font-weight:400;margin-top:1px}
-  .lnk .arw{color:var(--faint);font-size:18px}
-  .lnk.note{background:#FFFBEB;border-color:#FDE68A;font-weight:500;font-size:13px;color:#92400E}
-  .pill{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px}
-  .prow{margin-bottom:12px}
-  .prow:last-child{margin-bottom:0}
-  .prow .pl{display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px}
-  .prow .pl b{font-weight:700}
-  .bar{height:8px;background:#EFEFEC;border-radius:5px;overflow:hidden}
-  .bar>i{display:block;height:100%;background:var(--nut);border-radius:5px}
-  .overall{text-align:center;padding:6px 0 14px}
-  .overall .big{font-size:38px;font-weight:800;color:var(--nut);line-height:1}
-  .overall .cap{font-size:12px;color:var(--soft);margin-top:2px}
-  .cctxt{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 15px;font-size:14px;white-space:pre-wrap;line-height:1.6}
-  .cctxt .cct{font-size:11px;color:var(--faint);margin-top:8px;text-align:right}
-
-  @media(max-width:720px){
-    #side{width:100%}
-    #chat{display:none}
-    body.chat-open #side{display:none}
-    body.chat-open #chat{display:flex}
-    .back{display:block}
-  }
+  .send{background:var(--nut);color:#fff;border:none;border-radius:14px;padding:0 20px;font-weight:700;font-size:14.5px;cursor:pointer}
+  .banner{background:#FEF2F2;color:#991B1B;font-size:13px;padding:10px 16px;text-align:center}
+  .muted{color:var(--faint);font-size:13px}
 </style>
 </head>
 <body>
 <div id="app">
-  <aside id="side">
-    <div class="side-h"><b>Command Center</b><div class="sub">ทุก track · ทุก agent · หน้ารวม</div></div>
-    <div id="banner"></div>
-    <div class="rooms" id="roomList"></div>
-  </aside>
-  <main id="chat">
-    <div class="chat-h">
-      <button class="back" onclick="closeRoom()">‹</button>
-      <span class="ch-dot" id="chDot" style="background:var(--idle)"></span>
-      <div class="ch-info"><b id="chName">เลือกห้อง</b><div class="ch-cur" id="chCur"></div></div>
+
+  <!-- ===== HOME (Dashboard) ===== -->
+  <section class="page on" id="pgHome">
+    <div class="top">
+      <div class="tt"><b>Under360</b><span class="s">Command Center · หน้ารวม</span></div>
+      <button class="rf" onclick="loadAll(true)" title="รีเฟรช">⟳</button>
     </div>
-    <div class="msgs" id="msgs"><div class="empty">เลือกห้องทางซ้ายเพื่อเริ่มคุย</div></div>
-    <div class="dash-wrap" id="dashView" style="display:none"></div>
-    <div class="compose" id="compose">
-      <textarea id="input" rows="1" placeholder="พิมพ์ข้อความถึงห้องนี้..." oninput="growBox(this)" onkeydown="onKey(event)"></textarea>
-      <button class="send" id="sendBtn" onclick="send()" disabled>ส่ง</button>
+    <div class="wrap"><div class="body">
+      <div id="banner"></div>
+      <button class="chatbtn" onclick="goChatList()">💬 แชททีม <span class="cb-badge" id="cbBadge" style="display:none">0</span></button>
+      <div id="homeCards"></div>
+    </div></div>
+  </section>
+
+  <!-- ===== CHAT LIST ===== -->
+  <section class="page" id="pgList">
+    <div class="top">
+      <button class="bk" onclick="goHome()">‹</button>
+      <div class="tt"><b>แชททีม</b><span class="s">12 ห้อง · แตะเพื่อคุย</span></div>
+      <button class="rf" onclick="loadAll(true)">⟳</button>
     </div>
-  </main>
+    <div class="wrap"><div id="roomList"></div></div>
+  </section>
+
+  <!-- ===== CHAT ===== -->
+  <section class="page" id="pgChat">
+    <div class="top">
+      <button class="bk" onclick="goChatList()">‹</button>
+      <span class="dot" id="cDot" style="width:10px;height:10px;border-radius:50%"></span>
+      <div class="tt"><b id="cName">ห้อง</b><span class="s" id="cCur"></span></div>
+    </div>
+    <div class="wrap">
+      <div id="chatMsgs"></div>
+      <div class="compose">
+        <textarea id="input" rows="1" placeholder="พิมพ์ถึงห้องนี้..." oninput="growBox(this)" onkeydown="onKey(event)"></textarea>
+        <button class="send" onclick="send()">ส่ง</button>
+      </div>
+    </div>
+  </section>
+
 </div>
 
 <script>
@@ -124,215 +184,311 @@ const sb=supabase.createClient(SB_URL,SB_KEY);
 const BASE='https://under360-system.vercel.app';
 
 const ROOMS=[
-  {id:'u',      label:'U-track',   desc:'โค้ด / LIFF / DB / หลังบ้าน', color:'#2563EB', kind:'track'},
-  {id:'m',      label:'M-track',   desc:'เว็บ / บล็อก / SEO',          color:'#16A34A', kind:'track'},
-  {id:'a',      label:'A-track',   desc:'agents infra / บัญชี เสา 2',  color:'#9333EA', kind:'track'},
-  {id:'migrate',label:'Migrate',   desc:'Hato → customers / orders',   color:'#EA580C', kind:'track'},
-  {id:'f',      label:'F-track',   desc:'การเงิน / P&L',               color:'#0891B2', kind:'track'},
-  {id:'eath',   label:'เอิธ',      desc:'คู่แข่ง / แอด / CRM / อินฟลู', color:'#DB2777', kind:'agent'},
-  {id:'niw',    label:'น้องนิว',   desc:'จัดเมนู Meal Plan',           color:'#65A30D', kind:'agent'},
-  {id:'keng',   label:'พี่เก่ง',   desc:'จัดส่ง / Lalamove',           color:'#CA8A04', kind:'agent'},
-  {id:'fah',    label:'ฟ้า',       desc:'วัตถุดิบ / ครัว',             color:'#0D9488', kind:'agent'},
-  {id:'tiang',  label:'น้องเตียง', desc:'กราฟิก / โซเชียล',           color:'#E11D48', kind:'agent'},
-  {id:'ploy',   label:'ห้องพลอย',  desc:'มาเก็ตติ้ง / แคมเปญ (พลอย)', color:'#7C3AED', kind:'ploy'},
-  {id:'rnd01',  label:'R&D 01',    desc:'Hyrox — สูตร → DB + รูป',     color:'#059669', kind:'rnd'},
+  {id:'u',      label:'U-track',   desc:'โค้ด / LIFF / DB',        color:'#2563EB', kind:'track'},
+  {id:'m',      label:'M-track',   desc:'เว็บ / บล็อก / SEO',      color:'#16A34A', kind:'track'},
+  {id:'a',      label:'A-track',   desc:'agents / บัญชี',         color:'#9333EA', kind:'track'},
+  {id:'migrate',label:'Migrate',   desc:'Hato → DB',              color:'#EA580C', kind:'track'},
+  {id:'f',      label:'F-track',   desc:'การเงิน / P&L',          color:'#0891B2', kind:'track'},
+  {id:'p',      label:'P-track',   desc:'sync Hato / catalog',    color:'#7C3AED', kind:'track'},
+  {id:'eath',   label:'เอิธ',      desc:'แอด / CRM / คู่แข่ง',    color:'#DB2777', kind:'agent'},
+  {id:'niw',    label:'น้องนิว',   desc:'จัดเมนู Meal Plan',      color:'#65A30D', kind:'agent'},
+  {id:'keng',   label:'พี่เก่ง',   desc:'จัดส่ง / Lalamove',      color:'#CA8A04', kind:'agent'},
+  {id:'fah',    label:'ฟ้า',       desc:'วัตถุดิบ / ครัว',        color:'#0D9488', kind:'agent'},
+  {id:'tiang',  label:'น้องเตียง', desc:'กราฟิก / โซเชียล',       color:'#E11D48', kind:'agent'},
+  {id:'ploy',   label:'ห้องพลอย',  desc:'มาเก็ตติ้ง / แคมเปญ',    color:'#BE185D', kind:'ploy'},
+  {id:'rnd01',  label:'R&D 01',    desc:'Hyrox — สูตร → DB + รูป', color:'#059669', kind:'rnd'},
 ];
 const RMAP=Object.fromEntries(ROOMS.map(r=>[r.id,r]));
 const STCOL={idle:'var(--idle)',working:'var(--work)',blocked:'var(--block)'};
 
-// ── Link hub (แก้ตรงนี้เพิ่ม/ลบลิงก์ได้เลย) ──
 const LINKS=[
-  {grp:'ลูกค้า / แอดมิน (ใช้บ่อย)', items:[
-    {ic:'🍱', t:'LIFF ลูกค้า (สั่งอาหาร)', d:'หน้าที่ลูกค้าเห็น', u:'https://liff.line.me/2010442513-NI3JGTkb'},
-    {ic:'🗂️', t:'Operation Hub (แอดมิน)', d:'จัดออเดอร์/เมนู/โปร/สั่งแทนลูกค้า', u:BASE+'/operation_hub.html'},
-    {ic:'👨‍🍳', t:'ครัว (Kitchen Queue)', d:'ออเดอร์ที่ต้องทำวันนี้', u:BASE+'/kitchen_queue.html'},
-    {ic:'📆', t:'ออเดอร์ล่วงหน้า 7 วัน', d:'PWA · PIN 0360 · เพิ่มลงหน้าโฮมได้', u:BASE+'/pwa/orders_upcoming.html'},
+  {grp:'ลูกค้า / แอดมิน', items:[
+    {ic:'🍱',t:'LIFF ลูกค้า (สั่งอาหาร)',d:'หน้าที่ลูกค้าเห็น',u:'https://liff.line.me/2010442513-NI3JGTkb'},
+    {ic:'🗂️',t:'Operation Hub',d:'จัดออเดอร์/เมนู/โปร',u:BASE+'/operation_hub.html'},
+    {ic:'👨‍🍳',t:'ครัว (Kitchen Queue)',d:'',u:BASE+'/kitchen_queue.html'},
+    {ic:'📆',t:'ออเดอร์ล่วงหน้า (PIN 0360)',d:'',u:BASE+'/pwa/orders_upcoming.html'},
   ]},
-  {grp:'จัดการหลังบ้าน', items:[
-    {ic:'📋', t:'ฐานข้อมูลเมนู (DB)', d:'เมนู/วัตถุดิบ/แพคเกจ/สต็อก', u:BASE+'/main_database_v2.html'},
-    {ic:'🏠', t:'จัดหน้าแรก (Home Editor)', d:'จัดการ์ด HomeGrid', u:BASE+'/home_editor.html'},
-    {ic:'👥', t:'ข้อมูลลูกค้า', d:'', u:BASE+'/customer.html'},
-    {ic:'📊', t:'รายงาน', d:'', u:BASE+'/report.html'},
-  ]},
-  {grp:'เว็บ / มาร์เก็ตติ้ง', items:[
-    {ic:'🌐', t:'เว็บสาธารณะใหม่', d:'under360-system.vercel.app/web', u:BASE+'/web/'},
-    {ic:'⭐', t:'ลิงก์ขอรีวิว Google', d:'ส่งให้ลูกค้าประจำ', u:'https://g.page/r/CTHTcnneZEtoEBI/review'},
+  {grp:'จัดการ / เว็บ', items:[
+    {ic:'📋',t:'ฐานข้อมูลเมนู (DB)',d:'',u:BASE+'/main_database_v2.html'},
+    {ic:'🏠',t:'จัดหน้าแรก (Home Editor)',d:'',u:BASE+'/home_editor.html'},
+    {ic:'🌐',t:'เว็บสาธารณะใหม่',d:'',u:BASE+'/web/'},
+    {ic:'⭐',t:'ลิงก์ขอรีวิว Google',d:'',u:'https://g.page/r/CTHTcnneZEtoEBI/review'},
   ]},
 ];
-const NOTE='ปุ่ม "สั่งแทนลูกค้า" ยังอยู่บน preview (รอเทส 1 ใบ แล้วขึ้น main) → พอ merge จะโผล่ในแท็บของ Operation Hub อัตโนมัติ';
-
-// ── 7 เสาหลัก (อัปเดตเลข % ที่นี่) ──
 const PILLARS=[
-  {n:'1. ระบบ Order & ลูกค้า', p:90},
-  {n:'2. ปฏิบัติการ & ต้นทุน', p:20},
-  {n:'3. Product-Market Fit', p:15},
-  {n:'4. CRM & Customer Intel', p:20},
-  {n:'5. Marketing Engine', p:20},
-  {n:'6. AI Agents', p:20},
-  {n:'7. Under360 Base', p:2},
+  {n:'1. ระบบ Order & ลูกค้า',p:90},{n:'2. ปฏิบัติการ & ต้นทุน',p:20},
+  {n:'3. Product-Market Fit',p:15},{n:'4. CRM & Customer Intel',p:20},
+  {n:'5. Marketing Engine',p:20},{n:'6. AI Agents',p:20},{n:'7. Under360 Base',p:2},
 ];
 const OVERALL=27;
+// ยอดขายจริง HT- (บาท) — เดือนที่ผ่านมา (แก้ที่นี่รายเดือน) · เดือนปัจจุบันดึงสด
+const HIST=[['ก.พ.',539476],['มี.ค.',513167],['เม.ย.',480153],['พ.ค.',399759],['มิ.ย.',365694]];
 
-let active=null, allMsgs=[], statusMap={}, tablesOk=true, ccPosts=[];
+// งานประจำวัน "วันนี้ต้องทำ"
+const ROUTINE=[
+  {key:'sync',   ic:'🔄', t:'อัพเดทยอดให้ตรง Hato', auto:'fresh'},
+  {key:'compet', ic:'🕵️', t:'ตามคู่แข่ง/IG วันนี้ทำเมนูอะไร → ทำคอนเทนต์', link:true},
+  {key:'tmrw',   ic:'🍳', t:'ดูออเดอร์พรุ่งนี้ก่อนสั่งวัตถุดิบ', auto:'tmrw'},
+  {key:'review', ic:'⭐', t:'ส่งลิงก์รีวิวลูกค้าประจำ 5-10 คน'},
+  {key:'bcast',  ic:'📊', t:'เช็คผล broadcast / แอด'},
+  {key:'wk_bc',  ic:'📣', t:'ยิง broadcast', weekly:true},
+  {key:'wk_so',  ic:'📱', t:'โพสต์โซเชียล', weekly:true},
+];
+
+let allMsgs=[], ccPosts=[], statusMap={}, biz={}, tablesOk=true, activeRoom=null;
 const seen=JSON.parse(localStorage.getItem('cc_seen')||'{}');
+const rdone=JSON.parse(localStorage.getItem('cc_routine')||'{}');
 
 function esc(s){return (s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
-function fmtTime(iso){const d=new Date(iso);const now=new Date();const sameDay=d.toDateString()===now.toDateString();
+function baht(n){return '฿'+Math.round(n||0).toLocaleString();}
+function thaiDate(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});}
+function addDays(ymd,n){return new Date(new Date(ymd+'T00:00:00Z').getTime()+n*86400000).toISOString().slice(0,10);}
+function fmtTime(iso){const d=new Date(iso);const now=new Date();const same=d.toDateString()===now.toDateString();
   const t=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
-  return sameDay?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
+  return same?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
 
-async function loadAll(){
-  const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(500);
-  if(error){ tablesOk=false; renderBanner(); return; }
-  tablesOk=true; renderBanner();
-  const all=(data||[]).slice().reverse();
-  allMsgs=all.filter(m=>m.room!=='cc');
-  ccPosts=all.filter(m=>m.room==='cc');
-  const {data:st}=await sb.from('track_status').select('*');
-  statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
-  renderRooms();
-  if(active==='__dash__') renderDash();
-  else if(active) renderMsgs();
+async function loadAll(manual){
+  try{
+    const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(500);
+    if(error){tablesOk=false;} else {
+      tablesOk=true;
+      const all=(data||[]).slice().reverse();
+      allMsgs=all.filter(m=>m.room!=='cc'); ccPosts=all.filter(m=>m.room==='cc');
+    }
+    const {data:st}=await sb.from('track_status').select('*');
+    statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
+    await loadBiz();
+  }catch(e){tablesOk=false;}
+  renderBanner(); renderHome(); renderRoomList();
+  if(activeRoom) renderChat();
+  if(manual) toast('รีเฟรชแล้ว');
+}
+
+async function loadBiz(){
+  const today=thaiDate(); const tmrw=addDays(today,1);
+  const ms=today.slice(0,7)+'-01';
+  const pm=today.slice(0,4)+'-'+String(Math.max(1,+today.slice(5,7)-1)).padStart(2,'0')+'-01';
+  const lmStart = +today.slice(5,7)===1 ? (+today.slice(0,4)-1)+'-12-01' : pm;
+  try{
+    const q=await sb.from('orders').select('total,created_at').like('order_number','HT-%').gt('total',0).gte('created_at',lmStart).limit(2000);
+    let cur=0,last=0,latest='';
+    for(const o of (q.data||[])){
+      const d=(o.created_at||'').slice(0,10);
+      if(d>=ms)cur+=+o.total; else last+=+o.total;
+      if(o.created_at>latest)latest=o.created_at;
+    }
+    const tq=await sb.from('orders').select('total').eq('delivery_date',tmrw).like('order_number','HT-%').limit(500);
+    biz={cur,last,latest:latest?latest.slice(0,10):'',today,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
+  }catch(e){biz={err:1};}
 }
 
 function renderBanner(){
-  document.getElementById('banner').innerHTML = tablesOk ? '' :
-    '<div class="banner">ยังไม่ได้รัน SQL — เปิด <b>scripts/sql_command_center.sql</b> ใน Supabase ก่อน</div>';
+  document.getElementById('banner').innerHTML = tablesOk?'':'<div class="banner card" style="padding:12px">เชื่อมข้อมูลไม่ได้ชั่วคราว — ลองรีเฟรช</div>';
 }
 
-function unreadOf(room){
-  const s=seen[room]||'1970';
-  return allMsgs.filter(m=>m.room===room && m.role!=='nut' && m.created_at>s).length;
-}
-function lastOf(room){const a=allMsgs.filter(m=>m.room===room);return a[a.length-1];}
-
-function renderRooms(){
-  const el=document.getElementById('roomList');
-  // pinned dashboard
-  let html=`<div class="room dash${active==='__dash__'?' active':''}" onclick="openDash()">
-      <span class="dot" style="background:#fff"></span>
-      <div class="room-b"><div class="room-t"><span class="room-n">📊 หน้ารวม (Dashboard)</span></div>
-      <div class="room-d">ลิงก์ทุกอัน · ความคืบหน้า · สรุปล่าสุด</div></div></div>`;
-  for(const kind of ['track','agent','ploy','rnd']){
-    html+=`<div class="grp">${kind==='track'?'Tracks (session)':kind==='agent'?'Agents':kind==='ploy'?'พลอย (มาเก็ตติ้ง)':'R&D (อาหาร)'}</div>`;
-    for(const r of ROOMS.filter(x=>x.kind===kind)){
-      const st=statusMap[r.id]; const unread=unreadOf(r.id);
-      const dotc=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
-      const last=lastOf(r.id);
-      const line = st&&st.current ? st.current : (last?(last.role==='nut'?'คุณ: ':'')+last.text:'ยังไม่มีข้อความ');
-      html+=`<div class="room${active===r.id?' active':''}" onclick="openRoom('${r.id}')">
-        <span class="dot" style="background:${dotc}"></span>
-        <div class="room-b">
-          <div class="room-t"><span class="room-n" style="color:${r.color}">${esc(r.label)}</span>${unread?`<span class="badge">${unread}</span>`:''}</div>
-          <div class="room-d">${esc(r.desc)}</div>
-          <div class="room-s">${esc(line).slice(0,60)}</div>
-        </div></div>`;
-    }
-  }
-  el.innerHTML=html;
-}
-
-function showView(which){ // 'chat' | 'dash'
-  document.getElementById('msgs').style.display   = which==='chat'?'flex':'none';
-  document.getElementById('compose').style.display= which==='chat'?'flex':'none';
-  document.getElementById('dashView').style.display= which==='dash'?'block':'none';
-}
-
-function openDash(){
-  active='__dash__';
-  document.body.classList.add('chat-open');
-  document.getElementById('chName').textContent='หน้ารวม';
-  document.getElementById('chName').style.color='var(--nut)';
-  document.getElementById('chDot').style.background='var(--nut)';
-  document.getElementById('chCur').textContent='ลิงก์ · ความคืบหน้า · สรุป';
-  showView('dash'); renderDash(); renderRooms();
-}
-
-function renderDash(){
-  const el=document.getElementById('dashView');
+/* ---------- HOME ---------- */
+function renderHome(){
   let h='';
-  // links
-  h+='<div class="dsec"><h3>🔗 ลิงก์ด่วน — กดเปิดได้เลย</h3>';
-  for(const g of LINKS){
-    h+=`<div class="dgrp">${esc(g.grp)}</div>`;
-    for(const it of g.items){
-      h+=`<a class="lnk" href="${it.u}" target="_blank" rel="noopener">
-        <span class="ic">${it.ic}</span>
-        <span class="lt">${esc(it.t)}${it.d?`<div class="ld">${esc(it.d)}</div>`:''}</span>
-        <span class="arw">›</span></a>`;
+  h+=cardBiz();
+  h+=cardRoutine();
+  h+=cardAction();
+  h+=cardTeam();
+  h+=cardProgress();
+  h+=cardLinks();
+  h+=cardCatchup();
+  document.getElementById('homeCards').innerHTML=h;
+  const unread=ROOMS.reduce((a,r)=>a+unreadOf(r.id),0);
+  const b=document.getElementById('cbBadge'); if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';
+}
+
+function cardBiz(){
+  if(biz.err) return '<div class="card"><h3>💰 ธุรกิจ ณ ตอนนี้</h3><div class="muted">ดึงข้อมูลไม่ได้</div></div>';
+  const diff=biz.last?((biz.cur-biz.last)/biz.last*100):0;
+  const cmp=biz.last?`<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff).toFixed(0)}%</span> เทียบเดือนก่อน (${baht(biz.last)})`:'';
+  // spark
+  const series=HIST.map(x=>x[1]).concat([biz.cur]);
+  const labels=HIST.map(x=>x[0]).concat(['เดือนนี้']);
+  const stale = biz.latest && biz.latest<biz.today;
+  const daysBehind = stale? Math.round((new Date(biz.today+'T00:00:00Z')-new Date(biz.latest+'T00:00:00Z'))/86400000):0;
+  const fresh = stale
+    ? `<div class="fresh bad">⚠️ ข้อมูลค้าง ${daysBehind} วัน (ล่าสุด ${thDisp(biz.latest)}) — ให้ P-track sync</div>`
+    : `<div class="fresh ok">✓ ข้อมูลอัปเดตถึงวันนี้ (${thDisp(biz.latest||biz.today)})</div>`;
+  return `<div class="card">
+    <h3>💰 ธุรกิจ ณ ตอนนี้ <span class="r">ช่องออนไลน์ (LIFF)</span></h3>
+    <div class="biz-top">
+      <div class="biz-main">
+        <div class="biz-lbl">ยอดขายเดือนนี้</div>
+        <div class="biz-num">${baht(biz.cur)}</div>
+        <div class="biz-cmp">${cmp}</div>
+      </div>
+      <div class="biz-side">
+        <div class="stat"><div class="v">${biz.tmrwCount}</div><div class="k">ออเดอร์พรุ่งนี้</div></div>
+      </div>
+    </div>
+    <div class="spark">${sparkline(series,labels)}</div>
+    ${fresh}
+  </div>`;
+}
+function thDisp(ymd){if(!ymd)return '-';const[a,b,c]=ymd.split('-');return `${+c} ${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][+b]}`;}
+function sparkline(vals,labels){
+  const w=612,h=64,pad=6,max=Math.max(...vals),min=Math.min(...vals);
+  const rng=max-min||1;
+  const pts=vals.map((v,i)=>{const x=pad+i*(w-2*pad)/(vals.length-1);const y=h-pad-(v-min)/rng*(h-2*pad);return[x,y];});
+  const path=pts.map((p,i)=>(i?'L':'M')+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ');
+  const area=`M${pts[0][0].toFixed(1)} ${h-pad} `+pts.map(p=>'L'+p[0].toFixed(1)+' '+p[1].toFixed(1)).join(' ')+` L${pts[pts.length-1][0].toFixed(1)} ${h-pad} Z`;
+  const last=pts[pts.length-1];
+  const lab=labels.map((l,i)=>`<span style="flex:1;text-align:${i===0?'left':i===labels.length-1?'right':'center'}">${l}</span>`).join('');
+  return `<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:64px;display:block"><path d="${area}" fill="rgba(31,77,58,.08)"/><path d="${path}" fill="none" stroke="#1F4D3A" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/><circle cx="${last[0].toFixed(1)}" cy="${last[1].toFixed(1)}" r="4" fill="#1F4D3A"/></svg>
+  <div style="display:flex;font-size:10.5px;color:var(--faint);margin-top:3px">${lab}</div>`;
+}
+
+function cardRoutine(){
+  const dow=new Date(biz.today+'T00:00:00Z').getUTCDay();
+  let rows='';
+  for(const j of ROUTINE){
+    let done=false,status='',scls='';
+    if(j.auto==='fresh'){ done = biz.latest && biz.latest>=biz.today; status=done?'sync แล้ววันนี้':'ยังไม่ sync วันนี้'; scls=done?'okc':'due'; }
+    else if(j.auto==='tmrw'){ done = rdone[j.key]===biz.today; status=`มี ${biz.tmrwCount} ออเดอร์พรุ่งนี้`+(done?' · ดูแล้ว':''); scls=done?'okc':''; }
+    else { done = j.weekly? (rdone[j.key] && weekOf(rdone[j.key])===weekOf(biz.today)) : rdone[j.key]===biz.today;
+      status = done?'ทำแล้ว':(j.weekly?'สัปดาห์นี้ยังไม่ได้ทำ':'ยังไม่ได้ทำวันนี้'); scls=done?'okc':(j.weekly?'':'due'); }
+    const due = !done && j.auto!=='tmrw';
+    rows+=`<div class="rj ${done?'done':''} ${due?'due':''}" onclick="toggleR('${j.key}',${!!j.auto})">
+      <div class="ck">${done?'✓':''}</div>
+      <div class="rx"><div class="rt">${j.ic} ${esc(j.t)}${j.auto?'<span class="badge-auto">auto</span>':''}${j.weekly?'<span class="badge-wk">รายสัปดาห์</span>':''}</div>
+        <div class="rs ${scls}">${esc(status)}</div>
+        ${j.link?`<div class="complink" onclick="event.stopPropagation()"><input id="clink" placeholder="วางลิงก์โพสต์คู่แข่ง/IG..."><button onclick="sendComp()">ส่งเอิธ</button></div>`:''}
+      </div></div>`;
+  }
+  const doneN=ROUTINE.filter(j=>{
+    if(j.auto==='fresh')return biz.latest&&biz.latest>=biz.today;
+    if(j.weekly)return rdone[j.key]&&weekOf(rdone[j.key])===weekOf(biz.today);
+    return rdone[j.key]===biz.today;
+  }).length;
+  return `<div class="card"><h3>✅ วันนี้ต้องทำ <span class="r">${doneN}/${ROUTINE.length}</span></h3>${rows}</div>`;
+}
+function weekOf(ymd){const d=new Date(ymd+'T00:00:00Z');const on=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-on);return d.toISOString().slice(0,10);}
+function toggleR(key,isAuto){
+  const j=ROUTINE.find(x=>x.key===key);
+  if(j&&j.auto==='fresh'){toast('อันนี้ระบบเช็คเอง — รัน P-track sync เพื่อให้เขียว');return;}
+  if(rdone[key]===biz.today||(j.weekly&&rdone[key]&&weekOf(rdone[key])===weekOf(biz.today))) delete rdone[key];
+  else rdone[key]=biz.today;
+  localStorage.setItem('cc_routine',JSON.stringify(rdone)); renderHome();
+}
+async function sendComp(){
+  const el=document.getElementById('clink'); const v=(el.value||'').trim(); if(!v)return;
+  el.value='';
+  await sb.from('session_messages').insert({room:'eath',sender:'nut',role:'nut',text:'[คู่แข่ง/IG วันนี้] '+v});
+  rdone['compet']=biz.today; localStorage.setItem('cc_routine',JSON.stringify(rdone));
+  toast('ส่งให้เอิธแล้ว'); renderHome();
+}
+
+function cardAction(){
+  const blocked=ROOMS.filter(r=>statusMap[r.id]&&statusMap[r.id].status==='blocked');
+  if(!blocked.length) return '';
+  let rows=''; let i=1;
+  for(const r of blocked){ rows+=`<div class="act"><div class="n">${i++}</div><div class="x">${esc(RMAP[r.id].label)} ค้าง<div class="sub">${esc(statusMap[r.id].current||'')}</div></div></div>`; }
+  return `<div class="card"><h3>🎯 ต้องปลดล็อก (${blocked.length})</h3>${rows}</div>`;
+}
+
+function cardTeam(){
+  let cells='';
+  for(const r of ROOMS){
+    const st=statusMap[r.id]; const dc=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
+    const cur=st&&st.current?st.current:(st&&st.status||'—');
+    const un=unreadOf(r.id);
+    cells+=`<div class="tc" onclick="openRoom('${r.id}')">
+      <div class="th"><span class="dot" style="background:${dc}"></span><span class="tn" style="color:${r.color}">${esc(r.label)}</span>${un?`<span class="badge">${un}</span>`:''}</div>
+      <div class="ts">${esc(cur)}</div></div>`;
+  }
+  return `<div class="card"><h3>🚦 สถานะทีม <span class="r">แตะเพื่อคุย</span></h3><div class="team">${cells}</div></div>`;
+}
+
+function cardProgress(){
+  const R=26,C=2*Math.PI*R,off=C*(1-OVERALL/100);
+  const ring=`<svg width="64" height="64" viewBox="0 0 64 64" class="ring"><circle cx="32" cy="32" r="${R}" fill="none" stroke="#EEF1EE" stroke-width="7"/><circle cx="32" cy="32" r="${R}" fill="none" stroke="#1F4D3A" stroke-width="7" stroke-dasharray="${C.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}" stroke-linecap="round" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle" font-size="16" font-weight="800" fill="#1F4D3A">${OVERALL}%</text></svg>`;
+  let bars=''; for(const p of PILLARS) bars+=`<div class="prow"><div class="pl"><span>${esc(p.n)}</span><b>${p.p}%</b></div><div class="bar"><i style="width:${p.p}%"></i></div></div>`;
+  return `<div class="card"><h3>📊 ความคืบหน้าโปรเจค</h3><div class="ring-row">${ring}<div class="muted">ภาพรวมทั้งโปรเจค<br>เป้า 500,000฿/เดือน</div></div><div style="margin-top:8px">${bars}</div></div>`;
+}
+
+function cardLinks(){
+  let h='<div class="card"><h3>🔗 ลิงก์ด่วน</h3>';
+  for(const g of LINKS){ h+=`<div class="dgrp">${esc(g.grp)}</div>`;
+    for(const it of g.items) h+=`<a class="lnk" href="${it.u}" target="_blank" rel="noopener"><span class="ic">${it.ic}</span><span>${esc(it.t)}${it.d?`<div class="ld">${esc(it.d)}</div>`:''}</span><span class="arw">›</span></a>`;
+  }
+  return h+'</div>';
+}
+
+function cardCatchup(){
+  if(!ccPosts.length) return '';
+  const c=ccPosts[ccPosts.length-1];
+  return `<div class="card"><h3>📝 สรุปล่าสุด</h3><div class="cctxt">${esc(c.text)}</div><div class="cct">${fmtTime(c.created_at)} · โดย ${esc(c.sender)}</div></div>`;
+}
+
+/* ---------- CHAT LIST ---------- */
+function unreadOf(room){const s=seen[room]||'1970';return allMsgs.filter(m=>m.room===room&&m.role!=='nut'&&m.created_at>s).length;}
+function lastOf(room){const a=allMsgs.filter(m=>m.room===room);return a[a.length-1];}
+function renderRoomList(){
+  const el=document.getElementById('roomList'); let h='';
+  for(const kind of ['track','agent','ploy','rnd']){
+    h+=`<div class="grp">${kind==='track'?'Tracks':kind==='agent'?'Agents':kind==='ploy'?'พลอย (มาเก็ตติ้ง)':'R&D (อาหาร)'}</div>`;
+    for(const r of ROOMS.filter(x=>x.kind===kind)){
+      const st=statusMap[r.id];const dc=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
+      const un=unreadOf(r.id);const last=lastOf(r.id);
+      const line=st&&st.current?st.current:(last?(last.role==='nut'?'คุณ: ':'')+last.text:'—');
+      h+=`<div class="room" onclick="openRoom('${r.id}')"><span class="dot" style="background:${dc}"></span>
+        <div class="room-b"><div class="room-t"><span class="room-n" style="color:${r.color}">${esc(r.label)}</span>${un?`<span class="badge">${un}</span>`:''}</div>
+        <div class="room-d">${esc(r.desc)}</div><div class="room-s">${esc(line)}</div></div></div>`;
     }
   }
-  h+=`<div class="lnk note">⚠️ ${esc(NOTE)}</div>`;
-  h+='</div>';
-  // progress
-  h+='<div class="dsec"><h3>📈 ความคืบหน้าโปรเจค (7 เสาหลัก)</h3><div class="pill">';
-  h+=`<div class="overall"><div class="big">${OVERALL}%</div><div class="cap">ภาพรวมทั้งโปรเจค · เป้า 500,000฿/เดือน</div></div>`;
-  for(const p of PILLARS){
-    h+=`<div class="prow"><div class="pl"><span>${esc(p.n)}</span><b>${p.p}%</b></div><div class="bar"><i style="width:${p.p}%"></i></div></div>`;
-  }
-  h+='</div></div>';
-  // catchup
-  h+='<div class="dsec"><h3>📝 สรุปล่าสุด (Catchup)</h3>';
-  if(!ccPosts.length){
-    h+='<div class="cctxt" style="color:var(--faint)">ยังไม่มีสรุป — เลขา (CC) จะโพสต์สรุปความคืบหน้าไว้ที่นี่</div>';
-  }else{
-    for(const c of ccPosts.slice(-3).reverse()){
-      h+=`<div class="cctxt" style="margin-bottom:10px">${esc(c.text)}<div class="cct">${fmtTime(c.created_at)}</div></div>`;
-    }
-  }
-  h+='</div>';
   el.innerHTML=h;
 }
 
-function openRoom(id){
-  active=id; const r=RMAP[id]; const st=statusMap[id];
-  document.body.classList.add('chat-open');
-  document.getElementById('chName').textContent=r.label;
-  document.getElementById('chName').style.color=r.color;
-  document.getElementById('chDot').style.background=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
-  const cur=[]; if(st&&st.version)cur.push(st.version); if(st&&st.current)cur.push(st.current);
-  if(st&&st.open_loops)cur.push('ค้าง '+st.open_loops);
-  document.getElementById('chCur').textContent=cur.join(' · ');
-  document.getElementById('sendBtn').disabled=false;
-  showView('chat'); renderMsgs();
-  const last=lastOf(id); seen[id]=last?last.created_at:new Date().toISOString();
+/* ---------- CHAT ---------- */
+function openRoom(id){activeRoom=id;showPage('pgChat');
+  const r=RMAP[id],st=statusMap[id];
+  document.getElementById('cName').textContent=r.label;
+  document.getElementById('cName').style.color='#fff';
+  document.getElementById('cDot').style.background=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
+  const cur=[];if(st&&st.version)cur.push(st.version);if(st&&st.current)cur.push(st.current);
+  document.getElementById('cCur').textContent=cur.join(' · ');
+  renderChat();
+  const last=lastOf(id);seen[id]=last?last.created_at:new Date().toISOString();
   localStorage.setItem('cc_seen',JSON.stringify(seen));
-  renderRooms();
 }
-function closeRoom(){document.body.classList.remove('chat-open');}
-
-function renderMsgs(){
-  const box=document.getElementById('msgs');
-  const list=allMsgs.filter(m=>m.room===active);
-  if(!list.length){box.innerHTML='<div class="empty">ยังไม่มีข้อความในห้องนี้ — พิมพ์ด้านล่างเพื่อเริ่ม</div>';return;}
-  const nearBottom = box.scrollHeight-box.scrollTop-box.clientHeight < 120;
+function renderChat(){
+  const box=document.getElementById('chatMsgs');
+  const list=allMsgs.filter(m=>m.room===activeRoom);
+  if(!list.length){box.innerHTML='<div class="empty muted" style="margin:auto;text-align:center;padding:40px">ยังไม่มีข้อความ — พิมพ์ด้านล่างเพื่อเริ่ม</div>';return;}
   box.innerHTML=list.map(m=>{
     if(m.role==='system')return `<div class="m system">${esc(m.text)}</div>`;
     const who=m.role==='nut'?'':`<div class="who">${esc(m.sender)}</div>`;
     return `<div class="m ${m.role==='nut'?'nut':'claude'}">${who}${esc(m.text)}<div class="t">${fmtTime(m.created_at)}</div></div>`;
   }).join('');
-  if(nearBottom||list.length)box.scrollTop=box.scrollHeight;
-  seen[active]=list[list.length-1].created_at;
-  localStorage.setItem('cc_seen',JSON.stringify(seen));
+  box.scrollTop=box.scrollHeight;
+  seen[activeRoom]=list[list.length-1].created_at;localStorage.setItem('cc_seen',JSON.stringify(seen));
 }
-
 async function send(){
-  const inp=document.getElementById('input'); const text=inp.value.trim();
-  if(!text||!active||active==='__dash__')return;
-  inp.value=''; growBox(inp);
-  const row={room:active,sender:'nut',role:'nut',text};
-  allMsgs.push({...row,created_at:new Date().toISOString()}); renderMsgs();
+  const inp=document.getElementById('input');const text=inp.value.trim();if(!text||!activeRoom)return;
+  inp.value='';growBox(inp);
+  const row={room:activeRoom,sender:'nut',role:'nut',text};
+  allMsgs.push({...row,created_at:new Date().toISOString()});renderChat();
   const {error}=await sb.from('session_messages').insert(row);
-  if(error){alert('ส่งไม่สำเร็จ: '+error.message); return;}
-  await loadAll();
+  if(error){toast('ส่งไม่สำเร็จ');return;}
+  loadAll();
 }
-
 function growBox(t){t.style.height='auto';t.style.height=Math.min(t.scrollHeight,120)+'px';}
 function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 
-// เปิดมา = โชว์หน้ารวมก่อน (มือถือ = เห็น dashboard ทันที)
-loadAll().then(()=>{ if(window.innerWidth>720) openDash(); });
-setInterval(loadAll,4000);
+/* ---------- nav ---------- */
+function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
+function goHome(){activeRoom=null;showPage('pgHome');renderHome();}
+function goChatList(){showPage('pgList');renderRoomList();}
+
+function toast(msg){let t=document.getElementById('_toast');if(!t){t=document.createElement('div');t.id='_toast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#14201B;color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;z-index:99;opacity:0;transition:.2s';document.body.appendChild(t);}
+  t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',1600);}
+
+loadAll();
+setInterval(()=>{ if(document.visibilityState==='visible') loadAll(); },8000);
 </script>
 </body>
 </html>
