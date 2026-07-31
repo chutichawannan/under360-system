@@ -59,10 +59,22 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;
   <div class="logo-sub">สมัครครั้งเดียว สั่งได้ตลอด</div>
 
   <div id="formArea">
+    <!-- Hook: สมัครรับ ฿50 -->
+    <div style="background:linear-gradient(135deg,#1F4D3A,#2D6B53);color:#fff;border-radius:12px;padding:14px 16px;margin-bottom:16px;text-align:center">
+      <div style="font-size:15px;font-weight:800">🎁 สมัครสมาชิกใหม่ รับส่วนลด ฿50</div>
+      <div style="font-size:12px;opacity:.9;margin-top:3px">เมื่อสั่งครั้งแรกครบ ฿500 — ระบบใส่ให้อัตโนมัติ</div>
+    </div>
     <!-- LINE auto -->
     <div class="line-card">
       <div class="line-av"><img id="lnAv" src="" onerror="this.style.display='none'"><span id="lnEmoji">👤</span></div>
       <div><div class="line-name" id="lnName">กำลังโหลด...</div><div class="line-ok">✓ ยืนยันผ่าน LINE</div></div>
+    </div>
+
+    <!-- ชื่อจริง -->
+    <div class="fg">
+      <label class="fl">ชื่อ-นามสกุล (ชื่อจริง)</label>
+      <input class="fi" id="fName" type="text" placeholder="เช่น สมชาย ใจดี">
+      <div class="fe" id="errName"></div>
     </div>
 
     <!-- DOB -->
@@ -95,23 +107,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;
 
     <!-- Phone -->
     <div class="fg">
-      <label class="fl">เบอร์โทรศัพท์</label>
-      <div class="phone-row">
-        <input class="fi" id="fPhone" type="tel" maxlength="10" inputmode="numeric" placeholder="0812345678" style="flex:1">
-        <button class="otp-btn" onclick="sendOtp()">รับ OTP</button>
-      </div>
+      <label class="fl">เบอร์โทรศัพท์ <span style="color:var(--ink-soft);text-transform:none;font-weight:400">(ไว้ติดต่อ/จัดส่ง)</span></label>
+      <input class="fi" id="fPhone" type="tel" maxlength="10" inputmode="numeric" placeholder="0812345678">
       <div class="fe" id="errPhone"></div>
-    </div>
-
-    <!-- OTP (hidden until phone sent) -->
-    <div class="fg" id="otpArea" style="display:none">
-      <label class="fl">รหัส OTP 6 หลัก</label>
-      <input class="otp-field" id="otpField" type="tel" maxlength="6" inputmode="numeric" placeholder="——————" oninput="checkOtp(this)">
-      <div class="otp-meta">
-        <span id="otpHint" style="color:var(--ink-soft)">ส่ง OTP แล้ว</span>
-        <button class="resend-btn" id="resendBtn" disabled onclick="sendOtp()">ส่งใหม่ใน <span id="cdNum">60</span>s</button>
-      </div>
-      <div class="fe" id="errOtp"></div>
     </div>
 
     <div class="err-box" id="errBox"></div>
@@ -123,7 +121,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;
   <div class="success" id="successArea">
     <div class="s-icon">🎉</div>
     <div class="s-title">ยินดีต้อนรับ!</div>
-    <div class="s-sub">สมัครเรียบร้อยแล้ว</div>
+    <div class="s-sub">สมัครเรียบร้อย! 🎁 ส่วนลด ฿50 พร้อมใช้ — สั่งครั้งแรกครบ ฿500 ระบบใส่ให้เลย</div>
     <button class="btn-p" style="max-width:240px;margin:0 auto" onclick="location.href='liff_customer.html'">🛒 สั่งอาหารเลย</button>
   </div>
 </div>
@@ -132,7 +130,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;
 const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 const LIFF_ID="2010442513-NI3JGTkb";
-const DEV=true;
+const DEV=false;
 let sb=null,lineProfile=null,otpCode=null,otpOk=false,cdTimer=null;
 
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
@@ -213,29 +211,43 @@ function getDob(){
   return null;
 }
 
+// normalize เบอร์ให้เทียบกันได้ (DB เก็บ 0xxxxxxxxx)
+function normPhone(p){ if(!p) return ""; var s=String(p).replace(/\D/g,""); if(s.indexOf("66")===0) s="0"+s.slice(2); if(s.length===9) s="0"+s; return s; }
+
 async function doRegister(){
-  if(!otpOk){showErr("กรุณายืนยัน OTP ก่อน");return;}
+  var name=(document.getElementById("fName").value||"").trim();
+  var phone=(document.getElementById("fPhone").value||"").trim();
+  if(!name){ showErr("กรุณากรอกชื่อ-นามสกุล"); return; }
+  if(!/^0[0-9]{9}$/.test(phone)){ document.getElementById("errPhone").textContent="กรุณากรอกเบอร์ 10 หลักให้ถูกต้อง"; return; }
+  document.getElementById("errPhone").textContent="";
+  if(!lineProfile){ showErr("กรุณาเปิดผ่าน LINE"); return; }
   const btn=document.getElementById("submitBtn");
-  btn.disabled=true;btn.textContent="⏳ กำลังบันทึก...";
-  const sb_=getSB();
-  if(sb_){
-    await sb_.from("customers").upsert({
-      line_uid:lineProfile.userId,
-      name:lineProfile.displayName,
-      line_display_name:lineProfile.displayName,
-      line_picture_url:lineProfile.pictureUrl||"",
-      phone:document.getElementById("fPhone").value.trim(),
-      birth_date:getDob(),
-      gender:_gender
-      // ⚠️ ไม่ใส่ loyalty_points/tier ตรงนี้ตั้งใจ — เดิมเขียน points:0 (คอลัมน์ไม่มีจริง เลยไม่มีผลอะไร)
-      // ถ้าเปลี่ยนเป็น loyalty_points:0 ตรงๆ จะเสี่ยงรีเซ็ตแต้มลูกค้าเดิมเป็น 0 ทุกครั้งที่ upsert ซ้ำ (onConflict:line_uid)
-      // รอนัทตัดสินใจเรื่องระบบแต้มใหม่ก่อน (ดู CLAUDE.md)
-    },{onConflict:"line_uid"});
-  }
-  localStorage.setItem("line_uid",lineProfile.userId);
-  localStorage.setItem("customer_name",lineProfile.displayName);
-  document.getElementById("formArea").style.display="none";
-  document.getElementById("successArea").style.display="block";
+  btn.disabled=true; btn.textContent="⏳ กำลังบันทึก...";
+  const sb_=getSB(), uid=lineProfile.userId, lineName=lineProfile.displayName, norm=normPhone(phone);
+  const today=new Date().toISOString().slice(0,10);
+  // display_name = ชื่อจริง · line_display_name = ชื่อไลน์ (เก็บทั้งคู่ · คอลัมน์ถูกต้องตาม schema จริง)
+  const fields={ display_name:name, line_display_name:lineName, picture_url:lineProfile.pictureUrl||"", phone:norm, date_of_birth:getDob(), gender:_gender };
+  try{
+    if(sb_){
+      // กันซ้ำ: ถ้าเบอร์นี้มีลูกค้าเดิม (line_uid ว่าง = migrate/keyed-by-phone) → merge เข้าแถวเก่า เก็บประวัติ/แต้ม/ที่มา
+      const { data:byPhone } = await sb_.from("customers").select("id,line_uid,admin_notes").eq("phone",norm).limit(10);
+      const old=(byPhone||[]).find(r=>!r.line_uid);
+      if(old){
+        // ปลด stub ที่ถือ line_uid นี้อยู่ (จากตอนเปิดแอป) กัน unique conflict
+        const { data:byUid } = await sb_.from("customers").select("id,admin_notes").eq("line_uid",uid).limit(2);
+        const stub=(byUid||[]).find(r=>r.id!==old.id);
+        if(stub){ await sb_.from("customers").update({ line_uid:null, is_blocked:true, admin_notes:((stub.admin_notes||"")+" [รวมเข้า "+old.id.slice(0,8)+"]").trim() }).eq("id",stub.id); }
+        await sb_.from("customers").update(Object.assign({},fields,{ line_uid:uid, admin_notes:((old.admin_notes||"")+" [🔄 สมัครใหม่/กลับมา "+today+"]").trim() })).eq("id",old.id);
+      } else {
+        // ลูกค้าใหม่ปกติ → upsert by line_uid (อัปเดต stub ที่เปิดแอปสร้างไว้ หรือสร้างใหม่)
+        await sb_.from("customers").upsert(Object.assign({},fields,{ line_uid:uid }),{onConflict:"line_uid"});
+      }
+    }
+    localStorage.setItem("line_uid",uid);
+    localStorage.setItem("customer_name",name);
+    document.getElementById("formArea").style.display="none";
+    document.getElementById("successArea").style.display="block";
+  }catch(e){ showErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); btn.disabled=false; btn.textContent="สมัครสมาชิก →"; }
 }
 function showErr(m){const e=document.getElementById("errBox");e.textContent=m;e.style.display="block";setTimeout(()=>e.style.display="none",3000);}
 </script>
