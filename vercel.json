@@ -1,6 +1,5 @@
 {
   "crons": [
-    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" },
-    { "path": "/api/notify-daily-orders", "schedule": "0 14 * * *" }
+    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" }
   ]
 }

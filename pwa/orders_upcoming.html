@@ -49,6 +49,11 @@ header{
 .dchip .dn{font-size:17px;font-weight:700;margin-top:1px}
 .dchip .dc{font-size:11px;color:var(--soft);margin-top:2px}
 .dchip.on{border-color:var(--g);background:var(--panel2)}
+.dchip.past{opacity:.55}
+.badge-pt{background:var(--panel2);color:var(--soft);border:1px solid var(--line);border-radius:999px;padding:2px 9px;font-size:11px;font-weight:700}
+.backbtn{display:block;width:100%;margin:0 0 18px;background:var(--panel);border:1px dashed var(--line);
+  color:var(--soft);border-radius:12px;padding:12px 0;font-size:14px;font-weight:600;cursor:pointer}
+.backbtn:active{border-color:var(--g);color:var(--tx)}
 .dchip.on .dc{color:var(--g)}
 main{padding:16px 14px 0}
 .day{margin-bottom:26px;scroll-margin-top:132px}
@@ -178,8 +183,14 @@ var orders = [];
 var itemsBy = {};
 var loading = false;
 var srcFilter = "all";   // all | 360 | hato — ช่วง beta คีย์คู่ขนานกับ Hato จะเห็นซ้ำ กรองได้
+var daysBack = 0;        // ดูย้อนหลังกี่วัน (กดปุ่มเพิ่มทีละ 7)
+var firstRender = true;  // เลื่อนอัตโนมัติเฉพาะรอบแรก — กดย้อนหลังแล้วต้องไม่ดีดกลับ
 
-for (var i=0;i<=DAYS_AHEAD;i++) dates.push(addDays(today,i));
+function buildDates(){
+  dates = [];
+  for (var i=-daysBack; i<=DAYS_AHEAD; i++) dates.push(addDays(today,i));
+}
+buildDates();
 
 /* ── LOAD (sequential เท่านั้น — ห้าม Promise.all) ─────── */
 async function loadAll(){
@@ -266,11 +277,12 @@ function render(){
   dates.forEach(function(d){ byDate[d] = []; });
   orders.filter(passSrc).forEach(function(o){ if(byDate[o.delivery_date]) byDate[o.delivery_date].push(o); });
 
-  // แถบวันที่ด้านบน
+  // แถบวันที่ด้านบน (index ของ "วันนี้" = daysBack เพราะข้างหน้ามีวันย้อนหลังต่อไว้)
   var bar = dates.map(function(d,i){
     var n = byDate[d].length;
-    return '<div class="dchip'+(i===1?" on":"")+'" data-d="'+d+'">'
-      + '<div class="dd">'+fmtDay(d)+(i===0?" (วันนี้)":i===1?" (พรุ่งนี้)":"")+'</div>'
+    var isToday = i===daysBack, isTm = i===daysBack+1, isPast = i<daysBack;
+    return '<div class="dchip'+(isPast?" past":"")+'" data-d="'+d+'">'
+      + '<div class="dd">'+fmtDay(d)+(isToday?" (วันนี้)":isTm?" (พรุ่งนี้)":"")+'</div>'
       + '<div class="dn">'+fmtDM(d)+'</div>'
       + '<div class="dc">'+(n? n+" ออเดอร์" : "—")+'</div></div>';
   }).join("");
@@ -285,7 +297,7 @@ function render(){
       (c.isMP ? mp : st).push(o);
     });
     var head = '<div class="dayhead"><div class="t">'+fmtDay(d)+" "+fmtDM(d)+'</div>'
-      + (i===0? '<span class="badge-tm">วันนี้</span>' : i===1? '<span class="badge-tm">พรุ่งนี้</span>' : "")
+      + (i===daysBack? '<span class="badge-tm">วันนี้</span>' : i===daysBack+1? '<span class="badge-tm">พรุ่งนี้</span>' : i<daysBack? '<span class="badge-pt">ผ่านมาแล้ว</span>' : "")
       + '<div class="n">'+list.length+' ออเดอร์'+(boxAll? " · "+boxAll+" กล่อง":"")+'</div></div>';
     var body = "";
     if(!list.length){
@@ -296,15 +308,27 @@ function render(){
     }
     return '<section class="day" id="day-'+d+'">'+head+body+'</section>';
   }).join("");
-  document.getElementById("main").innerHTML = html;
+  var backBtn = '<button class="backbtn" id="btnBack" type="button">ดูย้อนหลังอีก 7 วัน'
+    + (daysBack? ' (ตอนนี้ '+daysBack+' วัน)' : '') + '</button>';
+  document.getElementById("main").innerHTML = backBtn + html;
 
   Array.prototype.forEach.call(document.querySelectorAll(".dchip"), function(el){
     el.addEventListener("click", function(){ jump(el.getAttribute("data-d")); });
   });
-  // default = "วันแรกที่มีออเดอร์" (วันนี้ก่อนถ้ามี · ไม่งั้นข้ามวันว่างไปวันที่มีของจริง)
-  // หน่วง 1 เฟรม — บนมือถือถ้าเลื่อนทันทีตอน render มักโดน layout ทับแล้วค้างที่บนสุด
-  var firstDay = dates.filter(function(d){ return byDate[d].length; })[0] || dates[1];
-  requestAnimationFrame(function(){ setTimeout(function(){ jump(firstDay, true); }, 60); });
+  document.getElementById("btnBack").addEventListener("click", function(){
+    daysBack += 7;            // ยืดช่วงย้อนหลังทีละสัปดาห์ แล้วดึงใหม่ (ไม่ดีดกลับวันนี้)
+    buildDates();
+    loadAll();
+  });
+
+  // เลื่อนอัตโนมัติเฉพาะรอบแรก = "วันแรกที่มีออเดอร์ นับจากวันนี้ไป"
+  // (กดดูย้อนหลังแล้วต้องอยู่ที่เดิม ไม่งั้นกดแล้วเด้งหนีทุกที)
+  if(firstRender){
+    var fwd = dates.slice(daysBack);
+    var firstDay = fwd.filter(function(d){ return byDate[d].length; })[0] || fwd[1] || fwd[0];
+    requestAnimationFrame(function(){ setTimeout(function(){ jump(firstDay, true); }, 60); });
+    firstRender = false;
+  }
 }
 
 function grp(title, list){
@@ -379,7 +403,7 @@ document.addEventListener("visibilitychange", function(){
     var t = bkkToday();
     if(t !== today){ // ข้ามวันแล้ว → คำนวณช่วงวันใหม่
       today = t; dates = [];
-      for (var i=0;i<=DAYS_AHEAD;i++) dates.push(addDays(today,i));
+      buildDates();
     }
     loadAll();
   }
