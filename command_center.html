@@ -18,7 +18,13 @@
   #app{min-height:100dvh}
   .page{display:none;min-height:100dvh}
   .page.on{display:block}
-  .wrap{max-width:680px;margin:0 auto}
+  .wrap{max-width:1220px;margin:0 auto}
+  #pgChat .wrap,#pgList .wrap{max-width:860px}
+  #homeCards{column-width:350px;column-gap:14px}
+  #homeCards .card{margin-bottom:14px;break-inside:avoid;-webkit-column-break-inside:avoid}
+  .span-all{column-span:all;-webkit-column-span:all}
+  #chatMsgs{max-width:860px;margin:0 auto;width:100%}
+  @media(max-width:820px){ .wrap{max-width:100%} #homeCards{column-width:auto;column-count:1} }
 
   /* top bar */
   .top{position:sticky;top:0;z-index:20;background:var(--nut);color:#fff;padding:calc(12px + env(safe-area-inset-top)) 18px 12px;display:flex;align-items:center;gap:12px}
@@ -235,7 +241,7 @@ const ROUTINE=[
   {key:'wk_so',  ic:'📱', t:'โพสต์โซเชียล', weekly:true},
 ];
 
-let allMsgs=[], ccPosts=[], statusMap={}, biz={}, tablesOk=true, activeRoom=null;
+let allMsgs=[], ccPosts=[], statusMap={}, biz={}, tablesOk=true, activeRoom=null, bizLoaded=false;
 const seen=JSON.parse(localStorage.getItem('cc_seen')||'{}');
 const rdone=JSON.parse(localStorage.getItem('cc_routine')||'{}');
 
@@ -247,20 +253,21 @@ function fmtTime(iso){const d=new Date(iso);const now=new Date();const same=d.to
   const t=d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
   return same?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
 
-async function loadAll(manual){
+async function loadCore(){
+  // เบา: ข้อความ + สถานะ (poll ทุก 15 วิ)
   try{
-    const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(500);
-    if(error){tablesOk=false;} else {
-      tablesOk=true;
-      const all=(data||[]).slice().reverse();
-      allMsgs=all.filter(m=>m.room!=='cc'); ccPosts=all.filter(m=>m.room==='cc');
-    }
+    const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(400);
+    if(error){tablesOk=false;} else { tablesOk=true; const all=(data||[]).slice().reverse(); allMsgs=all.filter(m=>m.room!=='cc'); ccPosts=all.filter(m=>m.room==='cc'); }
     const {data:st}=await sb.from('track_status').select('*');
     statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
-    await loadBiz();
   }catch(e){tablesOk=false;}
-  renderBanner(); renderHome(); renderRoomList();
-  if(activeRoom) renderChat();
+}
+function refreshUI(){ renderBanner(); renderHome(); renderRoomList(); if(activeRoom) renderChat(); }
+async function loadAll(manual){
+  await loadCore();
+  // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
+  if(manual || !bizLoaded){ await loadBiz(); bizLoaded=true; }
+  refreshUI();
   if(manual) toast('รีเฟรชแล้ว');
 }
 
@@ -312,7 +319,7 @@ function cardBiz(){
   const fresh = stale
     ? `<div class="fresh bad">⚠️ ข้อมูลค้าง ${daysBehind} วัน (ล่าสุด ${thDisp(biz.latest)}) — ให้ P-track sync</div>`
     : `<div class="fresh ok">✓ ข้อมูลอัปเดตล่าสุด ${thDisp(biz.latest||biz.today)}</div>`;
-  return `<div class="card">
+  return `<div class="card span-all">
     <h3>💰 ธุรกิจ ณ ตอนนี้ <span class="r">ช่องออนไลน์ (LIFF)</span></h3>
     <div class="biz-top">
       <div class="biz-main">
@@ -487,7 +494,7 @@ function toast(msg){let t=document.getElementById('_toast');if(!t){t=document.cr
   t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',1600);}
 
 loadAll();
-setInterval(()=>{ if(document.visibilityState==='visible') loadAll(); },8000);
+setInterval(()=>{ if(document.visibilityState==='visible'){ loadCore().then(refreshUI); } },15000);
 </script>
 </body>
 </html>
