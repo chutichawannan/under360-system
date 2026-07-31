@@ -282,19 +282,34 @@ function getCodeDisplay(code,name){
 
 // ── LOAD ─────────────────────────────────────────────────
 var kitchenUtensilSize="normal";
+// ดึง order_items เฉพาะออเดอร์ที่โหลดมา (chunk 80/ครั้ง กัน URL ยาว + cap 1000/ครั้ง)
+async function fetchItemsFor(sb_, ids){
+  var out=[];
+  for(var i=0;i<ids.length;i+=80){
+    var r=await sb_.from("order_items").select("*").in("order_id",ids.slice(i,i+80));
+    if(r&&r.data) out=out.concat(r.data);
+  }
+  return out;
+}
 async function loadAll(){
   var sb_=getSB();
   if(!sb_){render();return;}
   try{
-    var r=await Promise.all([
-      sb_.from("orders").select("*").order("delivery_date").order("time_slot"),
-      sb_.from("order_items").select("*"),
+    // ⚠️ เดิม select("*") ไม่มี limit → Supabase cap 1000 + เรียงวันเก่าสุด = ครัวเห็นออเดอร์ 2024 ไม่เห็นวันนี้ (พังเงียบหลัง migrate 15,844 ใบ)
+    // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (เครื่องครัว=เวลาไทย · buffer 3 วันกัน TZ เพี้ยน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
+    var _d=new Date(); _d.setDate(_d.getDate()-3);
+    var startDate=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
+    var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot");
+    allOrders=ordRes.data||[];
+    var ids=allOrders.map(function(o){return o.id;});
+    var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*"),
       sb_.from("kitchen_data").select("data").eq("key","globalSettings").maybeSingle()
     ]);
-    allOrders=r[0].data||[]; allItems=r[1].data||[]; allMenus=r[2].data||[]; allMpDeliveries=r[3].data||[];
-    kitchenUtensilSize=(r[4].data&&r[4].data.data&&r[4].data.data.kitchenUtensilSize)||"normal";
+    allItems=await fetchItemsFor(sb_,ids);
+    allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
+    kitchenUtensilSize=(rest[2].data&&rest[2].data.data&&rest[2].data.data.kitchenUtensilSize)||"normal";
   }catch(e){console.error(e);}
   render();
 }
@@ -509,7 +524,7 @@ function renderCard(o){
     +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
     +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
     +"<span style='font-size:10px;font-weight:700;padding:1px 7px;border-radius:7px;"+(o.payment_status==="paid"?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span></div>"
-    +"<div class='oc-meta'>📍 "+escH(o.delivery_address||"—")+"</div>"
+    +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
     +"<div class='oc-meta' style='font-size:10px;color:var(--soft)'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
     +"<div class='items-grid'>"+itemsHtml+"</div>"
     +utensilHtml
