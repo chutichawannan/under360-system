@@ -135,6 +135,7 @@ const ROOMS=[
   {id:'fah',    label:'ฟ้า',       desc:'วัตถุดิบ / ครัว',             color:'#0D9488', kind:'agent'},
   {id:'tiang',  label:'น้องเตียง', desc:'กราฟิก / โซเชียล',           color:'#E11D48', kind:'agent'},
   {id:'ploy',   label:'ห้องพลอย',  desc:'มาเก็ตติ้ง / แคมเปญ (พลอย)', color:'#7C3AED', kind:'ploy'},
+  {id:'rnd01',  label:'R&D 01',    desc:'Hyrox — สูตร → DB + รูป',     color:'#059669', kind:'rnd'},
 ];
 const RMAP=Object.fromEntries(ROOMS.map(r=>[r.id,r]));
 const STCOL={idle:'var(--idle)',working:'var(--work)',blocked:'var(--block)'};
@@ -212,8 +213,8 @@ function renderRooms(){
       <span class="dot" style="background:#fff"></span>
       <div class="room-b"><div class="room-t"><span class="room-n">📊 หน้ารวม (Dashboard)</span></div>
       <div class="room-d">ลิงก์ทุกอัน · ความคืบหน้า · สรุปล่าสุด</div></div></div>`;
-  for(const kind of ['track','agent','ploy']){
-    html+=`<div class="grp">${kind==='track'?'Tracks (session)':kind==='agent'?'Agents':'พลอย (มาเก็ตติ้ง)'}</div>`;
+  for(const kind of ['track','agent','ploy','rnd']){
+    html+=`<div class="grp">${kind==='track'?'Tracks (session)':kind==='agent'?'Agents':kind==='ploy'?'พลอย (มาเก็ตติ้ง)':'R&D (อาหาร)'}</div>`;
     for(const r of ROOMS.filter(x=>x.kind===kind)){
       const st=statusMap[r.id]; const unread=unreadOf(r.id);
       const dotc=st?STCOL[st.status]||'var(--idle)':'var(--idle)';
