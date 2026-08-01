@@ -36,6 +36,7 @@
   .top .tt b{font-size:17px;font-weight:800;display:block;letter-spacing:.2px}
   .top .tt .s{font-size:11.5px;opacity:.8}
   .top .rf{background:rgba(255,255,255,.16);border:none;color:#fff;width:34px;height:34px;border-radius:10px;font-size:16px;cursor:pointer;flex-shrink:0}
+  .top .clk{font-size:12.5px;font-weight:700;background:rgba(255,255,255,.16);padding:6px 10px;border-radius:9px;white-space:nowrap;flex-shrink:0;font-variant-numeric:tabular-nums;letter-spacing:.2px}
 
   .body{padding:14px 14px calc(28px + env(safe-area-inset-bottom))}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:13px;box-shadow:0 1px 2px rgba(20,32,27,.03)}
@@ -93,7 +94,7 @@
 
   /* bar chart (hover ขึ้นยอด) */
   .bars{display:flex;align-items:flex-end;gap:8px;height:104px;padding-top:24px}
-  .barcol{flex:1;display:flex;flex-direction:column;align-items:center;min-width:0;cursor:default}
+  .barcol{flex:1;height:100%;display:flex;flex-direction:column;align-items:center;min-width:0;cursor:default}
   .bwrap{flex:1;width:100%;display:flex;align-items:flex-end;justify-content:center;position:relative}
   .bwrap>i{width:78%;max-width:40px;min-height:3px;background:linear-gradient(180deg,#2E6B4F,#1F4D3A);border-radius:5px 5px 0 0;transition:.15s}
   .barcol:hover .bwrap>i{background:linear-gradient(180deg,#41946E,#2E6B4F)}
@@ -160,6 +161,7 @@
   <section class="page on" id="pgHome">
     <div class="top">
       <div class="tt"><b>Under360</b><span class="s">Command Center · หน้ารวม</span></div>
+      <div class="clk" id="clk">🕐 —</div>
       <button class="rf" onclick="loadAll(true)" title="รีเฟรช">⟳</button>
     </div>
     <div class="wrap"><div class="body">
@@ -357,6 +359,14 @@ function barsChart(data){
     return `<div class="barcol"><div class="bwrap"><span class="btip">${baht(v)}</span><i style="height:${pct}%"></i></div><span class="blab">${lab}</span></div>`;
   }).join('')+'</div>';
 }
+function tickClock(){
+  const el=document.getElementById('clk'); if(!el)return;
+  const now=new Date();
+  const t=now.toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+  const d=now.toLocaleDateString('th-TH',{timeZone:'Asia/Bangkok',weekday:'short',day:'numeric',month:'short'});
+  el.textContent='🕐 '+t+' · '+d+' (ไทย)';
+}
+setInterval(tickClock,1000); tickClock();
 function sparkline(vals,labels){
   const w=612,h=64,pad=6,max=Math.max(...vals),min=Math.min(...vals);
   const rng=max-min||1;
