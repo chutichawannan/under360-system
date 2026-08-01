@@ -297,6 +297,7 @@ function getCodeDisplay(code,name){
 
 // ── LOAD ─────────────────────────────────────────────────
 var kitchenUtensilSize="normal";
+var catLabelMap={}; // cat_xxx → ชื่อหมวดสวย (จาก appConfig.categories)
 // ดึง order_items เฉพาะออเดอร์ที่โหลดมา (chunk 80/ครั้ง กัน URL ยาว + cap 1000/ครั้ง)
 async function fetchItemsFor(sb_, ids){
   var out=[];
@@ -320,11 +321,15 @@ async function loadAll(){
     var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*"),
-      sb_.from("kitchen_data").select("data").eq("key","globalSettings").maybeSingle()
+      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig"])
     ]);
     allItems=await fetchItemsFor(sb_,ids);
     allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
-    kitchenUtensilSize=(rest[2].data&&rest[2].data.data&&rest[2].data.data.kitchenUtensilSize)||"normal";
+    var _kd=rest[2].data||[];
+    var _gs=(_kd.find(function(x){return x.key==="globalSettings";})||{}).data||{};
+    var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
+    kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
+    catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
   }catch(e){console.error(e);}
   render();
 }
@@ -496,7 +501,7 @@ function renderStock(){
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>ตั้งจำนวนที่ทำวันนี้ต่อเมนู — <b>ลูกค้าสั่งได้ไม่เกินนี้</b> (LIFF อ่านตัวนี้) · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
   var lastCat=null;
   menus.forEach(function(m){
-    if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
+    if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
     var unlimited=(m.stock_total==null);
     var val=unlimited?0:m.stock_total;
     var ordered=om[m.id]||0;
