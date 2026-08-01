@@ -22,6 +22,15 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .tab-bar{display:flex;background:var(--w);border-bottom:2px solid var(--xsoft);overflow-x:auto;}
 .tab-btn{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--soft);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;white-space:nowrap;}
 .tab-btn.active{color:var(--g);border-bottom-color:var(--g);}
+.stk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--xsoft);}
+.stk-name{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.stk-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.stk-btn{width:40px;height:40px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:22px;font-weight:800;cursor:pointer;color:var(--g);line-height:1;}
+.stk-btn:active{background:var(--g);color:#fff;}
+.stk-btn:disabled{opacity:.3;cursor:default;}
+.stk-num{width:58px;height:40px;text-align:center;border:1.5px solid var(--xsoft);border-radius:10px;font-size:18px;font-weight:800;font-family:monospace;}
+.stk-inf{width:40px;height:40px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:18px;cursor:pointer;color:var(--soft);}
+.stk-inf.on{background:var(--g);color:#fff;border-color:var(--g);}
 
 /* DATE + SLOT BAR */
 .ctrl-bar{background:var(--w);border-bottom:1px solid var(--xsoft);padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
@@ -133,6 +142,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <div class="tab-bar">
   <button class="tab-btn active" id="tab1" onclick="switchTab(1)">📋 รายสินค้า</button>
   <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 รายออเดอร์</button>
+  <button class="tab-btn" id="tab3" onclick="switchTab(3)">📊 ตั้งสต็อค</button>
 </div>
 
 <!-- DATE + SLOT FILTER -->
@@ -158,6 +168,11 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <!-- TAB 2: รายออเดอร์ -->
 <div class="main" id="tabContent2" style="display:none">
   <div id="orderView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+</div>
+
+<!-- TAB 3: ตั้งสต็อค -->
+<div class="main" id="tabContent3" style="display:none">
+  <div id="stockView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
 </div>
 
 <!-- PRINT MODAL -->
@@ -258,7 +273,7 @@ function setSlot(mode,el){
 }
 function switchTab(n){
   tabMode=n;
-  [1,2].forEach(function(i){
+  [1,2,3].forEach(function(i){
     document.getElementById("tab"+i).classList.toggle("active",i===n);
     document.getElementById("tabContent"+i).style.display=i===n?"block":"none";
   });
@@ -343,6 +358,7 @@ function detectBadge(items){
 // ── RENDER ───────────────────────────────────────────────
 function render(){
   if(tabMode===1)renderProd();
+  else if(tabMode===3)renderStock();
   else renderOrders();
 }
 
@@ -365,25 +381,26 @@ function renderProd(){
     return;
   }
   var html="<div class='prod-wrap'>"
-    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>ของจริง</span><span>เหลือ</span></div>";
+    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>สต็อค</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
-    var actual=m.actual_stock!=null?m.actual_stock:(m.stock_total||0);
-    var rem=actual-r.qty;
-    var rowCls=rem<0?"danger":rem<3?"warn":"";
+    var unlimited=(m.stock_total==null);
+    var stk=unlimited?null:m.stock_total;
+    var rem=unlimited?null:(stk-r.qty);
+    var rowCls=(rem!=null&&rem<0)?"danger":(rem!=null&&rem<3)?"warn":"";
     html+="<div class='pt-row "+rowCls+"'>"
       +"<div style='display:flex;align-items:center;gap:6px;min-width:0'>"
       +"<span class='code-tag'>"+escH(getCodeDisplay(r.code,r.name))+"</span>"
       +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+escH(r.name)+"</span>":"")
       +"</div>"
       +"<div class='pt-n' style='color:var(--gold)'>"+r.qty+"</div>"
-      +"<div class='pt-n'><input class='actual-input' type='number' min='0' value='"+actual+"' data-menu-id='"+r.id+"' oninput='schedSave(this)'></div>"
-      +"<div class='pt-n' style='color:"+(rem<0?"var(--r)":"var(--g)")+"'>"+rem+"</div>"
+      +"<div class='pt-n'>"+(unlimited?"∞":stk)+"</div>"
+      +"<div class='pt-n' style='color:"+((rem!=null&&rem<0)?"var(--r)":"var(--g)")+"'>"+(unlimited?"∞":rem)+"</div>"
       +"</div>";
   });
   html+="<div style='padding:8px 12px;font-size:11px;color:var(--soft);border-top:1px solid var(--xsoft)'>"
     +"รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ"
-    +"<span style='float:right;color:var(--g);font-weight:600'>✏️ แก้ตัวเลข ของจริง ได้เลย</span></div></div>";
+    +"<span style='float:right;color:var(--g);font-weight:600;cursor:pointer' onclick='switchTab(3)'>📊 ตั้งสต็อคที่แท็บ \"ตั้งสต็อค\" →</span></div></div>";
   document.getElementById("prodView").innerHTML=html;
   renderMpQueue();
 }
@@ -467,6 +484,42 @@ function schedSave(inp){
     await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId);
   },600);
 }
+
+// ── TAB 3: ตั้งสต็อค (canonical = stock_total · ทุกหน้ารวม LIFF อ่านตัวนี้) ──
+var CATLBL_STK={no_regular:"🍚 ข้าวกล่อง",no_special:"⭐ เมนูพิเศษ",pack_regular:"📦 แพคกับข้าว",pack_special:"📦 แพคพิเศษ",trend:"🔥 เมนูกระแส"};
+function renderStock(){
+  var el=document.getElementById("stockView"); if(!el)return;
+  var menus=(allMenus||[]).filter(function(m){ return m.category!=="meal_hp"&&m.category!=="meal_lc"; })
+    .sort(function(a,b){ return (a.category||"").localeCompare(b.category||"")||(a.code||"").localeCompare(b.code||""); });
+  if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
+  var om={}; filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
+  var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>ตั้งจำนวนที่ทำวันนี้ต่อเมนู — <b>ลูกค้าสั่งได้ไม่เกินนี้</b> (LIFF อ่านตัวนี้) · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
+  var lastCat=null;
+  menus.forEach(function(m){
+    if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
+    var unlimited=(m.stock_total==null);
+    var val=unlimited?0:m.stock_total;
+    var ordered=om[m.id]||0;
+    html+="<div class='stk-row'>"
+      +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+escH(m.name||"")
+      +(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":"")+"</div>"
+      +"<div class='stk-ctrl'>"
+      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',-1)\" "+(unlimited?"disabled":"")+">−</button>"
+      +"<input class='stk-num' type='number' min='0' value='"+val+"' data-id='"+m.id+"' oninput='stkType(this)'"+(unlimited?" disabled style='opacity:.35'":"")+">"
+      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',1)\" "+(unlimited?"disabled":"")+">+</button>"
+      +"<button class='stk-inf "+(unlimited?"on":"")+"' onclick=\"stkInf('"+m.id+"')\" title='ขายไม่จำกัด'>∞</button>"
+      +"</div></div>";
+  });
+  el.innerHTML=html;
+}
+function stkWrite(menuId,val){ // val = ตัวเลข หรือ null (ไม่จำกัด)
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=val;
+  clearTimeout(saveTimers["stk_"+menuId]);
+  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_) await sb_.from("menu_items").update({stock_total:val}).eq("id",menuId); },500);
+}
+function stkAdj(menuId,d){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; var cur=(m.stock_total==null)?0:m.stock_total; stkWrite(menuId,Math.max(0,cur+d)); renderStock(); }
+function stkType(inp){ stkWrite(inp.dataset.id,Math.max(0,parseInt(inp.value)||0)); } // ไม่ re-render ระหว่างพิม กัน cursor เด้ง
+function stkInf(menuId){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; stkWrite(menuId, (m.stock_total!=null)?null:0); renderStock(); }
 
 // TAB 2: รายออเดอร์ by slot
 function renderOrders(){
