@@ -7,9 +7,10 @@
 // ─────────────────────────────────────────────────────────────────────────
 const crypto = require('crypto');
 
-const HOST = (process.env.LALAMOVE_ENV === 'production')
-  ? 'https://rest.lalamove.com'
-  : 'https://rest.sandbox.lalamove.com';
+// default = production (เราใช้คีย์ pk_prod/sk_prod) · ตั้ง LALAMOVE_ENV=sandbox ถ้าจะเทส sandbox
+const HOST = (process.env.LALAMOVE_ENV === 'sandbox')
+  ? 'https://rest.sandbox.lalamove.com'
+  : 'https://rest.lalamove.com';
 const KITCHEN = { lat: '13.7179969', lng: '100.5010971', address: 'Under360 ครัว' };
 
 module.exports = async (req, res) => {
