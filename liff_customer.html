@@ -911,8 +911,8 @@ const SLOTS = [
   { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท', mealPlanDisabled:true },
   { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
   { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
-  // ⏸️ ซ่อนชั่วคราว รอต่อ Lalamove API จริง — เรทปัจจุบันเป็น placeholder (30+8×กม.) = คิดเงินผิด/เคลมเท็จ · เปิดคืนเมื่อต่อ Lalamove จริง (พี่เก่ง)
-  // { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
+  // ✅ เปิดคืน 3 ส.ค. 2026 — ต่อ Lalamove v3 API จริงแล้ว (/api/lalamove-quote · เรทจริงจากพิกัด ไม่ใช่ placeholder)
+  { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
 ];
 
 const CAT_LABELS = {
@@ -2740,22 +2740,23 @@ let expressTime   = null;   // เวลาที่ลูกค้าเลื�
 
 async function fetchLalamovePrice(){
   if(!distKm){ lalamovePrice=null; return; }
-  // >30km → flat rate ฿200
-  if(distKm > 30){ lalamovePrice = 200; updateCartTotals(); return; }
-  // TODO: เชื่อม Lalamove v3 API จริงผ่าน /api/lalamove-quote ใน v0.4 (พี่เก่ง)
-  // ตอนนี้ estimate จาก distance (placeholder จนกว่า API จะพร้อม)
+  // ต้องมีพิกัดหมุดจริงถึงขอเรทได้ (Lalamove คิดจากพิกัด ไม่ใช่ระยะ)
+  const pos = cusPin ? cusPin.getPosition() : null;
+  if(!pos){ lalamovePrice=null; updateCartTotals(); return; }
   lalamovePrice = 'loading';
   updateCartTotals();
   try{
-    // Scaffold — เรียก backend proxy เมื่อพร้อม
-    // const res = await fetch('/api/lalamove-quote', { method:'POST',
-    //   body: JSON.stringify({ from: KITCHEN_POS, to: { lat: cusPin... } }) });
-    // const { price } = await res.json();
-    // lalamovePrice = price;
-    // placeholder: คิด 30 บาทเริ่มต้น + 8 บาท/กม.
-    await new Promise(r=>setTimeout(r,800)); // simulate API delay
-    lalamovePrice = Math.round(30 + distKm * 8);
-  }catch(e){ lalamovePrice = null; }
+    // เรทจริงจาก Lalamove v3 (ผ่าน serverless proxy — secret อยู่ฝั่ง server)
+    const u = '/api/lalamove-quote?lat='+pos.lat()+'&lng='+pos.lng()
+            + '&addr='+encodeURIComponent((document.getElementById('addr-input')||{}).value||'ปลายทาง');
+    const res  = await fetch(u);
+    const json = await res.json();
+    if(json && json.ok && typeof json.price === 'number') lalamovePrice = Math.round(json.price);
+    else throw new Error('no price');
+  }catch(e){
+    // API ล่ม/โควตาหมด → ประมาณจากระยะไว้ก่อน (ไม่ปล่อยให้ลูกค้าค้าง)
+    lalamovePrice = Math.min(Math.round(30 + distKm * 8), 400);
+  }
   updateCartTotals();
   renderTimePick();
 } // default ก่อนโหลด orders
