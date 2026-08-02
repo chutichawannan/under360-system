@@ -239,16 +239,24 @@ async function showReorder(orderId,orderNum){
   let items=[];
   if(sb_){
     try{
-      const r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
-      items=(r.data||[]).map(i=>({...i.menu_items,qty:i.quantity}));
-    }catch(e){}
+      // ⚠️ สต็อกจริง = stock_total (เดิมโค้ดอ้าง stock_quantity ที่ไม่มีคอลัมน์นี้ → query error → ตกไป mock = โชว์เมนูปลอม · แก้ 3 ส.ค. 2026)
+      const r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_total)").eq("order_id",orderId);
+      if(r.error) throw r.error;
+      items=(r.data||[]).filter(i=>i.menu_items).map(i=>({...i.menu_items,qty:i.quantity}));
+    }catch(e){ console.error("showReorder failed:",e); }
   }
-  if(!items.length)items=[{id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",is_available:true,stock_quantity:5,qty:2},{id:"m2",code:"HP04",name:"สันในหมูย่าง",is_available:false,stock_quantity:0,qty:1}];
   reorderCart=items;
-  const hasUnavail=items.some(i=>!i.is_available||i.stock_quantity===0);
+  // ไม่มีรายการ = โชว์ตามจริง ห้ามยัด mock (ลูกค้าเคยเห็นเมนูที่ไม่ได้สั่ง)
+  if(!items.length){
+    document.getElementById("reWarn").style.display="none";
+    document.getElementById("reItems").innerHTML='<div class="pop-item"><span>ดึงรายการเมนูของออเดอร์นี้ไม่ได้</span><span class="pop-unavail">ลองใหม่อีกครั้ง</span></div>';
+    document.getElementById("rePop").style.display="flex";
+    return;
+  }
+  const hasUnavail=items.some(i=>!i.is_available||i.stock_total===0);
   document.getElementById("reWarn").style.display=hasUnavail?"block":"none";
   document.getElementById("reItems").innerHTML=items.map(i=>{
-    const avail=i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);
+    const avail=i.is_available&&(i.stock_total==null||i.stock_total>0);
     return `<div class="pop-item"><span>${i.code} ${i.name} ×${i.qty}</span><span class="${avail?"pop-avail":"pop-unavail"}">${avail?"✓ มีสินค้า":"✗ ไม่มีในขณะนี้"}</span></div>`;
   }).join("");
   document.getElementById("rePop").style.display="flex";
@@ -257,7 +265,7 @@ async function showReorder(orderId,orderNum){
 function confirmReorder(){
   if(!reorderCart)return;
   const cart={};
-  reorderCart.filter(i=>i.is_available&&(i.stock_quantity===null||i.stock_quantity>0))
+  reorderCart.filter(i=>i.is_available&&(i.stock_total==null||i.stock_total>0))
     .forEach(i=>{cart[i.id]=i.qty;});
   localStorage.setItem("cart",JSON.stringify(cart));
   location.href="liff_customer.html";
