@@ -339,10 +339,7 @@ async function loadAll(){
 }
 
 // เขียนไม่ติด = ต้องรู้ทันที (supabase v2 ไม่ throw → ถ้าไม่เช็ค .error จะเงียบสนิท) — เพิ่ม 3 ส.ค. 2026
-function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"
-"+((e&&e.message)||"")+"
-
-กดรีเฟรชแล้วลองใหม่"); }
+function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชแล้วลองใหม่"); }
 
 // ── FILTER ───────────────────────────────────────────────
 function filteredOrders(){
