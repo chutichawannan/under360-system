@@ -2413,6 +2413,18 @@ async function submitOrder() {
     const { error: iErr } = await sb.from('order_items').insert(items);
     if (iErr) throw iErr;
 
+    // 2a. ✂️ ตัดสต็อกอัตโนมัติ (เพิ่ม 3 ส.ค. 2026)
+    // เดิม: ลูกค้าสั่งไปเท่าไหร่ stock_total ไม่ลดเลย → badge "เหลือ N ชิ้น" ไม่จริง · ขายเกินได้
+    // ใช้ RPC adjust_stock (ทำใน DB ครั้งเดียว = คนสั่งพร้อมกันก็ไม่เพี้ยน) · เมนูไม่จำกัดสต็อก (null) ฟังก์ชันข้ามให้เอง
+    // best-effort: ตัดไม่สำเร็จห้ามทำให้ออเดอร์ลูกค้าพัง — แค่ log ไว้ให้แอดมินเช็ค
+    try {
+      const need = {};
+      for (const it of items) { if (it.menu_item_id) need[it.menu_item_id] = (need[it.menu_item_id] || 0) + (it.quantity || 0); }
+      await Promise.allSettled(Object.entries(need).map(([mid, qty]) =>
+        sb.rpc('adjust_stock', { p_menu_id: mid, p_delta: -Math.abs(qty) })
+      ));
+    } catch(e) { console.error('ตัดสต็อกไม่สำเร็จ (ออเดอร์บันทึกแล้ว):', e); }
+
     // 2b. สร้างตารางส่ง Meal Plan (Mon/Wed/Fri rounds) — ไม่บล็อก flow ถ้าพัง
     for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot, recipientName); }
 
@@ -2459,6 +2471,13 @@ async function submitOrder() {
           const { data: rOrd, error: rErr } = await sb.from('orders').insert(rPayload).select().single();
           if (rErr) throw rErr;
           await sb.from('order_items').insert(rItems.map(it => ({ ...it, order_id: rOrd.id })));
+          // ตัดสต็อกของรอบนี้ด้วย (กล่องของรอบ 2..N ก็กินสต็อกจริงเหมือนกัน)
+          try {
+            const rNeed = {};
+            for (const it of rItems) { if (it.menu_item_id) rNeed[it.menu_item_id] = (rNeed[it.menu_item_id] || 0) + (it.quantity || 0); }
+            await Promise.allSettled(Object.entries(rNeed).map(([mid, qty]) =>
+              sb.rpc('adjust_stock', { p_menu_id: mid, p_delta: -Math.abs(qty) })));
+          } catch(e) { console.error('ตัดสต็อกรอบ ' + r + ' ไม่สำเร็จ:', e); }
           roundOrderNums.push({ num: rOrderNum, date: rDate });
         } catch(e) { console.error('round order create failed (non-blocking):', e); }
       }

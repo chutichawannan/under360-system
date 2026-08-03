@@ -480,7 +480,7 @@ function schedSave(inp){
   var val=parseInt(inp.value)||0;
   // update local ให้ rem re-calc
   var m=allMenus.find(function(x){return x.id===menuId;});
-  if(m)m.actual_stock=val;
+  if(m){ m.actual_stock=val; if(m.stock_total!=null) m.stock_total=val; }   // ผลิตได้จริงเท่าไหร่ = ลูกค้าซื้อได้เท่านั้น
   // update rem display ทันที
   var row=inp.closest(".pt-row");
   if(row){
@@ -493,7 +493,15 @@ function schedSave(inp){
   clearTimeout(saveTimers[menuId]);
   saveTimers[menuId]=setTimeout(async function(){
     var sb_=getSB(); if(!sb_)return;
-    var _w3=await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId); if(_w3.error) kqWriteFail(_w3.error,"สต็อคที่นับได้");
+    // 🔗 ครัวกรอก "ผลิตได้จริง" → ตั้งเลขที่ลูกค้าซื้อได้ (stock_total) ให้ตรงกันทันที (3 ส.ค. 2026)
+    //    เดิมเก็บแค่ actual_stock อย่างเดียว → ไม่มีอะไรเชื่อมกับเลขขาย → ครัวผลิตได้ 0 แต่ลูกค้ายังสั่งได้ 10
+    //    เมนูที่ตั้ง "ไม่จำกัด" (stock_total = null) ไม่แตะ — ยังขายได้เรื่อยๆ ตามเดิม
+    var mm=allMenus.find(function(x){return x.id===menuId;})||{};
+    var patch={actual_stock:val};
+    if(mm.stock_total!=null) patch.stock_total=val;
+    var _w3=await sb_.from("menu_items").update(patch).eq("id",menuId);
+    if(_w3.error) kqWriteFail(_w3.error,"ผลิตได้จริง/สต็อคขาย");
+    else if(patch.stock_total!=null) logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")");
   },600);
 }
 
