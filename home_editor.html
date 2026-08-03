@@ -705,8 +705,12 @@ function addCard(){
   },100);
 }
 
+// การ์ดที่ถูกลบ — ต้องจำไว้ไปปิดใน DB ตอนกดบันทึก
+// (เดิมลบแค่ในหน้าจอ ไม่เคยลบ/ปิดใน DB เลย → กดบันทึกแล้วการ์ดยังโชว์ให้ลูกค้าเห็น + กลับมาเองตอนรีโหลด — แก้ 3 ส.ค. 2026)
+let deletedCardIds=[];
 function deleteCard(idx){
   if(!confirm(`ลบ Card "${cards[idx].title}"?`)) return;
+  if(cards[idx] && cards[idx].id) deletedCardIds.push(cards[idx].id);
   cards.splice(idx,1);
   if(activeCardIdx>=cards.length) activeCardIdx=null;
   renderAll();
@@ -965,9 +969,15 @@ async function saveAll(){
   showToast('กำลังบันทึก...','info');
   let ok=true;
   try{
+    // ปิดการ์ดที่ถูกลบก่อน (is_active=false → liff_customer ไม่โชว์) แล้วค่อยบันทึกที่เหลือ
+    if(deletedCardIds.length){
+      const {error:delErr}=await sb.from('home_layout').update({is_active:false,updated_at:new Date().toISOString()}).in('section_key',deletedCardIds);
+      if(delErr) throw delErr;
+      deletedCardIds=[];
+    }
     for(let i=0;i<cards.length;i++){
       const c=cards[i];
-      await sb.from('home_layout').upsert({
+      const {error:upErr}=await sb.from('home_layout').upsert({
         section_key:c.id, section_type:'promo', // 'meal_plan'/'promo' ทั้งคู่ถูกรวมเป็น collage เดียวกันฝั่ง liff_customer.html อยู่แล้ว ไม่ผูกกับขนาดอีกต่อไป
         col_start:1,row_start:i+1, col_span:SIZE_TO_COL_SPAN[c.size]||4, row_span:SIZE_TO_COL_SPAN[c.size]||4,
         title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image||'',
@@ -975,6 +985,7 @@ async function saveAll(){
         item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}, {overlay:c.overlay||'gradient'}),
         sort_order:i, is_active:true, updated_at:new Date().toISOString()
       },{onConflict:'section_key'});
+      if(upErr) throw upErr;   // เดิมไม่รับ error → v2 ไม่ throw → catch ไม่เคยทำงาน = ขึ้น "✅ สำเร็จ" ทั้งที่ลูกค้ายังเห็นของเก่า
     }
   }catch(e){ ok=false; }
   let menuOrderCount=0, orderOk=true;

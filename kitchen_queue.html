@@ -197,7 +197,8 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 var sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 // d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด
-function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
+// ⏰ ยึดเวลาไทยเสมอ — ครัวอยู่ไทย · เจ้าของอาจเปิดจากต่างประเทศ (เดิมใช้เวลาเครื่อง = ได้วันของประเทศนั้น) แก้ 3 ส.ค. 2026
+function toISO(d){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(d||new Date());}
 function today(){return toISO(new Date());}
 function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
@@ -317,12 +318,13 @@ async function loadAll(){
     // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (เครื่องครัว=เวลาไทย · buffer 3 วันกัน TZ เพี้ยน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
     var _d=new Date(); _d.setDate(_d.getDate()-3);
     var startDate=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
-    var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot");
+    var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot").limit(3000);
+    if(ordRes.error) throw ordRes.error;   // เดิมไม่เช็ค → โหลดพลาดแล้วขึ้น "ไม่มีออเดอร์" ทั้งที่ DB มีเต็ม (แก้ 3 ส.ค. 2026)
     allOrders=ordRes.data||[];
     var ids=allOrders.map(function(o){return o.id;});
     var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
-      sb_.from("mp_deliveries").select("*"),
+      sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
       sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig"])
     ]);
     allItems=await fetchItemsFor(sb_,ids);
@@ -332,9 +334,15 @@ async function loadAll(){
     var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
     kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
     catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
-  }catch(e){console.error(e);}
+  }catch(e){ console.error(e); alert("⚠️ โหลดออเดอร์ไม่สำเร็จ — ที่เห็นบนจออาจไม่ครบ\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชอีกครั้ง"); }
   render();
 }
+
+// เขียนไม่ติด = ต้องรู้ทันที (supabase v2 ไม่ throw → ถ้าไม่เช็ค .error จะเงียบสนิท) — เพิ่ม 3 ส.ค. 2026
+function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"
+"+((e&&e.message)||"")+"
+
+กดรีเฟรชแล้วลองใหม่"); }
 
 // ── FILTER ───────────────────────────────────────────────
 function filteredOrders(){
@@ -454,7 +462,7 @@ function renderMpQueue(){
 async function markMpDelivered(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
-  await sb_.from("mp_deliveries").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
+  var _w1=await sb_.from("mp_deliveries").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id); if(_w1.error){kqWriteFail(_w1.error,"ส่งแล้ว (Meal Plan)");return;}
   var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="delivered";
   logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ✅ ส่งแล้ว");
   renderMpQueue();
@@ -463,7 +471,7 @@ async function markMpUndelivered(id){
   if(!requireKqUser())return;
   if(!confirm("ยกเลิกสถานะ \"ส่งแล้ว\" ใช่ไหม? (เผื่อกดพลาด)"))return;
   var sb_=getSB(); if(!sb_)return;
-  await sb_.from("mp_deliveries").update({status:"menu_assigned",updated_at:new Date().toISOString()}).eq("id",id);
+  var _w2=await sb_.from("mp_deliveries").update({status:"menu_assigned",updated_at:new Date().toISOString()}).eq("id",id); if(_w2.error){kqWriteFail(_w2.error,"ยกเลิกส่งแล้ว");return;}
   var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="menu_assigned";
   logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ↩ ยกเลิกส่งแล้ว");
   renderMpQueue();
@@ -488,7 +496,7 @@ function schedSave(inp){
   clearTimeout(saveTimers[menuId]);
   saveTimers[menuId]=setTimeout(async function(){
     var sb_=getSB(); if(!sb_)return;
-    await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId);
+    var _w3=await sb_.from("menu_items").update({actual_stock:val}).eq("id",menuId); if(_w3.error) kqWriteFail(_w3.error,"สต็อคที่นับได้");
   },600);
 }
 
@@ -522,7 +530,7 @@ function renderStock(){
 function stkWrite(menuId,val){ // val = ตัวเลข หรือ null (ไม่จำกัด)
   var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=val;
   clearTimeout(saveTimers["stk_"+menuId]);
-  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_) await sb_.from("menu_items").update({stock_total:val}).eq("id",menuId); },500);
+  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_){ var _w4=await sb_.from("menu_items").update({stock_total:val}).eq("id",menuId); if(_w4.error) kqWriteFail(_w4.error,"ตั้งสต็อค (ลูกค้าเห็นเลขนี้)"); } },500);
 }
 function stkAdj(menuId,d){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; var cur=(m.stock_total==null)?0:m.stock_total; stkWrite(menuId,Math.max(0,cur+d)); renderStock(); }
 function stkType(inp){ stkWrite(inp.dataset.id,Math.max(0,parseInt(inp.value)||0)); } // ไม่ re-render ระหว่างพิม กัน cursor เด้ง
@@ -596,7 +604,7 @@ function renderCard(o){
 async function markPacked(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
-  await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
+  var _w5=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id); if(_w5.error){kqWriteFail(_w5.error,"จัดกล่องเสร็จ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
   render();
@@ -604,7 +612,7 @@ async function markPacked(id){
 async function markUnpack(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
-  await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id);
+  var _w6=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id); if(_w6.error){kqWriteFail(_w6.error,"ย้อนสถานะ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดกล่อง");
   render();
