@@ -976,14 +976,19 @@ function ordGoPage(d){
 // dropdown วันที่ — กลิ้งขึ้น=ก่อนหน้า กลิ้งลง=ถัดไป (default วันนี้)
 function buildDateDropdown(){
   var sel=document.getElementById("dt-pick"); if(!sel||sel.options.length)return;
-  var todayStr=today2(), html="", base=new Date(todayStr+"T00:00:00");
-  for(var i=-60;i<=60;i++){
+  var todayStr=today2(), base=new Date(todayStr+"T00:00:00");
+  function opt(i){
     var d=new Date(base.getTime()+i*86400000);
     var v=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
     var lbl=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
-    html+="<option value='"+v+"'"+(i===0?" selected":"")+">"+(i===0?"📌 วันนี้ · ":i===1?"พรุ่งนี้ · ":"")+lbl+"</option>";
+    return "<option value='"+v+"'"+(i===0?" selected":"")+">"+(i===0?"📌 วันนี้ · ":i===1?"พรุ่งนี้ · ":"")+lbl+"</option>";
   }
-  sel.innerHTML=html; sel.value=todayStr;
+  // วันนี้ต้องอยู่ "บนสุด" ตอนกดครั้งแรก → กลุ่มบน = วันนี้+ล่วงหน้า (กลิ้งลง=วันถัดไป) · ย้อนหลังแยกกลุ่มล่าง
+  var fut=""; for(var i=0;i<=60;i++) fut+=opt(i);
+  var past=""; for(var j=-1;j>=-60;j--) past+=opt(j);
+  sel.innerHTML="<optgroup label='วันนี้ / ล่วงหน้า'>"+fut+"</optgroup>"
+               +"<optgroup label='ย้อนหลัง (ใหม่→เก่า)'>"+past+"</optgroup>";
+  sel.value=todayStr;
 }
 function toggleRangeBox(){
   var b=document.getElementById("rangeBox"); if(!b)return;
@@ -1690,6 +1695,26 @@ function msgZone(o){
   var i=Math.round(brg/45)%8;
   return {key:"s"+i,label:S[i][1]+" "+S[i][0],dist:dist,ord:i};
 }
+// บันทึก "ผู้ส่ง" ลง orders.courier — เดิมเลือกแล้วไม่ได้เก็บที่ไหนเลย สลับแท็บ = หายหมด
+var _msgOrders=[];
+async function saveCourier(sel){
+  var sb_=getSB(); if(!sb_)return;
+  var id=sel.dataset.oid, val=sel.value||null, prev=sel.dataset.prev||"";
+  sel.disabled=true;
+  try{
+    var r=await sb_.from("orders").update({courier:val,updated_at:new Date().toISOString()}).eq("id",id);
+    if(r.error)throw r.error;
+    sel.classList.toggle("assigned",!!val);
+    sel.dataset.prev=val||"";
+    var o=_msgOrders.find(function(x){return x.id===id;}); if(o)o.courier=val;
+    if(typeof showToastOH==="function") showToastOH("บันทึกผู้ส่งแล้ว");
+  }catch(e){
+    sel.value=prev;   // บันทึกไม่ได้ = คืนค่าเดิม ไม่หลอกตา
+    var miss=/courier|does not exist|42703|PGRST204/i.test((e.message||"")+(e.code||""));
+    alert(miss?"ยังบันทึกไม่ได้ — ต้องรัน scripts/sql_order_courier.sql ก่อน (เพิ่มคอลัมน์ orders.courier)"
+              :"บันทึกผู้ส่งไม่สำเร็จ: "+(e.message||e.code||e));
+  }finally{ sel.disabled=false; }
+}
 async function loadMessenger(){
   var el=document.getElementById("messengerList"); if(!el)return;
   var sb_=getSB();
@@ -1719,6 +1744,7 @@ async function loadMessenger(){
       o._flags=all.filter(function(i){return CTRL[i.menu_code];}).map(function(i){return CTRL[i.menu_code];});
       o._noFood=o._food.length===0;                                                 // ⚠️ ไม่รู้ว่าต้องส่งอะไร
     });
+    _msgOrders=data;   // ให้ saveCourier อัปเดต state ได้
     var noFoodN=data.filter(function(o){return o._noFood;}).length;
     // สรุปต่อช่วงเวลา
     var slots={}; data.forEach(function(o){var s=o.time_slot_label||o.time_slot||"ไม่ระบุ";slots[s]=(slots[s]||0)+1;});
@@ -1762,12 +1788,15 @@ async function loadMessenger(){
         if(o._flags.length) h+="<div style='margin-top:3px;font-size:11px;color:#6B7280'>"+o._flags.map(esc2).join(" · ")+"</div>";
         h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:2px'>"+fmtB(o.total)+(o.total?"":" <span style='font-size:10px;color:#6B7280;font-weight:400'>(จ่ายในใบหลักแล้ว)</span>")+"</div></div>";
         h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-        h+="<select class='driver-select'><option value=''>เลือกผู้ส่ง...</option><option value='store'>🛵 แมสร้าน</option><option value='lalamove'>🟠 Lalamove</option><option value='grab'>🟢 Grab</option></select>";
+        var cur=o.courier||"";
+        var dopt=function(v,txt){return "<option value='"+v+"'"+(cur===v?" selected":"")+">"+txt+"</option>";};
+        h+="<select class='driver-select"+(cur?" assigned":"")+"' data-oid='"+o.id+"' data-prev='"+cur+"' onchange='saveCourier(this)'>"
+          +dopt("","เลือกผู้ส่ง...")+dopt("store","🛵 แมสร้าน")+dopt("lalamove","🟠 Lalamove")+dopt("grab","🟢 Grab")+"</select>";
         h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+statusTh(o.status)+"</span></div></div>";
       });
     });
     el.innerHTML=h;
-    el.querySelectorAll(".driver-select").forEach(function(sel){sel.addEventListener("change",function(){sel.classList.toggle("assigned",sel.value!=="");});});
+
   }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้: "+esc2(e.message||"")+"</div>";}
 }
 
