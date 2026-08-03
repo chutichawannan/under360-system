@@ -665,7 +665,7 @@ body{background:#fff!important}
     <div class="tgrid" id="tpick"></div>
     <div class="divider"></div>
     <!-- address compact -->
-    <div class="sec-head">ที่อยู่จัดส่ง</div>
+    <div class="sec-head">ที่อยู่จัดส่ง <span style="font-weight:400;font-size:11px;color:var(--soft)">— ที่อยู่นี้คือที่ใช้ส่งจริง (แก้เองได้)</span></div>
     <div class="igrp">
       <div style="display:flex;gap:8px">
         <input id="recipient-name-input" class="ifield" type="text" placeholder="ชื่อผู้รับ" style="flex:1">
@@ -673,6 +673,7 @@ body{background:#fff!important}
       </div>
       <div style="display:flex;gap:8px;align-items:flex-start">
         <textarea id="addr-input" class="ifield" rows="2" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด" style="flex:1;resize:none"></textarea>
+        <!-- ช่องนี้ = ที่อยู่ที่ใช้ส่งจริง (แก้เองได้ · แมสอ่านอันนี้) · ช่องในแผนที่ด้านล่าง = ช่องค้นหาอย่างเดียว -->
         <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px"><span style="font-size:12px;color:var(--g);font-weight:700;line-height:1.2">ปักหมุด</span></button>
       </div>
       <input id="notes-input" class="ifield" type="text" placeholder="รายละเอียดเพิ่ม เช่น ชั้น 3, ไม่เผ็ด">
@@ -687,11 +688,14 @@ body{background:#fff!important}
       <div style="position:relative;padding:0 14px 10px">
         <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
         <div style="display:flex;gap:8px">
-          <input id="addr-search" class="ifield" type="text" placeholder="ค้นหาที่อยู่ หรือกดบนแผนที่">
+          <input id="addr-search" class="ifield" type="text" placeholder="🔍 ค้นหาสถานที่ / ชื่ออาคาร เพื่อวางหมุด">
           <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">ตำแหน่งฉัน</button>
         </div>
+        <div style="font-size:11px;color:var(--soft);padding:4px 2px 0">ช่องนี้ใช้ <b>ค้นหาเพื่อวางหมุด</b> เท่านั้น — ที่อยู่ที่ใช้ส่งจริงคือช่องด้านบน</div>
       </div>
       <div id="customer-map"></div>
+      <!-- ตำแหน่งหมุดจริง (อ่านอย่างเดียว) — ให้เห็นว่าหมุดอยู่ตรงไหน ต่างจากที่อยู่ที่พิมพ์เองได้ -->
+      <div id="pin-caption" style="display:none;font-size:11px;color:var(--soft);padding:6px 2px 0;line-height:1.4"></div>
       <div id="fee-row" class="fee-row" style="display:none;margin-top:8px">
         <span class="fee-km" id="fee-dist">—</span>
         <span>ค่าจัดส่ง: <span class="fee-baht" id="fee-amt">—</span></span>
@@ -2746,11 +2750,13 @@ function handleSlipUpload(event){
 let lalamovePrice = null;   // null=ยังไม่ได้ fetch, 'loading', number
 let expressTime   = null;   // เวลาที่ลูกค้าเลือก เช่น "14:30"
 
+let _llmSeq = 0;   // กัน race: ลากหมุดเร็วๆ → ผลเก่ามาทีหลังต้องถูกทิ้ง
 async function fetchLalamovePrice(){
   if(!distKm){ lalamovePrice=null; return; }
   // ต้องมีพิกัดหมุดจริงถึงขอเรทได้ (Lalamove คิดจากพิกัด ไม่ใช่ระยะ)
   const pos = cusPin ? cusPin.getPosition() : null;
   if(!pos){ lalamovePrice=null; updateCartTotals(); return; }
+  const seq = ++_llmSeq;
   lalamovePrice = 'loading';
   updateCartTotals();
   try{
@@ -2759,9 +2765,11 @@ async function fetchLalamovePrice(){
             + '&addr='+encodeURIComponent((document.getElementById('addr-input')||{}).value||'ปลายทาง');
     const res  = await fetch(u);
     const json = await res.json();
+    if(seq !== _llmSeq) return;                    // มีการปักหมุดใหม่ระหว่างรอ → ทิ้งผลเก่า
     if(json && json.ok && typeof json.price === 'number') lalamovePrice = Math.round(json.price);
     else throw new Error('no price');
   }catch(e){
+    if(seq !== _llmSeq) return;
     // API ล่ม/โควตาหมด → ประมาณจากระยะไว้ก่อน (ไม่ปล่อยให้ลูกค้าค้าง)
     lalamovePrice = Math.min(Math.round(30 + distKm * 8), 400);
   }
@@ -2866,13 +2874,18 @@ function setCusPin(lat,lng,addr){
   }
   detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด (ใช้เส้นตรง = รัศมีภูมิศาสตร์ ถูกต้องแล้ว)
   updateRoadDistance(lat, lng);     // ← ยิง Google วัดระยะขับจริง มาแทนค่าส่ง (async, fallback = haversine)
+  // หมุดขยับ = เรท Lalamove ต้องคิดใหม่ (เดิมยิงแค่ตอนกดชิป → ย้ายหมุดไกลแค่ไหนราคาก็ค้างเท่าเดิม)
+  if(selSlot==='express'){ lalamovePrice=null; fetchLalamovePrice(); }
   updateCartTotals();
 }
 
 // อัปเดตช่องที่อยู่ตามหมุดเสมอ (ไม่เช็ค !value แล้ว — หมุดเปลี่ยน = ช่องเปลี่ยนตาม)
 function _setAddrFields(a){
   const ai=document.getElementById('addr-input'); if(ai) ai.value=a;
-  const as=document.getElementById('addr-search'); if(as) as.value=a.split(',').slice(0,2).join(',');
+  // ⚠️ ไม่ยัดที่อยู่ลงช่องค้นหาแล้ว — เดิมทำให้เห็นที่อยู่ 2 ช่องคล้ายกัน สับสนว่าอันไหนใช้ส่งจริง
+  // แทนด้วยบรรทัดอ่านอย่างเดียวใต้แผนที่ (ตำแหน่งหมุด)
+  const pc=document.getElementById('pin-caption');
+  if(pc){ pc.style.display='block'; pc.innerHTML='📍 <b>ตำแหน่งหมุด:</b> '+h(a)+'<br><span style="color:var(--soft)">ใช้คิดค่าส่ง/นำทางแมส — ถ้าที่อยู่ส่งจริงต่างจากนี้ แก้ที่ช่องด้านบนได้</span>'; }
 }
 
 // ล้างหมุด+ที่อยู่ เพื่อค้นใหม่ (ปุ่มลบทิ้ง)
@@ -2881,6 +2894,8 @@ function clearCusAddr(){
   distKm=null;
   const ai=document.getElementById('addr-input'); if(ai) ai.value='';
   const as=document.getElementById('addr-search'); if(as){ as.value=''; as.focus(); }
+  const pc=document.getElementById('pin-caption'); if(pc){ pc.style.display='none'; pc.innerHTML=''; }
+  lalamovePrice=null;   // ล้างหมุด = เรท Lalamove เดิมใช้ไม่ได้แล้ว
   const fRow=document.getElementById('fee-row'); if(fRow) fRow.style.display='none';
   const bkk=document.getElementById('zone-bkk'), cold=document.getElementById('zone-cold');
   if(bkk)bkk.style.display=''; if(cold)cold.style.display='none';
