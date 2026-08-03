@@ -2266,9 +2266,13 @@ async function submitOrder() {
   if (!recipientName)  { toast('กรุณาใส่ชื่อผู้รับ'); return; }
   if (!recipientPhone) { toast('กรุณาใส่เบอร์โทรผู้รับ'); return; }
   // Warn if no map pin
+  // ไม่ปักหมุด = ระบบไม่รู้ระยะ → ค่าส่งคิดเป็น ฿0 (audit 3 ส.ค.: 22/43 ใบเป็นแบบนี้ = ร้านออกค่าส่งให้ฟรีโดยไม่รู้ตัว)
+  // → ยังให้สั่งได้ (ไม่ปิดกั้นการขาย) แต่ **ติดธงในโน้ตให้แอดมินตามเก็บค่าส่ง**
+  let pinSkipped = false;
   if (!distKm) {
     const proceed = await showMapConfirm();
     if (!proceed) return; // user chose to go back and pin
+    pinSkipped = true;
   }
 
   const btn = document.getElementById('sub-btn');
@@ -2279,15 +2283,18 @@ async function submitOrder() {
   const slot  = SLOTS.find(s => s.key===selSlot);
   const tot   = cartTotal();
   // ── สร้าง order number format U-MMDD-NNN ──────────────────
+  // เดิมนับจำนวนใบเก่าแล้ว +1 → ใบถูกลบ/2 คนกดพร้อมกัน = เลขซ้ำหรือย้อน · แก้เป็นดู "เลขล่าสุด" แล้ว +1 (3 ส.ค. 2026)
   const mmdd = selDate.slice(5,7) + selDate.slice(8,10);
   let nextNum = 1;
   try{
-    const cntRes = await sb.from('orders')
-      .select('id', {count:'exact',head:true})
-      .like('order_number', 'U-' + mmdd + '-%');
-    nextNum = (cntRes.count || 0) + 1;
+    const lastRes = await sb.from('orders')
+      .select('order_number')
+      .like('order_number', 'U-' + mmdd + '-%')
+      .order('order_number', {ascending:false}).limit(1);
+    const last = lastRes.data && lastRes.data[0] && lastRes.data[0].order_number;
+    if (last) nextNum = (parseInt(String(last).slice(-3), 10) || 0) + 1;
   }catch(e){ nextNum = Math.floor(1 + Math.random()*99); }
-  const orderNum = 'U-' + mmdd + '-' + String(nextNum).padStart(3,'0');
+  let orderNum = 'U-' + mmdd + '-' + String(nextNum).padStart(3,'0');
   // ───────────────────────────────────────────────────────────
 
   try {
@@ -2323,18 +2330,51 @@ async function submitOrder() {
       delivery_type:    selSlot==='express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
       slip_image:       slipBase64 ? true : false,
       delivery_week:    cartWeekType()==='next' ? 'next' : 'current',
-      notes:            (document.getElementById('notes-input').value || '').trim()
+      notes:            ((document.getElementById('notes-input').value || '').trim()
+                          + (pinSkipped ? ' [⚠️ ไม่ได้ปักหมุด — ค่าส่งยังไม่ได้คิด แอดมินตามเก็บ]' : '')).trim()
     };
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
       const utEl = document.getElementById('utensil-input');
       orderPayload.want_utensils = utEl ? utEl.checked : false;
     }
-    // payment_status: อัพสลิปแล้ว = assume "โอนแล้ว" (paid) · ไม่อัพ = "รอโอน" (unpaid) — แอดมินไล่เช็คสลิปจริงทีหลัง
+    // payment_status (แก้ 3 ส.ค. 2026 — เดิม assume 'paid' ทันทีที่อัพสลิป ทั้งที่รูปถูกทิ้ง ตรวจสอบไม่ได้เลย)
+    // อัพสลิป = 'pending_review' (รอแอดมินเปิดดูรูปแล้วกดยืนยัน) · ไม่อัพ = 'unpaid'
     if (hasPaymentStatusColumn) {
-      orderPayload.payment_status = slipBase64 ? 'paid' : 'unpaid';
+      orderPayload.payment_status = slipBase64 ? 'pending_review' : 'unpaid';
     }
-    const { data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single();
+    // เก็บ "รูปสลิป" จริงลง Storage แล้วผูกลิงก์กับออเดอร์ (ต้องรัน scripts/sql_slip_url.sql ก่อน)
+    // ชื่อไฟล์สุ่ม = เดาลิงก์ไม่ได้ · อัพล้มเหลว = ไม่ทำให้ออเดอร์พัง (แค่ไม่มีรูปให้ตรวจ)
+    if (slipBase64) {
+      try {
+        const m = /^data:(image\/[a-z0-9.+-]+);base64,(.+)$/i.exec(slipBase64);
+        if (m) {
+          const bin = atob(m[2]); const buf = new Uint8Array(bin.length);
+          for (let i=0;i<bin.length;i++) buf[i] = bin.charCodeAt(i);
+          const ext  = (m[1].split('/')[1]||'jpg').replace('jpeg','jpg');
+          const path = orderNum + '_' + Math.random().toString(36).slice(2) + Date.now().toString(36) + '.' + ext;
+          const up = await sb.storage.from('payment-slips').upload(path, buf, { contentType: m[1], upsert: false });
+          if (!up.error) {
+            const pub = sb.storage.from('payment-slips').getPublicUrl(path);
+            const url = pub?.data?.publicUrl;
+            if (url) orderPayload.slip_url = url;
+          } else { console.error('slip upload:', up.error); }
+        }
+      } catch(e){ console.error('slip upload failed:', e); }
+    }
+    let { data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single();
+    // ยังไม่ได้รัน sql_slip_url.sql → คอลัมน์ slip_url ไม่มี → ถอยคอลัมน์นั้นแล้วสั่งใหม่ (ห้ามให้ออเดอร์ลูกค้าพังเพราะ SQL ยังไม่รัน)
+    if (oErr && 'slip_url' in orderPayload && /slip_url/i.test(oErr.message||'')) {
+      delete orderPayload.slip_url;
+      ({ data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single());
+    }
+    // เลขออเดอร์ชนกัน (2 คนกดพร้อมกัน · ต้องรัน sql_slip_url.sql ให้มีกฎห้ามซ้ำก่อนถึงจะจับได้) → ขยับเลขแล้วลองใหม่
+    for (let tryN = 0; oErr && tryN < 5 && (oErr.code === '23505' || /duplicate key|order_number/i.test(oErr.message||'')); tryN++) {
+      nextNum++;
+      orderNum = 'U-' + mmdd + '-' + String(nextNum).padStart(3,'0');
+      orderPayload.order_number = orderNum;
+      ({ data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single());
+    }
     // หมายเหตุ: order_type ไม่เก็บเป็นคอลัมน์ (ตาราง orders ยังไม่มี) — เดาได้จาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
     if (oErr) throw oErr;
 
