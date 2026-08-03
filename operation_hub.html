@@ -423,6 +423,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <button class="dtab active" id="dt-today" onclick="setDate('today')">วันนี้</button>
         <button class="dtab" id="dt-tom" onclick="setDate('tomorrow')">พรุ่งนี้</button>
         <button class="dtab" id="dt-all" onclick="setDate('all')">ทั้งหมด</button>
+        <input type="date" id="dt-pick" onchange="setPickDate(this.value)" title="เลือกวันที่ (ดูย้อนหลังได้)"
+          style="margin-left:6px;padding:4px 7px;border:1px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:12px;color:var(--ink)">
       </div>
       <div class="live-dot"></div>
       <span class="last-upd" id="lastUpd">—</span>
@@ -767,7 +769,7 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
-let dateMode="today",showImages=false,sidebarMini=false,refreshTimer=null;
+let dateMode="today",pickedDate=null,showImages=false,sidebarMini=false,refreshTimer=null;
 let planView="full";
 let selectedRowIds=[];   // mp_deliveries.id ที่เลือกไว้ (คลิกชื่อลูกค้า = เลือกทั้งแถว, คลิกช่องรอบ = เลือกรอบเดียว)
 let planDateFilter=null; // คลิกวันที่ที่ header → กรองให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle — คลิกซ้ำ = เอาออก)
@@ -831,9 +833,17 @@ function openTab(name,el){
   }
 }
 function setDate(m){
-  dateMode=m;
+  dateMode=m; pickedDate=null;
+  var dp=document.getElementById("dt-pick"); if(dp) dp.value="";     // กดชิป = เลิกใช้วันที่ที่เลือกไว้
   ["today","tom","all"].forEach(function(k){document.getElementById("dt-"+k).classList.remove("active");});
-  document.getElementById("dt-"+(m==="tomorrow"?"tom":m)).classList.add("active");
+  var b=document.getElementById("dt-"+(m==="tomorrow"?"tom":m)); if(b) b.classList.add("active");
+  loadAll();
+}
+// เลือกวันเอง (ย้อนหลัง/ล่วงหน้าก็ได้)
+function setPickDate(v){
+  if(!v){ setDate("today"); return; }
+  pickedDate=v; dateMode="pick";
+  ["today","tom","all"].forEach(function(k){var e=document.getElementById("dt-"+k);if(e)e.classList.remove("active");});
   loadAll();
 }
 
@@ -849,21 +859,40 @@ async function loadAll(){
   }
   try{
     var todayStr=today2(),tomStr=tomorrow2(),dayStr=dayAfter2();
-    var q=sb_.from("orders").select("*").order("created_at",{ascending:false});
-    if(dateMode==="today")q=q.eq("delivery_date",todayStr);
-    else if(dateMode==="tomorrow")q=q.eq("delivery_date",tomStr);
-    var res=await q; if(res.error)throw res.error;
-    var orders=res.data||[];
-    var todayO=orders.filter(function(o){return o.delivery_date===todayStr;});
-    var tomO=orders.filter(function(o){return o.delivery_date===tomStr;});
-    var advO=orders.filter(function(o){return o.delivery_date>=dayStr;});
+    // ⚠️ เดิม select ทั้งตารางเรียง created_at → ติด cap 1000 + ลำดับสะเปะสะปะ (ไม่ได้เรียงวันส่ง)
+    // ใหม่: ดึงเฉพาะ "วันนี้เป็นต้นไป" เรียงตามวันส่ง → ไม่ติด cap + เรียงถูกเสมอ
+    var futRes=await sb_.from("orders").select("*")
+      .gte("delivery_date",todayStr)
+      .order("delivery_date",{ascending:true}).order("time_slot",{ascending:true});
+    if(futRes.error)throw futRes.error;
+    var fut=(futRes.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
+    var todayO=fut.filter(function(o){return o.delivery_date===todayStr;});
+    var tomO=fut.filter(function(o){return o.delivery_date===tomStr;});
+    var advO=fut.filter(function(o){return o.delivery_date>=dayStr;});
     function setTxt(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
     setTxt("cnt-today",todayO.length); setTxt("cnt-tom",tomO.length); setTxt("cnt-adv",advO.length);
     setTxt("rev-today",fmtB(todayO.reduce(function(s,o){return s+(o.total||0);},0)));
     setTxt("rev-tom",fmtB(tomO.reduce(function(s,o){return s+(o.total||0);},0)));
-    var pending=orders.filter(function(o){return o.status==="confirmed"||o.status==="preparing";}).length;
+    var pending=fut.filter(function(o){return o.status==="confirmed"||o.status==="preparing";}).length;
     var nb=document.getElementById("nb-orders"); if(nb){nb.textContent=pending;nb.classList.toggle("show",pending>0);}
-    renderOrders(dateMode==="today"?todayO:dateMode==="tomorrow"?tomO:orders);
+    // รายการที่จะโชว์ตามโหมด
+    var listOrders, title;
+    if(dateMode==="today"){ listOrders=todayO; title="ออเดอร์วันนี้ ("+todayStr+")"; }
+    else if(dateMode==="tomorrow"){ listOrders=tomO; title="ออเดอร์พรุ่งนี้ ("+tomStr+")"; }
+    else if(dateMode==="pick" && pickedDate){          // เลือกวันเอง — ย้อนหลังได้
+      var pr=await sb_.from("orders").select("*").eq("delivery_date",pickedDate)
+        .order("time_slot",{ascending:true}).order("created_at",{ascending:true});
+      listOrders=(pr.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
+      title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
+    }
+    else{                                              // ทั้งหมด = วันนี้ → วันไกลสุดที่ลูกค้าสั่ง
+      listOrders=fut;
+      var last=fut.length?fut[fut.length-1].delivery_date:todayStr;
+      title="ทั้งหมด "+todayStr+" → "+last;
+    }
+    var tEl=document.getElementById("orderListTitle");
+    if(tEl) tEl.textContent=title+" · "+listOrders.length+" ใบ";
+    renderOrders(listOrders);
     setTxt("lastUpd","อัพเดท "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
   }catch(e){console.error(e);}
 }
@@ -872,7 +901,15 @@ function renderOrders(orders){
   var el=document.getElementById("ordersList"); if(!el)return;
   if(!orders||!orders.length){el.innerHTML="<div style='padding:32px;text-align:center;color:#6B7280'>ยังไม่มีออเดอร์</div>";return;}
   var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ยอด</span><span>วันส่ง</span><span>สถานะ</span></div>";
-  orders.slice(0,20).forEach(function(o){
+  var lastDate=null;   // คั่นหัวข้อเมื่อข้ามวัน (โหมดหลายวันจะได้ไม่มั่ว)
+  orders.slice(0,400).forEach(function(o){
+    if(o.delivery_date!==lastDate){
+      lastDate=o.delivery_date;
+      var dayCnt=orders.filter(function(x){return x.delivery_date===lastDate;});
+      var sum=dayCnt.reduce(function(s,x){return s+(x.total||0);},0);
+      h+="<div style='grid-column:1/-1;padding:7px 12px;background:#EBF3EF;font-size:12px;font-weight:800;color:#1F4D3A;display:flex;justify-content:space-between'>"
+        +"<span>📅 "+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
+    }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
     h+="<div class='orders-mini-row'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
     h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
