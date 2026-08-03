@@ -214,6 +214,9 @@ function getDob(){
 // normalize เบอร์ให้เทียบกันได้ (DB เก็บ 0xxxxxxxxx)
 function normPhone(p){ if(!p) return ""; var s=String(p).replace(/\D/g,""); if(s.indexOf("66")===0) s="0"+s.slice(2); if(s.length===9) s="0"+s; return s; }
 
+// ตัดค่าว่าง/null ออกก่อนอัปเดตลูกค้าเก่า — ไม่งั้นช่องที่ลูกค้าไม่กรอก (วันเกิด/เพศ/รูป) จะไปลบข้อมูลเดิมทิ้ง (3 ส.ค. 2026)
+function nonEmpty(o){ const out={}; for(const k in o){ const v=o[k]; if(v!==null&&v!==undefined&&v!=="") out[k]=v; } return out; }
+
 async function doRegister(){
   var name=(document.getElementById("fName").value||"").trim();
   var phone=(document.getElementById("fPhone").value||"").trim();
@@ -237,10 +240,14 @@ async function doRegister(){
         const { data:byUid } = await sb_.from("customers").select("id,admin_notes").eq("line_uid",uid).limit(2);
         const stub=(byUid||[]).find(r=>r.id!==old.id);
         if(stub){ await sb_.from("customers").update({ line_uid:null, is_blocked:true, admin_notes:((stub.admin_notes||"")+" [รวมเข้า "+old.id.slice(0,8)+"]").trim() }).eq("id",stub.id); }
-        await sb_.from("customers").update(Object.assign({},fields,{ line_uid:uid, admin_notes:((old.admin_notes||"")+" [🔄 สมัครใหม่/กลับมา "+today+"]").trim() })).eq("id",old.id);
+        // ⚠️ merge เข้าลูกค้าเก่า = ห้ามเขียนทับของเดิมด้วยค่าว่าง (ไม่กรอกวันเกิด/เพศ = เว้นไว้ ไม่ใช่ลบทิ้ง)
+        await sb_.from("customers").update(Object.assign({},nonEmpty(fields),{ line_uid:uid, admin_notes:((old.admin_notes||"")+" [🔄 สมัครใหม่/กลับมา "+today+"]").trim() })).eq("id",old.id);
       } else {
         // ลูกค้าใหม่ปกติ → upsert by line_uid (อัปเดต stub ที่เปิดแอปสร้างไว้ หรือสร้างใหม่)
-        await sb_.from("customers").upsert(Object.assign({},fields,{ line_uid:uid }),{onConflict:"line_uid"});
+        // ถ้าเบอร์นี้มีลูกค้าอยู่แล้วแต่ผูก LINE อื่น → ไม่ merge (กันสวมบัญชีคนอื่น) แต่ต้อง flag ให้แอดมินรวมมือ กันลูกค้าซ้ำ
+        const dupNote=(byPhone||[]).some(r=>r.line_uid&&r.line_uid!==uid)
+          ? " [⚠️ เบอร์ซ้ำกับลูกค้าเดิม "+((byPhone||[]).filter(r=>r.line_uid&&r.line_uid!==uid).map(r=>r.id.slice(0,8)).join(","))+" — แอดมินตรวจ/รวมมือ "+today+"]" : "";
+        await sb_.from("customers").upsert(Object.assign({},fields,{ line_uid:uid },dupNote?{admin_notes:dupNote.trim()}:{}),{onConflict:"line_uid"});
       }
     }
     localStorage.setItem("line_uid",uid);
