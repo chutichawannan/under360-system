@@ -64,6 +64,10 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .online-toggle-btn{appearance:none;border:1.5px solid var(--line);border-radius:20px;padding:3px 10px;font-size:11.5px;cursor:pointer;background:var(--surface-2);color:var(--ink-soft);white-space:nowrap;font-family:inherit;transition:all .15s;flex-shrink:0;line-height:1.4;}
 .online-toggle-btn.online-on{background:var(--forest-soft);color:var(--forest);border-color:var(--forest);font-weight:700;}
 .online-toggle-btn:hover{opacity:.8;}
+/* ชื่อเล่นเมนู (subcode) — s1/xs3 · ครัวกับลูกค้าเรียกชื่อนี้ ไม่ใช่โค้ดจริง · โชว์เฉพาะสินค้าออนไลน์ */
+.subcode-input{width:56px;border:1.5px dashed var(--line);border-radius:8px;padding:3px 6px;font-size:12px;font-weight:700;font-family:var(--mono,monospace);text-align:center;color:var(--forest);background:var(--surface-2);flex-shrink:0;}
+.subcode-input:focus{outline:none;border-style:solid;border-color:var(--forest);background:#fff;}
+.subcode-input::placeholder{color:var(--ink-xsoft,#bbb);font-weight:400;}
 .online-export-bar{background:var(--forest-soft);border:1px solid rgba(31,77,58,.25);border-radius:var(--radius);padding:10px 14px;display:flex;align-items:center;gap:12px;margin-bottom:10px;font-size:13px;}
 .online-export-bar .cnt{font-size:18px;font-weight:700;color:var(--forest);font-family:'IBM Plex Mono',monospace;}
 .btn-sm{padding:7px 11px;font-size:12.5px;}
@@ -2620,6 +2624,36 @@ async function persistRecipes(){ await setStored('recipes', state.recipes, true)
 
 
 
+// ── 🔄 ขึ้นสัปดาห์ใหม่ — เติม x ให้ชื่อเล่นของเมนูที่ยังออนไลน์ (3 ส.ค. 2026 · นัทสั่ง) ──────────
+// ระบบชื่อเล่นที่ครัวใช้จริง: เมนูพิเศษหมุนทุกสัปดาห์ (ข้าวกล่อง 8 · แพ็คกับข้าว 5)
+//   s1..s8 = ของสัปดาห์นี้ · ตัวที่ขายไม่หมดข้ามสัปดาห์ → xs3 → xxs3 …
+//   จำนวน x = ค้างมากี่สัปดาห์ (อ่านออกด้วยตาเปล่า ไม่ต้องเปิดรายงาน)
+// เดิมแอดมินต้องไล่เปลี่ยนชื่อสินค้าทีละตัวใน Hato — ตอนนี้กดปุ่มเดียวจบ
+async function weeklyRollSubcodes(){
+  if(!requireUser()) return;
+  const online = state.recipes.filter(r=>r.available_online && r.status==='active' && (r.subcode||'').trim());
+  if(!online.length){ showToast('ยังไม่มีเมนูออนไลน์ที่ตั้งชื่อเล่นไว้'); return; }
+  const preview = online.slice(0,8).map(r=>r.subcode+' → x'+r.subcode).join('\n');
+  const more = online.length>8 ? `\n…และอีก ${online.length-8} เมนู` : '';
+  if(!window.confirm(`ขึ้นสัปดาห์ใหม่: เติม x ให้ชื่อเล่น ${online.length} เมนูที่ยังออนไลน์อยู่\n\n${preview}${more}\n\n(หลังจากนี้ค่อยตั้งชื่อเล่นใหม่ s1–s8 ให้เมนูของสัปดาห์นี้)\n\nยืนยัน?`)) return;
+  const sb = getSB();
+  let ok=0, fail=0;
+  for(const r of online){
+    const nv = 'x' + r.subcode.trim();
+    try{
+      if(sb && r.code){
+        const { error } = await sb.from('menu_items').update({ subcode: nv }).eq('code', r.code);
+        if(error) throw error;
+      }
+      r.subcode = nv; ok++;
+    }catch(e){ console.error('weeklyRoll', r.code, e); fail++; }
+  }
+  persistRecipes();
+  logActivity('stock', `ขึ้นสัปดาห์ใหม่ — เติม x ให้ชื่อเล่น ${ok} เมนู` + (fail?` (พลาด ${fail})`:''));
+  render();
+  showToast(fail ? `เติม x แล้ว ${ok} เมนู · พลาด ${fail}` : `✅ ขึ้นสัปดาห์ใหม่แล้ว — เติม x ให้ ${ok} เมนู`);
+}
+
 async function exportOnlineMenus(){
   const items = state.recipes.filter(r=>r.available_online && r.status==='active');
   if(!items.length){
@@ -3008,6 +3042,7 @@ function renderRecipesTab(){
       ${state.showOnlineOnly?'<span style="font-size:11px;background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;margin-left:2px;">เฉพาะออนไลน์ ✕</span>':''}
     </button>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <button class="btn btn-sm" id="weekRollBtn" title="เมนูที่ยังออนไลน์อยู่และมีชื่อเล่น จะถูกเติม x ข้างหน้าทั้งหมด (x 1 ตัว = ค้างมา 1 สัปดาห์) — แล้วค่อยตั้งชื่อเล่นใหม่ให้เมนูของสัปดาห์นี้" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:5px 12px;">🔄 ขึ้นสัปดาห์ใหม่</button>
       <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
     </div>
   </div>`;
@@ -3349,6 +3384,7 @@ function renderRecipeCard(r, tot, pinInfo){
       </div>
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
+      ${r.available_online?`<input type="text" class="subcode-input" data-id="${r.id}" value="${(r.subcode||'').replace(/"/g,'&quot;')}" placeholder="ชื่อเล่น" maxlength="6" title="ชื่อเล่นที่ครัว/ลูกค้าเรียก เช่น s1 · xs3 (x = ค้างมากี่สัปดาห์) — กรอกได้เฉพาะสินค้าที่ออนไลน์">`:''}
       <span class="meta">${tot.cost>0?'฿'+fmtMoney(tot.cost):'—'}${r.selling_price?' · ขาย ฿'+r.selling_price:''}</span>
       <button type="button" class="expand-btn" data-id="${r.id}" title="${isOpen?'ปิดแผงแก้ไข':'เปิดแผงแก้ไข'}">${isOpen?'▲':'▼'}</button>
     </div>`;
@@ -4001,6 +4037,27 @@ function attachHandlers(){
     });
 
     // 🛒 Online toggle — เปิด/ปิดให้สั่งผ่าน LIFF
+    // ── ชื่อเล่นเมนู (subcode) — บันทึกลง menu_items ตรงๆ (ลูกค้าเห็นใน LIFF · ครัวเรียกชื่อนี้) ──
+    document.querySelectorAll('.subcode-input').forEach(inp=>{
+      inp.onclick = e => e.stopPropagation();
+      inp.onchange = async (e)=>{
+        e.stopPropagation();
+        if(!requireUser()) return;
+        const r = state.recipes.find(x=>x.id===inp.dataset.id);
+        if(!r) return;
+        const val = (inp.value||'').trim().toLowerCase();
+        r.subcode = val;
+        persistRecipesDebounced();
+        try{
+          const sb = getSB(); if(!sb) throw new Error('no sb');
+          if(!r.code) throw new Error('เมนูนี้ยังไม่มีรหัส (code)');
+          const { error } = await sb.from('menu_items').update({ subcode: val || null }).eq('code', r.code);
+          if(error) throw error;
+          logActivity('stock', `ตั้งชื่อเล่น "${val||'(ล้าง)'}" ให้ ${r.code} ${r.name||''}`);
+          showToast(val ? `ชื่อเล่น "${val}" ✓` : 'ล้างชื่อเล่นแล้ว');
+        }catch(err){ console.error(err); showToast('บันทึกชื่อเล่นไม่สำเร็จ: '+(err.message||'')); }
+      };
+    });
     document.querySelectorAll('.online-toggle-btn').forEach(btn=>{
       btn.onclick = (e)=>{
         e.stopPropagation();
@@ -4020,6 +4077,8 @@ function attachHandlers(){
     // 📤 Export button
     const exportOnlineBtn = document.getElementById('exportOnlineBtn');
     if(exportOnlineBtn) exportOnlineBtn.onclick = exportOnlineMenus;
+    const weekRollBtn = document.getElementById('weekRollBtn');
+    if(weekRollBtn) weekRollBtn.onclick = weeklyRollSubcodes;
     // 🛒 Online filter toggle — กดตัวเลข "N ออนไลน์" เพื่อกรองเฉพาะออนไลน์
     const toggleOnlineBtn = document.getElementById('toggleOnlineFilterBtn');
     if(toggleOnlineBtn) toggleOnlineBtn.onclick = (e)=>{
