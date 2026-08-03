@@ -463,6 +463,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         </div>
         <div style="padding:24px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
       </div>
+      <button id="ordMoreBtn" onclick="loadMoreOrders()" style="display:none;width:100%;margin-top:10px;padding:11px;border:1.5px solid var(--g);border-radius:10px;background:#fff;color:var(--g);font-weight:700;font-size:13px;cursor:pointer;font-family:var(--sans)">⬇ โหลดเพิ่ม</button>
     </div>
 
     <!-- TAB: ONLINE MENUS -->
@@ -718,6 +719,16 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         </select>
       </div>
       <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">📋 หน้าออเดอร์ — โหลดทีละกี่ใบ</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">เปิดหน้าจะโหลดแค่ชุดแรก แล้วกด "โหลดเพิ่ม" เอา — ตั้งน้อยลงถ้าเน็ตช้า</div>
+        <select id="set-order-page-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit" onchange="saveGlobalSettings()">
+          <option value="10">10 ใบ/รอบ</option>
+          <option value="20">20 ใบ/รอบ</option>
+          <option value="50">50 ใบ/รอบ</option>
+          <option value="100">100 ใบ/รอบ</option>
+        </select>
+      </div>
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
         <div style="font-size:14px;font-weight:700;margin-bottom:4px">🍳 หน้าครัว (KQ) — ขนาดช่องช้อนส้อม</div>
         <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">ตั้งเป็น "ใหญ่พิเศษ" ช่วงที่มีพนักงานใหม่ กันลืมจัดช้อนส้อม</div>
         <select id="set-utensil-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit" onchange="saveGlobalSettings()">
@@ -770,6 +781,7 @@ let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
 let dateMode="today",pickedDate=null,showImages=false,sidebarMini=false,refreshTimer=null;
+let orderPageSize=20;   // ออเดอร์ต่อรอบ (ตั้งได้ที่ ⚙️ ตั้งค่า · โหลดจาก globalSettings)
 let planView="full";
 let selectedRowIds=[];   // mp_deliveries.id ที่เลือกไว้ (คลิกชื่อลูกค้า = เลือกทั้งแถว, คลิกช่องรอบ = เลือกรอบเดียว)
 let planDateFilter=null; // คลิกวันที่ที่ header → กรองให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle — คลิกซ้ำ = เอาออก)
@@ -848,7 +860,7 @@ function setPickDate(v){
 }
 
 // ── ORDERS ───────────────────────────────────────────────
-async function loadAll(){
+async function loadAll(keepLoaded){
   var sb_=getSB();
   var listEl=document.getElementById("ordersList");
   if(!sb_){
@@ -861,41 +873,74 @@ async function loadAll(){
     var todayStr=today2(),tomStr=tomorrow2(),dayStr=dayAfter2();
     // ⚠️ เดิม select ทั้งตารางเรียง created_at → ติด cap 1000 + ลำดับสะเปะสะปะ (ไม่ได้เรียงวันส่ง)
     // ใหม่: ดึงเฉพาะ "วันนี้เป็นต้นไป" เรียงตามวันส่ง → ไม่ติด cap + เรียงถูกเสมอ
-    var futRes=await sb_.from("orders").select("*")
-      .gte("delivery_date",todayStr)
-      .order("delivery_date",{ascending:true}).order("time_slot",{ascending:true});
-    if(futRes.error)throw futRes.error;
-    var fut=(futRes.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
-    var todayO=fut.filter(function(o){return o.delivery_date===todayStr;});
-    var tomO=fut.filter(function(o){return o.delivery_date===tomStr;});
-    var advO=fut.filter(function(o){return o.delivery_date>=dayStr;});
+    // สถิติหัวหน้า — นับจาก DB ตรง (head:true = ไม่ดึงแถว) เลยไม่ช้าแม้ออเดอร์เยอะ
     function setTxt(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
-    setTxt("cnt-today",todayO.length); setTxt("cnt-tom",tomO.length); setTxt("cnt-adv",advO.length);
-    setTxt("rev-today",fmtB(todayO.reduce(function(s,o){return s+(o.total||0);},0)));
-    setTxt("rev-tom",fmtB(tomO.reduce(function(s,o){return s+(o.total||0);},0)));
-    var pending=fut.filter(function(o){return o.status==="confirmed"||o.status==="preparing";}).length;
+    var NOTEST="source.is.null,source.neq.parallel_test";
+    var stat=await Promise.all([
+      sb_.from("orders").select("total").eq("delivery_date",todayStr).neq("status","cancelled").or(NOTEST),
+      sb_.from("orders").select("total").eq("delivery_date",tomStr).neq("status","cancelled").or(NOTEST),
+      sb_.from("orders").select("id",{count:"exact",head:true}).gte("delivery_date",dayStr).neq("status","cancelled").or(NOTEST),
+      sb_.from("orders").select("id",{count:"exact",head:true}).gte("delivery_date",todayStr).in("status",["confirmed","preparing"])
+    ]);
+    var todayO=stat[0].data||[], tomO=stat[1].data||[];
+    var sum=function(a){return a.reduce(function(s,o){return s+(o.total||0);},0);};
+    setTxt("cnt-today",todayO.length); setTxt("cnt-tom",tomO.length); setTxt("cnt-adv",stat[2].count||0);
+    setTxt("rev-today",fmtB(sum(todayO))); setTxt("rev-tom",fmtB(sum(tomO)));
+    var pending=stat[3].count||0;
     var nb=document.getElementById("nb-orders"); if(nb){nb.textContent=pending;nb.classList.toggle("show",pending>0);}
-    // รายการที่จะโชว์ตามโหมด
-    var listOrders, title;
-    if(dateMode==="today"){ listOrders=todayO; title="ออเดอร์วันนี้ ("+todayStr+")"; }
-    else if(dateMode==="tomorrow"){ listOrders=tomO; title="ออเดอร์พรุ่งนี้ ("+tomStr+")"; }
-    else if(dateMode==="pick" && pickedDate){          // เลือกวันเอง — ย้อนหลังได้
-      var pr=await sb_.from("orders").select("*").eq("delivery_date",pickedDate)
-        .order("time_slot",{ascending:true}).order("created_at",{ascending:true});
-      listOrders=(pr.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
-      title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
-    }
-    else{                                              // ทั้งหมด = วันนี้ → วันไกลสุดที่ลูกค้าสั่ง
-      listOrders=fut;
-      var last=fut.length?fut[fut.length-1].delivery_date:todayStr;
-      title="ทั้งหมด "+todayStr+" → "+last;
-    }
-    var tEl=document.getElementById("orderListTitle");
-    if(tEl) tEl.textContent=title+" · "+listOrders.length+" ใบ";
-    renderOrders(listOrders);
+    // รายการ = โหลดทีละหน้า (ตั้งจำนวนต่อรอบได้ที่ ⚙️ ตั้งค่า) — เปิดหน้าไม่ต้องรอโหลดทุกใบ
+    // keepLoaded=true (auto-refresh ทุก 30 วิ) → ดึงเท่าที่โหลดค้างไว้ ไม่รีเซ็ตกลับหน้าแรก
+    var keepN=(keepLoaded&&ordRows.length)?ordRows.length:0;
+    ordRows=[]; ordFrom=0; ordHasMore=false;
+    await fetchOrdersPage(keepN||undefined);
     setTxt("lastUpd","อัพเดท "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
   }catch(e){console.error(e);}
 }
+// ── แบ่งหน้ารายการออเดอร์ (โหลดทีละชุด — จำนวนต่อรอบตั้งที่ ⚙️ ตั้งค่า) ──
+var ordRows=[], ordFrom=0, ordHasMore=false, ordLoading=false, ordTotal=0;
+function ordBaseQuery(sb_,todayStr,tomStr){
+  var NOTEST="source.is.null,source.neq.parallel_test";
+  var q=sb_.from("orders").select("*",{count:"exact"});
+  if(dateMode==="today")            q=q.eq("delivery_date",todayStr);
+  else if(dateMode==="tomorrow")    q=q.eq("delivery_date",tomStr);
+  else if(dateMode==="pick"&&pickedDate) q=q.eq("delivery_date",pickedDate);
+  else                              q=q.gte("delivery_date",todayStr);   // ทั้งหมด = วันนี้ → ไกลสุด
+  return q.neq("status","cancelled").or(NOTEST)
+          .order("delivery_date",{ascending:true}).order("time_slot",{ascending:true}).order("created_at",{ascending:true});
+}
+async function fetchOrdersPage(sizeOverride){
+  var sb_=getSB(); if(!sb_||ordLoading)return;
+  ordLoading=true;
+  var btn=document.getElementById("ordMoreBtn"); if(btn){btn.disabled=true;btn.textContent="กำลังโหลด...";}
+  try{
+    var todayStr=today2(), tomStr=tomorrow2();
+    var size=sizeOverride||orderPageSize||20;
+    var res=await ordBaseQuery(sb_,todayStr,tomStr).range(ordFrom, ordFrom+size-1);
+    if(res.error)throw res.error;
+    var rows=res.data||[];
+    ordTotal=(typeof res.count==="number")?res.count:(ordFrom+rows.length);
+    ordRows=ordRows.concat(rows);
+    ordFrom+=rows.length;
+    ordHasMore=ordFrom<ordTotal;
+    // หัวข้อ: ดูช่วงไหน + โชว์กี่ใบจากทั้งหมด
+    var title;
+    if(dateMode==="today")            title="ออเดอร์วันนี้ ("+todayStr+")";
+    else if(dateMode==="tomorrow")    title="ออเดอร์พรุ่งนี้ ("+tomStr+")";
+    else if(dateMode==="pick"&&pickedDate) title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
+    else{ var last=ordRows.length?ordRows[ordRows.length-1].delivery_date:todayStr;
+          title="ทั้งหมด "+todayStr+" → "+(ordHasMore?"…":last); }
+    var tEl=document.getElementById("orderListTitle");
+    if(tEl) tEl.textContent=title+" · โชว์ "+ordRows.length+"/"+ordTotal+" ใบ";
+    renderOrders(ordRows);
+  }catch(e){ console.error(e); }
+  finally{
+    ordLoading=false;
+    var b=document.getElementById("ordMoreBtn");
+    if(b){ b.style.display=ordHasMore?"block":"none"; b.disabled=false;
+           b.textContent="⬇ โหลดเพิ่มอีก "+Math.min(orderPageSize||20, Math.max(0,ordTotal-ordRows.length))+" ใบ (เหลือ "+Math.max(0,ordTotal-ordRows.length)+")"; }
+  }
+}
+function loadMoreOrders(){ if(ordHasMore) fetchOrdersPage(); }
 var ST={confirmed:{t:"รอครัว",cls:"p-wait"},preparing:{t:"ทำอยู่",cls:"p-cook"},ready:{t:"พร้อมส่ง",cls:"p-ready"},delivered:{t:"ส่งแล้ว",cls:"p-done"}};
 function renderOrders(orders){
   var el=document.getElementById("ordersList"); if(!el)return;
@@ -1733,7 +1778,7 @@ async function savePromo(){
 }
 
 // ── ⚙️ Global Settings (kitchen_data key='globalSettings') — ตั้งค่าที่แชร์ข้าม DB/KQ ──
-var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal"};
+var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal",orderPageSize:20};
 async function loadGlobalSettings(){
   var sb_=getSB(); if(!sb_)return;
   try{
@@ -1743,16 +1788,22 @@ async function loadGlobalSettings(){
     var utSel=document.getElementById("set-utensil-size");
     if(pageSel)pageSel.value=String(s.dbMenuPageSize);
     if(utSel)utSel.value=s.kitchenUtensilSize;
+    orderPageSize=parseInt(s.orderPageSize,10)||20;
+    var ordSel=document.getElementById("set-order-page-size"); if(ordSel)ordSel.value=String(orderPageSize);
   }catch(e){console.error("loadGlobalSettings:",e);}
 }
 async function saveGlobalSettings(){
   var sb_=getSB(); if(!sb_)return;
   var pageSel=document.getElementById("set-db-page-size");
   var utSel=document.getElementById("set-utensil-size");
+  var ordSel=document.getElementById("set-order-page-size");
   var data={
     dbMenuPageSize: parseInt((pageSel&&pageSel.value)||30,10),
-    kitchenUtensilSize: (utSel&&utSel.value)||"normal"
+    kitchenUtensilSize: (utSel&&utSel.value)||"normal",
+    orderPageSize: parseInt((ordSel&&ordSel.value)||20,10)
   };
+  orderPageSize=data.orderPageSize;
+  if(typeof loadAll==="function") loadAll();   // เปลี่ยนจำนวนแล้วโหลดรายการใหม่ทันที
   try{
     await sb_.from("kitchen_data").upsert({key:"globalSettings",data:data,updated_at:new Date().toISOString()},{onConflict:"key"});
     var msg=document.getElementById("settingsSaveMsg");
@@ -1993,8 +2044,10 @@ async function saveMpMenuPicker(id){
   }catch(e){alert("บันทึกเมนูไม่ได้");}
 }
 
-loadAll();
-refreshTimer=setInterval(loadAll,30000);
+// โหลดค่าตั้งค่าก่อน (จำนวนออเดอร์ต่อรอบ) แล้วค่อยโหลดรายการ — ไม่งั้นค่าที่ตั้งไว้ไม่มีผลตอนเปิดหน้า
+Promise.resolve(typeof loadGlobalSettings==="function"?loadGlobalSettings():null)
+  .catch(function(){}).then(function(){ loadAll(); });
+refreshTimer=setInterval(function(){loadAll(true);},30000);
 subscribeRealtime();
 
 // ── CUSTOMER MANAGEMENT (merged from customer.html) ───────
