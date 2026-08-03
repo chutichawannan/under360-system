@@ -1703,14 +1703,34 @@ async function loadMessenger(){
     var res=await sb_.from("orders").select("*").eq("delivery_date",date).order("time_slot").order("created_at");
     if(res.error)throw res.error;
     var data=(res.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
+    // ── ดึงรายการของแต่ละใบ (แมสต้องรู้ว่าขนอะไรขึ้นรถ) ──
+    var CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
+    var itemsByOrder={};
+    if(data.length){
+      var ids=data.map(function(o){return o.id;});
+      for(var i=0;i<ids.length;i+=60){
+        var ir=await sb_.from("order_items").select("order_id,menu_code,menu_name,quantity").in("order_id",ids.slice(i,i+60));
+        (ir.data||[]).forEach(function(it){ (itemsByOrder[it.order_id]=itemsByOrder[it.order_id]||[]).push(it); });
+      }
+    }
+    data.forEach(function(o){
+      var all=itemsByOrder[o.id]||[];
+      o._food=all.filter(function(i){return !CTRL[i.menu_code];});                  // ของจริงที่ต้องขน
+      o._flags=all.filter(function(i){return CTRL[i.menu_code];}).map(function(i){return CTRL[i.menu_code];});
+      o._noFood=o._food.length===0;                                                 // ⚠️ ไม่รู้ว่าต้องส่งอะไร
+    });
+    var noFoodN=data.filter(function(o){return o._noFood;}).length;
     // สรุปต่อช่วงเวลา
     var slots={}; data.forEach(function(o){var s=o.time_slot_label||o.time_slot||"ไม่ระบุ";slots[s]=(slots[s]||0)+1;});
     var sumEl=document.getElementById("msg-summary");
     if(sumEl){
       var slotStr=Object.keys(slots).map(function(s){return esc2(s)+" <b>"+slots[s]+"</b>";}).join(" · ")||"—";
+      var boxN=data.reduce(function(s,o){return s+o._food.reduce(function(a,i){return a+(i.quantity||1);},0);},0);
       sumEl.innerHTML="<div style='background:#EBF3EF;border-radius:10px;padding:11px 13px'>"
-        +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>📅 "+date+" — ส่ง "+data.length+" ราย</div>"
-        +"<div style='font-size:12px;color:#374151;margin-top:3px'>ช่วงเวลา: "+slotStr+"</div></div>";
+        +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>📅 "+date+" — ส่ง "+data.length+" ราย · รวม "+boxN+" ชิ้น</div>"
+        +"<div style='font-size:12px;color:#374151;margin-top:3px'>ช่วงเวลา: "+slotStr+"</div>"
+        +(noFoodN?"<div style='margin-top:6px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:7px 9px;font-size:12px;color:#B91C1C;font-weight:700'>⚠️ "+noFoodN+" ใบไม่มีรายการของในระบบ (ใบแยกวันส่ง) — ต้องเช็คกับแอดมินก่อนจัดของ</div>":"")
+        +"</div>";
     }
     if(!data.length){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>ไม่มีงานส่งวันนี้</div>";return;}
     // จัดกลุ่มตามเขต (ทิศ) → เรียงใกล้→ไกลในเขต (แมสไล่รอบง่าย)
@@ -1728,7 +1748,19 @@ async function loadMessenger(){
         h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
         h+="<div class='msg-addr'>📍 "+esc2(addr)+(maploc?" <a href='"+maploc+"' target='_blank' style='color:#1D4ED8;font-weight:600'>🗺️แผนที่</a>":"")+"</div>";
         h+=(o.customer_phone?"<div style='font-size:12px;margin-top:2px'>📞 <a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a></div>":"");
-        h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:2px'>"+fmtB(o.total)+"</div></div>";
+        // 📦 ของที่ต้องขน — แมสเห็นในใบเดียวกัน ไม่ต้องเปิดหน้าอื่น
+        if(o._food.length){
+          var boxN=o._food.reduce(function(a,i){return a+(i.quantity||1);},0);
+          h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:6px 8px;font-size:12px'>"
+            +"<b style='color:#1F4D3A'>📦 ของ "+boxN+" ชิ้น</b><div style='color:#374151;margin-top:2px'>"
+            +o._food.map(function(i){return "<span style='display:inline-block;margin:1px 6px 1px 0'><b style='font-family:var(--mono);font-size:11px'>"+esc2(i.menu_code||"")+"</b>×"+(i.quantity||1)+"</span>";}).join("")
+            +"</div></div>";
+        }else{
+          h+="<div style='margin-top:5px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:6px 8px;font-size:12px;color:#B91C1C;font-weight:700'>"
+            +"⚠️ ไม่มีรายการของในระบบ — เช็คกับแอดมินก่อนจัดของ</div>";
+        }
+        if(o._flags.length) h+="<div style='margin-top:3px;font-size:11px;color:#6B7280'>"+o._flags.map(esc2).join(" · ")+"</div>";
+        h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:2px'>"+fmtB(o.total)+(o.total?"":" <span style='font-size:10px;color:#6B7280;font-weight:400'>(จ่ายในใบหลักแล้ว)</span>")+"</div></div>";
         h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
         h+="<select class='driver-select'><option value=''>เลือกผู้ส่ง...</option><option value='store'>🛵 แมสร้าน</option><option value='lalamove'>🟠 Lalamove</option><option value='grab'>🟢 Grab</option></select>";
         h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+statusTh(o.status)+"</span></div></div>";
