@@ -27,8 +27,8 @@ const SB = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const SK = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const SBH = { apikey: SK, Authorization: 'Bearer ' + SK, 'Content-Type': 'application/json' };
 
-const Q = `query($vid:Int,$lid:Int,$limit:Int!,$offset:Int!){
-  listOrdersWithPagination(vendorID:$vid,locationID:$lid,limit:$limit,offset:$offset){
+const Q = `query($vid:Int,$lid:Int,$limit:Int!,$offset:Int!,$filter:OrderListFilter){
+  listOrdersWithPagination(vendorID:$vid,locationID:$lid,limit:$limit,offset:$offset,filter:$filter){
     orders{ number placedAt deliveryDate deliveryTimeslot status totalSatangs shippingTotalSatangs
       lineItemTotalSatangs deliveryDistanceM requestUtensils specialInstructions
       user{ name phone lineDisplayName }
@@ -50,22 +50,36 @@ const gql = async (variables) => {
 const satang = (v) => (v == null ? null : v / 100);
 const slotOf = (t) => { const m = (t || '').match(/(\d+):/); return (m ? +m[1] : 13) < 12 ? 'morning' : 'afternoon'; };
 const stamp = () => new Date().toLocaleDateString('th-TH', { day: 'numeric', month: 'short', timeZone: 'Asia/Bangkok' });
+const bkkToday = () => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(new Date());
 
 (async () => {
-  // 1) ดึงจาก Hato (เรียงใหม่→เก่า) จนพ้นช่วง SINCE
-  console.log(`🔎 ดึงออเดอร์ Hato ตั้งแต่ ${SINCE} ...`);
+  // 1) ดึงจาก Hato — 2 แกน เพราะแกนเดียวพลาดของจริงมาแล้ว (นัทจับได้ 3 ส.ค.: ขาด 2 ใบของวันที่ 4)
+  //    แกน A "วันสั่ง" — ออเดอร์ที่เพิ่งเข้ามา
+  //    แกน B "วันส่ง"  — ออเดอร์ล่วงหน้าที่สั่งไว้นานแล้วแต่ส่งวันข้างหน้า (แกน A มองไม่เห็นถ้า SINCE สั้น)
+  console.log(`🔎 ดึงออเดอร์ Hato — วันสั่ง ≥ ${SINCE} + วันส่งล่วงหน้า 30 วัน ...`);
   let pool = [], offset = 0;
   for (let p = 0; p < 12; p++) {
     const d = await gql({ vid: VENDOR, lid: LOCATION, limit: 100, offset });
     const rows = d.orders || [];
     pool = pool.concat(rows);
     if (rows.length < 100) break;
-    // เจอใบที่เก่ากว่า SINCE แล้ว = พอ (API เรียงใหม่→เก่า)
     if (rows[rows.length - 1].placedAt < SINCE) break;
     offset += rows.length;
   }
-  const recent = pool.filter((o) => o.placedAt >= SINCE);
-  console.log(`   ดึงมา ${pool.length} ใบ · อยู่ในช่วง ${recent.length} ใบ`);
+  let recent = pool.filter((o) => o.placedAt >= SINCE);
+  console.log(`   แกนวันสั่ง: ${recent.length} ใบ`);
+
+  // แกน B — กรองที่ฝั่ง Hato ด้วย deliveryFromDate/ToDate (filter นี้ใช้ได้จริง ต่างจาก orderFromDate ที่เสีย)
+  const today = bkkToday();
+  const until = new Date(Date.parse(today + 'T00:00:00Z') + 30 * 864e5).toISOString().slice(0, 10);
+  const seen = new Set(recent.map((o) => o.number));
+  for (let p = 0; p < 6; p++) {
+    const d = await gql({ vid: VENDOR, lid: LOCATION, limit: 100, offset: p * 100, filter: { deliveryFromDate: today, deliveryToDate: until } });
+    const rows = d.orders || [];
+    rows.forEach((o) => { if (!seen.has(o.number)) { seen.add(o.number); recent.push(o); } });
+    if (rows.length < 100) break;
+  }
+  console.log(`   รวมทั้ง 2 แกน: ${recent.length} ใบ`);
   if (!recent.length) return console.log('✅ ไม่มีอะไรต้อง sync');
 
   // 2) เทียบกับ DB (chunk ละ 100 กัน URL ยาวเกิน)
