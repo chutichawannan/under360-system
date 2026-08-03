@@ -977,14 +977,22 @@ async function saveAll(){
       },{onConflict:'section_key'});
     }
   }catch(e){ ok=false; }
-  let menuOrderCount=0;
+  let menuOrderCount=0, orderOk=true;
   try{
     const changed=menuItems.filter(m=>m.sort_order!==undefined);
     menuOrderCount=changed.length;
-    for(const m of changed){ await sb.from('menu_items').update({sort_order:m.sort_order}).eq('id',m.id); }
-  }catch(e){}
-  if(ok) logHeActivity(cards.length, menuOrderCount);
-  showToast(ok?'✅ บันทึกสำเร็จ!':'⚠️ บางส่วนไม่สำเร็จ — ตรวจสอบ console',ok?'ok':'err');
+    // เดิม catch เปล่า → ลำดับเมนูเซฟไม่ติดแต่ยังขึ้น "✅ บันทึกสำเร็จ" (แอดมินไม่รู้ว่าหาย) — แก้ 3 ส.ค. 2026
+    for(const m of changed){
+      const { error } = await sb.from('menu_items').update({sort_order:m.sort_order}).eq('id',m.id);
+      if(error) throw error;
+    }
+  }catch(e){ orderOk=false; console.error('saveAll menu order:',e); }
+  if(ok && orderOk) logHeActivity(cards.length, menuOrderCount);
+  const allOk = ok && orderOk;
+  showToast(allOk ? '✅ บันทึกสำเร็จ!'
+    : (!ok && !orderOk) ? '⚠️ บันทึกไม่สำเร็จทั้งการ์ดและลำดับเมนู — ลองใหม่'
+    : !ok ? '⚠️ การ์ดบันทึกไม่สำเร็จ (ลำดับเมนูบันทึกแล้ว) — ลองใหม่'
+    : '⚠️ ลำดับเมนูบันทึกไม่สำเร็จ (การ์ดบันทึกแล้ว) — ลองใหม่', allOk?'ok':'err');
 }
 
 // ── UI HELPERS ──
