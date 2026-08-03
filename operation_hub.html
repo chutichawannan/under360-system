@@ -1133,6 +1133,7 @@ async function openOrderDetail(id){
 }
 
 // สลับสถานะการเงิน (โอนแล้ว ⇄ รอโอน) — beta: assume อัพสลิป=จริง, แอดมินแก้เองได้ (โอนผ่านไลน์) แล้วไล่เช็คสลิปจริงตกเย็น
+// เขียนไม่ติดต้องรู้ทันที — supabase v2 ไม่ throw ถ้าไม่เช็ค .error จะขึ้นสำเร็จทั้งที่ DB ไม่ขยับ (audit 3 ส.ค. 2026)
 async function togglePayment(id,current,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var sb_=getSB(); if(!sb_)return;
@@ -1387,7 +1388,8 @@ function saveMpPlanRow(rowId){
     var newStatus=r.status;
     if(total>=(r.box_count||7) && ["scheduled","request_open","request_submitted","no_change"].indexOf(r.status)>=0) newStatus="menu_assigned";
     try{
-      await sb_.from("mp_deliveries").update({menu_items:items,status:newStatus,updated_at:new Date().toISOString()}).eq("id",rowId);
+      var _mp=await sb_.from("mp_deliveries").update({menu_items:items,status:newStatus,updated_at:new Date().toISOString()}).eq("id",rowId);
+      if(_mp.error) throw _mp.error;   // เดิมเงียบสนิท (แก้ 3 ส.ค. 2026)
       r.status=newStatus;
     }catch(e){console.error("saveMpPlanRow:",e);}
   },500);
@@ -2265,7 +2267,7 @@ function custTypeBtn(id,c,type,label){
 async function setCustomerType(id,type){
   var c=allCustomers.find(function(x){return x.id===id;}); if(!c) return;
   var sb_=getSB();
-  if(sb_){ try{ await sb_.from("customers").update({customer_type:type||null,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }
+  if(sb_){ try{ var _w=await sb_.from("customers").update({customer_type:type||null,updated_at:new Date().toISOString()}).eq("id",id); if(_w.error) throw _w.error; }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }
   c.customer_type=type||null;
   showToastOH(type?("ตั้งเป็น "+custCategory(c).label+" ✓"):"ล้างประเภท (อนุมานเอง) ✓");
   selectCustomer(id); renderCustList();  // re-render detail + badge ในลิสต์
@@ -2551,7 +2553,7 @@ async function adjustCustPoints(id){
   var log="["+new Date().toLocaleDateString("th-TH")+"] "+(val>0?"+":"")+val+" → "+newPts+" แต้ม | "+note;
   var newLog=[].concat(c.pts_log||[]).concat([log]);
   var sb_=getSB();
-  if(sb_){ try{ await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }
+  if(sb_){ try{ var _w=await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id); if(_w.error) throw _w.error; }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }
   c.loyalty_points=newPts; c.pts_log=newLog;
   var el=document.getElementById("oh-pts-show-"+id); if(el) el.textContent=newPts;
   document.getElementById("oh-pval-"+id).value="";
@@ -2565,7 +2567,7 @@ async function saveCustNotesOH(id){
   var c=allCustomers.find(function(x){return x.id===id;}); if(!c) return;
   var notes=document.getElementById("oh-notes-"+id).value||"";
   var sb_=getSB();
-  if(sb_){ try{ await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ"); return; } }
+  if(sb_){ try{ var _w=await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id); if(_w.error) throw _w.error; }catch(e){ showToastOH("บันทึกไม่สำเร็จ"); return; } }
   c.admin_notes=notes; showToastOH("บันทึกโน้ตแล้ว ✓");
 }
 
@@ -2573,7 +2575,7 @@ async function saveCustAIOH(id){
   var c=allCustomers.find(function(x){return x.id===id;}); if(!c) return;
   var ai=document.getElementById("oh-ai-"+id).value||"";
   var sb_=getSB();
-  if(sb_){ try{ await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ"); return; } }
+  if(sb_){ try{ var _w=await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id); if(_w.error) throw _w.error; }catch(e){ showToastOH("บันทึกไม่สำเร็จ"); return; } }
   c.ai_comment=ai; showToastOH("บันทึก AI Insight แล้ว ✓");
 }
 
