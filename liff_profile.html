@@ -283,16 +283,59 @@ async function savePref(){
   const prefs=[];
   document.querySelectorAll(".pref-tog.on").forEach(t=>prefs.push(t.dataset.pref));
   prefs.push(...customPrefList);
-  // ❌ เดิมอ้าง element #prefOther ที่ไม่มีในหน้า → TypeError ทุกครั้ง = ปุ่มค้าง "กำลังบันทึก" ตลอด
-  //    และเขียนลง customers.preferences ซึ่ง **ไม่มีคอลัมน์นี้จริงใน DB** → ข้อมูลแพ้อาหารไม่เคยถูกเก็บเลย (audit 3 ส.ค. 2026)
-  //    ที่เก็บจริงต้องเป็นตาราง customer_preferences (SQL เตรียมไว้ใน CLAUDE.md ยังไม่รัน) — ส่งต่อ U-track แล้ว
-  console.warn("savePref: ยังไม่มีที่เก็บ (รอตาราง customer_preferences)", {lineUid, prefs});
-  btn.textContent="⚠️ ยังบันทึกไม่ได้";
-  alert("ตอนนี้ระบบยังบันทึก 'ความชอบ / อาหารที่แพ้' ไม่ได้ครับ\nรบกวนแจ้งแอดมินทางแชท LINE เพื่อบันทึกให้ก่อนนะครับ 🙏\n(ทีมงานกำลังเปิดระบบส่วนนี้)");
-  setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},2500);
+  // ✅ 3 ส.ค. 2026: เก็บลงตาราง customer_preferences จริงแล้ว (เดิมเขียนลงคอลัมน์ที่ไม่มี = หายเงียบ)
+  //    แยก "แพ้" (allergies) ออกจาก "ไม่ชอบ/ไม่ทาน" (dislikes) — น้องนิว treat ของแพ้เข้มกว่า
+  const sb_=getSB();
+  const allergies=prefs.filter(x=>/แพ้/.test(x));
+  const dislikes =prefs.filter(x=>!/แพ้/.test(x));
+  try{
+    if(!sb_) throw new Error("offline");
+    // ผูกกับ customers.id ถ้ามี (ให้ตรงกับที่หลังบ้าน/น้องนิวใช้) · ไม่มีก็เก็บด้วย line_uid ไปก่อน
+    let cid=lineUid;
+    try{
+      const cr=await sb_.from("customers").select("id").eq("line_uid",lineUid).maybeSingle();
+      if(cr&&cr.data&&cr.data.id) cid=cr.data.id;
+    }catch(e){}
+    const r=await sb_.from("customer_preferences").upsert({
+      customer_id:cid,
+      allergies:allergies.join(", "),
+      dislikes:dislikes.join(", "),
+      updated_by:"customer",
+      updated_at:new Date().toISOString()
+    },{onConflict:"customer_id"});
+    if(r.error) throw r.error;
+    btn.textContent="✅ บันทึกแล้ว";
+    setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},1800);
+  }catch(e){
+    console.error("savePref:",e);
+    btn.textContent="⚠️ บันทึกไม่สำเร็จ";
+    alert("บันทึกไม่สำเร็จ กรุณาลองใหม่ หรือแจ้งแอดมินทางแชท LINE ครับ");
+    setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},2000);
+  }
 }
 
 loadProfile();
+// โหลด "ข้อจำกัดอาหาร" ที่เคยบันทึกไว้ กลับมาติ๊กให้ (เดิมกรอกแล้วเปิดใหม่หายทุกครั้ง)
+async function loadPrefs(){
+  const sb_=getSB(); if(!sb_)return;
+  const lineUid=localStorage.getItem("line_uid")||"dev_001";
+  try{
+    let cid=lineUid;
+    const cr=await sb_.from("customers").select("id").eq("line_uid",lineUid).maybeSingle();
+    if(cr&&cr.data&&cr.data.id) cid=cr.data.id;
+    let r=await sb_.from("customer_preferences").select("*").eq("customer_id",cid).maybeSingle();
+    if((!r||!r.data)&&cid!==lineUid) r=await sb_.from("customer_preferences").select("*").eq("customer_id",lineUid).maybeSingle();
+    const d=r&&r.data; if(!d)return;
+    const all=((d.allergies||"")+", "+(d.dislikes||"")).split(",").map(s=>s.trim()).filter(Boolean);
+    const known=[];
+    document.querySelectorAll(".pref-tog").forEach(tg=>{
+      if(all.indexOf(tg.dataset.pref)>=0){ tg.classList.add("on"); known.push(tg.dataset.pref); }
+    });
+    customPrefList=all.filter(x=>known.indexOf(x)<0);
+    if(typeof renderCustomPrefs==="function") renderCustomPrefs();
+  }catch(e){ console.warn("loadPrefs:",e); }
+}
+loadPrefs();
 
 var customPrefList = [];
 function addCustomPref(){

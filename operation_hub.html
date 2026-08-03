@@ -2504,6 +2504,47 @@ function closeCustDetail(){
   renderCustList();
 }
 
+// ── 🥗 ข้อจำกัดอาหารของลูกค้า (ตาราง customer_preferences) — แอดมินดู/แก้แทนลูกค้าได้ ──
+async function ohLoadPrefs(id, c){
+  var box=document.getElementById("oh-pref-"+id); if(!box)return;
+  var sb_=getSB(); if(!sb_){box.textContent="Offline";return;}
+  try{
+    var r=await sb_.from("customer_preferences").select("*").eq("customer_id",id).maybeSingle();
+    var d=(r&&r.data)||null;
+    if(!d && c && c.line_uid){   // เผื่อบันทึกไว้ด้วย line_uid (ลูกค้าที่ยังไม่มีแถว customers ตอนกรอก)
+      var r2=await sb_.from("customer_preferences").select("*").eq("customer_id",c.line_uid).maybeSingle();
+      d=(r2&&r2.data)||null;
+    }
+    var al=(d&&d.allergies)||"", di=(d&&d.dislikes)||"";
+    box.innerHTML=
+      (al?"<div style='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:7px 9px;margin-bottom:6px;color:#B91C1C;font-weight:700'>⚠️ แพ้: "+esc2(al)+"</div>":"")
+      +(di?"<div style='background:#F7F8F6;border-radius:8px;padding:7px 9px;margin-bottom:6px;color:var(--ink)'>🚫 ไม่ทาน/ไม่ชอบ: "+esc2(di)+"</div>":"")
+      +((!al&&!di)?"<div style='margin-bottom:6px'>— ยังไม่มีข้อมูล —</div>":"")
+      +"<div style='display:grid;gap:5px'>"
+      +"<input id='ohpf-al-"+id+"' class='p-ifield' placeholder='แพ้ (คั่นด้วย , ) เช่น แพ้กุ้ง, แพ้ถั่ว' value=\""+esc2(al)+"\">"
+      +"<input id='ohpf-di-"+id+"' class='p-ifield' placeholder='ไม่ทาน/ไม่ชอบ (คั่นด้วย , ) เช่น ไม่ผักชี' value=\""+esc2(di)+"\">"
+      +"<button class='btn-psave' onclick='ohSavePrefs(\""+id+"\")'>บันทึกข้อจำกัดอาหาร</button>"
+      +"</div>"
+      +(d&&d.updated_at?"<div style='font-size:11px;color:var(--ink-soft);margin-top:5px'>อัปเดตล่าสุด "+fmtDateTh(d.updated_at)+" โดย "+esc2(d.updated_by||"—")+"</div>":"");
+  }catch(e){
+    box.innerHTML="<div style='color:#B91C1C'>โหลดไม่ได้: "+esc2(e.message||"")+"</div>";
+  }
+}
+async function ohSavePrefs(id){
+  var sb_=getSB(); if(!sb_)return;
+  var al=(document.getElementById("ohpf-al-"+id)||{}).value||"";
+  var di=(document.getElementById("ohpf-di-"+id)||{}).value||"";
+  try{
+    var r=await sb_.from("customer_preferences").upsert({
+      customer_id:id, allergies:al.trim(), dislikes:di.trim(),
+      updated_by:"admin", updated_at:new Date().toISOString()
+    },{onConflict:"customer_id"});
+    if(r.error)throw r.error;
+    if(typeof showToastOH==="function") showToastOH("บันทึกข้อจำกัดอาหารแล้ว ✅");
+    var c=allCustomers.find(function(x){return x.id===id;});
+    ohLoadPrefs(id,c);
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+(e.message||e.code||e)); }
+}
 async function selectCustomer(id){
   selectedCustId=id;
   renderCustList();
@@ -2561,6 +2602,10 @@ async function selectCustomer(id){
     +(c.date_of_birth?crmRow("วันเกิด", fmtDateTh(c.date_of_birth)):"")
     +(c.gender?crmRow("เพศ", c.gender):"")
     +"</div>"
+    // ── 🥗 ข้อจำกัดอาหาร (customer_preferences) — น้องนิวใช้ตัดเมนูที่แพ้ออก ──
+    +"<div class='p-section'><div class='p-sec-title'>🥗 ข้อจำกัดอาหาร</div>"
+    +"<div id='oh-pref-"+id+"' style='font-size:12px;color:var(--ink-soft)'>⏳ กำลังโหลด...</div>"
+    +"</div>"
     // ── ตั้งประเภทลูกค้า (แอดมิน override — เช่น ร้านค้า B2B) ──
     +"<div class='p-section'><div class='p-sec-title'>🏷️ ตั้งประเภท (override)</div>"
     +"<div style='display:flex;gap:6px;flex-wrap:wrap'>"
@@ -2602,6 +2647,7 @@ async function selectCustomer(id){
     +"<textarea id='oh-ai-"+id+"' class='p-note-area ai-note-area' rows='3' placeholder='AI insight เช่น สั่ง HP plan สม่ำเสมอ มักเพิ่มโปรตีน...'>"+esc2(c.ai_comment||"")+"</textarea>"
     +"<div class='p-save-row'><button class='btn-psave' style='background:#1D4ED8' onclick='saveCustAIOH(\""+id+"\")'>💾 บันทึก AI</button></div></div>"
     +"</div>";
+  ohLoadPrefs(id, c);
 }
 
 async function adjustCustPoints(id){
