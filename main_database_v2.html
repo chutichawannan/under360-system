@@ -546,6 +546,18 @@ const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 let _sb = null;
 function getSB(){ if(!_sb) _sb = supabase.createClient(SB_URL, SB_KEY); return _sb; }
+
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// นาฬิกาเวลาไทยที่หัวหน้าจอ
+function bkkClockTick(){ const e=document.getElementById('bkk-clock'); if(e) e.textContent=bkkDate()+' '+bkkTime()+' น. (เวลาไทย)'; }
 </script>
 </head>
 <body>
@@ -555,6 +567,7 @@ function getSB(){ if(!_sb) _sb = supabase.createClient(SB_URL, SB_KEY); return _
     <div class="sub">เมนู · วัตถุดิบ · ต้นทุน · แคลอรี่ · สต็อก — ข้อมูลเดียวกันทั้งร้าน</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <span id="bkk-clock" style="color:#fff;opacity:.75;font-size:11.5px;white-space:nowrap;font-variant-numeric:tabular-nums;" title="เวลาไทย (Asia/Bangkok) — ระบบยึดเวลานี้เสมอ"></span>
     <a href="operation_hub.html" style="color:#fff;opacity:.75;font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 12px;white-space:nowrap;" title="ไปหน้า Operation Hub">← OH</a>
     <div id="whoami" class="whoami"></div>
   </div>
@@ -1285,7 +1298,11 @@ const MONTH_TH = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','
 const DAY_FULL = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
 const MP_COL_W = {1:300, 3:260, 5:220, 7:190, 10:160};
 
-function mpIsoDate(d){ return d.toISOString().split('T')[0]; }
+// ⚠️ เดิมใช้ d.toISOString().split('T')[0] = แปลงเป็น UTC ก่อนตัด → วันที่เพี้ยน 1 วัน
+// (ไทย UTC+7: เที่ยงคืน–7:00 น. ได้วันที่ย้อนหลัง / ฝั่ง PST ได้วันที่ล่วงหน้า)
+// ตอนนี้อ่านจาก field ของ Date object ตรงๆ (round-trip กับ mpDateFromIso ได้เป๊ะ)
+// ส่วน "วันนี้" ต้องเรียก bkkDate() แทน mpIsoDate(new Date()) เสมอ
+function mpIsoDate(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
 function mpDateFromIso(s){ return new Date(s+'T00:00:00'); }
 function mpShortDate(d){ return d.getDate()+' '+MONTH_TH[d.getMonth()]+' '+(d.getFullYear()+543); }
 function mpAddDays(iso,n){ const d=mpDateFromIso(iso); d.setDate(d.getDate()+n); return mpIsoDate(d); }
@@ -1313,7 +1330,7 @@ function mpSummaryForDates(dates){
   return totals;
 }
 function mpLookbackDateRange(days){
-  const today=new Date(); today.setHours(0,0,0,0);
+  const today=mpDateFromIso(bkkDate()); // "วันนี้" = วันไทย ไม่ใช่วันของเครื่องผู้ใช้
   const dates=[];
   for(let i=days;i>0;i--){
     const d=new Date(today); d.setDate(d.getDate()-i); dates.push(mpIsoDate(d));
@@ -1327,8 +1344,7 @@ let mpProdLoadedIso = null;
 let _mpProdNoteTimers = {};
 
 function mpProdTodayIso(){
-  const d=new Date();
-  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+  return bkkDate(); // "วันนี้" ของครัว = วันไทยเสมอ
 }
 function mpProdAddDays(iso,n){
   const d=new Date(iso+'T00:00:00'); d.setDate(d.getDate()+n);
@@ -1549,7 +1565,7 @@ async function newMpOffer(){
 
 function renderMealPlanTab(){
   if(!state.mpViewDays) state.mpViewDays=7;
-  const todayISO  = mpIsoDate(new Date());
+  const todayISO  = bkkDate();
 
   // Sub-view toggle
   let html = `<div style="display:flex;gap:6px;margin-bottom:12px;">
@@ -1708,7 +1724,7 @@ function renderMpLookback(){
 
 function attachMealPlanHandlers(){
   const dp=document.getElementById('mpDatePicker');
-  if(dp&&!dp.value) dp.value=mpIsoDate(new Date());
+  if(dp&&!dp.value) dp.value=bkkDate();
   const addDateBtn=document.getElementById('mpAddDateBtn');
   if(addDateBtn) addDateBtn.onclick=()=>{
     const iso=dp&&dp.value; if(!iso){ showToast('กรุณาเลือกวันที่ก่อน'); return; }
@@ -1717,7 +1733,7 @@ function attachMealPlanHandlers(){
   };
   const todayBtn=document.getElementById('mpTodayBtn');
   if(todayBtn) todayBtn.onclick=()=>{
-    const iso=mpIsoDate(new Date());
+    const iso=bkkDate();
     if(!state.mpDates.includes(iso)){ mpAddDate(iso); render(); }
     setTimeout(()=>{ const el=document.querySelector('.mp-day-header.mp-today'); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'}); },80);
   };
@@ -1866,7 +1882,7 @@ function fmtDateShort(iso){
   if(!iso) return '';
   try{
     const d = new Date(iso);
-    return d.toLocaleDateString('th-TH',{day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+    return d.toLocaleDateString('th-TH',{timeZone:TZ_BKK,day:'numeric',month:'short'}) + ' ' + d.toLocaleTimeString('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false});
   }catch(e){ return ''; }
 }
 
@@ -2618,7 +2634,27 @@ async function exportOnlineMenus(){
     showToast('ยังไม่มีเมนูที่เปิดออนไลน์ — กด "○ ออฟไลน์" ที่แถวเมนูก่อน');
     return;
   }
-  const toSync = items.map(r=>{
+  const sb = getSB();
+  // ── pre-flight: ดึงของเดิมมาเทียบก่อนเขียนทับ (3 ส.ค. 2026) ────────────────
+  // เคยเป็นกับดัก: sync ส่ง image_urls:[] + sort_order:0 เสมอ → กดทีเดียว "ล้างรูปเมนู 71 ตัว"
+  // ที่ P ดึงมาจาก Hato + รีเซ็ตลำดับที่นัทจัดไว้ทิ้ง (สูตรในหน้านี้ไม่มีรูป แต่ menu_items มี)
+  let existing = {};
+  try {
+    const codes = items.map(r=>r.code).filter(Boolean);
+    const { data } = await sb.from('menu_items').select('code,price,image_urls').in('code', codes);
+    (data||[]).forEach(m=>{ existing[m.code]=m; });
+  } catch(e){ console.error('sync pre-flight failed:', e); }
+  const priceChanges = items.filter(r=>existing[r.code] && (r.selling_price||0)!==(existing[r.code].price||0));
+  const imgKept = items.filter(r=>!(r.image_urls&&r.image_urls.length) && existing[r.code] && (existing[r.code].image_urls||[]).length);
+  if(priceChanges.length){
+    const list = priceChanges.slice(0,8).map(r=>'  '+r.code+'  ฿'+(existing[r.code].price||0)+' → ฿'+(r.selling_price||0)).join('\n');
+    const more = priceChanges.length>8 ? '\n  …และอีก '+(priceChanges.length-8)+' เมนู' : '';
+    if(!window.confirm('⚠️ ราคาจะถูกเขียนทับ '+priceChanges.length+' เมนู (ราคาในหน้านี้ จะทับราคาที่ตั้งไว้ใน LIFF)\n\n'+list+more+'\n\nยืนยัน Sync?')) {
+      showToast('ยกเลิก Sync — ราคายังไม่ถูกแตะ');
+      return;
+    }
+  }
+  const base = r => {
     const tot = computeTotals(r);
     return {
       code:         r.code||'',
@@ -2631,20 +2667,24 @@ async function exportOnlineMenus(){
       carb:         Math.round(tot.carb*10)/10||null,
       fat:          Math.round(tot.fat*10)/10||null,
       is_available: true,
-      sort_order:   0,
-      image_urls:   r.image_urls||[],           // ← รูปสำหรับ LIFF (4 slots)
       description:  r.description||'',          // ← คำอธิบายสำหรับ popup LIFF
       he_group:     r.he_group||'',
       no_morning:   r.no_morning||false,        // ← ไม่ส่งช่วงเช้า
+      // ❌ ไม่ส่ง sort_order → เก็บลำดับที่จัดไว้ใน HE/LIFF ไว้เหมือนเดิม
     };
-  });
+  };
+  // แยก 2 ชุด: มีรูป = ส่ง image_urls ทับ · ไม่มีรูป = ไม่ส่งคีย์นี้เลย (ของเดิมใน DB อยู่ครบ)
+  const withImg = items.filter(r=>r.image_urls&&r.image_urls.length).map(r=>Object.assign(base(r),{image_urls:r.image_urls}));
+  const noImg   = items.filter(r=>!(r.image_urls&&r.image_urls.length)).map(base);
   showToast('⏳ กำลัง Sync '+items.length+' เมนูไป Supabase...');
   try {
-    const sb = getSB();
-    const { error } = await sb.from('menu_items')
-      .upsert(toSync, { onConflict: 'code', ignoreDuplicates: false });
-    if(error) throw error;
-    showToast('✅ Sync แล้ว '+items.length+' เมนู — LIFF อัพเดทแล้ว!');
+    for(const batch of [withImg, noImg]){
+      if(!batch.length) continue;
+      const { error } = await sb.from('menu_items')
+        .upsert(batch, { onConflict: 'code', ignoreDuplicates: false });
+      if(error) throw error;
+    }
+    showToast('✅ Sync แล้ว '+items.length+' เมนู'+(imgKept.length?' · เก็บรูปเดิมไว้ '+imgKept.length+' เมนู':'')+' — LIFF อัพเดทแล้ว!');
   } catch(e) {
     console.error(e);
     showToast('❌ Sync ล้มเหลว: '+(e.message||'ตรวจสอบ credentials'));
@@ -2677,10 +2717,12 @@ async function syncOnlineMenu(r){
     carb: Math.round(tot.carb*10)/10||null,
     fat: Math.round(tot.fat*10)/10||null,
     is_available: !!(r.available_online && r.status==='active'),  // ปิดออนไลน์ = false → OH/LIFF ไม่เห็น
-    sort_order: 0,
-    image_urls: r.image_urls||[], description: r.description||'',
+    description: r.description||'',
     he_group: r.he_group||'', no_morning: r.no_morning||false,
+    // ❌ ไม่ส่ง sort_order → เก็บลำดับเดิม · image_urls ส่งเฉพาะตอนสูตรมีรูปจริง (ดูบรรทัดล่าง)
+    // เดิมส่ง image_urls:[] ทุกครั้ง → แค่กดเปิด/ปิดออนไลน์ทีละเมนู = ลบรูปเมนูนั้นทิ้งเงียบๆ (แก้ 3 ส.ค. 2026)
   };
+  if(r.image_urls && r.image_urls.length) row.image_urls = r.image_urls;
   try{
     const sb = getSB();
     const { error } = await sb.from('menu_items').upsert(row, { onConflict:'code', ignoreDuplicates:false });
@@ -4742,6 +4784,10 @@ function attachHandlers(){
     };
   }
 }
+
+// ⏰ นาฬิกาเวลาไทยที่หัวหน้าจอ
+bkkClockTick();
+setInterval(bkkClockTick, 30000);
 
 init();
 </script>

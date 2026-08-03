@@ -220,6 +220,20 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// วันไทย +n วัน → 'YYYY-MM-DD' (คำนวณจากวันไทย ไม่ใช่วันเครื่อง)
+function bkkDateOffset(n){const p=bkkDate().split("-").map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]+(n||0))).toISOString().slice(0,10);}
+// 'YYYY-MM-DD' → label ภาษาไทยตามโซนไทย
+function bkkLabel(iso,opt){return new Date(iso+"T00:00:00+07:00").toLocaleDateString("th-TH",Object.assign({timeZone:TZ_BKK},opt||{}));}
+
 // State
 let cart={}, deliveryFee=0, selDate=null, selSlot=null, payMethod="qr", dist=null, slipVerified=false;
 const KITCHEN_LAT=13.7205, KITCHEN_LNG=100.5855;
@@ -272,9 +286,8 @@ async function searchAddr(){
 function buildDates(){
   const grid=document.getElementById("dateGrid"); grid.innerHTML="";
   for(let i=1;i<=4;i++){
-    const d=new Date();d.setDate(d.getDate()+i);
-    const iso=d.toISOString().split("T")[0];
-    const label=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    const iso=bkkDateOffset(i);                 // นับจาก "วันนี้" ตามเวลาไทย
+    const label=bkkLabel(iso,{weekday:"short",day:"numeric",month:"short"});
     const el=document.createElement("div");
     el.className="dt-chip"; el.textContent=label; el.dataset.date=iso;
     el.onclick=()=>{document.querySelectorAll(".dt-chip").forEach(x=>x.classList.remove("active"));el.classList.add("active");selDate=iso;};
@@ -331,7 +344,7 @@ async function handleSlip(input){
     try{
       const base64=e.target.result.split(",")[1];
       const expected=cartSubtotal()+deliveryFee;
-      const today=new Date().toLocaleDateString("th-TH");
+      const today=new Date().toLocaleDateString("th-TH",{timeZone:TZ_BKK});
 
       const res=await fetch("https://api.anthropic.com/v1/messages",{
         method:"POST",

@@ -15,6 +15,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .hdr-title{font-size:15px;font-weight:700;color:#fff;flex:1;}
 .hdr-btn{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:var(--sans);text-decoration:none;white-space:nowrap;}
 .hdr-btn.active{background:rgba(255,255,255,.35);}
+.hdr-clock{font-size:11px;font-weight:600;color:rgba(255,255,255,.85);background:rgba(255,255,255,.12);border-radius:8px;padding:5px 10px;white-space:nowrap;font-family:var(--mono);letter-spacing:.2px;}
 .live-dot{width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 2s infinite;flex-shrink:0;}
 @keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
 
@@ -129,6 +130,8 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 <div class="hdr">
   <div class="hdr-title">🍳 ครัว Under360</div>
   <div class="live-dot"></div>
+  <!-- นาฬิกาเวลาไทย — ทั้งหน้ายึด Asia/Bangkok ไม่ใช่เวลาเครื่อง -->
+  <div class="hdr-clock" id="bkk-clock"></div>
   <!-- code toggle -->
   <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">🏷️ Code</button>
   <!-- ชื่อผู้ใช้ — ผูกกับปุ่มกดสถานะ (จัดกล่องเสร็จ/ส่งแล้ว) เพื่อเก็บ log ว่าใครกด กันมือลั่นแล้วหาไม่เจอ -->
@@ -194,16 +197,33 @@ const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 var sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
-// d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด
-function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
-function today(){return toISO(new Date());}
-function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
-function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+// เจ้าของร้านเปิดดูจาก timezone อื่นได้ (เคยอยู่ PST) — ถ้าใช้เวลาเครื่อง "วันนี้" จะเพี้ยน = ครัวทำอาหารผิดวัน
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// เลื่อนวันจากสตริง 'YYYY-MM-DD' โดยยึดหมุด 12:00 UTC — ไม่ขึ้นกับ timezone เครื่องเลย
+function bkkShift(iso,n){
+  var d=new Date(iso+"T12:00:00Z"); d.setUTCDate(d.getUTCDate()+(n||0));
+  return d.getUTCFullYear()+"-"+String(d.getUTCMonth()+1).padStart(2,"0")+"-"+String(d.getUTCDate()).padStart(2,"0");
+}
+function today(){return bkkDate();}
+function tomorrow(){return bkkShift(bkkDate(),1);}
+// รับ 'YYYY-MM-DD' → ผูกที่ 12:00 UTC (=19:00 ไทย วันเดียวกันเสมอ) แล้ว format ด้วย timeZone ไทย
+function fmtDate(iso){
+  if(!iso)return "—";
+  return new Date(iso+"T12:00:00Z").toLocaleDateString("th-TH",{timeZone:TZ_BKK,weekday:"short",day:"numeric",month:"short"});
+}
 // created_at เป็น timestamp เต็ม (มี T อยู่แล้ว) ต้องแยกจาก fmtDate ที่รับแค่วันที่เปล่า
 function fmtOrderPlaced(iso){
   if(!iso)return "—";
   var d=new Date(iso);
-  return d.toLocaleDateString("th-TH",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+  return d.toLocaleDateString("th-TH",{timeZone:TZ_BKK,day:"numeric",month:"short"})+" "+d.toLocaleTimeString("th-TH",{timeZone:TZ_BKK,hour:"2-digit",minute:"2-digit",hour12:false});
 }
 
 // ── ชื่อผู้ใช้ + Activity Log (ใครกดปุ่มสถานะ เมื่อไหร่ — กันมือลั่นแล้วหาไม่เจอ) ──
@@ -312,9 +332,8 @@ async function loadAll(){
   if(!sb_){render();return;}
   try{
     // ⚠️ เดิม select("*") ไม่มี limit → Supabase cap 1000 + เรียงวันเก่าสุด = ครัวเห็นออเดอร์ 2024 ไม่เห็นวันนี้ (พังเงียบหลัง migrate 15,844 ใบ)
-    // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (เครื่องครัว=เวลาไทย · buffer 3 วันกัน TZ เพี้ยน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
-    var _d=new Date(); _d.setDate(_d.getDate()-3);
-    var startDate=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
+    // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (นับจาก "วันนี้" เวลาไทย · buffer 3 วัน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
+    var startDate=bkkShift(bkkDate(),-3);
     var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot");
     allOrders=ordRes.data||[];
     var ids=allOrders.map(function(o){return o.id;});
@@ -629,14 +648,22 @@ function lineTag(o){
 // ── INIT ─────────────────────────────────────────────────
 (function(){
   var sel=document.getElementById("calPicker");
+  var base=bkkDate(); // "วันนี้" เวลาไทย
   for(var i=0;i<14;i++){
-    var d=new Date();d.setDate(d.getDate()-i);
-    var iso=toISO(d);
+    var iso=bkkShift(base,-i);
     var opt=document.createElement("option");opt.value=iso;
-    opt.textContent=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    opt.textContent=fmtDate(iso);
     sel.appendChild(opt);
   }
 })();
+
+// ── นาฬิกาเวลาไทย (หัวหน้าจอ) ────────────────────────────
+function tickBkkClock(){
+  var e=document.getElementById("bkk-clock");
+  if(e)e.textContent=bkkDate()+" "+bkkTime()+" น. (เวลาไทย)";
+}
+tickBkkClock();
+setInterval(tickBkkClock,30000);
 
 loadNickname();
 loadAll();

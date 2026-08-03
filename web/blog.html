@@ -122,6 +122,16 @@ const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+
 /* UTM capture — เก็บ source ไว้ใช้กับ attribution */
 (function(){
   try{
@@ -147,7 +157,8 @@ function track(event, page){
   }catch(e){}
 }
 
-const fmtDate = d => new Date(d).toLocaleDateString('th-TH',{year:'numeric',month:'long',day:'numeric'});
+/* วันที่เผยแพร่ = แสดงตามเวลาไทยเสมอ (created_at ใน DB เป็น UTC — ไม่แก้ค่า แค่แสดงผล) */
+const fmtDate = d => new Date(d).toLocaleDateString('th-TH',{timeZone:TZ_BKK,year:'numeric',month:'long',day:'numeric'});
 
 /* ═══ Legacy redirect map — URL เก่า Wix (/single-post/…) → slug ใหม่ (client-side กัน Vercel match ไทยไม่ได้) ═══ */
 const LEGACY_MAP = {

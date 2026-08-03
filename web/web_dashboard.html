@@ -68,7 +68,7 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
   <div class="top">
     <div>
       <h1>📊 Web Dashboard</h1>
-      <p class="sub">ทราฟฟิกเว็บ 360foodbox + คนกดปุ่มสั่งใน LINE · แยกตามช่องทางที่มา (FB / Google / ตรง)</p>
+      <p class="sub">ทราฟฟิกเว็บ 360foodbox + คนกดปุ่มสั่งใน LINE · แยกตามช่องทางที่มา (FB / Google / ตรง)<br><span id="bkk-clock"></span></p>
     </div>
     <div class="range">
       <button class="on" data-d="7" onclick="setRange(this)">7 วัน</button>
@@ -125,6 +125,18 @@ const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const sb = supabase.createClient(SB_URL, SB_KEY);
 
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// จุดเริ่มวันไทย (00:00 น. ตามเวลาไทย) ของวันที่ 'YYYY-MM-DD' → ISO instant สำหรับ query
+const bkkDayStartISO=(ymd)=>new Date(ymd+'T00:00:00+07:00').toISOString();
+
 const SRC_COLOR = { fb:'#1877F2', ig:'#E1306C', google:'#EA4335', line:'#06C755' };
 let days = 7;
 
@@ -143,7 +155,8 @@ function srcLabel(s){
 function esc(s){ const d=document.createElement('div'); d.textContent=s==null?'':s; return d.innerHTML; }
 
 async function load(){
-  const since = new Date(Date.now() - days*864e5).toISOString();
+  // ช่วงสถิติอิง "วันไทย" — เริ่มนับที่ 00:00 น. เวลาไทย ของวันแรกในช่วง (ไม่ใช่ย้อนหลังแบบนับชั่วโมง)
+  const since = bkkDayStartISO(bkkDate(new Date(Date.now() - (days-1)*864e5)));
   let rows = [];
   try{
     const { data, error } = await sb.from('web_events')
@@ -206,10 +219,11 @@ async function load(){
   // sparkline รายวัน
   const buckets = {};
   for(let i=days-1;i>=0;i--){
-    const d = new Date(Date.now()-i*864e5).toISOString().slice(0,10);
+    const d = bkkDate(new Date(Date.now()-i*864e5));
     buckets[d] = 0;
   }
-  pv.forEach(r=>{ const d=(r.created_at||'').slice(0,10); if(d in buckets) buckets[d]++; });
+  // created_at จาก Supabase เป็น UTC — ต้องแปลงเป็นวันไทยก่อนเข้าถัง (ไม่งั้นช่วง 00:00-07:00 น. ไทย ตกไปวันก่อนหน้า)
+  pv.forEach(r=>{ if(!r.created_at) return; const d=bkkDate(new Date(r.created_at)); if(d in buckets) buckets[d]++; });
   const vals = Object.values(buckets), maxV = Math.max(1,...vals);
   const keys = Object.keys(buckets);
   document.getElementById('spark').innerHTML = vals.map((v,i)=>
@@ -218,13 +232,13 @@ async function load(){
     keys.length ? `${keys[0]} → ${keys[keys.length-1]} · สูงสุด ${maxV} ครั้ง/วัน` : '';
 }
 
-function fmtTime(iso){ return new Date(iso).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+function fmtTime(iso){ return new Date(iso).toLocaleTimeString('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 function timeAgo(iso){
   const s = Math.floor((Date.now()-new Date(iso))/1000);
   if(s<60) return 'เมื่อสักครู่';
   if(s<3600) return 'เมื่อ '+Math.floor(s/60)+' นาทีที่แล้ว';
   if(s<86400) return 'เมื่อ '+Math.floor(s/3600)+' ชม.ที่แล้ว';
-  return new Date(iso).toLocaleDateString('th-TH');
+  return new Date(iso).toLocaleDateString('th-TH',{timeZone:TZ_BKK});
 }
 async function loadLive(){
   try{
@@ -245,7 +259,7 @@ async function loadLive(){
         <span class="lago">${timeAgo(r.created_at)}</span>
       </div>`;
     }).join('') : '<div class="empty">ยังไม่มีคลิก — เมื่อมีคนกดปุ่ม “สั่งใน LINE” จะโชว์ที่นี่ทันที</div>';
-    document.getElementById('liveUpd').textContent = '· อัปเดตล่าสุด '+fmtTime(new Date().toISOString());
+    document.getElementById('liveUpd').textContent = '· อัปเดตล่าสุด '+fmtTime(new Date())+' น. (เวลาไทย)';
   }catch(e){
     document.getElementById('liveFeed').innerHTML = '<div class="err">อ่านข้อมูลไม่ได้ — เช็ค web_events</div>';
   }
@@ -266,6 +280,11 @@ async function loadPresence(){
     document.getElementById('presLine').innerHTML = '<span style="color:var(--muted)">คนออนไลน์: ยังไม่พร้อม (รอรัน sql_live_presence.sql + LIFF heartbeat)</span>';
   }
 }
+
+// นาฬิกาเวลาไทย — ทุกตัวเลขในหน้านี้อิงวันไทย ไม่ใช่เวลาเครื่องผู้ใช้
+function tickClock(){ const e=document.getElementById('bkk-clock'); if(e) e.textContent = bkkDate()+' '+bkkTime()+' น. (เวลาไทย)'; }
+tickClock();
+setInterval(tickClock, 30000);
 
 load();
 loadLive();

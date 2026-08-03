@@ -422,6 +422,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <button class="dtab" id="dt-tom" onclick="setDate('tomorrow')">พรุ่งนี้</button>
         <button class="dtab" id="dt-all" onclick="setDate('all')">ทั้งหมด</button>
       </div>
+      <span class="last-upd" id="bkk-clock" style="font-variant-numeric:tabular-nums" title="เวลาไทย (Asia/Bangkok) — ระบบยึดเวลานี้เสมอ"></span>
       <div class="live-dot"></div>
       <span class="last-upd" id="lastUpd">—</span>
     </div>
@@ -770,13 +771,31 @@ let planView="full";
 let selectedRowIds=[];   // mp_deliveries.id ที่เลือกไว้ (คลิกชื่อลูกค้า = เลือกทั้งแถว, คลิกช่องรอบ = เลือกรอบเดียว)
 let planDateFilter=null; // คลิกวันที่ที่ header → กรองให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle — คลิกซ้ำ = เอาออก)
 
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// นาฬิกาเวลาไทยที่หัวหน้าจอ
+function bkkClockTick(){ var e=document.getElementById("bkk-clock"); if(e) e.textContent=bkkDate()+" "+bkkTime()+" น. (เวลาไทย)"; }
+// บวก/ลบวันบนสตริง YYYY-MM-DD ตรงๆ — ไม่ผ่าน timezone ของเครื่อง
+function bkkAddDays(iso,n){var d=new Date(iso+"T12:00:00Z");d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);}
+
 // d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด (เจอบั๊กจริงจาก mp_deliveries)
 function toISO(d){var y=d.getFullYear(),m=String(d.getMonth()+1).padStart(2,"0"),dd=String(d.getDate()).padStart(2,"0");return y+"-"+m+"-"+dd;}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
-function today2(){return toISO(new Date());}
-function tomorrow2(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
-function dayAfter2(){var d=new Date();d.setDate(d.getDate()+2);return toISO(d);}
-function fmtD(d){return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+function today2(){return bkkDate();}
+function tomorrow2(){return bkkAddDays(bkkDate(),1);}
+function dayAfter2(){return bkkAddDays(bkkDate(),2);}
+// รับได้ทั้ง Date object และสตริง "YYYY-MM-DD" — format ที่ UTC เที่ยงวัน กันวันเลื่อนข้ามโซน
+function fmtD(d){
+  var iso = (typeof d==="string") ? d.slice(0,10) : toISO(d);
+  return new Intl.DateTimeFormat("th-TH",{timeZone:TZ_BKK,weekday:"short",day:"numeric",month:"short"}).format(new Date(iso+"T12:00:00Z"));
+}
 
 function toggleSidebar(){
   sidebarMini=!sidebarMini;
@@ -862,7 +881,7 @@ async function loadAll(){
     var pending=orders.filter(function(o){return o.status==="confirmed"||o.status==="preparing";}).length;
     var nb=document.getElementById("nb-orders"); if(nb){nb.textContent=pending;nb.classList.toggle("show",pending>0);}
     renderOrders(dateMode==="today"?todayO:dateMode==="tomorrow"?tomO:orders);
-    setTxt("lastUpd","อัพเดท "+new Date().toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit",second:"2-digit"}));
+    setTxt("lastUpd","อัพเดท "+new Date().toLocaleTimeString("th-TH",{timeZone:TZ_BKK,hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false})+" น.");
   }catch(e){console.error(e);}
 }
 var ST={confirmed:{t:"รอครัว",cls:"p-wait"},preparing:{t:"ทำอยู่",cls:"p-cook"},ready:{t:"พร้อมส่ง",cls:"p-ready"},delivered:{t:"ส่งแล้ว",cls:"p-done"}};
@@ -1208,7 +1227,7 @@ function countMenu(code,dateStr){
 function renderLeftPanel(){
   var el=document.getElementById("menuListDrag"); if(!el)return;
   var titleEl=document.getElementById("planPanelTitle");
-  if(titleEl)titleEl.textContent=planDateFilter?("เมนูวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))):"เมนูทุกวัน (รวม)";
+  if(titleEl)titleEl.textContent=planDateFilter?("เมนูวันที่ "+fmtD(planDateFilter)):"เมนูทุกวัน (รวม)";
   var h="";
   todayPlan.forEach(function(code){
     var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
@@ -1347,7 +1366,7 @@ function _buildPlanTable(){
   var hint=document.getElementById("planSubHint");
   if(hint){
     hint.textContent=planDateFilter
-      ? "🔎 กรองเฉพาะวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))+" — เห็น "+visibleSubs.length+"/"+subs.length+" แพลน (คลิกวันที่เดิมอีกครั้งเพื่อดูทั้งหมด)"
+      ? "🔎 กรองเฉพาะวันที่ "+fmtD(planDateFilter)+" — เห็น "+visibleSubs.length+"/"+subs.length+" แพลน (คลิกวันที่เดิมอีกครั้งเพื่อดูทั้งหมด)"
       : "ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · "+allDates.length+" วันจัดส่ง (คลิกวันที่ที่หัวตารางเพื่อกรองดูแค่วันนั้น)";
   }
 
@@ -1357,7 +1376,7 @@ function _buildPlanTable(){
     var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
     var isFiltered=planDateFilter===dateStr;
     hh+="<th style='min-width:110px;"+(isFiltered?"background:#15803D;":"")+"'>";
-    hh+="<span onclick='toggleDateFilter(\""+dateStr+"\")' style='cursor:pointer;text-decoration:underline dotted;' title='คลิกเพื่อกรองดูแค่วันนี้'>"+fmtD(new Date(dateStr+'T00:00:00'))+(isFiltered?" 🔎":"")+"</span><br>";
+    hh+="<span onclick='toggleDateFilter(\""+dateStr+"\")' style='cursor:pointer;text-decoration:underline dotted;' title='คลิกเพื่อกรองดูแค่วันนี้'>"+fmtD(dateStr)+(isFiltered?" 🔎":"")+"</span><br>";
     if(hasLc)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
     if(hasHp)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
     hh+="</th>";
@@ -1406,7 +1425,7 @@ function renderPlanHistory(pastDates,subs){
   if(planHistoryOpen){
     h+="<div style='margin-top:8px;overflow-x:auto;border-radius:8px;border:1px solid var(--ink-xsoft);'>";
     h+="<table class='plan-table' style='min-width:400px'><thead><tr><th style='width:130px'>ลูกค้า</th>";
-    pastDates.forEach(function(d){ h+="<th style='min-width:90px;font-size:10px'>"+fmtD(new Date(d+'T00:00:00'))+"</th>"; });
+    pastDates.forEach(function(d){ h+="<th style='min-width:90px;font-size:10px'>"+fmtD(d)+"</th>"; });
     h+="</tr></thead><tbody>";
     subs.forEach(function(s){
       var hasAny=s.rows.some(function(r){return pastDates.indexOf(r.delivery_date)>=0;});
@@ -1430,7 +1449,7 @@ function renderPlanHistory(pastDates,subs){
 // ── MESSENGER ─────────────────────────────────────────
 // ── แผนส่งของ + จัดเขตกรุงเทพจากพิกัด (ทิศ+ระยะจากครัว ช่วยแมสจัดรอบ) ──
 var MSG_KITCHEN={lat:13.7179969,lng:100.5010971};
-function msgSetDay(offset){ var d=new Date(); d.setDate(d.getDate()+offset); var e=document.getElementById("msg-date"); if(e) e.value=toISO(d); loadMessenger(); }
+function msgSetDay(offset){ var e=document.getElementById("msg-date"); if(e) e.value=bkkAddDays(bkkDate(),offset); loadMessenger(); }
 function msgZone(o){
   if(o.delivery_lat==null||o.delivery_lng==null) return {key:"none",label:"❓ ไม่มีพิกัด (เช็คที่อยู่เอง)",dist:99999,ord:99};
   var dLat=Number(o.delivery_lat)-MSG_KITCHEN.lat, dLng=Number(o.delivery_lng)-MSG_KITCHEN.lng;
@@ -1958,6 +1977,10 @@ loadAll();
 refreshTimer=setInterval(loadAll,30000);
 subscribeRealtime();
 
+// ⏰ นาฬิกาเวลาไทยที่หัวหน้าจอ
+bkkClockTick();
+setInterval(bkkClockTick,30000);
+
 // ── CUSTOMER MANAGEMENT (merged from customer.html) ───────
 var allCustomers=[], filteredCustomers=[], selectedCustId=null, custOrderCache={};
 var custPage=1, custPageSize=50;
@@ -2291,7 +2314,7 @@ async function adjustCustPoints(id){
   if(!val){ showToastOH("ใส่จำนวนแต้มก่อน ⚠️"); return; }
   if(!note){ showToastOH("ต้องระบุเหตุผล (บังคับ) ⚠️"); return; }
   var newPts=Math.max(0,(c.loyalty_points||0)+val);
-  var log="["+new Date().toLocaleDateString("th-TH")+"] "+(val>0?"+":"")+val+" → "+newPts+" แต้ม | "+note;
+  var log="["+new Date().toLocaleDateString("th-TH",{timeZone:TZ_BKK})+"] "+(val>0?"+":"")+val+" → "+newPts+" แต้ม | "+note;
   var newLog=[].concat(c.pts_log||[]).concat([log]);
   var sb_=getSB();
   if(sb_){ try{ await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id); }catch(e){ showToastOH("บันทึกไม่สำเร็จ ❌"); return; } }

@@ -46,7 +46,10 @@ tr:hover td{background:var(--forest-soft);}
     <div class="hdr-title">📊 รายงาน</div>
     <div class="hdr-sub">UNDER360 · Revenue & Analytics</div>
   </div>
-  <a class="back-btn" href="operation_hub.html">← OH</a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="bkk-clock" class="hdr-sub" style="font-family:var(--mono);white-space:nowrap"></span>
+    <a class="back-btn" href="operation_hub.html">← OH</a>
+  </div>
 </div>
 
 <div class="main">
@@ -98,7 +101,22 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
-function toISO(d){return d.toISOString().split("T")[0];}
+
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// วันไทย +n วัน → 'YYYY-MM-DD' (คำนวณจากวันไทย ไม่ใช่วันเครื่อง)
+function bkkDateOffset(n){const p=bkkDate().split("-").map(Number);return new Date(Date.UTC(p[0],p[1]-1,p[2]+(n||0))).toISOString().slice(0,10);}
+// 'YYYY-MM-DD' → label ภาษาไทยตามโซนไทย
+function bkkLabel(iso,opt){return new Date(iso+"T00:00:00+07:00").toLocaleDateString("th-TH",Object.assign({timeZone:TZ_BKK},opt||{}));}
+
+function toISO(d){return bkkDate(d);}
 
 let revenueChart=null, typeChart=null;
 let currentRange="today";
@@ -131,13 +149,11 @@ async function loadData(){
   var data;
   if(sb_){
     try{
-      var today=new Date().toISOString().split("T")[0];
-      var from=new Date();
-      if(currentRange==="week") from.setDate(from.getDate()-7);
-      else if(currentRange==="month") from.setDate(from.getDate()-30);
+      var today=bkkDate();                       // วันนี้ตามเวลาไทย
+      var fromISO=bkkDateOffset(currentRange==="week"?-7:currentRange==="month"?-30:0);
       var q=sb_.from("orders").select("*, order_items(quantity, menu_item_id, menu_items(code,name,price))").order("created_at",{ascending:false});
       if(currentRange==="today") q=q.eq("delivery_date",today);
-      else if(currentRange!=="all") q=q.gte("delivery_date",from.toISOString().split("T")[0]);
+      else if(currentRange!=="all") q=q.gte("delivery_date",fromISO);
       var res=await q;
       if(!res.error&&res.data&&res.data.length){
         // แปลง Supabase data เป็น format เดิม
@@ -165,7 +181,7 @@ async function loadData(){
 
   // Revenue chart
   const days7=[]; const rev7=[];
-  for(let i=6;i>=0;i--){const d=new Date();d.setDate(d.getDate()-i);const iso=toISO(d);days7.push(d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric"}));rev7.push(data.filter(o=>o.delivery_date===iso).reduce((s,o)=>s+o.total,0));}
+  for(let i=6;i>=0;i--){const iso=bkkDateOffset(-i);days7.push(bkkLabel(iso,{weekday:"short",day:"numeric"}));rev7.push(data.filter(o=>o.delivery_date===iso).reduce((s,o)=>s+o.total,0));}
   if(revenueChart) revenueChart.destroy();
   revenueChart=new Chart(document.getElementById("revenueChart"),{type:"bar",data:{labels:days7,datasets:[{label:"รายได้ (฿)",data:rev7,backgroundColor:"rgba(31,77,58,.7)",borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{ticks:{callback:v=>"฿"+v.toLocaleString()}}}}});
 
@@ -189,6 +205,11 @@ async function loadData(){
     "<tr><td><code>"+o.order_number+"</code></td><td>"+o.customer_name+"</td><td>"+o.delivery_date+"</td><td>"+fmtB(o.total)+"</td><td>"+( ST[o.status]||o.status)+"</td></tr>"
   ).join("");
 }
+
+// นาฬิกาเวลาไทย (หัวหน้าจอ)
+function tickClock(){const e=document.getElementById("bkk-clock");if(e)e.textContent=bkkDate()+" "+bkkTime()+" น. (เวลาไทย)";}
+tickClock(); setInterval(tickClock,30000);
+
 loadData();
 </script>
 </body>

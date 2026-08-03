@@ -183,6 +183,18 @@ const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 let sb=null,reorderCart=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// วันที่ในประวัติออเดอร์ — delivery_date เป็น DATE ('YYYY-MM-DD') แสดงตรงๆ ได้
+// แต่ถ้าเจอค่าที่เป็น timestamp (มี T) ต้องแปลงเป็นวันไทยก่อน ไม่ใช่วันตามเครื่องลูกค้า
+function fmtDay(v){ if(!v) return ""; const s=String(v); return s.includes("T") ? bkkDate(new Date(s)) : s.slice(0,10); }
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
 const TIERS=[{id:1,label:"🥈 เทียร์ 1",cls:"t1",min:0,max:2999,disc:1},{id:2,label:"🥇 เทียร์ 2",cls:"t2",min:3000,max:9999,disc:3},{id:3,label:"💎 เทียร์ 3",cls:"t3",min:10000,max:24999,disc:5},{id:4,label:"👑 VIP",cls:"t4",min:25000,max:Infinity,disc:10}];
 
@@ -227,7 +239,7 @@ async function loadProfile(){
   document.getElementById("histBody").innerHTML=orders.slice(0,5).map(o=>
     `<div class="order-row">
       <span class="o-num">${o.order_number||"—"}</span>
-      <span class="o-desc">${o.delivery_date||""}</span>
+      <span class="o-desc">${fmtDay(o.delivery_date)}</span>
       <span class="o-total">${fmtB(o.total)}</span>
       <button class="o-rebuy" onclick="showReorder('${o.id}','${o.order_number}')">สั่งซ้ำ</button>
     </div>`
@@ -239,16 +251,24 @@ async function showReorder(orderId,orderNum){
   let items=[];
   if(sb_){
     try{
-      const r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_quantity)").eq("order_id",orderId);
-      items=(r.data||[]).map(i=>({...i.menu_items,qty:i.quantity}));
-    }catch(e){}
+      // ⚠️ สต็อกจริง = stock_total (เดิมโค้ดอ้าง stock_quantity ที่ไม่มีคอลัมน์นี้ → query error → ตกไป mock = โชว์เมนูปลอม · แก้ 3 ส.ค. 2026)
+      const r=await sb_.from("order_items").select("quantity,menu_item_id,menu_items(id,code,name,is_available,stock_total)").eq("order_id",orderId);
+      if(r.error) throw r.error;
+      items=(r.data||[]).filter(i=>i.menu_items).map(i=>({...i.menu_items,qty:i.quantity}));
+    }catch(e){ console.error("showReorder failed:",e); }
   }
-  if(!items.length)items=[{id:"m1",code:"HP01",name:"อกไก่ย่างสมุนไพร",is_available:true,stock_quantity:5,qty:2},{id:"m2",code:"HP04",name:"สันในหมูย่าง",is_available:false,stock_quantity:0,qty:1}];
   reorderCart=items;
-  const hasUnavail=items.some(i=>!i.is_available||i.stock_quantity===0);
+  // ไม่มีรายการ = โชว์ตามจริง ห้ามยัด mock (ลูกค้าเคยเห็นเมนูที่ไม่ได้สั่ง)
+  if(!items.length){
+    document.getElementById("reWarn").style.display="none";
+    document.getElementById("reItems").innerHTML='<div class="pop-item"><span>ดึงรายการเมนูของออเดอร์นี้ไม่ได้</span><span class="pop-unavail">ลองใหม่อีกครั้ง</span></div>';
+    document.getElementById("rePop").style.display="flex";
+    return;
+  }
+  const hasUnavail=items.some(i=>!i.is_available||i.stock_total===0);
   document.getElementById("reWarn").style.display=hasUnavail?"block":"none";
   document.getElementById("reItems").innerHTML=items.map(i=>{
-    const avail=i.is_available&&(i.stock_quantity===null||i.stock_quantity>0);
+    const avail=i.is_available&&(i.stock_total==null||i.stock_total>0);
     return `<div class="pop-item"><span>${i.code} ${i.name} ×${i.qty}</span><span class="${avail?"pop-avail":"pop-unavail"}">${avail?"✓ มีสินค้า":"✗ ไม่มีในขณะนี้"}</span></div>`;
   }).join("");
   document.getElementById("rePop").style.display="flex";
@@ -257,7 +277,7 @@ async function showReorder(orderId,orderNum){
 function confirmReorder(){
   if(!reorderCart)return;
   const cart={};
-  reorderCart.filter(i=>i.is_available&&(i.stock_quantity===null||i.stock_quantity>0))
+  reorderCart.filter(i=>i.is_available&&(i.stock_total==null||i.stock_total>0))
     .forEach(i=>{cart[i.id]=i.qty;});
   localStorage.setItem("cart",JSON.stringify(cart));
   location.href="liff_customer.html";

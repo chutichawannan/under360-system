@@ -80,7 +80,10 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);min-height:10
 <body>
 <div class="header">
   <div><div class="hdr-title">👥 ข้อมูลลูกค้า</div><div class="hdr-sub">UNDER360 · Customer Management</div></div>
-  <a class="back-btn" href="operation_hub.html">← OH</a>
+  <div style="display:flex;align-items:center;gap:10px">
+    <span id="bkk-clock" class="hdr-sub" style="font-family:var(--mono);white-space:nowrap"></span>
+    <a class="back-btn" href="operation_hub.html">← OH</a>
+  </div>
 </div>
 
 <div class="stats-bar">
@@ -118,6 +121,19 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
+
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// แสดงวันที่จากค่า DB: date column ('YYYY-MM-DD') ใช้ตรงๆ · timestamptz แปลงเป็นวันไทยก่อน
+function dispDate(v){ if(!v) return ""; var s=String(v); if(s.length<=10) return s; var d=new Date(s); return isNaN(d.getTime())?s.slice(0,10):bkkDate(d); }
+
 function esc(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 function genMid(idx){return "U360-"+(String(idx+1)).padStart(6,"0");}
 
@@ -253,7 +269,7 @@ async function showProfile(id){
         <div class="p-grid">
           <div class="p-field"><div class="p-field-label">ออเดอร์</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:22px">${c._oc}</div></div>
           <div class="p-field"><div class="p-field-label">ยอดรวม</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:18px">${fmtB(Math.round(c._ot))}</div></div>
-          <div class="p-field"><div class="p-field-label">ออเดอร์ล่าสุด</div><div class="p-field-val">${(orders[0]?.delivery_date||orders[0]?.created_at||"—").slice(0,10)}</div></div>
+          <div class="p-field"><div class="p-field-label">ออเดอร์ล่าสุด</div><div class="p-field-val">${dispDate(orders[0]?.delivery_date||orders[0]?.created_at)||"—"}</div></div>
           <div class="p-field"><div class="p-field-label">แต้มสะสม</div><div class="p-field-val" style="font-family:var(--mono);color:var(--forest);font-size:18px" id="pts-show-${id}">${pts}</div></div>
         </div>
       </div>
@@ -290,7 +306,7 @@ async function showProfile(id){
         ${orders.length?orders.slice(0,20).map(o=>`
           <div class="history-row">
             <span class="h-num">${o.order_number||("#"+o.id.slice(0,6))}</span>
-            <span class="h-date">${(o.delivery_date||o.created_at||"").slice(0,10)}</span>
+            <span class="h-date">${dispDate(o.delivery_date||o.created_at)}</span>
             <span class="h-items">${(o.items||[]).map(i=>i.code||i.name||"").join(", ")||"—"}</span>
             <span class="h-status">${statusTh(o.status)}</span>
             <span class="h-total">${fmtB(o.total_price||0)}</span>
@@ -323,7 +339,7 @@ async function adjustPoints(id){
   if(!val){toast("ใส่จำนวนแต้มก่อน ⚠️");return;}
   if(!note){toast("ต้องระบุเหตุผล (บังคับ) ⚠️");return;}
   var newPts=Math.max(0,(c.loyalty_points||0)+val);
-  var log=`[${new Date().toLocaleDateString("th-TH")}] ${val>0?"+":""}${val} → ${newPts} แต้ม | ${note}`;
+  var log=`[${new Date().toLocaleDateString("th-TH",{timeZone:TZ_BKK})} ${bkkTime()}] ${val>0?"+":""}${val} → ${newPts} แต้ม | ${note}`;
   var newLog=[...(c.pts_log||[]),log];
   var sb_=getSB();
   if(sb_){
@@ -364,6 +380,10 @@ function toast(msg){
 }
 
 // ── INIT ──
+// นาฬิกาเวลาไทย (หัวหน้าจอ)
+function tickClock(){var e=document.getElementById("bkk-clock");if(e)e.textContent=bkkDate()+" "+bkkTime()+" น. (เวลาไทย)";}
+tickClock(); setInterval(tickClock,30000);
+
 loadCustomersFromSB();
 </script>
 </body>

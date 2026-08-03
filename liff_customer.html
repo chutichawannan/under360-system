@@ -1431,6 +1431,14 @@ function localYMD(d) {
   return `${y}-${m}-${dd}`;
 }
 
+// ⏰ "ตอนนี้" ตามเวลาไทยเสมอ — ห้ามใช้ new Date() ตรงๆ กับ logic วันที่/เวลาตัดรอบ
+// เจ้าของร้าน/แอดมินเปิดจากต่างประเทศได้ (เคยอยู่ PST) ถ้าอิงเวลาเครื่อง = cutoff 18:00 / 08:30
+// และ "วันนี้" จะเพี้ยนทั้งระบบ (ลูกค้าได้วันส่งผิด)
+// คืน Date ที่ getHours/getDate/getDay ให้ค่า "เวลาไทย" → โค้ดเดิมที่เรียก getter พวกนี้ถูกทันที
+function bkkNow() {
+  return new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Bangkok' }));
+}
+
 async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipientName) {
   try {
     const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
@@ -1479,7 +1487,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
 // ══════════════════════════════════════
 function isNextWeekItem(item) {
   if (!item || !item.available_from) return false;
-  const today = new Date(); today.setHours(0,0,0,0);
+  const today = bkkNow(); today.setHours(0,0,0,0);
   return new Date(item.available_from) > today;
 }
 
@@ -1665,7 +1673,7 @@ async function loadPaymentAccount(){
   // ถ้ามีหลายบัญชี → โหลดออเดอร์ไตรมาสนี้มาถัวเฉลี่ย
   if(PAYMENT_ACCOUNTS.length <= 1){ selectedPaymentAccount = PAYMENT_ACCOUNTS[0]; updatePaymentUI(); return; }
   try{
-    const now = new Date();
+    const now = bkkNow();
     const qStart = localYMD(new Date(now.getFullYear(), Math.floor(now.getMonth()/3)*3, 1));
     const { data } = await sb.from('orders').select('payment_account').gte('created_at', qStart);
     selectedPaymentAccount = pickPaymentAccount(data||[]);
@@ -1959,7 +1967,7 @@ const MP_CUTOFF_HOUR = 8, MP_CUTOFF_MIN = 30;
 function renderDatePick() {
   const el = document.getElementById('dpick');
   const notice = document.getElementById('date-notice');
-  const now = new Date();
+  const now = bkkNow(); // ⏰ เวลาไทยเสมอ — cutoff 18:00 (สต็อก) / 08:30 (Meal Plan) ต้องคิดจากเวลาร้าน
   const DAYS   = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const isMeal = hasMealPlan();
@@ -2085,7 +2093,7 @@ function renderRoundDatePicker(idx){
   const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   // วันของรอบนี้ต้อง "หลัง" วันของรอบก่อนหน้า (รอบ 1 = selDate) → วันก่อน/เท่ารอบก่อน = เทา กดไม่ได้
   const prevDate = idx===0 ? selDate : extraRoundDates[idx-1];
-  const base = selDate ? new Date(selDate+'T00:00:00') : new Date();
+  const base = selDate ? new Date(selDate+'T00:00:00') : bkkNow();
   let html='';
   for(let i=1;i<=28;i++){
     const d=new Date(base); d.setDate(base.getDate()+i);
@@ -2513,7 +2521,7 @@ async function resolveCanonicalCustomer(phone, uid, lineName){
     }
     // ผูก line_uid + ชื่อไลน์ เข้าแถวเก่า (canonical) + ป้าย "กลับมา"
     const upd = { line_uid: uid, line_display_name: lineName };
-    if(!(old.admin_notes||'').includes('กลับมาสั่ง')) upd.admin_notes = ((old.admin_notes||'')+' [🔄 กลับมาสั่ง '+localYMD(new Date())+']').trim();
+    if(!(old.admin_notes||'').includes('กลับมาสั่ง')) upd.admin_notes = ((old.admin_notes||'')+' [🔄 กลับมาสั่ง '+localYMD(bkkNow())+']').trim();
     const { error: uErr } = await sb.from('customers').update(upd).eq('id', old.id);
     if(uErr) return customer;                          // เช่น ยังไม่รัน SQL (ไม่มีคอลัมน์ line_display_name) → ใช้ customer เดิม
     return Object.assign({}, old, upd);
@@ -2555,7 +2563,7 @@ async function loadSuggestedPromosIfNeeded(){
 function renderSuggestedPromoChips(){
   const wrap = document.getElementById('promo-suggest-wrap');
   if(!wrap) return;
-  const today = localYMD(new Date());
+  const today = localYMD(bkkNow());
   const sub = cartTotal();
   const eligible = suggestedPromos.filter(p => {
     if(p.expires_at && p.expires_at < today) return false;
@@ -2632,7 +2640,7 @@ async function applyPromo(codeOverride){
     if(!p){ showMsg('ไม่พบโค้ดนี้', false); return; }
     if(!p.is_active){ showMsg('โค้ดนี้ถูกปิดใช้งาน', false); return; }
     if(p.expires_at){
-      const today = localYMD(new Date());
+      const today = localYMD(bkkNow());
       if(p.expires_at < today){ showMsg('โค้ดหมดอายุแล้ว', false); return; }
     }
     if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit){ showMsg('โค้ดถูกใช้ครบจำนวนแล้ว', false); return; }
@@ -3431,7 +3439,7 @@ function mpManageMoveDatePickerHtml(r) {
   const usedDates = mpManageRows.filter(x => x.order_id === r.order_id && x.id !== r.id).map(x => x.delivery_date);
   const DAYS = ['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
-  const now = new Date();
+  const now = bkkNow(); // ⏰ เวลาไทย — ลูกค้าเลื่อนรอบ Meal Plan ต้องอิงวันของร้าน
   let chips = '', found = 0, i = 1;
   while (found < 6 && i < 30) {
     const d = new Date(now); d.setDate(now.getDate() + i); i++;

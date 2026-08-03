@@ -60,6 +60,7 @@ button{cursor:pointer;border:none;font-family:inherit;-webkit-tap-highlight-colo
 .date-btn:hover{background:#3A3A3C}
 .date-btn.on{background:var(--g);color:#fff}
 .date-label{font-size:14px;font-weight:700;color:var(--txt);padding:0 4px}
+.bkk-clock{font-size:12px;font-weight:600;color:var(--soft);background:var(--card);border:1px solid var(--line);padding:4px 10px;border-radius:6px;white-space:nowrap}
 .refresh-btn{
   padding:7px 12px;border-radius:8px;background:var(--faint);color:var(--txt);
   font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;
@@ -173,6 +174,8 @@ button{cursor:pointer;border:none;font-family:inherit;-webkit-tap-highlight-colo
   <!-- TOP BAR -->
   <div class="topbar">
     <div class="topbar-logo">UNDER<em>360</em> ครัว</div>
+    <!-- นาฬิกาเวลาไทย — ทั้งหน้ายึด Asia/Bangkok ไม่ใช่เวลาเครื่อง -->
+    <div class="bkk-clock" id="bkk-clock"></div>
     <div class="stats" id="stats-bar"></div>
     <div class="date-nav">
       <button class="date-btn on" id="btn-today" onclick="setDay(0)">วันนี้</button>
@@ -226,7 +229,31 @@ const STATUS_BTN = {
   ready:     { label:'🚀 ส่งแล้ว',      cls:'act-dlv'  },
 };
 
-let sb, viewDate = new Date();
+// ════════════════════════════════════
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+// เจ้าของร้านเปิดดูจาก timezone อื่นได้ (เคยอยู่ PST) — ถ้าใช้เวลาเครื่อง "วันนี้" จะเพี้ยน = ครัวทำอาหารผิดวัน
+// ════════════════════════════════════
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+// เลื่อนวันจากสตริง 'YYYY-MM-DD' โดยยึดหมุด 12:00 UTC — ไม่ขึ้นกับ timezone เครื่องเลย
+function bkkShift(iso,n){
+  const d=new Date(iso+'T12:00:00Z'); d.setUTCDate(d.getUTCDate()+(n||0));
+  return d.getUTCFullYear()+'-'+String(d.getUTCMonth()+1).padStart(2,'0')+'-'+String(d.getUTCDate()).padStart(2,'0');
+}
+// แตกสตริงวันเป็นชิ้นๆ (ปี/เดือน/วัน/วันในสัปดาห์) แบบไม่พึ่ง timezone เครื่อง
+function isoParts(iso){
+  const d=new Date(iso+'T12:00:00Z');
+  return {y:d.getUTCFullYear(),m:d.getUTCMonth()+1,d:d.getUTCDate(),dow:d.getUTCDay()};
+}
+
+// viewISO = วันที่กำลังดู เก็บเป็นสตริง 'YYYY-MM-DD' (ตามปฏิทินไทย) ไม่ใช่ object Date ของเครื่อง
+let sb, viewISO = bkkDate();
 let orders = [], realtimeCh = null;
 
 // ════════════════════════════════════
@@ -271,19 +298,20 @@ function enterKitchen() {
 // ════════════════════════════════════
 // DATE NAVIGATION
 // ════════════════════════════════════
+const DAYS_TH=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+const MONTHS_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+// offset นับจาก "วันนี้" เวลาไทย (ไม่ใช่วันนี้ของเครื่องผู้ใช้)
 function setDay(offset) {
-  const d = new Date();
-  d.setDate(d.getDate() + offset);
-  viewDate = d;
+  viewISO = bkkShift(bkkDate(), offset);
 
   document.getElementById('btn-today').classList.toggle('on', offset===0);
   document.getElementById('btn-tom').classList.toggle('on', offset===1);
   document.getElementById('btn-other').classList.toggle('on', offset>1);
 
-  const DAYS=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
-  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const p = isoParts(viewISO);
   document.getElementById('date-label').textContent =
-    `${DAYS[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()+543}`;
+    `${DAYS_TH[p.dow]} ${p.d} ${MONTHS_TH[p.m-1]} ${p.y+543}`;
 
   loadOrders();
 }
@@ -291,13 +319,15 @@ function setDay(offset) {
 function pickOther() {
   const input = prompt('ใส่วัน (YYYY-MM-DD):');
   if (!input) return;
-  viewDate = new Date(input+'T12:00:00');
+  const iso = String(input).trim();
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) { toast('รูปแบบวันไม่ถูกต้อง (YYYY-MM-DD)'); return; }
+  viewISO = iso;
   document.getElementById('btn-today').classList.remove('on');
   document.getElementById('btn-tom').classList.remove('on');
   document.getElementById('btn-other').classList.add('on');
-  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const p = isoParts(viewISO);
   document.getElementById('date-label').textContent =
-    `${viewDate.getDate()} ${MONTHS[viewDate.getMonth()]} ${viewDate.getFullYear()+543}`;
+    `${DAYS_TH[p.dow]} ${p.d} ${MONTHS_TH[p.m-1]} ${p.y+543}`;
   loadOrders();
 }
 
@@ -305,7 +335,9 @@ function pickOther() {
 // LOAD ORDERS
 // ════════════════════════════════════
 async function loadOrders() {
-  const dateStr = viewDate.toISOString().split('T')[0];
+  // ⚠️ เดิม viewDate.toISOString().split('T')[0] = บั๊กจริง — toISOString แปลงเป็น UTC
+  // ไทยเร็วกว่า UTC 7 ชม. → ก่อน 7 โมงเช้าได้วันที่ย้อนหลัง 1 วัน = ครัวเห็นออเดอร์ผิดวัน
+  const dateStr = viewISO;
   document.getElementById('main-content').innerHTML = '<div class="loading"><div class="spin"></div></div>';
   try {
     const { data, error } = await sb
@@ -506,8 +538,7 @@ function h(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').r
 
 function fmtTime(iso) {
   if (!iso) return '';
-  const d = new Date(iso);
-  return d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'});
+  return bkkTime(new Date(iso)); // เวลาไทยเสมอ ไม่ใช่เวลาเครื่องผู้ใช้
 }
 
 let toastTimer;
@@ -521,8 +552,15 @@ function toast(msg, ms=2500) {
 // ════════════════════════════════════
 // START
 // ════════════════════════════════════
+function tickBkkClock(){
+  const e=document.getElementById('bkk-clock');
+  if(e) e.textContent = bkkDate()+' '+bkkTime()+' น. (เวลาไทย)';
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   init();
+  tickBkkClock();
+  setInterval(tickBkkClock, 30000);
   // Auto-enter if session still valid
   if (sessionStorage.getItem('k_auth')==='1') enterKitchen();
   // Auto-refresh every 5 minutes

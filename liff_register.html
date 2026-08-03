@@ -135,12 +135,22 @@ let sb=null,lineProfile=null,otpCode=null,otpOk=false,cdTimer=null;
 
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 
+// ⏰ เวลากลาง = Asia/Bangkok เสมอ (ห้ามใช้เวลาเครื่องผู้ใช้ — ครัว/ลูกค้าอยู่ไทย)
+const TZ_BKK='Asia/Bangkok';
+const bkkDate=(d)=>new Intl.DateTimeFormat('en-CA',{timeZone:TZ_BKK}).format(d||new Date()); // 'YYYY-MM-DD'
+const bkkTime=(d)=>new Intl.DateTimeFormat('th-TH',{timeZone:TZ_BKK,hour:'2-digit',minute:'2-digit',hour12:false}).format(d||new Date()); // 'HH:MM'
+function bkkParts(d){ // {y,m,d,hh,mm,dow} ตามเวลาไทย
+  const f=new Intl.DateTimeFormat('en-US',{timeZone:TZ_BKK,year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false,weekday:'short'}).formatToParts(d||new Date());
+  const g=t=>{const p=f.find(x=>x.type===t);return p?p.value:''};
+  return {y:+g('year'),m:+g('month'),d:+g('day'),hh:+g('hour')%24,mm:+g('minute'),dow:g('weekday')};
+}
+
 // Init DOB dropdowns
 (function(){
   const dayEl=document.getElementById("dobDay");
   for(let i=1;i<=31;i++){const o=document.createElement("option");o.value=String(i).padStart(2,"0");o.textContent=i;dayEl.appendChild(o);}
   const yearEl=document.getElementById("dobYear");
-  const y=new Date().getFullYear()-543; // AD year
+  const y=bkkParts().y-543; // ⚠️ ปีปัจจุบันตามเวลาไทย · (ดู TODO: -543 ทำให้ค่าเป็น พ.ศ.-543 ไม่ใช่ ค.ศ.)
   for(let i=y;i>=y-80;i--){const o=document.createElement("option");o.value=i;o.textContent=i+543+" ("+(i)+" AD)";yearEl.appendChild(o);}
 })();
 
@@ -224,7 +234,7 @@ async function doRegister(){
   const btn=document.getElementById("submitBtn");
   btn.disabled=true; btn.textContent="⏳ กำลังบันทึก...";
   const sb_=getSB(), uid=lineProfile.userId, lineName=lineProfile.displayName, norm=normPhone(phone);
-  const today=new Date().toISOString().slice(0,10);
+  const today=bkkDate();   // วันที่ไทย (ใช้เขียนลง admin_notes)
   // display_name = ชื่อจริง · line_display_name = ชื่อไลน์ (เก็บทั้งคู่ · คอลัมน์ถูกต้องตาม schema จริง)
   const fields={ display_name:name, line_display_name:lineName, picture_url:lineProfile.pictureUrl||"", phone:norm, date_of_birth:getDob(), gender:_gender };
   try{
