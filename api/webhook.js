@@ -142,8 +142,10 @@ async function getRawBody(req) {
 // เช็คว่า request มาจาก Meta จริง (เทียบ HMAC-SHA256 กับ App Secret)
 function verifySignature(rawBody, sig, secret) {
   if (!secret) {
-    console.warn('⚠️ ยังไม่ได้ตั้ง META_APP_SECRET — ข้ามการเช็คลายเซ็น (เฉพาะตอนเดฟ)');
-    return true;
+    // ❌ เดิม return true = ปล่อยผ่านทุก request เมื่อ env หาย (fail-open) → ใครก็ยิงเข้ามาสั่งบอทได้
+    //    เฟสถัดไปที่จะเขียนออเดอร์จาก webhook = กลายเป็นช่องเขียน DB · แก้เป็นปฏิเสธ 3 ส.ค. 2026
+    console.error('🔒 ไม่ได้ตั้ง META_APP_SECRET — ปฏิเสธทุก request (fail-closed)');
+    return false;
   }
   if (!sig) return false;
   const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(rawBody, 'utf8').digest('hex');

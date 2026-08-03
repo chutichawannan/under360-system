@@ -116,7 +116,19 @@ async function runDayBeforeReminder(token, hasToken, tomorrow) {
   return out;
 }
 
+
+// 🔒 กันคนนอกยิง endpoint นี้ (เดิมใครรู้ URL ก็เรียกได้ = สั่ง push LINE / เผาโควตาได้ไม่จำกัด) — เพิ่ม 3 ส.ค. 2026
+// Vercel Cron ส่ง Authorization: Bearer <CRON_SECRET> มาให้อัตโนมัติเมื่อตั้ง env CRON_SECRET ไว้
+function requireAuth(req, res) {
+  const need = process.env.CRON_SECRET;
+  if (!need) return true;                     // ยังไม่ได้ตั้ง env = ทำงานเหมือนเดิม (ไม่ล็อกตัวเองออก)
+  const got = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (got === need) return true;
+  res.status(401).json({ ok: false, error: 'unauthorized' });
+  return false;
+}
 module.exports = async (req, res) => {
+  if (!requireAuth(req, res)) return;
   try {
     const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
     const hasToken = !!token;
