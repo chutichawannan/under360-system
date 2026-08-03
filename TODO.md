@@ -32,6 +32,21 @@
 - [ ] 📣 **shortlist อินฟลูสาย Hyrox/ฟิตเนส ให้พลอย** (เอิธคัดจาก `influencer_master.csv` 44 คน — ไม่วิจัยใหม่ · เรียงตามตอบเร็ว เพราะเหลือ 3 วัน · ดู Ginzy = คู่แข่งตลาดนี้ก่อน) + ร่างข้อความทาบทาม `[e→พลอย]`
 - [ ] 🎟️ **โค้ดติดตามยอด Hyrox** (แยกจาก wave 2 + จากแอด) — ให้วัดได้ว่าเซ็ตนี้ทำเงินเท่าไหร่ · แอดมินสร้างใน Hato แบบเดียวกับ FREEWEEKDAY `[e]`
 
+### 🎯 จาก Hato ก่อนบอกเลิก 7 ส.ค. — ของที่ดึงมาแล้ว รอทำต่อ (นัทเคาะ 3 ส.ค.)
+> ดึงเก็บไว้ครบใน `docs/hato_export/` แล้ว · **ไม่เร่ง** — นัทบอก "ต้องการให้ระบบเราไปต่อได้ก่อน"
+- [ ] 🏅 **ทำระบบ tier/แต้มของเราเอง — ยึดโครงสร้างจริงจาก Hato** (`docs/hato_export/membership_and_modifiers.json`)
+      **UNDER360 CLUB** · หน่วย "พอยท์" · คำนวณ `FixedSubsequentYear`
+      · rank 0 **Healthy Habits** = 0 แต้ม · rank 1 **Wellness Warriors** = 200 · rank 2 **Fit&Fabulous** = 400
+      · โครงสร้างแลกแต้มที่ Hato ใช้จริง: ส่วนลด 10/50/100/300/500/800/1000/1200/1500 บาท · แลกซาลาเปาฟรี
+      · ส่วนลดตาม tier: Fit&Fabulous 10% · Wellness Warriors 5% · Welcome New Member ครบ 500 ลด 50 (u ทำแล้ว)
+      → **ตอบ backlog "Loyalty tier threshold" ใน CLAUDE.md ที่เขียนว่ารอนัทเคาะ — ตอนนี้มีตัวเลขจริงแล้ว** `[u/p]`
+- [ ] 🥑 **แผน Ketogenic — อนาคตจะขาย** (ตอนนี้ยังไม่ขายเพราะไม่ได้โปรโมท · นัทยืนยัน 3 ส.ค.)
+      Hato ตั้งราคาไว้: **Keto Weekly ฿3,990 · Keto Monthly ฿14,900** · เป็นชุดขายเดียวกับ Meal Plan + Hyrox `[u]`
+- [x] ✅ **ไม่เอาระบบ Modifier ของ Hato** (นัทเคาะ: *"ไม่ต้องเอาระบบนี้มา"*) — Hato มี 51 กลุ่ม 521 ตัวเลือก แต่**มีไว้ชดเชยที่ระบบ Hato ไม่ยืดหยุ่น** · ของเราทำ set builder / สั่งข้ามสัปดาห์ / แยกวันส่ง / Meal Plan ไปแล้ว **ยืดหยุ่นและแม่นยำกว่า** · เก็บไฟล์ไว้อ้างอิงเฉยๆ
+- [x] ✅ **โปรโมชั่น 119 ตัว** — ดึงเก็บแล้ว (`promotions.json`) · นัทเคาะ: ส่วนใหญ่ใช้แบบเดิม/มีในระบบเราแล้ว · หลายอันเป็น**โค้ดรายคน** ไม่ต้อง migrate
+- [x] ✅ **รายงาน Hato** — นัทอนุญาต · **สั่งส่งเข้าเมลแล้ว 3 ฉบับ (3 ส.ค.)**: ออเดอร์ทั้งหมด · รายสินค้า (LineItem) · รีวิวลูกค้า (Feedback) — ช่วง 1 ส.ค. 2024 → 3 ส.ค. 2026 · **ไปที่ `chutichawannan@gmail.com` · ลิงก์อายุ 24 ชม.** → นัทฟอเวิร์ดมาให้ผมได้เลย
+      💡 เคล็ดลับที่เพิ่งเจอ: query `hsReportDownloadURL` **ต้องไม่ใส่ `vendorID`** (ใส่แค่ `locationIDs:[2461]`) ไม่งั้น "Input is invalid"
+
 ### 🔄 SYNC (คำสั่งลัดของนัท — พิมพ์ "sync" = รันอันนี้)
 > **"sync" = ดึงออเดอร์ Hato ใหม่ → DB** · ต้องมี Chrome login `portal.hatohub.com` (token Firebase จาก IDB) · **เครื่องใหม่ (คอมไทย) ไม่มี node** → รันผ่าน browser javascript แทน
 > **วิธี:** `listOrdersWithPagination(vendorID:171, locationID:2461, limit/offset:Int!)` → `o.number` **มี `HT-` อยู่แล้ว ห้ามเติมซ้ำ** · `placedAt` = **เวลาไทย (UTC+7)** · filter `orderFromDate` **ไม่ทำงาน → กรอง placedAt เองในโค้ด** · marker `admin_notes='[HATO SYNC วันที่]'` · source='hato'
