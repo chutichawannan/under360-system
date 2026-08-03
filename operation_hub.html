@@ -755,6 +755,17 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 </div><!-- /main -->
 </div><!-- /app -->
 
+<!-- 🧾 รายละเอียดออเดอร์ (กดที่แถวออเดอร์) -->
+<div id="odOverlay" onclick="if(event.target===this)closeOrderDetail()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:4000;padding:16px;overflow:auto">
+  <div style="max-width:560px;margin:24px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+    <div style="display:flex;align-items:center;gap:8px;padding:13px 16px;background:#1F4D3A;color:#fff">
+      <div style="flex:1;font-size:15px;font-weight:800" id="odTitle">ออเดอร์</div>
+      <button onclick="closeOrderDetail()" style="background:rgba(255,255,255,.18);color:#fff;border:none;border-radius:8px;width:30px;height:30px;font-size:17px;cursor:pointer">✕</button>
+    </div>
+    <div id="odBody" style="padding:14px 16px;font-size:13px;line-height:1.6;max-height:75vh;overflow:auto">กำลังโหลด...</div>
+  </div>
+</div>
 
 <script>
 
@@ -956,7 +967,7 @@ function renderOrders(orders){
         +"<span>📅 "+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
-    h+="<div class='orders-mini-row'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
+    h+="<div class='orders-mini-row' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
     h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
     h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
@@ -969,6 +980,104 @@ function renderOrders(orders){
   });
   el.innerHTML=h;
 }
+// ── 🧾 รายละเอียดออเดอร์ (กดแถวไหนก็ได้) ──────────────────
+function closeOrderDetail(){ var o=document.getElementById("odOverlay"); if(o)o.style.display="none"; }
+function odThaiDT(s){ if(!s)return "—"; try{ return new Date(s).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}); }catch(e){ return s; } }
+// กติกาแต้ม (ถอดจาก Hato): ฿50 = 1 แต้ม จาก "ยอดสินค้า" ไม่รวมค่าส่ง · ปัดลง
+function odPoints(sub,disc){ return Math.floor(Math.max(0,(sub||0)-(disc||0))/50); }
+async function openOrderDetail(id){
+  var ov=document.getElementById("odOverlay"), body=document.getElementById("odBody"), ttl=document.getElementById("odTitle");
+  if(!ov)return;
+  ov.style.display="block"; body.innerHTML="กำลังโหลด...";
+  var sb_=getSB(); if(!sb_){ body.innerHTML="Offline"; return; }
+  try{
+    var o=(ordRows||[]).find(function(x){return x.id===id;});
+    if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
+    if(!o){ body.innerHTML="ไม่พบออเดอร์"; return; }
+    ttl.textContent=(o.order_number||"ออเดอร์")+" · "+fmtB(o.total);
+    // ดึงรายการสินค้า + ข้อมูลสมาชิก + ประวัติซื้อ พร้อมกัน
+    var itRes=await sb_.from("order_items").select("*").eq("order_id",id);
+    var items=itRes.data||[];
+    // หาบัญชีลูกค้า: customer_id → line_uid → เบอร์ (ออเดอร์ที่ sync มาจาก Hato มักไม่มี customer_id)
+    var c=null, matchedBy="";
+    if(o.customer_id){ var r1=await sb_.from("customers").select("*").eq("id",o.customer_id).maybeSingle(); c=r1.data; matchedBy="customer_id"; }
+    if(!c && o.line_uid){ var r2=await sb_.from("customers").select("*").eq("line_uid",o.line_uid).limit(1); c=(r2.data||[])[0]||null; if(c)matchedBy="LINE"; }
+    if(!c && o.customer_phone){
+      var ph=String(o.customer_phone).replace(/\D/g,""); if(ph.indexOf("66")===0)ph="0"+ph.slice(2); if(ph.length===9)ph="0"+ph;
+      var r3=await sb_.from("customers").select("*").eq("phone",ph).limit(1); c=(r3.data||[])[0]||null; if(c)matchedBy="เบอร์";
+    }
+    // ประวัติซื้อของลูกค้าคนนี้ (ผูกได้ทั้ง customer_id และ line_uid)
+    var hist=[];
+    if(c){
+      var hq=await sb_.from("orders").select("total").or("customer_id.eq."+c.id+(o.line_uid?",line_uid.eq."+o.line_uid:"")).neq("status","cancelled");
+      hist=hq.data||[];
+    }
+    var st=ST[o.status]||{t:o.status,cls:"p-done"};
+    var paid=o.payment_status==="paid";
+    var addr=o.delivery_address_text||o.delivery_address||"—";
+    var maps=(o.delivery_lat!=null&&o.delivery_lng!=null)?("https://www.google.com/maps?q="+o.delivery_lat+","+o.delivery_lng):(o.delivery_maps_url||"");
+    var box=function(t,inner){ return "<div style='background:#F7F8F6;border-radius:10px;padding:10px 12px;margin-bottom:10px'>"
+      +"<div style='font-size:12px;font-weight:800;color:#1F4D3A;margin-bottom:5px'>"+t+"</div>"+inner+"</div>"; };
+    var row=function(k,v){ return "<div style='display:flex;justify-content:space-between;gap:10px'><span style='color:#6B7280'>"+k+"</span><span style='text-align:right;font-weight:600'>"+v+"</span></div>"; };
+    var h="";
+    // สถานะ
+    h+="<div style='display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px'>"
+      +"<span class='pill "+st.cls+"'>"+st.t+"</span>"
+      +"<span style='font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;"+(paid?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"'>"+(paid?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
+      +(o.source?"<span style='font-size:11px;padding:3px 9px;border-radius:8px;background:#EEF2FF;color:#3730A3'>"+esc2(o.source)+"</span>":"")
+      +"</div>";
+    // เวลา
+    h+=box("🕒 เวลา", row("สั่งเมื่อ", odThaiDT(o.created_at))
+      +row("ส่งวันที่", (o.delivery_date||"—"))
+      +row("ช่วงเวลาส่ง", esc2(o.time_slot_label||o.time_slot||"—")));
+    // ลูกค้า + ที่อยู่
+    h+=box("👤 ผู้รับ / จัดส่ง",
+       row("ชื่อผู้รับ", esc2(o.customer_name||"—"))
+      +(o.line_display_name?row("ชื่อไลน์", esc2(o.line_display_name)):"")
+      +row("เบอร์", o.customer_phone?("<a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A'>"+esc2(o.customer_phone)+"</a>"):"—")
+      +"<div style='margin-top:5px;color:#6B7280'>📍 "+esc2(addr)+(maps?" <a href='"+maps+"' target='_blank' style='color:#1D4ED8;font-weight:700'>🗺️แผนที่</a>":"")+"</div>"
+      +(o.delivery_distance_km!=null?row("ระยะจากครัว", Number(o.delivery_distance_km).toFixed(1)+" กม."):"")
+      +row("ช้อนส้อม", o.want_utensils?"ต้องการ":"ไม่รับ"));
+    // รายการสินค้า
+    var itemsHtml=items.length
+      ? items.map(function(i){ return "<div style='display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #E5E7EB'>"
+          +"<span><b style='font-family:var(--mono);font-size:11px;color:#1F4D3A'>"+esc2(i.menu_code||"—")+"</b> "+esc2(i.menu_name||"")
+          +(i.notes?" <span style='font-size:10px;color:#9CA3AF'>("+esc2(i.notes)+")</span>":"")+"</span>"
+          +"<span style='white-space:nowrap'>×"+(i.quantity||1)+" · "+fmtB(i.subtotal!=null?i.subtotal:(i.unit_price||0)*(i.quantity||1))+"</span></div>"; }).join("")
+      : "<div style='color:#9CA3AF'>— ไม่มีรายการสินค้าบันทึกไว้ —</div>";
+    h+=box("🧾 รับอะไรบ้าง ("+items.length+" รายการ · "+items.reduce(function(s,i){return s+(i.quantity||1);},0)+" ชิ้น)", itemsHtml);
+    // ยอดเงิน
+    h+=box("💰 ยอดเงิน",
+       row("ยอดสินค้า", fmtB(o.subtotal))
+      +((o.discount_amount||0)>0?row("ส่วนลด"+(o.promotion_code?" ("+esc2(o.promotion_code)+")":""), "-"+fmtB(o.discount_amount)):"")
+      +row("ค่าจัดส่ง", fmtB(o.delivery_fee))
+      +"<div style='border-top:1px solid #E5E7EB;margin-top:5px;padding-top:5px'>"+row("<b>รวมทั้งหมด</b>", "<b style='color:#DC2626;font-size:15px'>"+fmtB(o.total)+"</b>")+"</div>"
+      +row("วิธีจ่าย", esc2(o.payment_method||"—")+(o.payment_account?" / "+esc2(o.payment_account):"")));
+    // สมาชิก
+    var pts=odPoints(o.subtotal,o.discount_amount);
+    var spent=hist.reduce(function(s,x){return s+(x.total||0);},0);
+    h+=box("⭐ สมาชิก",
+       row("แต้มที่ได้จากออเดอร์นี้", "<b>"+pts+" แต้ม</b>")
+      +"<div style='font-size:11px;color:#9CA3AF;margin:-2px 0 5px'>คิดตามกติกา ฿50 = 1 แต้ม (ยอดสินค้าหลังหักส่วนลด ไม่รวมค่าส่ง) — ⚠️ ระบบยังไม่สะสมให้อัตโนมัติ แอดมินปรับแต้มเองที่หน้าลูกค้า</div>"
+      +(c?(row("จับคู่บัญชีจาก", matchedBy)
+        +row("แต้มคงเหลือตอนนี้", (c.loyalty_points||0)+" แต้ม")
+        +row("ระดับสมาชิก", esc2(String(c.tier||"—").replace(/&amp;/g,"&")))   // tier บางแถวติด &amp; มาจาก import
+        +row("ประเภทลูกค้า", esc2(c.customer_type||c.source_first||"—"))
+        +row("เป็นสมาชิกตั้งแต่", odThaiDT(c.created_at))
+        +(c.date_of_birth?row("วันเกิด", esc2(c.date_of_birth)):"")
+        +row("ซื้อมาแล้ว", hist.length+" ครั้ง · "+fmtB(spent)))
+        :"<div style='color:#9CA3AF'>— ออเดอร์นี้ยังไม่ผูกกับบัญชีลูกค้า —</div>"));
+    // โน้ต
+    if(o.notes||o.admin_notes||o.created_by){
+      h+=box("📝 โน้ต",
+         (o.notes?"<div><b>ลูกค้า:</b> "+esc2(o.notes)+"</div>":"")
+        +(o.admin_notes?"<div style='color:#6B7280'><b>แอดมิน:</b> "+esc2(o.admin_notes)+"</div>":"")
+        +(o.created_by?row("คนกดสั่ง", esc2(o.created_by)):""));
+    }
+    body.innerHTML=h;
+  }catch(e){ body.innerHTML="โหลดรายละเอียดไม่ได้: "+esc2(e.message||""); }
+}
+
 // สลับสถานะการเงิน (โอนแล้ว ⇄ รอโอน) — beta: assume อัพสลิป=จริง, แอดมินแก้เองได้ (โอนผ่านไลน์) แล้วไล่เช็คสลิปจริงตกเย็น
 async function togglePayment(id,current,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
