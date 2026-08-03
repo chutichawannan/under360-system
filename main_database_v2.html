@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Main Database — Under360</title>
-<link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
-<link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -2620,7 +2618,27 @@ async function exportOnlineMenus(){
     showToast('ยังไม่มีเมนูที่เปิดออนไลน์ — กด "○ ออฟไลน์" ที่แถวเมนูก่อน');
     return;
   }
-  const toSync = items.map(r=>{
+  const sb = getSB();
+  // ── pre-flight: ดึงของเดิมมาเทียบก่อนเขียนทับ (3 ส.ค. 2026) ────────────────
+  // เคยเป็นกับดัก: sync ส่ง image_urls:[] + sort_order:0 เสมอ → กดทีเดียว "ล้างรูปเมนู 71 ตัว"
+  // ที่ P ดึงมาจาก Hato + รีเซ็ตลำดับที่นัทจัดไว้ทิ้ง (สูตรในหน้านี้ไม่มีรูป แต่ menu_items มี)
+  let existing = {};
+  try {
+    const codes = items.map(r=>r.code).filter(Boolean);
+    const { data } = await sb.from('menu_items').select('code,price,image_urls').in('code', codes);
+    (data||[]).forEach(m=>{ existing[m.code]=m; });
+  } catch(e){ console.error('sync pre-flight failed:', e); }
+  const priceChanges = items.filter(r=>existing[r.code] && (r.selling_price||0)!==(existing[r.code].price||0));
+  const imgKept = items.filter(r=>!(r.image_urls&&r.image_urls.length) && existing[r.code] && (existing[r.code].image_urls||[]).length);
+  if(priceChanges.length){
+    const list = priceChanges.slice(0,8).map(r=>'  '+r.code+'  ฿'+(existing[r.code].price||0)+' → ฿'+(r.selling_price||0)).join('\n');
+    const more = priceChanges.length>8 ? '\n  …และอีก '+(priceChanges.length-8)+' เมนู' : '';
+    if(!window.confirm('⚠️ ราคาจะถูกเขียนทับ '+priceChanges.length+' เมนู (ราคาในหน้านี้ จะทับราคาที่ตั้งไว้ใน LIFF)\n\n'+list+more+'\n\nยืนยัน Sync?')) {
+      showToast('ยกเลิก Sync — ราคายังไม่ถูกแตะ');
+      return;
+    }
+  }
+  const base = r => {
     const tot = computeTotals(r);
     return {
       code:         r.code||'',
@@ -2633,20 +2651,24 @@ async function exportOnlineMenus(){
       carb:         Math.round(tot.carb*10)/10||null,
       fat:          Math.round(tot.fat*10)/10||null,
       is_available: true,
-      sort_order:   0,
-      image_urls:   r.image_urls||[],           // ← รูปสำหรับ LIFF (4 slots)
       description:  r.description||'',          // ← คำอธิบายสำหรับ popup LIFF
       he_group:     r.he_group||'',
       no_morning:   r.no_morning||false,        // ← ไม่ส่งช่วงเช้า
+      // ❌ ไม่ส่ง sort_order → เก็บลำดับที่จัดไว้ใน HE/LIFF ไว้เหมือนเดิม
     };
-  });
+  };
+  // แยก 2 ชุด: มีรูป = ส่ง image_urls ทับ · ไม่มีรูป = ไม่ส่งคีย์นี้เลย (ของเดิมใน DB อยู่ครบ)
+  const withImg = items.filter(r=>r.image_urls&&r.image_urls.length).map(r=>Object.assign(base(r),{image_urls:r.image_urls}));
+  const noImg   = items.filter(r=>!(r.image_urls&&r.image_urls.length)).map(base);
   showToast('⏳ กำลัง Sync '+items.length+' เมนูไป Supabase...');
   try {
-    const sb = getSB();
-    const { error } = await sb.from('menu_items')
-      .upsert(toSync, { onConflict: 'code', ignoreDuplicates: false });
-    if(error) throw error;
-    showToast('✅ Sync แล้ว '+items.length+' เมนู — LIFF อัพเดทแล้ว!');
+    for(const batch of [withImg, noImg]){
+      if(!batch.length) continue;
+      const { error } = await sb.from('menu_items')
+        .upsert(batch, { onConflict: 'code', ignoreDuplicates: false });
+      if(error) throw error;
+    }
+    showToast('✅ Sync แล้ว '+items.length+' เมนู'+(imgKept.length?' · เก็บรูปเดิมไว้ '+imgKept.length+' เมนู':'')+' — LIFF อัพเดทแล้ว!');
   } catch(e) {
     console.error(e);
     showToast('❌ Sync ล้มเหลว: '+(e.message||'ตรวจสอบ credentials'));
@@ -2679,10 +2701,12 @@ async function syncOnlineMenu(r){
     carb: Math.round(tot.carb*10)/10||null,
     fat: Math.round(tot.fat*10)/10||null,
     is_available: !!(r.available_online && r.status==='active'),  // ปิดออนไลน์ = false → OH/LIFF ไม่เห็น
-    sort_order: 0,
-    image_urls: r.image_urls||[], description: r.description||'',
+    description: r.description||'',
     he_group: r.he_group||'', no_morning: r.no_morning||false,
+    // ❌ ไม่ส่ง sort_order → เก็บลำดับเดิม · image_urls ส่งเฉพาะตอนสูตรมีรูปจริง (ดูบรรทัดล่าง)
+    // เดิมส่ง image_urls:[] ทุกครั้ง → แค่กดเปิด/ปิดออนไลน์ทีละเมนู = ลบรูปเมนูนั้นทิ้งเงียบๆ (แก้ 3 ส.ค. 2026)
   };
+  if(r.image_urls && r.image_urls.length) row.image_urls = r.image_urls;
   try{
     const sb = getSB();
     const { error } = await sb.from('menu_items').upsert(row, { onConflict:'code', ignoreDuplicates:false });
