@@ -2391,6 +2391,8 @@ function attachPackagesHandlers(){
           updated_at: new Date().toISOString()
         }).eq('id', pkgId);
         if(pkgErr) throw pkgErr;
+        // ⚠️ ท่า "ลบทิ้งแล้วใส่ใหม่" — ถ้าใส่พังหลังลบ = เมนูในแพคหายเกลี้ยง → เก็บของเดิมไว้กู้คืน (3 ส.ค. 2026)
+        const prevItems = (state.pkgItems[pkgId]||[]).map(it=>({ package_id: pkgId, sku: it.sku, extra_price: it.extra_price||0 }));
         const { error: delErr } = await sb.from('package_items').delete().eq('package_id', pkgId);
         if(delErr) throw delErr;
         const toInsert = Object.entries(state.editingPkgItems).map(([sku, extra_price]) => ({
@@ -2398,7 +2400,11 @@ function attachPackagesHandlers(){
         }));
         if(toInsert.length){
           const { error: insErr } = await sb.from('package_items').insert(toInsert);
-          if(insErr) throw insErr;
+          if(insErr){
+            // กู้ของเดิมกลับก่อน แล้วค่อยแจ้ง error (ไม่ปล่อยให้แพคว่างเปล่า)
+            if(prevItems.length){ try{ await sb.from('package_items').insert(prevItems); }catch(e2){ console.error('rollback failed:', e2); } }
+            throw insErr;
+          }
         }
         const pkg = state.packages.find(p => p.id === pkgId);
         if(pkg) Object.assign(pkg, { name, size, qty, base_price: price, description: desc, is_active: active, ...setFields });
