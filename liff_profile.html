@@ -137,6 +137,12 @@ body{font-family:var(--sans);background:var(--bg);padding-bottom:24px;}
   <div class="card">
     <div class="ch">🥗 ข้อจำกัดอาหาร</div>
     <div class="cb">
+      <!-- ⚠️ กันลูกค้าคาดหวังผิด: ข้อมูลนี้ใช้กับ Meal Plan (ที่ร้านจัดเมนูให้) เท่านั้น
+           เมนูที่ลูกค้าเลือกเองในตะกร้า = ได้ตามที่กดจริง ไม่ customize ตามข้อจำกัดนี้ -->
+      <div style="background:var(--forest-soft);border-radius:10px;padding:9px 11px;margin-bottom:12px;font-size:12px;line-height:1.5;color:var(--forest)">
+        ℹ️ ใช้กับ <b>Meal Plan</b> เท่านั้น — เมนูชุดที่ทางร้านจัดให้ (คุณไม่ได้เลือกเอง) เราจะเลี่ยงของที่คุณแพ้/ไม่ทานให้
+        <div style="color:var(--ink-soft);margin-top:3px">เมนูที่คุณกดเลือกเองในตะกร้า จะได้ตามที่สั่งจริง ไม่ถูกเปลี่ยนตามข้อมูลนี้</div>
+      </div>
       <!-- 6 อันฮิตที่สุดในไทย -->
       <div class="tog-row"><span class="tog-label">🐷 ไม่ทานเนื้อหมู</span><button class="tog pref-tog" data-pref="ไม่ทานเนื้อหมู" onclick="this.classList.toggle('on')"></button></div>
       <div class="tog-row"><span class="tog-label">🐄 ไม่ทานเนื้อวัว / เนื้อแดง</span><button class="tog pref-tog" data-pref="ไม่ทานเนื้อวัว" onclick="this.classList.toggle('on')"></button></div>
