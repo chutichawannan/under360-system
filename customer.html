@@ -135,24 +135,39 @@ const CUSTOMERS=[
 ];
 
 // ── LOAD FROM SUPABASE ──
+// ดึงทุกแถว ข้ามเพดาน 1,000 ของ Supabase (customers 8,000+ · orders 15,000+ — เดิมเห็นแค่ 1,000 คนแรก)
+async function fetchAllRows(sb_, table, cols){
+  var out=[], size=1000;
+  for(var from=0;;from+=size){
+    var r=await sb_.from(table).select(cols).range(from, from+size-1);
+    if(r.error) throw r.error;
+    out=out.concat(r.data||[]);
+    if(!r.data || r.data.length<size) return out;
+  }
+}
+function showLoadError(msg){
+  allCusts=[]; filteredCust=[];
+  var el=document.getElementById("custList");
+  if(el) el.innerHTML='<div style="text-align:center;padding:26px;color:#DC2626;font-size:13px">โหลดข้อมูลลูกค้าไม่ได้<br><span style="color:#6B7280;font-size:12px">'+(msg||"")+'</span><br><button onclick="location.reload()" style="margin-top:12px;padding:8px 16px;border:none;border-radius:8px;background:#1F4D3A;color:#fff;font-weight:700;cursor:pointer">ลองใหม่</button></div>';
+  updateStats();
+}
 async function loadCustomersFromSB(){
   var sb_=getSB();
-  if(!sb_){allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();return;}
+  // ❌ เดิม fallback เป็นลูกค้าปลอม (Boom/Pete/ชมพิสุทธิ์ พร้อมเบอร์ปลอม) → แอดมินโทรผิดคน (แก้ 3 ส.ค. 2026)
+  if(!sb_){ showLoadError("เชื่อมต่อฐานข้อมูลไม่ได้"); return; }
   try{
-    // customers
-    var res=await sb_.from("customers").select("*").order("created_at",{ascending:true});
-    if(res.error||!res.data||!res.data.length){
-      allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();return;
-    }
-    allCusts=res.data.map((c,i)=>({...c,member_id:c.member_id||genMid(i),_oc:0,_ot:0}));
+    // customers — ดึงครบทุกคน ไม่ติดเพดาน 1,000
+    var rows=await fetchAllRows(sb_,"customers","*");
+    if(!rows.length){ showLoadError("ยังไม่มีข้อมูลลูกค้าในระบบ"); return; }
+    allCusts=rows.map((c,i)=>({...c,member_id:c.member_id||"",_oc:0,_ot:0}));
 
-    // orders stats
-    var oRes=await sb_.from("orders").select("customer_line_uid,total_price,id,status");
+    // orders stats — ⚠️ คอลัมน์จริงคือ line_uid / total (เดิมใช้ customer_line_uid / total_price ที่ไม่มีจริง → ทุกคนโชว์ 0 ออเดอร์ ฿0)
+    var ords=await fetchAllRows(sb_,"orders","line_uid,total,id,status");
     var oMap={};
-    (oRes.data||[]).forEach(o=>{
-      var k=o.customer_line_uid; if(!k) return;
+    ords.forEach(o=>{
+      var k=o.line_uid; if(!k) return;
       if(!oMap[k]) oMap[k]={count:0,total:0};
-      oMap[k].count++; oMap[k].total+=Number(o.total_price||0);
+      oMap[k].count++; oMap[k].total+=Number(o.total||0);
     });
     allCusts.forEach(c=>{
       var om=oMap[c.line_uid||""]||{count:0,total:0};
@@ -161,7 +176,7 @@ async function loadCustomersFromSB(){
 
     filteredCust=[...allCusts];
     renderList(); updateStats();
-  }catch(e){console.error(e);allCusts=[...CUSTOMERS];filteredCust=[...allCusts];renderList();updateStats();}
+  }catch(e){ console.error(e); showLoadError((e&&e.message)||"เกิดข้อผิดพลาด"); }
 }
 
 function updateStats(){
@@ -218,7 +233,7 @@ async function showProfile(id){
     var sb_=getSB();
     if(sb_&&c.line_uid){
       try{
-        var r=await sb_.from("orders").select("*").eq("customer_line_uid",c.line_uid).order("created_at",{ascending:false}).limit(50);
+        var r=await sb_.from("orders").select("*").eq("line_uid",c.line_uid).order("created_at",{ascending:false}).limit(50);
         orders=r.data||[]; orderCache[id]=orders;
       }catch(e){}
     }
@@ -295,7 +310,7 @@ async function showProfile(id){
             <span class="h-date">${(o.delivery_date||o.created_at||"").slice(0,10)}</span>
             <span class="h-items">${(o.items||[]).map(i=>i.code||i.name||"").join(", ")||"—"}</span>
             <span class="h-status">${statusTh(o.status)}</span>
-            <span class="h-total">${fmtB(o.total_price||0)}</span>
+            <span class="h-total">${fmtB(o.total||0)}</span>
           </div>`).join("")
           :"<div style='font-size:12px;color:var(--ink-soft)'>ยังไม่มีประวัติ</div>"}
       </div>
@@ -329,7 +344,7 @@ async function adjustPoints(id){
   var newLog=[...(c.pts_log||[]),log];
   var sb_=getSB();
   if(sb_){
-    try{await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id);}
+    try{var _r=await sb_.from("customers").update({loyalty_points:newPts,pts_log:newLog,updated_at:new Date().toISOString()}).eq("id",id); if(_r.error)throw _r.error;}
     catch(e){toast("บันทึก Supabase ไม่สำเร็จ");return;}
   }
   c.loyalty_points=newPts; c.pts_log=newLog;
@@ -345,7 +360,7 @@ async function saveNotes(id){
   var c=allCusts.find(x=>x.id===id); if(!c) return;
   var notes=document.getElementById("notes-"+id).value||"";
   var sb_=getSB();
-  if(sb_){try{await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id);}catch(e){toast("บันทึกไม่สำเร็จ");return;}}
+  if(sb_){try{var _r2=await sb_.from("customers").update({admin_notes:notes,updated_at:new Date().toISOString()}).eq("id",id); if(_r2.error)throw _r2.error;}catch(e){toast("บันทึกไม่สำเร็จ: "+((e&&e.message)||""));return;}}
   c.admin_notes=notes; toast("บันทึกโน้ตแล้ว ✓");
 }
 
@@ -353,7 +368,7 @@ async function saveAI(id){
   var c=allCusts.find(x=>x.id===id); if(!c) return;
   var ai=document.getElementById("ai-"+id).value||"";
   var sb_=getSB();
-  if(sb_){try{await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id);}catch(e){toast("บันทึกไม่สำเร็จ");return;}}
+  if(sb_){try{var _r3=await sb_.from("customers").update({ai_comment:ai,updated_at:new Date().toISOString()}).eq("id",id); if(_r3.error)throw _r3.error;}catch(e){toast("บันทึกไม่สำเร็จ: "+((e&&e.message)||""));return;}}
   c.ai_comment=ai; toast("บันทึก AI Insight แล้ว ✓");
 }
 

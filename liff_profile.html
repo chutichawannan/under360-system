@@ -205,23 +205,26 @@ async function loadProfile(){
   let p=null;
   if(sb_){
     try{
-      const r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total,status)").eq("line_uid",lineUid).single();
+      // maybeSingle: ลูกค้าที่ยังไม่มีแถวใน DB จะได้ null เฉยๆ ไม่ error (เดิม .single() error → ตกไป mock)
+      const r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total,status)").eq("line_uid",lineUid).maybeSingle();
       if(!r.error)p=r.data;
-    }catch(e){}
+    }catch(e){ console.error("loadProfile:",e); }
   }
-  // fallback mock
-  if(!p)p={name:"Test User",phone:"081-234-5678",birth_date:"1992-05-15",line_display_name:"Test User",line_picture_url:"",loyalty_points:4200,orders:[
-    {id:"o1",order_number:"U-0620-003",delivery_date:"2026-06-20",total:495,status:"delivered"},
-    {id:"o2",order_number:"U-0618-007",delivery_date:"2026-06-18",total:330,status:"delivered"},
-  ]};
-  // render info
-  document.getElementById("hName").textContent=p.name||p.line_display_name||"—";
+  // ❌ เดิมมี mock "Test User · 4,200 แต้ม · ออเดอร์ปลอม" → ลูกค้าจริงที่ยังไม่สมัครเห็นข้อมูลคนอื่น (แก้ 3 ส.ค. 2026)
+  if(!p){
+    document.getElementById("hName").textContent="ยังไม่ได้สมัครสมาชิก";
+    document.getElementById("hLine").textContent="สมัครเพื่อสะสมแต้มและดูประวัติ";
+    document.getElementById("histBody").innerHTML='<div style="text-align:center;padding:18px"><div style="color:var(--ink-soft);font-size:13px;margin-bottom:10px">ยังไม่มีข้อมูลสมาชิก</div><a href="liff_register.html" style="display:inline-block;background:var(--forest);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700">สมัครสมาชิก →</a></div>';
+    return;
+  }
+  // ชื่อคอลัมน์จริงใน DB: display_name / date_of_birth / picture_url (เดิมอ้าง name/birth_date/line_picture_url ที่ไม่มีจริง → ขึ้น "—" ทั้งที่กรอกไว้)
+  document.getElementById("hName").textContent=p.display_name||p.line_display_name||"—";
   document.getElementById("hLine").textContent="@"+(p.line_display_name||"—");
-  document.getElementById("infoName").textContent=p.name||"—";
+  document.getElementById("infoName").textContent=p.display_name||"—";
   document.getElementById("infoPhone").textContent=p.phone||"—";
-  document.getElementById("infoDob").textContent=p.birth_date||"—";
+  document.getElementById("infoDob").textContent=p.date_of_birth||"—";
   document.getElementById("infoLine").textContent=p.line_display_name||"—";
-  if(p.line_picture_url){document.getElementById("hAv").src=p.line_picture_url;document.getElementById("hEmoji").style.display="none";}
+  if(p.picture_url){document.getElementById("hAv").src=p.picture_url;document.getElementById("hEmoji").style.display="none";}
   renderTier(p.loyalty_points||0);
   // history
   const orders=p.orders||[];
@@ -280,12 +283,13 @@ async function savePref(){
   const prefs=[];
   document.querySelectorAll(".pref-tog.on").forEach(t=>prefs.push(t.dataset.pref));
   prefs.push(...customPrefList);
-  const other=document.getElementById("prefOther").value;
-  if(other)prefs.push(other);
-  const sb_=getSB();
-  if(sb_)await sb_.from("customers").update({preferences:prefs}).eq("line_uid",lineUid);
-  btn.textContent="✅ บันทึกแล้ว";
-  setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},2000);
+  // ❌ เดิมอ้าง element #prefOther ที่ไม่มีในหน้า → TypeError ทุกครั้ง = ปุ่มค้าง "กำลังบันทึก" ตลอด
+  //    และเขียนลง customers.preferences ซึ่ง **ไม่มีคอลัมน์นี้จริงใน DB** → ข้อมูลแพ้อาหารไม่เคยถูกเก็บเลย (audit 3 ส.ค. 2026)
+  //    ที่เก็บจริงต้องเป็นตาราง customer_preferences (SQL เตรียมไว้ใน CLAUDE.md ยังไม่รัน) — ส่งต่อ U-track แล้ว
+  console.warn("savePref: ยังไม่มีที่เก็บ (รอตาราง customer_preferences)", {lineUid, prefs});
+  btn.textContent="⚠️ ยังบันทึกไม่ได้";
+  alert("ตอนนี้ระบบยังบันทึก 'ความชอบ / อาหารที่แพ้' ไม่ได้ครับ\nรบกวนแจ้งแอดมินทางแชท LINE เพื่อบันทึกให้ก่อนนะครับ 🙏\n(ทีมงานกำลังเปิดระบบส่วนนี้)");
+  setTimeout(()=>{btn.textContent="💾 บันทึกความชอบ";btn.disabled=false;},2500);
 }
 
 loadProfile();

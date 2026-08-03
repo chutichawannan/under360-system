@@ -140,8 +140,10 @@ function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createCli
   const dayEl=document.getElementById("dobDay");
   for(let i=1;i<=31;i++){const o=document.createElement("option");o.value=String(i).padStart(2,"0");o.textContent=i;dayEl.appendChild(o);}
   const yearEl=document.getElementById("dobYear");
-  const y=new Date().getFullYear()-543; // AD year
-  for(let i=y;i>=y-80;i--){const o=document.createElement("option");o.value=i;o.textContent=i+543+" ("+(i)+" AD)";yearEl.appendChild(o);}
+  // 🐛 เดิม: getFullYear()-543 (เข้าใจผิดว่า JS คืน พ.ศ.) → ปี 2026-543 = 1483 ถูกบันทึกลง date_of_birth
+  //    ทุกคนที่สมัครได้ปีเกิดเพี้ยน 543 ปี · แคมเปญวันเกิด/อายุพังหมด — แก้ 3 ส.ค. 2026
+  const y=new Date().getFullYear();  // JS คืน ค.ศ. อยู่แล้ว · เก็บลง DB เป็น ค.ศ. · โชว์ให้ลูกค้าเป็น พ.ศ.
+  for(let i=y;i>=y-80;i--){const o=document.createElement("option");o.value=i;o.textContent=(i+543)+" ("+i+" AD)";yearEl.appendChild(o);}
 })();
 
 // LIFF init
@@ -233,21 +235,28 @@ async function doRegister(){
   try{
     if(sb_){
       // กันซ้ำ: ถ้าเบอร์นี้มีลูกค้าเดิม (line_uid ว่าง = migrate/keyed-by-phone) → merge เข้าแถวเก่า เก็บประวัติ/แต้ม/ที่มา
-      const { data:byPhone } = await sb_.from("customers").select("id,line_uid,admin_notes").eq("phone",norm).limit(10);
+      // ถ้าอ่านพลาดแล้วปล่อยผ่าน = มองไม่เห็นลูกค้าเดิม → สร้างซ้ำ · ต้องหยุดแล้วให้ลองใหม่
+      const { data:byPhone, error:phErr } = await sb_.from("customers").select("id,line_uid,admin_notes").eq("phone",norm).limit(10);
+      if(phErr) throw phErr;
       const old=(byPhone||[]).find(r=>!r.line_uid);
       if(old){
         // ปลด stub ที่ถือ line_uid นี้อยู่ (จากตอนเปิดแอป) กัน unique conflict
         const { data:byUid } = await sb_.from("customers").select("id,admin_notes").eq("line_uid",uid).limit(2);
         const stub=(byUid||[]).find(r=>r.id!==old.id);
-        if(stub){ await sb_.from("customers").update({ line_uid:null, is_blocked:true, admin_notes:((stub.admin_notes||"")+" [รวมเข้า "+old.id.slice(0,8)+"]").trim() }).eq("id",stub.id); }
+        if(stub){ const s=await sb_.from("customers").update({ line_uid:null, is_blocked:true, admin_notes:((stub.admin_notes||"")+" [รวมเข้า "+old.id.slice(0,8)+"]").trim() }).eq("id",stub.id); if(s.error) throw s.error; }
         // ⚠️ merge เข้าลูกค้าเก่า = ห้ามเขียนทับของเดิมด้วยค่าว่าง (ไม่กรอกวันเกิด/เพศ = เว้นไว้ ไม่ใช่ลบทิ้ง)
-        await sb_.from("customers").update(Object.assign({},nonEmpty(fields),{ line_uid:uid, admin_notes:((old.admin_notes||"")+" [🔄 สมัครใหม่/กลับมา "+today+"]").trim() })).eq("id",old.id);
+        const u=await sb_.from("customers").update(Object.assign({},nonEmpty(fields),{ line_uid:uid, admin_notes:((old.admin_notes||"")+" [🔄 สมัครใหม่/กลับมา "+today+"]").trim() })).eq("id",old.id);
+        if(u.error) throw u.error;
       } else {
         // ลูกค้าใหม่ปกติ → upsert by line_uid (อัปเดต stub ที่เปิดแอปสร้างไว้ หรือสร้างใหม่)
         // ถ้าเบอร์นี้มีลูกค้าอยู่แล้วแต่ผูก LINE อื่น → ไม่ merge (กันสวมบัญชีคนอื่น) แต่ต้อง flag ให้แอดมินรวมมือ กันลูกค้าซ้ำ
         const dupNote=(byPhone||[]).some(r=>r.line_uid&&r.line_uid!==uid)
           ? " [⚠️ เบอร์ซ้ำกับลูกค้าเดิม "+((byPhone||[]).filter(r=>r.line_uid&&r.line_uid!==uid).map(r=>r.id.slice(0,8)).join(","))+" — แอดมินตรวจ/รวมมือ "+today+"]" : "";
-        await sb_.from("customers").upsert(Object.assign({},fields,{ line_uid:uid },dupNote?{admin_notes:dupNote.trim()}:{}),{onConflict:"line_uid"});
+        // ทางนี้ก็ห้ามทับด้วยค่าว่างเหมือนกัน (stub ที่เปิดแอปสร้างไว้อาจมีข้อมูลอยู่แล้ว) · โน้ตให้ต่อท้าย ไม่ทับทั้งก้อน
+        let prevNote="";
+        if(dupNote){ const { data:cur } = await sb_.from("customers").select("admin_notes").eq("line_uid",uid).limit(1); prevNote=(cur&&cur[0]&&cur[0].admin_notes)||""; }
+        const up=await sb_.from("customers").upsert(Object.assign({},nonEmpty(fields),{ line_uid:uid },dupNote?{admin_notes:(prevNote+dupNote).trim()}:{}),{onConflict:"line_uid"});
+        if(up.error) throw up.error;
       }
     }
     localStorage.setItem("line_uid",uid);
