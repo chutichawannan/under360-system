@@ -192,7 +192,7 @@ async function showList(){
   try{
     const { data, error } = await sb.from('blog_posts')
       .select('slug,title,excerpt,cover_url,created_at').eq('published',true)
-      .order('created_at',{ascending:false}).limit(50);
+      .order('created_at',{ascending:false}).limit(500);
     if(error) throw error;
     if(!data || !data.length){
       box.innerHTML = '<div class="empty">ยังไม่มีบทความ — กลับมาใหม่เร็วๆ นี้</div>';
