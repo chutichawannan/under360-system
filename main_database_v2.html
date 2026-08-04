@@ -693,6 +693,16 @@ async function loadNotifs(force){
 // เช็คเงียบๆ ตอนเปิดหน้า เพื่อโชว์ตัวเลขบนกระดิ่ง (ไม่เด้งอะไรทั้งนั้น)
 setTimeout(function(){ try{ loadNotifs(); }catch(e){} }, 2500);
 
+// นับเมนูที่ "ลูกค้าเห็นจริง" จาก menu_items (ไม่ใช่สูตรในหน้านี้) — กันเข้าใจผิดว่าขายอยู่กี่ตัว
+async function refreshLiveMenuCount(){
+  try{
+    const sb=(typeof getSB==="function")?getSB():null; if(!sb)return;
+    const r=await sb.from("menu_items").select("id",{count:"exact",head:true}).eq("is_available",true);
+    if(typeof r.count==="number"){ state.liveMenuCount=r.count; if(typeof render==="function") render(); }
+  }catch(e){ console.warn("refreshLiveMenuCount:",e); }
+}
+setTimeout(function(){ try{ refreshLiveMenuCount(); }catch(e){} }, 3000);
+
 const DEFAULT_CATEGORIES = [
   {key:'uncategorized', label:'ยังไม่มีหมวด', color:'#9CA3AF'},
   {key:'vegan', label:'อาหารเจ', color:'#22C55E'},
@@ -3147,14 +3157,18 @@ function renderRecipesTab(){
   }
   if(!state.storageOk && !state._offlineMode) html += `<div class="banner">ระบบบันทึกอัตโนมัติขัดข้องชั่วคราว ข้อมูลที่แก้ไขอาจไม่ถูกบันทึก ลองรีโหลดหน้านี้อีกครั้ง</div>`;
   if(state.showStatBar) html += renderStatBar();
+  // ⚠️ เลขนี้เคยนับจาก state.recipes (สูตรในหน้านี้) = 74 ทั้งที่ลูกค้าเห็นจริง 137 → ตัดสินใจผิดได้
+  //    ตอนนี้โชว์ "ขายจริงบน LIFF" (menu_items) เป็นหลัก · เลขสูตรเป็นตัวรอง
   const onlineCnt = state.recipes.filter(r=>r.available_online && r.status==='active').length;
+  const liveCnt = (state.liveMenuCount==null) ? onlineCnt : state.liveMenuCount;
   html += `<div class="online-export-bar">
     <button id="toggleOnlineFilterBtn" title="${state.showOnlineOnly?'แสดงทั้งหมด':'กรองเฉพาะออนไลน์'}"
       style="display:flex;align-items:center;gap:6px;background:${state.showOnlineOnly?'var(--forest)':'transparent'};
       border:${state.showOnlineOnly?'none':'none'};border-radius:8px;padding:2px 8px 2px 0;cursor:pointer;
       color:${state.showOnlineOnly?'#fff':'inherit'};">
-      <span class="cnt" style="color:${state.showOnlineOnly?'#fff':'var(--forest)'}">${onlineCnt}</span>
-      <span style="color:${state.showOnlineOnly?'#fff':'var(--forest)'};">ออนไลน์</span>
+      <span class="cnt" style="color:${state.showOnlineOnly?'#fff':'var(--forest)'}">${liveCnt}</span>
+      <span style="color:${state.showOnlineOnly?'#fff':'var(--forest)'};">ขายจริงบน LIFF</span>
+      ${(state.liveMenuCount!=null&&state.liveMenuCount!==onlineCnt)?('<span style="font-size:11px;color:#9AA894;margin-left:2px" title="ลูกค้าเห็นจริงจากตาราง menu_items · เลขสูตรคือรายการในหน้านี้">· มีสูตรในหน้านี้ '+onlineCnt+'</span>'):''}
       ${state.showOnlineOnly?'<span style="font-size:11px;background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;margin-left:2px;">เฉพาะออนไลน์ ✕</span>':''}
     </button>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
