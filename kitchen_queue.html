@@ -27,19 +27,19 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .stk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--xsoft);}
 .stk-name{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .stk-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
-.stk-btn{width:40px;height:40px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:22px;font-weight:800;cursor:pointer;color:var(--g);line-height:1;}
+.stk-btn{width:44px;height:44px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:22px;font-weight:800;cursor:pointer;color:var(--g);line-height:1;}
 .stk-btn:active{background:var(--g);color:#fff;}
 .stk-btn:disabled{opacity:.3;cursor:default;}
-.stk-num{width:58px;height:40px;text-align:center;border:1.5px solid var(--xsoft);border-radius:10px;font-size:18px;font-weight:800;font-family:monospace;}
-.stk-inf{width:40px;height:40px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:18px;cursor:pointer;color:var(--soft);}
+.stk-num{width:58px;height:44px;text-align:center;border:1.5px solid var(--xsoft);border-radius:10px;font-size:18px;font-weight:800;font-family:monospace;}
+.stk-inf{width:44px;height:44px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:18px;cursor:pointer;color:var(--soft);}
 .stk-inf.on{background:var(--g);color:#fff;border-color:var(--g);}
 
 /* DATE + SLOT BAR */
 .ctrl-bar{background:var(--w);border-bottom:1px solid var(--xsoft);padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
-.chip{flex-shrink:0;padding:5px 13px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;font-weight:500;cursor:pointer;background:var(--w);color:var(--soft);}
+.chip{flex-shrink:0;padding:0 14px;min-height:40px;display:inline-flex;align-items:center;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;font-weight:500;cursor:pointer;background:var(--w);color:var(--soft);}
 .chip.on{background:var(--g);color:#fff;border-color:var(--g);}
 .sep{width:1px;height:20px;background:var(--xsoft);flex-shrink:0;}
-.date-sel{padding:5px 10px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
+.date-sel{padding:0 10px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
 
 /* MAIN */
 .main{padding:12px;max-width:940px;margin:0 auto;}
@@ -69,7 +69,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .mp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
 .mp-chip{font-family:var(--mono);font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FE;padding:2px 6px;border-radius:4px;}
 .mp-chip.empty{font-family:inherit;font-style:italic;font-weight:400;color:var(--xsoft);background:none;padding:0;}
-.btn-mp-done{margin-top:6px;font-size:11px;font-weight:700;color:var(--g);background:var(--gs);border:1px solid var(--g);border-radius:6px;padding:4px 10px;cursor:pointer;}
+.btn-mp-done{margin-top:6px;font-size:12px;font-weight:700;color:var(--g);background:var(--gs);border:1px solid var(--g);border-radius:8px;padding:0 14px;min-height:44px;cursor:pointer;}
 .actual-input{width:44px;border:1.5px solid var(--g);border-radius:6px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g);padding:2px 0;background:var(--gs);}
 
 /* SLOT SECTION */
@@ -102,9 +102,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
 .oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
 .oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
-.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:7px 12px;font-size:12px;cursor:pointer;font-family:var(--sans);}
-.btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 14px;min-height:44px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+.btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .empty-slot{text-align:center;padding:16px;color:var(--xsoft);font-size:12px;}
 
 /* ── 📱 โหมดแท็บเล็ต (แท็บเล็ตติดผนังครัว) ──
