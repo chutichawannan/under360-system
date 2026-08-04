@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&display=swap" rel="stylesheet">
 <style>
   :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
-    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E}
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E;--red:#B91C1C;--redbg:#FEF2F2}
   *{box-sizing:border-box}
   body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai",sans-serif;font-size:15px;line-height:1.45}
   .wrap{max-width:820px;margin:0 auto;padding:16px 14px 50px}
@@ -20,6 +20,10 @@
   .k.lc{background:var(--lcbg);color:var(--lc)}
   .k.hp{background:var(--hpbg);color:var(--hp)}
   .k.hx{background:var(--hxbg);color:var(--hx)}
+  .alert{background:var(--redbg);border:1px solid #FECACA;border-radius:12px;padding:11px 13px;margin-bottom:16px}
+  .alert .t{font-weight:900;color:var(--red);font-size:14px;margin-bottom:6px}
+  .alert ul{margin:0;padding-left:18px}
+  .alert li{font-size:13.5px;font-weight:700;color:#7F1D1D;margin:4px 0}
   .m{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
   .mh{background:#F9FAFB;padding:9px 12px;font-weight:800;font-size:15px;display:flex;justify-content:space-between;gap:8px;align-items:center}
   .mh .tot{font-size:12px;font-weight:800;color:var(--head);background:#E8F5F2;border-radius:999px;padding:3px 10px;white-space:nowrap}
@@ -31,10 +35,9 @@
   .ln .d{flex:1;font-size:13.5px}
   .ln .d b{font-size:14.5px}
   .ln .q{flex:none;font-weight:900;font-size:15px;white-space:nowrap}
-  .ln .q .box{display:inline-block;min-width:34px;border-bottom:2px solid #CBD5E1;text-align:center}
   .veg{color:var(--soft);font-size:12px;margin-top:2px}
+  .flag{display:block;background:var(--redbg);color:var(--red);font-size:12px;font-weight:800;border-radius:6px;padding:4px 7px;margin-top:5px}
   .sec{font-size:13px;font-weight:900;color:var(--head);margin:20px 0 8px}
-  .note{background:#FEF2F2;border:1px solid #FECACA;color:#991B1B;border-radius:10px;padding:9px 12px;font-size:13px;font-weight:700;margin-bottom:14px}
   .foot{color:var(--soft);font-size:12px;margin-top:18px;line-height:1.7;border-top:1px solid var(--line);padding-top:10px}
   @media print{.wrap{max-width:100%} body{font-size:13px}}
 </style>
@@ -43,7 +46,7 @@
 <div class="wrap">
 
 <h1>👨‍🍳 ใบงานครัว — พุธ 5 ส.ค.</h1>
-<div class="sub">เมนูเดียวกัน มี 3 ปริมาณ → ดูป้ายสีก่อนชั่งทุกครั้ง</div>
+<div class="sub">มีลแพลน 56 กล่อง (LC 4 คน · HP 4 คน) + Hyrox 30 กล่อง</div>
 
 <div class="key">
   <span class="k lc">LC = เนื้อ 120g</span>
@@ -51,110 +54,124 @@
   <span class="k hx">HYROX = เนื้อ+คาร์บเยอะสุด</span>
 </div>
 
-<div class="note">⚠️ นวภัท (007) — ไม่ทานเนื้อหมู · แถม Maurten Gel: นวภัท 1 ซอง · พัดชา 1 ซอง</div>
+<div class="alert">
+  <div class="t">🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง</div>
+  <ul>
+    <li>คุณมอส (HP) — ไม่ทานเนื้อวัว → <u>HP73 ชีสเบอร์เกอร์ ใช้ <b>หมู</b> แทนเนื้อ</u> · ไม่ทานขิง · ไม่เอาซอสลุยสวน</li>
+    <li>มีมี่ (LC) — ไม่กินพริกหยวก → <u>LC82 ตัดพริกหยวกออก</u> (ใช้ถั่วฝักยาว/กะเพราแทน)</li>
+    <li>อุษณี (LC) — <u>ข้าวไรซ์เบอร์รี่ทั้ง 7 กล่อง</u></li>
+    <li>พรรณพิไล (HP) — ไม่รับเนื้อหมู · ได้ HP66 + HP67 แทน HP73/HP75 + Bone Broth</li>
+    <li>นวภัท 007 (Hyrox) — ไม่ทานเนื้อหมู → ไม่มีหมูบูลโกกิ</li>
+  </ul>
+</div>
 
 <div class="sec">■ เมนูที่ทำหลายปริมาณ (ระวังสลับ)</div>
 
 <div class="m">
-  <div class="mh"><span>LC78 ข้าวไข่ข้นยำทูน่า</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>ทูน่ากระป๋อง ~90g</b> + ไข่ · ข้าว ปกติ<div class="veg">หอมแดง·ขึ้นฉ่าย·มะเขือเทศ + แตงกวา</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>ทูน่ากระป๋อง ~130g</b> + ไข่ · ข้าว ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>ทูน่ากระป๋อง ~130g</b> + ไข่ · <b>ข้าว ~220g</b></div><span class="q">1 กล่อง</span></div>
-</div>
-
-<div class="m">
-  <div class="mh"><span>LC52 ไก่ซอสแครนเบอร์รี่</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · ข้าว ปกติ<div class="veg">สลัดผัก + แครอท + แตงกวา</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · ข้าว ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>52 ไก่ซอสแครนเบอร์รี่</span><span class="tot">รวม 9 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · ข้าว ปกติ<div class="veg">สลัดผัก + แครอท + แตงกวา</div><span class="flag">อุษณี 1 กล่อง = ข้าวไรซ์เบอร์รี่</span></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · ข้าว ปกติ</div><span class="q">4 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>อกไก่ 170g</b> · <b>ข้าว ~220g</b></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC73 ชีสเบอร์เกอร์โบลเนื้อ</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>เนื้อบด 120g</b> · ข้าว ปกติ<div class="veg">ผักกาดหอม·มะเขือเทศ·หอมใหญ่ + แตงกวาดอง</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>เนื้อบด 170g</b> · ข้าว ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>73 ชีสเบอร์เกอร์โบลเนื้อ</span><span class="tot">รวม 8 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>เนื้อบด 120g</b> · ข้าว ปกติ<div class="veg">ผักกาดหอม·มะเขือเทศ·หอมใหญ่ + แตงกวาดอง</div><span class="flag">อุษณี 1 กล่อง = ข้าวไรซ์เบอร์รี่</span></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>เนื้อบด 170g</b> · ข้าว ปกติ<span class="flag">คุณมอส 1 กล่อง = ใช้ <b>หมูบด</b> แทนเนื้อวัว</span></div><span class="q">3 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>เนื้อบด 180g</b> · <b>ข้าว ~220g</b></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC75 พาสต้าซอสผักโขม อกไก่พาเมซาน</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · พาสต้า ปกติ<div class="veg">ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · พาสต้า ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>74 อกไก่ย่างซอสมิโสะ</span><span class="tot">รวม 8 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · ข้าว ปกติ<div class="veg">บรอกโคลี + หน่อไม้ฝรั่ง + เห็ด</div><span class="flag">อุษณี 1 กล่อง = ข้าวไรซ์เบอร์รี่</span></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · ข้าว ปกติ</div><span class="q">4 กล่อง</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><span>75 พาสต้าซอสผักโขม อกไก่พาเมซาน</span><span class="tot">รวม 8 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · พาสต้า ปกติ<div class="veg">ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่</div></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · พาสต้า ปกติ</div><span class="q">3 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>อกไก่ 170g</b> · <b>พาสต้า ~200g</b></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC76 แซลมอนซอสทาท่า มันบด</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>แซลมอน 120g</b> · มันบด ปกติ<div class="veg">หน่อไม้ฝรั่ง + ถั่วแขก + มะเขือเทศ</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>แซลมอน 170g</b> · มันบด ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>76 แซลมอนซอสทาท่า มันบด</span><span class="tot">รวม 9 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>แซลมอน 120g</b> · มันบด ปกติ<div class="veg">หน่อไม้ฝรั่ง + ถั่วแขก + มะเขือเทศ</div></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>แซลมอน 170g</b> · มันบด ปกติ</div><span class="q">4 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>แซลมอน 160g</b> · <b>มันบด ~300g</b></div><span class="q">1 กล่อง</span></div>
 </div>
 
-<div class="sec">■ ทำเฉพาะ LC / HP (ไม่มี Hyrox)</div>
-
 <div class="m">
-  <div class="mh"><span>LC74 อกไก่ย่างซอสมิโสะ</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>อกไก่ 120g</b> · ข้าว ปกติ<div class="veg">บรอกโคลี + หน่อไม้ฝรั่ง + เห็ด</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>อกไก่ 170g</b> · ข้าว ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>78 ข้าวไข่ข้นยำทูน่า</span><span class="tot">รวม 9 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>ทูน่ากระป๋อง ~90g</b> + ไข่ · ข้าว ปกติ<div class="veg">หอมแดง·ขึ้นฉ่าย·มะเขือเทศ + แตงกวา</div><span class="flag">อุษณี 1 กล่อง = ข้าวไรซ์เบอร์รี่</span></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>ทูน่ากระป๋อง ~130g</b> + ไข่ · ข้าว ปกติ</div><span class="q">4 กล่อง</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>ทูน่ากระป๋อง ~130g</b> + ไข่ · <b>ข้าว ~220g</b></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC82 กุ้งผัดพริกขี้หนู ไข่ข้น</span><span class="tot">รวม <span class="box">__</span> กล่อง</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>กุ้ง 120g</b> + ไข่ · ข้าว ปกติ<div class="veg">ถั่วฝักยาว + พริกหยวก + ใบกะเพรา</div></div><span class="q"><span class="box"></span> กล่อง</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>กุ้ง 170g</b> + ไข่ · ข้าว ปกติ</div><span class="q"><span class="box"></span> กล่อง</span></div>
+  <div class="mh"><span>82 กุ้งผัดพริกขี้หนู ไข่ข้น</span><span class="tot">รวม 8 กล่อง</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b>กุ้ง 120g</b> + ไข่ · ข้าว ปกติ<div class="veg">ถั่วฝักยาว + พริกหยวก + ใบกะเพรา</div><span class="flag">มีมี่ 1 กล่อง = ตัดพริกหยวก · อุษณี 1 กล่อง = ข้าวไรซ์เบอร์รี่</span></div><span class="q">4 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b>กุ้ง 170g</b> + ไข่ · ข้าว ปกติ</div><span class="q">4 กล่อง</span></div>
 </div>
 
-<div class="sec">■ ทำเฉพาะ HYROX</div>
+<div class="sec">■ พิเศษเฉพาะ พรรณพิไล (HP · ไม่รับหมู)</div>
+<div class="m">
+  <div class="mh"><span>HP66 เส้นหมี่น้ำเงี้ยวอกไก่ · HP67 กระพงอบซอสเต้าเจี้ยว</span><span class="tot">อย่างละ 1</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d">แทน HP73 + HP75 ที่เธอไม่ได้รับ</div><span class="q">2 กล่อง</span></div>
+  <div class="ln hp"><span class="tag">เสริม</span><div class="d"><b>Bone Broth</b> — หมู 6 + ไก่ 6</div><span class="q">12 ถุง</span></div>
+</div>
+
+<div class="sec">■ HYROX เท่านั้น</div>
 
 <div class="m">
-  <div class="mh"><span>อกไก่ย่างตะไคร้ + น้ำพริกย่าง</span><span class="tot">รวม 4 กล่อง</span></div>
+  <div class="mh"><span>อกไก่ย่างตะไคร้ + น้ำพริกย่าง</span><span class="tot">4 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>อกไก่ 170g</b> · ข้าว ~220g<div class="veg">แตงกวา + ถั่วฝักยาว + กะหล่ำ</div></div><span class="q">4 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>หมูบูลโกกิ</span><span class="tot">รวม 3 กล่อง</span></div>
-  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>สันในหมู 180g</b> · ข้าว ~220g<div class="veg">ถั่วงอก + แครอท + ผักกาดหอม</div></div><span class="q">3 กล่อง</span></div>
+  <div class="mh"><span>หมูบูลโกกิ</span><span class="tot">3 กล่อง</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>สันในหมู 180g</b> · ข้าว ~220g<div class="veg">ถั่วงอก + แครอท + ผักกาดหอม</div><span class="flag">นวภัท ไม่ได้รับเมนูนี้ (ไม่ทานหมู)</span></div><span class="q">3 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>บิบิมบับ (เนื้อวัว)</span><span class="tot">รวม 3 กล่อง</span></div>
+  <div class="mh"><span>บิบิมบับ (เนื้อวัว)</span><span class="tot">3 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>เนื้อวัว 180g</b> · ข้าว ~220g + ไข่<div class="veg">ถั่วงอก·แครอท·ผักโขม·เห็ด</div></div><span class="q">3 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>อกไก่บอล ซอสมะเขือเทศ</span><span class="tot">รวม 3 กล่อง</span></div>
+  <div class="mh"><span>อกไก่บอล ซอสมะเขือเทศ</span><span class="tot">3 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>อกไก่บด 170g</b> · เพนเน่ ~200g<div class="veg">บรอกโคลี + มะเขือเทศเชอร์รี่ + ซูกินี</div></div><span class="q">3 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>การ์ลิคบัตเตอร์กุ้ง</span><span class="tot">รวม 4 กล่อง</span></div>
+  <div class="mh"><span>การ์ลิคบัตเตอร์กุ้ง</span><span class="tot">4 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>กุ้ง 160g</b> · ควินัว ~285g<div class="veg">หน่อไม้ฝรั่ง + บรอกโคลี</div></div><span class="q">4 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>กระพงย่างเขียวหวาน</span><span class="tot">รวม 4 กล่อง</span></div>
+  <div class="mh"><span>กระพงย่างเขียวหวาน</span><span class="tot">4 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>กระพง 185g</b> · ข้าว ~220g<div class="veg">มะเขือ + ถั่วฝักยาว + ใบโหระพา</div></div><span class="q">4 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>กระพงย่าง ซอสสามรส <span style="color:var(--hx);font-size:12px">(สำรอง)</span></span><span class="tot">รวม 2 กล่อง</span></div>
+  <div class="mh"><span>กระพงย่าง ซอสสามรส <span style="color:var(--hx);font-size:12px">(สำรอง)</span></span><span class="tot">2 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>กระพง 185g</b> · ข้าว ~240g<div class="veg">ยำผักสด (แตงกวา·หอมแดง·ผักกาดหอม)</div></div><span class="q">2 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC33 กะเพราเนื้อ</span><span class="tot">รวม 1 กล่อง</span></div>
+  <div class="mh"><span>33 กะเพราเนื้อ</span><span class="tot">1 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>เนื้อวัว 180g</b> · ข้าว ~220g<div class="veg">สลัดเห็ดออรินจิ + ถั่วฝักยาว</div></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><span>LC12 Mexican beef bowl</span><span class="tot">รวม 1 กล่อง</span></div>
+  <div class="mh"><span>12 Mexican beef bowl</span><span class="tot">1 กล่อง</span></div>
   <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b>เนื้อวัว 180g</b> · มันหวาน ~200g + ข้าวโพด<div class="veg">ซัลซ่า + อโวคาโด + ถั่วแดง</div></div><span class="q">1 กล่อง</span></div>
 </div>
 
 <div class="foot">
-  <b>Hyrox 5 ส.ค. = 30 กล่อง</b> — คุณเฉียง 12 (curated) · นวภัท 6 (ไม่ทานหมู) · พัดชา 6 · คุณชัย 6<br>
-  ช่องว่าง <span style="border-bottom:2px solid #CBD5E1">&nbsp;&nbsp;&nbsp;</span> = กรอกจำนวน LC / HP เอง (ตามยอดมีลแพลนวันนั้น)<br>
-  ผักเคียงใช้ชุดเดียวกันทั้ง LC / HP / Hyrox (เขียนไว้บรรทัด LC)
+  <b>มีลแพลน 5 ส.ค. = 8 ออเดอร์ · 56 กล่อง</b> — LC: มีมี่ · ธนัทพร · สุทธิภา · อุษณี | HP: มอส · โมจิ · Bright · พรรณพิไล<br>
+  <b>Hyrox 5 ส.ค. = 30 กล่อง</b> — คุณเฉียง 12 (ใบแยก) · นวภัท 6 (ไม่ทานหมู) · พัดชา 6 · คุณชัย 6<br>
+  แถม Maurten Gel: นวภัท 1 ซอง · พัดชา 1 ซอง
 </div>
 
 </div>
