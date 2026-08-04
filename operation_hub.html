@@ -1740,11 +1740,40 @@ async function loadMessenger(){
     }
     data.forEach(function(o){
       var all=itemsByOrder[o.id]||[];
-      o._food=all.filter(function(i){return !CTRL[i.menu_code];});                  // ของจริงที่ต้องขน
+      // ของจริงที่ต้องขน = ตัด control SKU + ตัดบรรทัด "ขยะ" (ไม่มีชื่อเมนู)
+      // ⚠️ เดิมเช็คแค่ "มี items ไหม" → บรรทัด menu_code="1" ชื่อ "แยกวันส่ง" ผ่านฉลุย = แมสนึกว่ามีของ
+      o._food=all.filter(function(i){
+        if(CTRL[i.menu_code]) return false;
+        if(!i.menu_name||!String(i.menu_name).trim()) return false;
+        return true;
+      });
       o._flags=all.filter(function(i){return CTRL[i.menu_code];}).map(function(i){return CTRL[i.menu_code];});
-      o._noFood=o._food.length===0;                                                 // ⚠️ ไม่รู้ว่าต้องส่งอะไร
+      o._junk=all.length>0&&o._food.length===0;    // มีบรรทัด แต่ใช้ไม่ได้เลย
+      o._noFood=o._food.length===0;                // ⚠️ ไม่รู้ว่าต้องส่งอะไร
     });
     _msgOrders=data;   // ให้ saveCourier อัปเดต state ได้
+    // ── fallback: Meal Plan ที่ order_items ใช้ไม่ได้ → ดึงเมนูจาก mp_deliveries ── (_mpFallbackDone)
+    // ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น
+    //    ห้ามจับคู่ด้วย "ชื่อ+วันที่" — เคยทำให้ข้อมูลเทสชื่อซ้ำลูกค้าจริงโผล่มาแสดง (5 ส.ค. 2026)
+    if(data.some(function(o){return o._noFood;})){
+      try{
+        var mpr=await sb_.from("mp_deliveries")
+          .select("order_id,line_uid,customer_id,menu_items,mp_type,status")
+          .eq("delivery_date",date).neq("status","cancelled");
+        var mprows=mpr.data||[];
+        data.forEach(function(o){
+          if(!o._noFood)return;
+          var m=null;
+          if(o.id)              m=mprows.find(function(x){return x.order_id&&x.order_id===o.id;});
+          if(!m&&o.line_uid)    m=mprows.find(function(x){return x.line_uid&&x.line_uid===o.line_uid;});
+          if(!m&&o.customer_id) m=mprows.find(function(x){return x.customer_id&&x.customer_id===o.customer_id;});
+          if(m&&Array.isArray(m.menu_items)&&m.menu_items.length){
+            o._food=m.menu_items.map(function(x){return {menu_code:x.code||"",menu_name:x.name||"",quantity:1};});
+            o._noFood=false; o._fromMp=String(m.mp_type||"MP").toUpperCase();
+          }
+        });
+      }catch(e){ console.warn("mp fallback:",e); }
+    }
     var noFoodN=data.filter(function(o){return o._noFood;}).length;
     // สรุปต่อช่วงเวลา
     var slots={}; data.forEach(function(o){var s=o.time_slot_label||o.time_slot||"ไม่ระบุ";slots[s]=(slots[s]||0)+1;});
@@ -1778,12 +1807,15 @@ async function loadMessenger(){
         if(o._food.length){
           var boxN=o._food.reduce(function(a,i){return a+(i.quantity||1);},0);
           h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:6px 8px;font-size:12px'>"
-            +"<b style='color:#1F4D3A'>📦 ของ "+boxN+" ชิ้น</b><div style='color:#374151;margin-top:2px'>"
+            +"<b style='color:#1F4D3A'>📦 ของ "+boxN+" ชิ้น</b>"
+            +(o._fromMp?" <span style='font-size:10px;background:#EDE9FE;color:#5B21B6;border-radius:6px;padding:1px 6px'>เมนูจากแพลน "+esc2(o._fromMp)+"</span>":"")
+            +"<div style='color:#374151;margin-top:2px'>"
             +o._food.map(function(i){return "<span style='display:inline-block;margin:1px 6px 1px 0'><b style='font-family:var(--mono);font-size:11px'>"+esc2(i.menu_code||"")+"</b>×"+(i.quantity||1)+"</span>";}).join("")
             +"</div></div>";
         }else{
           h+="<div style='margin-top:5px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:6px 8px;font-size:12px;color:#B91C1C;font-weight:700'>"
-            +"⚠️ ไม่มีรายการของในระบบ — เช็คกับแอดมินก่อนจัดของ</div>";
+            +(o._junk?"⚠️ มีบรรทัดสินค้าแต่ใช้ไม่ได้ (บรรทัดควบคุม/ไม่มีชื่อเมนู) — ห้ามเดา เช็คกับแอดมิน"
+                     :"⚠️ ไม่มีรายการของในระบบ — เช็คกับแอดมินก่อนจัดของ")+"</div>";
         }
         if(o._flags.length) h+="<div style='margin-top:3px;font-size:11px;color:#6B7280'>"+o._flags.map(esc2).join(" · ")+"</div>";
         h+="<div style='font-family:var(--mono);font-size:13px;font-weight:600;color:#1F4D3A;margin-top:2px'>"+fmtB(o.total)+(o.total?"":" <span style='font-size:10px;color:#6B7280;font-weight:400'>(จ่ายในใบหลักแล้ว)</span>")+"</div></div>";
