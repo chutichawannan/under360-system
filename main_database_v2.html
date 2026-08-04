@@ -37,6 +37,22 @@
 body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',sans-serif;-webkit-font-smoothing:antialiased;}
 .mono{font-family:'IBM Plex Mono',monospace;}
 header.top{position:sticky;top:0;z-index:20;background:var(--forest);color:#fff;padding:14px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+/* 🔔 กระดิ่งแจ้งเตือน — "ที่ให้เปิดดูง่าย" ไม่ใช่ noti เด้งใส่ (นัทย้ำ) */
+.nbell{position:relative;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:20px;
+  min-height:34px;padding:0 13px;font-size:15px;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:5px;}
+.nbell:hover{background:rgba(255,255,255,.24);}
+.nbell-dot{background:#DC2626;color:#fff;font-size:11px;font-weight:800;border-radius:10px;padding:1px 6px;min-width:18px;text-align:center;}
+.npanel{position:absolute;right:0;top:44px;width:min(420px,92vw);max-height:70vh;overflow:auto;background:#fff;color:#1A1A1A;
+  border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.28);z-index:500;display:none;text-align:left;}
+.npanel.on{display:block;}
+.nhead{padding:12px 15px;font-size:14px;font-weight:800;color:#1F4D3A;border-bottom:1px solid #E5E7EB;display:flex;justify-content:space-between;align-items:center;}
+.nitem{padding:11px 15px;border-bottom:1px solid #F1F1F1;font-size:13px;line-height:1.5;}
+.nitem:last-child{border-bottom:none;}
+.nitem-t{font-weight:700;display:flex;justify-content:space-between;gap:8px;align-items:center;}
+.nitem-c{background:#FEE2E2;color:#B91C1C;border-radius:9px;padding:1px 8px;font-size:12px;font-weight:800;white-space:nowrap;}
+.nitem-c.ok{background:#D1FAE5;color:#065F46;}
+.nitem-s{color:#6B7280;font-size:12px;margin-top:3px;}
+.nname{display:inline-block;background:#F3F4F6;border-radius:7px;padding:2px 7px;margin:2px 4px 0 0;font-size:12px;}
 header.top h1{font-size:17px;font-weight:600;margin:0;letter-spacing:.2px;}
 header.top .sub{font-size:12px;opacity:.75;margin-top:2px;}
 .tabs{display:flex;gap:6px;background:#fff;border-bottom:1px solid var(--line);padding:0 16px;position:sticky;top:56px;z-index:19;overflow-x:auto;}
@@ -561,6 +577,13 @@ function getSB(){ if(!_sb) _sb = supabase.createClient(SB_URL, SB_KEY); return _
     <div class="sub">เมนู · วัตถุดิบ · ต้นทุน · แคลอรี่ · สต็อก — ข้อมูลเดียวกันทั้งร้าน</div>
   </div>
   <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+    <div style="position:relative">
+      <button class="nbell" id="notifBell" onclick="toggleNotifs()" title="สิ่งที่ต้องตาม — กดดูได้ ไม่มีเด้งกวน">🔔<span class="nbell-dot" id="notifCount" style="display:none">0</span></button>
+      <div class="npanel" id="notifPanel">
+        <div class="nhead"><span>🔔 สิ่งที่ต้องตาม</span><button onclick="loadNotifs(true)" style="background:none;border:none;color:#1F4D3A;font-size:12px;cursor:pointer;font-family:inherit">🔄 รีเฟรช</button></div>
+        <div id="notifBody"><div style="padding:18px;text-align:center;color:#6B7280;font-size:13px">กำลังตรวจ...</div></div>
+      </div>
+    </div>
     <a href="operation_hub.html" style="color:#fff;opacity:.75;font-size:12px;text-decoration:none;border:1px solid rgba(255,255,255,.3);border-radius:20px;padding:5px 12px;white-space:nowrap;" title="ไปหน้า Operation Hub">← OH</a>
     <div id="whoami" class="whoami"></div>
   </div>
@@ -577,6 +600,99 @@ function getSB(){ if(!_sb) _sb = supabase.createClient(SB_URL, SB_KEY); return _
 <button class="fab" id="fabNew">+ เมนูใหม่</button>
 
 <script>
+// ══════════════════════════════════════════════════════════
+// 🔔 แจ้งเตือนในระบบ (derived — คำนวณสดตอนเปิดหน้า ไม่มีตาราง/cron)
+// นัทย้ำ: "ไม่ชอบให้เด้ง ชอบที่ให้เปิดดูง่าย" → ไม่มี push/popup ใดๆ กดกระดิ่งถึงเห็น
+// ══════════════════════════════════════════════════════════
+var _notifLoaded=false;
+function bkkToday(){ try{ return new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Bangkok"})); }catch(e){ return new Date(); } }
+function ymd(d){ return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0"); }
+function toggleNotifs(){
+  var pn=document.getElementById("notifPanel"); if(!pn)return;
+  pn.classList.toggle("on");
+  if(pn.classList.contains("on")&&!_notifLoaded) loadNotifs();
+}
+document.addEventListener("click",function(e){
+  var pn=document.getElementById("notifPanel"), b=document.getElementById("notifBell");
+  if(pn&&pn.classList.contains("on")&&!pn.contains(e.target)&&b&&!b.contains(e.target)) pn.classList.remove("on");
+});
+async function loadNotifs(force){
+  var body=document.getElementById("notifBody"); if(!body)return;
+  if(force) body.innerHTML="<div style='padding:18px;text-align:center;color:#6B7280;font-size:13px'>กำลังตรวจ...</div>";
+  var sb=(typeof getSB==="function")?getSB():null;
+  if(!sb){ body.innerHTML="<div class='nitem'>เชื่อมฐานข้อมูลไม่ได้</div>"; return; }
+  var today=bkkToday(), items=[], total=0;
+  var esc=function(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); };
+  // ── ① ไปทวงลูกค้า (นัทระบุเป็นตัวแรก) ──
+  //  แยก 2 กลุ่ม: "ถึงรอบตาม" 25-40 วัน = งานวันนี้ ปิดง่ายสุด (นับขึ้นกระดิ่ง)
+  //               "หายนาน" >40 วัน = งาน win-back ยิง broadcast (ไม่นับ ไม่งั้นตัวเลขบวมจนไม่มีความหมาย)
+  //  เรียงตาม "เคยซื้อเท่าไหร่" → ตามลูกค้าตัวใหญ่ก่อน ได้เงินคืนเร็วสุด
+  try{
+    var d90=new Date(today); d90.setDate(d90.getDate()-90);
+    var r=await sb.from("orders").select("customer_id,customer_name,customer_phone,delivery_date,total,source")
+      .gte("delivery_date",ymd(d90)).lte("delivery_date",ymd(today))
+      .neq("status","cancelled").order("delivery_date",{ascending:false}).limit(2000);
+    var rows=(r.data||[]).filter(function(o){ return o.source!=="parallel_test"; });
+    var last={};
+    rows.forEach(function(o){
+      var k=o.customer_id||o.customer_phone||o.customer_name; if(!k)return;
+      if(!last[k]) last[k]={d:o.delivery_date,n:o.customer_name,spent:0,cnt:0};
+      last[k].spent+=(o.total||0); last[k].cnt++;
+    });
+    var arr=Object.keys(last).map(function(k){
+      var v=last[k];
+      return {n:v.n,spent:v.spent,cnt:v.cnt,days:Math.round((today-new Date(v.d+"T00:00:00"))/86400000)};
+    });
+    var hot=arr.filter(function(x){return x.days>=25&&x.days<=40;}).sort(function(a,b){return b.spent-a.spent;});
+    var cold=arr.filter(function(x){return x.days>40;});
+    if(hot.length){
+      total+=hot.length;
+      items.push("<div class='nitem'><div class='nitem-t'><span>📞 ไปทวงลูกค้า — ถึงรอบตาม</span><span class='nitem-c'>"+hot.length+" คน</span></div>"
+        +"<div class='nitem-s'>สั่งล่าสุด 25-40 วัน = ครบรอบพอดี ปิดง่ายสุด (เรียงจากลูกค้าตัวใหญ่)</div><div style='margin-top:5px'>"
+        +hot.slice(0,10).map(function(x){
+            return "<span class='nname'>"+esc(x.n||"ไม่ระบุชื่อ")+" <b>"+x.days+"ว.</b> · ฿"+Math.round(x.spent).toLocaleString()+"</span>";
+          }).join("")
+        +(hot.length>10?"<span class='nname'>+อีก "+(hot.length-10)+" คน</span>":"")+"</div></div>");
+    }
+    if(cold.length){
+      items.push("<div class='nitem'><div class='nitem-t'><span>❄️ หายไปนาน (&gt;40 วัน)</span><span class='nitem-c ok'>"+cold.length+" คน</span></div>"
+        +"<div class='nitem-s'>ไม่ใช่งานรายวัน — เก็บไว้ยิง broadcast win-back ทีเดียว (ไม่นับในกระดิ่ง)</div></div>");
+    }
+  }catch(e){ console.warn("notif ทวงลูกค้า:",e); }
+  // ── ② เงินยังไม่เข้า
+  try{
+    var d2=new Date(today); d2.setDate(d2.getDate()-2);
+    var un=await sb.from("orders").select("id",{count:"exact",head:true})
+      .eq("payment_status","unpaid").neq("status","cancelled").lt("created_at",ymd(d2));
+    if((un.count||0)>0){ total+=un.count;
+      items.push("<div class='nitem'><div class='nitem-t'><span>💰 ค้างโอนเกิน 2 วัน</span><span class='nitem-c'>"+un.count+" ใบ</span></div><div class='nitem-s'>ตามเก็บเงิน หรือยกเลิกถ้าลูกค้าเงียบ</div></div>"); }
+    var pr=await sb.from("orders").select("id",{count:"exact",head:true}).eq("payment_status","pending_review");
+    if((pr.count||0)>0){ total+=pr.count;
+      items.push("<div class='nitem'><div class='nitem-t'><span>🧾 รอตรวจสลิป</span><span class='nitem-c'>"+pr.count+" ใบ</span></div><div class='nitem-s'>ลูกค้าอัพสลิปแล้ว รอแอดมินเปิดดูแล้วกดยืนยัน (ที่ OH)</div></div>"); }
+  }catch(e){ console.warn("notif เงิน:",e); }
+  // ── ③ ของใกล้หมด / เมนูไม่มีรูป
+  try{
+    var lo=await sb.from("menu_items").select("code,name,stock_total").eq("is_available",true).gte("stock_total",0).lte("stock_total",3).limit(50);
+    var low=lo.data||[];
+    if(low.length){ total+=low.length;
+      items.push("<div class='nitem'><div class='nitem-t'><span>📦 ของใกล้หมด</span><span class='nitem-c'>"+low.length+" เมนู</span></div><div style='margin-top:5px'>"
+        +low.slice(0,10).map(function(m){return "<span class='nname'>"+esc(m.code)+" <b>"+(m.stock_total)+"</b></span>";}).join("")+"</div></div>"); }
+    var ni=await sb.from("menu_items").select("code,name").eq("is_available",true).eq("image_urls","{}").limit(30);
+    var noimg=ni.data||[];
+    if(noimg.length){ total+=noimg.length;
+      items.push("<div class='nitem'><div class='nitem-t'><span>🖼️ เมนูขายอยู่แต่ไม่มีรูป</span><span class='nitem-c'>"+noimg.length+"</span></div><div style='margin-top:5px'>"
+        +noimg.slice(0,10).map(function(m){return "<span class='nname'>"+esc(m.code)+"</span>";}).join("")+"</div></div>"); }
+  }catch(e){ console.warn("notif ของ:",e); }
+
+  _notifLoaded=true;
+  body.innerHTML = items.length ? items.join("")
+    : "<div class='nitem'><div class='nitem-t'><span>✅ ไม่มีอะไรต้องตาม</span><span class='nitem-c ok'>เคลียร์</span></div><div class='nitem-s'>เงินเข้าครบ · ของไม่ขาด · ลูกค้าไม่มีใครค้างตาม</div></div>";
+  var dot=document.getElementById("notifCount");
+  if(dot){ if(total>0){ dot.style.display=""; dot.textContent=total>99?"99+":total; } else dot.style.display="none"; }
+}
+// เช็คเงียบๆ ตอนเปิดหน้า เพื่อโชว์ตัวเลขบนกระดิ่ง (ไม่เด้งอะไรทั้งนั้น)
+setTimeout(function(){ try{ loadNotifs(); }catch(e){} }, 2500);
+
 const DEFAULT_CATEGORIES = [
   {key:'uncategorized', label:'ยังไม่มีหมวด', color:'#9CA3AF'},
   {key:'vegan', label:'อาหารเจ', color:'#22C55E'},
