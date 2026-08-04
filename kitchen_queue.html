@@ -107,6 +107,60 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:7px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .empty-slot{text-align:center;padding:16px;color:var(--xsoft);font-size:12px;}
 
+/* ── 📱 โหมดแท็บเล็ต (แท็บเล็ตติดผนังครัว) ──
+   ออกแบบสำหรับ: อ่านห่าง 50-80 ซม. · แตะด้วยมือเปียก/ใส่ถุงมือ · ยืนดูทั้งวัน
+   หลัก: ตัวใหญ่ขึ้น ~40% · ปุ่มขั้นต่ำ 56px · คอนทราสต์สูง · หัวติดบนเสมอ · จอไม่ดับ */
+body.tablet{font-size:17px;}
+body.tablet .hdr{padding:14px 18px;}
+body.tablet .hdr-title{font-size:22px;}
+body.tablet .hdr-btn{font-size:15px;padding:11px 16px;border-radius:10px;}
+body.tablet .tab-bar{position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+body.tablet .tab-btn{font-size:19px;padding:18px 10px;}
+body.tablet .ctrl-bar{padding:12px 16px;gap:9px;position:sticky;top:56px;z-index:89;}
+body.tablet .chip{font-size:16px;padding:0 22px;border-radius:26px;min-height:52px;display:inline-flex;align-items:center;}
+body.tablet .date-sel{font-size:16px;padding:0 14px;border-radius:26px;min-height:52px;}
+body.tablet .main{max-width:100%;padding:16px 20px;}
+/* ตารางรายสินค้า — เลขต้องอ่านออกจากระยะไกล */
+body.tablet .pt-head{padding:11px 16px;}
+body.tablet .pt-head span{font-size:13px;}
+body.tablet .pt-row{padding:15px 16px;grid-template-columns:1fr 78px 78px 92px;}
+body.tablet .pt-row>div:first-child{font-size:18px;}
+body.tablet .pt-n{font-size:23px;}
+body.tablet .code-tag{font-size:14px;padding:4px 9px;}
+/* การ์ดออเดอร์ */
+body.tablet .oc{padding:16px 18px;border-radius:14px;border-width:2px;margin-bottom:10px;}
+body.tablet .oc-name{font-size:19px;}
+body.tablet .oc-meta,body.tablet .oc-order-num{font-size:15px;}
+body.tablet .oc-badge{font-size:13px;padding:4px 10px;}
+body.tablet .item-chip{font-size:17px;padding:8px 13px;border-radius:9px;}
+body.tablet .item-chip .ic-code{font-size:15px;}
+body.tablet .item-chip .ic-qty{font-size:19px;}
+body.tablet .oc-note{font-size:16px;padding:7px 11px;}
+body.tablet .oc-utensil{font-size:16px;padding:7px 12px;}
+/* ปุ่มกดสถานะ — เป้าใหญ่ กันกดพลาดตอนมือเปียก */
+body.tablet .btn-pack,body.tablet .btn-done,body.tablet .btn-undo,body.tablet .btn-mp-done{
+  font-size:17px;padding:15px 26px;border-radius:12px;min-height:56px;}
+body.tablet .oc-actions{gap:10px;margin-top:12px;}
+/* แท็บตั้งสต็อค */
+body.tablet .stk-row{padding:12px 14px;}
+body.tablet .stk-name{font-size:18px;}
+body.tablet .stk-btn{width:58px;height:58px;font-size:30px;}
+body.tablet .stk-num{width:82px;height:58px;font-size:24px;}
+body.tablet .stk-inf{width:58px;height:58px;font-size:24px;}
+body.tablet .slot-hdr{padding:12px 16px;}
+body.tablet .slot-hdr-label{font-size:19px;}
+body.tablet .slot-hdr-count{font-size:16px;padding:4px 12px;}
+body.tablet .mp-name{font-size:18px;}
+body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
+/* จอกว้าง = วางการ์ด 2 คอลัมน์ ใช้พื้นที่แนวนอนให้คุ้ม */
+@media (min-width:1000px){
+  body.tablet .slot-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
+  body.tablet .slot-body .oc{margin-bottom:0;}
+}
+@media (min-width:1400px){
+  body.tablet .slot-body{grid-template-columns:1fr 1fr 1fr;}
+}
+
 /* PRINT MODAL */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;}
 .modal{background:var(--w);border-radius:16px;padding:20px;width:320px;max-width:90vw;}
@@ -136,6 +190,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
   <!-- ชื่อผู้ใช้ — ผูกกับปุ่มกดสถานะ (จัดกล่องเสร็จ/ส่งแล้ว) เพื่อเก็บ log ว่าใครกด กันมือลั่นแล้วหาไม่เจอ -->
   <button class="hdr-btn no-print" id="whoamiBtn" onclick="promptNickname()">👋 ตั้งชื่อ</button>
   <!-- print -->
+  <button class="hdr-btn no-print" id="tabletBtn" onclick="toggleTablet()" title="ขยายตัวอักษร/ปุ่มให้กดง่ายบนแท็บเล็ตครัว">📱 แท็บเล็ต</button>
   <button class="hdr-btn no-print" onclick="openPrint()">🖨️ พิมพ์</button>
   <button class="hdr-btn no-print" onclick="loadAll()">🔄</button>
   <a href="main_database_v2.html" target="_blank" class="hdr-btn no-print">📖 สูตร</a>
@@ -297,6 +352,32 @@ function getCodeDisplay(code,name){
   if(codeMode==="subcode")return (code||"").replace(/^[A-Za-z]+/,"") || code;
   return code||"—";
 }
+
+// ── 📱 โหมดแท็บเล็ต (ครัวติดผนัง) ──────────────────────────
+// เปิดครั้งเดียวจำไว้ในเครื่องนั้น · เครื่องอื่น (มือถือแอดมิน) ไม่กระทบ
+var _wakeLock=null;
+async function kqKeepAwake(){
+  try{ if("wakeLock" in navigator && !_wakeLock){ _wakeLock=await navigator.wakeLock.request("screen"); _wakeLock.addEventListener("release",function(){_wakeLock=null;}); } }catch(e){}
+}
+function kqReleaseAwake(){ try{ if(_wakeLock){_wakeLock.release();_wakeLock=null;} }catch(e){} }
+function applyTabletMode(on,save){
+  document.body.classList.toggle("tablet",!!on);
+  var b=document.getElementById("tabletBtn");
+  if(b){ b.textContent=on?"📱 แท็บเล็ต: เปิด":"📱 แท็บเล็ต"; b.style.background=on?"rgba(255,255,255,.38)":""; }
+  if(save) localStorage.setItem("kq_tablet",on?"1":"0");
+  if(on) kqKeepAwake(); else kqReleaseAwake();
+}
+function toggleTablet(){ applyTabletMode(!document.body.classList.contains("tablet"),true); }
+// จอดับแล้วกลับมา → ขอ wake lock ใหม่ (browser ปล่อยเองตอน tab ไม่ active)
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&document.body.classList.contains("tablet")) kqKeepAwake();
+});
+(function initTablet(){
+  var saved=null; try{ saved=localStorage.getItem("kq_tablet"); }catch(e){}
+  // ยังไม่เคยตั้ง + เป็นจอสัมผัสขนาดแท็บเล็ตขึ้นไป → เปิดให้เลย (กดปิดได้ 1 ปุ่ม)
+  var looksTablet = (typeof screen!=="undefined") && Math.min(screen.width,screen.height)>=700 && ("ontouchstart" in window);
+  applyTabletMode(saved==="1"||(saved===null&&looksTablet),false);
+})();
 
 // ── LOAD ─────────────────────────────────────────────────
 var kitchenUtensilSize="normal";
