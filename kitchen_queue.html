@@ -580,10 +580,27 @@ function schedSave(inp){
     var mm=allMenus.find(function(x){return x.id===menuId;})||{};
     var patch={actual_stock:val};
     if(mm.stock_total!=null) patch.stock_total=val;
+    // ⚠️ เมนูที่ตั้ง "ไม่จำกัด" (stock_total=null) → กรอกเลขนี้ไปก็ "ไม่คุมการขาย"
+    //    เดิมเงียบสนิท ครัวนึกว่าจำกัดแล้วแต่ลูกค้ายังสั่งได้ไม่อั้น → ต้องบอกให้รู้ (ไม่เปลี่ยนพฤติกรรมการขายเอง)
+    else kqUnlimitedHint(inp, mm);
     var _w3=await sb_.from("menu_items").update(patch).eq("id",menuId);
     if(_w3.error) kqWriteFail(_w3.error,"ผลิตได้จริง/สต็อคขาย");
     else if(patch.stock_total!=null) logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")");
   },600);
+}
+
+// เตือนเมื่อกรอก "ผลิตได้จริง" ให้เมนูที่ตั้งไว้ว่า "ขายไม่จำกัด" — เลขนี้จะไม่คุมการขาย
+function kqUnlimitedHint(inp, mm){
+  try{
+    var row=inp.closest(".pt-row"); if(!row)return;
+    if(row.querySelector(".kq-unl-hint"))return;
+    var d=document.createElement("div");
+    d.className="kq-unl-hint";
+    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:8px;padding:5px 8px;font-size:11px;color:#9A3412;font-weight:600;line-height:1.4";
+    d.textContent="เมนูนี้ตั้งไว้ \u0e02\u0e32\u0e22\u0e44\u0e21\u0e48\u0e08\u0e33\u0e01\u0e31\u0e14 (\u221e) — เลขนี้บันทึกไว้ดูเฉยๆ ไม่ได้จำกัดยอดขาย ถ้าต้องการจำกัด ให้ตั้งเลขที่แท็บ \"ตั้งสต็อค\" ก่อน";
+    row.appendChild(d);
+    setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 8000);
+  }catch(e){}
 }
 
 // ── TAB 3: ตั้งสต็อค (canonical = stock_total · ทุกหน้ารวม LIFF อ่านตัวนี้) ──
