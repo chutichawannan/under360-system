@@ -468,7 +468,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | 9 | ✅ แก้แล้ว — liff คลิกเมนูพังจริงตอนนี้มาตลอด (`openProduct()` อ้าง element ที่ไม่เคยมี) | ✅ Done |
 | 10 | ✅ แก้แล้ว (u0.4.23) — verify แล้วว่า cutoff เดิม = **18:00** (นัทจำถูก, เอกสาร 17:00 ผิด) · Meal Plan เปลี่ยนเป็นสั่งได้ถึง 8:30 น. ของวันส่งแล้ว เมนูสต็อกคงเดิม | ✅ Done |
 | 11 | 🆕 LIFF + เว็บใหม่ ยังไม่เคยเทสบน iOS Safari เลย — 🔴 นัทต้องเทสบน iPhone จริง (ดู WEB_LAUNCH_TODO กลุ่ม 5) | 🔴 ก่อน launch |
-| 12 | 🆕 ราคา Meal Plan ในโค้ด vs ราคาที่ประกาศ (masternote) ไม่ตรงกัน — ดูกล่องเตือนในหัวข้อ Product Lines Line 2 · **เว็บ mealplan.html + ad copy ใช้ราคาโฆษณาแล้ว (LC1399/HP1699…) → เช็ค `mp_offer_sets` ให้ตรงก่อนเปิด Ads** | 🔴 ก่อนเปิด Ads แคมเปญ 2 |
+| 12 | ✅ **ปิดแล้ว 5 ส.ค. 2026** — ราคา Meal Plan ใน `mp_offer_sets` **ตรงราคาโฆษณาแล้วทุกตัว** (ทดลอง HP 1,699 / LC 1,399 · weekly HP 4,190 / LC 3,190 · monthly HP 15,900 / LC 12,000) · เตียงเจอก่อน + CC verify ซ้ำกับ DB จริง · เพิ่มเซ็ต `hyrox` 4,500 (21 กล่อง) เข้าตารางแล้ว = **ad copy "เริ่ม 1,399.-" ใช้ได้ ไม่ต้องรออะไร** | ✅ Done |
 | 13 | 🟡 ปุ่ม "⬇ Export เมนู" (เพิ่ม u0.4.23) **ถูกลบแล้ว u0.4.28** ตามที่นัทสั่ง — เมนู DB ยังไม่นิ่ง (หมวดซ้ำ เช่น pack_special ว่าง vs pack_regular) ยังไม่พร้อม export ไปลง platform · **งานลง delivery platform → รอเมนูนิ่งก่อน แล้วค่อยขอ export ใหม่** (โค้ดเดิมอยู่ใน git history commit `e07fe3b` ดึงกลับได้) | 🟡 Deferred |
 
 ---
