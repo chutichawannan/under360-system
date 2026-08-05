@@ -80,7 +80,25 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .slot-body{background:var(--w);border:1px solid var(--xsoft);border-top:none;border-radius:0 0 10px 10px;padding:8px;}
 
 /* ORDER CARD */
-.oc{border:1px solid var(--xsoft);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--w);}
+.oc{border:1px solid var(--xsoft);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--w);}
+/* 🖥️ ดูบนเว็บ/จอกว้าง: แบ่ง 2 คอลัมน์ — ซ้ายข้อมูลลูกค้า ขวาของที่ต้องจัด+ปุ่ม (นัทสั่ง 6 ส.ค. 2569)
+   จอแคบกว่า 720px ยุบเป็นคอลัมน์เดียวเหมือนเดิม มือถือแอดมินไม่กระทบ */
+.oc-2col{display:block;}
+.oc-left{min-width:0;}
+.oc-right{min-width:0;}
+@media(min-width:720px){
+  .oc-2col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start;}
+  .oc-right{border-left:1px solid var(--xsoft);padding-left:16px;}
+}
+.oc-done{opacity:.55;}                                  /* ส่งแล้ว = จางลง แต่ยังอยู่ให้กดยกเลิกได้ */
+.oc-state{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;}
+.oc-state.packed{background:var(--gs);color:var(--g);}
+.oc-state.shipped{background:#DBEAFE;color:#1E40AF;}
+.oc-pay{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;}
+.oc-pay.is-paid{background:#D1FAE5;color:#065F46;}
+.oc-pay.is-unpaid{background:#FEF3C7;color:#92400E;}
+.oc-meta-sm{font-size:11px;}
+.btn-ship{background:#1E40AF;color:#fff;border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
 .oc:last-child{margin-bottom:0;}
 .oc.pkg{border-color:var(--gold);background:var(--golds);}
 .oc.mealplan{border-color:var(--g);background:var(--gs);}
@@ -90,27 +108,27 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .oc-badge.lc{background:#D1FAE5;color:#065F46;}
 .oc-badge.pkg{background:var(--golds);color:var(--gold);border:1px solid var(--gold);}
 .oc-badge.mp{background:var(--gs);color:var(--g);}
-.oc-name{font-size:13px;font-weight:700;}
-.oc-meta{font-size:11px;color:var(--soft);margin-top:1px;}
-.oc-order-num{font-family:var(--mono);font-size:11px;color:var(--soft);}
+.oc-name{font-size:16px;font-weight:800;}
+.oc-meta{font-size:13px;color:var(--soft);margin-top:2px;line-height:1.45;}
+.oc-order-num{font-family:var(--mono);font-size:12.5px;color:var(--soft);}
 .items-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
 /* ชื่อเมนูต้องอ่านครบเสมอ — ให้ตัดบรรทัดได้ ห้ามตัดข้อความทิ้ง (ครัวใช้เช็คว่าลูกค้ารับอะไรบ้าง) */
-.item-chip{font-size:11px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:baseline;gap:4px;max-width:100%;}
-.item-chip .ic-code{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);flex-shrink:0;}
-.item-chip .ic-name{font-size:10px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;}
+.item-chip{font-size:13px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:baseline;gap:4px;max-width:100%;}
+.item-chip .ic-code{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--g);flex-shrink:0;}
+.item-chip .ic-name{font-size:12.5px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;}
 /* เซ็ต/คอร์ส = กล่องแยก มีหัวข้อ ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน */
 .set-box{margin-top:6px;border:1px dashed var(--xsoft);border-radius:8px;padding:5px 7px;background:rgba(0,0,0,.015);}
-.set-hdr{font-size:11px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.set-hdr{font-size:13px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px;margin-bottom:2px;}
 .set-hdr .set-n{font-family:var(--mono);font-weight:700;color:var(--ink);}
 .set-box .items-grid{margin-top:3px;}
 .item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
-.oc-note{font-size:11px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
-.oc-utensil{font-size:12px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
+.oc-note{font-size:13px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
+.oc-utensil{font-size:13.5px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
 .oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
 .oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
 .oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
-.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
-.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 14px;min-height:44px;font-size:12px;cursor:pointer;font-family:var(--sans);}
+.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 18px;min-height:46px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 16px;min-height:46px;font-size:13.5px;cursor:pointer;font-family:var(--sans);}
 .btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .empty-slot{text-align:center;padding:16px;color:var(--xsoft);font-size:12px;}
 
@@ -440,7 +458,10 @@ function filteredOrders(){
     //    (นัทเปิดจอจริงเจอ 5 ส.ค. 2569 · ตัวเกินคือ U-0805-001 ที่ cancelled ไปแล้ว)
     if(o.status==="cancelled") return false;
     if(o.source==="parallel_test") return false;
-    return o.status!=="delivered";
+    // ส่งแล้วยังโชว์อยู่ถ้าเลือกวันเจาะจง — ครัวเห็นความคืบหน้าทั้งวัน + กดยกเลิกย้อนได้
+    // (ดูรวมทุกวันค่อยซ่อน ไม่งั้นรายการยาวไปด้วยของที่จบแล้ว)
+    if(o.status==="delivered") return !!tgt;
+    return true;
   });
 }
 // บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
@@ -769,29 +790,64 @@ function renderCard(o){
   }else itemsHtml="<span style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</span>";
   // Meal Plan = ซื้อทั้ง subscription ครั้งเดียว ไม่ใช่ของที่ต้องจัดกล่องในวันนี้วันเดียว
   // รอบส่งจริง + เมนูที่กำหนด อยู่ที่ mp_deliveries → ลิ้งไปดูที่แท็บ "รายสินค้า" แทนปุ่มจัดกล่อง
-  var actions=isMp
-    ?"<div class='oc-actions'><span onclick='switchTab(1)' style='font-size:12px;color:var(--g);font-weight:700;cursor:pointer;text-decoration:underline'>📋 ดูรอบส่ง & เมนูที่แท็บ \"รายสินค้า\" →</span></div>"
-    :o.status==="confirmed"||o.status==="preparing"
-    ?"<div class='oc-actions'><button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button></div>"
-    :o.status==="ready"
-    ?"<div class='oc-actions'><span style='font-size:12px;color:var(--g);font-weight:600'>✅ พร้อมส่ง</span><button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยกเลิก</button></div>":"";
+  // ปุ่ม 2 ขั้น: จัดกล่องเสร็จ → ส่งแมสแล้ว · ยกเลิกย้อนได้ทั้งคู่ (นัทสั่ง 6 ส.ค. 2569)
+  var packed = (o.status==="ready"||o.status==="delivered");
+  var shipped = (o.status==="delivered");
+  var actions;
+  if(isMp){
+    actions="<div class='oc-actions'><span onclick='switchTab(1)' style='color:var(--g);font-weight:700;cursor:pointer;text-decoration:underline'>📋 ดูรอบส่ง & เมนูที่แท็บ \"รายสินค้า\" →</span></div>";
+  }else{
+    var b="";
+    if(!packed) b+="<button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button>";
+    else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
+    if(packed&&!shipped) b+="<button class='btn-ship' onclick='markShipped(\""+o.id+"\")'>🛵 ส่งแมสแล้ว</button>";
+    if(shipped)          b+="<button class='btn-undo' onclick='markUnship(\""+o.id+"\")'>↩ ยังไม่ส่ง</button>";
+    actions="<div class='oc-actions'>"+b+"</div>";
+  }
   var wantsUtensils=o.want_utensils!==false;
   var utensilHtml="<div class='oc-utensil"+(kitchenUtensilSize==="large"?" oc-utensil-lg":"")+(wantsUtensils?"":" oc-utensil-no")+"'>"
     +(wantsUtensils?"🥄🍴 ใส่ช้อนส้อม":"❌ ไม่ต้องช้อนส้อม")+"</div>";
-  return "<div class='"+cardCls+"'>"
-    +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
-    +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
-    +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
-    +"<span style='font-size:10px;font-weight:700;padding:1px 7px;border-radius:7px;"+(o.payment_status==="paid"?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span></div>"
-    +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
-    +"<div class='oc-meta' style='font-size:10px;color:var(--soft)'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
-    +itemsHtml
-    +utensilHtml
-    +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
-    +actions+"</div>";
+  var stateTag = shipped?"<span class='oc-state shipped'>🛵 ส่งแมสแล้ว</span>"
+               : packed?"<span class='oc-state packed'>✅ จัดกล่องแล้ว</span>":"";
+  // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
+  return "<div class='"+cardCls+(shipped?" oc-done":"")+"'>"
+    +"<div class='oc-2col'>"
+      +"<div class='oc-left'>"
+        +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
+        +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
+        +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
+        +"<span class='oc-pay "+(o.payment_status==="paid"?"is-paid":"is-unpaid")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
+        +stateTag+"</div>"
+        +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
+        +(o.customer_phone?"<div class='oc-meta'>📞 "+escH(o.customer_phone)+"</div>":"")
+        +"<div class='oc-meta oc-meta-sm'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
+        +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
+      +"</div>"
+      +"<div class='oc-right'>"+itemsHtml+utensilHtml+actions+"</div>"
+    +"</div></div>";
 }
 
 // ── ACTIONS ──────────────────────────────────────────────
+// ส่งแมสแล้ว = ปิดงานของครัวใบนั้น · ยังเห็นการ์ดอยู่ (จางลง) เพื่อกดยกเลิกย้อนได้
+async function markShipped(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var w=await sb_.from("orders").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
+  if(w.error){kqWriteFail(w.error,"ส่งแมสแล้ว");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="delivered";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"🛵 ส่งแมสแล้ว");
+  render();
+}
+async function markUnship(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var w=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
+  if(w.error){kqWriteFail(w.error,"ย้อนสถานะส่ง");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกส่งแมส");
+  render();
+}
+
 async function markPacked(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;

@@ -671,8 +671,10 @@ body{background:#fff!important}
     <div class="igrp">
       <div style="display:flex;gap:8px">
         <input id="recipient-name-input" class="ifield" type="text" placeholder="ชื่อผู้รับ" style="flex:1">
-        <input id="recipient-phone-input" class="ifield" type="tel" placeholder="เบอร์โทร" style="flex:1" maxlength="10">
+        <input id="recipient-phone-input" class="ifield" type="tel" inputmode="numeric" placeholder="เบอร์โทร 10 หลัก" style="flex:1" maxlength="10"
+          oninput="normalizePhoneInput(this)" onblur="showPhoneHint()">
       </div>
+      <div id="phone-hint" style="display:none;font-size:11.5px;color:#B91C1C;margin-top:-4px"></div>
       <div style="display:flex;gap:8px;align-items:flex-start">
         <textarea id="addr-input" class="ifield" rows="2" placeholder="บ้านเลขที่ ซอย ถนน เขต จังหวัด" style="flex:1;resize:none"></textarea>
         <!-- ช่องนี้ = ที่อยู่ที่ใช้ส่งจริง (แก้เองได้ · แมสอ่านอันนี้) · ช่องในแผนที่ด้านล่าง = ช่องค้นหาอย่างเดียว -->
@@ -2300,6 +2302,13 @@ async function submitOrder() {
   const recipientPhone = document.getElementById('recipient-phone-input').value.trim();
   if (!recipientName)  { toast('กรุณาใส่ชื่อผู้รับ'); return; }
   if (!recipientPhone) { toast('กรุณาใส่เบอร์โทรผู้รับ'); return; }
+  // เบอร์ต้องครบ 10 หลักและขึ้นต้นด้วย 0 — เบอร์ผิด = แมสโทรหาลูกค้าไม่ได้ ของค้างอยู่หน้าบ้าน
+  if (!isValidThaiPhone(recipientPhone)) {
+    showPhoneHint();
+    toast(phoneError(recipientPhone));
+    const pe = document.getElementById('recipient-phone-input'); if (pe) pe.focus();
+    return;
+  }
   // Warn if no map pin
   // ไม่ปักหมุด = ระบบไม่รู้ระยะ → ค่าส่งคิดเป็น ฿0 (audit 3 ส.ค.: 22/43 ใบเป็นแบบนี้ = ร้านออกค่าส่งให้ฟรีโดยไม่รู้ตัว)
   // → ยังให้สั่งได้ (ไม่ปิดกั้นการขาย) แต่ **ติดธงในโน้ตให้แอดมินตามเก็บค่าส่ง**
@@ -2917,14 +2926,15 @@ function initCusMap(){
     const inp=document.getElementById('addr-search');
     if(inp&&google.maps.places){
       cusAuto=new google.maps.places.Autocomplete(inp,{
-        componentRestrictions:{country:'TH'},fields:['geometry','formatted_address']
+        // ขอ 'name' มาด้วย — เดิมขอแค่ที่อยู่ ปักที่ ICONSIAM แล้วแมสเห็นแต่เลขที่ถนน หาไม่เจอว่าตึกไหน
+        componentRestrictions:{country:'TH'},fields:['geometry','formatted_address','name']
       });
       cusAuto.addListener('place_changed',()=>{
         const pl=cusAuto.getPlace();
         if(!pl.geometry)return;
         const lat=pl.geometry.location.lat(),lng=pl.geometry.location.lng();
         cusMap.panTo({lat,lng});cusMap.setZoom(15);
-        setCusPin(lat,lng,pl.formatted_address);
+        setCusPin(lat,lng,joinPlaceAddr(pl.name,pl.formatted_address));
       });
     }
   }catch(e){console.warn('Map init failed',e);}
@@ -2944,6 +2954,51 @@ function detectZone(lat, lng, addr){
   if(prevIsOut !== isOutOfProvince){
     renderDatePick(); updateCartTotals();
   }
+}
+
+// รวม "ชื่อสถานที่" กับ "ที่อยู่" เป็นบรรทัดเดียวให้แมสอ่านรู้เรื่อง
+// เช่น "ไอคอนสยาม · 299 ถ.เจริญนคร คลองต้นไทร คลองสาน กรุงเทพฯ 10600"
+// (นัทปักที่ ICONSIAM แล้วครัวเห็นแต่เลขที่ถนน — 6 ส.ค. 2569)
+function joinPlaceAddr(name, addr){
+  var n=String(name||'').trim(), a=String(addr||'').trim();
+  if(!n) return a;
+  if(!a) return n;
+  if(a.indexOf(n)>=0) return a;     // Google ใส่ชื่อมาในที่อยู่แล้ว ไม่ต้องซ้ำ
+  return n+' · '+a;
+}
+
+// ══════════════════════════════════════
+// ☎️ เบอร์โทรไทย — ต้อง 10 หลัก ขึ้นต้นด้วย 0 (นัทสั่ง 6 ส.ค. 2569)
+// เบอร์ผิด = แมสโทรหาลูกค้าไม่ได้ ของไปค้างหน้าบ้าน → กันตั้งแต่หน้าสั่ง
+// รับ +66 / 66 มาแปลงเป็น 0 ให้อัตโนมัติ (ลูกค้าก๊อปเบอร์จากที่อื่นมาบ่อย)
+// ══════════════════════════════════════
+function cleanThaiPhone(v){
+  var d=String(v||'').replace(/\D/g,'');
+  if(d.indexOf('66')===0 && d.length>=11) d='0'+d.slice(2);   // +66812345678 → 0812345678
+  else if(d.length===9 && d[0]!=='0')     d='0'+d;            // 812345678    → 0812345678
+  return d.slice(0,10);
+}
+function isValidThaiPhone(v){ var d=cleanThaiPhone(v); return d.length===10 && d[0]==='0'; }
+function phoneError(v){
+  var d=cleanThaiPhone(v);
+  if(!d)            return 'กรุณาใส่เบอร์โทร';
+  if(d[0]!=='0')    return 'เบอร์ต้องขึ้นต้นด้วย 0 (ไม่ต้องใส่ +66)';
+  if(d.length<10)   return 'เบอร์ไม่ครบ — ใส่แล้ว '+d.length+' หลัก ต้องครบ 10 หลัก';
+  return '';
+}
+function normalizePhoneInput(el){
+  var before=el.value, after=cleanThaiPhone(before);
+  if(before!==after) el.value=after;      // ตัดขีด/เว้นวรรค/+66 ทิ้งให้เอง ลูกค้าไม่ต้องมานั่งลบ
+  showPhoneHint();
+}
+function showPhoneHint(){
+  var el=document.getElementById('recipient-phone-input'), hint=document.getElementById('phone-hint');
+  if(!el||!hint) return;
+  var v=el.value.trim();
+  if(!v || isValidThaiPhone(v)){ hint.style.display='none'; hint.textContent=''; el.style.borderColor=''; return; }
+  hint.textContent='⚠️ '+phoneError(v);
+  hint.style.display='block';
+  el.style.borderColor='#DC2626';
 }
 
 function setCusPin(lat,lng,addr){
