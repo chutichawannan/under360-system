@@ -1965,11 +1965,17 @@ function msgRenderPlan(box,r){
         +(p.errs.length?"ขอราคาไม่ได้":(save==null?"—":(save>0?"ประหยัด "+fmtB(save):(save<0?"แพงขึ้น "+fmtB(-save):"เท่ากัน"))))+"</td>"
       +"<td style='padding:6px 8px;font-size:11px;color:#6B7280'>"+(note||"")+"</td></tr>");
   }
-  row("แยกคันต่อจุด",A,"ฐานเทียบ · "+r.jobs.length+" จุด");
-  row("จัดรอบตามช่วงเวลา ✅",C,C?("วิ่งทีละ "+C.k+" งาน · "+r.slots+" ช่วงเวลา · ทำได้จริง"):"");
-  row("รวมทุกจุดไม่สนช่วงเวลา",B,B?("วิ่งทีละ "+B.k+" งาน · เป็นแค่ขอบเขตล่าง"):"");
+  // ✅ เลือกวิธีที่ "ถูกจริง" ไม่ใช่เลือกไว้ล่วงหน้า — ข้อมูลจริง 5 ส.ค. 2026 พบว่าคันเดียวหลายจุด
+  //    หลายทีแพงกว่าแยกคัน (Lalamove คิดตามระยะที่วิ่งจริง · ครัวอยู่กลาง จุดกระจายรอบทิศ
+  //    → ต่อจุดเป็นสายทำให้ระยะรวมยาวกว่าวิ่งตรงจากครัวทีละจุด) ห้าม default ว่ารวมรอบดีกว่าเสมอ
+  var ok=function(p){return p&&!p.errs.length;};
+  var pick=null, pickName="";
+  if(ok(C)&&(!pick||C.total<pick.total)){pick=C;pickName="จัดรอบตามช่วงเวลา — วิ่งทีละ "+C.k+" งาน";}
+  if(ok(A)&&(!pick||A.total<pick.total)){pick=A;pickName="แยกคันต่อจุด (ไม่ต้องรวมรอบ)";}
+  row("แยกคันต่อจุด"+(pick===A?" ✅":""),A,"ฐานเทียบ · "+r.jobs.length+" จุด");
+  row("จัดรอบตามช่วงเวลา"+(pick===C?" ✅":""),C,C?("วิ่งทีละ "+C.k+" งาน · "+r.slots+" ช่วงเวลา · ทำได้จริง"):"");
+  row("รวมทุกจุดไม่สนช่วงเวลา",B,B?("วิ่งทีละ "+B.k+" งาน · ขอบเขตล่าง ทำจริงไม่ได้"):"");
 
-  var pick=(C&&!C.errs.length)?C:null;
   var h="<div style='background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px'>"
     +"<div style='font-size:14px;font-weight:800;color:#1F4D3A;margin-bottom:2px'>💰 เทียบวิธีจัดรอบส่ง (เรทสด Lalamove)</div>"
     +"<div style='font-size:11px;color:#6B7280;margin-bottom:8px'>ขอราคาอย่างเดียว ยังไม่ได้จองรถ"
@@ -1979,13 +1985,17 @@ function msgRenderPlan(box,r){
     +"<tbody>"+rows.join("")+"</tbody></table></div>";
 
   if(pick){
-    h+="<div style='margin-top:10px;font-size:13px;font-weight:800;color:#1F4D3A'>🛵 รอบที่แนะนำ — วิ่งทีละ "+pick.k+" งาน ("+pick.cars+" คัน)</div>";
-    pick.trips.forEach(function(t,i){
-      h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
-        +"<b style='color:#1F4D3A'>รอบ "+(i+1)+"</b> <span style='color:#6B7280'>· "+esc2(t[0].slot)+"</span><div style='color:#374151;margin-top:2px'>"
-        +t.map(function(p,n){return (n+1)+". "+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
-        +"</div></div>";
-    });
+    h+="<div style='margin-top:10px;font-size:13px;font-weight:800;color:#1F4D3A'>🛵 ถูกสุด: "+esc2(pickName)+" ("+pick.cars+" คัน · "+fmtB(pick.total)+")</div>";
+    if(pick.cars>1&&pick.trips.some(function(t){return t.length>1;})){
+      pick.trips.forEach(function(t,i){
+        h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
+          +"<b style='color:#1F4D3A'>รอบ "+(i+1)+"</b> <span style='color:#6B7280'>· "+esc2(t[0].slot)+"</span><div style='color:#374151;margin-top:2px'>"
+          +t.map(function(p,n){return (n+1)+". "+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
+          +"</div></div>";
+      });
+    }else{
+      h+="<div style='margin-top:5px;font-size:12px;color:#374151'>วันนี้รวมรอบแล้วไม่ถูกลง — ส่งแยกจุดตามปกติคุ้มกว่า (ครัวอยู่กลาง จุดกระจายคนละทิศ ต่อเป็นสายทำให้ระยะรวมยาวขึ้น)</div>";
+    }
   }
   var allErr=[].concat(A?A.errs:[],B?B.errs:[],C?C.errs:[]);
   if(allErr.length) h+="<div style='margin-top:8px;font-size:11px;color:#B45309'>⚠️ บางรอบขอราคาไม่ได้: "+esc2(allErr.slice(0,3).join(" · "))+"</div>";
