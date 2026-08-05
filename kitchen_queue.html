@@ -98,6 +98,11 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .item-chip{font-size:11px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:baseline;gap:4px;max-width:100%;}
 .item-chip .ic-code{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);flex-shrink:0;}
 .item-chip .ic-name{font-size:10px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;}
+/* เซ็ต/คอร์ส = กล่องแยก มีหัวข้อ ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน */
+.set-box{margin-top:6px;border:1px dashed var(--xsoft);border-radius:8px;padding:5px 7px;background:rgba(0,0,0,.015);}
+.set-hdr{font-size:11px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.set-hdr .set-n{font-family:var(--mono);font-weight:700;color:var(--ink);}
+.set-box .items-grid{margin-top:3px;}
 .item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
 .oc-note{font-size:11px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
 .oc-utensil{font-size:12px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
@@ -431,6 +436,10 @@ function filteredOrders(){
   return allOrders.filter(function(o){
     if(tgt&&o.delivery_date!==tgt)return false;
     if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
+    // 🔴 ใบที่ยกเลิก + ออเดอร์เทส ต้องไม่โผล่หน้าครัว — ครัวเคยเห็น 13 ใบทั้งที่งานจริง 12
+    //    (นัทเปิดจอจริงเจอ 5 ส.ค. 2569 · ตัวเกินคือ U-0805-001 ที่ cancelled ไปแล้ว)
+    if(o.status==="cancelled") return false;
+    if(o.source==="parallel_test") return false;
     return o.status!=="delivered";
   });
 }
@@ -441,9 +450,30 @@ function getOrderItems(orderId){
       code: i.menu_code || (m&&m.code) || "—",
       name: i.menu_name || (m&&m.name) || "—",
       qty: i.quantity||1,
-      menu_item_id: i.menu_item_id
+      menu_item_id: i.menu_item_id,
+      notes: i.notes||""      // ใช้แยกว่าอยู่ในเซ็ต/คอร์สไหน (รูปแบบ pkg:{id}:course:r/N)
     };
   });
+}
+
+// รวมรายการซ้ำ + จัดกลุ่มเซ็ต/คอร์ส (นัทเจอบนจอครัว 5 ส.ค. 2569)
+//  · เดิมเมนูเดียวกัน 6 กล่อง ขึ้น 6 บรรทัดเหมือนกันเป๊ะ → ครัวนับเอง
+//  · เดิมเซ็ต/คอร์สขึ้นปนกับเมนูเดี่ยว → ครัวไม่รู้ว่าอันไหนอยู่ในเซ็ตเดียวกัน
+function groupOrderItems(items){
+  var groups=[], byKey={};
+  items.forEach(function(i){
+    var pk=(String(i.notes||"").match(/^pkg:([^:\s]+)/)||[])[1]||null;
+    var gk=pk?("pkg:"+pk):"_single";
+    if(!byKey[gk]){ byKey[gk]={pkg:pk,round:null,items:[],_seen:{}}; groups.push(byKey[gk]); }
+    var g=byKey[gk];
+    var cr=String(i.notes||"").match(/course:(\d+)\s*\/\s*(\d+)/);
+    if(cr) g.round=cr[1]+"/"+cr[2];
+    var ik=(i.code||"")+"|"+(i.name||"");
+    if(g._seen[ik]) g._seen[ik].qty+=(i.qty||1);
+    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1)}; g.items.push(g._seen[ik]); }
+  });
+  groups.sort(function(a,b){ return (a.pkg?1:0)-(b.pkg?1:0); });   // เมนูเดี่ยวก่อน แล้วค่อยเซ็ต
+  return groups;
 }
 function detectBadge(items){
   if(items.some(function(i){return (i.code||"").match(/^HP/i);}))return "hp";
@@ -686,14 +716,28 @@ function renderCard(o){
   var badgeHtml=isPkg?"<span class='oc-badge pkg'>📦 แพ็ค</span>"
     :isMp?"<span class='oc-badge mp'>🥗 Meal</span>"
     :badge!=="normal"?"<span class='oc-badge "+badge+"'>"+badge.toUpperCase()+"</span>":"";
-  var itemsHtml=items.length?items.map(function(i){
-    // 🔴 เดิม i.name.slice(0,12) → ตัดชื่อเมนูทิ้งจริงใน JS (ไม่ใช่แค่ CSS) ครัวกดดูก็ไม่เห็น
-    //    ชื่อเมนูไทยยาว 20-40 ตัว เช่น "สเต็กไก่อบน้ำผึ้งผักย่าง" เหลือ "สเต็กไก่อบน้ำ" = อ่านไม่รู้เรื่องว่ารับอะไร
-    //    (นัทเห็นกับตาบนจอครัวจริง 5 ส.ค. 2569) → โชว์เต็ม แล้วให้ CSS ตัดบรรทัดเอา
+  // 🔴 เดิม i.name.slice(0,12) → ตัดชื่อเมนูทิ้งจริงใน JS (ไม่ใช่แค่ CSS) ครัวกดดูก็ไม่เห็น
+  //    ชื่อเมนูไทยยาว 20-40 ตัว เช่น "สเต็กไก่อบน้ำผึ้งผักย่าง" เหลือ "สเต็กไก่อบน้ำ" = อ่านไม่รู้เรื่องว่ารับอะไร
+  //    (นัทเห็นกับตาบนจอครัวจริง 5 ส.ค. 2569) → โชว์เต็ม แล้วให้ CSS ตัดบรรทัดเอา
+  var chip=function(i){
     return "<div class='item-chip'><span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
       +(codeMode!=="name"?" <span class='ic-name'>"+escH(i.name)+"</span>":"")
       +" <span class='ic-qty'>×"+i.qty+"</span></div>";
-  }).join(""):"<span style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</span>";
+  };
+  var itemsHtml="";
+  if(items.length){
+    groupOrderItems(items).forEach(function(g){
+      var boxes=g.items.reduce(function(s,i){return s+(i.qty||1);},0);
+      if(g.pkg){
+        // เซ็ต/คอร์ส → หัวข้อ + รายการย่อยข้างใน ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน
+        itemsHtml+="<div class='set-box'><div class='set-hdr'>📦 เซ็ต/คอร์ส"
+          +(g.round?" · รอบ "+escH(g.round):"")+" <span class='set-n'>"+boxes+" กล่อง</span></div>"
+          +"<div class='items-grid'>"+g.items.map(chip).join("")+"</div></div>";
+      }else{
+        itemsHtml+="<div class='items-grid'>"+g.items.map(chip).join("")+"</div>";
+      }
+    });
+  }else itemsHtml="<span style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</span>";
   // Meal Plan = ซื้อทั้ง subscription ครั้งเดียว ไม่ใช่ของที่ต้องจัดกล่องในวันนี้วันเดียว
   // รอบส่งจริง + เมนูที่กำหนด อยู่ที่ mp_deliveries → ลิ้งไปดูที่แท็บ "รายสินค้า" แทนปุ่มจัดกล่อง
   var actions=isMp
@@ -712,7 +756,7 @@ function renderCard(o){
     +"<span style='font-size:10px;font-weight:700;padding:1px 7px;border-radius:7px;"+(o.payment_status==="paid"?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span></div>"
     +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
     +"<div class='oc-meta' style='font-size:10px;color:var(--soft)'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
-    +"<div class='items-grid'>"+itemsHtml+"</div>"
+    +itemsHtml
     +utensilHtml
     +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
     +actions+"</div>";
