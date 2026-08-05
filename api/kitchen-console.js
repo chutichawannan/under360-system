@@ -46,9 +46,16 @@ async function toBurmese(text) {
   } catch (e) { console.error('toBurmese failed:', e); return null; }
 }
 
+// หากลุ่มครัวจากข้อความล่าสุด (ไม่ต้องให้นัทไปหา groupId มากรอกเอง)
+// ⚠️ ต้องกรอง 2 ชั้น ไม่งั้นเลือกกลุ่มผิดแล้วข้อความนัทหลุดไปผิดที่:
+//   1) id ของกลุ่ม/ห้องจริงจาก LINE ขึ้นต้นด้วย C หรือ R เท่านั้น — กันแถวเทส/แถวขยะ
+//   2) เรียงด้วย created_at (มี default now() เสมอ) ไม่ใช่ line_ts ที่เป็น null ได้
+//      — ใน Postgres `order by line_ts desc` เอา NULL ขึ้นก่อน = แถวไม่มีเวลาจะชนะแถวจริง
 async function latestGroupId() {
   if (process.env.LINE_KITCHEN_GROUP_ID) return process.env.LINE_KITCHEN_GROUP_ID;
-  const r = await fetch(`${SB}/line_group_messages?select=group_id&order=line_ts.desc&limit=1`, { headers: svcHeaders() });
+  const r = await fetch(
+    `${SB}/line_group_messages?select=group_id&or=(group_id.like.C*,group_id.like.R*)&order=created_at.desc&limit=1`,
+    { headers: svcHeaders() });
   const j = await r.json();
   return Array.isArray(j) && j[0] ? j[0].group_id : null;
 }
