@@ -34,6 +34,17 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'ยังไม่ได้ตั้ง LALAMOVE_API_KEY / LALAMOVE_API_SECRET ใน Vercel env' });
   }
 
+  // 🔎 ?info=cities → ถามสเปคจริงจาก Lalamove ว่าเมืองนี้มีรถ/บริการอะไรบ้าง (ห้ามเดาชื่อ serviceType เอง)
+  if ((req.query && req.query.info) === 'cities') {
+    const p = '/v3/cities';
+    const t = Date.now().toString();
+    const sig = crypto.createHmac('sha256', SECRET).update(`${t}\r\nGET\r\n${p}\r\n\r\n`).digest('hex');
+    try {
+      const r = await fetch(HOST + p, { headers: { 'Authorization': `hmac ${KEY}:${t}:${sig}`, 'Market': MARKET } });
+      return res.status(r.status).json(await r.json().catch(() => ({})));
+    } catch (e) { return res.status(500).json({ error: String(e && e.message || e) }); }
+  }
+
   // ปลายทาง — รับได้ 2 แบบ
   //   1) จุดเดียว (เดิม): ?lat=&lng=&addr=
   //   2) หลายจุด (multi-stop): body { drops:[{lat,lng,addr},...] } หรือ ?drops=<json>
