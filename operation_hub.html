@@ -1129,6 +1129,93 @@ function closeOrderDetail(){ var o=document.getElementById("odOverlay"); if(o)o.
 function odThaiDT(s){ if(!s)return "—"; try{ return new Date(s).toLocaleString("th-TH",{dateStyle:"medium",timeStyle:"short"}); }catch(e){ return s; } }
 // กติกาแต้ม (ถอดจาก Hato): ฿50 = 1 แต้ม จาก "ยอดสินค้า" ไม่รวมค่าส่ง · ปัดลง
 function odPoints(sub,disc){ return Math.floor(Math.max(0,(sub||0)-(disc||0))/50); }
+// ══════════════════════════════════════
+// 🧾 แก้รายการในออเดอร์ (เพิ่ม/แก้/ลบ) — นัทสั่ง 6 ส.ค. 2569
+// ที่มา: "ครัวจะชอบมีออเดอร์แปลกๆ เช่นคุณ Milk สั่งมันบดเปล่าๆ 500 กรัม จะ order ยังไงดี"
+// เดิม OH อ่าน order_items ได้อย่างเดียว แอดมินเพิ่มเองไม่ได้ ต้องเรียกคนมาแก้ให้
+// ⚠️ ทุกครั้งที่แก้ ต้องคำนวณยอดออเดอร์ใหม่ ไม่งั้นเพิ่มของแล้วเก็บเงินไม่ตรง
+// ══════════════════════════════════════
+var OD_SPECIAL=[
+  {code:"SP-FOOD", label:"🍽️ รายการพิเศษ (ครัวต้องทำ · คิดเงิน)"},
+  {code:"SP-FREE", label:"🎁 ของแถม (ครัวต้องจัด · ไม่คิดเงิน)"},
+  {code:"SP-ADJ",  label:"💰 ปรับยอด/ส่วนต่าง (ครัวไม่ต้องทำ)"}
+];
+// คิดยอดใหม่จากรายการจริง แล้วเขียนกลับ orders (subtotal → total)
+async function odRecalcTotal(orderId){
+  var sb_=getSB(); if(!sb_) return;
+  var r=await sb_.from("order_items").select("quantity,unit_price,subtotal").eq("order_id",orderId);
+  if(r.error) throw r.error;
+  var sub=(r.data||[]).reduce(function(s,i){
+    return s + (i.subtotal!=null ? Number(i.subtotal) : Number(i.unit_price||0)*Number(i.quantity||1));
+  },0);
+  var o=await sb_.from("orders").select("discount_amount,delivery_fee").eq("id",orderId).maybeSingle();
+  var disc=Number((o.data||{}).discount_amount||0), fee=Number((o.data||{}).delivery_fee||0);
+  var up=await sb_.from("orders").update({subtotal:sub,total:Math.max(0,sub-disc+fee),updated_at:new Date().toISOString()}).eq("id",orderId);
+  if(up.error) throw up.error;
+}
+async function odAddItem(orderId){
+  var sb_=getSB(); if(!sb_) return;
+  var opts=OD_SPECIAL.map(function(s,i){return (i+1)+") "+s.label;}).join("\n");
+  var pick=prompt("เพิ่มรายการอะไร?\n"+opts+"\n\nพิมพ์เลข 1-3 (หรือพิมพ์โค้ดเมนูปกติ เช่น S103)","1");
+  if(pick==null) return;
+  pick=String(pick).trim(); if(!pick) return;
+  var code, baseName;
+  var n=parseInt(pick,10);
+  if(n>=1&&n<=OD_SPECIAL.length){ code=OD_SPECIAL[n-1].code; }
+  else { code=pick.toUpperCase(); }
+  try{
+    var m=await sb_.from("menu_items").select("id,code,name,price").eq("code",code).maybeSingle();
+    if(!m.data){ alert("ไม่พบโค้ด "+code+" ในเมนู"); return; }
+    baseName=m.data.name;
+    var detail=prompt("รายละเอียด (จะต่อท้ายชื่อให้ครัวอ่าน)\nเช่น: มันบดเปล่าๆ 500 กรัม","");
+    if(detail==null) return;
+    var qty=parseInt(prompt("จำนวน","1")||"1",10); if(!(qty>0)) qty=1;
+    var isFree=(code==="SP-FREE");
+    var price=isFree?0:Number(prompt("ราคาต่อชิ้น (บาท)", String(m.data.price||0))||0);
+    if(isNaN(price)) price=0;
+    var nameFinal=baseName+(detail.trim()?" — "+detail.trim():"");
+    var ins=await sb_.from("order_items").insert({
+      order_id:orderId, menu_item_id:m.data.id, menu_code:code,
+      menu_name:nameFinal, quantity:qty, unit_price:price, subtotal:price*qty,
+      notes:"เพิ่มโดยแอดมิน"
+    });
+    if(ins.error) throw ins.error;
+    await odRecalcTotal(orderId);
+    if(typeof showToastOH==="function") showToastOH("เพิ่มรายการแล้ว · คิดยอดใหม่ให้เรียบร้อย");
+    openOrderDetail(orderId);
+    if(typeof loadAll==="function") loadAll(true);   // รีเฟรชตารางออเดอร์ให้ยอดใหม่ขึ้นทันที
+  }catch(e){ alert("เพิ่มไม่สำเร็จ: "+(e.message||e)); }
+}
+async function odEditItem(itemId, orderId){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var r=await sb_.from("order_items").select("*").eq("id",itemId).maybeSingle();
+    if(!r.data){ alert("ไม่พบรายการ"); return; }
+    var it=r.data;
+    var name=prompt("ชื่อรายการ (แก้ได้)", it.menu_name||""); if(name==null) return;
+    var qty=parseInt(prompt("จำนวน", String(it.quantity||1))||"1",10); if(!(qty>0)) qty=1;
+    var price=Number(prompt("ราคาต่อชิ้น (บาท)", String(it.unit_price||0))||0); if(isNaN(price)) price=0;
+    var up=await sb_.from("order_items").update({menu_name:name,quantity:qty,unit_price:price,subtotal:price*qty}).eq("id",itemId);
+    if(up.error) throw up.error;
+    await odRecalcTotal(orderId);
+    if(typeof showToastOH==="function") showToastOH("แก้รายการแล้ว · คิดยอดใหม่ให้เรียบร้อย");
+    openOrderDetail(orderId);
+    if(typeof loadAll==="function") loadAll(true);   // รีเฟรชตารางออเดอร์ให้ยอดใหม่ขึ้นทันที
+  }catch(e){ alert("แก้ไม่สำเร็จ: "+(e.message||e)); }
+}
+async function odDelItem(itemId, orderId){
+  if(!confirm("ลบรายการนี้ออกจากออเดอร์?\n(ยอดเงินจะถูกคิดใหม่อัตโนมัติ)")) return;
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var d=await sb_.from("order_items").delete().eq("id",itemId);
+    if(d.error) throw d.error;
+    await odRecalcTotal(orderId);
+    if(typeof showToastOH==="function") showToastOH("ลบรายการแล้ว · คิดยอดใหม่ให้เรียบร้อย");
+    openOrderDetail(orderId);
+    if(typeof loadAll==="function") loadAll(true);   // รีเฟรชตารางออเดอร์ให้ยอดใหม่ขึ้นทันที
+  }catch(e){ alert("ลบไม่สำเร็จ: "+(e.message||e)); }
+}
+
 async function openOrderDetail(id){
   var ov=document.getElementById("odOverlay"), body=document.getElementById("odBody"), ttl=document.getElementById("odTitle");
   if(!ov)return;
@@ -1187,8 +1274,13 @@ async function openOrderDetail(id){
       ? items.map(function(i){ return "<div style='display:flex;justify-content:space-between;gap:8px;padding:3px 0;border-bottom:1px dashed #E5E7EB'>"
           +"<span><b style='font-family:var(--mono);font-size:11px;color:#1F4D3A'>"+esc2(i.menu_code||"—")+"</b> "+esc2(i.menu_name||"")
           +(i.notes?" <span style='font-size:10px;color:#9CA3AF'>("+esc2(i.notes)+")</span>":"")+"</span>"
-          +"<span style='white-space:nowrap'>×"+(i.quantity||1)+" · "+fmtB(i.subtotal!=null?i.subtotal:(i.unit_price||0)*(i.quantity||1))+"</span></div>"; }).join("")
+          +"<span style='white-space:nowrap'>×"+(i.quantity||1)+" · "+fmtB(i.subtotal!=null?i.subtotal:(i.unit_price||0)*(i.quantity||1))
+          +" <span onclick=\"odEditItem('"+i.id+"','"+id+"')\" title='แก้จำนวน/ราคา' style='cursor:pointer;margin-left:4px'>✏️</span>"
+          +" <span onclick=\"odDelItem('"+i.id+"','"+id+"')\" title='ลบรายการนี้' style='cursor:pointer'>🗑️</span>"
+          +"</span></div>"; }).join("")
       : "<div style='color:#9CA3AF'>— ไม่มีรายการสินค้าบันทึกไว้ —</div>";
+    // ปุ่มเพิ่มรายการ — ของนอกเมนู เช่น "มันบดเปล่าๆ 500 กรัม" ที่ครัวทำได้แต่ไม่มีในเมนู
+    itemsHtml+="<div style='margin-top:8px'><button class='btn' onclick=\"odAddItem('"+id+"')\">➕ เพิ่มรายการ</button></div>";
     h+=box("🧾 รับอะไรบ้าง ("+items.length+" รายการ · "+items.reduce(function(s,i){return s+(i.quantity||1);},0)+" ชิ้น)", itemsHtml);
     // ยอดเงิน
     h+=box("💰 ยอดเงิน",
