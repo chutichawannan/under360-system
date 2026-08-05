@@ -909,6 +909,13 @@ async function loadMpOfferSets(){
 }
 let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
 let selDate = null, selSlot = null;
+
+// 🔧 โหมดย้ายข้อมูล (`?migrate=1`) — ใช้ช่วง cutover Hato เท่านั้น (นัทสั่ง 5 ส.ค. 2569 ผ่านห้อง P)
+// ทำไมต้องมี: ลูกค้าคอร์สเก่าต้องกดสั่งผ่าน LIFF จริง เพื่อให้ multi-round split (u0.4.25)
+// สร้างออเดอร์ทุกรอบส่งให้เอง → หน้าแมส/ครัว/PWA เห็นครบ ไม่ต้องพึ่งใครจดในชีท
+// ปลดล็อก: เลือกวันย้อนหลังได้ · ข้ามกฎ Meal Plan จ/พ/ศ · พิมพ์วันเองได้
+// ⚠️ ลูกค้าจริงไม่มีทางเข้าโหมดนี้ (ต้องพิมพ์ ?migrate=1 เอง) และมีแถบแดงเตือนคาหน้าจอตลอด
+const MIGRATE_MODE = (()=>{ try{ return new URLSearchParams(location.search).get('migrate')==='1'; }catch(e){ return false; } })();
 // เซ็ตแบ่งส่งหลายรอบ (delivery_rounds>1): เลือกวันรับรอบ 2..N (รอบ 1 = selDate) · setDeliverOnce=รับรวดเดียว
 let setDeliverOnce = false, extraRoundDates = [];
 let activeCat = null;
@@ -1994,8 +2001,12 @@ function renderDatePick() {
     startOffset = isOutOfProvince ? baseOffset + 1 : baseOffset;
   }
 
+  // โหมดย้ายข้อมูล: ชิปกางเป็น 7 วันย้อนหลัง → 21 วันข้างหน้า · ถ้าไกลกว่านั้นใช้ช่องพิมพ์วันเอง
+  let spanDays = 6;
+  if (MIGRATE_MODE) { startOffset = -7; spanDays = 28; }
+
   // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
-  if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
+  if(!MIGRATE_MODE && isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
 
   let noticeHtml = (!isMeal && isPastCutoff)
     ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
@@ -2005,13 +2016,23 @@ function renderDatePick() {
       🥗 <b>Meal Plan ส่งเฉพาะวันจันทร์/พุธ/ศุกร์</b> — เลือกวันแรกที่จะเริ่มรับได้เลย ระบบจะจัดส่งต่อเนื่องอัตโนมัติทุกรอบ (จ/พ/ศ) จนครบจำนวนกล่อง${beforeMpCutoff ? ' · สั่งวันนี้ทันภายใน 08:30 น.' : ' · เลย 08:30 น. ของวันนี้แล้ว เริ่มได้รอบถัดไป'}
     </div>`;
   }
+  if (MIGRATE_MODE) {
+    // พิมพ์วันเองได้ เร็วกว่าเลื่อนหาชิป (ข้อมูลเก่าอาจย้อนไปหลายเดือน)
+    noticeHtml = `<div style="padding:7px 12px;font-size:11.5px;color:#7F1D1D;background:#FEE2E2;border:1.5px solid #FCA5A5;border-radius:8px;margin:0 14px 6px;line-height:1.5">
+      🔧 <b>โหมดย้ายข้อมูล — ไม่ใช่หน้าลูกค้าปกติ</b><br>เลือกวันส่งย้อนหลังได้ · ข้ามกฎ Meal Plan จ/พ/ศ · ออเดอร์ที่สร้างเป็นของจริงในระบบ
+      <div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span>พิมพ์วันส่งตรงๆ:</span>
+        <input type="date" value="${selDate||''}" onchange="pickDate(this.value)"
+          style="padding:4px 7px;border:1.5px solid #FCA5A5;border-radius:7px;font-family:inherit;font-size:12px">
+      </div></div>` + noticeHtml;
+  }
   if(notice) notice.innerHTML = noticeHtml;
 
   let html = '';
-  for(let i = startOffset; i <= startOffset + 6; i++){
+  for(let i = startOffset; i <= startOffset + spanDays; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
     const key  = localYMD(d);
-    const disabled = isMeal && !isMWF(d.getDay());
+    const disabled = !MIGRATE_MODE && isMeal && !isMWF(d.getDay());
     const isOn = selDate===key && !disabled ? 'on' : '';
     html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
       <div class="dd">${DAYS[d.getDay()]}</div>
@@ -2343,6 +2364,8 @@ async function submitOrder() {
       notes:            ((document.getElementById('notes-input').value || '').trim()
                           + (pinSkipped ? ' [⚠️ ไม่ได้ปักหมุด — ค่าส่งยังไม่ได้คิด แอดมินตามเก็บ]' : '')).trim()
     };
+    // ติดป้ายออเดอร์ที่สร้างจากโหมดย้ายข้อมูล — ตามรอย/แก้กลับได้ทีหลัง (ปกติไม่ส่ง field นี้เลย)
+    if (MIGRATE_MODE) orderPayload.created_by = '[MIGRATE] LIFF';
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
       const utEl = document.getElementById('utensil-input');
