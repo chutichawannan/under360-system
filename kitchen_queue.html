@@ -443,8 +443,31 @@ function filteredOrders(){
     return o.status!=="delivered";
   });
 }
+// บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
+var KQ_CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
+
 function getOrderItems(orderId){
-  return allItems.filter(function(i){return i.order_id===orderId;}).map(function(i){
+  var o=(allOrders||[]).find(function(x){return x.id===orderId;});
+  var raw=allItems.filter(function(i){return i.order_id===orderId;});
+  var food=raw.filter(function(i){
+    if(KQ_CTRL[i.menu_code]) return false;                       // บรรทัดควบคุม
+    return !!String(i.menu_name||"").trim();                     // บรรทัดไม่มีชื่อ = ครัวใช้ไม่ได้
+  });
+  // 🔁 ไม่มีของให้ทำเลย → ดึงเมนูจากแพลนเมนู (mp_deliveries) แบบเดียวกับหน้าแมสใน OH
+  //    ที่มา: แอดมินแก้เมนูที่หน้า "แพลนเมนู" ซึ่งเขียนลง mp_deliveries — ถ้าครัวอ่านแต่ order_items จะไม่เห็นการแก้เลย
+  //    ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
+  if(!food.length && o && (allMpDeliveries||[]).length){
+    var m=null;
+    if(o.id)              m=allMpDeliveries.find(function(x){return x.order_id&&x.order_id===o.id;});
+    if(!m&&o.line_uid)    m=allMpDeliveries.find(function(x){return x.line_uid&&x.line_uid===o.line_uid&&x.delivery_date===o.delivery_date;});
+    if(!m&&o.customer_id) m=allMpDeliveries.find(function(x){return x.customer_id&&x.customer_id===o.customer_id&&x.delivery_date===o.delivery_date;});
+    if(m&&m.status!=="cancelled"&&Array.isArray(m.menu_items)&&m.menu_items.length){
+      return m.menu_items.map(function(x){
+        return {code:x.code||"—", name:(x.name||"—"), qty:x.qty||1, menu_item_id:null, notes:"", _fromPlan:String(m.mp_type||"MP").toUpperCase()};
+      });
+    }
+  }
+  return (food.length?food:raw).map(function(i){
     var m=allMenus.find(function(x){return x.id===i.menu_item_id;});
     return {
       code: i.menu_code || (m&&m.code) || "—",
@@ -464,8 +487,9 @@ function groupOrderItems(items){
   items.forEach(function(i){
     var pk=(String(i.notes||"").match(/^pkg:([^:\s]+)/)||[])[1]||null;
     var gk=pk?("pkg:"+pk):"_single";
-    if(!byKey[gk]){ byKey[gk]={pkg:pk,round:null,items:[],_seen:{}}; groups.push(byKey[gk]); }
+    if(!byKey[gk]){ byKey[gk]={pkg:pk,round:null,fromPlan:null,items:[],_seen:{}}; groups.push(byKey[gk]); }
     var g=byKey[gk];
+    if(i._fromPlan) g.fromPlan=i._fromPlan;
     var cr=String(i.notes||"").match(/course:(\d+)\s*\/\s*(\d+)/);
     if(cr) g.round=cr[1]+"/"+cr[2];
     var ik=(i.code||"")+"|"+(i.name||"");
@@ -728,7 +752,12 @@ function renderCard(o){
   if(items.length){
     groupOrderItems(items).forEach(function(g){
       var boxes=g.items.reduce(function(s,i){return s+(i.qty||1);},0);
-      if(g.pkg){
+      if(g.fromPlan){
+        // เมนูมาจากหน้า "แพลนเมนู" ไม่ใช่จากตะกร้าลูกค้า — บอกครัวให้ชัด กันเข้าใจผิดว่าลูกค้าสั่งเอง
+        itemsHtml+="<div class='set-box'><div class='set-hdr'>🥗 เมนูจากแพลน "+escH(g.fromPlan)
+          +" <span class='set-n'>"+boxes+" กล่อง</span></div>"
+          +"<div class='items-grid'>"+g.items.map(chip).join("")+"</div></div>";
+      }else if(g.pkg){
         // เซ็ต/คอร์ส → หัวข้อ + รายการย่อยข้างใน ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน
         itemsHtml+="<div class='set-box'><div class='set-hdr'>📦 เซ็ต/คอร์ส"
           +(g.round?" · รอบ "+escH(g.round):"")+" <span class='set-n'>"+boxes+" กล่อง</span></div>"
