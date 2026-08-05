@@ -117,11 +117,20 @@
 > **ทำไม:** ทุกวันนี้ยอดสั่งวิ่งผ่านแชท คนพิมพ์ต่อกันเอง → ย้อนตรวจไม่ได้ (ดู `docs/CASE_01_wrong_box_count.md` — เคสส่งเกิน 2 กล่อง)
 > ✅ CC ทำแล้ว: `api/line-webhook.js` + `scripts/sql_line_group_log.sql` (อยู่บน main)
 
-- [ ] **① รัน `scripts/sql_line_group_log.sql`** (CC ลองรันให้แล้วแต่ Chrome ค้าง ทำไม่สำเร็จ — เปิด Supabase SQL Editor วางไฟล์ กด Run)
-- [ ] **② ใส่ env ใน Vercel 2 ตัว** — `LINE_CHANNEL_SECRET` · `LINE_CHANNEL_ACCESS_TOKEN` (เอาจากคอนโซล LINE ช่อง Messaging API)
-- [ ] **③ ตั้งค่าในคอนโซล LINE** — Webhook URL = `https://under360-system.vercel.app/api/line-webhook` · เปิด **Use webhook** · เปิด **อนุญาตให้บอทเข้ากลุ่ม** (Allow bot to join group chats)
-- [ ] **④ เชิญบอทเข้ากลุ่มครัว** → บอทจะทักทายเอง + บอก `groupId` ในกลุ่ม
-- [ ] ⚠️ **แจ้งทีมครัวก่อนเชิญเข้า** ว่ามีผู้ช่วยเข้ามาช่วยเช็คยอด **และเก็บบทสนทนาไว้** (มารยาท + PDPA)
+> 🆕 **5 ส.ค. — k-track ต่อยอดเป็น "คุยงานครัว 2 ทาง" แล้ว** (นัทเคาะเอง): บอทเก็บ **ต้นฉบับ + แปลไทย + แปลพม่า** ในแถวเดียว (ครัว 6 คนเป็นไทใหญ่ · อ่านไทยได้ 2/6) + หน้า `kitchen_console.html` ให้นัท **อ่านแชทเป็นไทย และพิมพ์ไทยส่งเข้ากลุ่มเป็น ไทย+พม่า**
+> 💰 **ค่าแปล ~฿210/เดือน** (200 ข้อความ/วัน) · **ไม่ใช้ = ไม่เสีย** จ่ายตามใช้จริง ไม่มีค่ารายเดือน → **ทำไว้ก่อนได้ ไม่มีต้นทุนจม**
+> 📖 บริบทเต็ม: `docs/KITCHEN.md` · section 🍳 k-track ใน `CLAUDE.md`
+
+- [x] ✅ **① รัน SQL** — เสร็จ 5 ส.ค. (`sql_line_group_log` + `sql_kitchen_translate`) · verify กับ DB จริงแล้ว: ตารางมี · คอลัมน์ใหม่ 4 ตัวครบ · เขียนได้ 201 · **anon อ่านไม่ได้ตามที่ตั้งใจ**
+- [ ] **② สร้าง Messaging API channel ใหม่ (แยกจาก OA ลูกค้า)** — ⚠️ 2 channel ที่เห็นในคอนโซลเป็น **LINE Login** ใช้กับบอทไม่ได้ · **แยก OA เพื่อกันบอทเผลอส่งหาลูกค้า 20,000 คน** (ฟรี) → เอา **Channel secret** (แท็บ Basic settings) + **Channel access token** (แท็บ Messaging API)
+- [ ] **③ Anthropic API key** — platform.claude.com → API keys (คนละอันกับ subscription)
+- [ ] **④ Supabase service role key** — Settings → API → `service_role` ⚠️ ตัวลับ
+- [ ] **⑤ ใส่ env 5 ตัวใน Vercel (Production)** — `LINE_CHANNEL_SECRET` · `LINE_CHANNEL_ACCESS_TOKEN` · `ANTHROPIC_API_KEY` · `SUPABASE_SERVICE_ROLE_KEY` · `KITCHEN_CONSOLE_KEY` (ตั้งเอง = รหัสเปิดหน้าคุยงาน)
+- [ ] **⑥ merge branch `k-track-kitchen-console` → main** (โค้ดยังไม่ขึ้น production) `[k]`
+- [ ] **⑦ ตั้งค่าในคอนโซล LINE** — Webhook URL = `https://under360-system.vercel.app/api/line-webhook` · เปิด **Use webhook** · เปิด **Allow bot to join group chats**
+- [ ] ⚠️ **⑧ แจ้งทีมครัวก่อนเชิญเข้า** ว่ามีผู้ช่วยเข้ามาช่วยเช็คยอด **และเก็บบทสนทนาไว้** (มารยาท + PDPA) — **ต้องมีพม่าด้วย** (k ร่างให้ได้)
+- [ ] **⑨ เชิญบอทเข้ากลุ่มครัว** → บอททักทายเอง + บอก `groupId` → เปิด `under360-system.vercel.app/kitchen_console.html`
+- [ ] ❓ **เช็คโควตา push ของ LINE OA แพลนฟรี** — บอท**ตอบ** (reply) ฟรีไม่จำกัด แต่ข้อความที่**นัทส่งจากหน้าคอนโซล** = push อาจนับโควตา (และอาจนับต่อจำนวนคนในกลุ่ม) · **ยังไม่ได้ verify — อย่าเพิ่งเชื่อตัวเลขไหน** `[k]`
 
 **🔒 ที่ CC ออกแบบกันไว้แล้ว:** ตาราง `line_group_messages` **เขียนได้อย่างเดียว อ่านไม่ได้** ด้วย anon key → แชทครัวไม่หลุดผ่านหน้าเว็บ (anon key ฝังในหน้าเว็บ ใครก็หยิบได้) · อ่านได้เฉพาะเจ้าของผ่าน SQL Editor
 
