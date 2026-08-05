@@ -61,6 +61,40 @@ async function getDisplayName(groupId, userId, token) {
   } catch { return null; }
 }
 
+// ── 🌏 ชั้นแปลภาษา (k-track 5 ส.ค.) ────────────────────────────
+//  ครัว 6 คนเป็นไทใหญ่ · อ่านไทยได้ 2/6 · อ่านพม่าได้ ~4-5/6
+//  หลายคนเขียนไทใหญ่แบบ "ทับศัพท์" ด้วยอักษรไทย/พม่า → ต้องบอกโมเดลไว้ด้วย
+//  แปลครั้งเดียวตอนเก็บ ไม่ใช่ตอนเปิดอ่าน → ไม่ยิง API ซ้ำทุกครั้งที่นัทเปิดหน้า
+const TRANSLATE_MODEL = 'claude-haiku-4-5-20251001';
+
+async function translate(text) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  const t = (text || '').trim();
+  // ไม่มีคีย์ / ข้อความสั้นเกินจะแปล (สติกเกอร์ เลขล้วน "ok") = ข้าม ไม่เผาเงิน
+  if (!key || t.length < 2 || /^[\d\s.,:/-]+$/.test(t)) return {};
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: TRANSLATE_MODEL,
+        max_tokens: 700,
+        system:
+          'คุณคือล่ามของครัวอาหาร ทีมครัวเป็นคนไทใหญ่ (Shan) หลายคนพิมพ์ภาษาไทใหญ่แบบทับศัพท์ด้วยอักษรไทยหรือพม่า ' +
+          'เจ้าของร้านอ่านไทย ทีมครัวอ่านพม่าได้บางส่วน\n' +
+          'ตอบเป็น JSON เท่านั้น: {"src_lang":"th|my|shan|other","text_th":"...","text_my":"..."}\n' +
+          'กฎ: ห้ามแปลงตัวเลข ชื่อเมนู รหัสเมนู (เช่น S136, HP, LC) และหน่วย (กล่อง/กก./กรัม) — คงไว้ตามต้นฉบับเป๊ะ ' +
+          'แปลตรงตัว ไม่ต้องเติมความ ถ้าอ่านไม่ออกให้คืนข้อความเดิม',
+        messages: [{ role: 'user', content: t.slice(0, 2000) }],
+      }),
+    });
+    if (!r.ok) { console.error('translate HTTP', r.status); return {}; }
+    const raw = (await r.json())?.content?.[0]?.text || '';
+    const j = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    return { src_lang: j.src_lang || null, text_th: j.text_th || null, text_my: j.text_my || null };
+  } catch (e) { console.error('translate failed:', e); return {}; }   // แปลพัง = ยังเก็บต้นฉบับได้ ไม่ล้มทั้ง webhook
+}
+
 async function logMessage(row) {
   try {
     await fetch(SB + '/line_group_messages', {
@@ -133,12 +167,16 @@ export default async function handler(req, res) {
     const m = ev.message || {};
     const text = m.type === 'text' ? (m.text || '') : '';
 
-    // 1) 📝 เก็บทุกข้อความ (นัทสั่ง "เก็บประวัติการคุยทั้งหมด")
-    const displayName = await getDisplayName(groupId, userId, token);
+    // 1) 📝 เก็บทุกข้อความ (นัทสั่ง "เก็บประวัติการคุยทั้งหมด") + แปลไว้ในแถวเดียวกัน
+    const [displayName, tr] = await Promise.all([
+      getDisplayName(groupId, userId, token),
+      translate(text),
+    ]);
     await logMessage({
       message_id: m.id || null, group_id: groupId, user_id: userId,
       display_name: displayName, msg_type: m.type || 'unknown',
       text: text || null,
+      src_lang: tr.src_lang || null, text_th: tr.text_th || null, text_my: tr.text_my || null,
       line_ts: ev.timestamp ? new Date(ev.timestamp).toISOString() : null,
     });
 

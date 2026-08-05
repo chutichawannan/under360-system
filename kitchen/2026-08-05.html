@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบงานครัว 5 ส.ค. — LC / HP / Hyrox</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--veg:#15803D}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:15px;line-height:1.45}
+  .wrap{max-width:820px;margin:0 auto;padding:0 14px 50px}
+  .langbar{position:sticky;top:0;z-index:10;background:#fff;display:flex;gap:6px;padding:12px 0 8px;border-bottom:1px solid var(--line)}
+  .lb{flex:1;font-size:14px;font-weight:800;border:1.5px solid var(--line);background:#fff;color:var(--soft);border-radius:10px;padding:9px 4px;cursor:pointer}
+  .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
+  h1{font-size:21px;font-weight:900;margin:14px 0 2px}
+  .sub{color:var(--soft);font-size:13px;margin-bottom:12px}
+  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:12px 0}
+  .key{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .k{font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px}
+  .k.lc{background:var(--lcbg);color:var(--lc)}
+  .k.hp{background:var(--hpbg);color:var(--hp)}
+  .k.hx{background:var(--hxbg);color:var(--hx)}
+  .k.sp{background:var(--redbg);color:var(--red)}
+  .alert{background:var(--redbg);border:1px solid #FECACA;border-radius:12px;padding:11px 13px;margin-bottom:16px}
+  .alert .t{font-weight:900;color:var(--red);font-size:14px;margin-bottom:6px}
+  .alert ul{margin:0;padding-left:18px}
+  .alert li{font-size:13.5px;font-weight:700;color:#7F1D1D;margin:4px 0}
+  .m{border:1px solid var(--line);border-radius:12px;margin-bottom:10px;overflow:hidden}
+  .mh{background:#F3F4F6;padding:9px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .mh .nm{flex:1;min-width:0}
+  .mh .nm .t1{font-weight:800;font-size:15px}
+  .mh .nm .veg{color:var(--veg);font-size:12px;font-weight:600;margin-top:2px}
+  .mh .nm .fat{color:var(--hx);font-size:12px;font-weight:700;margin-top:2px}
+  .mh .tot{flex:none;font-size:12px;font-weight:800;color:var(--head);background:#E8F5F2;border-radius:999px;padding:3px 10px;white-space:nowrap}
+  .ln{display:flex;gap:10px;padding:9px 12px;border-top:1px solid var(--line);align-items:center}
+  .ln .tag{flex:none;font-size:11.5px;font-weight:900;border-radius:7px;padding:4px 8px;min-width:62px;text-align:center;line-height:1.2}
+  .ln.lc .tag{background:var(--lcbg);color:var(--lc)}
+  .ln.hp .tag{background:var(--hpbg);color:var(--hp)}
+  .ln.hx .tag{background:var(--hxbg);color:var(--hx)}
+  .ln .d{flex:1;font-size:13.5px}
+  .ln .d b{font-size:14.5px}
+  .ln .q{flex:none;font-weight:900;font-size:18px;white-space:nowrap;min-width:26px;text-align:right}
+  .sp{background:var(--redbg);color:#7F1D1D;font-size:13px;font-weight:800;padding:7px 12px 7px 14px}
+  .sec{font-size:13px;font-weight:900;color:var(--head);margin:22px 0 8px}
+  .foot{color:var(--soft);font-size:12px;margin-top:18px;line-height:1.7;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:13px} .langbar{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<div class="langbar">
+  <button class="lb on" id="b_th" onclick="setLang('th')">ไทย</button>
+  <button class="lb" id="b_shn" onclick="setLang('shn')">ไทใหญ่ · တႆး</button>
+  <button class="lb" id="b_my" onclick="setLang('my')">พม่า · မြန်မာ</button>
+</div>
+
+<div class="vbanner" id="vbanner"></div>
+
+<h1>👨‍🍳 <span data-i="title">ใบงานครัว — พุธ 5 ส.ค.</span></h1>
+<div class="sub" data-i="sub">มีลแพลน 56 กล่อง (LC 4 คน · HP 4 คน) + Hyrox 30 กล่อง</div>
+
+<div class="key">
+  <span class="k lc">LC = <span data-i="meat">เนื้อ</span> 120g</span>
+  <span class="k hp">HP = <span data-i="meat">เนื้อ</span> 170g</span>
+  <span class="k hx">HYROX = <span data-i="hxkey">เนื้อ+คาร์บเยอะสุด</span></span>
+  <span class="k sp" data-i="spkey">แถบชมพู = กล่องที่ต้องทำต่างจากปกติ</span>
+</div>
+
+<div class="alert">
+  <div class="t" data-i="al_t">🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง</div>
+  <ul>
+    <li data-i="al1">คุณมอส (HP) — ไม่ทานเนื้อวัว · ไม่ทานขิง · ไม่เอาซอสลุยสวน</li>
+    <li data-i="al2">มีมี่ (LC) — ไม่กินพริกหยวก</li>
+    <li data-i="al3">อุษณี (LC) — ข้าวไรซ์เบอร์รี่ทั้ง 7 กล่อง</li>
+    <li data-i="al4">พรรณพิไล (HP) — ไม่รับเนื้อหมู · ได้ HP66 + HP67 แทน HP73/HP75</li>
+    <li data-i="al5">นวภัท 007 (Hyrox) — ไม่ทานเนื้อหมู → ไม่มีหมูบูลโกกิ</li>
+  </ul>
+</div>
+
+<div class="sub" style="color:var(--hx);font-weight:700" data-i="fatnote">🫒 น้ำมัน = น้ำมันรำข้าวที่เติม (คุมไขมันทั้งกล่องให้อยู่ ~12–18g ตามบรีฟ)</div>
+
+<div class="sec" data-i="sec1">■ เมนูที่ทำหลายปริมาณ (ระวังสลับ)</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">52 <span data-i="mt52">ไก่ซอสแครนเบอร์รี่</span></div><div class="veg">🥗 <span data-i="vg52">สลัดผัก + แครอท + แตงกวา</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot"><span data-i="total">รวม</span> 9 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chicken">อกไก่</span> 120g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="sp" data-i="n_us">อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">73 <span data-i="mt73">ชีสเบอร์เกอร์โบลเนื้อ</span></div><div class="veg">🥗 <span data-i="vg73">ผักกาดหอม·มะเขือเทศ·หอมใหญ่ + แตงกวาดอง</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~8g</div></div><span class="tot"><span data-i="total">รวม</span> 8 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="gbeef">เนื้อบด</span> 120g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="sp" data-i="n_us">อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="gbeef">เนื้อบด</span> 170g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">3</span></div>
+  <div class="sp" data-i="n_moss">คุณมอส — ใช้หมูบดแทนเนื้อวัว 1 กล่อง</div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="gbeef">เนื้อบด</span> 180g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">74 <span data-i="mt74">อกไก่ย่างซอสมิโสะ</span></div><div class="veg">🥗 <span data-i="vg74">บรอกโคลี + หน่อไม้ฝรั่ง + เห็ด</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot"><span data-i="total">รวม</span> 8 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chicken">อกไก่</span> 120g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="sp" data-i="n_us">อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">75 <span data-i="mt75">พาสต้าซอสผักโขม อกไก่พาเมซาน</span></div><div class="veg">🥗 <span data-i="vg75">ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~10g</div></div><span class="tot"><span data-i="total">รวม</span> 8 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chicken">อกไก่</span> 120g</b> · <span data-i="pasta_r">พาสต้าปกติ</span></div><span class="q">4</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="pasta_r">พาสต้าปกติ</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="pasta">พาสต้า</span> ~200g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">76 <span data-i="mt76">แซลมอนซอสทาท่า มันบด</span></div><div class="veg">🥗 <span data-i="vg76">หน่อไม้ฝรั่ง + ถั่วแขก + มะเขือเทศ</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~3g</div></div><span class="tot"><span data-i="total">รวม</span> 9 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 120g</b> · <span data-i="mash_r">มันบดปกติ</span></div><span class="q">4</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="mash_r">มันบดปกติ</span></div><span class="q">4</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="mash">มันบด</span> ~300g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">78 <span data-i="mt78">ข้าวไข่ข้นยำทูน่า</span></div><div class="veg">🥗 <span data-i="vg78">หอมแดง·ขึ้นฉ่าย·มะเขือเทศ + แตงกวา</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot"><span data-i="total">รวม</span> 9 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="ctuna">ทูน่ากระป๋อง</span> ~90g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="sp" data-i="n_us">อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="ctuna">ทูน่ากระป๋อง</span> ~130g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ctuna">ทูน่ากระป๋อง</span> ~130g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">82 <span data-i="mt82">กุ้งผัดพริกขี้หนู ไข่ข้น</span></div><div class="veg">🥗 <span data-i="vg82">ถั่วฝักยาว + พริกหยวก + ใบกะเพรา</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~10g</div></div><span class="tot"><span data-i="total">รวม</span> 8 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 120g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+  <div class="sp" data-i="n_mimi">มีมี่ — ตัดพริกหยวกออก 1 กล่อง</div>
+  <div class="sp" data-i="n_us">อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 170g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice_r">ข้าวปกติ</span></div><span class="q">4</span></div>
+</div>
+
+<div class="sec" data-i="sec2">■ พิเศษเฉพาะ พรรณพิไล (HP · ไม่รับหมู)</div>
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="pann_t">แทน HP73 + HP75 ที่เธอไม่ได้รับ</div></div><span class="tot">2 <span data-i="box">กล่อง</span> + 12 <span data-i="bag">ถุง</span></span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d">HP66 <b><span data-i="mt_hp66">เส้นหมี่น้ำเงี้ยวอกไก่</span></b></div><span class="q">1</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d">HP67 <b><span data-i="mt_hp67">กระพงอบซอสเต้าเจี้ยว</span></b></div><span class="q">1</span></div>
+  <div class="ln hp"><span class="tag" data-i="extra">เสริม</span><div class="d"><b>Bone Broth</b> — <span data-i="pork">หมู</span> 6 + <span data-i="chick2">ไก่</span> 6</div><span class="q">12</span></div>
+</div>
+
+<div class="sec" data-i="sec3">■ HYROX เท่านั้น</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_ta">อกไก่ย่างตะไคร้ + น้ำพริกย่าง</div><div class="veg">🥗 <span data-i="vg_ta">แตงกวา + ถั่วฝักยาว + กะหล่ำ</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~7g</div></div><span class="tot">4 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">4</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_bul">หมูบูลโกกิ</div><div class="veg">🥗 <span data-i="vg_bul">ถั่วงอก + แครอท + ผักกาดหอม</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot">3 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">สันในหมู</span> 180g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">3</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_bib">บิบิมบับ (เนื้อวัว)</div><div class="veg">🥗 <span data-i="vg_bib">ถั่วงอก·แครอท·ผักโขม·เห็ด + ไข่</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot">3 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 180g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">3</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_ball">อกไก่บอล ซอสมะเขือเทศ</div><div class="veg">🥗 <span data-i="vg_ball">บรอกโคลี + มะเขือเทศเชอร์รี่ + ซูกินี</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~8g</div></div><span class="tot">3 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chickenb">อกไก่บด</span> 170g</b> · <span data-i="penne">เพนเน่</span> ~200g</div><span class="q">3</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_gar">การ์ลิคบัตเตอร์กุ้ง</div><div class="veg">🥗 <span data-i="vg_gar">หน่อไม้ฝรั่ง + บรอกโคลี</span></div><div class="fat">🫒 <span data-i="oilb">น้ำมัน/เนย</span> ~9g</div></div><span class="tot">4 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 160g</b> · <span data-i="quinoa">ควินัว</span> ~285g</div><span class="q">4</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1" data-i="mt_grn">กระพงย่างเขียวหวาน</div><div class="veg">🥗 <span data-i="vg_grn">มะเขือ + ถั่วฝักยาว + ใบโหระพา</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~6g</div></div><span class="tot">4 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seabass">กระพง</span> 185g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">4</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1"><span data-i="mt_3rs">กระพงย่าง ซอสสามรส</span> <span style="color:var(--hx);font-size:12px">(<span data-i="backup">สำรอง</span>)</span></div><div class="veg">🥗 <span data-i="vg_3rs">ยำผักสด (แตงกวา·หอมแดง·ผักกาดหอม)</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~9g</div></div><span class="tot">2 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seabass">กระพง</span> 185g</b> · <span data-i="rice">ข้าว</span> ~240g</div><span class="q">2</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">33 <span data-i="mt33">กะเพราเนื้อ</span></div><div class="veg">🥗 <span data-i="vg33">สลัดเห็ดออรินจิ + ถั่วฝักยาว</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~9g</div></div><span class="tot">1 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 180g</b> · <span data-i="rice">ข้าว</span> ~220g</div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">12 Mexican beef bowl</div><div class="veg">🥗 <span data-i="vg12">ซัลซ่า + อโวคาโด + ถั่วแดง</span></div><div class="fat">🫒 <span data-i="oil">น้ำมันรำข้าว</span> ~8g</div></div><span class="tot">1 <span data-i="box">กล่อง</span></span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 180g</b> · <span data-i="sweetp">มันหวาน</span> ~200g + <span data-i="corn">ข้าวโพด</span></div><span class="q">1</span></div>
+</div>
+
+<div class="foot">
+  <b>มีลแพลน 5 ส.ค. = 8 ออเดอร์ · 56 กล่อง</b> — LC: มีมี่ · ธนัทพร · สุทธิภา · อุษณี | HP: มอส · โมจิ · Bright · พรรณพิไล<br>
+  <b>Hyrox 5 ส.ค. = 30 กล่อง</b> — คุณเฉียง 12 · นวภัท 6 · พัดชา 6 · คุณชัย 6
+</div>
+
+</div>
+
+<script>
+const T = {
+  title:{th:'ใบงานครัว — พุธ 5 ส.ค.', shn:'ၽိုၼ်ႁဵတ်းၵၢၼ်ႁွင်ႈၶဝ်ႈ — ဝၼ်းပုတ်ႉ 5 ဢေႃးၵၢတ်ႉ', my:'မီးဖိုချောင်အလုပ်စာရွက် — ဗုဒ္ဓဟူး ၅ သြဂုတ်'},
+  sub:{th:'มีลแพลน 56 กล่อง (LC 4 คน · HP 4 คน) + Hyrox 30 กล่อง', shn:'Meal Plan 56 ႁိပ်ႇ (LC 4 · HP 4) + Hyrox 30 ႁိပ်ႇ', my:'Meal Plan ၅၆ ဘူး (LC ၄ · HP ၄) + Hyrox ၃၀ ဘူး'},
+  meat:{th:'เนื้อ', shn:'ၼိူဝ်ႉ', my:'အသား'},
+  hxkey:{th:'เนื้อ+คาร์บเยอะสุด', shn:'ၼိူဝ်ႉ+ၶၢပ်ႈ ၼမ်သုတ်း', my:'အသား+ကာဗို အများဆုံး'},
+  spkey:{th:'แถบชมพู = กล่องที่ต้องทำต่างจากปกติ', shn:'သီလႅင်ဢွၼ်ႇ = ႁိပ်ႇထႅမ်ႁဵတ်းၽိတ်းၵၼ်', my:'ပန်းရောင်တန်း = ပုံမှန်နဲ့မတူတဲ့ဘူး'},
+  al_t:{th:'🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง', shn:'🔴 ၶွင်ႁၢမ်ႈ ၽႂ်မၼ်း — ၵူတ်ႇတူၺ်းၵွၼ်ႇထုပ်ႇၵူႈႁိပ်ႇ', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မထုပ်ခင် အကုန်စစ်ပါ'},
+  al1:{th:'คุณมอส (HP) — ไม่ทานเนื้อวัว · ไม่ทานขิง · ไม่เอาซอสลุยสวน', shn:'Moss (HP) — ဢမ်ႇၵိၼ်ၼိူဝ်ႉဝူဝ်း · ဢမ်ႇၵိၼ်ၶိင် · ဢမ်ႇဢဝ်ဆော့စ်(ၼမ်ႉၽၵ်း)', my:'Moss (HP) — အမဲသားမစား · ချင်းမစား · ဆော့စ်မပါ'},
+  al2:{th:'มีมี่ (LC) — ไม่กินพริกหยวก', shn:'Mimi (LC) — ဢမ်ႇၵိၼ် ၽိတ်ႉယူၺ်း', my:'Mimi (LC) — ငရုတ်ကောင်း(ငရုတ်ကြီး) မစား'},
+  al3:{th:'อุษณี (LC) — ข้าวไรซ์เบอร์รี่ทั้ง 7 กล่อง', shn:'Ussanee (LC) — ၶဝ်ႈ Riceberry ၵူႈ 7 ႁိပ်ႇ', my:'Ussanee (LC) — Riceberry ထမင်း ၇ ဘူးလုံး'},
+  al4:{th:'พรรณพิไล (HP) — ไม่รับเนื้อหมู · ได้ HP66 + HP67 แทน HP73/HP75', shn:'Pannapilai (HP) — ဢမ်ႇဢဝ်ၼိူဝ်ႉမူ · ဢဝ် HP66 + HP67 တႅၼ်း HP73/HP75', my:'Pannapilai (HP) — ဝက်သားမယူ · HP73/HP75 အစား HP66+HP67'},
+  al5:{th:'นวภัท 007 (Hyrox) — ไม่ทานเนื้อหมู → ไม่มีหมูบูลโกกิ', shn:'Nawaphat 007 (Hyrox) — ဢမ်ႇၵိၼ်ၼိူဝ်ႉမူ → ဢမ်ႇမီးမူ Bulgogi', my:'Nawaphat 007 (Hyrox) — ဝက်သားမစား → ဝက် Bulgogi မပါ'},
+  fatnote:{th:'🫒 น้ำมัน = น้ำมันรำข้าวที่เติม (คุมไขมันทั้งกล่องให้อยู่ ~12–18g ตามบรีฟ)', shn:'🫒 ၼမ်ႉမၼ်း = ၼမ်ႉမၼ်းၶဝ်ႈ ထႅမ် (ၵုမ်းၼမ်ႉမၼ်း ~12–18g)', my:'🫒 ဆီ = ဆန်ဖွဲဆီ ထည့် (အဆီ ~12–18g ထိန်း)'},
+  sec1:{th:'■ เมนูที่ทำหลายปริมาณ (ระวังสลับ)', shn:'■ မဵၼ်ႇႁဵတ်းလၢႆၶၼႃႇ (ၾၢင်ႉယႃႇသုမ်ႇ)', my:'■ ပမာဏများ ချက်ရသည့်မီနူး (မမှားပါစေနဲ့)'},
+  sec2:{th:'■ พิเศษเฉพาะ พรรณพิไล (HP · ไม่รับหมู)', shn:'■ ၶိုၵ်ႉ ဢၼ် Pannapilai (HP · ဢမ်ႇဢဝ်မူ)', my:'■ Pannapilai အတွက်သီးသန့် (HP · ဝက်မပါ)'},
+  sec3:{th:'■ HYROX เท่านั้น', shn:'■ HYROX ၵူၺ်း', my:'■ HYROX သီးသန့်'},
+  n_us:{th:'อุษณี — ข้าวไรซ์เบอร์รี่ 1 กล่อง', shn:'Ussanee — ၶဝ်ႈ Riceberry 1 ႁိပ်ႇ', my:'Ussanee — Riceberry ထမင်း ၁ ဘူး'},
+  n_moss:{th:'คุณมอส — ใช้หมูบดแทนเนื้อวัว 1 กล่อง', shn:'Moss — ၸႂ်ႉၼိူဝ်ႉမူႇၸဵၼ်း တႅၼ်းၼိူဝ်ႉဝူဝ်း 1 ႁိပ်ႇ', my:'Moss — အမဲသားအစား ဝက်သားစဉ်းသုံး ၁ ဘူး'},
+  n_mimi:{th:'มีมี่ — ตัดพริกหยวกออก 1 กล่อง', shn:'Mimi — တတ်းဢွၵ်ႇ ၽိတ်ႉယူၺ်း 1 ႁိပ်ႇ', my:'Mimi — ငရုတ်ကောင်းဖြုတ် ၁ ဘူး'},
+  pann_t:{th:'แทน HP73 + HP75 ที่เธอไม่ได้รับ', shn:'တႅၼ်း HP73 + HP75 ဢၼ်မၼ်းဢမ်ႇလႆႈ', my:'သူမမရတဲ့ HP73 + HP75 အစား'},
+  oil:{th:'น้ำมันรำข้าว', shn:'ၼမ်ႉမၼ်းၶဝ်ႈ', my:'ဆန်ဖွဲဆီ'},
+  oilb:{th:'น้ำมัน/เนย', shn:'ၼမ်ႉမၼ်း/မၼ်းၼူမ်း', my:'ဆီ/ထောပတ်'},
+  total:{th:'รวม', shn:'ႁူမ်ႈ', my:'စုစုပေါင်း'},
+  box:{th:'กล่อง', shn:'ႁိပ်ႇ', my:'ဘူး'},
+  bag:{th:'ถุง', shn:'ထူင်', my:'အိတ်'},
+  extra:{th:'เสริม', shn:'ထႅမ်', my:'ဖြည့်'},
+  backup:{th:'สำรอง', shn:'ႁပ်ႉ', my:'အရန်'},
+  chicken:{th:'อกไก่', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇ', my:'ကြက်ရင်သား'},
+  chick2:{th:'ไก่', shn:'ၵႆႇ', my:'ကြက်'},
+  chickenb:{th:'อกไก่บด', shn:'ၼိူဝ်ႉၵႆႇၸဵၼ်း', my:'ကြက်သားစဉ်း'},
+  gbeef:{th:'เนื้อบด', shn:'ၼိူဝ်ႉဝူဝ်းၸဵၼ်း', my:'အမဲသားစဉ်း'},
+  gpork:{th:'หมูบด', shn:'ၼိူဝ်ႉမူႇၸဵၼ်း', my:'ဝက်သားစဉ်း'},
+  ptender:{th:'สันในหมู', shn:'ၼိူဝ်ႉမူႇ(သၼ်လင်)', my:'ဝက်သားနု'},
+  beef:{th:'เนื้อวัว', shn:'ၼိူဝ်ႉဝူဝ်း', my:'အမဲသား'},
+  pork:{th:'หมู', shn:'ၼိူဝ်ႉမူႇ', my:'ဝက်'},
+  salmon:{th:'แซลมอน', shn:'ပႃႇ Salmon', my:'ဆယ်လ်မွန်ငါး'},
+  shrimp:{th:'กุ้ง', shn:'ၵုင်ႈ', my:'ပုစွန်'},
+  ctuna:{th:'ทูน่ากระป๋อง', shn:'ပႃႇ Tuna (ၵျွင်း)', my:'တူနာငါး(ဗူး)'},
+  seabass:{th:'กระพง', shn:'ပႃႇၵြပွင်း', my:'ကကတစ်ငါး'},
+  egg:{th:'ไข่', shn:'ၶႆႇ', my:'ဥ'},
+  rice_r:{th:'ข้าวปกติ', shn:'ၶဝ်ႈ (ပၵ်ႇတိ)', my:'ထမင်း(ပုံမှန်)'},
+  rice:{th:'ข้าว', shn:'ၶဝ်ႈ', my:'ထမင်း'},
+  pasta_r:{th:'พาสต้าปกติ', shn:'Pasta (ပၵ်ႇတိ)', my:'ပါစတာ(ပုံမှန်)'},
+  pasta:{th:'พาสต้า', shn:'Pasta', my:'ပါစတာ'},
+  penne:{th:'เพนเน่', shn:'Penne', my:'ပန်နဲ'},
+  mash_r:{th:'มันบดปกติ', shn:'မၢၼ်းၸဵၼ်း (ပၵ်ႇတိ)', my:'အာလူးထောင်း(ပုံမှန်)'},
+  mash:{th:'มันบด', shn:'မၢၼ်းၸဵၼ်း', my:'အာလူးထောင်း'},
+  sweetp:{th:'มันหวาน', shn:'မၢၼ်းဝၢၼ်', my:'ကန်စွန်းဥ'},
+  quinoa:{th:'ควินัว', shn:'Quinoa', my:'ကီနွာ'},
+  corn:{th:'ข้าวโพด', shn:'ၶဝ်ႈၵၢပ်ႈ', my:'ပြောင်းဖူး'},
+  mt52:{th:'ไก่ซอสแครนเบอร์รี่', shn:'ၵႆႇ ဆော့စ် Cranberry', my:'ကြက် ကရန်ဘယ်ရီဆော့စ်'},
+  mt73:{th:'ชีสเบอร์เกอร์โบลเนื้อ', shn:'ၼိူဝ်ႉဝူဝ်း Cheeseburger Bowl', my:'အမဲ ချိစ်ဘာဂါ ဘိုး'},
+  mt74:{th:'อกไก่ย่างซอสมิโสะ', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇၽဝ် ဆော့စ်မိသူဝ်', my:'ကြက်ရင်သားကင် မီဆိုဆော့စ်'},
+  mt75:{th:'พาสต้าซอสผักโขม อกไก่พาเมซาน', shn:'Pasta ဆော့စ်ၽၵ်းၶူမ်း ၵႆႇ Parmesan', my:'ဟင်းနုနွယ်ဆော့စ်ပါစတာ ကြက်ပါမီဆန်'},
+  mt76:{th:'แซลมอนซอสทาท่า มันบด', shn:'Salmon ဆော့စ် Tartar၊ မၢၼ်းၸဵၼ်း', my:'ဆယ်လ်မွန် တာတာဆော့စ်၊ အာလူးထောင်း'},
+  mt78:{th:'ข้าวไข่ข้นยำทูน่า', shn:'ၶဝ်ႈ ၶႆႇ Tuna ယမ်', my:'ဥအနှစ်ထမင်း တူနာသုပ်'},
+  mt82:{th:'กุ้งผัดพริกขี้หนู ไข่ข้น', shn:'ၵုင်ႈၽတ်ႉ ၽိတ်ႉၶီႈၼူ ၶႆႇ', my:'ပုစွန်ငရုတ်ကြော် ဥအနှစ်'},
+  mt_ta:{th:'อกไก่ย่างตะไคร้ + น้ำพริกย่าง', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇၽဝ်ၶႃ + ၼမ်ႉၽိတ်ႉ', my:'ကြက်ရင်သားကင် စပါးလင် + နံပြက်'},
+  mt_bul:{th:'หมูบูลโกกิ', shn:'ၼိူဝ်ႉမူႇ Bulgogi', my:'ဝက်သား Bulgogi'},
+  mt_bib:{th:'บิบิมบับ (เนื้อวัว)', shn:'Bibimbap (ၼိူဝ်ႉဝူဝ်း)', my:'Bibimbap (အမဲ)'},
+  mt_ball:{th:'อกไก่บอล ซอสมะเขือเทศ', shn:'ၵႆႇလုၵ်ႈ ဆော့စ်မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ', my:'ကြက်သားလုံး ခရမ်းချဉ်ဆော့စ်'},
+  mt_gar:{th:'การ์ลิคบัตเตอร์กุ้ง', shn:'ၵုင်ႈ Garlic Butter', my:'ကြက်သွန်ဖြူထောပတ် ပုစွန်'},
+  mt_grn:{th:'กระพงย่างเขียวหวาน', shn:'ပႃႇၵြပွင်းၽဝ် ၵႅင်းၶဵဝ်', my:'ကကတစ်ကင် စိမ်းစပ်ဟင်း'},
+  mt_3rs:{th:'กระพงย่าง ซอสสามรส', shn:'ပႃႇၵြပွင်းၽဝ် ဆော့စ်သၢမ်ရသ', my:'ကကတစ်ကင် သုံးအရသာဆော့စ်'},
+  mt33:{th:'กะเพราเนื้อ', shn:'ၼိူဝ်ႉဝူဝ်း ၽတ်ႉဢဝ်းႁွမ်', my:'အမဲ ပဒဲကြော်'},
+  mt_hp66:{th:'เส้นหมี่น้ำเงี้ยวอกไก่', shn:'ၶဝ်ႈသဵၼ်ႈ ၼမ်ႉငႄႇဝ် ၵႆႇ', my:'ကြက် နမ်းငြေါ ခေါက်ဆွဲ'},
+  mt_hp67:{th:'กระพงอบซอสเต้าเจี้ยว', shn:'ပႃႇၵြပွင်း ဆော့စ်တဝ်ႇၸဵဝ်ႈ', my:'ကကတစ် ပဲငံပြာဆော့စ်'},
+  vg52:{th:'สลัดผัก + แครอท + แตงกวา', shn:'ၽၵ်းသုမ်ႈ + ၽၵ်းၵၢတ်ႇ + တႅင်ႈ', my:'အသုပ် + မုန်လာဥနီ + သခွား'},
+  vg73:{th:'ผักกาดหอม·มะเขือเทศ·หอมใหญ่ + แตงกวาดอง', shn:'ၽၵ်းၸလၢတ်ႇ·မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ·ႁၢၼ်ႉ + တႅင်ႈၶႅမ်ႉ', my:'ဆလတ်·ခရမ်းချဉ်·ကြက်သွန်နီ + သခွားသနပ်'},
+  vg74:{th:'บรอกโคลี + หน่อไม้ฝรั่ง + เห็ด', shn:'Broccoli + ၼေႃႇမႆႇ + ႁဵတ်ႇ', my:'ဘရိုကိုလီ + ကညွန့် + မှို'},
+  vg75:{th:'ร็อกเก็ต/สลัด + มะเขือเทศเชอร์รี่', shn:'ၽၵ်းသုမ်ႈ + မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ Cherry', my:'ရော့ကတ်/အသုပ် + ချယ်ရီခရမ်းချဉ်'},
+  vg76:{th:'หน่อไม้ฝรั่ง + ถั่วแขก + มะเขือเทศ', shn:'ၼေႃႇမႆႇ + ထူဝ်ႇ + မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ', my:'ကညွန့် + ပဲတောင့်ရှည် + ခရမ်းချဉ်'},
+  vg78:{th:'หอมแดง·ขึ้นฉ่าย·มะเขือเทศ + แตงกวา', shn:'ႁၢၼ်ႉလႅင်·ၽၵ်းၶီႇၶၢႆ·မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ + တႅင်ႈ', my:'ကြက်သွန်နီ·ဆလ်ရီ·ခရမ်းချဉ် + သခွား'},
+  vg82:{th:'ถั่วฝักยาว + พริกหยวก + ใบกะเพรา', shn:'ထူဝ်ႇ + ၽိတ်ႉယူၺ်း + ဢဝ်းၽၵ်းႁွမ်', my:'ပဲတောင့်ရှည် + ငရုတ်ကောင်း + ပဒဲရွက်'},
+  vg_ta:{th:'แตงกวา + ถั่วฝักยาว + กะหล่ำ', shn:'တႅင်ႈ + ထူဝ်ႇ + ၵေႃႇၽီႇ', my:'သခွား + ပဲတောင့်ရှည် + ဂေါ်ဖီ'},
+  vg_bul:{th:'ถั่วงอก + แครอท + ผักกาดหอม', shn:'ထူဝ်ႇငွၵ်ႈ + ၽၵ်းၵၢတ်ႇ + ၽၵ်းၸလၢတ်ႇ', my:'ပဲပင်ပေါက် + မုန်လာဥနီ + ဆလတ်'},
+  vg_bib:{th:'ถั่วงอก·แครอท·ผักโขม·เห็ด + ไข่', shn:'ထူဝ်ႇငွၵ်ႈ·ၽၵ်းၵၢတ်ႇ·ၽၵ်းၶူမ်း·ႁဵတ်ႇ + ၶႆႇ', my:'ပဲပင်ပေါက်·မုန်လာဥနီ·ဟင်းနုနွယ်·မှို + ဥ'},
+  vg_ball:{th:'บรอกโคลี + มะเขือเทศเชอร์รี่ + ซูกินี', shn:'Broccoli + မၢၵ်ႇၶိူဝ်ႇသူမ်ႈ Cherry + Zucchini', my:'ဘရိုကိုလီ + ချယ်ရီခရမ်းချဉ် + ဇူကီနီ'},
+  vg_gar:{th:'หน่อไม้ฝรั่ง + บรอกโคลี', shn:'ၼေႃႇမႆႇ + Broccoli', my:'ကညွန့် + ဘရိုကိုလီ'},
+  vg_grn:{th:'มะเขือ + ถั่วฝักยาว + ใบโหระพา', shn:'မၢၵ်ႇၶိူဝ်ႇ + ထူဝ်ႇ + ဢဝ်းႁွမ်', my:'ခရမ်းသီး + ပဲတောင့်ရှည် + ပင်စိမ်းရွက်'},
+  vg_3rs:{th:'ยำผักสด (แตงกวา·หอมแดง·ผักกาดหอม)', shn:'ယမ်ၽၵ်းသုမ်ႈ (တႅင်ႈ·ႁၢၼ်ႉလႅင်·ၽၵ်းၸလၢတ်ႇ)', my:'ဟင်းသီးစိမ်းသုပ် (သခွား·ကြက်သွန်နီ·ဆလတ်)'},
+  vg33:{th:'สลัดเห็ดออรินจิ + ถั่วฝักยาว', shn:'ယမ်ႁဵတ်ႇ Orinji + ထူဝ်ႇ', my:'အိုရင်ဂျီမှိုသုပ် + ပဲတောင့်ရှည်'},
+  vg12:{th:'ซัลซ่า + อโวคาโด + ถั่วแดง', shn:'Salsa + Avocado + ထူဝ်ႇလႅင်', my:'ဆာဆာ + ထောပတ်သီး + ပဲနီ'}
+};
+const V = {
+  th:'',
+  shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ (ข้อห้ามสำคัญสุด)',
+  my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ'
+};
+function setLang(l){
+  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(T[k]&&T[k][l]!=null) e.textContent=T[k][l];});
+  ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
+  var b=document.getElementById('vbanner'); b.textContent=V[l]||''; b.style.display=l==='th'?'none':'block';
+  document.documentElement.lang = l==='my'?'my':(l==='shn'?'shn':'th');
+}
+</script>
+</body>
+</html>

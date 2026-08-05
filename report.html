@@ -128,20 +128,44 @@ function genMockData(range){
   return orders;
 }
 
+// สถานะของข้อมูลรอบล่าสุด — ใช้บอกผู้ใช้ตรงๆ ว่าเลขที่เห็นเชื่อได้แค่ไหน
+var _capped=false;      // ดึงไม่ครบ (ชนเพดานหน้า)
+var _orderCount=0;      // จำนวน "ใบ" จริง (ไม่ใช่จำนวนรายการสินค้า)
+var _mockMode=false;    // กำลังโชว์ข้อมูลตัวอย่าง ไม่ใช่ยอดจริง
+
 async function loadData(){
   var sb_=getSB();
   var data;
+  _capped=false; _orderCount=0; _mockMode=false;
   if(sb_){
     try{
       var today=new Date().toISOString().split("T")[0];
       var from=new Date();
       if(currentRange==="week") from.setDate(from.getDate()-7);
       else if(currentRange==="month") from.setDate(from.getDate()-30);
-      var q=sb_.from("orders").select("*, order_items(quantity, menu_item_id, menu_items(code,name,price))").order("created_at",{ascending:false});
-      if(currentRange==="today") q=q.eq("delivery_date",today);
-      else if(currentRange!=="all") q=q.gte("delivery_date",from.toISOString().split("T")[0]);
-      var res=await q;
-      if(!res.error&&res.data&&res.data.length){
+      // ⚠️ 1000-cap: `.select()` ไม่มี `.range()` → Supabase คืนแค่ 1000 แถวเงียบๆ
+      //    ช่วง "ทั้งหมด" มีออเดอร์ 15,900+ ใบ = เดิมรายงานจากแค่ 1,000 ใบล่าสุด แล้วโชว์เป็นยอดจริง
+      var SEL="*, order_items(quantity, menu_item_id, menu_items(code,name,price))";
+      var PAGE=1000, MAX_PAGES=25, rows=[];
+      _capped=false;
+      for(var pg=0;pg<MAX_PAGES;pg++){
+        var q=sb_.from("orders").select(SEL)
+                 .order("created_at",{ascending:false}).order("id",{ascending:false})   // ทับซ้อน/ตกหล่นตอนแบ่งหน้า
+                 .range(pg*PAGE,(pg+1)*PAGE-1);
+        if(currentRange==="today") q=q.eq("delivery_date",today);
+        else if(currentRange!=="all") q=q.gte("delivery_date",from.toISOString().split("T")[0]);
+        var res=await q;
+        if(res.error) throw res.error;
+        // ตัดใบยกเลิก + ออเดอร์เทส ออกก่อนนับ (ตรงกับที่ OH/แมสทำ · เดิมนับรวมหมด = ยอดเกินจริง)
+        rows=rows.concat((res.data||[]).filter(function(o){
+          return o.status!=="cancelled" && o.source!=="parallel_test";
+        }));
+        if(!res.data||res.data.length<PAGE) break;
+        if(pg===MAX_PAGES-1) _capped=true;    // ยังไม่หมด แต่หยุดแล้ว = ตัวเลขไม่ครบ ต้องบอกให้เห็น
+      }
+      var res={data:rows};
+      _orderCount=rows.length;
+      if(res.data&&res.data.length){
         // แปลง Supabase data เป็น format เดิม
         data=[];
         res.data.forEach(function(o){
@@ -153,17 +177,26 @@ async function loadData(){
           });
           if(!items.length) data.push({order_number:o.order_number,customer_name:o.customer_name,delivery_date:o.delivery_date,total:o.total||0,status:o.status,menu:{code:"—",name:"ไม่ระบุ",type:"s",price:0},qty:1});
         });
-      } else { data=genMockData(currentRange); }
-    }catch(e){ data=genMockData(currentRange); }
-  } else { data=genMockData(currentRange); }
+      } else { data=genMockData(currentRange); _mockMode=true; _orderCount=0; }
+    }catch(e){ console.warn("report: โหลดข้อมูลจริงไม่ได้ →",e); data=genMockData(currentRange); _mockMode=true; _orderCount=0; }
+  } else { data=genMockData(currentRange); _mockMode=true; }
   const totalRev=data.reduce((s,o)=>s+o.total,0);
   const totalBoxes=data.reduce((s,o)=>s+o.qty,0);
+  // ⚠️ data = "รายการสินค้า" ไม่ใช่ "ออเดอร์" — เดิมโชว์ data.length ในช่อง "ออเดอร์ทั้งหมด" = นับเกินจริงหลายเท่า
+  var nOrders=_orderCount||new Set(data.map(function(o){return o.order_number;})).size;
   document.getElementById("sRev").textContent=fmtB(totalRev);
-  document.getElementById("sOrders").textContent=data.length;
-  document.getElementById("sAvg").textContent=fmtB(Math.round(totalRev/(data.length||1)));
+  document.getElementById("sOrders").textContent=nOrders;
+  document.getElementById("sAvg").textContent=fmtB(Math.round(totalRev/(nOrders||1)));
   document.getElementById("sBoxes").textContent=totalBoxes;
-  document.getElementById("sRevTrend").innerHTML="<span class='trend up'>▲ +12% จากช่วงก่อน</span>";
-  document.getElementById("sOrdersTrend").innerHTML="<span class='trend up'>▲ +5 ออเดอร์</span>";
+  // ❌ เดิมฮาร์ดโค้ด "▲ +12%" / "▲ +5 ออเดอร์" ไว้ตายตัว = ตัวเลขปลอมที่หน้าตาเหมือนของจริง (ลบทิ้ง 5 ส.ค. 2026)
+  //    ยังไม่ได้คำนวณเทียบช่วงก่อนจริง → ไม่โชว์ดีกว่าโชว์ผิด
+  // ⚠️ ยอดตรงนี้ = Σ(ราคาเมนู × จำนวน) ไม่ใช่ยอดที่ลูกค้าจ่ายจริง (ไม่รวมส่วนลด/ค่าส่ง · เซ็ต/มีลแพลนคิดราคาเป็นชุด)
+  //    → จะไม่ตรงกับตัวเลข f-track ที่มาจาก orders.total · ต้องเขียนบอกไว้ กันเอาไปอ้างผิดที่
+  document.getElementById("sRevTrend").textContent=
+    _capped ? "⚠️ ข้อมูลไม่ครบ (ตัดที่ "+_orderCount+" ใบ)"
+    : _mockMode ? ""
+    : "= ราคาเมนู×จำนวน ไม่ใช่ยอดจ่ายจริง";
+  document.getElementById("sOrdersTrend").textContent=_mockMode?"⚠️ ข้อมูลตัวอย่าง ไม่ใช่ยอดจริง":"ตัดใบยกเลิก/เทสแล้ว";
 
   // Revenue chart
   const days7=[]; const rev7=[];
