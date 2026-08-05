@@ -651,8 +651,10 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <button class="btn" onclick="msgSetDay(0)">วันนี้</button>
         <button class="btn" onclick="msgSetDay(1)">พรุ่งนี้</button>
         <input type="date" id="msg-date" onchange="loadMessenger()" style="padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:13px">
+        <button class="btn" id="msg-plan-btn" onclick="msgPlanRoutes()" title="ถามราคาจริงจาก Lalamove แล้วเทียบว่าจัดรอบแบบไหนถูกสุด (ขอราคาอย่างเดียว ไม่จองรถ)">💰 คำนวณค่าส่งถูกสุด</button>
       </div>
       <div id="msg-summary" style="margin-bottom:10px"></div>
+      <div id="msg-plan" style="margin-bottom:10px"></div>
       <div class="messenger-list" id="messengerList">
         <div style="padding:40px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
       </div>
@@ -1842,6 +1844,154 @@ async function loadMessenger(){
     el.innerHTML=h;
 
   }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้: "+esc2(e.message||"")+"</div>";}
+}
+
+// ══════════════════════════════════════
+// 💰 คำนวณค่าส่งถูกสุด — เทียบ "แยกคันต่อจุด" vs "คันเดียวหลายจุด" (นัทสั่ง 5 ส.ค. 2026)
+// ⚠️ ขอราคาจาก Lalamove อย่างเดียว (POST /v3/quotations) — ไม่จองรถ ไม่มีการใช้เงิน
+// ⚠️ เลข "ถูกสุด" นี้คือ "ถ้าจ้าง Lalamove ทั้งวัน" — ยังไม่ได้เทียบกับต้นทุนแมสร้าน (ยังไม่มีตัวเลขนั้นในระบบ)
+// ══════════════════════════════════════
+var MSG_TRIP_SIZES=[2,3,4,5,6];   // ทดลอง "วิ่งทีละกี่งาน" — ตอบคำถามนัทว่ากี่งานต่อรอบถูกสุด
+var _msgQuoteCache={};            // key = ลำดับพิกัด → ราคา (กันยิงซ้ำ)
+
+function msgKm(a,b){ var dLat=a.lat-b.lat,dLng=a.lng-b.lng; return Math.sqrt(dLat*dLat+dLng*dLng)*111; }
+
+// เรียงจุดแบบ "ใกล้สุดก่อน" ไล่จากครัว (nearest-neighbour) — ไม่ใช่เส้นทางที่ดีที่สุดในทางทฤษฎี แต่ใกล้เคียงและเร็วพอ
+function msgRouteOrder(pts){
+  var left=pts.slice(), out=[], cur=MSG_KITCHEN;
+  while(left.length){
+    var bi=0,bd=Infinity;
+    for(var i=0;i<left.length;i++){ var d=msgKm(cur,left[i]); if(d<bd){bd=d;bi=i;} }
+    cur=left[bi]; out.push(left.splice(bi,1)[0]);
+  }
+  return out;
+}
+function msgChunk(arr,n){ var out=[]; for(var i=0;i<arr.length;i+=n) out.push(arr.slice(i,i+n)); return out; }
+
+// ขอราคา 1 รอบ (1 คัน วิ่งกี่จุดก็ได้) — cache ด้วยลำดับพิกัด
+async function msgQuoteTrip(stops){
+  var key=stops.map(function(s){return s.lat.toFixed(5)+","+s.lng.toFixed(5);}).join("|");
+  if(_msgQuoteCache[key]!==undefined) return _msgQuoteCache[key];
+  var val=null;
+  try{
+    var r=await fetch("/api/lalamove-quote",{
+      method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({drops:stops.map(function(s){return {lat:s.lat,lng:s.lng,addr:s.addr};})})
+    });
+    var j=await r.json().catch(function(){return {};});
+    if(j&&j.ok&&typeof j.price==="number") val=j.price;
+    else val={err:(j&&j.detail&&j.detail.message)||(j&&j.error)||("HTTP "+r.status)};
+  }catch(e){ val={err:String(e&&e.message||e)}; }
+  _msgQuoteCache[key]=val;
+  return val;
+}
+// ราคารวมของ "แผน" = ชุดของรอบ · ถ้ารอบไหนขอราคาไม่ได้ = แผนนั้นใช้ไม่ได้ (ไม่เดาราคาแทน)
+async function msgQuotePlan(trips){
+  var total=0, errs=[];
+  for(var i=0;i<trips.length;i++){
+    var v=await msgQuoteTrip(trips[i]);
+    if(v==null||typeof v==="object"){ errs.push((v&&v.err)||"ขอราคาไม่ได้"); }
+    else total+=v;
+  }
+  return {total:total,trips:trips,cars:trips.length,errs:errs};
+}
+
+async function msgPlanRoutes(){
+  var box=document.getElementById("msg-plan"), btn=document.getElementById("msg-plan-btn");
+  if(!box)return;
+  // เอาเฉพาะงานที่ Lalamove รับได้จริง: มีพิกัด + ไม่ใช่ "นอกเขตแมส" + ยังไม่ส่ง
+  var jobs=(_msgOrders||[]).filter(function(o){
+    return o.delivery_lat!=null && o.delivery_lng!=null
+        && o._z && o._z.key!=="far" && o._z.key!=="none"
+        && o.status!=="delivered";
+  }).map(function(o){
+    return {lat:Number(o.delivery_lat),lng:Number(o.delivery_lng),
+            addr:o.delivery_address_text||o.delivery_address||"ปลายทาง",
+            name:o.customer_name||"ลูกค้า", no:o.order_number||"—",
+            slot:o.time_slot_label||o.time_slot||"ไม่ระบุ"};
+  });
+  var skipped=(_msgOrders||[]).length-jobs.length;
+  if(jobs.length<2){
+    box.innerHTML="<div style='background:#FFF7ED;border:1px solid #FDBA74;border-radius:10px;padding:11px 13px;font-size:13px;color:#9A3412'>"
+      +"มีงานที่คำนวณได้แค่ <b>"+jobs.length+"</b> จุด — ต้องมีอย่างน้อย 2 จุดถึงจะมีอะไรให้เทียบ"
+      +(skipped?"<div style='font-size:12px;margin-top:3px;font-weight:400'>(ข้าม "+skipped+" ใบ: ไม่มีพิกัด / นอกเขตแมส / ส่งแล้ว)</div>":"")+"</div>";
+    return;
+  }
+  if(btn){btn.disabled=true;btn.textContent="⏳ กำลังถามราคา...";}
+  box.innerHTML="<div style='padding:16px;text-align:center;color:#6B7280;font-size:13px'>กำลังขอราคาจาก Lalamove... (ขอราคาอย่างเดียว ไม่จองรถ)</div>";
+  try{
+    var route=msgRouteOrder(jobs);
+    // งานเยอะ = ลดจำนวนแบบที่ทดลอง กันยิง API รัวเกินไป
+    var sizes=(jobs.length>12)?[3,5]:MSG_TRIP_SIZES;
+
+    // แผน A — แยกคันต่อจุด (baseline ที่เทียบทุกแผนกับตัวนี้)
+    var planA=await msgQuotePlan(route.map(function(p){return [p];}));
+
+    // แผน B — คันเดียววิ่งหลายจุด "โดยไม่สนช่วงเวลา" = ขอบเขตล่างของราคา (ในทางปฏิบัติอาจทำไม่ได้)
+    var bestB=null;
+    for(var i=0;i<sizes.length;i++){
+      if(sizes[i]>=jobs.length && bestB) break;
+      var p=await msgQuotePlan(msgChunk(route,sizes[i]));
+      p.k=sizes[i];
+      if(!p.errs.length && (!bestB||p.total<bestB.total)) bestB=p;
+    }
+    // แผน C — แบ่งรอบตามช่วงเวลา (ทำได้จริง: ของช่วงเช้ากับบ่ายรวมคันเดียวกันไม่ได้)
+    var bySlot={}; route.forEach(function(p){ (bySlot[p.slot]=bySlot[p.slot]||[]).push(p); });
+    var slotKeys=Object.keys(bySlot);
+    var bestC=null;
+    for(var s=0;s<sizes.length;s++){
+      var trips=[];
+      slotKeys.forEach(function(k){ trips=trips.concat(msgChunk(bySlot[k],sizes[s])); });
+      var pc=await msgQuotePlan(trips); pc.k=sizes[s];
+      if(!pc.errs.length && (!bestC||pc.total<bestC.total)) bestC=pc;
+    }
+    msgRenderPlan(box,{A:planA,B:bestB,C:bestC,jobs:jobs,skipped:skipped,slots:slotKeys.length});
+  }catch(e){
+    box.innerHTML="<div style='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:11px 13px;font-size:13px;color:#B91C1C'>คำนวณไม่สำเร็จ: "+esc2(String(e&&e.message||e))+"</div>";
+  }finally{ if(btn){btn.disabled=false;btn.textContent="💰 คำนวณค่าส่งถูกสุด";} }
+}
+
+function msgRenderPlan(box,r){
+  var A=r.A, B=r.B, C=r.C;
+  var baseOk=A&&!A.errs.length;
+  var rows=[];
+  function row(name,p,note){
+    if(!p) return;
+    var save=(baseOk&&!p.errs.length)?(A.total-p.total):null;
+    rows.push("<tr><td style='padding:6px 8px;font-weight:700'>"+name+"</td>"
+      +"<td style='padding:6px 8px;text-align:center'>"+p.cars+" คัน</td>"
+      +"<td style='padding:6px 8px;text-align:right;font-family:var(--mono);font-weight:700'>"+(p.errs.length?"—":fmtB(p.total))+"</td>"
+      +"<td style='padding:6px 8px;text-align:right;font-family:var(--mono);color:"+(save>0?"#15803D":"#6B7280")+";font-weight:700'>"
+        +(p.errs.length?"ขอราคาไม่ได้":(save==null?"—":(save>0?"ประหยัด "+fmtB(save):(save<0?"แพงขึ้น "+fmtB(-save):"เท่ากัน"))))+"</td>"
+      +"<td style='padding:6px 8px;font-size:11px;color:#6B7280'>"+(note||"")+"</td></tr>");
+  }
+  row("แยกคันต่อจุด",A,"ฐานเทียบ · "+r.jobs.length+" จุด");
+  row("จัดรอบตามช่วงเวลา ✅",C,C?("วิ่งทีละ "+C.k+" งาน · "+r.slots+" ช่วงเวลา · ทำได้จริง"):"");
+  row("รวมทุกจุดไม่สนช่วงเวลา",B,B?("วิ่งทีละ "+B.k+" งาน · เป็นแค่ขอบเขตล่าง"):"");
+
+  var pick=(C&&!C.errs.length)?C:null;
+  var h="<div style='background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px'>"
+    +"<div style='font-size:14px;font-weight:800;color:#1F4D3A;margin-bottom:2px'>💰 เทียบวิธีจัดรอบส่ง (เรทสด Lalamove)</div>"
+    +"<div style='font-size:11px;color:#6B7280;margin-bottom:8px'>ขอราคาอย่างเดียว ยังไม่ได้จองรถ"
+    +(r.skipped?" · ข้าม "+r.skipped+" ใบ (ไม่มีพิกัด / นอกเขตแมส / ส่งแล้ว)":"")+"</div>"
+    +"<div style='overflow-x:auto'><table style='width:100%;border-collapse:collapse;font-size:12.5px;min-width:520px'>"
+    +"<thead><tr style='background:#F7F8F6;color:#374151'><th style='padding:6px 8px;text-align:left'>วิธี</th><th style='padding:6px 8px'>จำนวนรถ</th><th style='padding:6px 8px;text-align:right'>ค่าส่งรวม</th><th style='padding:6px 8px;text-align:right'>ต่างจากฐาน</th><th style='padding:6px 8px;text-align:left'>หมายเหตุ</th></tr></thead>"
+    +"<tbody>"+rows.join("")+"</tbody></table></div>";
+
+  if(pick){
+    h+="<div style='margin-top:10px;font-size:13px;font-weight:800;color:#1F4D3A'>🛵 รอบที่แนะนำ — วิ่งทีละ "+pick.k+" งาน ("+pick.cars+" คัน)</div>";
+    pick.trips.forEach(function(t,i){
+      h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
+        +"<b style='color:#1F4D3A'>รอบ "+(i+1)+"</b> <span style='color:#6B7280'>· "+esc2(t[0].slot)+"</span><div style='color:#374151;margin-top:2px'>"
+        +t.map(function(p,n){return (n+1)+". "+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
+        +"</div></div>";
+    });
+  }
+  var allErr=[].concat(A?A.errs:[],B?B.errs:[],C?C.errs:[]);
+  if(allErr.length) h+="<div style='margin-top:8px;font-size:11px;color:#B45309'>⚠️ บางรอบขอราคาไม่ได้: "+esc2(allErr.slice(0,3).join(" · "))+"</div>";
+  h+="<div style='margin-top:8px;font-size:11px;color:#6B7280'>หมายเหตุ: ตัวเลขนี้คือ \"ถ้าจ้าง Lalamove ทั้งวัน\" — ยังไม่ได้เทียบกับต้นทุนแมสร้าน (ระบบยังไม่มีตัวเลขนั้น) · ลำดับจุดคำนวณแบบใกล้สุดก่อน ไม่ใช่เส้นทางที่ดีที่สุดตามทฤษฎี</div>";
+  h+="</div>";
+  box.innerHTML=h;
 }
 
 // ══════════════════════════════════════

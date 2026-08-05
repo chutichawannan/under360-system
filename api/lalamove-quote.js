@@ -1,8 +1,9 @@
 // Lalamove v3 quotation proxy — คำนวณค่าส่งจริงจาก Lalamove (เก็บ secret ฝั่ง server ห้ามอยู่ browser)
 // ─────────────────────────────────────────────────────────────────────────
-// ⚠️ สถานะ: โครงพร้อม แต่ "ยังไม่ผ่านการทดสอบจริง" — รอ 2 อย่างจากนัท:
-//   1) LALAMOVE_API_KEY + LALAMOVE_API_SECRET (จาก Partner Portal → Developers) ตั้งใน Vercel env
-//   2) เทส sandbox 1 ครั้ง เพื่อ verify รูปแบบ signature + ที่อยู่ราคาใน response (อาจต้องปรับเล็กน้อย)
+// ✅ สถานะ: ใช้งานจริงแล้ว (คีย์อยู่ใน Vercel env · เทสได้ราคาจริง 5 ส.ค. 2026)
+//   - จุดเดียว: ?lat=&lng=&addr=
+//   - หลายจุดต่อคัน (multi-stop): body { drops:[{lat,lng,addr}] } — ใช้เทียบว่าจัดรอบแบบไหนถูกสุด
+//   ⚠️ endpoint นี้ "ขอราคา" อย่างเดียว ยังไม่จองรถ = ไม่มีการใช้เงิน
 // ref: https://developers.lalamove.com/  (HMAC-SHA256 · POST /v3/quotations · header Market=TH)
 // ─────────────────────────────────────────────────────────────────────────
 const crypto = require('crypto');
@@ -33,14 +34,30 @@ module.exports = async (req, res) => {
     return res.status(500).json({ error: 'ยังไม่ได้ตั้ง LALAMOVE_API_KEY / LALAMOVE_API_SECRET ใน Vercel env' });
   }
 
-  // พิกัดปลายทาง (รับจาก query ?lat=&lng=&addr= หรือ body)
+  // ปลายทาง — รับได้ 2 แบบ
+  //   1) จุดเดียว (เดิม): ?lat=&lng=&addr=
+  //   2) หลายจุด (multi-stop): body { drops:[{lat,lng,addr},...] } หรือ ?drops=<json>
+  //      ใช้เทียบว่า "คันเดียววิ่งหลายจุด" ถูกกว่า "แยกคันต่อจุด" เท่าไหร่ (นัทสั่ง 5 ส.ค.)
   const q = req.query || {};
   const b = req.body || {};
-  const lat = q.lat || b.lat;
-  const lng = q.lng || b.lng;
-  const addr = q.addr || b.addr || 'ปลายทาง';
   const serviceType = q.service || b.service || 'MOTORCYCLE'; // MOTORCYCLE / SEDAN / VAN ...
-  if (!lat || !lng) return res.status(400).json({ error: 'ต้องมี lat, lng ปลายทาง' });
+
+  let drops = b.drops || null;
+  if (!drops && q.drops) { try { drops = JSON.parse(q.drops); } catch (e) { return res.status(400).json({ error: 'drops ไม่ใช่ JSON ที่อ่านได้' }); } }
+  if (!Array.isArray(drops) || !drops.length) {
+    const lat = q.lat || b.lat, lng = q.lng || b.lng;
+    if (!lat || !lng) return res.status(400).json({ error: 'ต้องมี lat, lng ปลายทาง หรือ drops[]' });
+    drops = [{ lat, lng, addr: q.addr || b.addr || 'ปลายทาง' }];
+  }
+  // ⚠️ เพดานจำนวนจุดต่อคัน Lalamove ไม่เท่ากันทุกตลาด/ทุกประเภทรถ — ยังไม่ได้ verify เลขจริงของ TH
+  //    ตั้ง MAX ไว้กันยิงเกินแล้วเสียเที่ยว · ถ้า API ตอบ error เรื่องจำนวนจุด ให้ลดเลขนี้ลง
+  const MAX_DROPS = Number(process.env.LALAMOVE_MAX_DROPS || 10);
+  if (drops.length > MAX_DROPS) {
+    return res.status(400).json({ error: 'จุดส่งเกิน ' + MAX_DROPS + ' จุดต่อคัน (ตั้งค่าที่ LALAMOVE_MAX_DROPS)' });
+  }
+  for (const d of drops) {
+    if (d == null || d.lat == null || d.lng == null) return res.status(400).json({ error: 'ทุกจุดใน drops ต้องมี lat/lng' });
+  }
 
   const path = '/v3/quotations';
   const body = JSON.stringify({
@@ -48,9 +65,10 @@ module.exports = async (req, res) => {
       serviceType,
       language: 'th_TH',
       stops: [
-        { coordinates: { lat: String(KITCHEN.lat), lng: String(KITCHEN.lng) }, address: KITCHEN.address },
-        { coordinates: { lat: String(lat), lng: String(lng) }, address: String(addr) }
-      ]
+        { coordinates: { lat: String(KITCHEN.lat), lng: String(KITCHEN.lng) }, address: KITCHEN.address }
+      ].concat(drops.map(function (d) {
+        return { coordinates: { lat: String(d.lat), lng: String(d.lng) }, address: String(d.addr || 'ปลายทาง') };
+      }))
     }
   });
 
@@ -77,6 +95,7 @@ module.exports = async (req, res) => {
       ok: true,
       price: pb ? Number(pb.total) : null,
       currency: pb ? pb.currency : null,
+      stops: drops.length,
       quotationId: json && json.data ? json.data.quotationId : null,
       raw: json
     });
