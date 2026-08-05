@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบงานครัว Under360 — รายวัน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;--head:#0F766E;--headbg:#E8F5F2}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai",sans-serif;font-size:15.5px;line-height:1.5}
+  .wrap{max-width:620px;margin:0 auto;padding:20px 16px 60px}
+  h1{font-size:22px;font-weight:900;margin:0 0 4px}
+  .sub{color:var(--soft);font-size:13.5px;margin-bottom:20px}
+  .sec{font-size:13px;font-weight:900;color:var(--head);margin:22px 0 8px}
+  a.day{display:flex;justify-content:space-between;align-items:center;text-decoration:none;color:var(--ink);
+    border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:9px;font-weight:800}
+  a.day:hover{background:var(--headbg)}
+  a.day .d{font-size:16px}
+  a.day .go{color:var(--head);font-size:13px}
+  a.day.past{opacity:.55}
+  a.day.past .go{color:var(--soft)}
+  .note{background:#F9FAFB;border:1px solid var(--line);border-radius:12px;padding:14px 16px;font-size:13px;color:#374151;line-height:1.65}
+  .note b{color:var(--ink)}
+  .pill{display:inline-block;background:var(--headbg);color:var(--head);font-size:11.5px;font-weight:800;border-radius:999px;padding:2px 9px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>👨‍🍳 ใบงานครัว Under360</h1>
+<div class="sub">แยกตามวันส่ง · แต่ละใบมี LC / HP / Hyrox + ข้อห้ามรายคน + 3 ภาษา</div>
+
+<div class="sec">■ ใบงานรายวัน</div>
+<a class="day" href="2026-08-05.html"><span class="d">พุธ 5 ส.ค. 2026</span><span class="go">เปิด →</span></a>
+<!-- เพิ่มวันใหม่ที่นี่: <a class="day" href="2026-08-07.html">...</a> -->
+
+<div class="sec">■ ระบบทำงานยังไง</div>
+<div class="note">
+  <b>ตอนนี้ (ทำมือ):</b> 1 วัน = 1 ไฟล์ <code>YYYY-MM-DD.html</code> ในโฟลเดอร์นี้ · พอเลยวัน = ใบเก่าไม่ใช้แล้ว<br><br>
+  <b>ล้างของเก่า:</b> ใบที่เกิน ~30 วัน ลบทิ้งได้ (กัน git รก) — บอกได้ ผมล้างให้ หรือตั้งให้ล้างอัตโนมัติทุกเดือน<br><br>
+  <span class="pill">เป้าหมาย</span> <b>ตัวจบ = ไม่ต้องมีไฟล์รายวันเลย</b> — หน้าเดียวดึงออเดอร์ "วันนี้" จาก DB สดๆ (งานที่ส่งห้อง U แล้ว) → ครัวเปิด URL เดียว เห็นของวันนี้เสมอ · <b>น้องฟ้า</b> (ครัว/วัตถุดิบ) คุมตรงนี้ + สั่งของตามยอด
+</div>
+
+</div>
+</body>
+</html>
