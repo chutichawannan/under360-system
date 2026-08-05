@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>คุยงานครัว · Under360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🍳</text></svg>">
+<style>
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;
+       background:#f2f4f7;color:#1a1d21;display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{background:#0f766e;color:#fff;padding:10px 14px;display:flex;align-items:center;gap:10px;flex:0 0 auto}
+  header h1{font-size:16px;margin:0;font-weight:700}
+  header .sub{font-size:11px;opacity:.75}
+  header button{margin-left:auto;background:rgba(255,255,255,.18);color:#fff;border:0;border-radius:8px;
+                padding:6px 10px;font-size:12px;cursor:pointer;font-family:inherit}
+
+  #gate{margin:auto;background:#fff;padding:26px 22px;border-radius:14px;width:min(340px,90vw);
+        box-shadow:0 6px 28px rgba(0,0,0,.10);text-align:center}
+  #gate h2{margin:0 0 6px;font-size:17px}
+  #gate p{margin:0 0 16px;font-size:12px;color:#667}
+  #gate input{width:100%;padding:12px;border:1px solid #d6dae0;border-radius:10px;font-size:16px;
+              text-align:center;font-family:inherit}
+  #gate button{width:100%;margin-top:10px;padding:12px;background:#0f766e;color:#fff;border:0;
+               border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;font-family:inherit}
+
+  #feed{flex:1 1 auto;overflow-y:auto;padding:12px 12px 4px;-webkit-overflow-scrolling:touch}
+  .day{text-align:center;font-size:11px;color:#8b94a0;margin:12px 0 8px}
+  .msg{margin-bottom:12px;max-width:88%}
+  .msg .who{font-size:11px;color:#6b7480;margin-bottom:3px;padding:0 4px}
+  .bub{background:#fff;border-radius:14px;padding:9px 12px;box-shadow:0 1px 2px rgba(0,0,0,.06);
+       font-size:15px;line-height:1.5;white-space:pre-wrap;word-break:break-word}
+  /* คำแปลไทย = ของหลักที่นัทอ่าน · ต้นฉบับเก็บไว้ตรวจสอบได้ */
+  .tr{margin-top:7px;padding-top:7px;border-top:1px dashed #dfe3e8;font-size:15px;color:#0f766e}
+  .tr b{font-size:10px;font-weight:700;opacity:.6;display:block;margin-bottom:2px;letter-spacing:.3px}
+  .orig{font-size:13px;color:#8b94a0}
+  .me{margin-left:auto}
+  .me .bub{background:#0f766e;color:#fff}
+  .me .who{text-align:right}
+  .bot .bub{background:#fffbe9;border:1px solid #f2e6bd}
+  .lang{display:inline-block;font-size:10px;background:#eef1f4;color:#6b7480;border-radius:5px;
+        padding:1px 5px;margin-left:5px;vertical-align:1px}
+
+  footer{flex:0 0 auto;background:#fff;border-top:1px solid #e3e7ec;padding:8px 10px;
+         padding-bottom:calc(8px + env(safe-area-inset-bottom));display:flex;gap:8px;align-items:flex-end}
+  footer textarea{flex:1;border:1px solid #d6dae0;border-radius:12px;padding:10px 12px;font-size:16px;
+                  font-family:inherit;resize:none;max-height:120px;line-height:1.4}
+  footer button{background:#0f766e;color:#fff;border:0;border-radius:12px;padding:11px 16px;
+                font-size:15px;font-weight:600;cursor:pointer;font-family:inherit;flex:0 0 auto}
+  footer button:disabled{opacity:.5}
+  #note{font-size:11px;color:#8b94a0;text-align:center;padding:0 12px 6px}
+  #err{background:#fdecec;color:#a4262c;font-size:12px;padding:8px 12px;display:none}
+  .empty{text-align:center;color:#8b94a0;font-size:13px;margin-top:40px;line-height:1.8}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <h2>🍳 คุยงานครัว</h2>
+  <p>หน้านี้อ่านแชทกลุ่มครัวและส่งข้อความเข้ากลุ่มได้<br>ใส่รหัสเพื่อเข้าใช้</p>
+  <input id="gkey" type="password" placeholder="รหัสเข้าใช้" autocomplete="off">
+  <button onclick="saveKey()">เข้าใช้งาน</button>
+</div>
+
+<header style="display:none">
+  <div>
+    <h1>🍳 คุยงานครัว</h1>
+    <div class="sub" id="hsub">กำลังโหลด…</div>
+  </div>
+  <button onclick="logout()">ออก</button>
+</header>
+
+<div id="err"></div>
+<div id="feed" style="display:none"></div>
+
+<footer style="display:none">
+  <textarea id="inp" rows="1" placeholder="พิมพ์ภาษาไทย — ระบบแปลเป็นพม่าให้ก่อนส่ง"></textarea>
+  <button id="send" onclick="send()">ส่ง</button>
+</footer>
+<div id="note" style="display:none">ส่งเข้ากลุ่มเป็น <b>ไทย + พม่า</b> คู่กัน · ตัวเลข/รหัสเมนูไม่ถูกแปล</div>
+
+<script>
+const API = '/api/kitchen-console';
+const KEY_LS = 'u360_kitchen_key';
+let key = localStorage.getItem(KEY_LS) || '';
+let lastCount = 0, timer = null;
+
+const $ = id => document.getElementById(id);
+const show = (sel, on) => document.querySelectorAll(sel).forEach(e => e.style.display = on ? '' : 'none');
+
+// ⏰ เวลาไทยเสมอ — ครัวอยู่ไทย นัทอาจเปิดจากที่อื่น
+const bkkTime = iso => new Intl.DateTimeFormat('th-TH',
+  { timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit' }).format(new Date(iso));
+const bkkDay = iso => new Intl.DateTimeFormat('th-TH',
+  { timeZone:'Asia/Bangkok', day:'numeric', month:'short' }).format(new Date(iso));
+
+const LANG = { th:'ไทย', my:'พม่า', shan:'ไทใหญ่', other:'อื่นๆ' };
+const esc = s => String(s == null ? '' : s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+function saveKey() {
+  const v = $('gkey').value.trim();
+  if (!v) return;
+  key = v; localStorage.setItem(KEY_LS, v);
+  start();
+}
+function logout() {
+  localStorage.removeItem(KEY_LS); key = '';
+  if (timer) clearInterval(timer);
+  show('#gate', true); show('header,#feed,footer,#note', false);
+}
+
+function start() {
+  show('#gate', false); show('header,#feed,footer,#note', true);
+  load();
+  if (timer) clearInterval(timer);
+  timer = setInterval(load, 10000);          // ดูดเบาๆ ทุก 10 วิ — ไม่ realtime แต่พอสำหรับงานครัว
+}
+
+function err(msg) {
+  const e = $('err');
+  if (!msg) { e.style.display = 'none'; return; }
+  e.textContent = '⚠️ ' + msg; e.style.display = 'block';
+}
+
+async function load() {
+  try {
+    const r = await fetch(API + '?limit=120', { headers: { 'x-console-key': key } });
+    const j = await r.json();
+    if (!j.ok) {
+      if (r.status === 401) { err('รหัสไม่ถูก — กด "ออก" แล้วใส่ใหม่'); return; }
+      err(j.error || 'โหลดไม่สำเร็จ'); return;
+    }
+    err('');
+    render(j.messages || []);
+  } catch (e) { err('ต่อเน็ตไม่ได้'); }
+}
+
+function render(list) {
+  const feed = $('feed');
+  const atBottom = feed.scrollHeight - feed.scrollTop - feed.clientHeight < 120;
+
+  $('hsub').textContent = list.length ? (list.length + ' ข้อความล่าสุด · อัปเดต ' + bkkTime(new Date().toISOString())) : 'ยังไม่มีข้อความ';
+
+  if (!list.length) {
+    feed.innerHTML = '<div class="empty">ยังไม่มีข้อความในกลุ่ม<br>ถ้าเพิ่งตั้งค่าเสร็จ ลองให้ใครสักคนพิมพ์ในกลุ่มดู</div>';
+    return;
+  }
+
+  let html = '', lastDay = '';
+  for (const m of list) {
+    const day = m.line_ts ? bkkDay(m.line_ts) : '';
+    if (day && day !== lastDay) { html += '<div class="day">' + esc(day) + '</div>'; lastDay = day; }
+
+    const cls = m.from_owner ? 'msg me' : (m.is_bot_reply ? 'msg bot' : 'msg');
+    const who = esc(m.display_name || 'ไม่ทราบชื่อ') + ' · ' + (m.line_ts ? bkkTime(m.line_ts) : '');
+    const lang = (m.src_lang && m.src_lang !== 'th') ? '<span class="lang">' + (LANG[m.src_lang] || m.src_lang) + '</span>' : '';
+
+    let inner;
+    if (m.msg_type !== 'text') {
+      inner = '<span class="orig">[' + esc(m.msg_type) + ' — เปิดดูใน LINE]</span>';
+    } else if (!m.from_owner && m.text_th && m.src_lang && m.src_lang !== 'th') {
+      // ไม่ใช่ไทย → โชว์คำแปลไทยเป็นตัวหลัก ต้นฉบับไว้ล่างให้ตรวจสอบได้
+      inner = '<span class="orig">' + esc(m.text) + '</span>' +
+              '<div class="tr"><b>แปลไทย</b>' + esc(m.text_th) + '</div>';
+    } else {
+      inner = esc(m.text);
+    }
+
+    html += '<div class="' + cls + '"><div class="who">' + who + lang + '</div><div class="bub">' + inner + '</div></div>';
+  }
+  feed.innerHTML = html;
+  if (atBottom || list.length !== lastCount) feed.scrollTop = feed.scrollHeight;
+  lastCount = list.length;
+}
+
+async function send() {
+  const inp = $('inp'), btn = $('send');
+  const text = inp.value.trim();
+  if (!text) return;
+  btn.disabled = true; btn.textContent = 'กำลังส่ง…';
+  try {
+    const r = await fetch(API, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-console-key': key },
+      body: JSON.stringify({ text }),
+    });
+    const j = await r.json();
+    if (!j.ok) { err(j.error || 'ส่งไม่สำเร็จ'); }
+    else { err(j.translated ? '' : 'ส่งแล้ว แต่ยังแปลพม่าไม่ได้ (เช็ค ANTHROPIC_API_KEY)'); inp.value = ''; inp.style.height = 'auto'; await load(); }
+  } catch (e) { err('ส่งไม่สำเร็จ — ต่อเน็ตไม่ได้'); }
+  btn.disabled = false; btn.textContent = 'ส่ง';
+}
+
+$('inp').addEventListener('input', function () {
+  this.style.height = 'auto';
+  this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+});
+$('gkey').addEventListener('keydown', e => { if (e.key === 'Enter') saveKey(); });
+
+if (key) start();
+</script>
+</body>
+</html>
