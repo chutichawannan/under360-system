@@ -805,6 +805,12 @@ body{background:#fff!important}
   <div class="scroll pb-btn">
     <div class="sec-head">รายการที่สั่ง</div>
     <div class="card-wrap" id="conf-items"></div>
+    <!-- ยอดต้องแยกบรรทัดให้ตรงกับหน้าตะกร้าเป๊ะ — เดิมโชว์แค่ยอดสินค้าแล้วติดป้ายว่า "รวมทั้งหมด" -->
+    <div class="card-wrap">
+      <div class="srow"><span class="slbl">ยอดสินค้า</span><span class="sval" id="conf-sub">฿0</span></div>
+      <div class="srow" id="conf-disc-row" style="display:none"><span class="slbl">ส่วนลด</span><span class="sval" id="conf-disc">฿0</span></div>
+      <div class="srow"><span class="slbl">ค่าจัดส่ง</span><span class="sval" id="conf-fee">—</span></div>
+    </div>
     <div class="stot">
       <div class="stot-l">รวมทั้งหมด</div>
       <div class="stot-v" id="conf-total">฿0</div>
@@ -2218,7 +2224,11 @@ function pickSlot(key) {
 // ══════════════════════════════════════
 function renderConfirm(addr) {
   const slot = SLOTS.find(s => s.key===selSlot);
-  const tot  = cartTotal();
+  // 🔴 เดิมใช้ cartTotal() = ยอดสินค้าล้วน ไม่รวมค่าส่ง ไม่หักส่วนลด แต่ติดป้ายว่า "รวมทั้งหมด"
+  //    ผลคือ: เปลี่ยนช่วงเวลาส่ง (เช่น ส่งระบุเวลา → ตลอดวัน) ยอดหน้านี้ไม่ขยับเลย
+  //    และยอดหน้ายืนยัน ≠ ยอดหน้าตะกร้า ≠ ยอดที่จ่ายจริง (นัทเจอเอง 6 ส.ค. 2569)
+  //    → ใช้ computeOrder() ตัวเดียวกับหน้าตะกร้า จะได้ตรงกันเสมอ
+  const o = computeOrder();
 
   document.getElementById('conf-items').innerHTML =
     cart.map(c => {
@@ -2230,7 +2240,19 @@ function renderConfirm(addr) {
       return `<div class="srow"><span class="slbl">${h(c.name)} × ${c.qty}${tagHtml}</span><span class="sval">฿${(c.price*c.qty).toLocaleString()}</span></div>`;
     }).join('');
 
-  document.getElementById('conf-total').textContent = '฿' + tot.toLocaleString();
+  // ยอดแยกบรรทัด — ให้ตรงกับหน้าตะกร้าทุกตัว (ใช้กติกาเดียวกับ updateCartTotals)
+  document.getElementById('conf-sub').textContent = '฿' + o.sub.toLocaleString();
+  const dRow = document.getElementById('conf-disc-row'), dEl = document.getElementById('conf-disc');
+  if (dRow && dEl) {
+    if (o.discount > 0) { dRow.style.display = 'flex'; dEl.textContent = '-฿' + o.discount.toLocaleString(); }
+    else dRow.style.display = 'none';
+  }
+  const fEl = document.getElementById('conf-fee');
+  if (fEl) {
+    if (appliedPromos.some(p => p.discount_type === 'free_shipping') && o.feeKnown) fEl.textContent = 'ฟรี';
+    else fEl.textContent = o.feeKnown ? '฿' + o.feeAfter.toLocaleString() : 'ยังไม่ได้ปักหมุด';
+  }
+  document.getElementById('conf-total').textContent = '฿' + o.total.toLocaleString();
   document.getElementById('conf-date').textContent  = fmtDate(selDate);
   document.getElementById('conf-slot').textContent  = slot ? `${slot.label} (${slot.time})` : '-';
   document.getElementById('conf-addr').textContent  = addr;
