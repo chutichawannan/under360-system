@@ -283,7 +283,7 @@ async function loadAll(manual){
   await loadCore();
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
   if(manual || !bizLoaded){ await loadBiz(); bizLoaded=true; }
-  await loadNiw();
+  await loadNiw(); await loadCutover();
   refreshUI();
   if(manual) toast('รีเฟรชแล้ว');
 }
@@ -312,6 +312,7 @@ function renderBanner(){
 function renderHome(){
   let h='';
   h+=cardBiz();
+  h+=cardCutover();
   h+=cardNiw();
   h+=cardRoutine();
   h+=cardAction();
@@ -735,6 +736,41 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
 // ใช้ใน command_center.html:  const r = await niwWeeklySpecialWatch(sb, { mode: 'stocked' });
 
+
+/* ---------- ⏰ การ์ดนับถอยหลัง cutover Hato (7 ส.ค. 2026) ---------- */
+var CUTOVER_DATE='2026-08-07';
+var cutHatoUrls=null;
+async function loadCutover(){
+  try{
+    var a=await sb.from('home_layout').select('*').limit(200);
+    var b=await sb.from('menu_items').select('code,image_urls').eq('is_available',true).limit(1000);
+    var blob=JSON.stringify(a.data||[])+JSON.stringify(b.data||[]);
+    var m=blob.match(/https?:\/\/[^"]*hato[^"]*/gi);
+    cutHatoUrls=m?m.length:0;
+  }catch(e){ cutHatoUrls=null; }
+}
+function cardCutover(){
+  var today=thaiDate();
+  var days=Math.round((new Date(CUTOVER_DATE+'T00:00:00Z')-new Date(today+'T00:00:00Z'))/86400000);
+  if(days<-3) return '';
+  var head=days>0?('เหลืออีก '+days+' วัน'):(days===0?'วันนี้!':'ผ่านมาแล้ว '+(-days)+' วัน');
+  var h='<div class="card"><h3>⏰ ปิด Hato '+CUTOVER_DATE+' <span class="r">'+head+'</span></h3>';
+  h+='<div class="s" style="margin-bottom:8px">'
+    +(cutHatoUrls===0?'✅ ระบบไม่พึ่งรูป/ลิงก์จาก Hato แล้ว (สแกนสด)'
+      :cutHatoUrls>0?'❌ ยังพบ '+cutHatoUrls+' URL ชี้ Hato — ต้องย้ายก่อนปิด'
+      :'⏳ กำลังสแกน…')+'</div>';
+  var todo=[
+    ['🚨','เทสสั่งจริง 1 ใบบนมือถือ','พิสูจน์ว่า LIFF 360 รับงานได้ก่อนโยนลูกค้าทั้งหมดมา'],
+    ['🚨','ย้ายริชเมนู LINE → LIFF 360','ตอนนี้ยังชี้ Hato · ถ้าไม่ย้าย = ลูกค้า ~20,000 กดสั่งไม่ได้ทั้งร้าน'],
+    ['🔑','login LINE Business ID','ปลด 3 งานพร้อมกัน: feedback routine · wave 2 · verify ริชเมนู'],
+    ['📸','ถ่ายรูป Meal Plan (HP+LC) + ครัว','ตอนนี้ 0 รูป → เสียโพสต์ 2 ใบ/สัปดาห์ ทุกสัปดาห์']
+  ];
+  todo.forEach(function(t){
+    h+='<div style="border-left:3px solid var(--r);padding-left:8px;margin-bottom:6px">'
+      +'<b>'+t[0]+' '+t[1]+'</b><div class="s">'+t[2]+'</div></div>';
+  });
+  return h+'<div class="s" style="opacity:.7">ตรวจซ้ำเองได้: bash scripts/check_hato_dependency.sh</div></div>';
+}
 
 /* ---------- 🤖 การ์ดน้องนิว: เมนูพิเศษอย่าให้ทำเหลือ (logic จากห้อง 12) ---------- */
 var niwData=null, niwErr=null;
