@@ -372,6 +372,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <span class="sb-icon">📋</span><span>ออเดอร์</span>
       <span class="sb-badge" id="nb-orders"></span>
     </div>
+    <div class="sb-item" onclick="openTab('onbehalf',this)">
+      <span class="sb-icon">➕</span><span>สั่งแทนลูกค้า</span>
+    </div>
     <div class="sb-item" onclick="openTab('menu',this)">
       <span class="sb-icon">🛒</span><span>เมนูออนไลน์</span>
     </div>
@@ -721,6 +724,84 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     </div>
 
     <!-- TAB: SETTINGS -->
+    <!-- TAB: สั่งแทนลูกค้า (admin order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน -->
+    <div class="tab-panel" id="panel-onbehalf">
+      <div style="max-width:760px;margin:0 auto;padding:4px 2px 40px">
+        <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400E;margin-bottom:16px">
+          สร้างออเดอร์แทนลูกค้าที่โทร/แชทมาสั่ง — บันทึกเป็นออเดอร์ของ <b>ลูกค้าตัวจริง</b> (ไม่ใช่ชื่อแอดมิน) + จดว่าใครกด · สั่งย้อนหลังได้
+        </div>
+        <div style="margin-bottom:14px">
+          <label style="font-size:12px;font-weight:700;color:#6B7280">ผู้กดสั่ง (แอดมิน)</label>
+          <input id="ob-admin" placeholder="ชื่อคนกด เช่น กิ๊ฟ" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;margin-top:4px">
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:8px">1. ลูกค้า</div>
+          <div id="ob-cust-picked" style="display:none;background:#E8F0EC;border-radius:9px;padding:10px 12px;margin-bottom:8px;font-size:14px"></div>
+          <div id="ob-cust-search-wrap">
+            <input id="ob-cust-q" oninput="obSearchCust(this.value)" placeholder="ค้นชื่อ / เบอร์ลูกค้าเดิม" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+            <div id="ob-cust-results" style="margin-top:6px"></div>
+            <div style="margin-top:8px;font-size:13px;color:#6B7280">ไม่เจอ? <a onclick="obNewCust()" style="color:#1F4D3A;font-weight:700;cursor:pointer;text-decoration:underline">+ ลูกค้าใหม่</a></div>
+          </div>
+          <div id="ob-cust-new" style="display:none;margin-top:8px">
+            <input id="ob-new-name" placeholder="ชื่อลูกค้า" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;margin-bottom:6px">
+            <input id="ob-new-phone" placeholder="เบอร์โทร" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+            <div style="margin-top:6px;font-size:13px"><a onclick="obCancelNew()" style="color:#6B7280;cursor:pointer;text-decoration:underline">ยกเลิก</a></div>
+          </div>
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:8px">2. รายการอาหาร</div>
+          <input id="ob-menu-q" oninput="obFilterMenu(this.value)" placeholder="ค้นเมนู (โค้ด/ชื่อ)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          <div id="ob-menu-list" style="max-height:200px;overflow:auto;margin-top:8px;border:1px solid #F3F4F6;border-radius:8px"></div>
+          <div style="font-weight:700;font-size:13px;color:#6B7280;margin:12px 0 4px">ในตะกร้า</div>
+          <div id="ob-cart"></div>
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:8px">3. จัดส่ง</div>
+          <label style="font-size:12px;font-weight:700;color:#6B7280">วันส่ง <span style="font-weight:400">(ย้อนหลังได้)</span></label>
+          <input type="date" id="ob-date" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;margin:4px 0 10px">
+          <label style="font-size:12px;font-weight:700;color:#6B7280">ช่วงเวลา</label>
+          <select id="ob-slot" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;margin:4px 0 10px">
+            <option value="all_day">รับได้ตลอดวัน (8:00-18:00)</option>
+            <option value="morning">ช่วงเช้า (8:00-13:00)</option>
+            <option value="afternoon" selected>ช่วงบ่าย (13:00-18:00)</option>
+          </select>
+          <label style="font-size:12px;font-weight:700;color:#6B7280">ที่อยู่จัดส่ง</label>
+          <textarea id="ob-addr" rows="2" placeholder="ที่อยู่" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;margin:4px 0 10px;resize:vertical"></textarea>
+          <div style="display:flex;gap:8px">
+            <input id="ob-rname" placeholder="ชื่อผู้รับ" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+            <input id="ob-rphone" placeholder="เบอร์ผู้รับ" style="flex:1;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          </div>
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:8px">4. ยอด & ชำระเงิน</div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">ค่าส่ง (บาท)</label>
+            <input type="number" id="ob-fee" value="0" oninput="obRenderCart()" style="width:110px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;text-align:right">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">ส่วนลด (บาท)</label>
+            <input type="number" id="ob-disc" value="0" oninput="obRenderCart()" style="width:110px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px;text-align:right">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">โค้ดโปรฯ (เก็บอ้างอิง)</label>
+            <input id="ob-promo" placeholder="เช่น FREESHIP" style="width:150px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;margin-bottom:8px">
+            <label style="font-size:13px;color:#6B7280;flex:1">วิธีชำระ</label>
+            <select id="ob-pay" style="width:150px;padding:8px 10px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+              <option value="qr">QR/PromptPay</option>
+              <option value="transfer">โอนเงิน</option>
+              <option value="cod">เก็บปลายทาง</option>
+            </select>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;color:#374151"><input type="checkbox" id="ob-paid"> ทำเครื่องหมายว่าโอนแล้ว (paid)</label>
+          <div style="text-align:right;font-size:20px;font-weight:800;margin-top:10px">รวม <span id="ob-total">฿0</span></div>
+        </div>
+        <button onclick="obSubmit()" id="ob-submit-btn" style="width:100%;background:#1F4D3A;color:#fff;border:none;border-radius:12px;padding:14px;font-size:16px;font-weight:700;cursor:pointer">บันทึกออเดอร์แทนลูกค้า</button>
+        <div id="ob-msg" style="margin-top:10px;text-align:center;font-size:14px"></div>
+      </div>
+    </div>
+
     <div class="tab-panel" id="panel-settings">
       <div class="sec-header">
         <div class="sec-title">⚙️ ตั้งค่า</div>
@@ -830,7 +911,7 @@ function toggleSidebar(){
   if(fb) fb.classList.toggle("show",sidebarMini);
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
+var TAB_TITLES={orders:"📋 ออเดอร์",onbehalf:"➕ สั่งแทนลูกค้า",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
 
 function _autoCollapseBar(){
   sidebarMini=true;
@@ -856,6 +937,7 @@ function openTab(name,el){
   if(el)el.classList.add("active");
   document.getElementById("topTitle").textContent=TAB_TITLES[name]||name;
   if(name==="orders")loadAll();
+  if(name==="onbehalf")initOnbehalf();
   if(name==="menu")loadMenus();
   if(name==="plan"){buildPlan();loadMpDeliveries();}
   if(name==="messenger")loadMessenger();
@@ -3011,6 +3093,119 @@ function showToastOH(msg){
 
 
 
+</script>
+<script>
+/* ═══ สั่งแทนลูกค้า (order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน ═══ */
+var obMenus=[],obCart=[],obCust=null,obNewMode=false,obHasCreatedBy=false,obInit=false,obCustResults=[];
+function obEsc(s){return (''+(s==null?'':s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function obBkkYMD(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});} /* "2026-07-28" ยึดเวลาไทยเสมอ กัน order_number เพี้ยนตอนเครื่องอยู่คนละ timezone */
+async function initOnbehalf(){
+  var sb_=getSB(); if(!sb_)return;
+  var a=document.getElementById('ob-admin'); if(a&&!a.value)a.value=localStorage.getItem('lastNickname')||'';
+  var d=document.getElementById('ob-date'); if(d&&!d.value)d.value=obBkkYMD();
+  if(obInit)return; obInit=true;
+  try{ await sb_.from('orders').select('created_by').limit(1); obHasCreatedBy=true; }catch(e){ obHasCreatedBy=false; }
+  var r=await sb_.from('menu_items').select('id,code,name,price').eq('is_available',true).order('sort_order');
+  obMenus=r.data||[]; obFilterMenu(''); obRenderCart();
+}
+function obFilterMenu(q){
+  q=(q||'').toLowerCase();
+  var list=obMenus.filter(function(m){return !q||(m.code+' '+m.name).toLowerCase().indexOf(q)>=0;}).slice(0,40);
+  document.getElementById('ob-menu-list').innerHTML=list.map(function(m){
+    return '<div onclick="obAdd(\''+m.code+'\')" style="display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:13px"><span>'+obEsc(m.code)+' · '+obEsc(m.name)+'</span><span style="color:#1F4D3A;font-weight:700">+ ฿'+m.price+'</span></div>';
+  }).join('')||'<div style="padding:10px;color:#9CA3AF;font-size:13px">ไม่พบเมนู</div>';
+}
+function obAdd(code){
+  var m=obMenus.find(function(x){return x.code===code;}); if(!m)return;
+  var c=obCart.find(function(x){return x.code===code;});
+  if(c)c.qty++; else obCart.push({id:m.id,code:m.code,name:m.name,price:m.price,qty:1});
+  obRenderCart();
+}
+function obCartQty(code,delta){
+  var c=obCart.find(function(x){return x.code===code;}); if(!c)return;
+  c.qty+=delta; if(c.qty<=0)obCart=obCart.filter(function(x){return x.code!==code;});
+  obRenderCart();
+}
+function obSubtotal(){return obCart.reduce(function(s,c){return s+c.price*c.qty;},0);}
+function obRenderCart(){
+  var el=document.getElementById('ob-cart'); if(!el)return;
+  el.innerHTML=obCart.length?obCart.map(function(c){
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:14px"><span>'+obEsc(c.name)+'</span><span style="display:flex;align-items:center;gap:8px"><button onclick="obCartQty(\''+c.code+'\',-1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">-</button>'+c.qty+'<button onclick="obCartQty(\''+c.code+'\',1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">+</button><span style="width:70px;text-align:right;font-weight:700">฿'+(c.price*c.qty)+'</span></span></div>';
+  }).join(''):'<div style="color:#9CA3AF;font-size:13px;padding:6px 0">ยังไม่มีรายการ</div>';
+  var fee=parseInt((document.getElementById('ob-fee')||{}).value)||0;
+  var disc=parseInt((document.getElementById('ob-disc')||{}).value)||0;
+  var t=document.getElementById('ob-total'); if(t)t.textContent='฿'+Math.max(0,obSubtotal()+fee-disc).toLocaleString();
+}
+async function obSearchCust(q){
+  var box=document.getElementById('ob-cust-results'); if(!box)return;
+  if(!q||q.length<2){box.innerHTML='';return;}
+  var sb_=getSB(); var like='%'+q+'%';
+  var r=await sb_.from('customers').select('id,display_name,phone,addresses').or('display_name.ilike.'+like+',phone.ilike.'+like).limit(8);
+  obCustResults=r.data||[];
+  box.innerHTML=obCustResults.length?obCustResults.map(function(c,i){
+    return '<div onclick="obPickIdx('+i+')" style="padding:8px 10px;border:1px solid #F3F4F6;border-radius:8px;margin-bottom:4px;cursor:pointer;font-size:13px">'+obEsc(c.display_name||'(ไม่มีชื่อ)')+' · '+obEsc(c.phone||'-')+'</div>';
+  }).join(''):'<div style="padding:6px;color:#9CA3AF;font-size:13px">ไม่พบ — กด "+ ลูกค้าใหม่"</div>';
+}
+function obPickIdx(i){
+  var c=obCustResults[i]; if(!c)return; obCust=c; obNewMode=false;
+  document.getElementById('ob-cust-search-wrap').style.display='none';
+  document.getElementById('ob-cust-new').style.display='none';
+  var p=document.getElementById('ob-cust-picked');
+  p.style.display='block'; p.innerHTML='<b>'+obEsc(c.display_name||'(ไม่มีชื่อ)')+'</b> · '+obEsc(c.phone||'-')+' <a onclick="obClearCust()" style="color:#C9573F;cursor:pointer;margin-left:8px;text-decoration:underline">เปลี่ยน</a>';
+  var addr=(c.addresses&&c.addresses[0])?(c.addresses[0].address||''):'';
+  if(addr)document.getElementById('ob-addr').value=addr;
+  document.getElementById('ob-rname').value=c.display_name||'';
+  document.getElementById('ob-rphone').value=c.phone||'';
+}
+function obClearCust(){obCust=null;document.getElementById('ob-cust-picked').style.display='none';document.getElementById('ob-cust-search-wrap').style.display='block';document.getElementById('ob-cust-q').value='';document.getElementById('ob-cust-results').innerHTML='';}
+function obNewCust(){obNewMode=true;document.getElementById('ob-cust-new').style.display='block';}
+function obCancelNew(){obNewMode=false;document.getElementById('ob-cust-new').style.display='none';}
+async function obSubmit(){
+  var sb_=getSB(); var btn=document.getElementById('ob-submit-btn'),msg=document.getElementById('ob-msg');
+  function err(t){msg.style.color='#C9573F';msg.textContent=t;}
+  var admin=(document.getElementById('ob-admin').value||'').trim();
+  if(!admin)return err('กรอกชื่อผู้กด (แอดมิน) ก่อน');
+  if(!obCart.length)return err('ยังไม่มีรายการอาหาร');
+  var date=document.getElementById('ob-date').value; if(!date)return err('เลือกวันส่ง');
+  var rname=(document.getElementById('ob-rname').value||'').trim();
+  var rphone=(document.getElementById('ob-rphone').value||'').trim();
+  var addr=(document.getElementById('ob-addr').value||'').trim();
+  btn.disabled=true; btn.textContent='กำลังบันทึก...';
+  try{
+    localStorage.setItem('lastNickname',admin);
+    var custId=null;
+    if(obCust){ custId=obCust.id; }
+    else if(obNewMode){
+      var nname=(document.getElementById('ob-new-name').value||'').trim();
+      var nphone=(document.getElementById('ob-new-phone').value||'').trim();
+      if(!nname&&!nphone) throw new Error('กรอกข้อมูลลูกค้าใหม่ หรือเลือกลูกค้าเดิม');
+      if(nphone){ var ex=await sb_.from('customers').select('id').eq('phone',nphone).limit(1); if(ex.data&&ex.data[0])custId=ex.data[0].id; }
+      if(!custId){ var ins=await sb_.from('customers').insert({display_name:nname||null,phone:nphone||null,source_first:'admin_manual',tier:'bronze',addresses:addr?[{address:addr,label:'ที่อยู่'}]:[]}).select('id').single(); if(ins.error)throw ins.error; custId=ins.data.id; }
+    } else { throw new Error('เลือกลูกค้า หรือกด "+ ลูกค้าใหม่"'); }
+    var mmdd=date.slice(5,7)+date.slice(8,10); /* ยึด "วันส่ง" ที่เลือก (เหมือน LIFF ใช้ selDate) ไม่ใช่วันสร้าง/เวลาเครื่อง = timezone-proof + เลขตรงกับ LIFF */
+    var cnt=await sb_.from('orders').select('id',{count:'exact',head:true}).like('order_number','U-'+mmdd+'-%');
+    var orderNum='U-'+mmdd+'-'+String((cnt.count||0)+1).padStart(3,'0');
+    var sub=obSubtotal(); var fee=parseInt(document.getElementById('ob-fee').value)||0;
+    var disc=parseInt(document.getElementById('ob-disc').value)||0;
+    var promo=(document.getElementById('ob-promo').value||'').trim();
+    var slot=document.getElementById('ob-slot').value;
+    var slotLabels={all_day:'8:00 – 18:00',morning:'8:00 – 13:00',afternoon:'13:00 – 18:00'};
+    var payload={ order_number:orderNum, customer_id:custId, customer_name:rname||null, customer_phone:rphone||null,
+      delivery_date:date, time_slot:slot, time_slot_label:slotLabels[slot]||'', delivery_address:addr||null,
+      delivery_fee:fee, subtotal:sub, discount_amount:disc, promotion_code:promo||null, total:Math.max(0,sub+fee-disc), status:'confirmed',
+      payment_method:document.getElementById('ob-pay').value, delivery_type:'messenger', slip_image:false,
+      delivery_week:'current', source:'admin_manual', notes:'สั่งแทนโดย '+admin,
+      payment_status:document.getElementById('ob-paid').checked?'paid':'unpaid' };
+    if(obHasCreatedBy) payload.created_by=admin;
+    var ord=await sb_.from('orders').insert(payload).select().single(); if(ord.error)throw ord.error;
+    var items=obCart.map(function(c){return {order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:c.code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:''};});
+    var it=await sb_.from('order_items').insert(items); if(it.error)throw it.error;
+    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin);
+    obCart=[]; obRenderCart(); obClearCust();
+    document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-disc').value='0'; document.getElementById('ob-promo').value=''; document.getElementById('ob-paid').checked=false;
+  }catch(e){ err('พลาด: '+(e.message||e)); }
+  btn.disabled=false; btn.textContent='บันทึกออเดอร์แทนลูกค้า';
+}
 </script>
 </body>
 </html>
