@@ -655,6 +655,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       </div>
       <div id="msg-summary" style="margin-bottom:10px"></div>
       <div id="msg-plan" style="margin-bottom:10px"></div>
+      <div id="msg-hist" style="margin-bottom:10px"></div>
       <div class="messenger-list" id="messengerList">
         <div style="padding:40px;text-align:center;color:var(--ink-soft);font-size:13px">กำลังโหลด...</div>
       </div>
@@ -1842,6 +1843,7 @@ async function loadMessenger(){
       });
     });
     el.innerHTML=h;
+    msgShowCostHistory();   // โชว์สถิติสะสมทันทีที่เปิดแท็บ ไม่ต้องรอกดคำนวณ
 
   }catch(e){el.innerHTML="<div style='padding:40px;text-align:center;color:#DC2626'>โหลดไม่ได้: "+esc2(e.message||"")+"</div>";}
 }
@@ -1993,9 +1995,73 @@ async function msgPlanRoutes(){
       t.save  = (t.group!=null&&t.soloOk) ? Math.max(0,t.solo-t.group) : 0;
     }
     msgRenderPlan(box,{trips:trips,jobs:jobs,skipped:skipped});
+    msgLogCost(trips,jobs,skipped);          // สะสมสถิติไว้ตอบ "จ้างแมสเท่าไหร่ถึงคุ้ม" (ไม่บล็อกการแสดงผล)
   }catch(e){
     box.innerHTML="<div style='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:10px;padding:11px 13px;font-size:13px;color:#B91C1C'>คำนวณไม่สำเร็จ: "+esc2(String(e&&e.message||e))+"</div>";
   }finally{ if(btn){btn.disabled=false;btn.textContent="💰 คำนวณค่าส่งถูกสุด";} }
+}
+
+// 📊 บันทึกสถิติค่าส่งของวันนั้นลง delivery_cost_log (1 วัน 1 แถว เขียนทับได้)
+// นัทสั่ง 5 ส.ค. 2569 — เก็บทุกวันไปเรื่อยๆ พอข้อมูลพอ จะคำนวณได้ว่าจ้างแมสเงินเดือนเท่าไหร่ถึงคุ้ม
+// ⚠️ ยังไม่รัน scripts/sql_delivery_cost_log.sql ก็ไม่พัง — แค่ไม่บันทึก (เงียบ ไม่กวนแอดมิน)
+async function msgLogCost(trips,jobs,skipped){
+  try{
+    var sb_=getSB(); if(!sb_) return;
+    var dEl=document.getElementById("msg-date"); var date=(dEl&&dEl.value)||tomorrow2();
+    var grouped=0, separate=0, cars=0;
+    trips.forEach(function(t){
+      grouped += (t.cost||0);
+      separate += (t.soloOk ? t.solo : (t.cost||0));
+      cars += (t.merge||t.order.length===1) ? 1 : t.order.length;   // รอบที่ไม่คุ้มถูกแตกเป็นหลายคัน
+    });
+    if(!grouped) return;                       // ขอเรทไม่ได้เลย = ไม่มีอะไรให้เก็บ
+    var detail=trips.map(function(t){
+      return {stops:t.order.map(function(p){return p.name;}), price:t.cost, solo:t.soloOk?t.solo:null, merged:!!t.merge};
+    });
+    var res=await sb_.from("delivery_cost_log").upsert({
+      delivery_date:date, stops:jobs.length, trips:cars,
+      cost_grouped:Math.round(grouped), cost_separate:Math.round(separate),
+      max_stops:MSG_MAX_STOPS, skipped:skipped, detail:detail,
+      updated_at:new Date().toISOString()
+    },{onConflict:"delivery_date"});
+    if(res.error) throw res.error;
+    msgShowCostHistory();
+  }catch(e){ console.warn("delivery_cost_log:",e&&(e.message||e.code)); }
+}
+
+// สรุปสะสม — โชว์ใต้แผน ว่าตอนนี้เก็บข้อมูลมากี่วันแล้ว และค่าส่งเฉลี่ยเท่าไหร่
+async function msgShowCostHistory(){
+  try{
+    var sb_=getSB(); if(!sb_) return;
+    var el=document.getElementById("msg-hist"); if(!el) return;
+    var res=await sb_.from("delivery_cost_log").select("delivery_date,stops,trips,cost_grouped,cost_separate")
+              .order("delivery_date",{ascending:false}).limit(120);
+    if(res.error||!res.data||!res.data.length) return;
+    var d=res.data, n=d.length;
+    var avgStop=d.reduce(function(s,x){return s+x.stops;},0)/n;
+    var avgCost=d.reduce(function(s,x){return s+x.cost_grouped;},0)/n;
+    var avgSep =d.reduce(function(s,x){return s+x.cost_separate;},0)/n;
+    var perMonth=Math.round(avgCost*26);
+    el.innerHTML="<div style='background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px;margin-top:10px'>"
+      +"<div style='font-size:13.5px;font-weight:800;color:#1F4D3A'>📊 สะสมมาแล้ว "+n+" วัน</div>"
+      +"<div style='font-size:11px;color:#6B7280;margin-bottom:8px'>เก็บอัตโนมัติทุกครั้งที่กดคำนวณ — ยิ่งเก็บมาก ยิ่งตอบได้แม่นว่าจ้างแมสเท่าไหร่ถึงคุ้ม</div>"
+      +"<div style='display:flex;gap:8px;flex-wrap:wrap'>"
+      +"<div style='flex:1;min-width:110px;background:#F7F8F6;border-radius:9px;padding:8px 10px'>"
+        +"<div style='font-size:10.5px;color:#6B7280;font-weight:700'>จุดส่งเฉลี่ย/วัน</div>"
+        +"<div style='font-family:var(--mono);font-size:17px;font-weight:700'>"+avgStop.toFixed(1)+"</div></div>"
+      +"<div style='flex:1;min-width:110px;background:#F7F8F6;border-radius:9px;padding:8px 10px'>"
+        +"<div style='font-size:10.5px;color:#6B7280;font-weight:700'>ค่าส่งเฉลี่ย/วัน</div>"
+        +"<div style='font-family:var(--mono);font-size:17px;font-weight:700'>"+fmtB(Math.round(avgCost))+"</div></div>"
+      +"<div style='flex:1;min-width:110px;background:#F7F8F6;border-radius:9px;padding:8px 10px'>"
+        +"<div style='font-size:10.5px;color:#6B7280;font-weight:700'>ประมาณการ/เดือน</div>"
+        +"<div style='font-family:var(--mono);font-size:17px;font-weight:700'>"+fmtB(perMonth)+"</div></div>"
+      +"</div>"
+      +"<div style='font-size:11.5px;color:#374151;margin-top:8px;line-height:1.6'>"
+      +"ถ้าจ้างแมสมาวิ่งแทน<b>ทั้งหมด</b> เงินที่จ่ายได้โดยไม่ขาดทุน = <b>"+fmtB(perMonth)+"/เดือน</b> (รวมน้ำมัน+ค่าเสื่อมรถแล้ว)"
+      +"<br>ถ้าแมสวิ่งได้แค่บางรอบ ก็หารตามสัดส่วนงานที่รับไป"
+      +(n<10?"<br><span style='color:#B45309;font-weight:700'>⚠️ ยังเก็บได้แค่ "+n+" วัน — ตัวเลขยังแกว่ง ควรเก็บให้ครบอย่างน้อย 20-30 วันก่อนตัดสินใจ</span>":"")
+      +"</div></div>";
+  }catch(e){}
 }
 
 function msgRenderPlan(box,r){
@@ -2009,14 +2075,10 @@ function msgRenderPlan(box,r){
   var totalSolo=r.trips.reduce(function(s,t){return s+(t.soloOk?t.solo:(t.cost||0));},0);
   var saved=totalSolo-totalPlan;
 
-  // แมสร้านควรรับรอบไหน = รอบที่รวมแล้วประหยัดเยอะสุด (ตัดค่า Lalamove ออกได้มากสุด)
-  var mergedTrips=r.trips.filter(function(t){return t.merge;}).sort(function(a,b){return b.cost-a.cost;});
-  var bySlot={}; mergedTrips.forEach(function(t){ if(!bySlot[t.slot]) bySlot[t.slot]=t; });
-  var msJobs=0, msCut=0;
-  Object.keys(bySlot).forEach(function(k){ msJobs+=bySlot[k].order.length; msCut+=bySlot[k].cost; });
-
+  // เฟส 1 = ยิง Lalamove อย่างเดียว (ยังไม่มีแมสร้าน — นัทสั่ง 5 ส.ค. 2569)
+  // เก็บสถิติไปเรื่อยๆ ก่อน พอข้อมูลพอค่อยคำนวณว่าจ้างแมสเท่าไหร่ถึงคุ้ม แล้วค่อยเปิดส่วนแบ่งงานแมส
   var h="<div style='background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:12px'>"
-    +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>💰 แผนจัดรอบส่ง (เรทสด Lalamove)</div>"
+    +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>🟠 รายการยิง Lalamove (เรทสด)</div>"
     +"<div style='font-size:11px;color:#6B7280;margin-bottom:9px'>ขอราคาอย่างเดียว ยังไม่ได้จองรถ · เพดาน "+MSG_MAX_STOPS+" งาน/รอบ"
     +(r.skipped?" · ข้าม "+r.skipped+" ใบ (ไม่มีพิกัด / นอกเขตแมส / ส่งแล้ว)":"")+"</div>"
 
@@ -2036,8 +2098,7 @@ function msgRenderPlan(box,r){
   var n=0;
   rows.forEach(function(t){
     n++;
-    var isMs = t.merge && bySlot[t.slot]===t;
-    h+="<div style='margin-top:5px;background:"+(isMs?"#EEF6F1":"#F7F8F6")+";border:"+(isMs?"1px solid #86C7A5":"1px solid transparent")+";border-radius:8px;padding:7px 9px;font-size:12px'>"
+    h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
       +"<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline'>"
       +"<b style='color:#1F4D3A'>รอบ "+n+"</b> <span style='color:#6B7280;flex:1'>"+esc2(t.slot)+"</span>"
       +"<span style='font-family:var(--mono);font-weight:700'>"+(t.cost!=null?fmtB(t.cost):"—")+"</span></div>"
@@ -2045,20 +2106,10 @@ function msgRenderPlan(box,r){
       +t.order.map(function(p,i){return (t.order.length>1?(i+1)+". ":"")+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
       +"</div>"
       +(t.save>15?"<div style='font-size:11px;color:#15803D;font-weight:700;margin-top:2px'>✅ รวมรอบแล้วประหยัด "+fmtB(t.save)+" (ยิงแยก "+fmtB(t.solo)+")</div>":"")
-      +(isMs?"<div style='font-size:11px;color:#1F4D3A;font-weight:700;margin-top:2px'>🛵 รอบนี้ให้แมสร้านวิ่ง — ตัดค่า Lalamove ออกได้ทั้งก้อน</div>":"")
       +"</div>";
   });
-
-  if(msJobs){
-    h+="<div style='margin-top:10px;background:#F7F8F6;border-radius:9px;padding:9px 11px;font-size:12.5px'>"
-      +"<b style='color:#1F4D3A'>สรุปการแบ่งงาน</b>"
-      +"<div style='color:#374151;margin-top:3px'>🛵 แมสร้าน <b>"+msJobs+" งาน</b> ("+Object.keys(bySlot).length+" รอบ · รอบละช่วงเวลา) → ตัดค่า Lalamove ออก <b>"+fmtB(msCut)+"</b></div>"
-      +"<div style='color:#374151'>🟠 ยิง Lalamove <b>"+(r.jobs.length-msJobs)+" งาน</b> (งานฉีก คนละทิศ) → <b>"+fmtB(totalPlan-msCut)+"</b></div>"
-      +"</div>";
-  }
   h+="<div style='margin-top:8px;font-size:11px;color:#6B7280'>"
-    +"⚠️ ยังไม่ได้เช็คน้ำหนัก — มอเตอร์ไซค์รับ 20 กก. รอบที่มีลูกค้าคอร์สหลายคนอาจเกิน ต้องดูด้วยตาก่อน · "
-    +"เรทขยับ ±10% ต่างกันไม่ถึง ฿20 ถือว่าเท่ากัน</div>";
+    +"เรทขยับ ±10% — ต่างกันไม่ถึง ฿20 ถือว่าเท่ากัน · จุดที่วิ่งเดี่ยวคือลองจับคู่ทุกแบบแล้วไม่คุ้ม</div>";
   h+="</div>";
   box.innerHTML=h;
 }
