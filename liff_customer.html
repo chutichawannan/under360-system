@@ -926,8 +926,12 @@ const SLOTS = [
   { key:'all_day',   label:'รับได้ตลอดวัน', time:'8:00 – 18:00', discount:10, note:'ลดค่าส่ง 10 บาท', mealPlanDisabled:true },
   { key:'morning',   label:'ช่วงเช้า',       time:'8:00 – 13:00',  mealPlanDisabled:true },
   { key:'afternoon', label:'ช่วงบ่าย',       time:'13:00 – 18:00' },
-  // ✅ เปิดคืน 3 ส.ค. 2026 — ต่อ Lalamove v3 API จริงแล้ว (/api/lalamove-quote · เรทจริงจากพิกัด ไม่ใช่ placeholder)
-  { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true },
+  // ⏸️ "ส่งระบุเวลา" ปิดชั่วคราว — นัทสั่ง 6 ส.ค. 2569 (ก่อน cutover Hato 7 ส.ค.)
+  //    เหตุผล: เรทที่ API คืนมาดูถูกผิดปกติ (6.2 กม. ฿71 · 30.4 กม. ฿127 · 48.9 กม. ฿197)
+  //    ยังไม่ได้เทียบกับแอป Lalamove จริง → ถ้าเปิดไว้แล้วเรทผิด = คิดเงินลูกค้าผิด
+  //    ให้ระบบหลักใช้งานได้ก่อน แล้วค่อยเปิด branch พัฒนาส่วนนี้ต่อหลัง beta
+  //    👉 เปิดคืน: ลบ hidden:true บรรทัดล่าง (โค้ด express ทั้งหมดยังอยู่ครบ ไม่ได้ลบ)
+  { key:'express',   label:'ส่งระบุเวลา', time:'เรท Lalamove', isExpress:true, mealPlanDisabled:true, hidden:true },
 ];
 
 const CAT_LABELS = {
@@ -2227,7 +2231,7 @@ function renderTimePick() {
     🍱 <b>Meal Plan:</b> ผลิตสดใหม่เสร็จช่วงเที่ยง — <b>ส่งได้เฉพาะช่วงบ่าย (13:00–18:00)</b> เท่านั้น (ไม่มีช่วงเช้า/ตลอดวัน/ส่งด่วน)
   </div>` : '';
 
-  const slotHTML = SLOTS.map(s => {
+  const slotHTML = SLOTS.filter(s => !s.hidden).map(s => {
     const disabled = isMeal && s.mealPlanDisabled;
     const isOn = selSlot===s.key && !disabled;
 
