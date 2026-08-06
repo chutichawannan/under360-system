@@ -116,6 +116,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .item-chip{font-size:13px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:baseline;gap:4px;max-width:100%;}
 .item-chip .ic-code{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--g);flex-shrink:0;}
 .item-chip .ic-name{font-size:12.5px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;}
+/* โน้ตรายกล่อง — ต้องเด่นพอให้ครัวไม่พลาด (เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่") */
+.item-chip .ic-note{font-size:12px;font-weight:700;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;white-space:normal;word-break:break-word;}
+body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
 /* เซ็ต/คอร์ส = กล่องแยก มีหัวข้อ ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน */
 .set-box{margin-top:6px;border:1px dashed var(--xsoft);border-radius:8px;padding:5px 7px;background:rgba(0,0,0,.015);}
 .set-hdr{font-size:13px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px;margin-bottom:2px;}
@@ -484,7 +487,13 @@ function getOrderItems(orderId){
     if(!m&&o.customer_id) m=allMpDeliveries.find(function(x){return x.customer_id&&x.customer_id===o.customer_id&&x.delivery_date===o.delivery_date;});
     if(m&&m.status!=="cancelled"&&Array.isArray(m.menu_items)&&m.menu_items.length){
       return m.menu_items.map(function(x){
-        return {code:x.code||"—", name:(x.name||"—"), qty:x.qty||1, menu_item_id:null, notes:"", _fromPlan:String(m.mp_type||"MP").toUpperCase()};
+        // โน้ตจากหน้าแพลนเมนู — ทั้งแบบใช้ทุกกล่อง (note) และแยกรายกล่อง (notes[])
+        // ครัวต้องเห็น ไม่งั้นแอดมินกรอก "ข้าวไรซ์เบอร์รี่ กล่อง 2" ไปก็ไม่มีใครอ่าน
+        var parts=[];
+        if(String(x.note||"").trim()) parts.push("ทุกกล่อง: "+String(x.note).trim());
+        (x.notes||[]).forEach(function(v,i){ if(String(v||"").trim()) parts.push("กล่อง "+(i+1)+": "+String(v).trim()); });
+        return {code:x.code||"—", name:(x.name||"—"), qty:x.qty||1, menu_item_id:null, notes:"",
+                _fromPlan:String(m.mp_type||"MP").toUpperCase(), _boxNote:parts.join(" · ")};
       });
     }
   }
@@ -515,7 +524,7 @@ function groupOrderItems(items){
     if(cr) g.round=cr[1]+"/"+cr[2];
     var ik=(i.code||"")+"|"+(i.name||"");
     if(g._seen[ik]) g._seen[ik].qty+=(i.qty||1);
-    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1)}; g.items.push(g._seen[ik]); }
+    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1),boxNote:i._boxNote||""}; g.items.push(g._seen[ik]); }
   });
   groups.sort(function(a,b){ return (a.pkg?1:0)-(b.pkg?1:0); });   // เมนูเดี่ยวก่อน แล้วค่อยเซ็ต
   return groups;
@@ -780,7 +789,10 @@ function renderCard(o){
   var chip=function(i){
     return "<div class='item-chip'><span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
       +(codeMode!=="name"?" <span class='ic-name'>"+escH(i.name)+"</span>":"")
-      +" <span class='ic-qty'>×"+i.qty+"</span></div>";
+      +" <span class='ic-qty'>×"+i.qty+"</span>"
+      // 📌 โน้ตรายกล่องจากแพลนเมนู เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่" — ครัวต้องเห็นตอนจัดกล่อง
+      +(i.boxNote?"<span class='ic-note'>📌 "+escH(i.boxNote)+"</span>":"")
+      +"</div>";
   };
   var itemsHtml="";
   if(items.length){

@@ -1621,11 +1621,35 @@ function removeMenuEntry(rowId,code){
   renderLeftPanel();
 }
 function toggleNote(rowId,code){
-  var id="note-"+rowId+"-"+code;
-  var el=document.getElementById(id);
+  var el=document.getElementById("notebox-"+rowId+"-"+code);
   if(!el)return;
-  el.style.display=el.style.display==="none"?"block":"none";
-  if(el.style.display==="block")el.focus();
+  var open = el.style.display==="none";
+  el.style.display = open ? "block" : "none";
+  if(open){ var f=el.querySelector("input"); if(f) f.focus(); }
+}
+
+// ══════════════════════════════════════
+// 📦 โน้ตราย "กล่อง" — นัทสั่ง 6 ส.ค. 2569
+// เดิมโน้ตผูกกับ "รายการเมนู" → เมนูเดียวกัน ×3 กล่อง ใส่โน้ตได้อันเดียว ใช้กับทั้ง 3 กล่อง
+//   เคสจริงที่ทำไม่ได้: "อุษณี ข้าวไรซ์เบอร์รี่ 1 กล่อง" (จาก 3 กล่อง เอาไรซ์เบอร์รี่แค่กล่องเดียว)
+// ตอนนี้: qty=1 → ช่องเดียวเหมือนเดิม · qty>1 → ช่อง "ทุกกล่อง" + ช่องแยกรายกล่อง
+// เก็บใน entry.notes[] (ลำดับ = กล่องที่ 1,2,3…) · entry.note เดิมยังใช้ได้ = โน้ตที่ใช้กับทุกกล่อง
+// ══════════════════════════════════════
+function saveBoxNote(rowId,code,idx,val){
+  var entry=getEntry(rowId,code); if(!entry) return;
+  var n=(entry.notes||[]).slice();
+  while(n.length < (entry.qty||1)) n.push("");
+  n[idx]=val;
+  entry.notes = n.some(function(x){return String(x||"").trim();}) ? n : null;   // ว่างหมด = ไม่ต้องเก็บ
+  saveMpPlanRow(rowId);
+  renderPlanCell(rowId);
+}
+// สรุปโน้ตให้ครัวอ่านสั้นๆ เช่น "ทุกกล่อง: ไม่ผักชี · กล่อง 2: ข้าวไรซ์เบอร์รี่"
+function noteSummary(e){
+  var parts=[];
+  if(String(e.note||"").trim()) parts.push("ทุกกล่อง: "+String(e.note).trim());
+  (e.notes||[]).forEach(function(v,i){ if(String(v||"").trim()) parts.push("กล่อง "+(i+1)+": "+String(v).trim()); });
+  return parts.join(" · ");
 }
 function saveNote(rowId,code,val){
   var entry=getEntry(rowId,code);
@@ -1804,10 +1828,21 @@ function renderPlanCell(rowId){
     if((e.qty||1)>1)h+="<span class='qty-badge'>×"+e.qty+"</span>";
     h+="<span class='note-btn' onclick='event.stopPropagation();toggleNote(\""+rowId+"\",\""+e.code+"\")'>···</span></div>";
     h+="<div class='acf-name'>"+esc2(m.name||"")+"</div>";
-    if(e.note)h+="<div style='font-size:10px;color:#F59E0B'>📌"+esc2(e.note)+"</div>";
-    h+="<input id='note-"+rowId+"-"+e.code+"' class='note-inline' style='display:none' placeholder='โน้ต เช่น ไม่ผักชี...' value='"+esc2(e.note||"")+"' onclick='event.stopPropagation()'";
-    h+=" onchange='saveNote(\""+rowId+"\",\""+e.code+"\",this.value)' onblur='toggleNote(\""+rowId+"\",\""+e.code+"\")'>";
-    h+="</div>";
+    var summ=noteSummary(e);
+    if(summ)h+="<div style='font-size:10px;color:#F59E0B;line-height:1.4'>📌"+esc2(summ)+"</div>";
+    // กล่องกรอกโน้ต — qty>1 จะมีช่องแยกรายกล่องให้ด้วย
+    var qty=e.qty||1;
+    h+="<div id='notebox-"+rowId+"-"+e.code+"' style='display:none' onclick='event.stopPropagation()'>";
+    h+="<input class='note-inline' placeholder='"+(qty>1?"ทุกกล่อง เช่น ไม่ผักชี":"โน้ต เช่น ไม่ผักชี")+"' value='"+esc2(e.note||"")+"'"
+      +" onchange='saveNote(\""+rowId+"\",\""+e.code+"\",this.value)'>";
+    if(qty>1){
+      h+="<div style='font-size:9.5px;color:var(--ink-soft);margin-top:3px'>แยกเฉพาะกล่อง (เว้นว่างได้)</div>";
+      for(var bi=0; bi<qty; bi++){
+        h+="<input class='note-inline' style='width:120px' placeholder='กล่อง "+(bi+1)+"' value='"+esc2((e.notes||[])[bi]||"")+"'"
+          +" onchange='saveBoxNote(\""+rowId+"\",\""+e.code+"\","+bi+",this.value)'>";
+      }
+    }
+    h+="</div></div>";
   });
   h+="</div>";
   if(total<box)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/"+box+"</span>";
