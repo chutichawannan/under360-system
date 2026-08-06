@@ -108,7 +108,22 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc:last-child{margin-bottom:0;}
 .oc.pkg{border-color:var(--gold);background:var(--golds);}
 .oc.mealplan{border-color:var(--g);background:var(--gs);}
-.oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;}
+.oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;}
+/* ── พับ/กางการ์ด (N-13) ── ค่าเริ่มต้น = กางไว้ · พับแล้วเหลือ ชื่อ+กล่อง+สถานะ ── */
+.oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
+.oc-collapsed .oc-caret{transform:rotate(-90deg);}
+.oc-boxn{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--soft);}
+.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:none;}
+.oc-collapsed .oc-2col{display:block;}
+.oc-collapsed .oc-top{margin-bottom:0;}
+.oc-collapsed{padding-top:9px;padding-bottom:9px;}
+.fold-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 2px 10px;}
+.fold-btn{padding:0 14px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);background:var(--w);color:var(--soft);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.fold-hint{font-size:11px;color:var(--xsoft);}
+body.tablet .fold-btn{font-size:16px;padding:0 20px;min-height:50px;border-radius:26px;}
+body.tablet .fold-hint{font-size:14px;}
+body.tablet .oc-boxn{font-size:14px;}
+body.tablet .oc-caret{font-size:19px;}
 .oc-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-top:2px;}
 .oc-badge.hp{background:#FEF3C7;color:#92400E;}
 .oc-badge.lc{background:#D1FAE5;color:#065F46;}
@@ -206,7 +221,10 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 
 /* PRINT CSS */
 @media print{
-  .hdr,.tab-bar,.ctrl-bar,.oc-actions,.no-print{display:none!important;}
+  .hdr,.tab-bar,.ctrl-bar,.oc-actions,.no-print,.oc-caret,.date-banner .db-back{display:none!important;}
+  /* พิมพ์ = ต้องได้ของครบทุกใบ แม้ครัวพับการ์ดไว้บนจอ (N-13) */
+  .oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:block!important;}
+  .oc-collapsed .oc-2col{display:block!important;}
   body{background:#fff;font-size:11px;}
   .main{padding:0;max-width:100%;}
   .slot-hdr{background:#1F4D3A!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
@@ -445,6 +463,9 @@ async function loadAll(){
     if(ordRes.error) throw ordRes.error;   // เดิมไม่เช็ค → โหลดพลาดแล้วขึ้น "ไม่มีออเดอร์" ทั้งที่ DB มีเต็ม (แก้ 3 ส.ค. 2026)
     allOrders=ordRes.data||[];
     var ids=allOrders.map(function(o){return o.id;});
+    // N-13: ทิ้งสถานะ "พับ" ของออเดอร์ที่หลุดช่วงวันไปแล้ว กัน localStorage บวมสะสมไปเรื่อยๆ
+    (function(){var keep={},ch=false; ids.forEach(function(i){if(kqCollapsed[i])keep[i]=1;});
+      for(var k in kqCollapsed){if(!keep[k]){ch=true;break;}} if(ch){kqCollapsed=keep;saveCollapsed();}})();
     var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
@@ -483,6 +504,16 @@ function filteredOrders(){
 // บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
 var KQ_CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
 
+// จับคู่ออเดอร์ ↔ รอบส่ง Meal Plan — แยกออกมาเป็นฟังก์ชันเดียว ใช้ทั้งตอนดึงเมนูและตอนนับกล่อง
+// ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
+function findMpFor(o){
+  if(!o||!(allMpDeliveries||[]).length) return null;
+  var m=null;
+  if(o.id)              m=allMpDeliveries.find(function(x){return x.order_id&&x.order_id===o.id;});
+  if(!m&&o.line_uid)    m=allMpDeliveries.find(function(x){return x.line_uid&&x.line_uid===o.line_uid&&x.delivery_date===o.delivery_date;});
+  if(!m&&o.customer_id) m=allMpDeliveries.find(function(x){return x.customer_id&&x.customer_id===o.customer_id&&x.delivery_date===o.delivery_date;});
+  return m;
+}
 function getOrderItems(orderId){
   var o=(allOrders||[]).find(function(x){return x.id===orderId;});
   var raw=allItems.filter(function(i){return i.order_id===orderId;});
@@ -494,10 +525,7 @@ function getOrderItems(orderId){
   //    ที่มา: แอดมินแก้เมนูที่หน้า "แพลนเมนู" ซึ่งเขียนลง mp_deliveries — ถ้าครัวอ่านแต่ order_items จะไม่เห็นการแก้เลย
   //    ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
   if(!food.length && o && (allMpDeliveries||[]).length){
-    var m=null;
-    if(o.id)              m=allMpDeliveries.find(function(x){return x.order_id&&x.order_id===o.id;});
-    if(!m&&o.line_uid)    m=allMpDeliveries.find(function(x){return x.line_uid&&x.line_uid===o.line_uid&&x.delivery_date===o.delivery_date;});
-    if(!m&&o.customer_id) m=allMpDeliveries.find(function(x){return x.customer_id&&x.customer_id===o.customer_id&&x.delivery_date===o.delivery_date;});
+    var m=findMpFor(o);
     if(m&&m.status!=="cancelled"&&Array.isArray(m.menu_items)&&m.menu_items.length){
       return m.menu_items.map(function(x){
         // โน้ตจากหน้าแพลนเมนู — ทั้งแบบใช้ทุกกล่อง (note) และแยกรายกล่อง (notes[])
@@ -760,6 +788,27 @@ function stkAdj(menuId,d){ var m=(allMenus||[]).find(function(x){return x.id===m
 function stkType(inp){ stkWrite(inp.dataset.id,Math.max(0,parseInt(inp.value)||0)); } // ไม่ re-render ระหว่างพิม กัน cursor เด้ง
 function stkInf(menuId){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; stkWrite(menuId, (m.stock_total!=null)?null:0); renderStock(); }
 
+// ── พับ/กางการ์ด (N-13) ──────────────────────────────────
+// วันที่ออเดอร์เยอะ หน้ายาวมากจนครัวเลื่อนหาของไม่เจอ → กดหัวการ์ดพับเก็บได้
+// กติกา: ค่าเริ่มต้น "กางไว้" เสมอ (ครัวต้องเห็นของโดยไม่ต้องกด) · พับเองเมื่ออยากเก็บ
+// เก็บสถานะไว้ใน localStorage → auto-refresh 30 วิ (loadAll→render) ไม่เด้งกางเอง
+var kqCollapsed={};
+try{ kqCollapsed=JSON.parse(localStorage.getItem("kqCollapsedOrders")||"{}")||{}; }catch(e){ kqCollapsed={}; }
+function saveCollapsed(){ try{ localStorage.setItem("kqCollapsedOrders",JSON.stringify(kqCollapsed)); }catch(e){} }
+function toggleCard(id){
+  if(kqCollapsed[id]) delete kqCollapsed[id]; else kqCollapsed[id]=1;
+  saveCollapsed();
+  // ขยับเฉพาะการ์ดใบนั้น ไม่ re-render ทั้งหน้า = ไม่กระโดดหลุดตำแหน่งที่ครัวเลื่อนค้างไว้
+  var el=document.querySelector(".oc[data-oid='"+id+"']");
+  if(el) el.classList.toggle("oc-collapsed",!!kqCollapsed[id]);
+  else render();
+}
+function foldAll(on){
+  filteredOrders().forEach(function(o){ if(on)kqCollapsed[o.id]=1; else delete kqCollapsed[o.id]; });
+  saveCollapsed(); render();
+}
+function boxCount(items){ return (items||[]).reduce(function(s,i){return s+(i.qty||1);},0); }
+
 // TAB 2: รายออเดอร์ by slot
 function renderOrders(){
   var orders=filteredOrders();
@@ -795,7 +844,11 @@ function renderOrders(){
   //    กติกาใหม่: ช่วงเวลาที่ไม่รู้จัก ต้องโผล่ท้ายจอเสมอ ห้ามตกหล่นเด็ดขาด
   var known=slotOrder.slice();
   var extra=Object.keys(bySlot).filter(function(s){return known.indexOf(s)<0;}).sort();
-  var html="";
+  // N-13: ปุ่มพับ/กางทั้งหมด — วันออเดอร์เยอะครัวพับเก็บทีเดียวแล้วค่อยกางทีละใบที่กำลังทำ
+  var html="<div class='fold-bar no-print'>"
+    +"<button class='fold-btn' onclick='foldAll(true)'>⊟ พับทั้งหมด</button>"
+    +"<button class='fold-btn' onclick='foldAll(false)'>⊞ กางทั้งหมด</button>"
+    +"<span class='fold-hint'>แตะชื่อลูกค้าเพื่อพับ/กางทีละใบ</span></div>";
   known.concat(extra).forEach(function(s){
     if(!bySlot[s]||!bySlot[s].length)return;
     var isExtra=known.indexOf(s)<0;
@@ -867,13 +920,22 @@ function renderCard(o){
     +(wantsUtensils?"🥄🍴 ใส่ช้อนส้อม":"❌ ไม่ต้องช้อนส้อม")+"</div>";
   var stateTag = shipped?"<span class='oc-state shipped'>🛵 ส่งแมสแล้ว</span>"
                : packed?"<span class='oc-state packed'>✅ จัดกล่องแล้ว</span>":"";
+  // N-13: พับได้ — ตอนพับยังต้องเห็น ชื่อ · จำนวนกล่อง · สถานะ (ข้อมูลที่ครัวใช้ตัดสินใจ)
+  var isCol=!!kqCollapsed[o.id];
+  var nBox=boxCount(items);
+  // Meal Plan ที่แอดมินยังไม่ assign เมนู จะไม่มี order_items เลย → นับกล่องจากรอบส่ง (mp_deliveries.box_count)
+  // ไม่งั้นตอนพับจะขึ้น "0 กล่อง" ทั้งที่จริงมีของต้องทำ
+  if(!nBox){ var _mp=findMpFor(o); if(_mp&&_mp.box_count) nBox=_mp.box_count; }
+  var boxTag="<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
-  return "<div class='"+cardCls+(shipped?" oc-done":"")+"'>"
+  return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+"' data-oid='"+escH(o.id)+"'>"
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
-        +"<div class='oc-top'>"+badgeHtml+"<div style='flex:1;min-width:0'>"
+        +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
+        +"<span class='oc-caret'>▾</span>"+badgeHtml+"<div style='flex:1;min-width:0'>"
         +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
         +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
+        +boxTag
         +"<span class='oc-pay "+(o.payment_status==="paid"?"is-paid":"is-unpaid")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
         +stateTag+"</div>"
         +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
