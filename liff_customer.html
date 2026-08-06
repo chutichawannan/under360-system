@@ -2340,7 +2340,7 @@ function renderConfirm(addr) {
   }
   const fEl = document.getElementById('conf-fee');
   if (fEl) {
-    if (appliedPromos.some(p => p.discount_type === 'free_shipping') && o.feeKnown) fEl.textContent = 'ฟรี';
+    if (shipFreeDisplay(o)) fEl.textContent = 'ฟรี';
     else fEl.textContent = o.feeKnown ? '฿' + o.feeAfter.toLocaleString() : 'ยังไม่ได้ปักหมุด';
   }
   document.getElementById('conf-total').textContent = '฿' + o.total.toLocaleString();
@@ -2780,6 +2780,20 @@ function tapSuggestedPromo(id){
   applyPromo(p.code);
 }
 
+// ── ส่งฟรีทั้งใบจาก "ของในตะกร้า" (ไม่ต้องมีโค้ด) ────────────────────────
+// 1) แพคเกจที่ติ๊ก free_shipping ใน DB
+// 2) Meal Plan ทุกแพ็ค — นโยบายร้านประกาศไปแล้วว่า "Meal Plan ส่งฟรีทุกแพ็ค ไม่มีขั้นต่ำ"
+//    (N-26 · 6 ส.ค. 2569: U-0807-005 โดนคิดค่าส่ง ฿17 = เก็บเกินจากที่โฆษณา)
+// ⚠️ ใช้ตัวนี้ที่เดียวทุกจุด — ค่าส่งโชว์ 3 จุด (ใต้แผนที่ · สรุปตะกร้า · หน้ายืนยัน) ต้องตรงกันเสมอ
+function cartHasFreeShipping(){
+  return cart.some(c => c.type === 'meal_plan' || (c.type === 'package' && c.free_shipping));
+}
+// ส่งฟรีสำหรับ "การแสดงผล" = ของในตะกร้า หรือ โค้ดส่งฟรี (โค้ดต้องรู้ค่าส่งก่อนถึงจะบอกว่าฟรีได้)
+function shipFreeDisplay(o){
+  if (cartHasFreeShipping()) return true;
+  return appliedPromos.some(p => p.discount_type === 'free_shipping') && o.feeKnown;
+}
+
 // คำนวณยอดทั้งหมด: ยอดสินค้า - ส่วนลด(รวมทุกโค้ดที่ซ้อนอยู่) + ค่าส่ง(หลังหักส่งฟรี)
 function computeOrder(){
   const sub = cartTotal();
@@ -2799,8 +2813,8 @@ function computeOrder(){
   let autoDisc = 0;
   autoList.forEach(a => { a.amount = (a.type==='fixed') ? a.value : Math.round(sub * a.value/100); autoDisc += a.amount; });
   const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
-  // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
-  const pkgFreeShip = cart.some(c => c.type==='package' && c.free_shipping);
+  // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB + Meal Plan ทุกแพ็ค → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
+  const pkgFreeShip = cartHasFreeShipping();
   if(pkgFreeShip) shipDisc = fee;
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDiscTotal + shipDisc;
@@ -3129,7 +3143,7 @@ function setCusPin(lat,lng,addr){
   const fee=calcDeliveryFee(distKm, selSlot);
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
-  const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent='฿'+fee;
+  const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent=cartHasFreeShipping()?'ฟรี':'฿'+fee;
   if(addr){ _setAddrFields(addr); }
   else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → หาที่อยู่ให้เอง
     lookupPlaceAtPin(lat,lng);
@@ -3187,7 +3201,7 @@ function updateRoadDistance(lat, lng){
       distKm = el.distance.value/1000;                 // ระยะขับจริง (กม.)
       const fee = calcDeliveryFee(distKm, selSlot);
       const fD=document.getElementById('fee-dist'); if(fD) fD.textContent='🚗 '+distKm.toFixed(1)+' กม. (ระยะขับจริง)';
-      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent='฿'+fee;
+      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent=cartHasFreeShipping()?'ฟรี':'฿'+fee;
       updateCartTotals();
     });
   }catch(e){ const fD=document.getElementById('fee-dist'); if(fD && distKm) fD.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว'; }
@@ -3283,16 +3297,15 @@ function updateCartTotals(){
   }
   // ค่าส่ง: ส่งฟรี → ฟรี, ยังไม่ปักหมุด → ข้อความ, ปกติ → ตัวเลข
   if(feeEl){
-    if(appliedPromos.some(p=>p.discount_type==='free_shipping') && o.feeKnown) feeEl.textContent='ฟรี';
-    else feeEl.textContent = o.feeKnown ? '฿'+o.fee.toLocaleString() : 'ยังไม่ได้ปักหมุด';
+    if(shipFreeDisplay(o)) feeEl.textContent='ฟรี';
+    else feeEl.textContent = o.feeKnown ? '฿'+o.feeAfter.toLocaleString() : 'ยังไม่ได้ปักหมุด';
   }
   // 🔴 แถบค่าส่งใต้แผนที่ต้องตรงกับสรุปด้านล่างเสมอ
   //    เดิมอัปเดตแค่ตอนปักหมุด → เปลี่ยนช่วงเวลาส่งแล้วค้างที่เลขเดิม
   //    ลูกค้าเห็น 2 ตัวเลขคนละค่าพร้อมกัน (บน ฿31 · ล่าง ฿41) = งงว่าจะจ่ายเท่าไหร่ (นัทเจอเอง 6 ส.ค. 2569)
   var fAmtEl=document.getElementById('fee-amt');
   if(fAmtEl && o.feeKnown){
-    var freeShip = appliedPromos.some(p=>p.discount_type==='free_shipping') || cart.some(c=>c.type==='package'&&c.free_shipping);
-    fAmtEl.textContent = freeShip ? 'ฟรี' : '฿'+o.fee.toLocaleString();
+    fAmtEl.textContent = shipFreeDisplay(o) ? 'ฟรี' : '฿'+o.feeAfter.toLocaleString();
   }
   if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
   if(subBtn)subBtn.textContent='ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
