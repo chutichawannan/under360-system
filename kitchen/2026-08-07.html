@@ -9,7 +9,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
-    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--veg:#15803D;--zei:#BE185D;--zeibg:#FDF2F8}
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--veg:#15803D}
   *{box-sizing:border-box}
   body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:15px;line-height:1.45}
   .wrap{max-width:820px;margin:0 auto;padding:0 14px 50px}
@@ -21,7 +21,7 @@
   .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:12px 0}
   .key{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
   .k{font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px}
-  .k.lc{background:var(--lcbg);color:var(--lc)}.k.hp{background:var(--hpbg);color:var(--hp)}.k.hx{background:var(--hxbg);color:var(--hx)}.k.sp{background:var(--redbg);color:var(--red)}
+  .k.lc{background:var(--lcbg);color:var(--lc)}.k.hp{background:var(--hpbg);color:var(--hp)}.k.hx{background:var(--hxbg);color:var(--hx)}
   .alert{background:var(--redbg);border:1px solid #FECACA;border-radius:12px;padding:11px 13px;margin-bottom:16px}
   .alert .t{font-weight:900;color:var(--red);font-size:14px;margin-bottom:6px}
   .alert ul{margin:0;padding-left:18px}.alert li{font-size:13.5px;font-weight:700;color:#7F1D1D;margin:4px 0}
@@ -29,21 +29,15 @@
   .mh{background:#F3F4F6;padding:9px 12px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .mh .nm{flex:1;min-width:0}.mh .nm .t1{font-weight:800;font-size:15px}
   .mh .nm .veg{color:var(--veg);font-size:12px;font-weight:600;margin-top:2px}
-  .mh .nm .fat{color:var(--hx);font-size:12px;font-weight:700;margin-top:2px}
   .mh .tot{flex:none;font-size:12px;font-weight:800;color:var(--head);background:#E8F5F2;border-radius:999px;padding:3px 10px;white-space:nowrap}
   .ln{display:flex;gap:10px;padding:9px 12px;border-top:1px solid var(--line);align-items:center}
-  .ln .tag{flex:none;font-size:11.5px;font-weight:900;border-radius:7px;padding:4px 8px;min-width:62px;text-align:center;line-height:1.2}
+  .ln .tag{flex:none;font-size:11px;font-weight:900;border-radius:7px;padding:4px 6px;min-width:58px;text-align:center;line-height:1.2}
   .ln.lc .tag{background:var(--lcbg);color:var(--lc)}.ln.hp .tag{background:var(--hpbg);color:var(--hp)}.ln.hx .tag{background:var(--hxbg);color:var(--hx)}
   .ln .d{flex:1;font-size:13.5px}.ln .d b{font-size:14.5px}
-  .ln .q{flex:none;font-weight:900;font-size:18px;white-space:nowrap;min-width:26px;text-align:right}
+  .ln .d small{color:var(--soft);font-size:11.5px}
+  .ln .q{flex:none;font-weight:900;font-size:17px;white-space:nowrap;min-width:26px;text-align:right}
   .sp{background:var(--redbg);color:#7F1D1D;font-size:13px;font-weight:800;padding:7px 12px 7px 14px}
-  .sec{font-size:14px;font-weight:900;color:var(--head);margin:24px 0 8px}
-  .zei .mh{background:var(--zeibg)}.zei{border-color:#FBCFE8}
-  .zlist{border:1px solid #FBCFE8;border-radius:12px;padding:6px 4px;background:#fff}
-  .zrow{display:flex;gap:10px;padding:7px 10px;border-bottom:1px dashed var(--line);align-items:center;font-size:13.5px}
-  .zrow:last-child{border-bottom:none}
-  .zrow .n{flex:none;width:22px;font-weight:900;color:var(--zei)}
-  .zrow .d b{font-size:14px}
+  .sec{font-size:14px;font-weight:900;color:var(--head);margin:22px 0 8px}
   .foot{color:var(--soft);font-size:12px;margin-top:18px;line-height:1.7;border-top:1px solid var(--line);padding-top:10px}
   @media print{.wrap{max-width:100%} body{font-size:13px} .langbar{display:none}}
 </style>
@@ -58,121 +52,116 @@
 <div class="vbanner" id="vbanner"></div>
 
 <h1>👨‍🍳 <span data-i="title">ใบงานครัว — ศุกร์ 7 ส.ค.</span></h1>
-<div class="sub" data-i="sub">มีลแพลน (LC 2 คน · HP 5 คน) + Hyrox 27 กล่อง</div>
+<div class="sub" data-i="sub">มีลแพลน LC 2 · HP 5 + Hyrox (พัดชา 9 · Monchuta 6 · คุณเฉียง 12)</div>
 
 <div class="key">
   <span class="k lc">LC = <span data-i="meat">เนื้อ</span> 120g</span>
   <span class="k hp">HP = <span data-i="meat">เนื้อ</span> 170g</span>
-  <span class="k hx">HYROX = <span data-i="hxkey">เนื้อ+คาร์บเยอะสุด</span></span>
+  <span class="k hx">HYROX = <span data-i="hxkey">เนื้อ 170 + คาร์บสูง</span></span>
 </div>
 
 <div class="alert">
   <div class="t" data-i="al_t">🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง</div>
   <ul>
     <li data-i="al1">มีมี่ (LC) — ไม่กินพริกหยวก</li>
-    <li data-i="al2">โอ๋ (LC+HP) — ไม่ทานทูน่า/เนื้อ/ของดิบ · (HP) ไม่ทานไข่ต้ม · มีเมนูแทน ก๋วยเตี๋ยวหลอด/ปลาทูต้มมะนาว</li>
-    <li data-i="al3">⚠️ LC ธนัทพร · สุทธิภา · วิไลลักษณ์(Ploy65) — ช่องเมนู "ว่าง" ในชีท → ยังไม่ทำ (รอแอดมินติ๊ก)</li>
+    <li data-i="al2">โอ๋ (LC+HP) — ไม่ทานทูน่า/เนื้อ/ของดิบ · (HP) ไม่ทานไข่ต้ม</li>
+    <li data-i="al3">⚠️ LC ธนัทพร · สุทธิภา · วิไลลักษณ์ — ชีท "ว่าง" ยังไม่ติ๊ก → ยังไม่ทำ</li>
   </ul>
 </div>
 
-<div class="sec" data-i="secA">■ ส่วนที่ 1 — มีลแพลน (แต่ละเมนู LC 2 · HP 5)</div>
+<div class="sub" style="color:var(--hx);font-weight:700" data-i="hxwho">HYROX = คุณเฉียง 12 (VIP · ไม่ซ้ำรอบก่อน) + พัดชา 9 + Monchuta 6 · ทุกกล่องคาร์บสูง 55–65g</div>
+
+<div class="sec" data-i="secA">■ เมนูมีลแพลน (มี LC / HP / HYROX ในเมนูเดียว)</div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">35 พาสต้าแซลมอนไวท์ซอส</div><div class="fat">🫒 <span data-i="oilstd">ผัก/น้ำมันตามสูตรครัว</span></div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">35 พาสต้าแซลมอนไวท์ซอส</div><div class="veg" data-i="vegstd">🥗 ผัก/น้ำมันตามสูตรครัว</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 120g</b> · <span data-i="pasta">พาสต้า</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="pasta">พาสต้า</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="pasta">พาสต้า</span> ~200g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">55 กุ้งผัดแกงเขียวหวานไร้กะทิ</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">55 กุ้งเขียวหวานไร้กะทิ</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 120g</b> · <span data-i="rice">ข้าว</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 170g</b> · <span data-i="rice">ข้าว</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 170g</b> · <span data-i="rice">ข้าว</span> ~220g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">70 Sushi Bake แซลมอน อโวคาโด</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">70 Sushi Bake แซลมอน อโวคาโด</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 120g</b> · <span data-i="rice">ข้าว</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="rice">ข้าว</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="rice">ข้าว</span> ~220g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">79 โรลหมี่คลุกยำหมูย่าง น้ำจิ้มซีฟู้ด</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">79 โรลหมี่หมูย่าง น้ำจิ้มซีฟู้ด</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="pork">หมู</span>ย่าง 120g</b> · <span data-i="noodle">เส้นหมี่</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="pork">หมู</span>ย่าง 170g</b> · <span data-i="noodle">เส้นหมี่</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="pork">หมู</span>ย่าง 170g</b> · <span data-i="noodle">เส้นหมี่</span> <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">80 ข้าวสุกี้แห้งร่างทอง ไข่ข้น</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">80 ข้าวสุกี้แห้งร่างทอง ไข่ข้น</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="pork">หมู</span>/รวม 120g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="pork">หมู</span>/รวม 170g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="pork">หมู</span>/รวม 170g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span> ~220g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">81 ข้าวผัดอเมริกัน</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">81 ข้าวผัดอเมริกัน</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chick2">ไก่</span>/แฮม 120g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chick2">ไก่</span>/แฮม 170g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chick2">ไก่</span>/แฮม 170g</b> + <span data-i="egg">ไข่</span> · <span data-i="rice">ข้าว</span> ~220g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">83 ข้าวผัดน้ำพริกปลาทู</div></div><span class="tot"><span data-i="total">รวม</span> 7</span></div>
+  <div class="mh"><div class="nm"><div class="t1">83 ข้าวผัดน้ำพริกปลาทู</div></div><span class="tot"><span data-i="total">รวม</span> 8</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 120g</b> · <span data-i="rice">ข้าว</span></div><span class="q">2</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 170g</b> · <span data-i="rice">ข้าว</span></div><span class="q">5</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 170g</b> · <span data-i="rice">ข้าว</span> ~220g <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div>
 </div>
 
-<div class="sec" data-i="secB">■ ส่วนที่ 2 — Hyrox รอบ 2 (พัดชา 9 + Monchuta 6 · ปริมาณ Hyrox)</div>
-<div class="sp" data-i="monote">พัดชา = ได้ครบทั้ง 9 เมนู · Monchuta = 6 กล่อง (แอดมิน/ครัวเลือก 6 จาก 9) · ทุกกล่อง Hyrox portion (โปรตีน ~170 + คาร์บ 55–65g)</div>
+<div class="sec" data-i="secB">■ เมนู Hyrox (บรรทัด HYROX เท่านั้น)</div>
+<div class="sp" data-i="monote">พัดชา = ครบ 9 เมนู · Monchuta = 6 กล่อง (เลือก 6/9) · คุณเฉียง = ตามที่ระบุ · ตัวเลขขวา = พัดชา+คุณเฉียง (ยังไม่รวม Monchuta)</div>
 
-<div class="m"><div class="mh"><div class="nm"><div class="t1">อกไก่ Piri Piri</div><div class="veg">🥗 มันฝรั่งอบ + พริกหยวก/ซูกินี</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="potato">มันฝรั่ง</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">สเต๊กไก่พริกไทยดำ</div><div class="veg">🥗 บรอกโคลี + แครอท</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice">ข้าว</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">ไก่โรสต์มะนาวโรสแมรี</div><div class="veg">🥗 หน่อไม้ฝรั่ง + มะเขือเทศเชอร์รี่</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="potato">มันฝรั่ง</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">หมูย่างเกลือ</div><div class="veg">🥗 แตงกวา + มะเขือเทศ + สลัด</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">สันในหมู</span> 180g</b> · <span data-i="sweetp">มันหวาน</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">หมูผัดกิมจิ</div><div class="veg">🥗 ถั่วงอก + ผักกวางตุ้ง</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">สันในหมู</span> 180g</b> · <span data-i="rice">ข้าว</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">กุ้งอบวุ้นเส้น</div><div class="veg">🥗 บ็อกฉ่อย + เห็ด</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 160g</b> · <span data-i="glass">วุ้นเส้น</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">แซลมอนอบเลมอนดิล</div><div class="veg">🥗 หน่อไม้ฝรั่ง + ถั่วแขก</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="potato">มันฝรั่ง</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">กระพงนึ่งมะนาว</div><div class="veg">🥗 บรอกโคลี/กะหล่ำ + น้ำยำมะนาว</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seabass">กระพง</span> 185g</b> · <span data-i="rice">ข้าว</span></div><span class="q">1</span></div></div>
-<div class="m"><div class="mh"><div class="nm"><div class="t1">แซลมอนเพสโต้</div><div class="veg">🥗 มะเขือเทศเชอร์รี่ + ร็อกเก็ต</div></div><span class="tot">พัดชา 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="pasta">พาสต้า</span>เพสโต้</div><span class="q">1</span></div></div>
-
-<div class="sec" data-i="secC">■ ส่วนที่ 3 — คุณเฉียง 12 กล่อง (VIP · ไม่ซ้ำรอบก่อน · ทุกกล่อง Hyrox portion)</div>
-<div class="zlist">
-  <div class="zrow"><span class="n">1</span><div class="d"><b>35 พาสต้าแซลมอนไวท์ซอส</b> · <span data-i="salmon">แซลมอน</span> 170g</div></div>
-  <div class="zrow"><span class="n">2</span><div class="d"><b>55 กุ้งเขียวหวานไร้กะทิ</b> · <span data-i="shrimp">กุ้ง</span> 160g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">3</span><div class="d"><b>70 Sushi Bake แซลมอน</b> · <span data-i="salmon">แซลมอน</span> 160g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">4</span><div class="d"><b>79 โรลหมี่หมูย่าง</b> · <span data-i="pork">หมู</span> 170g · <span data-i="noodle">เส้นหมี่</span></div></div>
-  <div class="zrow"><span class="n">5</span><div class="d"><b>80 ข้าวสุกี้แห้งไข่ข้น</b> · <span data-i="pork">หมู</span>/รวม 170g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">6</span><div class="d"><b>81 ข้าวผัดอเมริกัน</b> · <span data-i="chick2">ไก่</span> 170g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">7</span><div class="d"><b>83 ข้าวผัดน้ำพริกปลาทู</b> · <span data-i="mackerel">ปลาทู</span> 170g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">8</span><div class="d"><b>66 เส้นหมี่น้ำเงี้ยวอกไก่</b> · <span data-i="chicken">อกไก่</span> 170g · <span data-i="noodle">เส้นหมี่</span></div></div>
-  <div class="zrow"><span class="n">9</span><div class="d"><b>67 กระพงอบซอสเต้าเจี้ยว</b> · <span data-i="seabass">กระพง</span> 185g · <span data-i="rice">ข้าว</span></div></div>
-  <div class="zrow"><span class="n">10</span><div class="d"><b>อกไก่ Piri Piri</b> · <span data-i="chicken">อกไก่</span> 170g · <span data-i="potato">มันฝรั่ง</span></div></div>
-  <div class="zrow"><span class="n">11</span><div class="d"><b>ไก่โรสต์มะนาวโรสแมรี</b> · <span data-i="chicken">อกไก่</span> 170g · <span data-i="potato">มันฝรั่ง</span></div></div>
-  <div class="zrow"><span class="n">12</span><div class="d"><b>กระพงนึ่งมะนาว</b> · <span data-i="seabass">กระพง</span> 185g · <span data-i="rice">ข้าว</span></div></div>
-</div>
-<div class="sp" data-i="zeinote" style="margin-top:8px">คุณเฉียง = ทุกกล่อง Hyrox portion (คาร์บ 55–65g) · เมนู 8/9 (66/67) ทำเฉพาะคุณเฉียง (มีลแพลนไม่ได้ติ๊ก)</div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">66 เส้นหมี่น้ำเงี้ยวอกไก่ <small style="color:var(--soft)" data-i="onlychia">(เฉพาะคุณเฉียง)</small></div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="noodle">เส้นหมี่</span> <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">67 กระพงอบซอสเต้าเจี้ยว <small style="color:var(--soft)" data-i="onlychia">(เฉพาะคุณเฉียง)</small></div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seabass">กระพง</span> 185g</b> · <span data-i="rice">ข้าว</span> <small data-i="ochia">(คุณเฉียง)</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">อกไก่ Piri Piri</div><div class="veg">🥗 มันฝรั่งอบ + พริกหยวก</div></div><span class="tot"><span data-i="total">รวม</span> 2</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="potato">มันฝรั่ง</span> <small>พัดชา 1 + คุณเฉียง 1</small></div><span class="q">2</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">สเต๊กไก่พริกไทยดำ</div><div class="veg">🥗 บรอกโคลี + แครอท</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="rice">ข้าว</span> <small>พัดชา 1</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">ไก่โรสต์มะนาวโรสแมรี</div><div class="veg">🥗 หน่อไม้ฝรั่ง + มะเขือเทศ</div></div><span class="tot"><span data-i="total">รวม</span> 2</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="potato">มันฝรั่ง</span> <small>พัดชา 1 + คุณเฉียง 1</small></div><span class="q">2</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">หมูย่างเกลือ</div><div class="veg">🥗 แตงกวา + สลัด</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">สันในหมู</span> 180g</b> · <span data-i="sweetp">มันหวาน</span> <small>พัดชา 1</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">หมูผัดกิมจิ</div><div class="veg">🥗 ถั่วงอก + ผักกวางตุ้ง</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">สันในหมู</span> 180g</b> · <span data-i="rice">ข้าว</span> <small>พัดชา 1</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">กุ้งอบวุ้นเส้น</div><div class="veg">🥗 บ็อกฉ่อย + เห็ด</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 160g</b> · <span data-i="glass">วุ้นเส้น</span> <small>พัดชา 1</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">แซลมอนอบเลมอนดิล</div><div class="veg">🥗 หน่อไม้ฝรั่ง + ถั่วแขก</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="potato">มันฝรั่ง</span> <small>พัดชา 1</small></div><span class="q">1</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">กระพงนึ่งมะนาว</div><div class="veg">🥗 บรอกโคลี + น้ำยำมะนาว</div></div><span class="tot"><span data-i="total">รวม</span> 2</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seabass">กระพง</span> 185g</b> · <span data-i="rice">ข้าว</span> <small>พัดชา 1 + คุณเฉียง 1</small></div><span class="q">2</span></div></div>
+<div class="m"><div class="mh"><div class="nm"><div class="t1">แซลมอนเพสโต้</div><div class="veg">🥗 มะเขือเทศเชอร์รี่ + ร็อกเก็ต</div></div><span class="tot"><span data-i="total">รวม</span> 1</span></div><div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="pasta">พาสต้า</span>เพสโต้ <small>พัดชา 1</small></div><span class="q">1</span></div></div>
 
 <div class="foot">
-  <b>มีลแพลน 7 ส.ค. = LC 2 (มีมี่·โอ๋) + HP 5 (เฟิน·ฝน·โอ๋·โมจิ·Bright) · 49 กล่อง</b><br>
-  <b>Hyrox 7 ส.ค. = 27 กล่อง</b> — พัดชา 9 · Monchuta 6 · คุณเฉียง 12<br>
-  ⚠️ ยึดใบแอดมินเป็นหลัก · ไม่ติ๊ก = ไม่ทำ · 🫒 มีลแพลน = ผัก/น้ำมันตามสูตรเดิม (ครัวรู้)
+  <b>มีลแพลน = LC 2 (มีมี่·โอ๋) + HP 5 (เฟิน·ฝน·โอ๋·โมจิ·Bright) · 49 กล่อง</b><br>
+  <b>Hyrox = 27 กล่อง</b> — พัดชา 9 · Monchuta 6 (เลือก 6/9 · ยังไม่รวมในเลขขวา) · คุณเฉียง 12<br>
+  ⚠️ ยึดใบแอดมิน · ไม่ติ๊ก=ไม่ทำ · Hyrox ชีทว่าง ใช้ตามแผนนัท · 🫒 มีลแพลน = ผัก/น้ำมันตามสูตรเดิม
 </div>
 </div>
 
 <script>
 const T = {
   title:{th:'ใบงานครัว — ศุกร์ 7 ส.ค.', shn:'ၽိုၼ်ႁဵတ်းၵၢၼ်ႁွင်ႈၶဝ်ႈ — ဝၼ်းသုၵ်း 7 ဢေႃးၵၢတ်ႉ', my:'မီးဖိုချောင်အလုပ်စာရွက် — သောကြာ ၇ သြဂုတ်'},
-  sub:{th:'มีลแพลน (LC 2 คน · HP 5 คน) + Hyrox 27 กล่อง', shn:'Meal Plan (LC 2 · HP 5) + Hyrox 27 ႁိပ်ႇ', my:'Meal Plan (LC ၂ · HP ၅) + Hyrox ၂၇ ဘူး'},
+  sub:{th:'มีลแพลน LC 2 · HP 5 + Hyrox (พัดชา 9 · Monchuta 6 · คุณเฉียง 12)', shn:'Meal Plan LC 2 · HP 5 + Hyrox (Patcha 9 · Monchuta 6 · Chia 12)', my:'Meal Plan LC ၂ · HP ၅ + Hyrox (Patcha ၉ · Monchuta ၆ · Chia ၁၂)'},
   meat:{th:'เนื้อ', shn:'ၼိူဝ်ႉ', my:'အသား'},
-  hxkey:{th:'เนื้อ+คาร์บเยอะสุด', shn:'ၼိူဝ်ႉ+ၶၢပ်ႈ ၼမ်သုတ်း', my:'အသား+ကာဗို အများဆုံး'},
-  al_t:{th:'🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง', shn:'🔴 ၶွင်ႁၢမ်ႈ ၽႂ်မၼ်း — ၵူတ်ႇတူၺ်းၵွၼ်ႇထုပ်ႇၵူႈႁိပ်ႇ', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မထုပ်ခင် အကုန်စစ်ပါ'},
+  hxkey:{th:'เนื้อ 170 + คาร์บสูง', shn:'ၼိူဝ်ႉ 170 + ၶၢပ်ႈၼမ်', my:'အသား ၁၇၀ + ကာဗိုများ'},
+  al_t:{th:'🔴 ข้อห้ามรายคน — เช็คก่อนแพ็คทุกกล่อง', shn:'🔴 ၶွင်ႁၢမ်ႈ ၽႂ်မၼ်း — ၵူတ်ႇတူၺ်းၵွၼ်ႇထုပ်ႇ', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မထုပ်ခင်စစ်ပါ'},
   al1:{th:'มีมี่ (LC) — ไม่กินพริกหยวก', shn:'Mimi (LC) — ဢမ်ႇၵိၼ် ၽိတ်ႉယူၺ်း', my:'Mimi (LC) — ငရုတ်ကောင်း မစား'},
-  al2:{th:'โอ๋ (LC+HP) — ไม่ทานทูน่า/เนื้อ/ของดิบ · (HP) ไม่ทานไข่ต้ม · มีเมนูแทน ก๋วยเตี๋ยวหลอด/ปลาทูต้มมะนาว', shn:'Oh (LC+HP) — ဢမ်ႇၵိၼ် Tuna/ၼိူဝ်ႉ/ၶွင်လိပ်း · (HP) ဢမ်ႇၵိၼ်ၶႆႇတူမ်ႈ · မီးမဵၼ်ႇတႅၼ်း', my:'Oh (LC+HP) — တူနာ/အမဲ/အစိမ်း မစား · (HP) ဥပြုတ်မစား · အစားထိုးမီနူးရှိ'},
-  al3:{th:'⚠️ LC ธนัทพร · สุทธิภา · วิไลลักษณ์(Ploy65) — ช่องเมนู "ว่าง" ในชีท → ยังไม่ทำ (รอแอดมินติ๊ก)', shn:'⚠️ LC Thanatporn · Suttipha · Wilailak — ၶွင်ႇမဵၼ်ႇ "ဝၢင်း" → ပႆႇႁဵတ်း (ပႂ်ႉ admin ၵၢမ်ႇ)', my:'⚠️ LC Thanatporn · Suttipha · Wilailak — မီနူးအကွက် "ဗလာ" → မလုပ်သေး (admin တစ်ခ်စောင့်)'},
-  secA:{th:'■ ส่วนที่ 1 — มีลแพลน (แต่ละเมนู LC 2 · HP 5)', shn:'■ ပွင်ႈ 1 — Meal Plan (ၵူႈမဵၼ်ႇ LC 2 · HP 5)', my:'■ အပိုင်း ၁ — Meal Plan (မီနူးတိုင်း LC ၂ · HP ၅)'},
-  secB:{th:'■ ส่วนที่ 2 — Hyrox รอบ 2 (พัดชา 9 + Monchuta 6)', shn:'■ ပွင်ႈ 2 — Hyrox ၶိုၼ်ႈ 2 (Patcha 9 + Monchuta 6)', my:'■ အပိုင်း ၂ — Hyrox အကြိမ် ၂ (Patcha ၉ + Monchuta ၆)'},
-  secC:{th:'■ ส่วนที่ 3 — คุณเฉียง 12 กล่อง (VIP · ไม่ซ้ำ · Hyrox portion)', shn:'■ ပွင်ႈ 3 — Chia 12 ႁိပ်ႇ (VIP · ဢမ်ႇသမ်ႇ · Hyrox)', my:'■ အပိုင်း ၃ — Chia ၁၂ ဘူး (VIP · မထပ် · Hyrox)'},
-  monote:{th:'พัดชา = ได้ครบทั้ง 9 เมนู · Monchuta = 6 กล่อง (แอดมิน/ครัวเลือก 6 จาก 9) · ทุกกล่อง Hyrox portion (โปรตีน ~170 + คาร์บ 55–65g)', shn:'Patcha = လႆႈ 9 မဵၼ်ႇ · Monchuta = 6 ႁိပ်ႇ (လိူၵ်ႈ 6/9) · ၵူႈႁိပ်ႇ Hyrox portion', my:'Patcha = ၉ မီနူးအကုန် · Monchuta = ၆ ဘူး (၆/၉ ရွေး) · အကုန် Hyrox portion'},
-  zeinote:{th:'คุณเฉียง = ทุกกล่อง Hyrox portion (คาร์บ 55–65g) · เมนู 8/9 (66/67) ทำเฉพาะคุณเฉียง (มีลแพลนไม่ได้ติ๊ก)', shn:'Chia = ၵူႈႁိပ်ႇ Hyrox portion · မဵၼ်ႇ 8/9 (66/67) ႁဵတ်းၽိုင်ႈ Chia', my:'Chia = အကုန် Hyrox portion · မီနူး 8/9 (66/67) Chia အတွက်သာ'},
-  oilstd:{th:'ผัก/น้ำมันตามสูตรครัว', shn:'ၽၵ်း/ၼမ်ႉမၼ်း ၸွမ်းသုၸ်း', my:'ဟင်းသီး/ဆီ ဟင်းချက်နည်းအတိုင်း'},
-  total:{th:'รวม', shn:'ႁူမ်ႈ', my:'စုစုပေါင်း'},
+  al2:{th:'โอ๋ (LC+HP) — ไม่ทานทูน่า/เนื้อ/ของดิบ · (HP) ไม่ทานไข่ต้ม', shn:'Oh (LC+HP) — ဢမ်ႇၵိၼ် Tuna/ၼိူဝ်ႉ/ၶွင်လိပ်း · (HP) ဢမ်ႇၵိၼ်ၶႆႇတူမ်ႈ', my:'Oh (LC+HP) — တူနာ/အမဲ/အစိမ်း မစား · (HP) ဥပြုတ်မစား'},
+  al3:{th:'⚠️ LC ธนัทพร · สุทธิภา · วิไลลักษณ์ — ชีท "ว่าง" ยังไม่ติ๊ก → ยังไม่ทำ', shn:'⚠️ LC Thanatporn · Suttipha · Wilailak — "ဝၢင်း" ပႆႇၵၢမ်ႇ → ပႆႇႁဵတ်း', my:'⚠️ LC Thanatporn · Suttipha · Wilailak — "ဗလာ" မတစ်ခ်ရသေး → မလုပ်သေး'},
+  hxwho:{th:'HYROX = คุณเฉียง 12 (VIP · ไม่ซ้ำรอบก่อน) + พัดชา 9 + Monchuta 6 · ทุกกล่องคาร์บสูง 55–65g', shn:'HYROX = Chia 12 (VIP·ဢမ်ႇသမ်ႇ) + Patcha 9 + Monchuta 6 · ၵူႈႁိပ်ႇၶၢပ်ႈၼမ် 55–65g', my:'HYROX = Chia 12 (VIP·မထပ်) + Patcha 9 + Monchuta 6 · အကုန်ကာဗို 55–65g'},
+  secA:{th:'■ เมนูมีลแพลน (มี LC / HP / HYROX ในเมนูเดียว)', shn:'■ မဵၼ်ႇ Meal Plan (မီ LC/HP/HYROX ၼႂ်းမဵၼ်ႇလဵဝ်)', my:'■ Meal Plan မီနူး (မီနူးတစ်ခုမှာ LC/HP/HYROX)'},
+  secB:{th:'■ เมนู Hyrox (บรรทัด HYROX เท่านั้น)', shn:'■ မဵၼ်ႇ Hyrox (HYROX ၵူၺ်း)', my:'■ Hyrox မီနူး (HYROX သာ)'},
+  monote:{th:'พัดชา = ครบ 9 เมนู · Monchuta = 6 กล่อง (เลือก 6/9) · คุณเฉียง = ตามที่ระบุ · ตัวเลขขวา = พัดชา+คุณเฉียง (ยังไม่รวม Monchuta)', shn:'Patcha = 9 မဵၼ်ႇ · Monchuta = 6 (လိူၵ်ႈ 6/9) · ၼမ်ႇၶႂႃ = Patcha+Chia (ပႆႇမီး Monchuta)', my:'Patcha = ၉ မီနူး · Monchuta = ၆ (၆/၉) · ညာဂဏန်း = Patcha+Chia (Monchuta မပါသေး)'},
+  onlychia:{th:'(เฉพาะคุณเฉียง)', shn:'(ၽိုင်ႈ Chia)', my:'(Chia သာ)'},
+  ochia:{th:'(คุณเฉียง)', shn:'(Chia)', my:'(Chia)'},
+  vegstd:{th:'🥗 ผัก/น้ำมันตามสูตรครัว', shn:'🥗 ၽၵ်း/ၼမ်ႉမၼ်း ၸွမ်းသုၸ်း', my:'🥗 ဟင်းသီး/ဆီ ဟင်းချက်နည်းအတိုင်း'},
+  total:{th:'รวม', shn:'ႁူမ်ႈ', my:'ပေါင်း'},
   chicken:{th:'อกไก่', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇ', my:'ကြက်ရင်သား'},
   chick2:{th:'ไก่', shn:'ၵႆႇ', my:'ကြက်'},
   ptender:{th:'สันในหมู', shn:'ၼိူဝ်ႉမူႇ(သၼ်လင်)', my:'ဝက်သားနု'},
@@ -189,7 +178,7 @@ const T = {
   potato:{th:'มันฝรั่ง', shn:'မၢၼ်းႁိုဝ်ႉ', my:'အာလူး'},
   sweetp:{th:'มันหวาน', shn:'မၢၼ်းဝၢၼ်', my:'ကန်စွန်းဥ'}
 };
-const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ (ข้อห้ามสำคัญสุด)', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
+const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
 function setLang(l){
   document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(T[k]&&T[k][l]!=null) e.textContent=T[k][l];});
   ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
