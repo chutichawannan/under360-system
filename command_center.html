@@ -296,7 +296,7 @@ async function loadAll(manual){
   await loadCore();
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
   if(manual || !bizLoaded){ await loadBiz(); bizLoaded=true; }
-  await loadNiw(); await loadCutover();
+  await loadNiw(); await loadCutover(); await loadOOS();
   refreshUI();
   if(manual) toast('รีเฟรชแล้ว');
 }
@@ -325,6 +325,7 @@ function renderBanner(){
 function renderHome(){
   let h='';
   h+=cardBiz();
+  h+=cardOOS();
   h+=cardCutover();
   h+=cardNiw();
   h+=cardRoutine();
@@ -749,6 +750,47 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
 // ใช้ใน command_center.html:  const r = await niwWeeklySpecialWatch(sb, { mode: 'stocked' });
 
+
+/* ---------- ⛔ การ์ดสินค้าหมดสต็อก (ลูกค้าเห็นแต่สั่งไม่ได้ = เสียยอดเงียบ) ---------- */
+var oosData=null;
+async function loadOOS(){
+  try{
+    var r=await sb.from('menu_items').select('code,name,category,stock_total')
+      .eq('is_available',true).eq('stock_total',0).limit(200);
+    var all=await sb.from('menu_items').select('code,category').eq('is_available',true).limit(1000);
+    var labels={};
+    var cfg=await sb.from('kitchen_data').select('data').eq('key','appConfig').limit(1);
+    var cats=(cfg.data&&cfg.data[0]&&cfg.data[0].data&&cfg.data[0].data.categories)||[];
+    cats.forEach(function(c){ labels[c.key]=c.label; });
+    var totBy={}; (all.data||[]).forEach(function(m){ totBy[m.category]=(totBy[m.category]||0)+1; });
+    var outBy={}; (r.data||[]).forEach(function(m){ (outBy[m.category]=outBy[m.category]||[]).push(m); });
+    oosData={items:r.data||[],outBy:outBy,totBy:totBy,labels:labels};
+  }catch(e){ oosData=null; }
+}
+function cardOOS(){
+  if(!oosData||!oosData.items.length) return '';
+  var d=oosData;
+  var whole=Object.keys(d.outBy).filter(function(k){ return d.outBy[k].length===d.totBy[k]; });
+  var h='<div class="card"><h3>⛔ หมดสต็อก — ลูกค้าเห็นแต่สั่งไม่ได้ <span class="r">'+d.items.length+' เมนู</span></h3>';
+  if(whole.length){
+    h+='<div style="border-left:3px solid var(--r);padding-left:8px;margin-bottom:8px">'
+      +'<b>🚨 หมดทั้งหมวด '+whole.length+' หมวด</b>'
+      +'<div class="s">ลูกค้ากดเข้าหมวดแล้วเจอของหมดยกแผง = เสียยอดทุกวันแบบไม่มีใครรู้</div>';
+    whole.forEach(function(k){
+      h+='<div class="s">· <b>'+(d.labels[k]||k)+'</b> — หมด '+d.outBy[k].length+'/'+d.totBy[k]+' ('
+        +d.outBy[k].map(function(m){return m.code;}).join(', ')+')</div>';
+    });
+    h+='</div>';
+  }
+  var other=Object.keys(d.outBy).filter(function(k){ return d.outBy[k].length!==d.totBy[k]; });
+  other.forEach(function(k){
+    h+='<div style="border-left:3px solid #e6a100;padding-left:8px;margin-bottom:6px">'
+      +'<b class="s">'+(d.labels[k]||k)+'</b><div class="s">หมด '+d.outBy[k].length+'/'+d.totBy[k]+' — '
+      +d.outBy[k].map(function(m){return m.code;}).join(', ')+'</div></div>';
+  });
+  h+='<div class="s" style="opacity:.75;margin-top:6px">แก้ที่ KQ แท็บ "ตั้งสต็อค" · ระบบตัดสต็อกอัตโนมัติตอนลูกค้าสั่ง แต่<b>ไม่มีใครเติมกลับ</b>ให้อัตโนมัติ</div>';
+  return h+'</div>';
+}
 
 /* ---------- ⏰ การ์ดนับถอยหลัง cutover Hato (7 ส.ค. 2026) ---------- */
 var CUTOVER_DATE='2026-08-07';
