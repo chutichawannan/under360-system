@@ -1776,9 +1776,12 @@ function backToMenu() {
   cart = []; saveCart(); updateCartUI();
   selDate = null; selSlot = null;
   setDeliverOnce = false; extraRoundDates = [];
+  appliedPromos = []; try{ refreshCouponUI(); }catch(e){}
   // 🔴 ล้างตะกร้าแล้วต้องวาดรายการเมนูใหม่ด้วย — เดิมไม่วาด การ์ดเลยยังโชว์จำนวนค้างจากออเดอร์ที่สั่งไปแล้ว
   //    ลูกค้าเห็นเลข +1 ค้างอยู่ทั้งที่ตะกร้าว่าง ต้องปิดแอปเปิดใหม่ถึงหาย (นัทเจอเอง 6 ส.ค. 2569)
+  // N-12: ต้องวาด "การ์ดพรีวิวหน้าแรก" ใหม่ด้วย — เดิมวาดแค่รายการเมนู การ์ดหน้าแรกเลยยังติ๊กค้าง
   if (typeof renderMenu === 'function') renderMenu(true);
+  try{ renderHomeGrid(); }catch(e){}
   showScr('s-menu');
 }
 
@@ -2085,8 +2088,16 @@ function renderCart() {
       </div>`;
     }
     if (c.type === 'package') {
-      const ilist = (c.items || []).map(it =>
-        `<div style="font-size:11.5px;color:#6B7280;line-height:1.8;">· ${h(it.name)}${it.extra_price>0?` <span style="color:#D97706;font-weight:700;">+฿${it.extra_price}</span>`:''}</div>`
+      // N-06: เซ็ตที่เลือกเมนูเดิมซ้ำหลายกล่อง (เช่น Diet Set A เลือกเส้นหมี่น้ำยาทูน่า 12 กล่อง)
+      //       เดิมพิมพ์ออกมา 12 บรรทัดเหมือนกันเป๊ะ อ่านไม่รู้เรื่อง → รวบเป็นบรรทัดเดียวแล้วติด ×12
+      const _grp = new Map();
+      (c.items || []).forEach(it => {
+        const k = (it.sku||'') + '|' + (it.name||'') + '|' + (it.extra_price||0);
+        if (_grp.has(k)) _grp.get(k).n++;
+        else _grp.set(k, { it, n:1 });
+      });
+      const ilist = [..._grp.values()].map(({it,n}) =>
+        `<div style="font-size:11.5px;color:#6B7280;line-height:1.8;">· ${h(it.name)}${n>1?` <b style="color:#374151;">×${n}</b>`:''}${it.extra_price>0?` <span style="color:#D97706;font-weight:700;">+฿${it.extra_price}${n>1?'/กล่อง':''}</span>`:''}</div>`
       ).join('');
       return `<div class="citem" style="border-left:4px solid #D98C2B;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div style="flex:1;min-width:0;">
@@ -2096,7 +2107,7 @@ function renderCart() {
         </div>
         <button onclick="removePkgFromCart('${c.id}')"
           style="background:#FDF0ED;color:#C9573F;border-radius:8px;padding:6px 12px;font-size:12px;font-weight:700;flex-shrink:0;">
-          เปลี่ยน
+          ลบ
         </button>
       </div>`;
     }
@@ -2482,6 +2493,13 @@ async function submitOrder() {
     const pe = document.getElementById('recipient-phone-input'); if (pe) pe.focus();
     return;
   }
+  // N-08: ต้องเลือกวิธีชำระเงินก่อน — ไม่งั้นแอดมินไม่รู้ว่าจะตามเงินทางไหน
+  if (!payMethod) {
+    toast('กรุณาเลือกวิธีชำระเงินก่อนสั่ง');
+    try{ openPayPopup(); }catch(e){}
+    return;
+  }
+
   // N-19 (6 ส.ค. 2569): **บังคับปักหมุด** — เดิมข้ามได้ ผลคือ 22/43 ใบไม่มีพิกัด
   //   → ออเดอร์ไม่โผล่หน้าแมส (แมสวางเส้นทางจากพิกัด) + ค่าส่งคิดเป็น ฿0 + แอดมินต้องไล่ถามที่อยู่ทีหลัง
   //   ป๊อปอัพให้ 2 ทางเลือกที่กดแล้วจบ (ใช้ GPS / เปิดแผนที่) ไม่ใช่แค่ห้ามเฉยๆ
@@ -2801,7 +2819,9 @@ async function submitOrder() {
 // ══════════════════════════════════════
 // 🗺️ GOOGLE MAPS + DELIVERY FEE
 // ══════════════════════════════════════
-let cusMap=null, cusPin=null, cusAuto=null, distKm=null, payMethod='qr';
+// N-08: payMethod เริ่มเป็น null — เดิม default 'qr' ทั้งที่หน้าจอยังขึ้น "เลือกวิธีชำระเงิน"
+//       ลูกค้าไม่เคยเลือกก็สั่งผ่าน แล้วร้านไม่รู้ว่าจะไปทวงเงินทางไหน
+let cusMap=null, cusPin=null, cusAuto=null, distKm=null, payMethod=null;
 let isOutOfProvince = false;  // ← fix: ต้อง declare ก่อนใช้ใน renderDatePick
 const KITCHEN_POS={lat:13.7179969,lng:100.5010971};
 
