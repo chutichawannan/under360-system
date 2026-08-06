@@ -3059,6 +3059,36 @@ function showPhoneHint(){
   el.style.borderColor='#DC2626';
 }
 
+// 📍 ลากหมุด/กดแผนที่ → หาทั้ง "ชื่อสถานที่" และ "ที่อยู่"
+// เดิมใช้ Geocoder อย่างเดียว ซึ่งคืนแต่เลขที่ถนน — ปักที่ ICONSIAM แล้วแมสเห็นแต่ "299 ถ.เจริญนคร"
+// หาไม่เจอว่าตึกไหน → ถาม Places ว่าตรงจุดนั้นมีสถานที่อะไรก่อน แล้วค่อย fallback ไป Geocoder
+// (นัทเจอเอง 6 ส.ค. 2569 · ตอนพิมพ์ค้นแล้วเลือกได้ชื่ออยู่แล้ว ขาดแค่ตอนลากหมุดเปล่าๆ)
+function lookupPlaceAtPin(lat,lng){
+  const done = (name,addr) => { const a=joinPlaceAddr(name,addr); if(a) _setAddrFields(a); };
+  const byGeocoder = (keepName) => {          // keepName = ชื่อสถานที่ที่หาได้แล้ว (ถ้ามี) จะได้ไม่โดนที่อยู่เขียนทับ
+    try{
+      new google.maps.Geocoder().geocode({location:{lat,lng},language:'th'},(res,st)=>{
+        if(st==='OK'&&res[0]) done(keepName||'', res[0].formatted_address);
+      });
+    }catch(e){}
+  };
+  // Places ต้องมี map object + library places (โหลดมาพร้อม autocomplete อยู่แล้ว)
+  if(!(cusMap && google.maps.places && google.maps.places.PlacesService)) { byGeocoder(); return; }
+  try{
+    new google.maps.places.PlacesService(cusMap).nearbySearch(
+      {location:{lat,lng}, radius:60, language:'th'},
+      (results,status)=>{
+        if(status!=='OK' || !results || !results.length){ byGeocoder(); return; }
+        // เอาสถานที่ที่ "เป็นตัวอาคาร/ร้าน" ไม่ใช่ถนนหรือเขต
+        const skip=/^(route|political|locality|sublocality|postal_code|administrative)/;
+        const hit=results.find(r=>r.name && !(r.types||[]).every(t=>skip.test(t)));
+        if(!hit){ byGeocoder(); return; }
+        if(hit.vicinity) done(hit.name, hit.vicinity);
+        else byGeocoder(hit.name);               // ได้ชื่อแต่ไม่ได้ที่อยู่ → ไปเอาที่อยู่มาต่อท้ายชื่อ
+      });
+  }catch(e){ byGeocoder(); }
+}
+
 function setCusPin(lat,lng,addr){
   if(!cusMap)return;
   if(cusPin)cusPin.setMap(null);
@@ -3070,8 +3100,8 @@ function setCusPin(lat,lng,addr){
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
   const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent='฿'+fee;
   if(addr){ _setAddrFields(addr); }
-  else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → reverse geocode มาอัปเดตช่องที่อยู่ (หมุดเปลี่ยน = ช่องบนเปลี่ยนตาม)
-    new google.maps.Geocoder().geocode({location:{lat,lng},language:'th'},(res,st)=>{ if(st==='OK'&&res[0]) _setAddrFields(res[0].formatted_address); });
+  else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → หาที่อยู่ให้เอง
+    lookupPlaceAtPin(lat,lng);
   }
   detectZone(lat, lng, addr || ''); // ← ตรวจ zone ทุกครั้งที่ปักหมุด (ใช้เส้นตรง = รัศมีภูมิศาสตร์ ถูกต้องแล้ว)
   updateRoadDistance(lat, lng);     // ← ยิง Google วัดระยะขับจริง มาแทนค่าส่ง (async, fallback = haversine)
