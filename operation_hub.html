@@ -531,13 +531,11 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <div style="width:250px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:12px;position:sticky;top:0;max-height:calc(100vh - 90px);overflow-y:auto;">
           <div id="planPanelTitle" style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูทุกวัน (รวม)</div>
           <div id="selectHint">👆 คลิกชื่อลูกค้า (ทั้งแถว) หรือคลิกช่องรอบเดียว (เลือกได้หลายอัน) แล้วกดเมนู</div>
-          <div id="menuListDrag"></div>
-          <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;position:relative;">
-            <input id="menuSearchBox" type="text" placeholder="🔍 ค้นหาเมนู (ชื่อ/โค้ด)..." autocomplete="off"
-              oninput="renderMenuSearchResults(this.value)" onfocus="renderMenuSearchResults(this.value)"
-              style="width:100%;padding:8px 10px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:13px;font-family:inherit;">
-            <div id="menuSearchResults" style="display:none;position:absolute;left:10px;right:10px;top:34px;z-index:20;background:#fff;border:1px solid var(--ink-xsoft);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;"></div>
-          </div>
+          <!-- N-30 · สลับดู "ทุกเมนู" / "เฉพาะที่ต้องผลิตวันนั้น" — นัทขอเอง 6 ส.ค. 2569 -->
+          <div id="menuFilterBar" style="display:flex;gap:5px;margin-bottom:8px;"></div>
+          <!-- N-29 · เอาช่องค้นหาออก โชว์ทุกเมนูให้เลื่อนหาเอา (นัทเปลี่ยนใจ 6 ส.ค. 2569)
+               ลิสต์นี้ยาว → ให้เลื่อนในกล่องตัวเอง กล่องสรุป/Request ข้างล่างจะได้ไม่ถูกดันหาย -->
+          <div id="menuListDrag" style="max-height:44vh;overflow-y:auto;"></div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
             <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">🔁 เมนู Request (ลูกค้าเลือกได้ใน LIFF)</div>
             <div id="mpReqList"></div>
@@ -1507,6 +1505,43 @@ async function loadMpPlanData(){
   }catch(e){ console.error("loadMpPlanData:",e); mpPlanRows=[]; }
   renderLeftPanel();
   _buildPlanTable();
+  loadMpOrderNumbers();
+}
+
+// ── N-28 · โชว์เลขออเดอร์ในแพลนเมนู ────────────────────────────────────────
+// ทำไม: แอดมินแพลนจากตารางนี้ แต่ตามกลับไปหาใบต้นทางไม่ได้เลย = เสี่ยงจับผิดคน
+//   (ชื่อลูกค้าซ้ำกันได้จริง — "โอ๋" มี 2 แพลนคนละชุดในวันเดียวกัน เจอตอนเทส 6 ส.ค.)
+// ได้ N-27 มาด้วยในตัว: รอบไหนยังไม่มีใบ = ครัว/แมสมองไม่เห็น → ขึ้นป้ายแดงตั้งแต่เปิดหน้า
+//   ไม่ต้องรอไปเจอเอาตอนของไม่ถึงลูกค้า
+// N-30 · ค่าเริ่มต้น = เห็นทุกเมนู (ตาม N-29) · กดสลับเป็นเฉพาะที่ต้องผลิตวันนั้นได้
+var menuListOnlyToday=false;
+function setMenuListFilter(v){ menuListOnlyToday=!!v; renderLeftPanel(); }
+
+var mpOrderMap={};
+async function loadMpOrderNumbers(){
+  var sb_=getSB(); mpOrderMap={};
+  if(!sb_||!mpPlanRows.length) return;
+  var dates=[];
+  mpPlanRows.forEach(function(r){ if(r.delivery_date&&dates.indexOf(r.delivery_date)<0) dates.push(r.delivery_date); });
+  if(!dates.length) return;
+  try{
+    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status")
+      .in("delivery_date",dates).neq("status","cancelled").limit(2000);
+    if(res.error) throw res.error;
+    var os=res.data||[];
+    var byId={}; os.forEach(function(o){ byId[o.id]=o; });
+    // ⚠️ ต้องเช็ค order_id ก่อน — 35 แถวไม่มี line_uid/customer_id เลย ถ้าจับด้วยตัวตนอย่างเดียว
+    //    จะขึ้น "ไม่มีใบ" หลอกแอดมินทั้งที่ใบมีอยู่ (ผมพลาดตรงนี้มาแล้วตอนนับ 6 ส.ค.)
+    mpPlanRows.forEach(function(r){
+      var hit=(r.order_id&&byId[r.order_id]&&byId[r.order_id].delivery_date===r.delivery_date)?byId[r.order_id]:null;
+      if(!hit) hit=os.find(function(o){
+        return o.delivery_date===r.delivery_date &&
+          ((r.line_uid&&o.line_uid===r.line_uid)||(r.customer_id&&o.customer_id===r.customer_id));
+      });
+      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id}:null;
+    });
+  }catch(e){ console.error("loadMpOrderNumbers:",e); }
+  document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
 }
 
 // จัดกลุ่มเป็น subscription (order_id) → เรียง round_no ในแต่ละกลุ่ม
@@ -1672,6 +1707,17 @@ var MPBOX_TAG="meal_plan:box";
 // ⚠️ จับคู่ด้วย line_uid / customer_id เท่านั้น ห้ามจับด้วยชื่อ (ชื่อลูกค้าซ้ำกันได้ = ครัวทำผิดคน)
 async function mpFindOrderForRound(sb_,r){
   if(!r) return null;
+  // 1) ยึด order_id ที่ผูกไว้ก่อนเสมอ — แต่ละรอบมีใบของตัวเองอยู่แล้ว 54/56 รอบ (นับจริง 6 ส.ค.)
+  //    ⚠️ เคยเข้าใจผิดว่ามี 39 รอบที่ไม่มีใบ — ที่จริงเป็นเพราะ 35 แถวไม่มี line_uid/customer_id
+  //       เลยจับคู่แบบ "วัน+ตัวตน" ไม่ติด ทั้งที่ order_id ชี้ถูกอยู่แล้ว
+  if(r.order_id){
+    try{
+      var po=await sb_.from("orders").select("id,order_number,delivery_date,status").eq("id",r.order_id).limit(1);
+      var p=(!po.error&&po.data&&po.data[0])?po.data[0]:null;
+      if(p&&p.delivery_date===r.delivery_date&&p.status!=="cancelled") return p;
+    }catch(e){ console.error("mpFindOrderForRound(byId):",e); }
+  }
+  // 2) ไม่ตรง (เช่น ใบแม่ถือวันของรอบแรก) → ค่อยหาใบของวันนั้นด้วยตัวตนลูกค้า
   try{
     var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status")
       .eq("delivery_date",r.delivery_date).neq("status","cancelled").limit(200);
@@ -1682,17 +1728,10 @@ async function mpFindOrderForRound(sb_,r){
       if(hit) return hit;
     }
   }catch(e){ console.error("mpFindOrderForRound:",e); }
-  // ยังไม่มีใบของรอบนี้ → ยอมให้ลงใบแม่ได้ "เฉพาะเมื่อวันส่งตรงกัน" เท่านั้น
-  // ⚠️ ห้ามยัดลงใบแม่มั่วๆ: เทสจริง 6 ส.ค. เจอว่ารอบ 3 (12 ส.ค.) ไปลงใบของวันที่ 7
-  //    = ครัวจะทำเมนูวันที่ 12 ให้คนที่รับวันที่ 7 · ผิดวันผิดของ ตรวจจับยากด้วย
-  if(r.order_id){
-    try{
-      var po=await sb_.from("orders").select("id,order_number,delivery_date,status").eq("id",r.order_id).limit(1);
-      var p=(!po.error&&po.data&&po.data[0])?po.data[0]:null;
-      if(p&&p.delivery_date===r.delivery_date&&p.status!=="cancelled") return p;
-    }catch(e){ console.error("mpFindOrderForRound(parent):",e); }
-  }
-  return null;   // ไม่มีใบของวันนี้จริงๆ → บอกแอดมินตรงๆ ดีกว่าเขียนผิดใบ
+  // ⚠️ ไม่มีใบของ "วันนั้น" จริงๆ → คืนว่าง ห้ามยัดลงใบแม่
+  //    เทสจริง 6 ส.ค.: ถ้ายอมให้ตกลงใบแม่ รอบ 3 (12 ส.ค.) จะไปลงใบของวันที่ 7
+  //    = ครัวทำเมนูวันที่ 12 ให้คนที่รับวันที่ 7 · ผิดวันผิดของ และตรวจจับยากมาก
+  return null;
 }
 
 // บรรทัดที่ถือว่า "มาจากแผน" = แทนที่ได้ · อย่างอื่นในใบห้ามแตะ
@@ -1871,9 +1910,33 @@ function renderLeftPanel(){
   if(titleEl)titleEl.textContent=planDateFilter?("เมนูวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))):"เมนูทุกวัน (รวม)";
   var h="";
   var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
+
+  // N-29 · โชว์ทุกเมนูใน DB ไม่ใช่แค่ 14 ตัวของวันนั้น (เดิมต้องพิมพ์ค้นหา ตอนนี้เลื่อนหาเอา)
+  // N-30 · สลับเป็น "เฉพาะที่ต้องผลิตวันนั้น" ได้ — เอาไว้ใช้ตอนสั่งของ/เช็คงานครัว
+  var bases=mpMenuBases();
+  var todaySet=todayPlan.map(mpBaseNo);
+  bases.forEach(function(b){ if(todaySet.indexOf(b.no)<0) todaySet.push(0); });   // คงลำดับเดิมไว้
+  var list=bases.slice().sort(function(a,b2){
+    var ca=countMenu(a.no,planDateFilter), cb=countMenu(b2.no,planDateFilter);
+    if((cb>0)-(ca>0)) return (cb>0)-(ca>0);                                        // ที่ถูกติ๊กแล้วขึ้นก่อน
+    return String(a.no).localeCompare(String(b2.no),undefined,{numeric:true});
+  });
+  if(menuListOnlyToday) list=list.filter(function(b){return countMenu(b.no,planDateFilter)>0;});
+
+  var fb=document.getElementById("menuFilterBar");
+  if(fb){
+    var mk=function(on,label,val){
+      return "<span onclick='setMenuListFilter("+val+")' style='flex:1;text-align:center;cursor:pointer;font-size:11px;font-weight:700;padding:5px 4px;border-radius:6px;"
+        +(on?"background:#1F4D3A;color:#fff":"background:#F3F4F6;color:#6B7280")+"'>"+label+"</span>";
+    };
+    fb.innerHTML=mk(!menuListOnlyToday,"ทุกเมนู ("+bases.length+")",false)
+               + mk(menuListOnlyToday,"เฉพาะที่ต้องผลิต",true);
+  }
+  if(!list.length) h+="<div style='font-size:11.5px;color:#9CA3AF;padding:10px 2px'>"+(menuListOnlyToday?"ยังไม่มีเมนูที่ถูกใส่ให้ลูกค้าในวันนี้":"ยังไม่มีเมนู HP/LC ในฐานข้อมูล")+"</div>";
+
   // 🍱 1 เมนู = 1 บรรทัด (ไม่แยก LC/HP แล้ว) · ตัวเลขข้างหลังคือยอดรวมทุกแผน + แยกให้ดูว่าใครได้เท่าไหร่
-  todayPlan.map(mpBaseNo).filter(function(v,i,a){return a.indexOf(v)===i;}).forEach(function(no){
-    var b=mpBaseByNo(no)||{no:no,name:no,codes:{}};
+  list.forEach(function(b){
+    var no=b.no;
     var cnt=countMenu(no,planDateFilter), byPlan=countMenuByPlan(no,planDateFilter);
     var parts=Object.keys(byPlan).sort().map(function(p){return p+" "+byPlan[p];}).join(" · ");
     h+="<div class='menu-chip mp"+(active?" clickable":"")+"' onclick='clickMenu(\""+no+"\")' title='"+esc2(b.name)+"'>";
@@ -1930,7 +1993,12 @@ function renderPlanCell(rowId){
   var arr=mpRowItems(rowId);
   var total=mpRowTotalQty(rowId);
   var box=mpRowBoxCount(rowId);
-  var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+"</div>";
+  // N-28/N-27 · เลขใบต้นทาง + เตือนถ้ารอบนี้ยังไม่มีใบ (= ครัวกับแมสมองไม่เห็นรอบนี้เลย)
+  var om=mpOrderMap[rowId];
+  var orderTag = (om===undefined) ? ""
+    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"
+         : "<span style='font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — หน้าครัวและหน้าแมสจะมองไม่เห็น'>⚠ ไม่มีใบ</span>";
+  var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+orderTag+"</div>";
 
   if(planView==="Compact"){
     td.innerHTML=roundLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
@@ -2019,9 +2087,13 @@ function renderMpRequests(){
 }
 
 function buildPlan(){
-  loadMpRequests().then(renderMpRequests);
-  // โหลดเมนูจริงจาก DB ก่อน แล้วค่อยวาด — ไม่งั้นค้นหาเมนูจะเจอแค่ 16 ตัวที่ฝังไว้ในไฟล์
-  loadMenuPool().then(function(){ loadMpPlanData(); });
+  // โหลดเมนูจริงจาก DB ก่อน แล้วค่อยวาด — ไม่งั้นเห็นแค่ 16 ตัวที่ฝังไว้ในไฟล์
+  // N-31 · ต้องวาดลิสต์ "เมนู Request" หลัง MENU_POOL มาแล้วเท่านั้น
+  //   เดิมยิง 2 อันขนานกัน → dropdown ถูกสร้างตอน MENU_POOL ยังว่าง = เมนูที่เพิ่งเพิ่มใน DB ไม่โผล่
+  Promise.all([loadMpRequests(),loadMenuPool()]).then(function(){
+    renderMpRequests();
+    loadMpPlanData();
+  });
 }
 function _buildPlanTable(){
   var head=document.getElementById("planHead");
