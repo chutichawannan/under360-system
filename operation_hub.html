@@ -2209,9 +2209,13 @@ async function msgPlanRoutes(){
   }finally{ if(btn){btn.disabled=false;btn.textContent="💰 คำนวณค่าส่งถูกสุด";} }
 }
 
-// 📊 บันทึกสถิติค่าส่งของวันนั้นลง delivery_cost_log (1 วัน 1 แถว เขียนทับได้)
-// นัทสั่ง 5 ส.ค. 2569 — เก็บทุกวันไปเรื่อยๆ พอข้อมูลพอ จะคำนวณได้ว่าจ้างแมสเงินเดือนเท่าไหร่ถึงคุ้ม
-// ⚠️ ยังไม่รัน scripts/sql_delivery_cost_log.sql ก็ไม่พัง — แค่ไม่บันทึก (เงียบ ไม่กวนแอดมิน)
+// 📊 บันทึกสถิติค่าส่งรายวัน — เก็บทุกวันไปเรื่อยๆ พอข้อมูลพอ จะคำนวณได้ว่าจ้างแมสเท่าไหร่ถึงคุ้ม
+// (นัทสั่ง 5 ส.ค. 2569)
+// 🔧 6 ส.ค.: ย้ายจากตารางใหม่ delivery_cost_log มาเก็บใน kitchen_data แทน
+//    เพราะตารางใหม่ต้องรัน SQL ก่อน ซึ่งค้างอยู่ 2 วันแล้ว (ผมรัน SQL เองไม่ได้ · Supabase dashboard
+//    ไม่ render ในเบราว์เซอร์ที่ผมใช้) → kitchen_data มีอยู่แล้วและ anon เขียนได้ = เริ่มเก็บได้ทันที
+//    1 วัน = 1 คีย์ (delivery_cost_2026-08-06) · กดปุ่มซ้ำ = เขียนทับ
+var DCOST_PREFIX="delivery_cost_";
 async function msgLogCost(trips,jobs,skipped){
   try{
     var sb_=getSB(); if(!sb_) return;
@@ -2226,15 +2230,16 @@ async function msgLogCost(trips,jobs,skipped){
     var detail=trips.map(function(t){
       return {stops:t.order.map(function(p){return p.name;}), price:t.cost, solo:t.soloOk?t.solo:null, merged:!!t.merge};
     });
-    var res=await sb_.from("delivery_cost_log").upsert({
-      delivery_date:date, stops:jobs.length, trips:cars,
-      cost_grouped:Math.round(grouped), cost_separate:Math.round(separate),
-      max_stops:MSG_MAX_STOPS, skipped:skipped, detail:detail,
-      updated_at:new Date().toISOString()
-    },{onConflict:"delivery_date"});
+    var res=await sb_.from("kitchen_data").upsert({
+      key: DCOST_PREFIX+date,
+      data: { delivery_date:date, stops:jobs.length, trips:cars,
+              cost_grouped:Math.round(grouped), cost_separate:Math.round(separate),
+              max_stops:MSG_MAX_STOPS, skipped:skipped, detail:detail,
+              updated_at:new Date().toISOString() }
+    },{onConflict:"key"});
     if(res.error) throw res.error;
     msgShowCostHistory();
-  }catch(e){ console.warn("delivery_cost_log:",e&&(e.message||e.code)); }
+  }catch(e){ console.warn("เก็บสถิติค่าส่งไม่สำเร็จ:",e&&(e.message||e.code)); }
 }
 
 // สรุปสะสม — โชว์ใต้แผน ว่าตอนนี้เก็บข้อมูลมากี่วันแล้ว และค่าส่งเฉลี่ยเท่าไหร่
@@ -2242,10 +2247,12 @@ async function msgShowCostHistory(){
   try{
     var sb_=getSB(); if(!sb_) return;
     var el=document.getElementById("msg-hist"); if(!el) return;
-    var res=await sb_.from("delivery_cost_log").select("delivery_date,stops,trips,cost_grouped,cost_separate")
-              .order("delivery_date",{ascending:false}).limit(120);
+    var res=await sb_.from("kitchen_data").select("key,data")
+              .like("key",DCOST_PREFIX+"%").order("key",{ascending:false}).limit(200);
     if(res.error||!res.data||!res.data.length) return;
-    var d=res.data, n=d.length;
+    var d=res.data.map(function(r){return r.data||{};}).filter(function(x){return x.cost_grouped!=null;});
+    if(!d.length) return;
+    var n=d.length;
     var avgStop=d.reduce(function(s,x){return s+x.stops;},0)/n;
     var avgCost=d.reduce(function(s,x){return s+x.cost_grouped;},0)/n;
     var avgSep =d.reduce(function(s,x){return s+x.cost_separate;},0)/n;
