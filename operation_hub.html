@@ -470,6 +470,16 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           <button class="btn" onclick="loadAll()">🔄 รีเฟรช</button>
         </div>
       </div>
+      <!-- N-15 · ค้นหาออเดอร์ — นัทเน้นข้อนี้ (6 ส.ค. 2569): แอดมินหาใบของลูกค้าไม่เจอเลย
+           ต้องค้นที่ฐานข้อมูล ไม่ใช่กรองเฉพาะหน้าที่เปิดอยู่ (มีออเดอร์ 15,000+ ใบ หน้าละ 20) -->
+      <div style="display:flex;gap:6px;align-items:center;margin-bottom:10px;flex-wrap:wrap">
+        <input id="ordSearchBox" type="search" autocomplete="off" placeholder="🔍 ค้นหา: ชื่อลูกค้า / เบอร์โทร / เลขออเดอร์"
+          onkeydown="if(event.key==='Enter')runOrderSearch()" oninput="ordSearchTyping()"
+          style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--ink-xsoft);border-radius:9px;font-family:var(--sans);font-size:13px">
+        <button class="btn" onclick="runOrderSearch()" style="background:var(--g);color:#fff;border-color:var(--g)">ค้นหา</button>
+        <button class="btn" id="ordSearchClear" onclick="clearOrderSearch()" style="display:none">✕ ล้าง</button>
+        <span id="ordSearchHint" style="font-size:11.5px;color:var(--ink-soft)"></span>
+      </div>
       <!-- เลือกช่วงวันที่ -->
       <div id="rangeBox" style="display:none;background:#fff;border:1px solid var(--ink-xsoft);border-radius:10px;padding:10px 12px;margin-bottom:10px">
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">
@@ -1013,9 +1023,37 @@ async function loadAll(keepLoaded){
 }
 // ── แบ่งหน้ารายการออเดอร์ (จำนวนต่อหน้าตั้งที่ ⚙️ ตั้งค่า) ──
 var ordRows=[], ordPage=0, ordLoading=false, ordTotal=0, rangeFrom=null, rangeTo=null;
+// ── N-15 · ค้นหาออเดอร์ ────────────────────────────────────────────────────
+// ต้องยิงหาที่ฐานข้อมูล ไม่ใช่กรองแถวที่โหลดมาแล้ว — หน้านี้โหลดทีละ 20 ใบจาก 15,000+
+// ตอนค้นหา = มองข้ามตัวกรองวัน (แอดมินไม่รู้ว่าใบอยู่วันไหน ถึงต้องค้น) และ **เห็นใบที่ยกเลิกด้วย**
+var ordSearchQ="";
+function ordSearchClean(s){ return String(s||"").trim().replace(/[,()*\\]/g," ").replace(/\s+/g," "); }
+function ordSearchTyping(){
+  var b=document.getElementById("ordSearchClear");
+  var v=(document.getElementById("ordSearchBox")||{}).value||"";
+  if(b) b.style.display=(v||ordSearchQ)?"":"none";
+}
+function runOrderSearch(){
+  var v=ordSearchClean((document.getElementById("ordSearchBox")||{}).value);
+  if(!v){ clearOrderSearch(); return; }
+  ordSearchQ=v; ordPage=0; ordSearchTyping(); fetchOrdersPage();
+}
+function clearOrderSearch(){
+  ordSearchQ=""; ordPage=0;
+  var i=document.getElementById("ordSearchBox"); if(i) i.value="";
+  var h=document.getElementById("ordSearchHint"); if(h) h.textContent="";
+  ordSearchTyping(); fetchOrdersPage();
+}
+
 function ordBaseQuery(sb_,todayStr,tomStr){
   var NOTEST="source.is.null,source.neq.parallel_test";
   var q=sb_.from("orders").select("*",{count:"exact"});
+  if(ordSearchQ){
+    var t=ordSearchQ;
+    return q.or("order_number.ilike.*"+t+"*,customer_name.ilike.*"+t+"*,customer_phone.ilike.*"+t+"*,line_display_name.ilike.*"+t+"*")
+            .or(NOTEST)
+            .order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
+  }
   if(dateMode==="today")                 q=q.eq("delivery_date",todayStr);
   else if(dateMode==="tomorrow")         q=q.eq("delivery_date",tomStr);
   else if(dateMode==="pick"&&pickedDate) q=q.eq("delivery_date",pickedDate);
@@ -1039,7 +1077,12 @@ async function fetchOrdersPage(){
     var maxPage=Math.max(0,Math.ceil(ordTotal/size)-1);
     if(ordPage>maxPage&&ordTotal>0){ ordPage=maxPage; ordLoading=false; return fetchOrdersPage(); }
     var title;
-    if(dateMode==="today")                 title="ออเดอร์วันนี้ ("+todayStr+")";
+    if(ordSearchQ){
+      title="ผลค้นหา \""+ordSearchQ+"\"";
+      var hh2=document.getElementById("ordSearchHint");
+      if(hh2) hh2.textContent=ordTotal?("เจอ "+ordTotal+" ใบ (ค้นทุกวัน รวมใบที่ยกเลิก)"):"ไม่เจอใบไหนเลย — ลองพิมพ์แค่บางส่วนของชื่อหรือเบอร์";
+    }
+    else if(dateMode==="today")            title="ออเดอร์วันนี้ ("+todayStr+")";
     else if(dateMode==="tomorrow")         title="ออเดอร์พรุ่งนี้ ("+tomStr+")";
     else if(dateMode==="pick"&&pickedDate) title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
     else if(dateMode==="range"&&rangeFrom&&rangeTo) title="ช่วง "+rangeFrom+" → "+rangeTo;
