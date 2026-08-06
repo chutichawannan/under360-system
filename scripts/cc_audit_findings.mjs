@@ -78,7 +78,12 @@ const main = async () => {
 
   const pkgs = await q('packages?select=name,base_price&is_active=eq.true');
   add('N-05', 'แพคเกจที่เปิดขาย', true, pkgs.length + ' ตัว: ' + pkgs.map(p => p.name.split('—')[0].trim()).join(' · '));
-  add('N-22', 'เซ็ต Hyrox ในหน้าลูกค้า', pkgs.some(p => /hyrox/i.test(p.name)), pkgs.some(p => /hyrox/i.test(p.name)) ? 'มีแล้ว' : 'ยังไม่มี');
+  // Hyrox อยู่ใน mp_offer_sets (ชุด Meal Plan) ไม่ใช่ packages — ต้องทั้ง is_active และโผล่ใน picker
+  const sets = await q('mp_offer_sets?select=set_key,label,is_active,show_in_default_picker');
+  const hx = sets.find(s => /hyrox/i.test(s.set_key + s.label));
+  add('N-22', 'เซ็ต Hyrox กดสั่งได้ในหน้าลูกค้า',
+    !!(hx && hx.is_active && hx.show_in_default_picker),
+    hx ? ('มีในระบบ · active=' + hx.is_active + ' · โผล่ใน picker=' + hx.show_in_default_picker) : 'ไม่มีในตารางเลย');
 
   const promos = await q('promo_codes?select=code,description&limit=50');
   const badEnc = promos.filter(p => /\?{3,}/.test(p.description || ''));
