@@ -1404,17 +1404,16 @@ function renderMealPlanPicker() {
       <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
         ปกติแอดมินจะจัดเมนูให้ 7 รายการ/สัปดาห์ตามความเหมาะสม ถ้ามีเมนูที่อยากกินเป็นพิเศษ เลือกได้ตรงนี้ — ระบบจะขอสลับเมนูที่แอดมินจัดไว้ 1-2 รายการ ให้เป็นเมนูที่เลือก (ไม่ต้องเลือกครบทุกอัน เลือกแค่ที่อยากได้)
       </div>
-      ${mpRequestMenus.length ? `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">${mpRequestMenus.map((r,i)=>{
+      ${/* N-21: ทำเป็นลิสต์ตัวหนังสือไปก่อน — เดิมเป็นการ์ดรูป แต่เมนู MP ยังไม่มีรูปจริง
+              โชว์กล่อง placeholder 🍱 เต็มจอ = ลูกค้าจะทวงหารูป · กลับมาใส่รูปทีหลังได้ */''}
+      ${mpRequestMenus.length ? `<div style="display:flex;flex-direction:column;gap:6px;">${mpRequestMenus.map((r,i)=>{
         const on = mpReqSel.includes(i);
-        const mi = menuItems.find(m=>m.code===r.code) || {};
-        const img = (mi.image_urls && mi.image_urls[0])
-          ? `<img src="${thumbUrl(mi.image_urls[0],250)}" loading="lazy" style="width:100%;height:88px;object-fit:cover;border-radius:9px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px&quot;>🍱</div>'">`
-          : `<div style="width:100%;height:88px;border-radius:9px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:30px;">🍱</div>`;
-        return `<div onclick="toggleMPReq(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:13px;padding:8px;cursor:pointer;position:relative;">
-          ${img}
-          <div style="font-size:12px;font-weight:700;color:#1A1A1A;margin-top:6px;line-height:1.25;">${h(r.name)}</div>
-          <div style="font-size:10px;color:#9AA0AC;margin-top:1px;">${h(r.code)}</div>
-          ${on?'<div style="position:absolute;top:7px;right:7px;width:22px;height:22px;border-radius:50%;background:#1F4D3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;">✓</div>':''}
+        return `<div onclick="toggleMPReq(${i})" style="display:flex;align-items:center;gap:10px;border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:11px;padding:10px 12px;cursor:pointer;">
+          <div style="width:20px;height:20px;flex-shrink:0;border-radius:6px;border:2px solid ${on?'#1F4D3A':'#D5D5D0'};background:${on?'#1F4D3A':'#fff'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;">${on?'✓':''}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:700;color:#1A1A1A;line-height:1.35;">${h(r.name)}</div>
+            <div style="font-size:10.5px;color:#9AA0AC;margin-top:1px;">${h(r.code)}</div>
+          </div>
         </div>`;
       }).join('')}</div>` : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
     </div>` : ''}`;
@@ -4039,20 +4038,19 @@ function mpManageReqPickerHtml(r, isOpen) {
   if (!mpRequestMenus.length) {
     return '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:12.5px;">ยังไม่มีเมนู request ตอนนี้</div>';
   }
+  // N-21: ลิสต์ตัวหนังสือ (ไม่มีรูป) — เมนู MP ยังไม่มีรูปจริง กล่อง placeholder ทำให้ลูกค้าทวงหารูป
   const cards = mpRequestMenus.map((r2,i) => {
     const on = mpManageReqSel.includes(i);
-    const mi = menuItems.find(m => m.code === r2.code) || {};
-    const img = (mi.image_urls && mi.image_urls[0])
-      ? `<img src="${thumbUrl(mi.image_urls[0],200)}" loading="lazy" style="width:100%;height:70px;object-fit:cover;border-radius:8px;display:block;" onerror="this.outerHTML='<div style=&quot;width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px&quot;>🍱</div>'">`
-      : `<div style="width:100%;height:70px;border-radius:8px;background:#F0F0F0;display:flex;align-items:center;justify-content:center;font-size:24px;">🍱</div>`;
-    return `<div onclick="event.stopPropagation();mpManageToggleReqItem(${i})" style="border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:11px;padding:7px;cursor:pointer;position:relative;">
-      ${img}
-      <div style="font-size:11.5px;font-weight:700;color:#1A1A1A;margin-top:5px;line-height:1.25;">${h(r2.name)}</div>
-      ${on?'<div style="position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:50%;background:#1F4D3A;color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">✓</div>':''}
+    return `<div onclick="event.stopPropagation();mpManageToggleReqItem(${i})" style="display:flex;align-items:center;gap:9px;border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:10px;padding:9px 11px;cursor:pointer;">
+      <div style="width:18px;height:18px;flex-shrink:0;border-radius:5px;border:2px solid ${on?'#1F4D3A':'#D5D5D0'};background:${on?'#1F4D3A':'#fff'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;">${on?'✓':''}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:12.5px;font-weight:700;color:#1A1A1A;line-height:1.3;">${h(r2.name)}</div>
+        <div style="font-size:10px;color:#9AA0AC;margin-top:1px;">${h(r2.code||'')}</div>
+      </div>
     </div>`;
   }).join('');
   return `<div style="margin-top:8px;" onclick="event.stopPropagation()">
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:7px;">${cards}</div>
+    <div style="display:flex;flex-direction:column;gap:6px;">${cards}</div>
     <button onclick="mpManageSubmitReq('${r.id}')" style="margin-top:8px;width:100%;background:#1F4D3A;color:#fff;border:none;border-radius:9px;padding:9px;font-size:13px;font-weight:700;cursor:pointer;">✅ ยืนยันเมนูที่เลือก</button>
   </div>`;
 }
