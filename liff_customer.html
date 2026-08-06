@@ -1794,9 +1794,37 @@ function effectiveStock(item) {
 // ══════════════════════════════════════
 // 🍽️ MENU RENDER
 // ══════════════════════════════════════
+// ⭐ เมนูพิเศษประจำสัปดาห์ (S1–S8 ข้าวกล่อง · D1–D5 แพคกับข้าว — เปลี่ยนทุกสัปดาห์ตามโบรชัวร์)
+// นัทเคาะ 6 ส.ค. 2569 (ตัวเลือก ค): ต้องเห็น 2 ที่
+//   1) รวมอยู่ในแท็บ "⭐ สัปดาห์นี้" — ไม่ว่าตัวเมนูจะอยู่หมวดไหน
+//   2) อยู่ **บนสุด** ของแท็บปกติ (ข้าวกล่อง / แพคกับข้าว) พร้อมป้าย ⭐
+const WEEKLY_CAT = 'no_special';                 // แท็บ "⭐ สัปดาห์นี้"
+const isWeeklySpecial = m => !!(m && m.is_weekly_special);
+
+function menuItemsForCat(cat){
+  if (cat === WEEKLY_CAT) {
+    // แท็บ ⭐ = เมนูในหมวดนี้ + เมนูที่ติดธงจากหมวดอื่น (เช่น D1–D5 ที่อยู่หมวดแพคกับข้าว)
+    const seen = new Set();
+    return menuItems.filter(m => {
+      const hit = m.category === cat || isWeeklySpecial(m);
+      if (!hit || seen.has(m.id)) return false;
+      seen.add(m.id); return true;
+    });
+  }
+  return menuItems.filter(m => m.category === cat);
+}
+// ของสัปดาห์นี้ขึ้นก่อนเสมอ แล้วค่อยเรียงตามลำดับเดิมที่แอดมินจัดไว้
+function sortWeeklyFirst(list){
+  return list.slice().sort((a,b) => {
+    const wa = isWeeklySpecial(a), wb = isWeeklySpecial(b);
+    if (wa !== wb) return wa ? -1 : 1;
+    return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
+  });
+}
+
 function renderMenu() {
   const el = document.getElementById('mlist');
-  const items = menuItems.filter(m => m.category === activeCat);
+  const items = sortWeeklyFirst(menuItemsForCat(activeCat));
   if (!items.length) {
     el.innerHTML = '<div class="empty"><div class="empty-ico">🍽️</div><div class="empty-txt">ยังไม่มีเมนูในหมวดนี้</div></div>';
     return;
