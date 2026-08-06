@@ -3536,7 +3536,9 @@ async function loadOrders() {
   }
 }
 
+let _lastOrders = [];      // เก็บไว้ re-render ตอนเปิด/ปิดตัวเลือกวัน โดยไม่ต้องยิง DB ซ้ำ
 function renderOrders(orders) {
+  if (Array.isArray(orders)) _lastOrders = orders; else orders = _lastOrders || [];
   const el = document.getElementById('olist');
   if (!orders.length) {
     el.innerHTML = '<div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">ยังไม่มีออเดอร์<br><small>สั่งอาหารครั้งแรกได้เลย!</small></div></div>';
@@ -3566,8 +3568,87 @@ function renderOrders(orders) {
         <span>⏰ ${o.time_slot_label || o.time_slot}</span>
         <span style="margin-left:auto;font-weight:700;color:var(--r)">฿${Number(o.total).toLocaleString()}</span>
       </div>
+      ${orderCanMove(o) ? `<div style="padding:0 14px 12px">
+        <span onclick="toggleMoveOrder('${o.id}')" style="font-size:12.5px;color:#1F4D3A;font-weight:700;text-decoration:underline;cursor:pointer">📅 ขอเลื่อนวันรับ</span>
+        ${moveOrderPickerHtml(o)}
+      </div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════
+// 📅 เลื่อนวันรับเอง — ออเดอร์สต็อค/แพค (นัทเคาะสเปค 3 ส.ค. · สั่งทำ 6 ส.ค. 2569)
+//
+// ที่มา: Meal Plan เลื่อนวันเองได้อยู่แล้ว แต่ออเดอร์ธรรมดาต้องทักแอดมิน
+//        SKU "แยกวันส่ง" เกิดขึ้นเพราะ Hato กด split ไม่ได้ → พอมาระบบเรา ลูกค้าทำเองได้เลย
+// กติกาที่นัทเคาะ:
+//   · เลื่อนได้ล่วงหน้า **10 วัน** · ต้องเขียนบอกให้ลูกค้าเห็นในหน้าเปลี่ยนวัน
+//   · **เลื่อนยกชุด = ไม่คิดค่าส่งเพิ่ม** (จ่ายมาแล้วกับชุดแรก)
+//   · **ไม่จำกัดจำนวนครั้ง** (นัท: "ลูกค้าเราชั้นดี ไม่มีใครเลื่อนรัวๆ")
+//   · แยกส่ง (split) = คนละเรื่อง คิดค่าส่งเพิ่ม → **เก็บไว้เฟสหลัง beta ตามที่นัทสั่ง**
+// ══════════════════════════════════════
+const MOVE_MAX_DAYS = 10;
+let moveOrderOpen = null, moveOrderSel = null, moveOrderBusy = false;
+
+// เลื่อนได้เฉพาะออเดอร์ที่ยังไม่ลงมือทำ/ยังไม่ส่ง และไม่ใช่ Meal Plan (MP มีหน้าจัดการของตัวเอง)
+function orderCanMove(o){
+  if(!o || !o.delivery_date) return false;
+  if(['delivered','cancelled','skipped','ready'].includes(o.status)) return false;
+  if((o.order_items||[]).some(i => String(i.notes||'').startsWith('meal_plan:'))) return false;
+  return o.delivery_date >= localYMD(new Date());     // วันส่งยังไม่ถึง
+}
+function toggleMoveOrder(id){
+  moveOrderOpen = (moveOrderOpen === id) ? null : id;
+  moveOrderSel = null;
+  renderOrders(_lastOrders);
+}
+function selectMoveDate(key){ moveOrderSel = key; renderOrders(_lastOrders); }
+
+function moveOrderPickerHtml(o){
+  if(moveOrderOpen !== o.id) return '';
+  const DAYS=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const now=new Date();
+  let chips='';
+  for(let i=1;i<=MOVE_MAX_DAYS;i++){
+    const d=new Date(now); d.setDate(now.getDate()+i);
+    const key=localYMD(d);
+    if(key===o.delivery_date) continue;                 // วันเดิมไม่ต้องโชว์
+    const on=moveOrderSel===key;
+    chips+=`<div onclick="event.stopPropagation();selectMoveDate('${key}')" style="flex-shrink:0;text-align:center;background:${on?'#EBF3EF':'#fff'};border:2px solid ${on?'#1F4D3A':'#E5E5E1'};border-radius:12px;padding:7px 11px;cursor:pointer;min-width:52px;">
+      <div style="font-size:11px;color:${on?'#1F4D3A':'#9AA0AC'};font-weight:600">${DAYS[d.getDay()]}</div>
+      <div style="font-size:18px;font-weight:800;color:${on?'#1F4D3A':'#1A1A1A'};line-height:1">${d.getDate()}</div>
+      <div style="font-size:11px;color:${on?'#1F4D3A':'#9AA0AC'}">${MONTHS[d.getMonth()]}</div>
+    </div>`;
+  }
+  return `<div style="margin-top:8px;background:#F7F8F6;border-radius:12px;padding:10px" onclick="event.stopPropagation()">
+    <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:2px">เลือกวันรับใหม่</div>
+    <div style="font-size:11px;color:#6B7280;margin-bottom:8px">เลื่อนได้ล่วงหน้าไม่เกิน ${MOVE_MAX_DAYS} วัน · <b>ยกทั้งออเดอร์ ไม่มีค่าส่งเพิ่ม</b> · เลื่อนกี่ครั้งก็ได้</div>
+    <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:4px">${chips}</div>
+    <button ${moveOrderSel?'':'disabled'} onclick="confirmMoveOrder('${o.id}')"
+      style="margin-top:9px;width:100%;padding:11px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;color:#fff;background:${moveOrderSel?'#1F4D3A':'#C7CDC9'};cursor:${moveOrderSel?'pointer':'default'}">
+      ${moveOrderSel?`ยืนยันเลื่อนไป ${fmtDate(moveOrderSel)}`:'เลือกวันก่อน'}
+    </button>
+  </div>`;
+}
+
+async function confirmMoveOrder(id){
+  if(!moveOrderSel || moveOrderBusy) return;
+  moveOrderBusy = true;
+  try{
+    const o=(_lastOrders||[]).find(x=>x.id===id);
+    const from=o?o.delivery_date:'';
+    const stamp=`[เลื่อนวันโดยลูกค้า ${from}→${moveOrderSel}]`;
+    const notes=((o&&o.notes)?o.notes+' ':'')+stamp;     // เก็บร่องรอยไว้ให้แอดมินเห็นว่าใครเลื่อน
+    const r=await sb.from('orders').update({delivery_date:moveOrderSel, notes, updated_at:new Date().toISOString()}).eq('id',id);
+    if(r.error) throw r.error;
+    toast('เลื่อนวันรับเรียบร้อย');
+    moveOrderOpen=null; moveOrderSel=null;
+    loadOrders();
+  }catch(e){
+    toast('เลื่อนไม่สำเร็จ ลองใหม่อีกครั้ง');
+    console.warn('confirmMoveOrder:', e);
+  }finally{ moveOrderBusy=false; }
 }
 
 // ══════════════════════════════════════
