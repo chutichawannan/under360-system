@@ -80,6 +80,12 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .slot-body{background:var(--w);border:1px solid var(--xsoft);border-top:none;border-radius:0 0 10px 10px;padding:8px;}
 
 /* ORDER CARD */
+/* ป้ายกำกับวันที่กำลังดู (N-32) */
+.date-banner{margin:0 14px 10px;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.5;}
+.date-banner.ahead{background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;}
+.date-banner.past{background:#E5E7EB;color:#374151;border:1.5px solid #9CA3AF;}
+.db-back{display:inline-block;margin-left:6px;font-weight:700;text-decoration:underline;cursor:pointer;}
+body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc{border:1px solid var(--xsoft);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--w);}
 /* 🖥️ ดูบนเว็บ/จอกว้าง: แบ่ง 2 คอลัมน์ — ซ้ายข้อมูลลูกค้า ขวาของที่ต้องจัด+ปุ่ม (นัทสั่ง 6 ส.ค. 2569)
    จอแคบกว่า 720px ยุบเป็นคอลัมน์เดียวเหมือนเดิม มือถือแอดมินไม่กระทบ */
@@ -245,6 +251,9 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
   <button class="chip" id="s-express" onclick="setSlot('express',this)">ด่วน</button>
 </div>
 
+<!-- ป้ายบอกว่ากำลังดูวันไหน — ครัวต้องแยกออกว่า "ของล่วงหน้า" ไม่ใช่ "ของที่ต้องทำวันนี้" (N-32) -->
+<div id="dateBanner"></div>
+
 <!-- TAB 1: รายสินค้า -->
 <div class="main" id="tabContent1">
   <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
@@ -348,6 +357,8 @@ function getTargetDate(){
 }
 function setDate(mode,el){
   dateMode=mode;
+  // กดชิป วันนี้/พรุ่งนี้/ทั้งหมด → ล้างค่าในปฏิทินด้วย ไม่งั้นจอโชว์วันหนึ่งแต่กรองอีกวัน
+  if(mode!=="custom"){var _cp=document.getElementById("calPicker"); if(_cp)_cp.value="";}
   document.querySelectorAll("#ctrlBar .chip[id^='d-']").forEach(function(b){b.classList.remove("on");});
   if(el&&el.classList)el.classList.add("on");
   render();
@@ -426,8 +437,10 @@ async function loadAll(){
   try{
     // ⚠️ เดิม select("*") ไม่มี limit → Supabase cap 1000 + เรียงวันเก่าสุด = ครัวเห็นออเดอร์ 2024 ไม่เห็นวันนี้ (พังเงียบหลัง migrate 15,844 ใบ)
     // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (เครื่องครัว=เวลาไทย · buffer 3 วันกัน TZ เพี้ยน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
-    var _d=new Date(); _d.setDate(_d.getDate()-3);
-    var startDate=_d.getFullYear()+"-"+String(_d.getMonth()+1).padStart(2,"0")+"-"+String(_d.getDate()).padStart(2,"0");
+    // 🔴 N-32: ขยายฝั่งย้อนหลังให้ครอบตัวเลือกใน calPicker (KQ_PAST_DAYS) ไม่งั้นเลือกวันเก่าแล้วขึ้นว่าง
+    //    ⚠️ ห้ามใส่ lte/upper bound เด็ดขาด — วันอนาคตต้องติดมาด้วย (คิว Meal Plan ล่วงหน้าอยู่ตรงนี้)
+    //    ใช้ toISO (Asia/Bangkok) แทนวันเครื่อง — เจ้าของเปิดจากอเมริกาจะได้ไม่เพี้ยนไป 1 วัน
+    var startDate=toISO(kqDayOffset(-(KQ_PAST_DAYS+2)));
     var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot").limit(3000);
     if(ordRes.error) throw ordRes.error;   // เดิมไม่เช็ค → โหลดพลาดแล้วขึ้น "ไม่มีออเดอร์" ทั้งที่ DB มีเต็ม (แก้ 3 ส.ค. 2026)
     allOrders=ordRes.data||[];
@@ -536,7 +549,27 @@ function detectBadge(items){
 }
 
 // ── RENDER ───────────────────────────────────────────────
+// ป้ายกำกับวัน (N-32) — วันล่วงหน้าต้องเตือนชัด กันครัวลงมือทำของวันอื่นโดยไม่รู้ตัว
+function updateDateBanner(){
+  var el=document.getElementById("dateBanner"); if(!el)return;
+  var tgt=getTargetDate();
+  if(!tgt){ el.innerHTML=""; return; }
+  var t=today();
+  if(tgt===t){ el.innerHTML=""; return; }   // วันนี้ = ปกติ ไม่ต้องรบกวนสายตา
+  var ahead=Math.round((new Date(tgt+"T00:00:00")-new Date(t+"T00:00:00"))/86400000);
+  if(ahead>0){
+    el.innerHTML="<div class='date-banner ahead'>🔜 กำลังดู<b>ของล่วงหน้า</b> "+fmtDate(tgt)
+      +" (อีก "+ahead+" วัน) — <b>ไม่ใช่ของที่ต้องทำวันนี้</b> ใช้ดูเพื่อเตรียมของ/เช็ครอบ Meal Plan"
+      +" <span class='db-back' onclick=\"setDate('today',document.getElementById('d-today'))\">↩ กลับไปวันนี้</span></div>";
+  }else{
+    el.innerHTML="<div class='date-banner past'>↩ กำลังดูวัน<b>ย้อนหลัง</b> "+fmtDate(tgt)+" ("+(-ahead)+" วันก่อน)"
+      +" <span class='db-back' onclick=\"setDate('today',document.getElementById('d-today'))\">↩ กลับไปวันนี้</span></div>";
+  }
+}
 function render(){
+  // ถ้าเปิดหน้าค้างข้ามวัน (ครัวไม่เคยปิดจอ) ตัวเลือกวันจะเก่า → สร้างใหม่เมื่อวันไทยเปลี่ยน
+  if(kqPickerBuiltFor && kqPickerBuiltFor!==today()) buildDatePicker();
+  updateDateBanner();
   if(tabMode===1)renderProd();
   else if(tabMode===3)renderStock();
   else renderOrders();
@@ -909,16 +942,34 @@ function lineTag(o){
 }
 
 // ── INIT ─────────────────────────────────────────────────
-(function(){
+// 🔴 N-32 (6 ส.ค. 2569): เดิมลูป d.setDate(getDate()-i) i=0..13 = สร้างแต่ "วันย้อนหลัง" ล้วน
+//    → ครัวเลือกวันข้างหน้าไม่ได้เลย = เตรียมของล่วงหน้าไม่ได้ + เช็ครอบ Meal Plan วันหน้าไม่ได้
+//    (ตัวเลือกวันสร้างจาก "ช่วงวันคงที่" ไม่ได้สร้างจากออเดอร์จริง — ข้อมูลวันอนาคตมีใน DB อยู่แล้ว)
+//    แก้: ล่วงหน้า 14 วัน (optgroup "ล่วงหน้า") + ย้อนหลัง 7 วัน แยกกลุ่มกันครัวกดผิด
+var KQ_FUTURE_DAYS=14, KQ_PAST_DAYS=7;
+var kqPickerBuiltFor=null;
+function kqDayOffset(n){var d=new Date();d.setDate(d.getDate()+n);return d;}
+function buildDatePicker(){
   var sel=document.getElementById("calPicker");
-  for(var i=0;i<14;i++){
-    var d=new Date();d.setDate(d.getDate()-i);
-    var iso=toISO(d);
-    var opt=document.createElement("option");opt.value=iso;
-    opt.textContent=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
-    sel.appendChild(opt);
+  if(!sel)return;
+  var keep=sel.value;
+  sel.innerHTML="<option value=''>📅 เลือกวัน...</option>";
+  var gF=document.createElement("optgroup");gF.label="🔜 ล่วงหน้า";
+  var gP=document.createElement("optgroup");gP.label="↩ ย้อนหลัง";
+  function mk(n){
+    var d=kqDayOffset(n);
+    var lbl=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    var pre=n===0?"วันนี้ · ":n===1?"พรุ่งนี้ · ":n>1?"🔜 ":"↩ ";
+    var opt=document.createElement("option");opt.value=toISO(d);opt.textContent=pre+lbl;
+    return opt;
   }
-})();
+  for(var i=0;i<=KQ_FUTURE_DAYS;i++) gF.appendChild(mk(i));
+  for(var j=1;j<=KQ_PAST_DAYS;j++)   gP.appendChild(mk(-j));
+  sel.appendChild(gF); sel.appendChild(gP);
+  if(keep) sel.value=keep;                 // auto-refresh ต้องไม่เขี่ยวันที่ครัวเลือกไว้ทิ้ง
+  kqPickerBuiltFor=today();
+}
+buildDatePicker();
 
 loadNickname();
 loadAll();
