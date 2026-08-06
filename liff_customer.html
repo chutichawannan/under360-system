@@ -1638,6 +1638,9 @@ async function init() {
     if (init) init.textContent = lineProfile.displayName.charAt(0).toUpperCase();
   }
 
+  // คืนค่าที่ลูกค้ากรอก/ปักไว้รอบก่อน (ทับค่าที่เติมจากโปรไฟล์ เพราะเป็นสิ่งที่เขาตั้งใจกรอกล่าสุด)
+  try { restoreDeliveryDraft(); } catch(e) { console.warn('restore draft:', e); }
+
   // Render and show
   try {
     renderCatTabs();
@@ -1733,6 +1736,9 @@ function backToMenu() {
   cart = []; saveCart(); updateCartUI();
   selDate = null; selSlot = null;
   setDeliverOnce = false; extraRoundDates = [];
+  // 🔴 ล้างตะกร้าแล้วต้องวาดรายการเมนูใหม่ด้วย — เดิมไม่วาด การ์ดเลยยังโชว์จำนวนค้างจากออเดอร์ที่สั่งไปแล้ว
+  //    ลูกค้าเห็นเลข +1 ค้างอยู่ทั้งที่ตะกร้าว่าง ต้องปิดแอปเปิดใหม่ถึงหาย (นัทเจอเอง 6 ส.ค. 2569)
+  if (typeof renderMenu === 'function') renderMenu(true);
   showScr('s-menu');
 }
 
@@ -1882,6 +1888,58 @@ function syncCartDeps(){
 }
 
 function saveCart() { localStorage.setItem('u360_cart', JSON.stringify(cart)); }
+
+// ══════════════════════════════════════
+// 💾 จำข้อมูลจัดส่งไว้ในเครื่อง — ปิดแอปแล้วกลับมาไม่ต้องกรอกใหม่
+// นัทเจอเอง 6 ส.ค. 2569: ปักหมุด ICONSIAM + กรอกชื่อ/เบอร์แล้ว พอกดออกกลับมา หายหมด
+// เก็บเฉพาะข้อมูลจัดส่งของเจ้าของเครื่องเอง (ไม่มีข้อมูลคนอื่น) · ล้างได้ด้วยปุ่ม "ล้างที่อยู่"
+// ══════════════════════════════════════
+const DRAFT_KEY = 'u360_delivery_draft';
+function saveDeliveryDraft(){
+  try{
+    const g = id => (document.getElementById(id)||{}).value || '';
+    const pos = cusPin ? cusPin.getPosition() : null;
+    localStorage.setItem(DRAFT_KEY, JSON.stringify({
+      name:  g('recipient-name-input'),
+      phone: g('recipient-phone-input'),
+      addr:  g('addr-input'),
+      search:g('addr-search'),
+      notes: g('notes-input'),
+      lat: pos ? pos.lat() : null,
+      lng: pos ? pos.lng() : null,
+      savedAt: Date.now()
+    }));
+  }catch(e){}
+}
+function loadDeliveryDraft(){
+  try{ return JSON.parse(localStorage.getItem(DRAFT_KEY)||'null'); }catch(e){ return null; }
+}
+function clearDeliveryDraft(){ try{ localStorage.removeItem(DRAFT_KEY); }catch(e){} }
+
+// คืนค่าที่กรอกไว้ + วางหมุดกลับที่เดิม (รอแผนที่พร้อมก่อนค่อยวางหมุด)
+function restoreDeliveryDraft(){
+  const d = loadDeliveryDraft(); if(!d) return;
+  const set = (id,v) => { const el=document.getElementById(id); if(el && v) el.value = v; };
+  set('recipient-name-input', d.name);
+  set('recipient-phone-input', d.phone);
+  set('addr-input',  d.addr);
+  set('addr-search', d.search);
+  set('notes-input', d.notes);
+  if(d.lat!=null && d.lng!=null){
+    let tries = 0;
+    const putPin = () => {
+      if(cusMap){ setCusPin(d.lat, d.lng, d.addr||''); cusMap.panTo({lat:d.lat,lng:d.lng}); cusMap.setZoom(15); return; }
+      if(++tries < 40) setTimeout(putPin, 250);       // แผนที่ยังโหลดไม่เสร็จ รอแล้วลองใหม่
+    };
+    putPin();
+  }
+}
+// เก็บอัตโนมัติเมื่อผู้ใช้พิมพ์ (หน่วงไว้ กันเขียนถี่เกิน)
+let _draftTimer = null;
+function queueSaveDraft(){ clearTimeout(_draftTimer); _draftTimer = setTimeout(saveDeliveryDraft, 400); }
+document.addEventListener('input', e => {
+  if(e.target && ['recipient-name-input','recipient-phone-input','addr-input','addr-search','notes-input'].includes(e.target.id)) queueSaveDraft();
+});
 
 function cartTotal()  { return cart.reduce((s,c) => s + c.price*c.qty, 0); }
 function cartCount()  { return cart.reduce((s,c) => s + c.qty, 0); }
@@ -3020,6 +3078,7 @@ function setCusPin(lat,lng,addr){
   // หมุดขยับ = เรท Lalamove ต้องคิดใหม่ (เดิมยิงแค่ตอนกดชิป → ย้ายหมุดไกลแค่ไหนราคาก็ค้างเท่าเดิม)
   if(selSlot==='express'){ lalamovePrice=null; fetchLalamovePrice(); }
   updateCartTotals();
+  queueSaveDraft();      // ปักหมุดแล้วจำไว้ด้วย — เปิดแอปใหม่หมุดต้องอยู่ที่เดิม
 }
 
 // อัปเดตช่องที่อยู่ตามหมุดเสมอ (ไม่เช็ค !value แล้ว — หมุดเปลี่ยน = ช่องเปลี่ยนตาม)
@@ -3035,6 +3094,7 @@ function _setAddrFields(a){
 function clearCusAddr(){
   if(cusPin){ cusPin.setMap(null); cusPin=null; }
   distKm=null;
+  clearDeliveryDraft();          // ลบของที่จำไว้ด้วย ไม่งั้นเปิดใหม่มันกลับมาอีก
   const ai=document.getElementById('addr-input'); if(ai) ai.value='';
   const as=document.getElementById('addr-search'); if(as){ as.value=''; as.focus(); }
   const pc=document.getElementById('pin-caption'); if(pc){ pc.style.display='none'; pc.innerHTML=''; }
@@ -3164,6 +3224,14 @@ function updateCartTotals(){
   if(feeEl){
     if(appliedPromos.some(p=>p.discount_type==='free_shipping') && o.feeKnown) feeEl.textContent='ฟรี';
     else feeEl.textContent = o.feeKnown ? '฿'+o.fee.toLocaleString() : 'ยังไม่ได้ปักหมุด';
+  }
+  // 🔴 แถบค่าส่งใต้แผนที่ต้องตรงกับสรุปด้านล่างเสมอ
+  //    เดิมอัปเดตแค่ตอนปักหมุด → เปลี่ยนช่วงเวลาส่งแล้วค้างที่เลขเดิม
+  //    ลูกค้าเห็น 2 ตัวเลขคนละค่าพร้อมกัน (บน ฿31 · ล่าง ฿41) = งงว่าจะจ่ายเท่าไหร่ (นัทเจอเอง 6 ส.ค. 2569)
+  var fAmtEl=document.getElementById('fee-amt');
+  if(fAmtEl && o.feeKnown){
+    var freeShip = appliedPromos.some(p=>p.discount_type==='free_shipping') || cart.some(c=>c.type==='package'&&c.free_shipping);
+    fAmtEl.textContent = freeShip ? 'ฟรี' : '฿'+o.fee.toLocaleString();
   }
   if(totEl)totEl.textContent='฿'+o.total.toLocaleString();
   if(subBtn)subBtn.textContent='ยืนยันและสั่งอาหาร (฿'+o.total.toLocaleString()+')';
