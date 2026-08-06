@@ -1823,6 +1823,36 @@ function selectCat(c) {
 function effectiveStock(item) {
   return (item && item.stock_total != null) ? item.stock_total : 999;
 }
+// Meal Plan (HP/LC) ไม่มีคอนเซปต์สต็อก — วางแผนจากวัตถุดิบ ไม่ใช่ของทำไว้ล่วงหน้า
+function isMealPlanMenu(m){
+  return !!m && (m.category==='meal_hp' || m.category==='meal_lc' || /^HP|^LC/i.test(m.code||''));
+}
+// สต็อกของเมนูนี้ "เหลือให้กดเพิ่มได้อีกกี่ชิ้น" — จุดเดียวที่ทุกหน้าถาม (เมนู · การ์ดหน้าแรก · ตะกร้า)
+// stock_total: null = ไม่จำกัด (ปกติ) · 0 = หมดจริง · N>0 = เหลือ N
+function stockInfo(id){
+  const item = menuItems.find(m => m.id === id);
+  const inCart = cart.find(c => c.id === id);
+  const qty = inCart ? inCart.qty : 0;
+  if (!item || isMealPlanMenu(item) || item.stock_total == null)
+    return { unlimited:true, stock:999, qty, remaining:999, item };
+  const stock = item.stock_total;
+  return { unlimited:false, stock, qty, remaining: stock - qty, item };
+}
+// N-01: ข้อความบอกลูกค้าว่าทำไมกดเพิ่มไม่ได้ + ทำอะไรต่อได้ (ไม่ใช่แค่ห้ามเฉยๆ)
+function stockBlockMsg(s){
+  if (s.stock <= 0) return 'เมนูนี้หมดแล้ววันนี้ — ลองเมนูอื่น หรือทักไลน์ให้ครัวทำรอบถัดไปได้';
+  return 'เมนูนี้เหลือ ' + s.stock + ' ชิ้น และอยู่ในตะกร้าครบแล้ว — เพิ่มมากกว่านี้ไม่ได้';
+}
+// รีเฟรชทุกที่ที่โชว์เมนู/สต็อก พร้อมกัน
+// 🔴 เดิม addItem/chgQty เรียกแค่ renderMenu() → การ์ดพรีวิวหน้าแรก (renderHomeGrid) ไม่เคยรีเฟรชเลย
+//    ลูกค้าเลยเห็นปุ่ม "+" ค้างอยู่ กดซ้ำได้เรื่อยๆ ทั้งที่ของหมดแล้ว (N-01 · นัทเจอเอง 6 ส.ค. 2569)
+function refreshItemViews(){
+  try{ renderMenu(); }catch(e){}
+  try{ renderHomeGrid(); }catch(e){}
+  updateCartUI();
+  const cs = document.getElementById('s-cart');
+  if (cs && cs.classList.contains('on')) { renderCart(); syncCartDeps(); }
+}
 
 // ══════════════════════════════════════
 // 🍽️ MENU RENDER
@@ -1895,7 +1925,7 @@ function renderMenu() {
       ? `<button class="mi-v2-add" disabled style="opacity:.4;cursor:not-allowed;font-size:10px;width:auto;padding:0 8px" title="Meal Plan — สมัครผ่าน Line OA">แพลน</button>`
       : isOut
       ? (qty>0
-          ? `<div class="mi-v2-qc"><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" onclick="event.stopPropagation();cart=cart.filter(c=>c.id!=='${item.id}');saveCart();renderMenu();updateCartUI();if(document.getElementById('s-cart').classList.contains('on'))renderCart();">🗑</button></div>`
+          ? `<div class="mi-v2-qc"><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" onclick="event.stopPropagation();cart=cart.filter(c=>c.id!=='${item.id}');saveCart();refreshItemViews();">🗑</button></div>`
           : `<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>`)
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
@@ -1913,12 +1943,10 @@ function renderMenu() {
 function addItem(id) {
   const item = menuItems.find(m => m.id===id);
   if (!item) return;
-  // Check stock limit
-  const stock = effectiveStock(item);
+  // Check stock limit (N-01: บล็อกตอนกด + บอกเหตุผลที่ลูกค้าเข้าใจว่าทำอะไรต่อได้)
+  const s = stockInfo(id);
   const ex = cart.find(c => c.id===id);
-  const curQty = ex ? ex.qty : 0;
-  if (stock <= 0) { toast('สินค้าหมดแล้ว'); return; }
-  if (curQty >= stock) { toast('ใส่ตะกร้าครบจำนวนที่มีในสต็อกแล้ว (' + stock + ')'); return; }
+  if (!s.unlimited && s.remaining <= 0) { toast(stockBlockMsg(s)); return; }
   // Week-type check: block mixed cart (A)
   const _isNext = isNextWeekItem(item);
   const _cwt   = cartWeekType();
@@ -1926,22 +1954,19 @@ function addItem(id) {
   if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูอาทิตย์หน้าอยู่ — กรุณาสั่งแยกออเดอร์'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
-  saveCart(); renderMenu(); updateCartUI();
+  saveCart(); refreshItemViews();
 }
 
 function chgQty(id, delta) {
   const idx = cart.findIndex(c => c.id===id);
   if (idx===-1) return;
   if (delta > 0) {
-    const item = menuItems.find(m => m.id===id);
-    const stock = effectiveStock(item);
-    if (cart[idx].qty >= stock) { toast('สต็อกมีแค่ ' + stock + ' ชิ้น'); return; }
+    const s = stockInfo(id);
+    if (!s.unlimited && s.remaining <= 0) { toast(stockBlockMsg(s)); return; }
   }
   cart[idx].qty += delta;
   if (cart[idx].qty <= 0) cart.splice(idx,1);
-  saveCart(); renderMenu(); updateCartUI();
-  // re-render if cart screen is visible
-  if (document.getElementById('s-cart').classList.contains('on')) { renderCart(); syncCartDeps(); }
+  saveCart(); refreshItemViews();
 }
 // หลังตะกร้าเปลี่ยนบนหน้า s-cart: date/time/round picker อาจต้องปลดล็อก
 // (เช่น ลบ Meal Plan ออก → วันที่ต้องเปิดให้เลือกทุกวัน ไม่บล็อก จ/พ/ศ อีก)
@@ -2074,15 +2099,22 @@ function renderCart() {
     }
     const _mi = menuItems.find(m => m.id === c.id);
     const _catLbl = _mi && _mi.category ? getCatLabel(_mi.category) : '';
+    // N-01: ปุ่ม + ในตะกร้าเดิมไม่มีสถานะปิดเลย → กดรัวได้ทั้งที่ของหมด · ตอนนี้ปิดปุ่ม + บอกจำนวนที่เหลือ
+    const _s = stockInfo(c.id);
+    const _atMax = !_s.unlimited && _s.remaining <= 0;
+    const _lowNote = (!_s.unlimited && _s.remaining > 0 && _s.remaining <= 5)
+      ? `<div style="font-size:11px;color:#92400E;margin-top:2px;">เพิ่มได้อีก ${_s.remaining} ชิ้น</div>` : '';
+    const _maxNote = _atMax
+      ? `<div style="font-size:11px;color:#DC2626;margin-top:2px;">ครบจำนวนที่มีแล้ว (สต็อกวันนี้ ${_s.stock} ชิ้น)</div>` : '';
     return `<div class="citem">
       <div style="flex:1">
         <div class="citem-name">${h(c.name)}${_catLbl?` <span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 6px;border-radius:8px;">${h(_catLbl)}</span>`:''}</div>
-        <div class="citem-sub">฿${c.price} × ${c.qty}</div>
+        <div class="citem-sub">฿${c.price} × ${c.qty}</div>${_lowNote}${_maxNote}
       </div>
       <div class="qc" style="margin:0 8px">
         <button class="qb" onclick="chgQty('${c.id}',-1)">−</button>
         <span class="qn">${c.qty}</span>
-        <button class="qb plus" onclick="chgQty('${c.id}',1)">+</button>
+        <button class="qb plus" onclick="chgQty('${c.id}',1)"${_atMax?' disabled style="opacity:.35;cursor:not-allowed"':''}>+</button>
       </div>
       <div class="citem-tot">฿${(c.price*c.qty).toLocaleString()}</div>
     </div>`;
@@ -3528,7 +3560,7 @@ function renderHomeGrid() {
       var tags = (m.calories?'<span class="mi-v2-kcal">'+m.calories+' kcal</span>':'')+(m.protein?'<span class="mi-v2-pro">โปรตีน '+m.protein+'g</span>':'')+(stockBadge?'<span>'+stockBadge+'</span>':'');
       var ctrl = isOut
         ? (qty>0
-            ? '<div class="mi-v2-qc"><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" data-mid="'+m.id+'" onclick="event.stopPropagation();var mid=this.dataset.mid;cart=cart.filter(function(c){return c.id!==mid;});saveCart();renderMenu();updateCartUI();if(document.getElementById(\'s-cart\').classList.contains(\'on\'))renderCart();">🗑</button></div>'
+            ? '<div class="mi-v2-qc"><span class="mi-v2-qn">'+qty+'</span><button class="mi-v2-qb" style="background:#DC2626;color:#fff" title="ลบออกจากตะกร้า (สินค้าหมดแล้ว)" data-mid="'+m.id+'" onclick="event.stopPropagation();var mid=this.dataset.mid;cart=cart.filter(function(c){return c.id!==mid;});saveCart();refreshItemViews();">🗑</button></div>'
             : '<button class="mi-v2-add" disabled style="opacity:.35;cursor:not-allowed">+</button>')
         : qty===0
         ? '<button class="mi-v2-add" data-mid="'+m.id+'" onclick="event.stopPropagation();addItem(this.dataset.mid)">+</button>'
