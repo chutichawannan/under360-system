@@ -1656,6 +1656,111 @@ function saveNote(rowId,code,val){
   if(entry){ entry.note=val; saveMpPlanRow(rowId); }
 }
 
+// ── N-33 · แพลนเมนูแล้วต้องเด้งไปถึงครัว ─────────────────────────────────
+// อาการที่นัทเจอเอง (6 ส.ค. 2569 · ใบจริง U-0807-005): แอดมินแพลนเมนู 7 กล่องเรียบร้อย
+//   แต่หน้าครัวขึ้นแค่บรรทัดเดียว "MP-HP-W Meal Plan HP · 1 สัปดาห์ (21 กล่อง) ×1"
+// สาเหตุ: หน้านี้เขียนแผนลง mp_deliveries.menu_items อย่างเดียว
+//   แต่ "หน้าครัว · หน้าแมส · หน้าออเดอร์ · รายงาน" อ่านจาก order_items หมด
+//   หน้าครัวมีทางสำรองไปอ่าน mp_deliveries อยู่ แต่ยิงเฉพาะตอน order_items ว่างเปล่า
+//   → ใบ Meal Plan มีบรรทัดราคาอยู่แล้ว = ไม่ว่าง = ทางสำรองไม่ยิง = ครัวไม่เห็นเมนู
+// วิธีแก้: ไม่แตะบรรทัดราคาเดิม (บรรทัดนั้นคือตัวถือเงิน ลบแล้วยอดขายเพี้ยน)
+//   แต่ "เพิ่ม" บรรทัดกล่องรายเมนูราคา 0 เข้าไปในใบของรอบนั้น
+// ⚠️ เซฟซ้ำได้เรื่อยๆ: ทุกครั้งจะลบบรรทัดกล่องเก่าทิ้งก่อนเสมอ (แอดมินแก้แผนกี่รอบก็ไม่ซ้ำ)
+var MPBOX_TAG="meal_plan:box";
+
+// หาว่ารอบนี้ต้องเขียนลง "ใบไหน" — รอบ 2-3 มีใบของตัวเอง คนละใบกับรอบ 1
+// ⚠️ จับคู่ด้วย line_uid / customer_id เท่านั้น ห้ามจับด้วยชื่อ (ชื่อลูกค้าซ้ำกันได้ = ครัวทำผิดคน)
+async function mpFindOrderForRound(sb_,r){
+  if(!r) return null;
+  try{
+    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status")
+      .eq("delivery_date",r.delivery_date).neq("status","cancelled").limit(200);
+    if(!res.error&&res.data&&res.data.length){
+      var hit=res.data.find(function(o){
+        return (r.line_uid&&o.line_uid===r.line_uid)||(r.customer_id&&o.customer_id===r.customer_id);
+      });
+      if(hit) return hit;
+    }
+  }catch(e){ console.error("mpFindOrderForRound:",e); }
+  // ยังไม่มีใบของรอบนี้ → ยอมให้ลงใบแม่ได้ "เฉพาะเมื่อวันส่งตรงกัน" เท่านั้น
+  // ⚠️ ห้ามยัดลงใบแม่มั่วๆ: เทสจริง 6 ส.ค. เจอว่ารอบ 3 (12 ส.ค.) ไปลงใบของวันที่ 7
+  //    = ครัวจะทำเมนูวันที่ 12 ให้คนที่รับวันที่ 7 · ผิดวันผิดของ ตรวจจับยากด้วย
+  if(r.order_id){
+    try{
+      var po=await sb_.from("orders").select("id,order_number,delivery_date,status").eq("id",r.order_id).limit(1);
+      var p=(!po.error&&po.data&&po.data[0])?po.data[0]:null;
+      if(p&&p.delivery_date===r.delivery_date&&p.status!=="cancelled") return p;
+    }catch(e){ console.error("mpFindOrderForRound(parent):",e); }
+  }
+  return null;   // ไม่มีใบของวันนี้จริงๆ → บอกแอดมินตรงๆ ดีกว่าเขียนผิดใบ
+}
+
+// บรรทัดที่ถือว่า "มาจากแผน" = แทนที่ได้ · อย่างอื่นในใบห้ามแตะ
+//   · meal_plan:box…   = ของที่หน้านี้เขียนเอง
+//   · "จากชีทแอดมิน"   = เมนูที่ย้ายมาจากระบบเก่า (ต้นทางเดียวกัน คือแผนของแอดมิน)
+// ถ้าไม่แทนที่ของเก่า จะกลายเป็นครัวเห็น 14 กล่องทั้งที่ลูกค้าสั่ง 7 (เทสจับได้ 6 ส.ค. ใบ MP-0807-009)
+var MPPLAN_SRC=["จากชีทแอดมิน"];
+
+async function syncPlanToOrderItems(r){
+  var sb_=getSB(); if(!sb_||!r) return null;
+  var tgt=await mpFindOrderForRound(sb_,r);
+  if(!tgt) return null;
+  try{
+    var tag=MPBOX_TAG+":r"+(r.round_no||1)+"/"+(r.total_rounds||1);
+    var raw=(r.menu_items||[]).filter(function(e){return e&&e.code;});
+
+    // ⚠️ ตรวจโค้ดก่อนส่งให้ครัว — เจอของจริง 6 ส.ค. code="HP" ชื่อ "35pasta…" (ที่จริงคือ HP35)
+    //    โค้ดเพี้ยนแบบนี้ถ้าหลุดไปหน้าครัว = ครัวหยิบเมนูไม่ถูก · กันไว้ที่ประตูนี้
+    var items=[], bad=[];
+    raw.forEach(function(e){
+      var ok=/^[A-Za-z]+\d+$/.test(String(e.code||""));
+      if(ok&&(!MENU_POOL.length||MENU_POOL.some(function(m){return m.code===e.code;}))) items.push(e);
+      else if(ok) items.push(e);          // ไม่มีใน pool (เมนูใหม่/นอกหมวด MP) — ยังส่งให้ครัวได้
+      else bad.push(e.code);
+    });
+
+    var existing=await sb_.from("order_items").select("id,menu_code,notes").eq("order_id",tgt.id).limit(500);
+    if(existing.error) throw existing.error;
+    // บรรทัดควบคุม/บรรทัดราคา ไม่ใช่ "เมนูที่ครัวต้องทำ" (ต้องตรงกับที่หน้าครัวกรอง)
+    var CTRL={"1":1,"0":1,"000":1};
+    var mine=[], fromSheet=[];
+    (existing.data||[]).forEach(function(i){
+      var n=String(i.notes||"").trim();
+      if(n.indexOf(MPBOX_TAG)===0){ mine.push(i); return; }
+      if(CTRL[i.menu_code]) return;                       // ช้อนส้อม/แยกวันส่ง/เพิ่มเติม
+      if(n.indexOf("meal_plan:")===0||n.indexOf("pkg:")===0) return;  // บรรทัดราคา/เซ็ต
+      fromSheet.push(i);                                  // เมนูเดิมในใบ — ติดป้ายหรือไม่ก็ตาม
+    });
+
+    // 🛑 ใบที่ย้ายมาจากระบบเก่ามีเมนูของตัวเองอยู่แล้ว (notes = "จากชีทแอดมิน") — ครัวเห็นอยู่แล้ว ไม่ใช่เคสที่พัง
+    //    และเจอของจริง 6 ส.ค. ว่า "แผนบอก HP แต่ในใบเป็น LC" = ยังไม่รู้ว่าฝั่งไหนถูก
+    //    → ห้ามทับอัตโนมัติ ถ้าทับผิดข้าง ครัวทำอาหารผิดประเภทให้ลูกค้าจริงพรุ่งนี้
+    //    ให้บอกแอดมินไปตรวจแทน (ของแบบนี้ต้องคนเคาะ ไม่ใช่โค้ดเดา)
+    if(fromSheet.length){
+      var planCodes=items.map(function(e){return e.code;}).sort().join(",");
+      var haveCodes=fromSheet.map(function(i){return i.menu_code;}).sort().join(",");
+      if(planCodes!==haveCodes)
+        return {id:tgt.id,order_number:tgt.order_number,bad:bad,written:0,conflict:haveCodes};
+    }
+    var killIds=mine.concat(fromSheet).map(function(i){return i.id;});
+
+    if(!items.length) return {id:tgt.id,order_number:tgt.order_number,bad:bad,written:0};
+    for(var k=0;k<killIds.length;k++){
+      var d=await sb_.from("order_items").delete().eq("id",killIds[k]);
+      if(d.error) throw d.error;
+    }
+    var rows=items.map(function(e){
+      var nt=noteSummary(e);              // "ทุกกล่อง: ไม่ผักชี · กล่อง 2: ข้าวไรซ์เบอร์รี่"
+      return { order_id:tgt.id, menu_code:e.code, menu_name:e.name||e.code,
+               quantity:e.qty||1, unit_price:0, subtotal:0,
+               notes: tag+(nt?" | 📌 "+nt:"") };
+    });
+    var ins=await sb_.from("order_items").insert(rows);
+    if(ins.error) throw ins.error;
+    return {id:tgt.id,order_number:tgt.order_number,bad:bad,written:rows.length};
+  }catch(e){ console.error("syncPlanToOrderItems:",e); return null; }
+}
+
 var mpPlanSaveTimers={};
 function saveMpPlanRow(rowId){
   clearTimeout(mpPlanSaveTimers[rowId]);
@@ -1670,7 +1775,9 @@ function saveMpPlanRow(rowId){
       var _mp=await sb_.from("mp_deliveries").update({menu_items:items,status:newStatus,updated_at:new Date().toISOString()}).eq("id",rowId);
       if(_mp.error) throw _mp.error;   // เดิมเงียบสนิท (แก้ 3 ส.ค. 2026)
       r.status=newStatus;
-    }catch(e){console.error("saveMpPlanRow:",e);}
+      var tgt=await syncPlanToOrderItems(r);      // N-33 · ส่งต่อให้ครัว/แมส/รายงานเห็น
+      mpSyncBadge(rowId,tgt);
+    }catch(e){console.error("saveMpPlanRow:",e); mpSyncBadge(rowId,null);}
   },500);
 }
 
@@ -1795,6 +1902,26 @@ function renderMpSummary(){
     +planLine+"<br>"
     +"กำหนดเมนูครบแล้ว: <b>"+doneCount+"/"+rows.length+"</b>"
     +"</div>";
+}
+
+// N-33 · บอกแอดมินด้วยตาว่าแผนเด้งถึงครัวแล้วจริงไหม
+//   เดิมกดแล้วเงียบ — แอดมินไม่มีทางรู้ว่าครัวเห็นหรือเปล่า จนไปเจอตอนของไม่ตรง
+function mpSyncBadge(rowId,tgt){
+  var td=document.querySelector(".assign-cell[data-rowid='"+rowId+"']"); if(!td)return;
+  var b=td.querySelector(".mp-sync");
+  if(!b){ b=document.createElement("div"); b.className="mp-sync"; b.style.cssText="font-size:10px;margin-top:3px;font-weight:700"; td.appendChild(b); }
+  if(!tgt){ b.style.color="#B91C1C"; b.textContent="⚠ ยังไม่มีใบของรอบนี้ — ครัว/แมสมองไม่เห็น"; return; }
+  if(tgt.conflict){
+    b.style.color="#B45309";
+    b.textContent="⚠ ใบนี้มีเมนูเดิมอยู่แล้ว ("+tgt.conflict+") ไม่ทับให้ — ตรวจก่อนว่าอันไหนถูก";
+    return;
+  }
+  if(tgt.bad&&tgt.bad.length){
+    b.style.color="#B45309";
+    b.textContent="⚠ ส่งครัวแล้ว "+tgt.written+" กล่อง · ตกไป "+tgt.bad.length+" (โค้ดเมนูเพี้ยน: "+tgt.bad.join(",")+")";
+    return;
+  }
+  b.style.color="#15803D"; b.textContent="✓ ครัวเห็นแล้ว"+(tgt.order_number?" ("+tgt.order_number+")":"");
 }
 
 function renderPlanCell(rowId){
@@ -3008,6 +3135,10 @@ async function saveMpMenuPicker(id){
     var res=await sb_.from("mp_deliveries").update({menu_items:selArr,status:newStatus,updated_at:new Date().toISOString()}).eq("id",id);
     if(res.error)throw res.error;
     row.menu_items=selArr; row.status=newStatus;
+    // N-33 · ทางเขียนแผนมี 2 ทาง (ตารางแพลนเมนู + ป้อบอัพนี้) — ต้องส่งต่อให้ครัวทั้งคู่
+    //   ไม่งั้นแอดมินแก้จากป้อบอัพ ครัวไม่เห็น = บั๊กเดิมกลับมาทางประตูหลัง
+    var tgt=await syncPlanToOrderItems(row);
+    if(!tgt) alert("บันทึกแผนแล้ว แต่ส่งต่อให้หน้าครัวไม่สำเร็จ — บอกห้องระบบด้วย");
     closeMpMenuPicker();
   }catch(e){alert("บันทึกเมนูไม่ได้");}
 }
