@@ -318,6 +318,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-chip{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:8px;font-size:13px;font-weight:600;cursor:grab;transition:.15s;user-select:none;margin-bottom:5px;border:1.5px solid transparent;}
 .menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
 .menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
+.menu-chip.mp{background:#EEF6F1;color:#1F4D3A;border-color:#B9DCC8;}
 .menu-chip:active{cursor:grabbing;opacity:.7;}
 .menu-chip.dragging{opacity:.4;}
 .assign-chip{display:inline-flex;align-items:center;gap:3px;padding:3px 7px;border-radius:6px;font-size:11px;margin:2px;line-height:1.3;cursor:default;}
@@ -336,6 +337,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .menu-chip{display:flex;align-items:center;gap:5px;padding:7px 10px;border-radius:7px;font-size:13px;font-weight:600;margin-bottom:4px;border:1.5px solid transparent;transition:.1s;}
 .menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
 .menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
+.menu-chip.mp{background:#EEF6F1;color:#1F4D3A;border-color:#B9DCC8;}
 .menu-chip.clickable{cursor:pointer;border-style:dashed;}
 .menu-chip.clickable:hover{opacity:.75;transform:scale(.98);}
 .menu-count-badge{background:rgba(0,0,0,.1);border-radius:10px;padding:1px 6px;font-size:10px;font-family:var(--mono);flex-shrink:0;}
@@ -1435,8 +1437,41 @@ var MENU_POOL=[
   {code:"LC25",name:"สเต็กปลากระพงเพสโต้+ผักย่าง",type:"lc"},
   {code:"HP25",name:"สเต็กปลากระพงเพสโต้+ผักย่าง",type:"hp"}
 ];
-var todayPlan=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
+var todayPlan=["01","02","04","05","07"];   // เก็บเป็น "เลขเมนู" ไม่ใช่ LC01/HP01 (ดูหัวข้อ 🍱 ด้านล่าง)
 var mpRequestMenus=[];  // เมนู Request ที่ลูกค้าเลือกได้ (เก็บ kitchen_data 'mp_request_menus')
+
+// ══════════════════════════════════════
+// 🍱 1 เมนู = 1 บรรทัด — เลิกแยก LC/HP บนหน้าจอ (นัทสั่ง 6 ส.ค. 2569: "ตอนนี้ยังเป็น LC HP อยู่ ใช้งานยาก")
+//
+// ปัญหาเดิม: LC01 กับ HP01 คือ "อกไก่ย่างสมุนไพร" เมนูเดียวกัน ต่างแค่ปริมาณเนื้อ
+//   → รายการซ้ายมี 164 บรรทัด ชื่อซ้ำกันเป็นคู่ๆ แอดมินต้องเลือกให้ถูกว่าลูกค้าคนนี้ HP หรือ LC
+//   → **เลือกลูกค้า HP กับ LC พร้อมกันแล้วกด LC01 = ลูกค้า HP ได้ LC01 ผิดทันที**
+//
+// วิธีแก้: รวมที่ "หน้าจอ" ไม่ต้องแตะข้อมูลใน DB (ไม่ทับงานห้อง P)
+//   · รายการซ้ายโชว์ "เลขเมนู + ชื่อ" ครั้งเดียว → 164 เหลือ ~82 บรรทัด
+//   · ตอนกดใส่ให้ลูกค้า ระบบเลือก LC/HP เองตามแผนที่ลูกค้าคนนั้นสมัคร (mp_deliveries.mp_type)
+//   · รองรับแผนใหม่ (Hyrox ฯลฯ) โดยไม่ต้องแก้โค้ด — แค่มี prefix ใน MENU_POOL ก็ใช้ได้
+// ══════════════════════════════════════
+function mpBaseNo(code){ var m=String(code||"").match(/^[A-Za-z]+(\d+)$/); return m?m[1]:String(code||""); }
+function mpPrefixOf(type){ return String(type||"lc").toUpperCase(); }   // 'hp'→'HP' · 'lc'→'LC' · เผื่อแผนใหม่
+
+// รวม MENU_POOL เป็นรายเมนู: { no:'01', name:'อกไก่ย่าง…', codes:{HP:'HP01',LC:'LC01'} }
+function mpMenuBases(){
+  var by={}, order=[];
+  (MENU_POOL||[]).forEach(function(m){
+    var no=mpBaseNo(m.code), pre=String(m.code||"").replace(/\d+$/,"").toUpperCase();
+    if(!by[no]){ by[no]={no:no, name:m.name||m.code, codes:{}}; order.push(no); }
+    by[no].codes[pre]=m.code;
+    if((m.name||"").length>(by[no].name||"").length) by[no].name=m.name;   // เอาชื่อที่สมบูรณ์กว่า
+  });
+  return order.map(function(n){return by[n];});
+}
+function mpBaseByNo(no){ return mpMenuBases().find(function(b){return b.no===no;}); }
+// เลือกโค้ดจริงให้ตรงกับแผนของลูกค้าแถวนั้น (ไม่มีของแผนนั้น → หยิบตัวที่มี)
+function mpCodeFor(no, mpType){
+  var b=mpBaseByNo(no); if(!b) return no;
+  return b.codes[mpPrefixOf(mpType)] || b.codes.LC || b.codes.HP || Object.values(b.codes)[0] || no;
+}
 
 // 🔴 MENU_POOL ข้างบนเป็นรายการที่ฝังไว้ในไฟล์แค่ 16 ตัว — ค้นหาเมนูเลยเจอไม่ครบ
 //    ทั้งที่ menu_items ใน DB มีเมนู Meal Plan อยู่ 160+ ตัว (นัทเจอเอง 6 ส.ค. 2569)
@@ -1544,13 +1579,19 @@ function clickMenu(code){
     return;
   }
   var added=0, full=0;
+  var baseNo=mpBaseNo(code);                      // รับได้ทั้ง "01" และ "LC01" (ของเก่า)
   selectedRowIds.forEach(function(rowId){
     var r=getMpRow(rowId); if(!r)return;
     if(mpRowTotalQty(rowId)>=mpRowBoxCount(rowId)){ full++; return; }
+    // 🍱 เลือกโค้ดให้ตรงกับแผนของลูกค้าแถวนี้เอง — กดครั้งเดียว ลูกค้า HP ได้ HP· LC ได้ LC
+    var realCode=mpCodeFor(baseNo, r.mp_type);
     var items=r.menu_items?r.menu_items.slice():[];
-    var entry=items.find(function(e){return e.code===code;});
+    var entry=items.find(function(e){return e.code===realCode;});
     if(entry){ entry.qty=(entry.qty||1)+1; }
-    else { var m=MENU_POOL.find(function(x){return x.code===code;}); items.push({code:code,name:m?m.name:code,qty:1,note:""}); }
+    else {
+      var m=MENU_POOL.find(function(x){return x.code===realCode;}) || mpBaseByNo(baseNo);
+      items.push({code:realCode,name:m?m.name:realCode,qty:1,note:""});
+    }
     r.menu_items=items;
     saveMpPlanRow(rowId);
     renderPlanCell(rowId);
@@ -1561,7 +1602,12 @@ function clickMenu(code){
   _buildPlanTable();
   renderLeftPanel();
   var hint=document.getElementById("selectHint");
-  if(hint){ hint.textContent="✅ ใส่ "+code+" ให้ "+added+" ช่อง"+(full?(" (เต็มแล้ว "+full+" ช่อง)"):"")+(selectedRowIds.length?(" — เหลือเลือกอยู่ "+selectedRowIds.length+" ช่อง"):""); hint.style.opacity="1"; }
+  if(hint){
+    var b=mpBaseByNo(baseNo);
+    hint.textContent="✅ ใส่ "+(b?b.name:code)+" ให้ "+added+" ช่อง (ระบบเลือก HP/LC ให้ตามแผนของแต่ละคน)"
+      +(full?(" · เต็มแล้ว "+full+" ช่อง"):"")+(selectedRowIds.length?(" — เหลือเลือกอยู่ "+selectedRowIds.length+" ช่อง"):"");
+    hint.style.opacity="1";
+  }
 }
 function removeMenuEntry(rowId,code){
   var r=getMpRow(rowId); if(!r)return;
@@ -1620,8 +1666,11 @@ function renderMenuSearchResults(q){
   var box=document.getElementById("menuSearchResults"); if(!box)return;
   q=(q||"").trim().toLowerCase();
   if(!q){ box.style.display="none"; box.innerHTML=""; return; }
-  var hits=MENU_POOL.filter(function(m){
-    return (m.code||"").toLowerCase().indexOf(q)>=0 || (m.name||"").toLowerCase().indexOf(q)>=0;
+  // 🍱 ค้นจาก "รายเมนู" ไม่ใช่รายโค้ด — เดิมพิมพ์ "ไก่" ได้ผลซ้ำเป็นคู่ LC/HP ยาวเป็นเท่าตัว
+  var hits=mpMenuBases().filter(function(b){
+    if((b.name||"").toLowerCase().indexOf(q)>=0) return true;
+    if(String(b.no).indexOf(q)>=0) return true;
+    return Object.values(b.codes||{}).some(function(c){return String(c).toLowerCase().indexOf(q)>=0;});
   });
   // เดิม slice(0,30) ตัดทิ้งเงียบๆ — ค้น "ไก่" มี 40 ตัวแต่เห็นแค่ 30 โดยไม่มีอะไรบอก (แก้ 6 ส.ค. 2569)
   var LIMIT=80, matches=hits.slice(0,LIMIT), hidden=hits.length-matches.length;
@@ -1630,12 +1679,13 @@ function renderMenuSearchResults(q){
     box.style.display="block";
     return;
   }
-  box.innerHTML=matches.map(function(m){
-    var already=todayPlan.indexOf(m.code)>=0;
-    return "<div onclick=\"addMenuFromSearch('"+m.code+"')\" style='padding:7px 10px;cursor:"+(already?"default":"pointer")+";border-bottom:1px solid var(--ink-xsoft);display:flex;align-items:center;gap:6px;"+(already?"opacity:.4":"")+"' onmouseover=\"this.style.background='var(--bg)'\" onmouseout=\"this.style.background=''\">"
-      +"<span class='customer-tag "+(m.type==="lc"?"tag-lc":"tag-hp")+"' style='font-size:9px'>"+(m.type||"").toUpperCase()+"</span>"
-      +"<span style='font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0'>"+esc2(m.code)+"</span>"
-      +"<span style='font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+esc2(m.name)+"</span>"
+  box.innerHTML=matches.map(function(b){
+    var already=todayPlan.map(mpBaseNo).indexOf(b.no)>=0;
+    var plans=Object.keys(b.codes||{}).sort().join("/");     // เช่น "HP/LC" — บอกว่าเมนูนี้มีของแผนไหนบ้าง
+    return "<div onclick=\"addMenuFromSearch('"+b.no+"')\" style='padding:7px 10px;cursor:"+(already?"default":"pointer")+";border-bottom:1px solid var(--ink-xsoft);display:flex;align-items:center;gap:6px;"+(already?"opacity:.4":"")+"' onmouseover=\"this.style.background='var(--bg)'\" onmouseout=\"this.style.background=''\">"
+      +"<span style='font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0'>"+esc2(b.no)+"</span>"
+      +"<span style='font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+esc2(b.name)+"</span>"
+      +"<span style='font-size:10px;color:var(--ink-soft);flex-shrink:0'>"+esc2(plans)+"</span>"
       +(already?"<span style='font-size:11px;color:var(--ink-soft)'>เพิ่มแล้ว</span>":"")
       +"</div>";
   }).join("")
@@ -1646,7 +1696,8 @@ function renderMenuSearchResults(q){
   box.style.display="block";
 }
 function addMenuFromSearch(code){
-  if(todayPlan.indexOf(code)<0){ todayPlan.push(code); renderLeftPanel(); }
+  var no=mpBaseNo(code);
+  if(todayPlan.map(mpBaseNo).indexOf(no)<0){ todayPlan.push(no); renderLeftPanel(); }
   var input=document.getElementById("menuSearchBox");
   var box=document.getElementById("menuSearchResults");
   if(input) input.value="";
@@ -1660,14 +1711,27 @@ document.addEventListener("click",function(e){
 });
 
 // ระบุ dateStr เพื่อนับเฉพาะวันนั้น (ตาม planDateFilter ที่กำลังดูอยู่) — ไม่ระบุ = รวมทุกวัน (เดิม)
+// นับรวมทุกแผน (HP+LC) ของเมนูเดียวกัน — รับได้ทั้ง "01" และ "LC01"
 function countMenu(code,dateStr){
-  var total=0;
+  var no=mpBaseNo(code), total=0;
   mpPlanRows.forEach(function(r){
     if(dateStr && r.delivery_date!==dateStr) return;
-    var entry=(r.menu_items||[]).find(function(e){return e.code===code;});
-    if(entry)total+=(entry.qty||1);
+    (r.menu_items||[]).forEach(function(e){ if(mpBaseNo(e.code)===no) total+=(e.qty||1); });
   });
   return total;
+}
+// แยกยอดตามแผน เช่น {HP:4, LC:7} — ให้แอดมินเห็นว่าเมนูนี้ใครได้บ้าง
+function countMenuByPlan(code,dateStr){
+  var no=mpBaseNo(code), out={};
+  mpPlanRows.forEach(function(r){
+    if(dateStr && r.delivery_date!==dateStr) return;
+    (r.menu_items||[]).forEach(function(e){
+      if(mpBaseNo(e.code)!==no) return;
+      var p=String(e.code||"").replace(/\d+$/,"").toUpperCase()||"?";
+      out[p]=(out[p]||0)+(e.qty||1);
+    });
+  });
+  return out;
 }
 
 function renderLeftPanel(){
@@ -1675,15 +1739,18 @@ function renderLeftPanel(){
   var titleEl=document.getElementById("planPanelTitle");
   if(titleEl)titleEl.textContent=planDateFilter?("เมนูวันที่ "+fmtD(new Date(planDateFilter+'T00:00:00'))):"เมนูทุกวัน (รวม)";
   var h="";
-  todayPlan.forEach(function(code){
-    var m=MENU_POOL.find(function(x){return x.code===code;})||{code:code,name:code,type:"lc"};
-    var cnt=countMenu(code,planDateFilter);
-    var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
-    h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
-    h+="<span style='font-family:var(--mono);font-size:12px;font-weight:700'>"+code+"</span>";
-    h+=" <span style='font-size:12px;opacity:.85;flex:1;line-height:1.35'>"+esc2(m.name)+"</span>";
-    if(cnt>0)h+=" <span class='menu-count-badge'>×"+cnt+"</span>";
+  var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
+  // 🍱 1 เมนู = 1 บรรทัด (ไม่แยก LC/HP แล้ว) · ตัวเลขข้างหลังคือยอดรวมทุกแผน + แยกให้ดูว่าใครได้เท่าไหร่
+  todayPlan.map(mpBaseNo).filter(function(v,i,a){return a.indexOf(v)===i;}).forEach(function(no){
+    var b=mpBaseByNo(no)||{no:no,name:no,codes:{}};
+    var cnt=countMenu(no,planDateFilter), byPlan=countMenuByPlan(no,planDateFilter);
+    var parts=Object.keys(byPlan).sort().map(function(p){return p+" "+byPlan[p];}).join(" · ");
+    h+="<div class='menu-chip mp"+(active?" clickable":"")+"' onclick='clickMenu(\""+no+"\")' title='"+esc2(b.name)+"'>";
+    h+="<span style='font-family:var(--mono);font-size:12px;font-weight:700'>"+esc2(no)+"</span>";
+    h+=" <span style='font-size:12px;opacity:.85;flex:1;line-height:1.35'>"+esc2(b.name)+"</span>";
+    if(cnt>0)h+=" <span class='menu-count-badge' title='"+esc2(parts)+"'>×"+cnt+"</span>";
     h+="</div>";
+    if(cnt>0&&parts) h+="<div style='font-size:10.5px;color:var(--ink-soft);margin:-3px 0 5px 8px'>"+esc2(parts)+"</div>";
   });
   el.innerHTML=h;
   renderMpSummary();
@@ -1693,13 +1760,15 @@ function renderLeftPanel(){
 function renderMpSummary(){
   var el=document.getElementById("menuSummary"); if(!el)return;
   var rows=planDateFilter?mpPlanRows.filter(function(r){return r.delivery_date===planDateFilter;}):mpPlanRows;
-  var hp=rows.filter(function(r){return r.mp_type==="hp";}).length;
-  var lc=rows.filter(function(r){return r.mp_type==="lc";}).length;
+  // นับตามแผนที่มีอยู่จริง ไม่ fix ชื่อ HP/LC ไว้ในโค้ด — เพิ่มแผนใหม่ (Hyrox ฯลฯ) แล้วโผล่เอง
+  var byPlan={};
+  rows.forEach(function(r){ var k=String(r.mp_type||"?").toUpperCase(); byPlan[k]=(byPlan[k]||0)+1; });
+  var planLine=Object.keys(byPlan).sort().map(function(k){return k+": <b>"+byPlan[k]+"</b>";}).join(" · ")||"—";
   var doneCount=rows.filter(function(r){return mpRowTotalQty(r.id)>=mpRowBoxCount(r.id);}).length;
   el.innerHTML="<div style='font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;'>📊 สรุป"+(planDateFilter?"":"ทั้งหมด")+"</div>"
     +"<div style='font-size:13px;color:var(--ink);line-height:1.9;'>"
     +"รอบทั้งหมด: <b>"+rows.length+"</b><br>"
-    +"HP: <b>"+hp+"</b> · LC: <b>"+lc+"</b><br>"
+    +planLine+"<br>"
     +"กำหนดเมนูครบแล้ว: <b>"+doneCount+"/"+rows.length+"</b>"
     +"</div>";
 }
