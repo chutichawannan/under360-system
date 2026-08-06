@@ -18,32 +18,32 @@
   .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
   h1{font-size:18px;font-weight:900;margin:10px 0 1px}
   .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
-  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;margin:8px 0}
+  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:10px 0}
   .tools{display:flex;gap:6px;margin-bottom:10px}
   .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
   .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
   .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.hx{color:var(--hx)}
   .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
   .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}.c.hx{border-color:#FDE68A}
-  .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:6px;align-items:center}
+  .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
   .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}.c.hx .ch{background:var(--hxbg)}
   .ch .nm{font-weight:900;font-size:14.5px;line-height:1.2}
-  .ch .pl{font-size:11px;font-weight:700;opacity:.85}
+  .ch .pl{font-size:11.5px;font-weight:800;margin-top:1px}
   .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}.c.hx .ch .pl{color:var(--hx)}
-  .ch .bx{flex:none;font-size:12px;font-weight:900;background:#fff;border-radius:999px;padding:2px 9px;white-space:nowrap}
+  .ch .bx{flex:none;font-size:13px;font-weight:900;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
   .note{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
   .gift{background:#FFFBEB;color:#92400E;font-size:11.5px;font-weight:800;padding:4px 10px;border-top:1px solid var(--line)}
   .it{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center;cursor:pointer;user-select:none}
   .it:hover{background:#FAFAFA}
-  .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:12px}
+  .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
   .it.done .bo{background:var(--head);border-color:var(--head)}
   .it.done .tx{text-decoration:line-through;color:var(--soft)}
   .it .no{flex:none;font-weight:900;color:var(--soft);width:20px;font-size:12px;text-align:right}
   .it .tx{flex:1;font-size:13.5px;font-weight:700;line-height:1.25}
-  .it .tx i{font-style:normal;color:var(--soft);font-size:11.5px;font-weight:600}
-  .it .x2{flex:none;font-size:12px;font-weight:900;color:var(--hx);background:var(--hxbg);border-radius:5px;padding:1px 6px}
-  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:8px}
-  @media print{.wrap{max-width:100%} body{font-size:11.5px} .langbar,.tools{display:none} .c{break-inside:avoid;margin-bottom:5px}}
+  .it .tx small{color:var(--soft);font-size:11.5px;font-weight:600}
+  .it .tx small::before{content:' · '}
+  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:12.5px} .langbar,.tools{display:none} .c{break-inside:avoid}}
 </style>
 </head>
 <body>
@@ -56,7 +56,7 @@
 <div class="vbanner" id="vbanner"></div>
 
 <h1>📦 <span data-i="title">ใบจัดของ — ศุกร์ 7 ส.ค.</span></h1>
-<div class="sub" data-i="sub">15 ลูกค้า · 117 กล่อง — แตะติ๊กเมื่อจัดเสร็จ</div>
+<div class="sub" data-i="sub">15 ลูกค้า · 117 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ</div>
 <div class="tools">
   <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
@@ -72,21 +72,23 @@
 </div>
 
 <script>
+// ── เมนูกลาง ──
 var M = {
- 1:{th:'อกไก่ Piri Piri', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇ Piri Piri', my:'ကြက်ရင်သား Piri Piri', p:{th:'อกไก่ · มันฝรั่ง',shn:'ၼိူဝ်ႉၵႆႇ · မၢၼ်းႁိုဝ်ႉ',my:'ကြက်သား · အာလူး'}},
- 2:{th:'สเต๊กไก่พริกไทยดำ', shn:'ၵႆႇ ဆော့စ်ၽိတ်ႉထႆလမ်', my:'ကြက် ငရုတ်ကောင်းမည်း', p:{th:'อกไก่ · ข้าว',shn:'ၼိူဝ်ႉၵႆႇ · ၶဝ်ႈ',my:'ကြက်သား · ထမင်း'}},
- 3:{th:'ไก่โรสต์มะนาวโรสแมรี', shn:'ၵႆႇၽဝ် မၢၵ်ႇၼၢဝ်+Rosemary', my:'ကြက်ကင် သံပုရာ', p:{th:'อกไก่ · มันฝรั่ง',shn:'ၼိူဝ်ႉၵႆႇ · မၢၼ်းႁိုဝ်ႉ',my:'ကြက်သား · အာလူး'}},
- 4:{th:'หมูย่างเกลือ', shn:'ၼိူဝ်ႉမူႇၽဝ်ၵိူဝ်', my:'ဝက်ကင် ဆား', p:{th:'สันในหมู · มันหวาน',shn:'ၼိူဝ်ႉမူႇ · မၢၼ်းဝၢၼ်',my:'ဝက်သား · ကန်စွန်းဥ'}},
- 5:{th:'หมูผัดกิมจิ', shn:'ၼိူဝ်ႉမူႇၽတ်ႉ Kimchi', my:'ဝက် ကင်ချိကြော်', p:{th:'สันในหมู · ข้าว',shn:'ၼိူဝ်ႉမူႇ · ၶဝ်ႈ',my:'ဝက်သား · ထမင်း'}},
- 6:{th:'กุ้งอบวุ้นเส้น', shn:'ၵုင်ႈဢုပ်ႇ ၶဝ်ႈသဵၼ်ႈသႂ်', my:'ပုစွန် ကြာဇံအုပ်', p:{th:'กุ้ง · วุ้นเส้น',shn:'ၵုင်ႈ · ၶဝ်ႈသဵၼ်ႈသႂ်',my:'ပုစွန် · ကြာဇံ'}},
- 7:{th:'แซลมอนอบเลมอนดิล', shn:'Salmon ဢုပ်ႇ Lemon Dill', my:'ဆယ်လ်မွန် သံပုရာဒီး', p:{th:'แซลมอน · มันฝรั่ง',shn:'Salmon · မၢၼ်းႁိုဝ်ႉ',my:'ဆယ်လ်မွန် · အာလူး'}},
- 8:{th:'กระพงนึ่งมะนาว', shn:'ပႃႇၵြပွင်းၼိုင်ႈ မၢၵ်ႇၼၢဝ်', my:'ကကတစ်ပေါင်း သံပုရာ', p:{th:'กระพง · ข้าว',shn:'ပႃႇၵြပွင်း · ၶဝ်ႈ',my:'ကကတစ် · ထမင်း'}},
- 9:{th:'แซลมอนเพสโต้', shn:'Salmon Pesto', my:'ဆယ်လ်မွန် ပက်စတို', p:{th:'แซลมอน · พาสต้าฟูซิลี่',shn:'Salmon · Pasta',my:'ဆယ်လ်မွန် · ပါစတာ'}},
- 10:{th:'กระพงนึ่งซีอิ๊ว', shn:'ပႃႇၵြပွင်းၼိုင်ႈ ၸီးဢိဝ်ႇ', my:'ကကတစ်ပေါင်း ပဲငံပြာရည်', p:{th:'กระพง · ข้าว · ซีอิ๊ว',shn:'ပႃႇၵြပွင်း · ၶဝ်ႈ',my:'ကကတစ် · ထမင်း'}},
- 11:{th:'กะเพราเนื้อไข่ดาว', shn:'ၼိူဝ်ႉဝူဝ်း ၽတ်ႉဢဝ်းႁွမ် + ၶႆႇတၢဝ်', my:'အမဲပဒဲကြော် + ကြက်ဥကြော်', p:{th:'เนื้อวัว · ไข่ดาว · ข้าว',shn:'ၼိူဝ်ႉဝူဝ်း · ၶႆႇ · ၶဝ်ႈ',my:'အမဲ · ဥ · ထမင်း'}},
- 66:{th:'เส้นหมี่น้ำเงี้ยวอกไก่', shn:'ၶဝ်ႈသဵၼ်ႈ ၼမ်ႉငႄႇဝ် ၵႆႇ', my:'ကြက် နမ်းငြေါ ခေါက်ဆွဲ', p:{th:'อกไก่ · เส้นหมี่',shn:'ၼိူဝ်ႉၵႆႇ · ၶဝ်ႈသဵၼ်ႈ',my:'ကြက်သား · ခေါက်ဆွဲ'}},
- 67:{th:'กระพงอบซอสเต้าเจี้ยว', shn:'ပႃႇၵြပွင်း ဆော့စ်တဝ်ႇၸဵဝ်ႈ', my:'ကကတစ် ပဲငံပြာဆော့စ်', p:{th:'กระพง · ข้าว',shn:'ပႃႇၵြပွင်း · ၶဝ်ႈ',my:'ကကတစ် · ထမင်း'}}
+ 1:{th:'อกไก่ Piri Piri', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇ Piri Piri', my:'ကြက်ရင်သား Piri Piri', p:{th:'อกไก่',shn:'ၼိူဝ်ႉၵႆႇ',my:'ကြက်သား'}},
+ 2:{th:'สเต๊กไก่พริกไทยดำ', shn:'ၵႆႇ ဆော့စ်ၽိတ်ႉထႆလမ်', my:'ကြက် ငရုတ်ကောင်းမည်း', p:{th:'อกไก่',shn:'ၼိူဝ်ႉၵႆႇ',my:'ကြက်သား'}},
+ 3:{th:'ไก่โรสต์มะนาวโรสแมรี', shn:'ၵႆႇၽဝ် မၢၵ်ႇၼၢဝ်+Rosemary', my:'ကြက်ကင် သံပုရာ', p:{th:'อกไก่',shn:'ၼိူဝ်ႉၵႆႇ',my:'ကြက်သား'}},
+ 4:{th:'หมูย่างเกลือ', shn:'ၼိူဝ်ႉမူႇၽဝ်ၵိူဝ်', my:'ဝက်ကင် ဆား', p:{th:'สันในหมู',shn:'ၼိူဝ်ႉမူႇ',my:'ဝက်သား'}},
+ 5:{th:'หมูผัดกิมจิ', shn:'ၼိူဝ်ႉမူႇၽတ်ႉ Kimchi', my:'ဝက် ကင်ချိကြော်', p:{th:'สันในหมู',shn:'ၼိူဝ်ႉမူႇ',my:'ဝက်သား'}},
+ 6:{th:'กุ้งอบวุ้นเส้น', shn:'ၵုင်ႈဢုပ်ႇ ၶဝ်ႈသဵၼ်ႈသႂ်', my:'ပုစွန် ကြာဇံအုပ်', p:{th:'กุ้ง',shn:'ၵုင်ႈ',my:'ပုစွန်'}},
+ 7:{th:'แซลมอนอบเลมอนดิล', shn:'Salmon ဢုပ်ႇ Lemon Dill', my:'ဆယ်လ်မွန် သံပုရာဒီး', p:{th:'แซลมอน',shn:'Salmon',my:'ဆယ်လ်မွန်'}},
+ 8:{th:'กระพงนึ่งมะนาว', shn:'ပႃႇၵြပွင်းၼိုင်ႈ မၢၵ်ႇၼၢဝ်', my:'ကကတစ်ပေါင်း သံပုရာ', p:{th:'กระพง',shn:'ပႃႇၵြပွင်း',my:'ကကတစ်'}},
+ 9:{th:'แซลมอนเพสโต้', shn:'Salmon Pesto', my:'ဆယ်လ်မွန် ပက်စတို', p:{th:'แซลมอน',shn:'Salmon',my:'ဆယ်လ်မွန်'}},
+ 66:{th:'เส้นหมี่น้ำเงี้ยวอกไก่', shn:'ၶဝ်ႈသဵၼ်ႈ ၼမ်ႉငႄႇဝ် ၵႆႇ', my:'ကြက် နမ်းငြေါ ခေါက်ဆွဲ', p:{th:'อกไก่',shn:'ၼိူဝ်ႉၵႆႇ',my:'ကြက်သား'}},
+ 67:{th:'กระพงอบซอสเต้าเจี้ยว', shn:'ပႃႇၵြပွင်း ဆော့စ်တဝ်ႇၸဵဝ်ႈ', my:'ကကတစ် ပဲငံပြာဆော့စ်', p:{th:'กระพง',shn:'ပႃႇၵြပွင်း',my:'ကကတစ်'}},
+ 70:{th:'Sushi Bake แซลมอน อโวคาโด', shn:'Sushi Bake Salmon Avocado', my:'Sushi Bake ဆယ်လ်မွန်', p:{th:'แซลมอน',shn:'Salmon',my:'ဆယ်လ်မွန်'}},
+ 83:{th:'ข้าวผัดน้ำพริกปลาทู', shn:'ၶဝ်ႈၽတ်ႉ ၼမ်ႉၽိတ်ႉ ပႃႇတူ', my:'ငရုတ်သုပ်ထမင်းကြော် ငါးကွမ်းရှပ်', p:{th:'ปลาทู',shn:'ပႃႇတူ',my:'ငါးကွမ်းရှပ်'}}
 };
+// ── ลูกค้า ──
 var C = [
  {g:'lc', n:{th:'มีมี่',shn:'Mimi',my:'Mimi'}, line:'LINE: Mimi', box:7, items:[1,2,3,4,5,6,7],
   note:{th:'🔴 เมนู 1 ตัดพริกหยวกออก (ใช้ซูกินี/แครอทแทน)', shn:'🔴 မဵၼ်ႇ 1 တတ်းဢွၵ်ႇၽိတ်ႉယူၺ်း', my:'🔴 မီနူး ၁ ငရုတ်ကောင်းဖြုတ်'}},
@@ -101,34 +103,35 @@ var C = [
  {g:'hp', n:{th:'ฝน',shn:'Fon',my:'Fon'}, line:'LINE: Numfon', box:7, items:[1,2,3,4,5,6,7],
   note:{th:'📌 ส่งทั้งหมด 24 รอบ', shn:'📌 သူင်ႇ 24 ၶိုၼ်ႈ', my:'📌 ၂၄ ကြိမ် ပို့'}},
  {g:'hp', n:{th:'โมจิ',shn:'Moji',my:'Moji'}, line:'LINE: Moji Phavinee', box:7, items:[1,2,3,4,5,6,7],
-  note:{th:'📌 เปลี่ยนที่อยู่จัดส่ง — เช็คก่อนส่ง', shn:'📌 လႅၵ်ႈတီႈယူႇ — ၵူတ်ႇတူၺ်းၵွၼ်ႇ', my:'📌 လိပ်စာပြောင်း — အရင်စစ်ပါ'}},
+  note:{th:'📌 เปลี่ยนที่อยู่จัดส่ง — เช็คที่อยู่ก่อนส่ง', shn:'📌 လႅၵ်ႈတီႈယူႇ — ၵူတ်ႇတူၺ်းၵွၼ်ႇ', my:'📌 လိပ်စာပြောင်း — အရင်စစ်ပါ'}},
  {g:'hp', n:{th:'Bright panisara',shn:'Bright',my:'Bright'}, line:'', box:7, items:[1,2,3,4,5,6,7]},
 
- {g:'hx', n:{th:'คุณเฉียง 👑',shn:'Chia 👑',my:'Chia 👑'}, line:'Influencer · VIP · รอบ 3', box:12, items:[[1,2],2,3,4,5,6,7,8,9,10,11],
-  note:{th:'👑 VIP · Piri Piri 2 กล่อง — เช็คให้ครบ 12', shn:'👑 VIP · Piri Piri 2 ႁိပ်ႇ — ႁႂ်ႈတဵမ် 12', my:'👑 VIP · Piri Piri ၂ ဘူး — ၁၂ ပြည့်အောင်'}},
- {g:'hx', n:{th:'พัดชา',shn:'Patcha',my:'Patcha'}, line:'LINE: pat · รอบ 2', box:9, items:[2,3,4,6,7,8,9,10,11], gift:1},
- {g:'hx', n:{th:'นวภัท (007)',shn:'Nawaphat (007)',my:'Nawaphat (007)'}, line:'รอบ 3', box:9, items:[1,2,3,6,7,8,9,10,11], gift:1,
-  note:{th:'🔴 ไม่ทานหมู — ห้ามใส่เมนู 4, 5', shn:'🔴 ဢမ်ႇၵိၼ်ၼိူဝ်ႉမူ — ႁၢမ်ႈမဵၼ်ႇ 4, 5', my:'🔴 ဝက်မစား — မီနူး ၄, ၅ မထည့်ရ'}},
- {g:'hx', n:{th:'กวาง',shn:'Kwang',my:'Kwang'}, line:'IG: Farung · รอบ 1', box:9, items:[1,2,3,4,5,6,7,8,9]},
- {g:'hx', n:{th:'Supatcha (TooN)',shn:'Supatcha (TooN)',my:'Supatcha (TooN)'}, line:'LINE: TooN · รอบ 2', box:9, items:[1,2,3,4,5,6,7,8,9], gift:1},
- {g:'hx', n:{th:'Monchuta',shn:'Monchuta',my:'Monchuta'}, line:'Influencer · รอบ 2', box:6, items:[1,2,3,6,7,8],
-  note:{th:'🚚 ส่ง Nim Express', shn:'🚚 Nim Express', my:'🚚 Nim Express'}}
+ {g:'hx', n:{th:'คุณเฉียง 👑',shn:'Chia 👑',my:'Chia 👑'}, line:'Influencer Hyrox · VIP', box:12, items:[1,2,3,4,5,6,7,8,66,67,70,83],
+  note:{th:'👑 VIP — เมนูห้ามซ้ำรอบก่อน · เช็คให้ครบ 12 กล่อง', shn:'👑 VIP — ဢမ်ႇသမ်ႇမဵၼ်ႇၵဝ်ႇ · ႁႂ်ႈတဵမ် 12', my:'👑 VIP — မီနူးမထပ်ရ · ၁၂ ဘူးပြည့်အောင်'}},
+ {g:'hx', n:{th:'พัดชา',shn:'Patcha',my:'Patcha'}, line:'LINE: pat', box:9, items:[1,2,3,4,5,6,7,8,9], gift:1},
+ {g:'hx', n:{th:'นวภัท (007)',shn:'Nawaphat (007)',my:'Nawaphat (007)'}, line:'', box:9, items:[1,2,3,6,7,8,9,70,83], gift:1,
+  note:{th:'🔴 ไม่ทานหมู — ห้ามใส่เมนู 4, 5 (ได้ 70 + 83 แทน)', shn:'🔴 ဢမ်ႇၵိၼ်ၼိူဝ်ႉမူ — ႁၢမ်ႈမဵၼ်ႇ 4, 5', my:'🔴 ဝက်မစား — မီနူး ၄, ၅ မထည့်ရ'}},
+ {g:'hx', n:{th:'กวาง',shn:'Kwang',my:'Kwang'}, line:'IG: Farung Yuthithum', box:9, items:[1,2,3,4,5,6,7,8,9]},
+ {g:'hx', n:{th:'Supatcha (TooN)',shn:'Supatcha (TooN)',my:'Supatcha (TooN)'}, line:'LINE: TooN', box:9, items:[1,2,3,4,5,6,7,8,9], gift:1},
+ {g:'hx', n:{th:'Monchuta',shn:'Monchuta',my:'Monchuta'}, line:'Influencer Hyrox', box:6, items:[1,3,4,6,7,8],
+  note:{th:'🚚 ส่ง Nim Express · เมนูชุดนี้ผมจัดให้ (แอดมินเปลี่ยนได้ แต่ต้องมีครบ 6)', shn:'🚚 Nim Express · မဵၼ်ႇၸုတ်ႉၼႆႉ ၸတ်းပၼ် (လႅၵ်ႈလႆႈ ႁႂ်ႈတဵမ် 6)', my:'🚚 Nim Express · ဒီမီနူးစီပေးထား (ပြောင်းလို့ရ ၆ ခုပြည့်ရမည်)'}}
 ];
 var G = {
-  lc:{th:'■ LC — เนื้อ 120g (5 คน)', shn:'■ LC — ၼိူဝ်ႉ 120g (5)', my:'■ LC — အသား ၁၂၀g (၅)'},
-  hp:{th:'■ HP — เนื้อ 170g (4 คน)', shn:'■ HP — ၼိူဝ်ႉ 170g (4)', my:'■ HP — အသား ၁၇၀g (၄)'},
-  hx:{th:'■ HYROX — เนื้อ 170g + คาร์บสูง (6 คน)', shn:'■ HYROX — ၼိူဝ်ႉ 170g + ၶၢပ်ႈ (6)', my:'■ HYROX — အသား ၁၇၀g + ကာဗို (၆)'}
+  lc:{th:'■ LC — เนื้อ 120g (5 คน)', shn:'■ LC — ၼိူဝ်ႉ 120g (5 ၵေႃႉ)', my:'■ LC — အသား ၁၂၀g (၅ ဦး)'},
+  hp:{th:'■ HP — เนื้อ 170g (4 คน)', shn:'■ HP — ၼိူဝ်ႉ 170g (4 ၵေႃႉ)', my:'■ HP — အသား ၁၇၀g (၄ ဦး)'},
+  hx:{th:'■ HYROX — เนื้อ 170g + คาร์บสูง (6 คน)', shn:'■ HYROX — ၼိူဝ်ႉ 170g + ၶၢပ်ႈၼမ် (6 ၵေႃႉ)', my:'■ HYROX — အသား ၁၇၀g + ကာဗို (၆ ဦး)'}
 };
 var UI = {
   title:{th:'ใบจัดของ — ศุกร์ 7 ส.ค.', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းသုၵ်း 7 ဢေႃးၵၢတ်ႉ', my:'ထုပ်ပိုးစာရွက် — သောကြာ ၇ သြဂုတ်'},
-  sub:{th:'15 ลูกค้า · 117 กล่อง — แตะติ๊กเมื่อจัดเสร็จ', shn:'15 ၵေႃႉ · 117 ႁိပ်ႇ — တႅမ်ႈမၢႆမိူဝ်ႈယဝ်ႉ', my:'၁၅ ဦး · ၁၁၇ ဘူး — ပြီးရင် အမှတ်ခြစ်'},
+  sub:{th:'15 ลูกค้า · 117 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ', shn:'15 ၵေႃႉ · 117 ႁိပ်ႇ — တႅမ်ႈမၢႆမိူဝ်ႈယဝ်ႉ', my:'၁၅ ဦး · ၁၁၇ ဘူး — ပြီးရင် အမှတ်ခြစ်'},
   btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
   btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
   gift:{th:'🎁 แถม Maurten Gel 100 — 1 ซอง', shn:'🎁 ထႅမ် Maurten Gel 100 — 1 ထူင်', my:'🎁 Maurten Gel 100 — ၁ ထုပ်'},
   boxes:{th:'กล่อง', shn:'ႁိပ်ႇ', my:'ဘူး'},
   f1:{th:'รวม 117 กล่อง — LC 5 คน · HP 4 คน · Hyrox 6 คน', shn:'ႁူမ်ႈ 117 ႁိပ်ႇ — LC 5 · HP 4 · Hyrox 6', my:'စုစုပေါင်း ၁၁၇ ဘူး — LC ၅ · HP ၄ · Hyrox ၆'},
   f2:{th:'🎁 Maurten Gel: พัดชา · นวภัท · Supatcha (คนละ 1 ซอง)', shn:'🎁 Maurten Gel: Patcha · Nawaphat · Supatcha', my:'🎁 Maurten Gel: Patcha · Nawaphat · Supatcha'},
-  f3:{th:'LC = เนื้อ 120g · HP = เนื้อ 170g · HYROX = เนื้อ 170g + คาร์บสูง', shn:'LC = 120g · HP = 170g · HYROX = 170g + ၶၢပ်ႈၼမ်', my:'LC = ၁၂၀g · HP = ၁၇၀g · HYROX = ၁၇၀g + ကာဗို'}
+  f3:{th:'LC = เนื้อ 120g · HP = เนื้อ 170g · HYROX = เนื้อ 170g + คาร์บสูง', shn:'LC = 120g · HP = 170g · HYROX = 170g + ၶၢပ်ႈၼမ်', my:'LC = ၁၂၀g · HP = ၁၇၀g · HYROX = ၁၇၀g + ကာဗို'},
+  pick:{th:'เลือก 6 เมนูจาก 1–9 (ยังไม่กำหนด)', shn:'လိူၵ်ႈ 6 မဵၼ်ႇ တီႈ 1–9', my:'၁–၉ ထဲက ၆ ခုရွေး'}
 };
 var V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
 var lang='th';
@@ -143,12 +146,11 @@ function render(){
        + '</div><span class="bx">'+c.box+' '+esc(UI.boxes[lang])+'</span></div>';
     if(c.note) h += '<div class="note">'+esc(c.note[lang])+'</div>';
     if(c.gift) h += '<div class="gift">'+esc(UI.gift[lang])+'</div>';
-    c.items.forEach(function(it){
-      var code = Array.isArray(it)?it[0]:it, qty = Array.isArray(it)?it[1]:1;
+    if(c.items.length===0){ h += '<div class="it"><span class="bo"></span><span class="no">?</span><span class="tx">'+esc(UI.pick[lang])+'</span></div>'; }
+    c.items.forEach(function(code){
       var m=M[code], k=ci+'-'+code, on=done[k]?' done':'';
       h += '<div class="it'+on+'" onclick="tog(\''+k+'\',this)"><span class="bo">✓</span><span class="no">'+code+'</span>'
-         + '<span class="tx">'+esc(m[lang])+' <i>'+esc(m.p[lang])+'</i></span>'
-         + (qty>1?'<span class="x2">×'+qty+'</span>':'') + '</div>';
+         + '<span class="tx">'+esc(m[lang])+'<small>'+esc(m.p[lang])+'</small></span></div>';
     });
     h += '</div>';
   });
