@@ -1883,25 +1883,60 @@ function refreshItemViews(){
 // ⚠️ เคยเข้าใจผิดว่ามีแท็บ "⭐ สัปดาห์นี้" แยกต่างหาก แล้วเขียนโค้ดดึงเมนูข้ามหมวดมารวม
 //    ที่จริง `no_special` **คือแท็บ "ข้าวกล่อง"** (แอดมินตั้งชื่อไว้แบบนั้น) → ดึงข้ามหมวดกลายเป็น
 //    เอาแพคกับข้าวไปโผล่ในข้าวกล่อง = ผิด · ถอดออกแล้ว เหลือแค่ "ดันขึ้นบนสุดในแท็บตัวเอง"
-const isWeeklySpecial = m => !!(m && m.is_weekly_special);
+// ── ชื่อเล่นเมนู (subcode) + ป้ายบอกสัปดาห์ ────────────────────────────────
+// นัทเคาะเอง 6 ส.ค. 2569: **ทุกเมนูที่ไม่ใช่เมนูประจำ ต้องมีป้ายบอกว่าของสัปดาห์ไหน**
+//   · เมนูประจำ = No1–No15 (ข้าวกล่อง) · A1–A17 (แพ็คกับข้าว) — มีตลอด ไม่ต้องมีป้าย
+//   · เมนูหมุนสัปดาห์ = รหัส S… และ D… — ต้องมีชื่อเล่นและป้ายเสมอ
+// ชื่อเล่น = ที่ครัวและลูกค้าเรียกกันจริง (S1–S8 / D1–D5) ไม่ใช่รหัสจริงในระบบ
+// ของค้างข้ามสัปดาห์เติม x นำหน้า: xS3 = ค้างมา 1 สัปดาห์ · xxS3 = 2 สัปดาห์
+//   (จำนวน x = อ่านของค้างสต็อกได้ด้วยตาเปล่า — เป็นภาษาภายใน ไม่ยกไปโชว์ลูกค้าตรงๆ)
+//
+// ⚠️ ยึด subcode เป็นตัวตัดสินตัวเดียว ไม่ใช่ is_weekly_special
+//    ตรวจ DB จริงแล้ว 2 ช่องนี้ตรงกันเป๊ะทั้ง 13 แถว = ซ้ำซ้อนกันอยู่
+//    เหลือช่องเดียวให้แอดมินกรอก = ไม่มีทางที่ 2 ช่องขัดกันเองในอนาคต
+//    (คง is_weekly_special ไว้เป็นทางสำรอง เผื่อมีแถวติดธงแต่ยังไม่ได้ตั้งชื่อเล่น)
+function subcodeInfo(m){
+  const raw = String(m && m.subcode || '').trim();
+  if (!raw) return null;
+  const mm = raw.match(/^(x*)(.*)$/i) || [];
+  const label = String(mm[2] || raw).toUpperCase();
+  const n = parseInt(label.replace(/\D/g,''), 10);
+  return { raw, stale: String(mm[1]||'').length, label, no: isNaN(n) ? 9999 : n };
+}
+const isWeeklySpecial = m => !!(subcodeInfo(m) || (m && m.is_weekly_special));
 
 function menuItemsForCat(cat){
   return menuItems.filter(m => m.category === cat);
 }
-// ของสัปดาห์นี้ขึ้นก่อนเสมอ แล้วค่อยเรียงตามลำดับเดิมที่แอดมินจัดไว้
-// ของสัปดาห์นี้ขึ้นก่อนเสมอ · เรียงตามชื่อเล่น S1→S8 / D1→D5 ให้ตรงกับลำดับในโบรชัวร์
-// (ที่เหลือเรียงตามลำดับเดิมที่แอดมินจัดไว้)
+// ลำดับที่ลูกค้าเห็น: ของสัปดาห์นี้ (S1→S8) → ของสัปดาห์ก่อน (ใหม่กว่าขึ้นก่อน) → เมนูประจำ
+// เดิมดันของหมุนสัปดาห์ขึ้นบนโดยไม่แยกว่าสัปดาห์ไหน + ป้ายเขียนว่า "สัปดาห์นี้" เหมือนกันหมด
+//   → จอมือถือเห็นทีละ ~8 แถว = แถวแรกๆ ติดดาวหมด ดูเหมือนติดมั่วทุกเมนู (นัทเจอเอง 6 ส.ค.)
 function subcodeNo(m){
-  const n = parseInt(String(m && m.subcode || '').replace(/\D/g,''), 10);
-  return isNaN(n) ? 9999 : n;
+  const s = subcodeInfo(m);
+  return s ? s.no : 9999;
+}
+function weeklyRank(m){
+  const s = subcodeInfo(m);
+  if (s) return s.stale;                       // 0 = สัปดาห์นี้ · 1,2… = ค้างมากี่สัปดาห์
+  return (m && m.is_weekly_special) ? 0 : 99;  // ติดธงแต่ยังไม่ได้ตั้งชื่อเล่น
 }
 function sortWeeklyFirst(list){
   return list.slice().sort((a,b) => {
-    const wa = isWeeklySpecial(a), wb = isWeeklySpecial(b);
-    if (wa !== wb) return wa ? -1 : 1;
-    if (wa && wb) return subcodeNo(a) - subcodeNo(b);
+    const ra = weeklyRank(a), rb = weeklyRank(b);
+    if (ra !== rb) return ra - rb;
+    if (ra < 99) return subcodeNo(a) - subcodeNo(b);
     return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
   });
+}
+// ป้ายที่ลูกค้าเห็น — โชว์ "ชื่อเล่น" ตามที่นัทเลือก (ไม่ใช่เลขสัปดาห์ เพราะระบบไม่ได้เก็บเลขสัปดาห์)
+function weeklyBadgeHtml(m){
+  const s = subcodeInfo(m);
+  const chip = (bg,fg,txt) => `<span style="font-size:10px;font-weight:700;color:${fg};background:${bg};padding:2px 7px;border-radius:8px;white-space:nowrap">${txt}</span>`;
+  if (!s) return (m && m.is_weekly_special) ? chip('#FEF3C7','#B45309','⭐ เมนูพิเศษสัปดาห์นี้') : '';
+  if (s.stale === 0) return chip('#FEF3C7','#B45309', `⭐ ${s.label} · เมนูสัปดาห์นี้`);
+  // ของสัปดาห์ก่อน — บอกตรงๆ แต่ไม่ใช้คำว่า "ค้าง" กับลูกค้า (นั่นเป็นคำที่ใช้กันในร้าน)
+  return chip('#F3F4F6','#6B7280', s.stale === 1 ? `${s.label} · เมนูสัปดาห์ก่อน`
+                                                 : `${s.label} · เมนูสัปดาห์ก่อนหน้า`);
 }
 
 function renderMenu() {
@@ -1935,7 +1970,7 @@ function renderMenu() {
       : isNextWk
       ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 อาทิตย์หน้า</span>`
       : '';
-    const specialBadge = item.is_weekly_special ? `<span style="font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:8px;white-space:nowrap">⭐ เมนูพิเศษสัปดาห์นี้</span>` : '';
+    const specialBadge = weeklyBadgeHtml(item);
     const tags = (specialBadge?`<span>${specialBadge}</span>`:'')
       + (item.calories?`<span class="mi-v2-kcal">${item.calories} kcal</span>`:'')
       + (item.protein?`<span class="mi-v2-pro">โปรตีน ${item.protein}g</span>`:'')
