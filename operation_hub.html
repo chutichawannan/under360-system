@@ -244,12 +244,19 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
 /* ── TAB 2: MEAL PLAN ── */
 .plan-table-wrap{overflow-x:auto}
-.plan-table{width:100%;border-collapse:collapse;font-size:12px}
-.plan-table th{
+/* แถบเลื่อนแนวนอนต้องมองเห็นเสมอ — บน Mac/Windows รุ่นใหม่ scrollbar ซ่อนตัวเอง
+   ทำให้ไม่รู้ว่ามีวันถัดไปให้ดูต่อ (นัท 6 ส.ค. 2569) */
+.plan-scroll{scrollbar-width:auto;scrollbar-color:var(--forest) var(--ink-xsoft);}
+.plan-scroll::-webkit-scrollbar{height:12px;}
+.plan-scroll::-webkit-scrollbar-track{background:var(--ink-xsoft);border-radius:6px;}
+.plan-scroll::-webkit-scrollbar-thumb{background:var(--forest);border-radius:6px;border:2px solid var(--ink-xsoft);}
+.plan-scroll::-webkit-scrollbar-thumb:hover{background:var(--forest-deep,#14361F);}
+.plan-table{width:100%;border-collapse:collapse;font-size:14px}
+.plan-table th{font-size:13px;
   background:var(--forest);color:#fff;padding:10px 14px;
   text-align:left;font-weight:600;white-space:nowrap;
 }
-.plan-table td{
+.plan-table td{font-size:13px;
   padding:8px 14px;border-bottom:1px solid var(--ink-xsoft);
   vertical-align:middle;
 }
@@ -308,7 +315,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .p-ready{background:#D1FAE5;color:#065F46}
 .p-done{background:#F3F4F6;color:#6B7280}
 
-.menu-chip{display:flex;align-items:center;gap:6px;padding:7px 10px;border-radius:8px;font-size:11px;font-weight:600;cursor:grab;transition:.15s;user-select:none;margin-bottom:5px;border:1.5px solid transparent;}
+.menu-chip{display:flex;align-items:center;gap:6px;padding:8px 11px;border-radius:8px;font-size:13px;font-weight:600;cursor:grab;transition:.15s;user-select:none;margin-bottom:5px;border:1.5px solid transparent;}
 .menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
 .menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
 .menu-chip:active{cursor:grabbing;opacity:.7;}
@@ -326,7 +333,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .cust-row:hover td{background:#F9FAFB;}
 .cust-row.selected td{background:#EBF3EF;}
 .cust-row.selected{outline:2px solid #1F4D3A;}
-.menu-chip{display:flex;align-items:center;gap:4px;padding:6px 8px;border-radius:7px;font-size:11px;font-weight:600;margin-bottom:4px;border:1.5px solid transparent;transition:.1s;}
+.menu-chip{display:flex;align-items:center;gap:5px;padding:7px 10px;border-radius:7px;font-size:13px;font-weight:600;margin-bottom:4px;border:1.5px solid transparent;transition:.1s;}
 .menu-chip.lc{background:#D1FAE5;color:#065F46;border-color:#A7F3D0;}
 .menu-chip.hp{background:#DBEAFE;color:#1E40AF;border-color:#BFDBFE;}
 .menu-chip.clickable{cursor:pointer;border-style:dashed;}
@@ -519,20 +526,20 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <div style="display:flex;gap:14px;align-items:flex-start;">
 
         <!-- LEFT: Menu List -->
-        <div style="width:150px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:10px;position:sticky;top:0;">
-          <div id="planPanelTitle" style="font-size:11px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูทุกวัน (รวม)</div>
+        <div style="width:250px;flex-shrink:0;background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);padding:12px;position:sticky;top:0;max-height:calc(100vh - 90px);overflow-y:auto;">
+          <div id="planPanelTitle" style="font-size:13px;font-weight:700;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.8px;margin-bottom:10px;">เมนูทุกวัน (รวม)</div>
           <div id="selectHint">👆 คลิกชื่อลูกค้า (ทั้งแถว) หรือคลิกช่องรอบเดียว (เลือกได้หลายอัน) แล้วกดเมนู</div>
           <div id="menuListDrag"></div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;position:relative;">
             <input id="menuSearchBox" type="text" placeholder="🔍 ค้นหาเมนู (ชื่อ/โค้ด)..." autocomplete="off"
               oninput="renderMenuSearchResults(this.value)" onfocus="renderMenuSearchResults(this.value)"
-              style="width:100%;padding:6px 8px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;">
+              style="width:100%;padding:8px 10px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:13px;font-family:inherit;">
             <div id="menuSearchResults" style="display:none;position:absolute;left:10px;right:10px;top:34px;z-index:20;background:#fff;border:1px solid var(--ink-xsoft);border-radius:8px;box-shadow:0 4px 14px rgba(0,0,0,.12);max-height:220px;overflow-y:auto;"></div>
           </div>
           <div style="margin-top:10px;border-top:1px solid var(--ink-xsoft);padding-top:10px;">
-            <div style="font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">🔁 เมนู Request (ลูกค้าเลือกได้ใน LIFF)</div>
+            <div style="font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;">🔁 เมนู Request (ลูกค้าเลือกได้ใน LIFF)</div>
             <div id="mpReqList"></div>
-            <select id="mpReqAdd" onchange="addMpRequest(this.value);this.value='';" style="width:100%;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:11px;font-family:inherit;margin-top:4px;">
+            <select id="mpReqAdd" onchange="addMpRequest(this.value);this.value='';" style="width:100%;padding:7px 9px;border:1px solid var(--ink-xsoft);border-radius:7px;font-size:13px;font-family:inherit;margin-top:4px;">
               <option value="">+ เพิ่มเมนู request...</option>
             </select>
           </div>
@@ -540,8 +547,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           </div>
         </div>
 
-        <!-- RIGHT: Customer Table -->
-        <div style="flex:1;overflow-x:auto;border-radius:var(--radius);border:1px solid var(--ink-xsoft);">
+        <!-- RIGHT: Customer Table — ต้องมีแถบเลื่อนให้เห็น ไม่งั้นไม่รู้ว่ามีวันถัดไปให้ดูต่อ (นัท 6 ส.ค. 2569) -->
+        <div class="plan-scroll" style="flex:1;min-width:0;overflow-x:auto;border-radius:var(--radius);border:1px solid var(--ink-xsoft);">
           <table class="plan-table" id="planTable" style="min-width:500px;">
             <thead><tr id="planHead"></tr></thead>
             <tbody id="planBody"></tbody>
@@ -1430,6 +1437,26 @@ var MENU_POOL=[
 ];
 var todayPlan=["LC01","HP01","LC02","HP02","LC04","HP04","LC05","HP05","LC07","HP07"];
 var mpRequestMenus=[];  // เมนู Request ที่ลูกค้าเลือกได้ (เก็บ kitchen_data 'mp_request_menus')
+
+// 🔴 MENU_POOL ข้างบนเป็นรายการที่ฝังไว้ในไฟล์แค่ 16 ตัว — ค้นหาเมนูเลยเจอไม่ครบ
+//    ทั้งที่ menu_items ใน DB มีเมนู Meal Plan อยู่ 160+ ตัว (นัทเจอเอง 6 ส.ค. 2569)
+//    → โหลดของจริงมาทับตอนเปิดแท็บ · ถ้าโหลดไม่ได้ก็ยังใช้ 16 ตัวเดิมได้ ไม่พังทั้งหน้า
+var _menuPoolLoaded=false;
+async function loadMenuPool(){
+  if(_menuPoolLoaded) return;
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var r=await sb_.from("menu_items").select("code,name,category")
+          .in("category",["meal_hp","meal_lc"]).order("code").limit(2000);
+    if(r.error) throw r.error;
+    var rows=(r.data||[]).filter(function(m){return m.code;});
+    if(!rows.length) return;                       // ไม่มีข้อมูล = ไม่ทับของเดิม
+    MENU_POOL=rows.map(function(m){
+      return {code:m.code, name:m.name||m.code, type:(m.category==="meal_hp")?"hp":"lc"};
+    });
+    _menuPoolLoaded=true;
+  }catch(e){ console.warn("loadMenuPool:",e&&(e.message||e)); }
+}
 // ── ข้อมูลจริงจาก mp_deliveries (ไม่ใช้ mock customer แล้ว) ─────────────
 var mpPlanRows=[];   // แถว mp_deliveries ที่ยังไม่ส่ง/ไม่ข้าม/ไม่ยกเลิก — ทุกรอบ ทุกวันในอนาคต ไม่จำกัดว่าไกลแค่ไหน
 
@@ -1593,9 +1620,11 @@ function renderMenuSearchResults(q){
   var box=document.getElementById("menuSearchResults"); if(!box)return;
   q=(q||"").trim().toLowerCase();
   if(!q){ box.style.display="none"; box.innerHTML=""; return; }
-  var matches=MENU_POOL.filter(function(m){
+  var hits=MENU_POOL.filter(function(m){
     return (m.code||"").toLowerCase().indexOf(q)>=0 || (m.name||"").toLowerCase().indexOf(q)>=0;
-  }).slice(0,30);
+  });
+  // เดิม slice(0,30) ตัดทิ้งเงียบๆ — ค้น "ไก่" มี 40 ตัวแต่เห็นแค่ 30 โดยไม่มีอะไรบอก (แก้ 6 ส.ค. 2569)
+  var LIMIT=80, matches=hits.slice(0,LIMIT), hidden=hits.length-matches.length;
   if(!matches.length){
     box.innerHTML="<div style='padding:10px;font-size:11px;color:var(--ink-soft);text-align:center'>ไม่พบเมนู</div>";
     box.style.display="block";
@@ -1605,11 +1634,15 @@ function renderMenuSearchResults(q){
     var already=todayPlan.indexOf(m.code)>=0;
     return "<div onclick=\"addMenuFromSearch('"+m.code+"')\" style='padding:7px 10px;cursor:"+(already?"default":"pointer")+";border-bottom:1px solid var(--ink-xsoft);display:flex;align-items:center;gap:6px;"+(already?"opacity:.4":"")+"' onmouseover=\"this.style.background='var(--bg)'\" onmouseout=\"this.style.background=''\">"
       +"<span class='customer-tag "+(m.type==="lc"?"tag-lc":"tag-hp")+"' style='font-size:9px'>"+(m.type||"").toUpperCase()+"</span>"
-      +"<span style='font-family:var(--mono);font-size:10px;font-weight:700;flex-shrink:0'>"+esc2(m.code)+"</span>"
-      +"<span style='font-size:11px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+esc2(m.name)+"</span>"
-      +(already?"<span style='font-size:9px;color:var(--ink-soft)'>เพิ่มแล้ว</span>":"")
+      +"<span style='font-family:var(--mono);font-size:12px;font-weight:700;flex-shrink:0'>"+esc2(m.code)+"</span>"
+      +"<span style='font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap'>"+esc2(m.name)+"</span>"
+      +(already?"<span style='font-size:11px;color:var(--ink-soft)'>เพิ่มแล้ว</span>":"")
       +"</div>";
-  }).join("");
+  }).join("")
+  + "<div style='padding:6px 10px;font-size:11px;color:var(--ink-soft);text-align:center;background:var(--bg)'>"
+    + (hidden>0 ? ("เจอ "+hits.length+" เมนู · แสดง "+matches.length+" ตัวแรก — พิมพ์ให้เจาะจงกว่านี้เพื่อดูที่เหลืออีก "+hidden)
+                : ("เจอ "+hits.length+" เมนู"))
+    + "</div>";
   box.style.display="block";
 }
 function addMenuFromSearch(code){
@@ -1647,8 +1680,8 @@ function renderLeftPanel(){
     var cnt=countMenu(code,planDateFilter);
     var active=selectedRowIds.length&&selectedRowIds.some(function(id){return mpRowTotalQty(id)<mpRowBoxCount(id);});
     h+="<div class='menu-chip "+m.type+(active?" clickable":"")+"' onclick='clickMenu(\""+code+"\")'>";
-    h+="<span style='font-family:var(--mono);font-size:10px;font-weight:700'>"+code+"</span>";
-    h+=" <span style='font-size:10px;opacity:.8;flex:1'>"+m.name.slice(0,16)+"</span>";
+    h+="<span style='font-family:var(--mono);font-size:12px;font-weight:700'>"+code+"</span>";
+    h+=" <span style='font-size:12px;opacity:.85;flex:1;line-height:1.35'>"+esc2(m.name)+"</span>";
     if(cnt>0)h+=" <span class='menu-count-badge'>×"+cnt+"</span>";
     h+="</div>";
   });
@@ -1663,8 +1696,8 @@ function renderMpSummary(){
   var hp=rows.filter(function(r){return r.mp_type==="hp";}).length;
   var lc=rows.filter(function(r){return r.mp_type==="lc";}).length;
   var doneCount=rows.filter(function(r){return mpRowTotalQty(r.id)>=mpRowBoxCount(r.id);}).length;
-  el.innerHTML="<div style='font-size:10px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;'>📊 สรุป"+(planDateFilter?"":"ทั้งหมด")+"</div>"
-    +"<div style='font-size:11px;color:var(--ink);line-height:1.9;'>"
+  el.innerHTML="<div style='font-size:12px;font-weight:700;color:var(--ink-soft);margin-bottom:6px;'>📊 สรุป"+(planDateFilter?"":"ทั้งหมด")+"</div>"
+    +"<div style='font-size:13px;color:var(--ink);line-height:1.9;'>"
     +"รอบทั้งหมด: <b>"+rows.length+"</b><br>"
     +"HP: <b>"+hp+"</b> · LC: <b>"+lc+"</b><br>"
     +"กำหนดเมนูครบแล้ว: <b>"+doneCount+"/"+rows.length+"</b>"
@@ -1756,7 +1789,8 @@ function renderMpRequests(){
 
 function buildPlan(){
   loadMpRequests().then(renderMpRequests);
-  loadMpPlanData();
+  // โหลดเมนูจริงจาก DB ก่อน แล้วค่อยวาด — ไม่งั้นค้นหาเมนูจะเจอแค่ 16 ตัวที่ฝังไว้ในไฟล์
+  loadMenuPool().then(function(){ loadMpPlanData(); });
 }
 function _buildPlanTable(){
   var head=document.getElementById("planHead");
