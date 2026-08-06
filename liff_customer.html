@@ -1794,30 +1794,29 @@ function effectiveStock(item) {
 // ══════════════════════════════════════
 // 🍽️ MENU RENDER
 // ══════════════════════════════════════
-// ⭐ เมนูพิเศษประจำสัปดาห์ (S1–S8 ข้าวกล่อง · D1–D5 แพคกับข้าว — เปลี่ยนทุกสัปดาห์ตามโบรชัวร์)
-// นัทเคาะ 6 ส.ค. 2569 (ตัวเลือก ค): ต้องเห็น 2 ที่
-//   1) รวมอยู่ในแท็บ "⭐ สัปดาห์นี้" — ไม่ว่าตัวเมนูจะอยู่หมวดไหน
-//   2) อยู่ **บนสุด** ของแท็บปกติ (ข้าวกล่อง / แพคกับข้าว) พร้อมป้าย ⭐
-const WEEKLY_CAT = 'no_special';                 // แท็บ "⭐ สัปดาห์นี้"
+// ⭐ เมนูพิเศษประจำสัปดาห์ (S1–S8 อยู่แท็บข้าวกล่อง · D1–D5 อยู่แท็บแพคกับข้าว — เปลี่ยนทุกสัปดาห์ตามโบรชัวร์)
+// นัทเคาะ 6 ส.ค. 2569: ต้องขึ้น **บนสุดของแท็บที่มันสังกัด** พร้อมป้าย ⭐
+//
+// ⚠️ เคยเข้าใจผิดว่ามีแท็บ "⭐ สัปดาห์นี้" แยกต่างหาก แล้วเขียนโค้ดดึงเมนูข้ามหมวดมารวม
+//    ที่จริง `no_special` **คือแท็บ "ข้าวกล่อง"** (แอดมินตั้งชื่อไว้แบบนั้น) → ดึงข้ามหมวดกลายเป็น
+//    เอาแพคกับข้าวไปโผล่ในข้าวกล่อง = ผิด · ถอดออกแล้ว เหลือแค่ "ดันขึ้นบนสุดในแท็บตัวเอง"
 const isWeeklySpecial = m => !!(m && m.is_weekly_special);
 
 function menuItemsForCat(cat){
-  if (cat === WEEKLY_CAT) {
-    // แท็บ ⭐ = เมนูในหมวดนี้ + เมนูที่ติดธงจากหมวดอื่น (เช่น D1–D5 ที่อยู่หมวดแพคกับข้าว)
-    const seen = new Set();
-    return menuItems.filter(m => {
-      const hit = m.category === cat || isWeeklySpecial(m);
-      if (!hit || seen.has(m.id)) return false;
-      seen.add(m.id); return true;
-    });
-  }
   return menuItems.filter(m => m.category === cat);
 }
 // ของสัปดาห์นี้ขึ้นก่อนเสมอ แล้วค่อยเรียงตามลำดับเดิมที่แอดมินจัดไว้
+// ของสัปดาห์นี้ขึ้นก่อนเสมอ · เรียงตามชื่อเล่น S1→S8 / D1→D5 ให้ตรงกับลำดับในโบรชัวร์
+// (ที่เหลือเรียงตามลำดับเดิมที่แอดมินจัดไว้)
+function subcodeNo(m){
+  const n = parseInt(String(m && m.subcode || '').replace(/\D/g,''), 10);
+  return isNaN(n) ? 9999 : n;
+}
 function sortWeeklyFirst(list){
   return list.slice().sort((a,b) => {
     const wa = isWeeklySpecial(a), wb = isWeeklySpecial(b);
     if (wa !== wb) return wa ? -1 : 1;
+    if (wa && wb) return subcodeNo(a) - subcodeNo(b);
     return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
   });
 }
