@@ -680,6 +680,8 @@ body{background:#fff!important}
         <!-- ช่องนี้ = ที่อยู่ที่ใช้ส่งจริง (แก้เองได้ · แมสอ่านอันนี้) · ช่องในแผนที่ด้านล่าง = ช่องค้นหาอย่างเดียว -->
         <button onclick="toggleMapSection()" id="btn-pin-map" style="flex-shrink:0;width:56px;padding:8px 4px;border:2px solid var(--line);border-radius:12px;background:#fff;cursor:pointer;text-align:center;line-height:1.4;font-size:18px"><span style="font-size:12px;color:var(--g);font-weight:700;line-height:1.2">ปักหมุด</span></button>
       </div>
+      <!-- N-19: บอกตั้งแต่แรกว่าปักหมุดเป็นของบังคับ ลูกค้าจะได้ไม่ไปเจอตอนกดสั่งแล้วงง -->
+      <div style="font-size:11.5px;color:#B45309;padding:2px 2px 6px;line-height:1.5">📍 <b>ต้องปักหมุด</b> ก่อนสั่ง — ทีมขนส่งใช้หาบ้านและจัดรอบส่ง (กด "ปักหมุด" แล้วเลือกใช้ตำแหน่งปัจจุบันได้เลย)</div>
       <input id="notes-input" class="ifield" type="text" placeholder="รายละเอียดเพิ่ม เช่น ชั้น 3, ไม่เผ็ด">
       <label style="display:inline-flex;align-items:center;gap:6px;padding:6px 2px 2px;font-size:12px;color:var(--soft);cursor:pointer;">
         <input type="checkbox" id="utensil-input" style="width:14px;height:14px;accent-color:var(--g);cursor:pointer;flex-shrink:0;">
@@ -693,9 +695,10 @@ body{background:#fff!important}
         <div class="map-dropdown" id="map-dd" style="display:none;top:38px"></div>
         <div style="display:flex;gap:8px">
           <input id="addr-search" class="ifield" type="text" placeholder="🔍 ค้นหาสถานที่ / ชื่ออาคาร เพื่อวางหมุด">
-          <button onclick="useMyLocation()" title="ใช้ตำแหน่งปัจจุบัน">ตำแหน่งฉัน</button>
         </div>
-        <div style="font-size:11px;color:var(--soft);padding:4px 2px 0">ช่องนี้ใช้ <b>ค้นหาเพื่อวางหมุด</b> เท่านั้น — ที่อยู่ที่ใช้ส่งจริงคือช่องด้านบน</div>
+        <!-- N-19: ปุ่มแชร์ตำแหน่งปัจจุบัน — ทางที่เร็วที่สุดสำหรับลูกค้าที่อยู่บ้านตอนสั่ง -->
+        <button onclick="useMyLocation()" style="width:100%;margin-top:8px;padding:11px;border:0;border-radius:12px;background:var(--g);color:#fff;font-size:14px;font-weight:700;cursor:pointer">ใช้ตำแหน่งปัจจุบันของฉัน</button>
+        <div style="font-size:11px;color:var(--soft);padding:6px 2px 0">ช่องค้นหานี้ใช้ <b>วางหมุด</b> เท่านั้น — ที่อยู่ที่ใช้ส่งจริงคือช่องด้านบน · ลากหมุดบนแผนที่ปรับให้ตรงบ้านได้</div>
       </div>
       <div id="customer-map"></div>
       <!-- ตำแหน่งหมุดจริง (อ่านอย่างเดียว) — ให้เห็นว่าหมุดอยู่ตรงไหน ต่างจากที่อยู่ที่พิมพ์เองได้ -->
@@ -2433,6 +2436,22 @@ function closeMapConfirm(proceed){
   if(ov) ov.style.display = 'none';
   if(mapConfirmResolve){ const r = mapConfirmResolve; mapConfirmResolve = null; r(!!proceed); }
 }
+// N-19: ปิดป๊อปอัพแล้วเปิดแผนที่ให้เลย (เดิมบอกให้ "กลับไปปักหมุด" แต่แผนที่พับอยู่ ลูกค้าหาไม่เจอ)
+function mapConfirmOpenMap(){
+  closeMapConfirm(false);
+  const sec = document.getElementById('map-section');
+  if(sec && sec.style.display === 'none') toggleMapSection();
+  if(sec) sec.scrollIntoView({behavior:'smooth', block:'center'});
+  const as = document.getElementById('addr-search'); if(as) setTimeout(()=>as.focus(), 350);
+}
+// N-19: กดปุ่มเดียวจบ — ขอตำแหน่งจากมือถือแล้ววางหมุดให้เลย
+function mapConfirmUseGPS(){
+  closeMapConfirm(false);
+  const sec = document.getElementById('map-section');
+  if(sec && sec.style.display === 'none') toggleMapSection();
+  if(sec) sec.scrollIntoView({behavior:'smooth', block:'center'});
+  setTimeout(useMyLocation, 300);   // รอแผนที่ init ก่อน ไม่งั้นหมุดวางไม่ติด
+}
 
 // ══════════════════════════════════════
 // 📤 SUBMIT ORDER
@@ -2463,14 +2482,13 @@ async function submitOrder() {
     const pe = document.getElementById('recipient-phone-input'); if (pe) pe.focus();
     return;
   }
-  // Warn if no map pin
-  // ไม่ปักหมุด = ระบบไม่รู้ระยะ → ค่าส่งคิดเป็น ฿0 (audit 3 ส.ค.: 22/43 ใบเป็นแบบนี้ = ร้านออกค่าส่งให้ฟรีโดยไม่รู้ตัว)
-  // → ยังให้สั่งได้ (ไม่ปิดกั้นการขาย) แต่ **ติดธงในโน้ตให้แอดมินตามเก็บค่าส่ง**
-  let pinSkipped = false;
-  if (!distKm) {
-    const proceed = await showMapConfirm();
-    if (!proceed) return; // user chose to go back and pin
-    pinSkipped = true;
+  // N-19 (6 ส.ค. 2569): **บังคับปักหมุด** — เดิมข้ามได้ ผลคือ 22/43 ใบไม่มีพิกัด
+  //   → ออเดอร์ไม่โผล่หน้าแมส (แมสวางเส้นทางจากพิกัด) + ค่าส่งคิดเป็น ฿0 + แอดมินต้องไล่ถามที่อยู่ทีหลัง
+  //   ป๊อปอัพให้ 2 ทางเลือกที่กดแล้วจบ (ใช้ GPS / เปิดแผนที่) ไม่ใช่แค่ห้ามเฉยๆ
+  const pinSkipped = false;
+  if (!cusPin || !distKm) {
+    await showMapConfirm();
+    return;   // ต้องปักหมุดก่อนเสมอ — กดสั่งใหม่อีกครั้งหลังปักเสร็จ
   }
 
   const btn = document.getElementById('sub-btn');
@@ -4182,15 +4200,15 @@ function mdAddToCart() {
 <div class="map-confirm-overlay" id="mapConfirmOverlay">
   <div class="map-confirm-box">
     <div class="map-confirm-ico">📍</div>
-    <div class="map-confirm-title">ยังไม่ได้ยืนยันตำแหน่ง</div>
+    <div class="map-confirm-title">ยังไม่ได้ปักหมุดที่อยู่</div>
     <div class="map-confirm-msg">
-      คุณยังไม่ได้ค้นหาหรือปักหมุดที่อยู่บนแผนที่<br>
-      อาจทำให้ทีมขนส่งหาที่อยู่ไม่พบได้<br><br>
-      <strong>แนะนำให้ค้นหาที่อยู่หรือกด 📍 ก่อนสั่ง</strong>
+      ระบบต้องรู้ตำแหน่งบ้านคุณ ถึงจะจัดรอบส่งและคิดค่าส่งได้<br>
+      ถ้าไม่ปักหมุด ออเดอร์จะไม่เข้าแผนส่งของทีมขนส่ง<br><br>
+      <strong>เลือกวิธีที่สะดวกที่สุด 1 อย่าง</strong>
     </div>
-    <div class="map-confirm-btns">
-      <button class="btn-pin" onclick="closeMapConfirm(false)">← กลับไปปักหมุด</button>
-      <button class="btn-skip" onclick="closeMapConfirm(true)">ดำเนินการต่อโดยไม่ปักหมุด</button>
+    <div class="map-confirm-btns" style="flex-direction:column;gap:8px">
+      <button class="btn-pin" style="width:100%" onclick="mapConfirmUseGPS()">ใช้ตำแหน่งปัจจุบันของฉัน</button>
+      <button class="btn-pin" style="width:100%;background:#fff;color:var(--g);border:1.5px solid var(--g)" onclick="mapConfirmOpenMap()">ค้นหา / ปักหมุดบนแผนที่เอง</button>
     </div>
   </div>
 </div>
