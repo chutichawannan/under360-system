@@ -733,6 +733,19 @@ function renderOrders(){
     if(!bySlot[s])bySlot[s]=[];
     bySlot[s].push(o);
   });
+  // 🍳 ในแต่ละช่วงเวลา: Meal Plan ขึ้นก่อน แล้วเรียงตามเวลาที่ลูกค้าสั่งเข้ามา (นัทสั่ง 6 ส.ค. 2569)
+  //    เดิมไม่ได้กำหนดลำดับในกลุ่มเลย → สลับที่ทุกครั้งที่โหลด ครัวจำตำแหน่งไม่ได้
+  //    ที่เอา Meal Plan ขึ้นบน เพราะเป็นของทำสดต้องลงมือก่อน · สต็อก/เซ็ตหยิบทีหลังได้
+  Object.keys(bySlot).forEach(function(s){
+    bySlot[s].forEach(function(o){
+      var it=getOrderItems(o.id);
+      o._isMp = it.some(function(i){ return /^(HP|LC|MP)/i.test(i.code||""); }) || it.some(function(i){ return i._fromPlan; });
+    });
+    bySlot[s].sort(function(a,b){
+      if(a._isMp!==b._isMp) return a._isMp?-1:1;                                   // Meal Plan ก่อน
+      return String(a.created_at||"").localeCompare(String(b.created_at||""));      // แล้วใครสั่งก่อนอยู่ก่อน
+    });
+  });
   // 🔴 เดิมวนแค่ slotOrder 5 ค่านี้ → ออเดอร์ที่ time_slot เป็นค่าอื่น "หายเงียบ" จากจอครัว
   //    เคสจริง: ลูกค้าเลือก "ส่งระบุเวลา" ใน LIFF → time_slot เก็บเป็นเวลาจริง เช่น "14:30"
   //    (liff_customer: `time_slot: selSlot==='express' ? expressTime : selSlot`)
