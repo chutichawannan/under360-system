@@ -1,26 +1,3 @@
-# Doc-flow working files — merged into CLAUDE.md, ไม่ push git (ดู CLAUDE.md ระบบเวอร์ชัน doc track)
-UNDER360_MASTERNOTE*.md
-UNDER360_HISTORY.md
-CLAUDE_CODE_HANDOFF.md
 
-# Sensitive — ห้าม commit เด็ดขาด (ข้อมูลส่วนตัว/การเงิน/ครอบครัว)
-nut_personal_profile.md
-
-# Zip archives ไม่เก็บใน git (under360-web.zip แตกเข้า /web แล้ว, ตัวอื่นเป็น artifact ชั่วคราว)
-*.zip
-
-# 🔒 PII / customer exports — ห้าม commit เด็ดขาด (PDPA)
-contacts.csv
-/*.csv
-*contacts*.csv
-
-# 🔒 เอิธ competitor intel — internal only ห้าม deploy สาธารณะ
-web/eath/
-
-# 🔒 FB Ads / financial exports — ข้อมูลการเงินธุรกิจ ห้าม commit เด็ดขาด
-download/
-
-# 🔒 f-track (การเงิน/บัญชี) — statement ธนาคาร/บัตร + ผลรวม P&L ห้าม commit เด็ดขาด
-# ⚠️ ต้องมี / นำหน้า = เฉพาะโฟลเดอร์ราก ไม่งั้นจะดักโดน scripts/finance/ (โค้ด) ไปด้วย
-# โค้ด parser อยู่ที่ scripts/finance/ (commit ได้ ไม่มีข้อมูล) · ข้อมูลดิบ+ผลลัพธ์อยู่ใน /finance/ (local เท่านั้น)
-/finance/
+# snapshot ชีทแอดมิน (ข้อมูลลูกค้า — ไม่ push)
+snapshots/
