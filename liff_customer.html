@@ -848,6 +848,8 @@ body{background:#fff!important}
       <div class="ok-num" id="ok-num">U-MMDD-NNN</div>
       <div class="ok-detail" id="ok-detail"></div>
     </div>
+    <!-- N-25: Meal Plan — ปุ่มไปหน้าจัดการรอบส่ง (โผล่เฉพาะออเดอร์ที่มี Meal Plan) -->
+    <button class="btn-p" id="ok-mp-btn" style="display:none;background:#1F4D3A;" onclick="showScr('s-mp-manage'); renderMpManage();">จัดการ / แก้ไขวันส่งรอบต่อไป</button>
     <button class="btn-p" onclick="backToMenu()">สั่งเพิ่มอีกครั้ง</button>
     <div class="ok-sep"></div>
     <button class="btn-s" onclick="goOrders()">ดูออเดอร์ทั้งหมด</button>
@@ -1497,9 +1499,40 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
       while (!isMWF(d)) d.setDate(d.getDate()+1);
     }
     await sb.from('mp_deliveries').insert(rows);
+    return rows;   // ← submitOrder เอาวันของรอบ 2..N ไปเปิด "ใบออเดอร์" ต่อ (N-27)
   } catch (e) {
     console.error('generateMpDeliveries failed (non-blocking):', e);
+    return [];
   }
+}
+
+// ══════════════════════════════════════
+// 🧾 เลขออเดอร์ — ตัวช่วยที่ใช้ร่วมกัน (ใบหลัก + ใบรอบย่อย)
+// ══════════════════════════════════════
+// เลขถัดไปของวันนั้น = "เลขล่าสุด +1" (ห้ามใช้ count+1 — ใบถูกลบ/สั่งพร้อมกัน = เลขซ้ำหรือย้อน)
+async function nextOrderNumForDate(dateStr){
+  const mmdd = dateStr.slice(5,7) + dateStr.slice(8,10);
+  let n = 1;
+  try{
+    const r = await sb.from('orders').select('order_number')
+      .like('order_number', 'U-' + mmdd + '-%')
+      .order('order_number', {ascending:false}).limit(1);
+    const last = r.data && r.data[0] && r.data[0].order_number;
+    if(last) n = (parseInt(String(last).slice(-3), 10) || 0) + 1;
+  }catch(e){ n = Math.floor(1 + Math.random()*99); }
+  return { mmdd, n };
+}
+// insert ออเดอร์ + ขยับเลขแล้วลองใหม่ถ้าชนกฎห้ามซ้ำ (2 คนกดพร้อมกัน)
+async function insertOrderWithRetry(payload, mmdd, startNum){
+  let n = startNum;
+  for(let t = 0; t < 6; t++){
+    payload.order_number = 'U-' + mmdd + '-' + String(n).padStart(3,'0');
+    const { data, error } = await sb.from('orders').insert(payload).select().single();
+    if(!error) return data;
+    if(!(error.code === '23505' || /duplicate key|order_number/i.test(error.message||''))) throw error;
+    n++;
+  }
+  throw new Error('เลขออเดอร์ชนกันหลายครั้ง');
 }
 
 
@@ -2559,7 +2592,13 @@ async function submitOrder() {
     } catch(e) { console.error('ตัดสต็อกไม่สำเร็จ (ออเดอร์บันทึกแล้ว):', e); }
 
     // 2b. สร้างตารางส่ง Meal Plan (Mon/Wed/Fri rounds) — ไม่บล็อก flow ถ้าพัง
-    for (const c of cart) { if (c.type === 'meal_plan') await generateMpDeliveries(ord.id, c, addrFinal, slot, recipientName); }
+    const mpRoundsAll = [];
+    for (const c of cart) {
+      if (c.type === 'meal_plan') {
+        const rows = await generateMpDeliveries(ord.id, c, addrFinal, slot, recipientName);
+        (rows || []).forEach(r => mpRoundsAll.push(r));
+      }
+    }
 
     // 2c. เซ็ตแบ่งส่งหลายรอบ: สร้าง order แยกรอบ 2..N (ยอด 0 — จ่ายรวมกับ order หลักแล้ว)
     //     1 รอบ = 1 order (ตรงกับที่แอดมินทำมือ) · KQ อ่าน orders ตาม delivery_date อยู่แล้ว
@@ -2616,6 +2655,55 @@ async function submitOrder() {
       }
     }
 
+    // 2d. 🥗 Meal Plan รอบ 2..N → เปิด "ใบออเดอร์" แยกรอบละใบ (ยอด 0 — จ่ายรวมกับใบแรกแล้ว)
+    //     N-27 (6 ส.ค. 2569): เดิมสร้างแค่แถวใน mp_deliveries → แต่หน้าแมส/หน้าออเดอร์/หน้าครัว
+    //     อ่านจากตาราง orders ทั้งหมด → รอบ 2-3 หายไปจากทุกจอ แมสไม่รู้ว่าวันนั้นต้องไปส่งใคร
+    //     ลูกค้าที่ย้ายมาจากระบบเก่ามีใบครบทุกรอบอยู่แล้ว (MP-0810-015..020) = ธรรมเนียม "1 รอบ = 1 ใบ" → ทำให้เหมือนกัน
+    const mpNextRounds = [];   // ใช้โชว์ในหน้าสั่งสำเร็จด้วย (N-25)
+    if (mpRoundsAll.length) {
+      const byDate = new Map();
+      mpRoundsAll.forEach(r => {
+        if (r.round_no === 1 || r.delivery_date === selDate) return;  // รอบแรก = ใบหลัก ไม่เปิดซ้ำ
+        if (!byDate.has(r.delivery_date)) byDate.set(r.delivery_date, []);
+        byDate.get(r.delivery_date).push(r);
+      });
+      const mpSlotVal = selSlot === 'express' ? expressTime : selSlot;
+      for (const rDate of [...byDate.keys()].sort()) {
+        const rounds = byDate.get(rDate);
+        try {
+          const { mmdd: rMmdd, n: rStart } = await nextOrderNumForDate(rDate);
+          const rLabel = rounds.map(r => 'Meal Plan ' + (r.mp_type === 'hp' ? 'HP' : 'LC')
+                                    + ' รอบ ' + r.round_no + '/' + r.total_rounds).join(', ');
+          const mpPayload = {
+            customer_id: customer?.id || null, line_uid: lineProfile.userId,
+            customer_name: recipientName, line_display_name: lineProfile.displayName, customer_phone: recipientPhone,
+            delivery_date: rDate, time_slot: mpSlotVal, time_slot_label: slot?.time || '',
+            delivery_address: addrFinal, delivery_fee: 0, subtotal: 0, discount_amount: 0, total: 0,
+            delivery_lat: cusPin ? cusPin.getPosition().lat() : null,
+            delivery_lng: cusPin ? cusPin.getPosition().lng() : null,
+            delivery_distance_km: (distKm != null) ? Number(distKm.toFixed(3)) : null,
+            status: 'confirmed', payment_method: payMethod || 'qr',
+            payment_account: selectedPaymentAccount?.id || PAYMENT_ACCOUNTS[0].id,
+            delivery_type: selSlot === 'express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
+            delivery_week: 'current',
+            notes: rLabel + ' — จ่ายรวมกับออเดอร์ ' + orderNum
+          };
+          if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); mpPayload.want_utensils = utEl ? utEl.checked : false; }
+          if (hasPaymentStatusColumn) mpPayload.payment_status = orderPayload.payment_status || 'unpaid';
+          const mpOrd = await insertOrderWithRetry(mpPayload, rMmdd, rStart);
+          await sb.from('order_items').insert(rounds.map(r => ({
+            order_id: mpOrd.id, menu_item_id: null,
+            menu_name: 'Meal Plan ' + (r.mp_type === 'hp' ? 'High Protein' : 'Low Carb')
+                       + ' · รอบ ' + r.round_no + '/' + r.total_rounds + ' (' + (r.box_count || 7) + ' กล่อง)',
+            menu_code: 'MP-' + String(r.mp_type).toUpperCase() + '-R' + r.round_no,
+            quantity: r.box_count || 7, unit_price: 0, subtotal: 0,
+            notes: 'meal_plan:' + r.mp_type + ':' + r.mp_set + ':round:' + r.round_no + '/' + r.total_rounds
+          })));
+          mpNextRounds.push({ num: mpOrd.order_number, date: rDate, round: rounds[0].round_no, total: rounds[0].total_rounds });
+        } catch(e) { console.error('MP round order create failed (non-blocking):', e); }
+      }
+    }
+
     // 3. Save default address + phone + ชื่อไลน์ (best-effort — ห่อ try กันพังทับ success ถ้าคอลัมน์ line_display_name ยังไม่มี/สิทธิ์)
     // display_name (ชื่อจริง) ไม่เซฟทับ — เก็บ line_display_name แยกไว้ (นัทขอเก็บทั้งชื่อไลน์+ชื่อจริง)
     if (customer?.id) {
@@ -2633,8 +2721,17 @@ async function submitOrder() {
       ? '<br>แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
         + roundOrderNums.map((r,i)=>'<br>&nbsp;&nbsp;• รอบ ' + (i+2) + ' — ' + fmtDate(r.date) + ' (' + r.num + ')').join('')
       : '';
+    // N-25: Meal Plan — บอกวันของรอบถัดๆ ไปให้ชัด (ลูกค้าจะได้รู้ว่าต้องอยู่รับวันไหนบ้าง)
+    const mpLines = mpNextRounds.length
+      ? '<div style="margin-top:10px;padding:10px 12px;background:#EBF3EF;border-radius:10px;text-align:left;line-height:1.7;">'
+        + '<b style="color:#1F4D3A;">รอบส่งถัดไป</b>'
+        + mpNextRounds.map(r => '<br>• รอบ ' + r.round + '/' + r.total + ' — ' + fmtDate(r.date) + ' <span style="color:var(--soft);font-size:12px;">(' + r.num + ')</span>').join('')
+        + '<br><span style="font-size:12px;color:var(--soft);">เลื่อนวัน / เลือกเมนูของแต่ละรอบได้ที่ปุ่มด้านล่าง</span></div>'
+      : '';
+    const okMpBtn = document.getElementById('ok-mp-btn');
+    if (okMpBtn) okMpBtn.style.display = cart.some(c => c.type === 'meal_plan') ? 'block' : 'none';
     document.getElementById('ok-detail').innerHTML =
-      `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(selDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}`;
+      `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(selDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}${mpLines}`;
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
     setDeliverOnce = false; extraRoundDates = [];
