@@ -252,7 +252,7 @@ let dbCats=[], catOrder=[], catDragKey=null, hiddenCats=[];
 // ── INIT ──
 window.onload = async function(){
   sb = supabase.createClient(SB_URL, SB_KEY);
-  await Promise.all([loadCards(), loadMenuItems(), loadHEPackages(), loadHEMpOffers()]);
+  await Promise.all([loadCards(), loadMenuItems(), loadHEPackages(), loadHEMpOffers(), loadMenuWeeks()]);
   try{ const {data:td}=await sb.from('kitchen_data').select('data').eq('key','home_section_title').maybeSingle();
     if(td?.data){ const c=(typeof td.data==='string')?{text:td.data}:td.data;
       if(c.text!=null) document.getElementById('sectionTitle').value=c.text;
@@ -896,7 +896,7 @@ function renderCatItems(){
         <div class="item-name-he">${esc(m.name)}</div>
         ${m.calories?`<div class="item-kcal-he">${m.calories} kcal</div>`:''}
       </div>
-      <button onclick="event.stopPropagation();toggleSpecial('${m.id}')" title="ติ๊ก = เมนูพิเศษประจำสัปดาห์ (ลูกค้าเห็นป้ายใต้ชื่อ)" style="background:none;border:none;font-size:20px;cursor:pointer;padding:0 8px;line-height:1;${m.is_weekly_special?'':'opacity:.28;filter:grayscale(1)'}">${m.is_weekly_special?'⭐':'☆'}</button>
+      ${weekTagBtnHtml(m)}
       <div class="item-price-he">฿${m.price}</div>
     </div>`).join('');
   setupItemDrag();
@@ -924,13 +924,94 @@ function setupItemDrag(){
   });
 }
 
-// ── ติ๊กเมนูพิเศษประจำสัปดาห์ (บันทึกทันที) ──
-async function toggleSpecial(id){
-  const m=menuItems.find(x=>x.id==id); if(!m)return;
-  const nv=!m.is_weekly_special; m.is_weekly_special=nv;
-  renderCatItems();
-  try{ const {error}=await sb.from('menu_items').update({is_weekly_special:nv}).eq('id',id); if(error)throw error; }
-  catch(e){ m.is_weekly_special=!nv; renderCatItems(); alert('บันทึกไม่สำเร็จ: '+(e.message||e)); }
+// ── 🏷️ แท็กสัปดาห์ (แทนที่ดาวเดิม — นัทสั่ง 6 ส.ค. 2569) ────────────────────
+// WHY: เมนูหมุนทุกสัปดาห์ · ของสัปดาห์ก่อนที่ยังขายอยู่ต้องคาป้ายสัปดาห์ตัวเองไว้
+//      ดาวบอกได้แค่ "พิเศษ/ไม่พิเศษ" → ของเก่ากับของใหม่หน้าตาเหมือนกันหมด
+// วิธีที่เลือก (นัทเคยคิดจะทำดาวหลายสี 3-4 ดวงแล้วแก้ชื่อวนไป — อันนี้ง่ายกว่าและไม่ต้องวน):
+//      เก็บเป็น "วันจันทร์ต้นสัปดาห์" แล้วสร้างป้ายจากวันที่เอง
+//      · ไม่ต้องพิมพ์ชื่อแท็ก = ไม่มีพิมพ์ผิด/ชื่อซ้ำ
+//      · พอถึงวันจันทร์ใหม่ ป้ายเลื่อนสถานะเอง ("สัปดาห์นี้"→"สัปดาห์ก่อน") ไม่ต้องไปไล่แก้
+//      · ย้อนหลังได้ไม่จำกัดสัปดาห์ ไม่ต้องเวียนดาว
+// เก็บใน kitchen_data (ไม่ต้องรัน SQL เพิ่ม) — คีย์เดียวกับที่ LIFF อ่าน
+const WEEK_KEY='menu_special_weeks';
+let menuWeeks={};
+const MON_EN=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function ymd(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function weekStartOf(dateLike){
+  const d=new Date(dateLike); d.setHours(0,0,0,0);
+  d.setDate(d.getDate()-((d.getDay()+6)%7));     // ย้อนไปวันจันทร์
+  return ymd(d);
+}
+// ⚠️ ยึดเวลาไทย — นัทอยู่อเมริกา ถ้าคิดจากเครื่องจะติดแท็กผิดสัปดาห์
+function thisWeekStart(){
+  const n=new Date();
+  return weekStartOf(new Date(n.getTime()+(n.getTimezoneOffset()+420)*60000));
+}
+function weekLabel(s){
+  if(!s) return '';
+  const a=new Date(s+'T00:00:00'), b=new Date(a); b.setDate(b.getDate()+6);
+  return `${a.getDate()}-${b.getDate()} ${MON_EN[b.getMonth()]}`;   // "3-9 Aug" · ข้ามเดือน "27-2 Aug"
+}
+function weekOffsetStart(back){
+  const d=new Date(thisWeekStart()+'T00:00:00'); d.setDate(d.getDate()-7*back); return ymd(d);
+}
+async function loadMenuWeeks(){
+  try{
+    const {data}=await sb.from('kitchen_data').select('data').eq('key',WEEK_KEY).maybeSingle();
+    menuWeeks=(data&&data.data&&typeof data.data==='object')?data.data:{};
+  }catch(e){ menuWeeks={}; }
+}
+async function saveMenuWeeks(){
+  const {error}=await sb.from('kitchen_data')
+    .upsert({key:WEEK_KEY,data:menuWeeks,updated_at:new Date().toISOString()},{onConflict:'key'});
+  if(error) throw error;
+}
+function weekTagBtnHtml(m){
+  const w=menuWeeks[m.code]||'';
+  const cur=w&&w===thisWeekStart();
+  const style=w
+    ? `background:${cur?'#FEF3C7':'#F3F4F6'};color:${cur?'#B45309':'#6B7280'};border:1px solid ${cur?'#FDE68A':'#E5E7EB'}`
+    : 'background:none;color:#C7CBD3;border:1px dashed #D8DBE0';
+  return `<button onclick="event.stopPropagation();openWeekTag('${m.id}')" title="ติดแท็กสัปดาห์ให้เมนูนี้ (ลูกค้าเห็นป้ายใต้ชื่อ)"
+    style="${style};font-size:11px;font-weight:700;cursor:pointer;padding:4px 9px;border-radius:8px;white-space:nowrap;font-family:inherit">
+    ${w?weekLabel(w):'🏷️ ติดแท็ก'}</button>`;
+}
+function openWeekTag(id){
+  const m=menuItems.find(x=>x.id==id); if(!m) return;
+  const cur=menuWeeks[m.code]||'';
+  const opts=[0,1,2,3].map(b=>{
+    const s=weekOffsetStart(b);
+    const name=b===0?'สัปดาห์นี้':b===1?'สัปดาห์ก่อน':`ย้อนไป ${b} สัปดาห์`;
+    return `<div onclick="setWeekTag('${id}','${s}')" style="padding:11px 14px;cursor:pointer;border-bottom:1px solid #F0F1EE;display:flex;justify-content:space-between;align-items:center;${cur===s?'background:#EBF3EF':''}">
+      <span style="font-weight:700;font-size:14px">${weekLabel(s)}</span>
+      <span style="font-size:11.5px;color:#8A8F98">${name}${cur===s?' ✓':''}</span></div>`;
+  }).join('');
+  const box=document.createElement('div');
+  box.id='wkTagOverlay';
+  box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  box.onclick=e=>{ if(e.target===box) closeWeekTag(); };
+  box.innerHTML=`<div style="background:#fff;border-radius:14px;max-width:340px;width:100%;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)">
+    <div style="padding:13px 14px;border-bottom:1px solid #F0F1EE">
+      <div style="font-weight:800;font-size:14px">${esc(m.name)}</div>
+      <div style="font-size:11.5px;color:#8A8F98;margin-top:2px">${m.code||''} — เมนูนี้เป็นของสัปดาห์ไหน</div>
+    </div>
+    ${opts}
+    <div onclick="setWeekTag('${id}','')" style="padding:11px 14px;cursor:pointer;color:#B91C1C;font-size:13px;font-weight:700;border-bottom:1px solid #F0F1EE">✕ เอาแท็กออก (เป็นเมนูประจำ)</div>
+    <div onclick="closeWeekTag()" style="padding:11px 14px;cursor:pointer;text-align:center;color:#6B7280;font-size:13px">ปิด</div>
+  </div>`;
+  document.body.appendChild(box);
+}
+function closeWeekTag(){ const b=document.getElementById('wkTagOverlay'); if(b) b.remove(); }
+async function setWeekTag(id,start){
+  const m=menuItems.find(x=>x.id==id); if(!m) return;
+  const prev=menuWeeks[m.code];
+  if(start) menuWeeks[m.code]=start; else delete menuWeeks[m.code];
+  closeWeekTag(); renderCatItems();
+  try{ await saveMenuWeeks(); }
+  catch(e){
+    if(prev) menuWeeks[m.code]=prev; else delete menuWeeks[m.code];
+    renderCatItems(); alert('บันทึกแท็กไม่สำเร็จ: '+(e.message||e));
+  }
 }
 
 // ── SAVE ──
