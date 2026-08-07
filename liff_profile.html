@@ -6,6 +6,7 @@
 <link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 var customPrefList = [];
 function addCustomPref(){
@@ -205,8 +206,38 @@ function renderTier(pts){
   document.getElementById("pNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString()+" แต้ม":"ระดับสูงสุด 👑";
 }
 
+// ════════════════════════════════════════════════════════════════
+// 🔒 ตัวตนลูกค้า — ต้องมาจาก LINE เท่านั้น (นัทเจอ 7 ส.ค. 2569)
+// ปัญหาเดิม: หน้านี้ไม่เคยเรียก LIFF เลย · อ่าน line_uid จาก localStorage
+//   แล้ว fallback เป็น "dev_001" → เอาเครื่องเดิมมาเปิดด้วยไลน์ใหม่
+//   = เห็นประวัติออเดอร์ของคนก่อนหน้า (ข้อมูลลูกค้ารั่วข้ามคน)
+// ตอนนี้: ถาม LINE ทุกครั้ง · ไม่มี fallback เดา · ไม่ได้เปิดผ่าน LINE = ไม่โชว์อะไรเลย
+// ════════════════════════════════════════════════════════════════
+const LIFF_ID = '2010442513-NI3JGTkb';
+let _lineUid = null;
+async function currentLineUid(){
+  if(_lineUid) return _lineUid;
+  try{
+    if(typeof liff === 'undefined') throw new Error('no liff sdk');
+    await liff.init({ liffId: LIFF_ID });
+    if(!liff.isLoggedIn()){ liff.login(); return null; }
+    const prof = await liff.getProfile();
+    _lineUid = prof && prof.userId;
+  }catch(e){ console.error('LIFF init failed:', e); _lineUid = null; }
+  if(!_lineUid){
+    // กันเด็ดขาด: ไม่รู้ว่าเป็นใคร = ไม่โชว์ประวัติใคร
+    localStorage.removeItem('line_uid');
+    const hb = document.getElementById('histBody');
+    if(hb) hb.innerHTML = '<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:18px">กรุณาเปิดหน้านี้ผ่านแอป LINE<br><small>เพื่อความปลอดภัยของข้อมูลลูกค้า</small></div>';
+    return null;
+  }
+  localStorage.setItem('line_uid', _lineUid);
+  return _lineUid;
+}
+
 async function loadProfile(){
-  const lineUid=localStorage.getItem("line_uid")||"dev_001";
+  const lineUid=await currentLineUid();
+  if(!lineUid) return;
   const sb_=getSB();
   let p=null;
   if(sb_){
@@ -285,7 +316,8 @@ function confirmReorder(){
 async function savePref(){
   const btn=document.querySelector(".btn-save");
   btn.textContent="⏳ กำลังบันทึก...";btn.disabled=true;
-  const lineUid=localStorage.getItem("line_uid")||"dev_001";
+  const lineUid=await currentLineUid();
+  if(!lineUid) return;
   const prefs=[];
   document.querySelectorAll(".pref-tog.on").forEach(t=>prefs.push(t.dataset.pref));
   prefs.push(...customPrefList);
@@ -324,7 +356,8 @@ loadProfile();
 // โหลด "ข้อจำกัดอาหาร" ที่เคยบันทึกไว้ กลับมาติ๊กให้ (เดิมกรอกแล้วเปิดใหม่หายทุกครั้ง)
 async function loadPrefs(){
   const sb_=getSB(); if(!sb_)return;
-  const lineUid=localStorage.getItem("line_uid")||"dev_001";
+  const lineUid=await currentLineUid();
+  if(!lineUid) return;
   try{
     let cid=lineUid;
     const cr=await sb_.from("customers").select("id").eq("line_uid",lineUid).maybeSingle();

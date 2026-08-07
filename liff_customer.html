@@ -2239,6 +2239,11 @@ function renderCart() {
 // Meal Plan: ปรุงสดเช้าวันส่ง + ส่งบ่าย → สั่งได้ถึง 08:30 น. ของวันส่ง (จ/พ/ศ) เริ่มวันนี้ได้ถ้ายังไม่เลยเวลาตัดรอบ
 const CUTOFF_HOUR = 18;
 const MP_CUTOFF_HOUR = 8, MP_CUTOFF_MIN = 30;
+// ── วันหยุดส่งของร้าน (นัทสั่ง 7 ส.ค. 2569: "ร้านเราไม่ส่งวันเสาร์") ──
+// 0=อา 1=จ 2=อ 3=พ 4=พฤ 5=ศ 6=ส  → ปิดเฉพาะเสาร์ · อาทิตย์ยังส่งปกติ
+const CLOSED_DOW = [6];
+function isClosedDay(dow){ return CLOSED_DOW.indexOf(dow) !== -1; }
+function isClosedYMD(ymd){ return !!ymd && isClosedDay(new Date(ymd + 'T00:00:00').getDay()); }
 
 function renderDatePick() {
   const el = document.getElementById('dpick');
@@ -2262,7 +2267,10 @@ function renderDatePick() {
     startOffset = isOutOfProvince ? baseOffset + 1 : baseOffset;
   }
 
-  let spanDays = 6;
+  let spanDays = 7;   // เดิม 6 — เพิ่ม 1 ชดเชยวันเสาร์ที่ปิด ลูกค้าจะยังเห็นวันเลือกได้เท่าเดิม
+
+  // วันที่เคยเลือกไว้ตกวันหยุดส่ง (เช่นเสาร์) → ล้างทิ้ง ไม่ให้ค้างแล้วสั่งผ่าน
+  if(selDate && isClosedYMD(selDate)) selDate = null;
 
   // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
   if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
@@ -2281,7 +2289,7 @@ function renderDatePick() {
   for(let i = startOffset; i <= startOffset + spanDays; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
     const key  = localYMD(d);
-    const disabled = isMeal && !isMWF(d.getDay());
+    const disabled = (isMeal && !isMWF(d.getDay())) || isClosedDay(d.getDay());   // ร้านไม่ส่งวันเสาร์
     const isOn = selDate===key && !disabled ? 'on' : '';
     html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
       <div class="dd">${DAYS[d.getDay()]}</div>
@@ -2376,7 +2384,7 @@ function renderRoundDatePicker(idx){
   for(let i=1;i<=28;i++){
     const d=new Date(base); d.setDate(base.getDate()+i);
     const key=localYMD(d);
-    const disabled = prevDate && key <= prevDate;
+    const disabled = (prevDate && key <= prevDate) || isClosedDay(d.getDay());   // ร้านไม่ส่งวันเสาร์
     if(disabled){
       html+=`<div class="dchip disabled" style="opacity:.35;cursor:not-allowed;">
         <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
@@ -2570,6 +2578,10 @@ async function submitOrder() {
     for (let i = 0; i < roundCount - 1; i++) {
       if (!extraRoundDates[i]) { toast('กรุณาเลือกวันรับให้ครบทุกรอบ'); return; }
     }
+  }
+  // กันชั้นสุดท้าย: ต่อให้หลุดปุ่มมาได้ ก็ห้ามบันทึกออเดอร์ที่ส่งวันหยุดร้าน (เสาร์)
+  if (isClosedYMD(selDate) || (doSplit && extraRoundDates.some(isClosedYMD))) {
+    toast('ร้านไม่ส่งวันเสาร์ — กรุณาเลือกวันอื่น'); return;
   }
   const addr = (document.getElementById('addr-input').value || document.getElementById('addr-search').value || '').trim();
   if (!addr)         { toast('กรุณาใส่หรือค้นหาที่อยู่จัดส่ง'); return; }
