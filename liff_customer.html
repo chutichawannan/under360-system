@@ -3940,6 +3940,17 @@ async function confirmMoveOrder(id){
     const notes=((o&&o.notes)?o.notes+' ':'')+stamp;     // เก็บร่องรอยไว้ให้แอดมินเห็นว่าใครเลื่อน
     const r=await sb.from('orders').update({delivery_date:moveOrderSel, notes, updated_at:new Date().toISOString()}).eq('id',id);
     if(r.error) throw r.error;
+    // บันทึกลงประวัติกลางด้วย — แอดมินค้นย้อนได้ว่าใครเลื่อนบ่อย ไม่ต้องไล่อ่านโน้ตทีละใบ
+    //   เขียนแบบไม่บล็อก: ถ้าเขียนประวัติไม่ได้ ก็ไม่กระทบการเลื่อนของลูกค้า
+    try{
+      await sb.from('activity_log').insert({
+        session_id:'liff_'+Date.now()+'_'+Math.random().toString(36).slice(2,8),
+        actor:(lineProfile&&lineProfile.displayName)||(o&&o.customer_name)||'ลูกค้า',
+        source:'liff', action_type:'order_move',
+        summary:`${(o&&o.order_number)||'ออเดอร์'} ${(o&&o.customer_name)||''} — ลูกค้าเลื่อนวันส่งเอง ${from} → ${moveOrderSel}`,
+        detail:{order_id:id, order_number:(o&&o.order_number)||null, from, to:moveOrderSel, by:'customer'}
+      });
+    }catch(e){ console.warn('log move:', e); }
     toast('เลื่อนวันรับเรียบร้อย');
     moveOrderOpen=null; moveOrderSel=null;
     loadOrders();

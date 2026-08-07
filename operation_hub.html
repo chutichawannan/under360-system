@@ -476,8 +476,9 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <input id="ordSearchBox" type="search" autocomplete="off" placeholder="🔍 ค้นหา: ชื่อลูกค้า / เบอร์โทร / เลขออเดอร์"
           onkeydown="if(event.key==='Enter')runOrderSearch()" oninput="ordSearchTyping()"
           style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--ink-xsoft);border-radius:9px;font-family:var(--sans);font-size:13px">
-        <button class="btn" onclick="runOrderSearch()" style="background:var(--g);color:#fff;border-color:var(--g)">ค้นหา</button>
+        <button class="btn" onclick="runOrderSearch()" style="background:var(--forest);color:#fff;border-color:var(--forest)">ค้นหา</button>
         <button class="btn" id="ordSearchClear" onclick="clearOrderSearch()" style="display:none">✕ ล้าง</button>
+        <button class="btn" id="ordMovedBtn" onclick="toggleMovedOnly()" title="ดูเฉพาะใบที่ถูกเลื่อนวันส่ง — ทั้งที่แอดมินเลื่อนและลูกค้าเลื่อนเอง">🔁 ใบที่ถูกเลื่อน</button>
         <span id="ordSearchHint" style="font-size:11.5px;color:var(--ink-soft)"></span>
       </div>
       <!-- เลือกช่วงวันที่ -->
@@ -485,7 +486,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:13px">
           <span>ตั้งแต่</span><input type="date" id="rgFrom" style="padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans)">
           <span>ถึง</span><input type="date" id="rgTo" style="padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans)">
-          <button class="btn" onclick="applyRange()" style="background:var(--g);color:#fff;border-color:var(--g)">ดูออเดอร์</button>
+          <button class="btn" onclick="applyRange()" style="background:var(--forest);color:#fff;border-color:var(--forest)">ดูออเดอร์</button>
         </div>
       </div>
       <div class="orders-mini" id="ordersList">
@@ -497,7 +498,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
       <!-- แบ่งหน้า -->
       <div id="ordPager" style="display:none;align-items:center;justify-content:center;gap:10px;margin-top:12px">
         <button class="btn" id="ordPrev" onclick="ordGoPage(-1)">‹ ก่อนหน้า</button>
-        <span id="ordPageInfo" style="font-size:13px;font-weight:700;color:var(--g)"></span>
+        <span id="ordPageInfo" style="font-size:13px;font-weight:700;color:var(--forest)"></span>
         <button class="btn" id="ordNext" onclick="ordGoPage(1)">ถัดไป ›</button>
       </div>
     </div>
@@ -851,7 +852,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           <option value="large">ใหญ่พิเศษ</option>
         </select>
       </div>
-      <div id="settingsSaveMsg" style="font-size:12px;color:var(--g);height:16px"></div>
+      <div id="settingsSaveMsg" style="font-size:12px;color:var(--forest);height:16px"></div>
     </div>
 
     <!-- TAB: HOME EDITOR (seamless iframe) -->
@@ -1054,6 +1055,11 @@ function ordBaseQuery(sb_,todayStr,tomStr){
             .or(NOTEST)
             .order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
   }
+  // 🔁 ใบที่ถูกเลื่อน — ข้ามตัวกรองวัน เพราะแอดมินอยากรู้ว่า "ที่เลื่อนไปแล้วไปอยู่วันไหน"
+  if(ordMovedOnly){
+    return q.like("notes","*เลื่อนวัน*").or(NOTEST)
+            .order("delivery_date",{ascending:true}).order("created_at",{ascending:false});
+  }
   if(dateMode==="today")                 q=q.eq("delivery_date",todayStr);
   else if(dateMode==="tomorrow")         q=q.eq("delivery_date",tomStr);
   else if(dateMode==="pick"&&pickedDate) q=q.eq("delivery_date",pickedDate);
@@ -1082,6 +1088,11 @@ async function fetchOrdersPage(){
       var hh2=document.getElementById("ordSearchHint");
       if(hh2) hh2.textContent=ordTotal?("เจอ "+ordTotal+" ใบ (ค้นทุกวัน รวมใบที่ยกเลิก)"):"ไม่เจอใบไหนเลย — ลองพิมพ์แค่บางส่วนของชื่อหรือเบอร์";
     }
+    else if(ordMovedOnly){
+      title="🔁 ใบที่ถูกเลื่อนวันส่ง";
+      var hh3=document.getElementById("ordSearchHint");
+      if(hh3) hh3.textContent=ordTotal?("เจอ "+ordTotal+" ใบ · เรียงตามวันส่งใหม่ (ทุกวัน)"):"ยังไม่มีใบไหนถูกเลื่อน";
+    }
     else if(dateMode==="today")            title="ออเดอร์วันนี้ ("+todayStr+")";
     else if(dateMode==="tomorrow")         title="ออเดอร์พรุ่งนี้ ("+tomStr+")";
     else if(dateMode==="pick"&&pickedDate) title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
@@ -1101,6 +1112,15 @@ async function fetchOrdersPage(){
     }
   }catch(e){ console.error(e); }
   finally{ ordLoading=false; }
+}
+// 🔁 ดูเฉพาะใบที่ถูกเลื่อน — ตอบคำถามแอดมินตรงๆ ว่า "ออเดอร์ที่เลื่อนไปอยู่ไหน"
+//    ค้นที่ฐานข้อมูล (notes มีคำว่าเลื่อนวัน) ไม่ใช่กรองเฉพาะหน้าที่เปิดอยู่ · ข้ามตัวกรองวันเหมือนการค้นหา
+var ordMovedOnly=false;
+function toggleMovedOnly(){
+  ordMovedOnly=!ordMovedOnly; ordPage=0;
+  var b=document.getElementById("ordMovedBtn");
+  if(b){ b.style.background=ordMovedOnly?"var(--forest)":""; b.style.color=ordMovedOnly?"#fff":""; b.style.borderColor=ordMovedOnly?"var(--forest)":""; }
+  fetchOrdersPage();
 }
 function ordGoPage(d){
   var size=orderPageSize||20, maxPage=Math.max(0,Math.ceil(ordTotal/size)-1);
@@ -1157,7 +1177,7 @@ function renderOrders(orders){
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
     h+="<div class='orders-mini-row' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
-    h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
+    h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
     h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
     h+="<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
@@ -1266,6 +1286,67 @@ async function odDelItem(itemId, orderId){
   }catch(e){ alert("ลบไม่สำเร็จ: "+(e.message||e)); }
 }
 
+// ── 🔁 เลื่อนวันส่ง (นัทสั่ง 7 ส.ค. 2569) ─────────────────────────────────
+// WHY: แอดมิน(กิฟ)รายงานว่าลูกค้าเลื่อนวันรับบ่อย (คุณโอ๋เป็นประจำ) แต่เดิม:
+//   · ออเดอร์ปกติ/คอร์ส  → แอดมินแก้วันส่งเองไม่ได้เลย ต้องไปแก้ที่ Hato
+//   · พอ Hato ปิด = ไม่มีทางเลื่อนเลย · และไม่มีที่ไหนดูได้ว่าใบไหนถูกเลื่อนบ้าง
+// เก็บประวัติลง activity_log (ตารางที่มีอยู่แล้ว) แทนการฝังเป็นข้อความในโน้ต
+//   → ค้นได้ ย้อนดูได้ว่าใครเลื่อน เมื่อไหร่ จากวันไหนไปวันไหน · ไม่ต้องรัน SQL เพิ่ม
+var OD_MOVE_TAG="[เลื่อนวันส่ง";
+// รับได้ทั้งที่แอดมินเลื่อนใน OH และที่ลูกค้าเลื่อนเองใน LIFF (คนละข้อความ ความหมายเดียวกัน)
+function odIsMoved(o){ return /\[เลื่อนวัน(ส่ง|โดยลูกค้า)/.test(String(o&&o.notes||"")); }
+function odMoveBadge(o){
+  if(!odIsMoved(o)) return "";
+  var byCust=/โดยลูกค้า/.test(String(o.notes||""));
+  return "<span title='"+esc2(odMovedInfo(o))+"' style='font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;border-radius:7px;padding:1px 6px;margin-left:5px'>🔁 "+(byCust?"ลูกค้าเลื่อน":"เลื่อนแล้ว")+"</span>";
+}
+function odMovedInfo(o){
+  var m=String(o&&o.notes||"").match(/\[เลื่อนวัน(?:ส่ง|โดยลูกค้า)\s+([0-9-]+)\s*→\s*([0-9-]+)[^\]]*\]/);
+  if(!m) return "";
+  return "ใบนี้ถูกเลื่อน: "+m[1]+" → "+m[2];
+}
+async function logMoveActivity(o,from,to,who){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+      actor: who||"ไม่ทราบชื่อ",
+      source:"oh",
+      action_type:"order_move",
+      summary:(o.order_number||"ออเดอร์")+" "+(o.customer_name||"")+" — เลื่อนวันส่ง "+from+" → "+to,
+      detail:{order_id:o.id,order_number:o.order_number,customer_name:o.customer_name,from:from,to:to}
+    });
+  }catch(e){ console.warn("logMoveActivity:",e); }
+}
+async function odMoveDate(id){
+  var sb_=getSB(); if(!sb_) return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  if(!o){ var r=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r.data; }
+  if(!o){ alert("ไม่พบออเดอร์"); return; }
+  var from=o.delivery_date||"—";
+  var to=window.prompt("เลื่อนวันส่งของ "+(o.order_number||"")+" ("+(o.customer_name||"")+")\n\nวันเดิม: "+from+"\nใส่วันใหม่ (ปปปป-ดด-วว)  เช่น 2026-08-12","");
+  if(!to) return;
+  to=String(to).trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(to)){ alert("รูปแบบวันที่ไม่ถูกต้อง — ต้องเป็น ปปปป-ดด-วว เช่น 2026-08-12"); return; }
+  // ⚠️ ร้านไม่ส่งวันเสาร์ (กติกาเดียวกับหน้าลูกค้า) — กันแอดมินเลื่อนไปวันที่ส่งไม่ได้
+  if(new Date(to+"T00:00:00").getDay()===6){ alert("วันเสาร์ร้านไม่ส่ง — เลือกวันอื่น"); return; }
+  if(to===from){ alert("วันเดิมกับวันใหม่เหมือนกัน"); return; }
+  var who=(typeof state!=="undefined"&&state&&state.currentUser)||localStorage.getItem("lastNickname")||"";
+  if(!who){ who=window.prompt("ใครเป็นคนเลื่อน? (ใส่ชื่อไว้ดูย้อนหลัง)","")||"ไม่ทราบชื่อ"; try{localStorage.setItem("lastNickname",who);}catch(e){} }
+  if(!window.confirm("ยืนยันเลื่อนวันส่ง\n\n"+(o.order_number||"")+" · "+(o.customer_name||"")+"\n"+from+"  →  "+to+"\n\nโดย: "+who)) return;
+  var stamp=OD_MOVE_TAG+" "+from+" → "+to+" โดย "+who+"]";
+  var notes=(o.notes?String(o.notes)+" ":"")+stamp;
+  try{
+    var res=await sb_.from("orders").update({delivery_date:to,notes:notes,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error) throw res.error;
+    o.delivery_date=to; o.notes=notes;
+    await logMoveActivity(o,from,to,who);
+    alert("เลื่อนแล้ว "+from+" → "+to);
+    closeOrderDetail&&closeOrderDetail();
+    loadAll(true);
+  }catch(e){ console.error(e); alert("เลื่อนไม่สำเร็จ: "+(e.message||e)); }
+}
+
 async function openOrderDetail(id){
   var ov=document.getElementById("odOverlay"), body=document.getElementById("odBody"), ttl=document.getElementById("odTitle");
   if(!ov)return;
@@ -1307,9 +1388,13 @@ async function openOrderDetail(id){
       +"<span style='font-size:11px;font-weight:700;padding:3px 9px;border-radius:8px;"+(paid?"background:#D1FAE5;color:#065F46":"background:#FEF3C7;color:#92400E")+"'>"+(paid?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
       +(o.source?"<span style='font-size:11px;padding:3px 9px;border-radius:8px;background:#EEF2FF;color:#3730A3'>"+esc2(o.source)+"</span>":"")
       +"</div>";
-    // เวลา
+    // เวลา + ปุ่มเลื่อนวันส่ง (นัทสั่ง 7 ส.ค. 2569 — แอดมิน(กิฟ)รายงานว่าลูกค้าบางคนเลื่อนบ่อย เช่นคุณโอ๋
+    //   แต่เดิมแอดมินแก้วันส่งของออเดอร์ปกติไม่ได้เลย ต้องไปแก้ที่ Hato = พอ Hato ปิดก็ทำไม่ได้)
+    var moved=odMovedInfo(o);
     h+=box("🕒 เวลา", row("สั่งเมื่อ", odThaiDT(o.created_at))
-      +row("ส่งวันที่", (o.delivery_date||"—"))
+      +row("ส่งวันที่", "<span style='font-family:var(--mono)'>"+(o.delivery_date||"—")+"</span>"
+           +" <span onclick=\"odMoveDate('"+id+"')\" title='เลื่อนวันส่ง' style='cursor:pointer;font-size:11px;font-weight:700;color:#1D4ED8;background:#EFF6FF;border-radius:7px;padding:2px 8px;margin-left:6px'>📅 เลื่อนวัน</span>")
+      +(moved?"<div style='font-size:11px;color:#B45309;background:#FEF3C7;border-radius:7px;padding:4px 8px;margin-top:5px'>🔁 "+esc2(moved)+"</div>":"")
       +row("ช่วงเวลาส่ง", esc2(o.time_slot_label||o.time_slot||"—")));
     // ลูกค้า + ที่อยู่
     h+=box("👤 ผู้รับ / จัดส่ง",
