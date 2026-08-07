@@ -3821,7 +3821,18 @@ function renderOrders(orders) {
   }
   el.innerHTML = orders.map(o => {
     const st = STATUS[o.status] || { t:o.status, c:'' };
-    const items = o.order_items || [];
+    // N-40 (7 ส.ค. 2569): เมนูซ้ำเคยขึ้นทีละบรรทัด — เซ็ต 18 กล่องขึ้น 18 บรรทัดติดกัน
+    //   รวมเมนูเดียวกัน (ชื่อ+ประเภท+ราคาต่อหน่วยเท่ากัน) เป็นบรรทัดเดียว แล้วบวกจำนวน/ยอดรวม
+    const items = (function(raw){
+      const map = new Map();
+      (raw || []).forEach(i => {
+        const key = [i.menu_name, i.notes || '', i.unit_price].join('|');
+        const hit = map.get(key);
+        if (hit) { hit.quantity += Number(i.quantity) || 0; }
+        else { map.set(key, Object.assign({}, i, { quantity: Number(i.quantity) || 0 })); }
+      });
+      return Array.from(map.values());
+    })(o.order_items);
     return `<div class="ocard">
       <div class="ocard-h">
         <span class="ocard-n">${h(o.order_number)}</span>

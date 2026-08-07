@@ -2824,11 +2824,14 @@ function setPromoScopeMode(mode){
 async function editPromo(id){
   var p=_loadedPromos.find(function(x){return x.id===id;});
   if(!p)return;
-  if((p.used_count||0)>0){alert("โค้ดนี้ถูกใช้ไปแล้ว แก้ไขไม่ได้ — ปิดโค้ดนี้แล้วสร้างโค้ดใหม่แทน");return;}
+  // N-39 (7 ส.ค. 2569 · นัทสั่ง): เดิมโค้ดที่มีคนใช้แล้วแก้ไม่ได้เลย
+  //   ตอนนี้แก้ได้ แต่ล็อกเฉพาะช่องที่ถ้าแก้แล้วจะทำให้ออเดอร์เก่าที่ใช้โค้ดนี้ไปแล้วเพี้ยน
+  //   (โค้ด · ประเภทส่วนลด · มูลค่า · ยอดขั้นต่ำ) — ที่เหลือแก้ได้หมด
+  var used=(p.used_count||0)>0;
   var f=document.getElementById("promoForm");
   if(!f)return;
   editingPromoId=id;
-  document.getElementById("promoFormTitle").textContent="แก้ไขโค้ด "+p.code;
+  document.getElementById("promoFormTitle").textContent="แก้ไขโค้ด "+p.code+(used?" (ใช้ไปแล้ว "+p.used_count+" ครั้ง)":"");
   document.getElementById("promoFormSaveBtn").textContent="💾 บันทึกการแก้ไข";
   f.style.display="block";
   document.getElementById("pc-code").value=p.code||"";
@@ -2845,6 +2848,21 @@ async function editPromo(id){
   setPromoScopeMode(p.scope_mode||"include");
   updatePromoForm();
   await updatePromoScopeUI();
+  // ล็อกช่องที่แก้แล้วกระทบออเดอร์เก่า + ขึ้นคำอธิบายให้แอดมินรู้ว่าทำไมกดไม่ได้
+  ["pc-code","pc-type","pc-value","pc-min"].forEach(function(k){
+    var el=document.getElementById(k); if(!el)return;
+    el.disabled=used; el.style.opacity=used?"0.55":""; el.style.cursor=used?"not-allowed":"";
+  });
+  var warn=document.getElementById("promoUsedWarn");
+  if(!warn){
+    warn=document.createElement("div"); warn.id="promoUsedWarn";
+    warn.style.cssText="background:#FDF3E3;border:1px solid #8F5606;color:#8F5606;border-radius:8px;padding:9px 11px;margin-bottom:12px;font-size:12.5px;font-weight:600;";
+    f.insertBefore(warn,f.firstChild);
+  }
+  warn.style.display=used?"block":"none";
+  warn.innerHTML="⚠️ โค้ดนี้มีลูกค้าใช้ไปแล้ว "+(p.used_count||0)+" ครั้ง<br>"+
+    "<span style='font-weight:400'>แก้ได้: คำอธิบาย · วันหมดอายุ · จำนวนจำกัด · ใช้ได้กับอะไร · แนะนำ/ซ้อนได้<br>"+
+    "แก้ไม่ได้: ชื่อโค้ด · ประเภท · มูลค่าส่วนลด · ยอดขั้นต่ำ (จะทำให้ออเดอร์เก่าที่ใช้โค้ดนี้ไปแล้วเพี้ยน)</span>";
   f.scrollIntoView({behavior:"smooth",block:"start"});
 }
 
@@ -3056,7 +3074,7 @@ async function loadPromos(){
       else if(usedUp)h+="<div style='font-size:11px;color:#DC2626;font-weight:600;margin-top:3px'>🚫 ใช้ครบจำนวนแล้ว</div>";
       h+="</div>";
       h+="<div style='display:flex;flex-direction:column;gap:6px;align-items:flex-end'>";
-      if((p.used_count||0)===0)h+="<button class='btn' onclick=\"editPromo('"+p.id+"')\" style='font-size:12px;padding:5px 10px'>✏️ แก้ไข</button>";
+      h+="<button class='btn' onclick=\"editPromo('"+p.id+"')\" style='font-size:12px;padding:5px 10px'>✏️ แก้ไข</button>"; // N-39: แก้ได้ทุกโค้ด (ตัวที่ใช้แล้วจะล็อกเฉพาะช่องเงิน)
       h+="<button class='btn' onclick=\"togglePromo('"+p.id+"',"+(p.is_active?"false":"true")+")\" style='font-size:12px;padding:5px 10px'>"+(p.is_active?"🟢 เปิด":"⚪ ปิด")+"</button>";
       h+="<button class='btn' onclick=\"delPromo('"+p.id+"','"+esc2(p.code)+"')\" style='font-size:12px;padding:5px 10px;color:#DC2626'>ลบ</button>";
       h+="</div></div></div>";

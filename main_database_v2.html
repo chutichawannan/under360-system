@@ -2089,7 +2089,11 @@ function renderPackageEditor(pkg){
     state.pkgMenuSearch  = '';
   }
 
-  const activeRecipes = (state.recipes || []).filter(r => r.status === 'active');
+  // N-36 (7 ส.ค. 2569): เดิมโชว์สูตร active ทั้งหมด ~961 รายการ รวมสูตรที่ยังไม่มีชื่อ (ขึ้นเป็น "–")
+  //   → แอดมินติ๊กเมนูไม่มีชื่อไปโดยไม่รู้ตัว (นัทเจอตอนเดโม่กับแอดมิน)
+  //   เหลือเฉพาะของที่ "ขายจริง" = เปิดขายออนไลน์ + มีโค้ด + มีชื่อ
+  const activeRecipes = (state.recipes || []).filter(r =>
+    r.status === 'active' && r.available_online && String(r.code || '').trim() && String(r.name || '').trim());
   const q = (state.pkgMenuSearch || '').trim().toLowerCase();
   const shown = q
     ? activeRecipes.filter(r => (r.name||'').toLowerCase().includes(q) || (r.code||'').toLowerCase().includes(q))
@@ -2186,9 +2190,14 @@ function renderPackageEditor(pkg){
     <div style="border:1px dashed var(--turmeric);border-radius:10px;padding:12px;margin-bottom:16px;background:var(--turmeric-soft);">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-wrap:wrap;gap:6px;">
         <span style="font-size:13px;font-weight:700;color:var(--turmeric);">🧩 กลุ่มการเลือก <span style="font-weight:400;color:var(--ink-soft);">(ตั้ง = เป็นเซ็ต/คอร์ส/บันเดิล · ว่าง = แพคแบบเดิม)</span></span>
-        <button type="button" class="btn btn-sm" id="pkgAddGroupBtn" style="padding:3px 10px;">+ เพิ่มกลุ่ม</button>
+        <button type="button" class="btn btn-sm pkg-add-group" id="pkgAddGroupBtn" style="padding:3px 10px;">+ เพิ่มกลุ่ม</button>
       </div>
-      ${groupRows || `<div style="font-size:12px;color:var(--ink-soft);padding:4px 2px;">ยังไม่มีกลุ่ม — ถ้าตั้งกลุ่ม ลูกค้าจะเลือกตามที่กำหนด (เช่น ข้าว 7 · กับข้าว 7 · น้ำ 3) · ราคาฐาน = ราคาเหมาต่อเซ็ต · เมนูที่ติ๊กด้านล่างที่มี +เงิน = ค่าบวกเพิ่มเมื่อลูกค้าเลือก</div>`}
+      ${groupRows || `
+      <div style="background:#FDECEB;border:1px solid #A02A1F;border-radius:8px;padding:12px;text-align:center;">
+        <div style="font-size:13.5px;font-weight:700;color:#A02A1F;margin-bottom:3px;">⚠️ แพคนี้ยังสั่งไม่ได้ — ลูกค้ากดเข้าไปแล้วเลือกอะไรไม่ได้เลย</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;">ต้องเพิ่ม "กลุ่มการเลือก" ก่อน เช่น เลือกข้าวกล่อง 7 · เลือกกับข้าว 7<br>เมนูพิเศษประจำสัปดาห์จะเข้ามาเองถ้าเลือกแบบ "ตามหมวด"</div>
+        <button type="button" class="btn pkg-add-group" style="padding:9px 20px;font-size:14px;font-weight:700;">+ เพิ่มกลุ่มการเลือก</button>
+      </div>`}
       <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
         <label style="font-size:12.5px;display:flex;align-items:center;gap:5px;">แบ่งส่ง <input type="number" class="pkg-f-rounds" value="${pkg.delivery_rounds||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> รอบ</label>
         <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="pkg-f-flexdeliv" ${pkg.flexible_delivery?'checked':''}> ลูกค้าเลือกวันส่งเองได้ (ของทำสต็อค)</label>
@@ -2221,9 +2230,14 @@ function renderPackageEditor(pkg){
       <input type="text" class="pkg-f-desc" value="${escapeHtml(pkg.description||'')}"
         placeholder="เช่น เลือก 9 กล่องจากเมนู online">
     </div>
-    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;">
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:${(pkg.is_active && !(state.editingGroups||[]).length) ? '6' : '14'}px;cursor:pointer;">
       <input type="checkbox" class="pkg-f-active" ${pkg.is_active?'checked':''}> เปิดขายแพคนี้
     </label>
+    ${/* N-35 (7 ส.ค. 2569): เปิดขายได้ทั้งที่ยังไม่มีกลุ่ม → ลูกค้าเห็นการ์ดแต่กดเข้าไปเลือกอะไรไม่ได้ */''}
+    ${(pkg.is_active && state.hasSetBuilderCols && !(state.editingGroups||[]).length) ? `
+    <div style="background:#FDECEB;border:1px solid #A02A1F;border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12.5px;color:#A02A1F;font-weight:600;">
+      ⚠️ เปิดขายอยู่ แต่ยังไม่มีกลุ่มการเลือก — ลูกค้าเห็นการ์ดแล้วกดเข้าไปสั่งไม่ได้
+    </div>` : ''}
     ${state.hasFreeShipCol ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;color:var(--forest);font-weight:600;">
       <input type="checkbox" class="pkg-f-freeship" ${pkg.free_shipping?'checked':''}> 🚚 ซื้อแพคนี้ = ส่งฟรี (ยกเว้นค่าส่งทั้งออเดอร์)
     </label>` : ''}
@@ -2311,14 +2325,17 @@ function attachPackagesHandlers(){
   };
 
   // ── กลุ่มการเลือก (เซ็ต/คอร์ส/บันเดิล): เพิ่ม/ลบ/สลับชนิด ──
-  const pkgAddGroupBtn = document.getElementById('pkgAddGroupBtn');
-  if(pkgAddGroupBtn) pkgAddGroupBtn.onclick = () => {
-    const panel = pkgAddGroupBtn.closest('.panel');
-    const pkg = state.packages.find(p => p.id === state.openPkgId);
-    syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
-    state.editingGroups.push({ label:'', kind:'category', category:(state.categories[0]||{}).key||'', skus:[], count:1, allow_repeat:true });
-    render();
-  };
+  // N-34 (7 ส.ค. 2569): เดิมมีปุ่มเดียวอยู่มุมขวาบน แอดมินหาไม่เจอตอนเดโม่
+  //   → ตอนที่ยังไม่มีกลุ่ม จะมีปุ่มใหญ่อีกตัวอยู่กลางกล่องเตือนด้วย (class เดียวกัน ทำงานเหมือนกัน)
+  document.querySelectorAll('.pkg-add-group').forEach(btn => {
+    btn.onclick = () => {
+      const panel = btn.closest('.panel');
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      state.editingGroups.push({ label:'', kind:'category', category:(state.categories[0]||{}).key||'', skus:[], count:1, allow_repeat:true });
+      render();
+    };
+  });
   document.querySelectorAll('.pg-remove').forEach(btn => {
     btn.onclick = () => {
       const panel = btn.closest('.panel');
