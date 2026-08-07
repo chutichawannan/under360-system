@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Under360 — ใบตรวจงาน</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<meta name="theme-color" content="#10221A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ใบตรวจ">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<style>
+:root{
+  --ink:#16211c;--soft:#4a5a52;--faint:#7d8c84;
+  --bg:#f6f8f6;--card:#fff;--line:#dee6e0;
+  --brand:#3c7a5c;--brandsoft:#e9f2ec;
+  --warn:#8f5606;--warnsoft:#fdf3e3;
+  --stop:#a02a1f;--stopsoft:#fdeceb;
+  --ok:#2f6b4f;--oksoft:#e7f3ec;
+  --r:10px;
+  --thai:"Noto Sans Thai","Sarabun","Leelawadee UI",system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--thai);font-size:16px;line-height:1.6;-webkit-text-size-adjust:100%}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px 100px}
+
+/* ── ล็อก PIN ── */
+#gate{position:fixed;inset:0;background:#10221A;color:#fff;display:grid;place-items:center;z-index:100;text-align:center;padding:20px}
+#gate h1{font-size:22px;margin:0 0 6px}
+#gate p{color:#9DB3A8;font-size:14px;margin:0 0 18px}
+#gate input{width:190px;font-size:26px;text-align:center;letter-spacing:8px;padding:12px;border-radius:12px;border:1px solid #2B4238;background:#16281F;color:#fff;font-family:inherit}
+#gate .err{color:#F0A08F;font-size:13px;margin-top:10px;min-height:18px}
+
+header.top{padding:4px 0 14px;border-bottom:2px solid var(--ink)}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--brand);font-weight:700}
+h1.t{font-size:23px;line-height:1.25;margin:5px 0 6px;letter-spacing:-.01em}
+.sub{color:var(--soft);font-size:14px;margin:0}
+
+.who{display:flex;gap:8px;align-items:center;margin:12px 0 0;font-size:13.5px;color:var(--soft);flex-wrap:wrap}
+.who b{color:var(--ink)}
+.who button{font-family:inherit;font-size:12.5px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--soft);cursor:pointer}
+
+.roles{margin:14px 0 4px}
+.roles-l{font-size:12px;color:var(--faint);margin-bottom:6px}
+.roles-b{display:flex;gap:6px;flex-wrap:wrap}
+.role{font-family:inherit;font-size:13.5px;font-weight:600;padding:7px 13px;border-radius:99px;border:1px solid var(--line);background:var(--card);color:var(--soft);cursor:pointer}
+.role.on{background:var(--brand);border-color:var(--brand);color:#fff}
+
+.bar{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 0;border-bottom:1px solid var(--line);margin-bottom:16px}
+.bar-row{display:flex;align-items:center;gap:10px}
+.track{flex:1;height:7px;background:var(--line);border-radius:99px;overflow:hidden;display:flex}
+.fok{height:100%;background:var(--ok);transition:width .3s}
+.fbad{height:100%;background:var(--stop);transition:width .3s}
+.count{font-size:12.5px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+
+h2.sec{display:flex;align-items:center;gap:10px;margin:30px 0 3px;font-size:19px;scroll-margin-top:80px}
+h2.sec .n{flex:none;width:28px;height:28px;border-radius:50%;background:var(--brand);color:#fff;display:grid;place-items:center;font-size:13px;font-weight:700}
+.why{margin:0 0 11px 38px;color:var(--faint);font-size:13px}
+h3.grp{margin:18px 0 7px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:var(--brand);font-weight:700}
+.known{margin:0 0 9px;padding:9px 12px;background:var(--oksoft);border-left:3px solid var(--ok);border-radius:0 8px 8px 0;font-size:13.5px;color:var(--soft)}
+.known.bad{background:var(--stopsoft);border-left-color:var(--stop)}
+.known .lbl{display:block;font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ok);font-weight:700;margin-bottom:2px}
+.known.bad .lbl{color:var(--stop)}
+.known b{color:var(--ink)}
+
+.item{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:10px 12px;margin-bottom:8px}
+.item.s-ok{border-color:var(--ok);background:var(--oksoft)}
+.item.s-bad{border-color:var(--stop);background:var(--stopsoft)}
+.item.s-skip{opacity:.55}
+.it-top{display:flex;gap:9px;align-items:flex-start}
+.it-t{flex:1;font-weight:600;font-size:15px}
+.it-t .code{font-size:11px;color:var(--faint);font-weight:400}
+.btns{display:flex;gap:4px;flex:none}
+.btns b{width:32px;height:30px;display:grid;place-items:center;border:1px solid var(--line);border-radius:7px;font-size:15px;cursor:pointer;color:var(--faint);user-select:none;background:var(--card)}
+.btns b.on[data-v="ok"]{background:var(--ok);border-color:var(--ok);color:#fff}
+.btns b.on[data-v="bad"]{background:var(--stop);border-color:var(--stop);color:#fff}
+.btns b.on[data-v="skip"]{background:var(--line);border-color:var(--line);color:var(--soft)}
+.exp{margin:8px 0 0 32px;padding-left:10px;border-left:2px solid var(--line);font-size:13.5px;color:var(--soft)}
+.exp b{color:var(--ink)}
+textarea{display:block;width:100%;margin:8px 0 0;font-family:inherit;font-size:14px;padding:7px 9px;border:1px dashed var(--line);border-radius:8px;background:transparent;color:var(--ink);resize:vertical;min-height:34px}
+textarea:focus{outline:2px solid var(--brand);outline-offset:1px;border-style:solid}
+.by{font-size:11.5px;color:var(--faint);margin-top:5px}
+
+.shots{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.addshot{font-family:inherit;font-size:12.5px;color:var(--brand);border:1px dashed var(--brand);border-radius:8px;padding:6px 11px;cursor:pointer;background:transparent;font-weight:600}
+.shot{width:54px;height:54px;border-radius:8px;overflow:hidden;border:1px solid var(--line);cursor:zoom-in}
+.shot img{width:100%;height:100%;object-fit:cover;display:block}
+.lb{position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99;display:none;place-items:center;padding:16px}
+.lb.on{display:grid}
+.lb img{max-width:100%;max-height:88vh;border-radius:8px}
+
+.secnote{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--brand);border-radius:var(--r);padding:11px 13px;margin:12px 0 4px}
+.secnote h4{margin:0 0 4px;font-size:14px}
+.secnote textarea{min-height:54px}
+
+.foot{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);padding:9px 14px;padding-bottom:calc(9px + env(safe-area-inset-bottom))}
+.foot-in{max-width:760px;margin:0 auto;display:flex;gap:8px;align-items:center}
+.foot .st{flex:1;font-size:12.5px;color:var(--faint)}
+.foot button{font-family:inherit;font-size:14px;font-weight:600;padding:10px 14px;border-radius:9px;border:1px solid var(--brand);background:var(--brand);color:#fff;cursor:pointer}
+code{font-family:ui-monospace,Menlo,monospace;font-size:.88em;background:var(--brandsoft);padding:1px 5px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<div id="gate">
+  <div>
+    <h1>ใบตรวจงาน Under360</h1>
+    <p>ใส่รหัส 4 ตัว</p>
+    <input id="pin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off">
+    <div class="err" id="pinerr"></div>
+  </div>
+</div>
+
+<div class="wrap" id="app" style="display:none">
+  <header class="top">
+    <div class="eyebrow">ช่วยกันตรวจ · ทุกคนเห็นเหมือนกัน</div>
+    <h1 class="t">ใบตรวจระบบ 7 หมวด</h1>
+    <p class="sub">กด <b>✓ ผ่าน</b> / <b>✗ มีปัญหา</b> / <b>– ข้าม</b> · พิมพ์คอมเมนต์ · แนบรูปหน้าจอได้ · <b>บันทึกอัตโนมัติ ทุกคนเห็นทันที</b></p>
+    <div class="who">
+      <span>คุณคือ: <b id="whoName">—</b></span>
+      <button id="btnName">เปลี่ยนชื่อ</button>
+      <span id="syncSt" style="color:var(--faint)"></span>
+    </div>
+  </header>
+
+  <div class="roles">
+    <div class="roles-l">เลือกงานของตัวเอง — จะเห็นเฉพาะส่วนที่ต้องตรวจ</div>
+    <div class="roles-b">
+      <button class="role on" data-r="all">ดูทั้งหมด</button>
+      <button class="role" data-r="cust">🛒 ฝั่งลูกค้า</button>
+      <button class="role" data-r="admin">💻 แอดมิน</button>
+      <button class="role" data-r="kitchen">🍳 ครัว</button>
+      <button class="role" data-r="msg">🛵 แมสเซนเจอร์</button>
+    </div>
+  </div>
+
+  <div class="bar">
+    <div class="bar-row">
+      <div class="track"><div class="fok" id="fok"></div><div class="fbad" id="fbad"></div></div>
+      <div class="count" id="count">0 / 0</div>
+    </div>
+  </div>
+
+  <div id="list"></div>
+</div>
+
+<div class="lb" id="lb"><img alt="รูปที่แนบ"></div>
+
+<div class="foot" id="foot" style="display:none">
+  <div class="foot-in">
+    <div class="st" id="footSt">พร้อมใช้งาน</div>
+    <button id="btnRefresh">รีเฟรช</button>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+var SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+var SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+var sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ── ล็อก PIN (กันคนหลงเข้า ไม่ใช่ security จริง — เหมือนหน้าออเดอร์ล่วงหน้า) ── */
+var PIN = '0360', PIN_KEY = 'u360_chk_pin';
+function unlock(){
+  document.getElementById('gate').style.display = 'none';
+  document.getElementById('app').style.display = '';
+  document.getElementById('foot').style.display = '';
+  start();
+}
+if (localStorage.getItem(PIN_KEY) === PIN) unlock();
+document.getElementById('pin').addEventListener('input', function(e){
+  if (e.target.value.length < 4) return;
+  if (e.target.value === PIN) { localStorage.setItem(PIN_KEY, PIN); unlock(); }
+  else { document.getElementById('pinerr').textContent = 'รหัสไม่ถูก ลองใหม่'; e.target.value = ''; }
+});
+setTimeout(function(){ var p = document.getElementById('pin'); if (p && p.offsetParent) p.focus(); }, 250);
+
+/* ── ชื่อคนตรวจ (ใช้คีย์เดียวกับหน้าครัว จะได้ไม่ต้องกรอกซ้ำ) ── */
+var NAME_KEY = 'lastNickname';
+function whoAmI(){ return localStorage.getItem(NAME_KEY) || ''; }
+function askName(force){
+  var cur = whoAmI();
+  if (cur && !force) return cur;
+  var n = window.prompt('ใส่ชื่อคุณ (ให้คนอื่นรู้ว่าใครตรวจข้อนี้)', cur || '');
+  if (n && n.trim()) { localStorage.setItem(NAME_KEY, n.trim()); }
+  return whoAmI();
+}
+document.getElementById('btnName').addEventListener('click', function(){ askName(true); paintWho(); });
+function paintWho(){ document.getElementById('whoName').textContent = whoAmI() || '(ยังไม่ใส่ชื่อ)'; }
+
+/* ── ข้อมูลใบตรวจ ── */
+var DATA=[
+{n:1,t:"หน้า LIFF — ลูกค้าสั่งเอง",why:"หน้าบ้านทั้งหมด · ออเดอร์จากหมวดนี้ใช้ตามต่อทุกหมวด",groups:[
+ {g:"เข้าแอป + หน้าแรก",items:[
+  {k:"1-01",t:"เปิด LIFF จากลิงก์ใน LINE ครั้งแรก",e:"เข้าได้โดยไม่ค้างหน้า login ซ้ำ · ชื่อไลน์ขึ้นถูกคน"},
+  {k:"1-02",t:"ปิดแอปแล้วเปิดใหม่ — ยังล็อกอินอยู่",e:"ไม่ต้องกด login ใหม่ทุกครั้ง"},
+  {k:"1-03",t:"การ์ดหน้าแรก 10 ใบ — รูปขึ้นครบ ไม่มีช่องขาว",e:"Diet A/B/C · Pack S/M/L · Bone Broth · Meal Plan · ทดลอง · เมนูพิเศษ"},
+  {k:"1-04",t:"การ์ดเลื่อนเองอัตโนมัติ และหยุดเมื่อเราแตะ",e:"แตะแล้วต้องหยุดถาวร ไม่กระตุกกลับมาเลื่อนเอง"},
+  {k:"1-05",t:"กดการ์ดทุกใบ → เปิดถูกที่ทุกใบ",e:"การ์ดเซ็ต → หน้าเลือกเมนูของเซ็ตนั้น · Meal Plan → หน้าเลือก HP/LC · เมนูพิเศษ → เลื่อนไปหมวดนั้น"},
+  {k:"1-06",t:"แถบหมวดเมนู — สลับหมวดแล้วรายการเปลี่ยนถูก",e:"ข้าวกล่อง · โปรตีนแพค · อาหารเด็ก · แซลมอนสด · บ๊ะจ่าง · ของทานเล่น · Bone Broth"},
+  {k:"1-07",t:"เลื่อนลงล่างสุด — ไม่มีช่องว่างแปลกๆ / เนื้อหาถูกตัด",e:""}]},
+ {g:"ดูเมนู",items:[
+  {k:"1-08",t:"กดชื่อเมนู → ป้อบอัพรายละเอียด",e:"ชื่อ · โค้ด · แคลอรี่ · โปรตีน · คำอธิบาย · ราคา · ปุ่มใส่ตะกร้า"},
+  {k:"1-09",t:"กดรูปเมนู → ขยายเต็มจอ",e:""},
+  {k:"1-10",t:"กดเมนูที่ไม่มีรูป (MC2 / S205) → ต้องไม่ค้าง ไม่ error",e:""},
+  {k:"1-11",t:"ชื่อเล่นเมนู (s1, s2, xs3…) โชว์ให้ลูกค้าเห็น",e:"กรอกแล้ว 13 จาก 118 — ดูว่าที่กรอกแล้วขึ้นถูก"},
+  {k:"1-12",t:"ป้ายสต็อก — เหลือน้อย / หมดแล้ว",e:"เหลือ ≤5 ขึ้น \"เหลือ N ชิ้นสุดท้าย\" · หมดแล้วกดสั่งไม่ได้"},
+  {k:"1-13",t:"ใส่ตะกร้าจนครบสต็อก → ขึ้นหมดทันที",e:"ไม่ใช่รอรีเฟรชหน้า"},
+  {k:"1-14",t:"ราคาที่โชว์ตรงกับที่ Hato ขาย",e:"สุ่มเช็ค 5-10 ตัว"}]},
+ {g:"ตะกร้า",items:[
+  {k:"1-15",t:"เพิ่ม / ลด / ลบของในตะกร้า ยอดคำนวณถูก",e:""},
+  {k:"1-16",t:"ปิดแอปแล้วเปิดใหม่ — ของในตะกร้ายังอยู่ไหม",e:"ถ้าหายหมด = ลูกค้าต้องเริ่มใหม่ ควรจดไว้"},
+  {k:"1-17",t:"ตะกร้าว่าง → กดไปหน้าชำระเงินไม่ได้",e:""},
+  {k:"1-18",t:"สั่งซ้ำจากประวัติออเดอร์เดิม",e:"ของเข้าตะกร้าครบตามใบเดิม"}]},
+ {g:"ส่วนลด + โปร",items:[
+  {k:"1-19",t:"กรอกโค้ดส่วนลดถูกต้อง → ลดจริง ยอดตรง",e:""},
+  {k:"1-20",t:"กรอกโค้ดผิด / หมดอายุ → ขึ้นข้อความบอกชัด",e:"ไม่ใช่เงียบหรือ error ดิบ"},
+  {k:"1-21",t:"กรอกโค้ดเดิมซ้ำ 2 รอบ → ต้องไม่ลดซ้อน",e:""},
+  {k:"1-22",t:"ชิป \"โค้ดแนะนำสำหรับคุณ\" — แตะแล้วใช้ได้เลย",e:""},
+  {k:"1-23",t:"โปรอัตโนมัติ ลูกค้าใหม่ ซื้อครบ ฿500 ลด ฿50",e:"เด้งเอง ไม่ต้องกรอกโค้ด"},
+  {k:"1-24",t:"ลูกค้าเก่าต้องไม่ได้โปรลูกค้าใหม่",e:"ลองสั่งด้วยบัญชีที่เคยซื้อแล้ว"},
+  {k:"1-25",t:"ส่วนลดสมาชิก 5% (Wellness Warriors)",e:"ถ้ามีบัญชีระดับนี้เทสด้วย"},
+  {k:"1-26",t:"ลดของออกจนยอดต่ำกว่าขั้นต่ำ → ส่วนลดต้องหลุดออก",e:"ไม่ใช่ค้างส่วนลดไว้ทั้งที่ไม่เข้าเงื่อนไข"}]},
+ {g:"วันส่ง + เวลา",items:[
+  {k:"1-27",t:"วันที่เลือกไม่ได้ ต้องเป็นสีเทากดไม่ได้",e:""},
+  {k:"1-28",t:"สั่งเมนูสต็อกหลัง 18:00 → วันพรุ่งนี้ต้องหายไป",e:"เวลาตัดยอดของเมนูสต็อก"},
+  {k:"1-29",t:"ช่วงเวลาส่ง 3 ช่วง เลือกได้ปกติ",e:""},
+  {k:"1-30",t:"ของลงถูกวันตามที่เลือกจริง",e:"เช็คซ้ำในหมวด 2 — เคยมีบั๊กวันเพี้ยนเพราะโซนเวลา"},
+  {k:"1-31",t:"เมนูสั่งล่วงหน้า (สัปดาห์หน้า) ผสมกับของสัปดาห์นี้",e:"ถ้าระบบบล็อก ต้องบอกเหตุผลชัด"}]},
+ {g:"ที่อยู่ + ค่าส่ง",items:[
+  {k:"1-32",t:"พิมพ์ในช่องค้นหาที่อยู่ → มีรายการเด้งให้เลือก",e:"⚠️ ไม่เด้ง = Google API ไม่ทำงาน — เคยทำให้ที่อยู่บันทึกเป็นข้อความมั่ว ส่งของไม่ได้"},
+  {k:"1-33",t:"ปักหมุดบนแผนที่ แล้วลากย้าย → ค่าส่งขยับตาม",e:""},
+  {k:"1-34",t:"ค่าส่งในกรุงเทพใกล้ๆ สมเหตุสมผล",e:"ปกติ 20-80 บาท"},
+  {k:"1-35",t:"ค่าส่งต่างจังหวัดไกล ต้องไม่เกิน ฿200",e:"เพดานที่นัทเคาะ · เคยพังคิด ฿4,232 ตอนส่งเกาะสมุย"},
+  {k:"1-36",t:"เซ็ตที่ตั้งส่งฟรี (Diet Set C) → ค่าส่งเป็น 0",e:""},
+  {k:"1-37",t:"ที่อยู่เดิมของลูกค้าเก่า ถูกดึงมาให้อัตโนมัติ",e:""},
+  {k:"1-38",t:"ไม่ปักหมุดเลย แล้วกดสั่ง → ระบบทำยังไง",e:"⚠️ เคยเจอค่าส่งหลุดเป็น 0 เพราะไม่มีพิกัด"}]},
+ {g:"สั่งเมนูเดี่ยว (เส้นหลัก)",items:[
+  {k:"1-39",t:"สั่งข้าวกล่อง 2 อย่าง ส่งมะรืนนี้ — จนจบ",e:"ได้เลขขึ้นต้น U- · ยอดกับค่าส่งแยกบรรทัด · จดเลขไว้ใช้ตามต่อ"},
+  {k:"1-40",t:"ช้อนส้อม — ค่าเริ่มต้นต้องไม่ติ๊ก",e:"ติ๊กแล้วต้องบันทึกไปถึงหน้าออเดอร์"},
+  {k:"1-41",t:"กรอกชื่อ/เบอร์ผู้รับที่ไม่ใช่ชื่อไลน์ตัวเอง",e:"หน้าออเดอร์ต้องโชว์ชื่อผู้รับ ไม่ใช่ชื่อไลน์"},
+  {k:"1-42",t:"ใส่โน้ตถึงร้าน → ไปโผล่ในหน้าออเดอร์",e:""},
+  {k:"1-43",t:"หน้าสั่งสำเร็จ โชว์ชื่อรายการที่สั่งครบ",e:""},
+  {k:"1-44",t:"กดปุ่มสั่งรัวๆ 2-3 ครั้ง → ต้องได้ออเดอร์ใบเดียว",e:"⚠️ เคสสำคัญ — ถ้าได้ 2 ใบ = ครัวทำซ้ำ"},
+  {k:"1-45",t:"อัพสลิปโอนเงิน",e:"สถานะเปลี่ยน · เปิดดูรูปสลิปได้จริงในหน้าออเดอร์"},
+  {k:"1-46",t:"ไม่อัพสลิป → สถานะต้องเป็นรอโอน",e:""}]},
+ {g:"สั่งเซ็ต / แพคเกจ",items:[
+  {k:"1-47",t:"เปิดเซ็ต → เลือกเมนูตามกลุ่มที่กำหนด",e:"เลือกไม่ครบต้องกดต่อไม่ได้ และบอกว่าขาดกี่ชิ้น"},
+  {k:"1-48",t:"เมนูที่กดซ้ำได้ — ปุ่ม +/- ทำงาน",e:""},
+  {k:"1-49",t:"เมนูพรีเมียมที่มีเงินเพิ่ม → ยอดขยับตาม",e:"เช่น +40"},
+  {k:"1-50",t:"เลือกเกินจำนวนที่กำหนด → กดไม่ได้",e:""},
+  {k:"1-51",t:"Diet Set C ฿4,450 — หน้าชำระเงินมีส่วน \"แบ่งส่ง 2 รอบ\"",e:"มีปุ่ม \"รับรวดเดียว\" + ช่องเลือกวัน 2 ช่อง"},
+  {k:"1-52",t:"เลือกวันรอบ 2 ย้อนก่อนรอบ 1 → กดไม่ได้",e:""},
+  {k:"1-53",t:"สั่งจริง → ต้องได้ 2 ใบ คนละวัน",e:"รอบ 1 ยอดเต็ม · รอบ 2 ยอด 0 · ได้ใบเดียว = วันส่งไม่ครบ"},
+  {k:"1-54",t:"กด \"รับรวดเดียว\" → กลับเป็นใบเดียววันเดียว",e:""},
+  {k:"1-55",t:"สั่งเซ็ตปนกับเมนูเดี่ยวในตะกร้าเดียว",e:"ค่าส่งกับวันส่งคิดยังไง"}]},
+ {g:"Meal Plan (ตรวจทีหลัง — ข้อมูลกำลังขยับ)",items:[
+  {k:"1-56",t:"เลือก HP / LC และไซส์ (ทดลอง / สัปดาห์ / เดือน)",e:"ราคา: ทดลอง HP 1,699 LC 1,399 · สัปดาห์ HP 4,190 LC 3,190 · เดือน HP 15,900 LC 12,000"},
+  {k:"1-57",t:"ช่องวันส่ง เลือกได้เฉพาะ จันทร์ / พุธ / ศุกร์",e:"วันอื่นต้องกดไม่ได้ (ข้อจำกัดครัวจริง)"},
+  {k:"1-58",t:"ช่วงเวลา — ต้องเหลือแต่บ่าย",e:""},
+  {k:"1-59",t:"สั่งแล้วเกิดรอบส่งครบตามจำนวนกล่อง",e:"ทดลอง 7 กล่อง = 7 รอบ · ไปดูในหมวด 5"},
+  {k:"1-60",t:"ใส่ Meal Plan ปนกับเมนูสต็อกในตะกร้าเดียว",e:"ระบบบล็อกหรือปล่อย และวันส่งเพี้ยนไหม"},
+  {k:"1-61",t:"ลบ Meal Plan ออกจากตะกร้า → วันส่งปลดล็อกกลับ",e:"เลือกวันอื่นได้เหมือนเดิม"},
+  {k:"1-62",t:"หน้าจัดการรอบของลูกค้า — เลื่อนรอบเองได้",e:""},
+  {k:"1-63",t:"ลูกค้ายกเลิกรอบเอง → แอดมินเห็น",e:""}]},
+ {g:"บัญชีลูกค้า",items:[
+  {k:"1-64",t:"สมัครสมาชิกจากริชเมนู",e:"⚠️ ริชเมนูอาจยังไม่ได้ชี้มาหน้าใหม่ — เช็คว่าลิงก์ไปถูกที่"},
+  {k:"1-65",t:"สมัครด้วยเบอร์ที่เคยสั่งกับร้านแล้ว",e:"ต้องรวมเข้าลูกค้าเดิม ไม่สร้างซ้ำ · ประวัติ/แต้มเดิมยังอยู่"},
+  {k:"1-66",t:"สมัครด้วยเบอร์ใหม่เอี่ยม → สร้างลูกค้าใหม่ถูกต้อง",e:""},
+  {k:"1-67",t:"กรอกเบอร์ผิดฟอร์แมต → ระบบเตือน",e:"ตอนนี้ไม่มี OTP → ถ้ากรอกมั่วผ่านได้ ต้องรู้ไว้"},
+  {k:"1-68",t:"หน้าโปรไฟล์ — แต้มคงเหลือขึ้นถูก",e:"เพิ่ง sync กับ Hato ต้องตรงกับที่ลูกค้าเคยเห็น"},
+  {k:"1-69",t:"กรอกข้อจำกัดอาหาร (แพ้ / ไม่ทาน) แล้วบันทึกได้",e:"มีป้ายบอกว่ามีผลกับ Meal Plan เท่านั้น"},
+  {k:"1-70",t:"ประวัติการสั่งซื้อขึ้นครบ",e:""}]},
+ {g:"เครื่อง / จอ",items:[
+  {k:"1-71",t:"เทสบน iPhone (Safari ใน LINE)",e:"⚠️ ยังไม่เคยเทส iOS จริงเลยทั้งระบบ"},
+  {k:"1-72",t:"เทสบน Android",e:""},
+  {k:"1-73",t:"จอเล็ก — ปุ่มไม่ทับกัน กดติดทุกปุ่ม",e:""},
+  {k:"1-74",t:"เน็ตช้า/หลุดตอนกดสั่ง → ระบบทำยังไง",e:"ปิด wifi ตอนกดสั่งดู · ต้องไม่เงียบหาย"}]}]},
+
+{n:2,t:"หน้าออเดอร์ (Operation Hub + PWA)",why:"ครบตาม Hato ไหม · ใบพิเศษอ่านออกไหม · อยากได้อะไรเพิ่ม",known:[{bad:1,l:"ผมเช็คให้แล้ว",h:"ออเดอร์ผี 3 ใบปนในวันจริง",b:"<code>U-ODTEST-1</code> (ส่ง 6 ส.ค.) · <code>U-0807-001</code> \"Nut test\" · <code>U-0807-002</code> \"Nut\" (ส่ง 7 ส.ค.) → <b>ครัวจะทำอาหารจริงให้ใบเทส</b><br>ส่วนใบยกเลิก 26 ใบ <b>ไม่หลุด</b> — ทั้งครัวและ PWA กรองออกแล้ว"}],groups:[
+ {g:"ความครบถ้วน",items:[
+  {k:"2-01",t:"นับใบวันพรุ่งนี้: Hato เทียบกับระบบเรา",e:"หา 2 อย่าง — Hato มีแต่เราไม่มี (ครัวไม่ได้ทำ) · เรามีแต่ Hato ไม่มี (ครัวทำเกิน)"},
+  {k:"2-02",t:"นับใบวันนี้ ซ้ำอีกรอบ",e:"คนละสถานการณ์กับพรุ่งนี้"},
+  {k:"2-03",t:"นับใบวันมะรืน และวันถัดไปอีก 3-4 วัน",e:"ยิ่งไกลยิ่งเจอใบแปลก"},
+  {k:"2-04",t:"ออเดอร์ที่เพิ่งสั่งจากหมวด 1 โผล่ทันทีไหม",e:""},
+  {k:"2-05",t:"ใบเทส 3 ใบข้างบน ยังอยู่ไหม",e:"ถ้ายังอยู่ ให้สั่งลบ"},
+  {k:"2-06",t:"เลื่อนดูจนสุด — ออเดอร์เก่าไม่ถูกตัดหาย",e:"เคยมีบั๊กเห็นแค่ 1,000 ใบแรก"}]},
+ {g:"รายละเอียดต่อใบ",items:[
+  {k:"2-07",t:"เปิดใบที่สั่งเอง — ข้อมูลครบตามที่กรอก",e:"ชื่อผู้รับ · เบอร์ · ที่อยู่เต็ม · ช้อนส้อม · โน้ต · ค่าส่งไม่เป็น 0"},
+  {k:"2-08",t:"ป้ายสถานะเงิน — กดสลับ รอโอน / โอนแล้ว ได้",e:""},
+  {k:"2-09",t:"กดดูรูปสลิปที่ลูกค้าอัพมา",e:"ต้องเปิดรูปได้จริง"},
+  {k:"2-10",t:"ใบรอบ 2 ของเซ็ตแบ่งส่ง — อ่านออกว่าคือรอบไหนของเซ็ตอะไร",e:"คำถามนัท: ขึ้นราคาไหม ขึ้นว่าอะไร · ที่ควรเป็น = ยอด 0 แต่บอกได้ว่ารอบ 2"},
+  {k:"2-11",t:"ใบ Meal Plan (MP-xxxx) — ขึ้นว่าอะไร ครบไหม",e:"⚠️ ผมเจอว่าหลายใบไม่มีเบอร์และไม่มีพิกัด"},
+  {k:"2-12",t:"ใบ \"แยกวันส่ง\" — อ่านออกว่าต้องส่งอะไร",e:""},
+  {k:"2-13",t:"ใบที่มาจาก Hato ปนกับใบของเรา — แยกออกไหม",e:""},
+  {k:"2-14",t:"ค้นหาด้วยเบอร์ / ชื่อ / เลขออเดอร์",e:""},
+  {k:"2-15",t:"แก้ไข / ยกเลิกออเดอร์ได้ไหม แล้วปลายทางรู้ไหม",e:"ยกเลิกแล้วครัวต้องไม่เห็น"}]},
+ {g:"PWA ดูออเดอร์จากมือถือ",items:[
+  {k:"2-16",t:"เปิดจากมือถือ ใส่ PIN 0360 ผ่าน",e:"ครั้งต่อไปไม่ถามซ้ำ"},
+  {k:"2-17",t:"เปิดมาเจอวันแรกที่มีของจริง ไม่ใช่วันว่าง",e:""},
+  {k:"2-18",t:"แตะการ์ดกางดูเมนู ครบทีละบรรทัด",e:""},
+  {k:"2-19",t:"ปุ่มกรอง ทั้งหมด / 360 / Hato ทำงาน",e:""},
+  {k:"2-20",t:"กดดูย้อนหลัง 7 วัน — ไม่ดีดกลับมาวันนี้",e:""},
+  {k:"2-21",t:"เพิ่มลงหน้าจอโฮม แล้วเปิดจากไอคอน",e:"เปิดเร็ว ไม่ค้างขาว"},
+  {k:"2-22",t:"จำนวนใบใน PWA ตรงกับใน Operation Hub",e:""}]},
+ {g:"สิ่งที่อยากได้เพิ่ม",items:[
+  {k:"2-23",t:"อยากได้อะไรเพิ่มในหน้าดูออเดอร์",e:"เช่น ยอดรวมของวัน · กดโทรจากหน้านี้ · เห็นว่าใบไหนยังไม่โอน · กรองเฉพาะที่ยังไม่จัด · ปริ๊นใบปะกล่อง"},
+  {k:"2-24",t:"ข้อมูลไหนที่ต้องเปิดหลายหน้าถึงจะเจอ",e:"= จุดที่ควรรวมมาไว้หน้าเดียว"}]}]},
+
+{n:3,t:"หน้าสั่งแทนลูกค้า",why:"แอดมินกดสั่งให้ลูกค้าที่ทักมาทางไลน์",known:[{bad:1,l:"ผมเช็คให้แล้ว · ยังตรวจไม่ได้",h:"หน้านี้ยังไม่มีบนเว็บจริง",b:"โค้ดอยู่แค่ branch <code>feature/oh-order-onbehalf</code><br>⚠️ branch นั้นเก่ากว่าตัวจริงมาก (159 KB เทียบ 236 KB) → <b>merge ตรงๆ จะย้อนงานหายเงียบ</b> ต้องให้ห้อง U จัดการก่อน<br>ข้อข้างล่างเก็บไว้ตรวจตอน merge เสร็จ"}],groups:[
+ {g:"ความครบของหน้า",items:[
+  {k:"3-01",t:"เลือกลูกค้าเดิมจากฐานได้ (ค้นด้วยชื่อ/เบอร์)",e:""},
+  {k:"3-02",t:"ลูกค้าใหม่ที่ยังไม่มีในระบบ — กรอกสดได้",e:""},
+  {k:"3-03",t:"ที่อยู่เดิมของลูกค้าถูกดึงมาให้",e:""},
+  {k:"3-04",t:"เมนูให้คลิกครบทุกหมวด",e:"เทียบกับ 118 รายการที่เปิดขาย"},
+  {k:"3-05",t:"สั่งเซ็ต / แพคเกจ ได้ไหม",e:""},
+  {k:"3-06",t:"สั่ง Meal Plan ได้ไหม",e:"ลูกค้าต่อคอร์สส่วนใหญ่ทักแอดมิน ไม่กดเอง"},
+  {k:"3-07",t:"มีช่องติ๊กช้อนส้อมไหม",e:""},
+  {k:"3-08",t:"ใส่ส่วนลด / โค้ดโปรได้ไหม",e:""},
+  {k:"3-09",t:"เลือกวันส่ง + ช่วงเวลา + ปักหมุด ได้ครบ",e:""},
+  {k:"3-10",t:"ระบุวิธีจ่ายเงิน / สถานะโอนได้ไหม",e:"ลูกค้าโอนผ่านไลน์ แอดมินต้องมาร์คได้"}]},
+ {g:"ปลายทาง",items:[
+  {k:"3-11",t:"กดสั่งแล้วขึ้นในหน้าออเดอร์",e:"ชื่อต้องเป็น \"ลูกค้าตัวจริง\" ไม่ใช่ชื่อแอดมินที่กด"},
+  {k:"3-12",t:"ขึ้นในหน้าแมสเซนเจอร์",e:""},
+  {k:"3-13",t:"ขึ้นในหน้าครัว (KQ)",e:""},
+  {k:"3-14",t:"เลขออเดอร์ยึดวันส่ง ไม่ใช่วันที่กด",e:""},
+  {k:"3-15",t:"ประวัติลูกค้าคนนั้นเพิ่มขึ้นถูกคน",e:"ไม่ไปกองที่บัญชีแอดมิน"},
+  {k:"3-16",t:"จุดไหนยังต้องกรอกมือซ้ำอีก",e:"คำถามนัท — จดว่ามีอะไรที่ระบบน่าจะเติมให้เองได้"}]}]},
+
+{n:4,t:"หน้าเมนูออนไลน์",why:"ของที่ลูกค้าเห็น มาจากหน้านี้ทั้งหมด",known:[{bad:0,l:"ผมเช็คให้แล้ว",h:"",b:"เปิดขาย <b>118 รายการ</b> · ไม่มีรูปเหลือ <b>2 ตัว</b> (<code>MC2</code> · <code>S205</code>) · ชื่อเล่นเมนูกรอกแล้ว <b>13 จาก 118</b> · แพคเกจเปิดอยู่ 8 ตัว"},{bad:1,l:"ผมเช็คให้แล้ว · ราคาไม่ตรง",h:"แพคกับข้าวแพงกว่า Hato",b:"เรา S 1,470 / M 2,940 / L 5,880 · Hato ขายจริง 1,400 / 2,650 / 4,900 → <b>ลูกค้าจ่ายแพงกว่า 70 / 290 / 980 บาท</b> (เราเก็บราคาก่อนลดไว้)"}],groups:[
+ {g:"รายการเมนู",items:[
+  {k:"4-01",t:"ไล่ดูใน LIFF — มีเมนูที่ไม่ควรขายโผล่ไหม",e:"118 รายการควรตรงกับที่ Hato ขาย · เจอตัวแปลกจดโค้ด"},
+  {k:"4-02",t:"มีเมนูที่ควรขายแต่หายไปไหม",e:"เทียบกับหน้าเมนูของ Hato"},
+  {k:"4-03",t:"ราคาแต่ละตัวตรงกับ Hato",e:"เคยเจอ 9 เมนูราคาไม่ตรง — เช็คว่าแก้แล้วหรือยัง"},
+  {k:"4-04",t:"เปิด/ปิดขายเมนู แล้วหน้าลูกค้าเปลี่ยนตามทันที",e:""},
+  {k:"4-05",t:"ชื่อ / คำอธิบาย / แคลอรี่ / โปรตีน ถูกต้อง",e:""},
+  {k:"4-06",t:"เพิ่มเมนูใหม่ 1 ตัว → ขึ้นหน้าลูกค้า",e:""}]},
+ {g:"รูป",items:[
+  {k:"4-07",t:"อัพรูปเมนูใหม่ 1 ตัว แล้วขึ้นในหน้าลูกค้า",e:""},
+  {k:"4-08",t:"รูปโหลดไวไหมบนเน็ตมือถือ",e:""},
+  {k:"4-09",t:"เคาะ 2 เมนูไม่มีรูป (MC2 · S205)",e:"ปิดขายไปก่อน / ปล่อยขายทั้งที่ไม่มีรูป / จะส่งรูปให้"}]},
+ {g:"หมวดหมู่ + การจัดเรียง",items:[
+  {k:"4-10",t:"ลากเรียงลำดับเมนูในหมวด → หน้าลูกค้าเรียงตาม",e:""},
+  {k:"4-11",t:"ปักหมุดเมนู (PTT) ขึ้นบนสุด",e:""},
+  {k:"4-12",t:"ลากเรียงลำดับหมวด",e:""},
+  {k:"4-13",t:"หมวดหมู่ไม่มีตัวซ้ำ / ตัวว่าง",e:""}]},
+ {g:"สต็อก",items:[
+  {k:"4-14",t:"ตั้งสต็อกเป็นตัวเลข → หน้าลูกค้าขึ้นป้ายเหลือน้อย",e:"ว่าง = ไม่จำกัด · 0 = หมด · N = เหลือ N"},
+  {k:"4-15",t:"ปุ่มเติมสต็อก +10 ทำงาน",e:""},
+  {k:"4-16",t:"ลูกค้าสั่งแล้วสต็อกลดอัตโนมัติ",e:"เพิ่งทำระบบตัดสต็อก — มายืนยันว่าตัดจริง"},
+  {k:"4-17",t:"ตั้งสต็อกเป็น 0 → ลูกค้าสั่งไม่ได้ทันที",e:""}]},
+ {g:"ชื่อเล่นเมนู (subcode)",items:[
+  {k:"4-18",t:"กรอกชื่อเล่น 1 ตัว → ขึ้นทั้งครัวและหน้าลูกค้า",e:""},
+  {k:"4-19",t:"ปุ่ม \"ขึ้นสัปดาห์ใหม่\" เติม x ให้ของค้าง",e:"s3 → xs3 = ค้างมา 1 สัปดาห์"},
+  {k:"4-20",t:"เคาะ: ต้องกรอกครบ 118 ก่อนศุกร์ไหม",e:"หรือเอาแค่เมนูพิเศษที่หมุนทุกสัปดาห์พอ"}]},
+ {g:"เซ็ต / แพคเกจ",items:[
+  {k:"4-21",t:"เปิดตัวจัดเซ็ต — กลุ่มการเลือกตั้งค่าถูก",e:"เลือกตามหมวด / เจาะจงเมนู / หลายหมวดรวมนับ"},
+  {k:"4-22",t:"ตั้งราคาเหมา + เงินเพิ่มรายเมนู แล้วหน้าลูกค้าคิดตรง",e:""},
+  {k:"4-23",t:"ตั้งจำนวนรอบส่ง + ติ๊กส่งฟรี แล้วมีผลจริง",e:""},
+  {k:"4-24",t:"สร้างเซ็ตใหม่ 1 ตัว แล้วสั่งได้จริง",e:""},
+  {k:"4-25",t:"เช็ค 8 แพคเกจที่เปิดอยู่ — ควรมีทั้งหมดนี้ไหม",e:"Diet A/B/C · Pack S/M/L · โบนบรอธ 10แถม1 · โบนบรอธ 16แถม2"},
+  {k:"4-26",t:"ราคาเซ็ต Meal Plan ตรงราคาโฆษณา",e:"ทดลอง 1,399 / 1,699 · สัปดาห์ 3,190 / 4,190 · เดือน 12,000 / 15,900"}]},
+ {g:"อื่นๆ",items:[
+  {k:"4-27",t:"ประวัติการแก้ไข (Activity Log) บันทึกว่าใครแก้อะไร",e:""},
+  {k:"4-28",t:"เปิดหน้านี้บนมือถือ ใช้งานได้ไหม",e:""}]}]},
+
+{n:5,t:"หน้าแพลนเมนู",why:"แอดมิน (ต่อไปคือน้องนิว) จัดเมนูให้ลูกค้า Meal Plan รายคน",known:[{bad:1,l:"ผมเช็คให้แล้ว · เจอบั๊กแล้ว",h:"แก้เมนูแล้วครัวไม่รู้เรื่อง",b:"ถ้าออเดอร์มีรายการอาหารอยู่ก่อนแล้ว แอดมินไปแก้เมนูในหน้าแผน → <b>ครัวยังเห็นเมนูเก่าค้าง</b><br>แย่กว่าไม่เห็นเลย เพราะครัวมั่นใจว่าถูก · ห้อง P ไล่เจอจุดในโค้ดแล้ว ส่งให้ U แก้แล้ว"},{bad:1,l:"ผมเช็คให้แล้ว · ข้อมูลกำลังขยับ",h:"",b:"ตารางรอบส่งเดิมมีรอบข้างหน้า = 0 (ล่าสุด 29 ก.ค.) · <b>อีกห้องกำลังสร้างรอบให้อยู่ตอนนี้</b> → หมวดนี้ตรวจทีหลัง"}],groups:[
+ {g:"ใช้งานพื้นฐาน",items:[
+  {k:"5-01",t:"เปิดหน้าแพลนเมนู — เห็นลูกค้าที่มีรอบส่งครบ",e:"เทียบกับ Meal Plan ที่ขายไปจริง"},
+  {k:"5-02",t:"เลือกวัน แล้วเห็นว่าวันนั้นต้องทำให้ใครบ้าง",e:""},
+  {k:"5-03",t:"assign เมนูให้ลูกค้า 1 คน แล้วบันทึกติด",e:""},
+  {k:"5-04",t:"(หลัง U แก้) แก้เมนูแล้ว → ครัวเห็นของใหม่",e:"แก้ซ้ำอีกรอบดูว่าตามทันไหม"},
+  {k:"5-05",t:"ดูรอบที่ผ่านมาแล้วย้อนหลังได้",e:""},
+  {k:"5-06",t:"เปิดหน้านี้บนมือถือ / แท็บเล็ต ใช้ได้ไหม",e:""}]},
+ {g:"ความถูกต้องของรอบ",items:[
+  {k:"5-07",t:"ลูกค้าที่ซื้อคอร์สเดือน — มีรอบครบทั้งเดือนไหม",e:"เช่น โมจิ HP Monthly ฿15,900 (ซื้อ 3 ส.ค.)"},
+  {k:"5-08",t:"ลูกค้าที่ซื้อคอร์สสัปดาห์ — ครบ 7 รอบไหม",e:""},
+  {k:"5-09",t:"รอบส่งตกเฉพาะ จันทร์ / พุธ / ศุกร์",e:""},
+  {k:"5-10",t:"เลื่อน / ยกเลิกรอบจากฝั่งแอดมินได้",e:""},
+  {k:"5-11",t:"ลูกค้าเลื่อน/ยกเลิกเองใน LIFF แล้วแอดมินเห็น",e:""},
+  {k:"5-12",t:"ข้อจำกัดอาหาร (แพ้/ไม่ทาน) โชว์ตอนจัดเมนู",e:"กันจัดเมนูที่ลูกค้าแพ้"},
+  {k:"5-13",t:"ลูกค้าที่คอร์สจบแล้ว ต้องไม่โผล่ในรอบถัดไป",e:""}]},
+ {g:"ความเห็นการใช้งาน",items:[
+  {k:"5-14",t:"กี่คลิกกว่าจะแพลนเสร็จ 1 คน — รับได้ไหม",e:""},
+  {k:"5-15",t:"เห็นภาพรวมทั้งวันไหม ว่าครัวต้องทำอะไรรวมกี่กล่อง",e:""},
+  {k:"5-16",t:"ถ้าให้ AI (น้องนิว) จัดให้ อยากให้จัดยังไง",e:"เขียนเงื่อนไขในหัวออกมาให้หมด = สเปคของน้องนิว"},
+  {k:"5-17",t:"ต้องปรับปรุงอะไรอีก",e:"เขียนยาวได้ นี่คือหน้าที่แอดมินใช้ทุกวัน"}]}]},
+
+{n:6,t:"หน้าแมสเซนเจอร์",why:"วางรอบส่งประจำวัน",known:[{bad:0,l:"ผมเช็คให้แล้ว",h:"",b:"กรอง<b>ใบเทสและใบยกเลิกออกแล้ว</b> · จัดเขตจากพิกัดจริง (8 ทิศ + ระยะจากครัว) · เลือกผู้ส่งบันทึกลงระบบแล้ว (บั๊กเดิมสลับแท็บแล้วหาย = แก้แล้ว)"},{bad:1,l:"ผมเช็คให้แล้ว · จุดที่จะติด",h:"",b:"ใบ Meal Plan ที่เพิ่งสร้าง <b>หลายใบไม่มีพิกัดและไม่มีเบอร์</b> → จัดเขตใบพวกนี้ไม่ได้ (ส่งให้ห้อง P เติมแล้ว)"}],groups:[
+ {g:"ออเดอร์เข้าครบไหม",items:[
+  {k:"6-01",t:"เลือกวันที่มีของส่งเยอะ — จำนวนใบตรงกับหน้าออเดอร์",e:"ต่างกันเมื่อไหร่ = มีใบตกหล่น"},
+  {k:"6-02",t:"ใบที่สั่งเองจากหมวด 1 อยู่ในนี้",e:""},
+  {k:"6-03",t:"ใบเซ็ตรอบ 2 (ยอด 0) อยู่ในนี้ด้วย",e:"ของต้องส่งจริง แม้ยอดเป็น 0"},
+  {k:"6-04",t:"ใบ Meal Plan (MP-xxxx) ขึ้นยังไง ใช้งานได้ไหม",e:"อ่านออกไหมว่าต้องส่งที่ไหน ให้ใคร"},
+  {k:"6-05",t:"ไม่มีใบเทส / ใบยกเลิกปนมา",e:""},
+  {k:"6-06",t:"ใบต่างจังหวัด (ส่งขนส่ง) แยกออกจากงานแมสไหม",e:""}]},
+ {g:"จัดรอบ",items:[
+  {k:"6-07",t:"เขตที่ระบบจัดให้ ตรงกับความเป็นจริง",e:"ทิศ + ระยะจากครัว · แมสที่วิ่งจริงจะรู้ทันทีว่าเพี้ยนไหม"},
+  {k:"6-08",t:"กดลิงก์แผนที่ → เปิดถูกจุด",e:""},
+  {k:"6-09",t:"กดเบอร์โทรจากหน้านี้ได้เลย",e:""},
+  {k:"6-10",t:"เลือกผู้ส่ง แล้วสลับแท็บออกไปกลับมา → ชื่อยังอยู่",e:"บั๊กเดิมคือหายทุกครั้ง"},
+  {k:"6-11",t:"สรุปช่วงเวลาส่งของวันนั้น อ่านง่ายไหม",e:""},
+  {k:"6-12",t:"เรียงลำดับจุดส่งได้ตามที่แมสอยากวิ่งไหม",e:""},
+  {k:"6-13",t:"ก๊อปรายการไปวาง Excel / ส่งต่อให้แมสได้ไหม",e:"แอดมินเดิมทำแบบนี้อยู่"},
+  {k:"6-14",t:"เปิดหน้านี้บนมือถือแมส ใช้งานได้ไหม",e:""}]},
+ {g:"Lalamove",items:[
+  {k:"6-15",t:"ขอเรทค่าส่งจากหน้านี้ได้",e:"เรทที่ได้ ดูสมเหตุสมผลเทียบกับที่จ่ายจริงไหม"},
+  {k:"6-16",t:"งานนอกเขตบริการ (ต่างจังหวัดไกล) — ต้องไม่ให้กดจอง",e:"เคยเจอใบร้อยเอ็ด 502 กม. ติดป้ายว่าเป็นงานแมส"},
+  {k:"6-17",t:"เทียบเรทที่ระบบบอก กับราคาในแอป Lalamove จริง",e:"นัทติดใจว่าเรทดูถูกผิดปกติ"}]},
+ {g:"ปัญหาที่เจอ",items:[
+  {k:"6-18",t:"เจอบั๊กอะไรอีกบ้างในหน้านี้",e:"เขียนได้ยาว"}]}]},
+
+{n:7,t:"หน้าครัว (KQ)",why:"ปลายทางสุดท้าย ถ้าหน้านี้ผิด = อาหารผิด",known:[{bad:0,l:"ผมเช็คให้แล้ว · 2 ข้อที่นัทถาม ได้ทั้งคู่",h:"",b:"<b>จัดออเดอร์ได้</b> — ปุ่มสถานะครบ กดแล้วบันทึกว่าใครกด<br><b>ปรับสต็อกได้</b> — ครัวกรอก \"ผลิตได้จริง\" แล้วระบบตั้งเลขที่ลูกค้าซื้อได้ตามทันที (เมนูไม่จำกัดไม่โดนแตะ แต่ขึ้นแถบเตือน)"}],groups:[
+ {g:"ออเดอร์เข้าครบ",items:[
+  {k:"7-01",t:"จำนวนใบวันนี้ ตรงกับหน้าออเดอร์",e:"เคยพังหนัก: ครัวไม่เห็นออเดอร์วันนี้เลยเพราะระบบดึงมาแต่ของปี 2024"},
+  {k:"7-02",t:"ใบที่สั่งเองจากหมวด 1 ขึ้นพร้อมรายการอาหาร",e:""},
+  {k:"7-03",t:"ใบเซ็ตรอบ 2 ขึ้นในวันของรอบนั้น",e:""},
+  {k:"7-04",t:"ใบ Meal Plan ขึ้นแยกจากเมนูสต็อก",e:"คนละไลน์การผลิต (ทำสด vs ทำล่วงหน้า)"},
+  {k:"7-05",t:"ไม่มีใบยกเลิก / ใบเทสโผล่",e:""},
+  {k:"7-06",t:"รวมยอดกล่องที่ต้องทำทั้งวัน ถูกต้อง",e:""},
+  {k:"7-07",t:"ดูวันพรุ่งนี้ / มะรืน ล่วงหน้าได้",e:"ครัวต้องเตรียมของล่วงหน้า"}]},
+ {g:"จัดออเดอร์",items:[
+  {k:"7-08",t:"กดปุ่มสถานะไล่จนจบใบ",e:"กำลังทำ → พร้อมส่ง → ส่งแล้ว"},
+  {k:"7-09",t:"กดผิดแล้วย้อนกลับได้",e:""},
+  {k:"7-10",t:"ระบบจำว่าใครเป็นคนกด",e:"ตั้งชื่อผู้ใช้ครั้งแรกก่อน"},
+  {k:"7-11",t:"2 คนเปิดพร้อมกัน กดคนละเครื่อง → ไม่ตีกัน",e:"ครัวจริงมีหลายคน"},
+  {k:"7-12",t:"ปริ๊นใบงานครัวได้",e:""}]},
+ {g:"สต็อก",items:[
+  {k:"7-13",t:"กรอก \"ผลิตได้จริง\" 1 เมนู → เลขที่ลูกค้าซื้อได้ขยับตาม",e:"ไปเช็คใน LIFF ว่าป้ายเหลือ N เปลี่ยนจริง"},
+  {k:"7-14",t:"กรอกเลขให้เมนูที่ตั้งไว้ \"ไม่จำกัด\" → ขึ้นแถบเตือน",e:"เตือนว่าเลขนี้ยังไม่จำกัดยอดขาย ต้องไปตั้งที่หน้าเมนูก่อน"},
+  {k:"7-15",t:"ผลิตไม่ครบ → ลดเลขลง แล้วลูกค้าสั่งเกินไม่ได้",e:""},
+  {k:"7-16",t:"ประวัติว่าใครแก้สต็อกเมื่อไหร่ ดูได้",e:""}]},
+ {g:"ใช้งานจริง",items:[
+  {k:"7-17",t:"กดโหมดแท็บเล็ต — ตัวใหญ่พอสำหรับครัวไหม",e:"จอต้องไม่ดับเอง"},
+  {k:"7-18",t:"ครัวอ่านแล้วรู้เลยไหมว่าต้องทำอะไรก่อนหลัง",e:""},
+  {k:"7-19",t:"ให้ครัวตัวจริงลองใช้ 1 วัน แล้วถามความเห็น",e:"สำคัญกว่าที่เราเดาเอง"},
+  {k:"7-20",t:"ต้องปรับปรุงอะไรอีก",e:""}]}]}
+];
+
+var ROLE = {1:'cust',2:'admin',3:'admin',4:'admin',5:'admin',6:'msg',7:'kitchen'};
+var RKEY = 'u360_chk_role';
+var state = {};            // { 'chk:1-01': {v,note,photos,by,at} }
+var BUCKET = 'menu-images';
+var PREFIX = 'chk:';
+
+function curRole(){ try { return localStorage.getItem(RKEY) || 'all'; } catch(e){ return 'all'; } }
+
+/* ── โหลดของทุกคนจากส่วนกลาง ── */
+async function loadAll(){
+  setSt('กำลังโหลด...');
+  var r = await sb.from('kitchen_data').select('key,data').like('key', PREFIX + '%');
+  if (r.error) { setSt('โหลดไม่สำเร็จ: ' + r.error.message); return; }
+  state = {};
+  (r.data || []).forEach(function(row){ state[row.key] = row.data || {}; });
+  render();
+  setSt('อัปเดตล่าสุด ' + new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}));
+}
+async function saveOne(id, patch){
+  var key = PREFIX + id;
+  var cur = state[key] || {};
+  var next = Object.assign({}, cur, patch, { by: whoAmI() || cur.by || '', at: new Date().toISOString() });
+  state[key] = next;
+  var r = await sb.from('kitchen_data').upsert({ key: key, data: next }, { onConflict: 'key' });
+  if (r.error) setSt('บันทึกไม่สำเร็จ: ' + r.error.message);
+  else setSt('บันทึกแล้ว ' + new Date().toLocaleTimeString('th-TH', {hour:'2-digit', minute:'2-digit'}));
+}
+function setSt(t){ var el = document.getElementById('footSt'); if (el) el.textContent = t; }
+
+/* ── วาดหน้า ── */
+function esc(s){ return String(s == null ? '' : s).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function render(){
+  var box = document.getElementById('list');
+  box.innerHTML = '';
+  DATA.forEach(function(sec){
+    var wrap = document.createElement('div');
+    wrap.dataset.role = ROLE[sec.n];
+    var html = '<h2 class="sec" id="sec' + sec.n + '"><span class="n">' + sec.n + '</span>' + esc(sec.t) + '</h2>' +
+               '<p class="why">' + esc(sec.why) + '</p>';
+    (sec.known || []).forEach(function(k){
+      html += '<div class="known' + (k.bad ? ' bad' : '') + '"><span class="lbl">' + k.l + '</span>' + (k.h ? '<b>' + k.h + '</b><br>' : '') + k.b + '</div>';
+    });
+    sec.groups.forEach(function(gr){
+      html += '<h3 class="grp">' + esc(gr.g) + '</h3>';
+      gr.items.forEach(function(it){
+        var s = state[PREFIX + it.k] || {};
+        var v = s.v || '';
+        var photos = (s.photos || []).map(function(u){
+          return '<div class="shot" data-url="' + esc(u) + '"><img src="' + esc(u) + '" alt="รูปแนบข้อ ' + it.k + '"></div>';
+        }).join('');
+        html += '<div class="item' + (v ? ' s-' + v : '') + '" data-k="' + it.k + '">' +
+          '<div class="it-top"><div class="it-t">' + esc(it.t) + ' <span class="code">' + it.k + '</span></div>' +
+          '<div class="btns">' +
+            '<b data-v="ok" class="' + (v === 'ok' ? 'on' : '') + '">✓</b>' +
+            '<b data-v="bad" class="' + (v === 'bad' ? 'on' : '') + '">✗</b>' +
+            '<b data-v="skip" class="' + (v === 'skip' ? 'on' : '') + '">–</b>' +
+          '</div></div>' +
+          (it.e ? '<div class="exp">' + it.e + '</div>' : '') +
+          '<textarea placeholder="คอมเมนต์">' + esc(s.note || '') + '</textarea>' +
+          '<div class="shots">' + photos + '<button class="addshot">＋ แนบรูป</button>' +
+          '<input type="file" accept="image/*" multiple hidden></div>' +
+          (s.by ? '<div class="by">ตรวจโดย ' + esc(s.by) + (s.at ? ' · ' + new Date(s.at).toLocaleString('th-TH', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}) : '') + '</div>' : '') +
+        '</div>';
+      });
+    });
+    var sn = state[PREFIX + 'note-' + sec.n] || {};
+    html += '<div class="secnote" data-k="note-' + sec.n + '"><h4>สรุปหมวด ' + sec.n + '</h4>' +
+            '<textarea placeholder="ภาพรวมหมวดนี้ · อะไรต้องแก้ก่อน">' + esc(sn.note || '') + '</textarea></div>';
+    wrap.innerHTML = html;
+    box.appendChild(wrap);
+  });
+  applyRole();
+  paint();
+}
+function applyRole(){
+  var r = curRole();
+  document.querySelectorAll('.role').forEach(function(b){ b.classList.toggle('on', b.dataset.r === r); });
+  document.querySelectorAll('#list > [data-role]').forEach(function(el){
+    el.style.display = (r === 'all' || el.dataset.role === r) ? '' : 'none';
+  });
+}
+function paint(){
+  var r = curRole(), ok = 0, bad = 0, any = 0, tot = 0;
+  DATA.forEach(function(sec){
+    if (r !== 'all' && ROLE[sec.n] !== r) return;
+    sec.groups.forEach(function(gr){ gr.items.forEach(function(it){
+      tot++;
+      var v = (state[PREFIX + it.k] || {}).v;
+      if (v) any++;
+      if (v === 'ok') ok++;
+      if (v === 'bad') bad++;
+    }); });
+  });
+  document.getElementById('fok').style.width = (tot ? ok / tot * 100 : 0) + '%';
+  document.getElementById('fbad').style.width = (tot ? bad / tot * 100 : 0) + '%';
+  document.getElementById('count').textContent = 'ตรวจแล้ว ' + any + '/' + tot + ' · ปัญหา ' + bad;
+}
+
+/* ── เหตุการณ์ ── */
+document.addEventListener('click', function(e){
+  var role = e.target.closest('.role');
+  if (role) { try { localStorage.setItem(RKEY, role.dataset.r); } catch(err){} applyRole(); paint(); return; }
+
+  var shot = e.target.closest('.shot');
+  if (shot) { var lb = document.getElementById('lb'); lb.querySelector('img').src = shot.dataset.url; lb.classList.add('on'); return; }
+
+  var add = e.target.closest('.addshot');
+  if (add) { if (!askName()) { paintWho(); return; } add.parentNode.querySelector('input[type=file]').click(); return; }
+
+  var b = e.target.closest('.btns b');
+  if (b) {
+    if (!askName()) { paintWho(); return; }
+    paintWho();
+    var item = b.closest('.item'), id = item.dataset.k;
+    var cur = (state[PREFIX + id] || {}).v || '';
+    var nv = (cur === b.dataset.v) ? '' : b.dataset.v;
+    saveOne(id, { v: nv }).then(function(){
+      item.className = 'item' + (nv ? ' s-' + nv : '');
+      item.querySelectorAll('.btns b').forEach(function(x){ x.classList.toggle('on', x.dataset.v === nv); });
+      paint();
+    });
+  }
+});
+document.getElementById('lb').addEventListener('click', function(){ this.classList.remove('on'); });
+
+var noteTimer = {};
+document.addEventListener('input', function(e){
+  if (!e.target.matches('textarea')) return;
+  var host = e.target.closest('[data-k]');
+  if (!host) return;
+  var id = host.dataset.k, val = e.target.value;
+  clearTimeout(noteTimer[id]);
+  noteTimer[id] = setTimeout(function(){ saveOne(id, { note: val }); }, 800);   // หน่วง 0.8 วิ กันยิงถี่
+});
+
+document.addEventListener('change', async function(e){
+  if (!e.target.matches('input[type=file]')) return;
+  var box = e.target.parentNode, id = box.closest('[data-k]').dataset.k;
+  var files = Array.prototype.slice.call(e.target.files);
+  e.target.value = '';
+  setSt('กำลังอัพรูป ' + files.length + ' รูป...');
+  var urls = ((state[PREFIX + id] || {}).photos || []).slice();
+  for (var i = 0; i < files.length; i++) {
+    var f = files[i];
+    var ext = (f.name.split('.').pop() || 'jpg').toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    var path = 'checklist/' + id + '-' + Date.now() + '-' + i + '.' + ext;
+    var up = await sb.storage.from(BUCKET).upload(path, f, { upsert: true, contentType: f.type || 'image/jpeg' });
+    if (up.error) { setSt('อัพรูปไม่สำเร็จ: ' + up.error.message); continue; }
+    urls.push(SB_URL + '/storage/v1/object/public/' + BUCKET + '/' + path);
+  }
+  await saveOne(id, { photos: urls });
+  render();
+});
+
+document.getElementById('btnRefresh').addEventListener('click', loadAll);
+
+function start(){
+  paintWho();
+  loadAll();
+  setInterval(function(){ if (document.visibilityState === 'visible') loadAll(); }, 20000);  // เห็นของคนอื่นภายใน 20 วิ
+}
+</script>
+</body>
+</html>
