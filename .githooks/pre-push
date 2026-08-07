@@ -1,21 +1,50 @@
 #!/bin/sh
 # ══════════════════════════════════════════════════════════════
 # กันแก้ของจริงตรงๆ — Under360 (นัทเคาะ 7 ส.ค. 2026 · แบบ C)
-# หลัง beta launch: ลูกค้าจริงใช้ main อยู่ → ห้ามยิงขึ้น main ตรงๆ
-# ต้อง: แยก branch → เทสบนลิงก์ Vercel ของ branch → merge
+# หลัง beta launch: ลูกค้าจริงใช้ main อยู่
 #
-# 🚨 ช่องฉุกเฉิน (แบบ C): ถ้าลูกค้าสั่งไม่ได้/ของจะไม่ถึงมือลูกค้า
-#    ให้ใส่ HOTFIX=1 นำหน้าคำสั่ง push แล้วต้องแจ้งบอร์ดทันที
+# กติกา: ห้ามยิง "โค้ดที่ไม่เคยผ่าน branch" ขึ้น main
+#   ✅ ผ่าน  = commit นั้นเคยถูก push ขึ้น branch อื่นมาก่อนแล้ว (= มีลิงก์ Vercel ให้เทส)
+#   ⛔ ไม่ผ่าน = commit ตรงบน main แล้วยิงเลย (ไม่มีใครได้เทส)
+#
+# 🚨 ช่องฉุกเฉิน: HOTFIX=1 git push ... (ลูกค้าเดือดร้อนอยู่เท่านั้น) แล้วแจ้งบอร์ดทันที
 # ══════════════════════════════════════════════════════════════
 
-BLOCKED=0
+REMOTE_NAME="$1"
+[ -z "$REMOTE_NAME" ] && REMOTE_NAME=origin
+
+ZERO=0000000000000000000000000000000000000000
+BAD=""
+
 while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
   case "$REMOTE_REF" in
-    refs/heads/main|refs/heads/master) BLOCKED=1 ;;
+    refs/heads/main|refs/heads/master) ;;
+    *) continue ;;
   esac
+  [ "$LOCAL_SHA" = "$ZERO" ] && continue
+
+  if [ "$REMOTE_SHA" = "$ZERO" ]; then
+    RANGE="$LOCAL_SHA"
+  else
+    RANGE="$REMOTE_SHA..$LOCAL_SHA"
+  fi
+
+  # ไล่ทีละ commit ที่กำลังจะขึ้น main — ข้าม merge commit (ไม่มีโค้ดของตัวเอง)
+  for SHA in $(git rev-list --no-merges "$RANGE" 2>/dev/null); do
+    # commit นี้เคยอยู่บน branch ไหนของ remote บ้าง (ไม่นับ main/master/HEAD)
+    SEEN=$(git branch -r --contains "$SHA" 2>/dev/null \
+           | sed 's/^[* ]*//' \
+           | grep "^$REMOTE_NAME/" \
+           | grep -vE "/(main|master|HEAD)$" \
+           | head -1)
+    if [ -z "$SEEN" ]; then
+      BAD="$BAD  · $(git log -1 --pretty='%h %s' "$SHA" | cut -c1-72)
+"
+    fi
+  done
 done
 
-[ "$BLOCKED" = "0" ] && exit 0
+[ -z "$BAD" ] && exit 0
 
 if [ -n "$HOTFIX" ]; then
   echo ""
@@ -25,32 +54,25 @@ if [ -n "$HOTFIX" ]; then
   exit 0
 fi
 
-cat <<'MSG'
-
-╔══════════════════════════════════════════════════════════════╗
-║  ⛔ ห้ามยิงขึ้น main ตรงๆ — ลูกค้าจริงใช้อยู่                  ║
-╚══════════════════════════════════════════════════════════════╝
-
-ตั้งแต่ beta launch (7 ส.ค. 2026) ทุกการแก้ต้องผ่าน branch ก่อน
-
-▸ วิธีที่ถูก (ก๊อปวางได้เลย ทีละบรรทัด)
-
-  git checkout -b fix/ชื่องานสั้นๆ
-  git add ไฟล์ที่แก้
-  git commit -m "ข้อความสั้นๆ ภาษาไทย"
-  git push -u origin HEAD
-
-  → Vercel จะสร้าง "ลิงก์ทดสอบ" ของ branch นี้ให้เอง (คนละลิงก์กับของจริง)
-  → เปิดลิงก์นั้นบนมือถือ เทสให้ผ่านก่อน
-  → ผ่านแล้วค่อย merge เข้า main แล้วลบ branch ทิ้ง
-
-▸ ถ้าเป็นเรื่องด่วนจริง (ลูกค้าสั่งไม่ได้ / ของจะไม่ถึงมือลูกค้า)
-
-  HOTFIX=1 git push origin HEAD:main
-
-  แล้ว "ต้อง" แจ้งบอร์ดทันทีว่าแก้อะไร ทำไมถึงด่วน
-
-▸ กติกาเต็ม: docs/BRANCH_RULES.md
-
-MSG
+echo ""
+echo "╔══════════════════════════════════════════════════════════════╗"
+echo "║  ⛔ โค้ดนี้ยังไม่เคยผ่าน branch — ลูกค้าจริงใช้ main อยู่      ║"
+echo "╚══════════════════════════════════════════════════════════════╝"
+echo ""
+echo "commit ที่ยังไม่เคยถูกเทสบน branch ไหนเลย:"
+echo "$BAD"
+echo "▸ วิธีที่ถูก (ก๊อปวางได้เลย)"
+echo ""
+echo "  git checkout -b fix/ชื่องานสั้นๆ"
+echo "  git push -u origin HEAD"
+echo "     → Vercel สร้างลิงก์ทดสอบของ branch นี้ให้เอง (ลูกค้าไม่เห็น) → เทสให้ผ่าน"
+echo "  git checkout main && git merge fix/ชื่องานสั้นๆ && git push"
+echo "  git branch -d fix/ชื่องานสั้นๆ"
+echo ""
+echo "▸ ด่วนจริง (ลูกค้าสั่งไม่ได้ / ของไม่ถึงมือลูกค้า / เงินคิดผิด)"
+echo ""
+echo "  HOTFIX=1 git push origin HEAD:main      แล้วแจ้งบอร์ดทันที"
+echo ""
+echo "▸ กติกาเต็ม: docs/BRANCH_RULES.md"
+echo ""
 exit 1
