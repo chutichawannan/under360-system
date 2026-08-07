@@ -979,13 +979,22 @@ function weekTagBtnHtml(m){
 function openWeekTag(id){
   const m=menuItems.find(x=>x.id==id); if(!m) return;
   const cur=menuWeeks[m.code]||'';
-  const opts=[0,1,2,3].map(b=>{
-    const s=weekOffsetStart(b);
+  // 8 สัปดาห์ล่าสุดให้กดเลือกเลย + ถ้าตัวที่ติดอยู่เก่ากว่านั้นก็เอามาโชว์ด้วย (จะได้เห็นว่าติดอะไรอยู่)
+  // ⚠️ ของจริงมีเก่าถึง "4-10 May" → ถ้าให้เลือกแค่ 3-4 สัปดาห์ แอดมินติดแท็กของเก่าไม่ได้เลย
+  const list=[0,1,2,3,4,5,6,7].map(weekOffsetStart);
+  if(cur && !list.includes(cur)) list.push(cur);
+  const opts=list.map(s=>{
+    const b=Math.round((new Date(thisWeekStart()+'T00:00:00')-new Date(s+'T00:00:00'))/604800000);
     const name=b===0?'สัปดาห์นี้':b===1?'สัปดาห์ก่อน':`ย้อนไป ${b} สัปดาห์`;
-    return `<div onclick="setWeekTag('${id}','${s}')" style="padding:11px 14px;cursor:pointer;border-bottom:1px solid #F0F1EE;display:flex;justify-content:space-between;align-items:center;${cur===s?'background:#EBF3EF':''}">
+    return `<div onclick="setWeekTag('${id}','${s}')" style="padding:10px 14px;cursor:pointer;border-bottom:1px solid #F0F1EE;display:flex;justify-content:space-between;align-items:center;${cur===s?'background:#EBF3EF':''}">
       <span style="font-weight:700;font-size:14px">${weekLabel(s)}</span>
       <span style="font-size:11.5px;color:#8A8F98">${name}${cur===s?' ✓':''}</span></div>`;
-  }).join('');
+  }).join('')
+  + `<div style="padding:10px 14px;border-bottom:1px solid #F0F1EE;display:flex;align-items:center;gap:8px">
+       <span style="font-size:12.5px;color:#6B7280;white-space:nowrap">เก่ากว่านั้น</span>
+       <input type="date" onchange="if(this.value)setWeekTag('${id}',weekStartOf(this.value+'T00:00:00'))"
+         style="flex:1;padding:5px 7px;border:1px solid var(--ink-xsoft);border-radius:7px;font-family:inherit;font-size:12.5px">
+     </div>`;
   const box=document.createElement('div');
   box.id='wkTagOverlay';
   box.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
