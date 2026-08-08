@@ -768,11 +768,23 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           </div>
         </div>
         <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
-          <div style="font-weight:800;font-size:15px;margin-bottom:8px">2. รายการอาหาร</div>
-          <input id="ob-menu-q" oninput="obFilterMenu(this.value)" placeholder="ค้นเมนู (โค้ด/ชื่อ)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:2px">2.1 เซ็ต / คอร์ส / Meal Plan</div>
+          <div style="font-size:12px;color:#6B7280;margin-bottom:10px">กดปุ่มเดียวจบ — ราคาเหมา ครัวจัดเมนูให้ · ตัวที่ต้องแพลนเมนู (Meal Plan / Hyrox) จะโผล่ในหน้า "แพลนเมนู" อัตโนมัติ</div>
+          <div style="font-weight:700;font-size:12px;color:#6B7280;margin-bottom:5px">📦 เซ็ต / แพคเกจ</div>
+          <div id="ob-pkg-list" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px"><span style="color:#9CA3AF;font-size:13px">กำลังโหลด…</span></div>
+          <div style="font-weight:700;font-size:12px;color:#6B7280;margin-bottom:5px">🥗 Meal Plan (ทำสด · ส่ง จ/พ/ศ)</div>
+          <div id="ob-mp-list" style="display:flex;flex-wrap:wrap;gap:6px"><span style="color:#9CA3AF;font-size:13px">กำลังโหลด…</span></div>
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:2px">2.2 เมนูเดี่ยว</div>
+          <div style="font-size:12px;color:#6B7280;margin-bottom:8px">ข้าวกล่อง / แพ็คกับข้าว / ของทานเล่น — คิดเป็นกล่อง (ไม่รวมเมนู LC/HP/HX ที่ขายเฉพาะในเซ็ต)</div>
+          <input id="ob-menu-q" oninput="obFilterMenu(this.value)" placeholder="ค้นเมนู (โค้ด / ชื่อเล่น / ชื่อ)" style="width:100%;padding:9px 12px;border:1.5px solid #E5E7EB;border-radius:9px;font-size:14px">
           <div id="ob-menu-list" style="max-height:200px;overflow:auto;margin-top:8px;border:1px solid #F3F4F6;border-radius:8px"></div>
-          <div style="font-weight:700;font-size:13px;color:#6B7280;margin:12px 0 4px">ในตะกร้า</div>
+        </div>
+        <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-weight:800;font-size:15px;margin-bottom:8px">🛒 ในตะกร้า</div>
           <div id="ob-cart"></div>
+          <div id="ob-cart-note" style="margin-top:8px"></div>
         </div>
         <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
           <div style="font-weight:800;font-size:15px;margin-bottom:8px">3. จัดส่ง</div>
@@ -3892,6 +3904,9 @@ function showToastOH(msg){
 <script>
 /* ═══ สั่งแทนลูกค้า (order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน ═══ */
 var obMenus=[],obCart=[],obCust=null,obNewMode=false,obHasCreatedBy=false,obInit=false,obCustResults=[];
+var obPkgs=[],obMpSets=[],obPlanType={},obFixedDate={};
+/* หมวดที่ขายเฉพาะในเซ็ต ห้ามโผล่ใน 2.2 (แอดมินเคยกดผิดเพราะ LC/HP/HX ปนอยู่ในลิสต์เดียวกัน) */
+var OB_SET_ONLY_CATS=['meal_hp','meal_lc','hyrox'];
 function obEsc(s){return (''+(s==null?'':s)).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function obBkkYMD(){return new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'});} /* "2026-07-28" ยึดเวลาไทยเสมอ กัน order_number เพี้ยนตอนเครื่องอยู่คนละ timezone */
 async function initOnbehalf(){
@@ -3900,33 +3915,110 @@ async function initOnbehalf(){
   var d=document.getElementById('ob-date'); if(d&&!d.value)d.value=obBkkYMD();
   if(obInit)return; obInit=true;
   try{ await sb_.from('orders').select('created_by').limit(1); obHasCreatedBy=true; }catch(e){ obHasCreatedBy=false; }
-  var r=await sb_.from('menu_items').select('id,code,name,price').eq('is_available',true).order('sort_order');
-  obMenus=r.data||[]; obFilterMenu(''); obRenderCart();
+  var res=await Promise.all([
+    sb_.from('menu_items').select('id,code,name,price,category,subcode').eq('is_available',true).order('sort_order'),
+    sb_.from('packages').select('id,name,base_price,qty,groups,free_shipping,delivery_rounds').eq('is_active',true).order('display_order'),
+    sb_.from('mp_offer_sets').select('set_key,label,boxes,price_hp,price_lc').eq('is_active',true).order('display_order'),
+    sb_.from('kitchen_data').select('key,data').in('key',['pkg_plan_type','pkg_fixed_dates'])
+  ]);
+  obMenus=res[0].data||[]; obPkgs=res[1].data||[]; obMpSets=res[2].data||[];
+  (res[3].data||[]).forEach(function(row){
+    if(row.key==='pkg_plan_type') obPlanType=row.data||{};
+    if(row.key==='pkg_fixed_dates') obFixedDate=row.data||{};
+  });
+  obRenderSets(); obFilterMenu(''); obRenderCart();
 }
+/* ── 2.1 เซ็ต / แพคเกจ / Meal Plan ── */
+function obPkgSku(p){ var s=null; (p.groups||[]).forEach(function(g){(g.skus||[]).forEach(function(k){ if(!s)s=k; });}); return s; }
+function obChip(onclick,label,sub,price){
+  return '<button onclick="'+onclick+'" style="text-align:left;background:#fff;border:1.5px solid #E5E7EB;border-radius:10px;padding:8px 11px;cursor:pointer;font-size:13px;line-height:1.35">'
+    +'<div style="font-weight:700;color:#111827">'+obEsc(label)+'</div>'
+    +(sub?'<div style="font-size:11px;color:#6B7280">'+obEsc(sub)+'</div>':'')
+    +'<div style="font-size:12px;color:#1F4D3A;font-weight:800;margin-top:2px">+ ฿'+Number(price).toLocaleString()+'</div></button>';
+}
+function obRenderSets(){
+  var pw=document.getElementById('ob-pkg-list');
+  if(pw) pw.innerHTML=obPkgs.map(function(p,i){
+    var tags=[]; if(p.qty)tags.push(p.qty+' กล่อง');
+    if(p.free_shipping)tags.push('ส่งฟรี');
+    if(obPlanType[p.id])tags.push('เข้าแพลนเมนู');
+    if(obFixedDate[p.id])tags.push('ส่ง '+obFixedDate[p.id].slice(8,10)+'/'+obFixedDate[p.id].slice(5,7));
+    if((p.delivery_rounds||1)>1)tags.push('แบ่ง '+p.delivery_rounds+' รอบ');
+    return obChip('obAddPkg('+i+')',p.name,tags.join(' · '),p.base_price||0);
+  }).join('')||'<span style="color:#9CA3AF;font-size:13px">ไม่มีแพคเกจที่เปิดขาย</span>';
+  var mw=document.getElementById('ob-mp-list');
+  if(mw) mw.innerHTML=obMpSets.map(function(s,i){
+    var sub=(s.boxes||0)+' กล่อง';
+    if(s.price_hp===s.price_lc) return obChip('obAddMp('+i+',\'hyrox\')',s.label,sub,s.price_hp);
+    return obChip('obAddMp('+i+',\'hp\')','HP · '+s.label,sub+' · โปรตีนสูง',s.price_hp)
+         + obChip('obAddMp('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
+  }).join('')||'<span style="color:#9CA3AF;font-size:13px">ไม่มีชุด Meal Plan</span>';
+}
+function obAddPkg(i){
+  var p=obPkgs[i]; if(!p)return;
+  obPush({kind:'pkg',key:'pkg:'+p.id,pkgId:p.id,code:obPkgSku(p),name:p.name,price:p.base_price||0,
+          boxes:p.qty||0,freeShip:!!p.free_shipping,planType:obPlanType[p.id]||null,fixedDate:obFixedDate[p.id]||null,rounds:p.delivery_rounds||1});
+}
+function obAddMp(i,type){
+  var s=obMpSets[i]; if(!s)return;
+  var price=(type==='lc')?s.price_lc:s.price_hp;
+  obPush({kind:'mp',key:'mp:'+s.set_key+':'+type,setKey:s.set_key,mpType:type,
+          name:type.toUpperCase()+' · '+s.label,price:price||0,boxes:s.boxes||0,planType:type});
+}
+function obPush(item){
+  var c=obCart.find(function(x){return x.key===item.key;});
+  if(c)c.qty++; else { item.qty=1; obCart.push(item); }
+  obRenderCart();
+}
+/* ── 2.2 เมนูเดี่ยว ── */
 function obFilterMenu(q){
   q=(q||'').toLowerCase();
-  var list=obMenus.filter(function(m){return !q||(m.code+' '+m.name).toLowerCase().indexOf(q)>=0;}).slice(0,40);
+  var pool=obMenus.filter(function(m){return OB_SET_ONLY_CATS.indexOf(m.category)<0;});
+  var list=pool.filter(function(m){return !q||(m.code+' '+(m.subcode||'')+' '+m.name).toLowerCase().indexOf(q)>=0;}).slice(0,40);
   document.getElementById('ob-menu-list').innerHTML=list.map(function(m){
-    return '<div onclick="obAdd(\''+m.code+'\')" style="display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:13px"><span>'+obEsc(m.code)+' · '+obEsc(m.name)+'</span><span style="color:#1F4D3A;font-weight:700">+ ฿'+m.price+'</span></div>';
+    var nick=m.subcode?'<b>'+obEsc(m.subcode)+'</b> · ':'';
+    return '<div onclick="obAdd(\''+m.code+'\')" style="display:flex;justify-content:space-between;padding:8px 10px;border-bottom:1px solid #F3F4F6;cursor:pointer;font-size:13px"><span>'+nick+obEsc(m.code)+' · '+obEsc(m.name)+'</span><span style="color:#1F4D3A;font-weight:700">+ ฿'+m.price+'</span></div>';
   }).join('')||'<div style="padding:10px;color:#9CA3AF;font-size:13px">ไม่พบเมนู</div>';
 }
 function obAdd(code){
   var m=obMenus.find(function(x){return x.code===code;}); if(!m)return;
-  var c=obCart.find(function(x){return x.code===code;});
-  if(c)c.qty++; else obCart.push({id:m.id,code:m.code,name:m.name,price:m.price,qty:1});
-  obRenderCart();
+  obPush({kind:'menu',key:'menu:'+m.code,id:m.id,code:m.code,name:m.name,price:m.price});
 }
-function obCartQty(code,delta){
-  var c=obCart.find(function(x){return x.code===code;}); if(!c)return;
-  c.qty+=delta; if(c.qty<=0)obCart=obCart.filter(function(x){return x.code!==code;});
+function obCartQty(key,delta){
+  var c=obCart.find(function(x){return x.key===key;}); if(!c)return;
+  c.qty+=delta; if(c.qty<=0)obCart=obCart.filter(function(x){return x.key!==key;});
   obRenderCart();
 }
 function obSubtotal(){return obCart.reduce(function(s,c){return s+c.price*c.qty;},0);}
+function obCartBadge(c){
+  if(c.kind==='mp') return '<span style="background:#E8F0EC;color:#1F4D3A;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px">Meal Plan</span>';
+  if(c.kind==='pkg') return '<span style="background:#FEF3C7;color:#B45309;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px">เซ็ต</span>';
+  return '';
+}
 function obRenderCart(){
   var el=document.getElementById('ob-cart'); if(!el)return;
   el.innerHTML=obCart.length?obCart.map(function(c){
-    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:14px"><span>'+obEsc(c.name)+'</span><span style="display:flex;align-items:center;gap:8px"><button onclick="obCartQty(\''+c.code+'\',-1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">-</button>'+c.qty+'<button onclick="obCartQty(\''+c.code+'\',1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">+</button><span style="width:70px;text-align:right;font-weight:700">฿'+(c.price*c.qty)+'</span></span></div>';
+    var sub=(c.boxes?('<div style="font-size:11px;color:#6B7280">'+(c.boxes*c.qty)+' กล่อง'+(c.planType?' · เข้าแพลนเมนู':'')+'</div>'):'');
+    return '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid #F3F4F6;font-size:14px"><span style="flex:1;min-width:0">'+obCartBadge(c)+obEsc(c.name)+sub+'</span><span style="display:flex;align-items:center;gap:8px;flex-shrink:0"><button onclick="obCartQty(\''+c.key+'\',-1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">-</button>'+c.qty+'<button onclick="obCartQty(\''+c.key+'\',1)" style="width:26px;height:26px;border:1px solid #E5E7EB;border-radius:6px;background:#fff;cursor:pointer">+</button><span style="width:70px;text-align:right;font-weight:700">฿'+(c.price*c.qty).toLocaleString()+'</span></span></div>';
   }).join(''):'<div style="color:#9CA3AF;font-size:13px;padding:6px 0">ยังไม่มีรายการ</div>';
+  /* ส่งฟรีอัตโนมัติ + วันส่งที่เซ็ตล็อกไว้ — เตือนตรงตะกร้า ไม่ต้องให้แอดมินจำเอง */
+  var note=document.getElementById('ob-cart-note');
+  if(note){
+    var msgs=[];
+    if(obCart.some(function(c){return c.freeShip;})){
+      var fe=document.getElementById('ob-fee'); if(fe&&(parseInt(fe.value)||0)!==0){fe.value='0';}
+      msgs.push('🚚 มีเซ็ต "ส่งฟรี" ในตะกร้า → ตั้งค่าส่ง 0 ให้แล้ว');
+    }
+    var fx=obCart.filter(function(c){return c.fixedDate;});
+    var de=document.getElementById('ob-date');
+    fx.forEach(function(c){
+      if(de&&de.value&&de.value!==c.fixedDate) msgs.push('📅 "'+c.name+'" ล็อกวันส่ง '+c.fixedDate+' แต่ช่อง 3 เลือก '+de.value+' — <a onclick="document.getElementById(\'ob-date\').value=\''+c.fixedDate+'\';obRenderCart()" style="color:#1F4D3A;font-weight:700;cursor:pointer;text-decoration:underline">แก้ให้ตรง</a>');
+      else if(de&&!de.value) msgs.push('📅 "'+c.name+'" ล็อกวันส่ง '+c.fixedDate);
+    });
+    var rd=obCart.filter(function(c){return (c.rounds||1)>1;});
+    rd.forEach(function(c){ msgs.push('🔁 "'+c.name+'" ปกติแบ่งส่ง '+c.rounds+' รอบ — ใบนี้บันทึกรอบเดียว ถ้าจะแบ่งให้กดสั่งแยกใบตามวันส่ง'); });
+    note.innerHTML=msgs.length?'<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:12px;color:#374151;line-height:1.7">'+msgs.join('<br>')+'</div>':'';
+  }
   var fee=parseInt((document.getElementById('ob-fee')||{}).value)||0;
   var disc=parseInt((document.getElementById('ob-disc')||{}).value)||0;
   var t=document.getElementById('ob-total'); if(t)t.textContent='฿'+Math.max(0,obSubtotal()+fee-disc).toLocaleString();
@@ -3993,9 +4085,27 @@ async function obSubmit(){
       payment_status:document.getElementById('ob-paid').checked?'paid':'unpaid' };
     if(obHasCreatedBy) payload.created_by=admin;
     var ord=await sb_.from('orders').insert(payload).select().single(); if(ord.error)throw ord.error;
-    var items=obCart.map(function(c){return {order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:c.code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:''};});
+    /* order_items — เขียน notes ให้ตรงกับที่ LIFF ใช้ ไม่งั้น KQ/แพลนเมนู/รายงาน อ่านประเภทออเดอร์ไม่ออก */
+    var items=obCart.map(function(c){
+      var note='', code=c.code||null;
+      if(c.kind==='pkg'){ note='pkg:'+c.pkgId; if(!code)code='PKG-'+String(c.pkgId).slice(0,8).toUpperCase(); }
+      else if(c.kind==='mp'){ note='meal_plan:'+c.mpType+':'+c.setKey; code='MP-'+c.mpType.toUpperCase(); }
+      return {order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:note};
+    });
     var it=await sb_.from('order_items').insert(items); if(it.error)throw it.error;
-    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin);
+    /* แถวแพลนเมนู — Meal Plan + เซ็ตที่ตั้ง pkg_plan_type ไว้ (Hyrox) ต้องโผล่หน้า "แพลนเมนู" เหมือนที่ลูกค้าสั่งผ่าน LIFF */
+    var planRows=obCart.filter(function(c){return c.planType;}).map(function(c){
+      return { order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
+        mp_type:c.planType, mp_set:c.setKey||null, round_no:1, total_rounds:1,
+        delivery_date:date, time_slot:slot, time_slot_label:slotLabels[slot]||'',
+        delivery_address:addr||null, box_count:(c.boxes||0)*c.qty, status:'scheduled' };
+    });
+    var planMsg='';
+    if(planRows.length){
+      var pr=await sb_.from('mp_deliveries').insert(planRows);
+      planMsg=pr.error?' · ⚠️ สร้างแถวแพลนเมนูไม่สำเร็จ ('+(pr.error.message||'')+') แจ้งนัท':' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+    }
+    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg);
     obCart=[]; obRenderCart(); obClearCust();
     document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-disc').value='0'; document.getElementById('ob-promo').value=''; document.getElementById('ob-paid').checked=false;
   }catch(e){ err('พลาด: '+(e.message||e)); }
