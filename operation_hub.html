@@ -267,6 +267,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 }
 .tag-lc{background:#D1FAE5;color:#065F46}
 .tag-hp{background:#DBEAFE;color:#1E40AF}
+.tag-hx{background:#FEF3C7;color:#B45309}   /* Hyrox — คนละสี จะได้ไม่สับกับ LC/HP บนตารางเดียวกัน */
 .menu-tag{
   display:inline-block;padding:2px 7px;border-radius:6px;
   font-size:11px;background:var(--forest-soft);color:var(--forest);
@@ -1636,12 +1637,25 @@ var mpRequestMenus=[];  // เมนู Request ที่ลูกค้าเ�
 //   · รองรับแผนใหม่ (Hyrox ฯลฯ) โดยไม่ต้องแก้โค้ด — แค่มี prefix ใน MENU_POOL ก็ใช้ได้
 // ══════════════════════════════════════
 function mpBaseNo(code){ var m=String(code||"").match(/^[A-Za-z]+(\d+)$/); return m?m[1]:String(code||""); }
-function mpPrefixOf(type){ return String(type||"lc").toUpperCase(); }   // 'hp'→'HP' · 'lc'→'LC' · เผื่อแผนใหม่
+function mpPrefixOf(type){
+  var t=String(type||"lc").toLowerCase();
+  if(t==="hyrox") return "HX";      // แผน Hyrox ใช้รหัส HX…
+  return t.toUpperCase();           // 'hp'→'HP' · 'lc'→'LC'
+}
+// 🔑 "ตระกูลเมนู" — กันเมนูคนละแผนที่บังเอิญเลขซ้ำกันมารวมเป็นบรรทัดเดียว
+//    LC31 กับ HP31 = จานเดียวกันคนละปริมาณ → รวมได้ (ตั้งใจ)
+//    HX31 = คนละจานเลย → ห้ามรวมกับ LC31/HP31 ไม่งั้นแอดมินกดเมนูผิดให้ลูกค้า
+function mpFamilyOf(codeOrType){
+  var s=String(codeOrType||"").toUpperCase();
+  return (/^HX/.test(s) || s==="HYROX") ? "hyrox" : "mp";
+}
 
 // รวม MENU_POOL เป็นรายเมนู: { no:'01', name:'อกไก่ย่าง…', codes:{HP:'HP01',LC:'LC01'} }
-function mpMenuBases(){
+//   family: 'mp' (LC/HP) หรือ 'hyrox' (HX) — ไม่ส่ง = เอาทั้งหมดแบบเดิม
+function mpMenuBases(family){
   var by={}, order=[];
   (MENU_POOL||[]).forEach(function(m){
+    if(family && mpFamilyOf(m.code)!==family) return;
     var no=mpBaseNo(m.code), pre=String(m.code||"").replace(/\d+$/,"").toUpperCase();
     if(!by[no]){ by[no]={no:no, name:m.name||m.code, codes:{}}; order.push(no); }
     by[no].codes[pre]=m.code;
@@ -1649,10 +1663,25 @@ function mpMenuBases(){
   });
   return order.map(function(n){return by[n];});
 }
-function mpBaseByNo(no){ return mpMenuBases().find(function(b){return b.no===no;}); }
+function mpBaseByNo(no, family){ return mpMenuBases(family).find(function(b){return b.no===no;}); }
+function mpTypeCls(t){ return mpFamilyOf(t)==="hyrox" ? "tag-hx" : (String(t||"")==="lc" ? "tag-lc" : "tag-hp"); }
+// ตระกูลของแถวที่แอดมินเลือกอยู่ตอนนี้ — ไม่ได้เลือกอะไร = ดูจากแถวที่มีในตาราง
+//   ถ้ามีทั้ง Meal Plan และ Hyrox ปนกันแต่ยังไม่เลือก → default เป็น mp (ของหลัก)
+function planFamilySelected(){
+  var fams={};
+  (selectedRowIds||[]).forEach(function(id){
+    var r=getMpRow(id); if(r) fams[mpFamilyOf(r.mp_type)]=1;
+  });
+  var k=Object.keys(fams);
+  if(k.length===1) return k[0];
+  if(k.length>1)  return null;      // เลือกคร่อมตระกูล = โชว์ทุกเมนู ให้แอดมินเห็นว่าปนกันอยู่
+  return "mp";
+}
 // เลือกโค้ดจริงให้ตรงกับแผนของลูกค้าแถวนั้น (ไม่มีของแผนนั้น → หยิบตัวที่มี)
 function mpCodeFor(no, mpType){
-  var b=mpBaseByNo(no); if(!b) return no;
+  var fam=mpFamilyOf(mpType);
+  var b=mpBaseByNo(no,fam); if(!b) return no;
+  if(fam==="hyrox") return b.codes.HX || Object.values(b.codes)[0] || no;
   return b.codes[mpPrefixOf(mpType)] || b.codes.LC || b.codes.HP || Object.values(b.codes)[0] || no;
 }
 
@@ -1665,12 +1694,23 @@ async function loadMenuPool(){
   var sb_=getSB(); if(!sb_) return;
   try{
     var r=await sb_.from("menu_items").select("code,name,category")
-          .in("category",["meal_hp","meal_lc"]).order("code").limit(2000);
+          .in("category",["meal_hp","meal_lc","hyrox"]).order("code").limit(2000);
     if(r.error) throw r.error;
     var rows=(r.data||[]).filter(function(m){return m.code;});
     if(!rows.length) return;                       // ไม่มีข้อมูล = ไม่ทับของเดิม
+    // 🚫 ตัด "SKU ตัวแทนเซ็ต" ออก — เช่น HX30 = ปุ่มยืนยันเซ็ต ฿1,500 ไม่ใช่จานที่ครัวทำ
+    //    ถ้าไม่ตัด แอดมินจะเห็นมันในลิสต์แล้วกดใส่เป็นเมนูให้ลูกค้าได้
+    var placeholders={};
+    try{
+      var pr=await sb_.from("packages").select("groups").eq("is_active",true).limit(200);
+      (pr.data||[]).forEach(function(p){
+        (p.groups||[]).forEach(function(g){ (g.skus||[]).forEach(function(s){ placeholders[String(s).toUpperCase()]=1; }); });
+      });
+    }catch(e){ console.warn("โหลด SKU ตัวแทนเซ็ตไม่ได้:",e); }
+    rows=rows.filter(function(m){ return !placeholders[String(m.code).toUpperCase()]; });
     MENU_POOL=rows.map(function(m){
-      return {code:m.code, name:m.name||m.code, type:(m.category==="meal_hp")?"hp":"lc"};
+      return {code:m.code, name:m.name||m.code,
+              type:(m.category==="hyrox")?"hyrox":((m.category==="meal_hp")?"hp":"lc")};
     });
     _menuPoolLoaded=true;
   }catch(e){ console.warn("loadMenuPool:",e&&(e.message||e)); }
@@ -1809,7 +1849,7 @@ function clickMenu(code){
     var entry=items.find(function(e){return e.code===realCode;});
     if(entry){ entry.qty=(entry.qty||1)+1; }
     else {
-      var m=MENU_POOL.find(function(x){return x.code===realCode;}) || mpBaseByNo(baseNo);
+      var m=MENU_POOL.find(function(x){return x.code===realCode;}) || mpBaseByNo(baseNo,mpFamilyOf(r.mp_type));
       items.push({code:realCode,name:m?m.name:realCode,qty:1,note:""});
     }
     r.menu_items=items;
@@ -1823,7 +1863,7 @@ function clickMenu(code){
   renderLeftPanel();
   var hint=document.getElementById("selectHint");
   if(hint){
-    var b=mpBaseByNo(baseNo);
+    var b=mpBaseByNo(baseNo,planFamilySelected());
     hint.textContent="✅ ใส่ "+(b?b.name:code)+" ให้ "+added+" ช่อง (ระบบเลือก HP/LC ให้ตามแผนของแต่ละคน)"
       +(full?(" · เต็มแล้ว "+full+" ช่อง"):"")+(selectedRowIds.length?(" — เหลือเลือกอยู่ "+selectedRowIds.length+" ช่อง"):"");
     hint.style.opacity="1";
@@ -2098,7 +2138,11 @@ function renderLeftPanel(){
 
   // N-29 · โชว์ทุกเมนูใน DB ไม่ใช่แค่ 14 ตัวของวันนั้น (เดิมต้องพิมพ์ค้นหา ตอนนี้เลื่อนหาเอา)
   // N-30 · สลับเป็น "เฉพาะที่ต้องผลิตวันนั้น" ได้ — เอาไว้ใช้ตอนสั่งของ/เช็คงานครัว
-  var bases=mpMenuBases();
+  // 🔑 โชว์เมนูเฉพาะ "ตระกูล" ที่ตรงกับแถวที่เลือกอยู่
+  //    เลือกแถว Hyrox → เห็นเฉพาะ HX · เลือกแถว Meal Plan → เห็นเฉพาะ LC/HP
+  //    ไม่งั้นแอดมินกดเมนู Hyrox ใส่ให้ลูกค้า Meal Plan ได้ — คนละชุดอาหารกันคนละเรื่อง
+  var famSel=planFamilySelected();
+  var bases=mpMenuBases(famSel);
   var todaySet=todayPlan.map(mpBaseNo);
   bases.forEach(function(b){ if(todaySet.indexOf(b.no)<0) todaySet.push(0); });   // คงลำดับเดิมไว้
   var list=bases.slice().sort(function(a,b2){
@@ -2326,7 +2370,7 @@ function _buildPlanTable(){
   var rows="";
   visibleSubs.forEach(function(s){
     var first=s.first;
-    var typeCls=first.mp_type==="lc"?"tag-lc":"tag-hp";
+    var typeCls=mpTypeCls(first.mp_type);
     var doneCount=s.rows.filter(function(r){return r.status==="delivered";}).length;
     var allIds=s.rows.map(function(r){return r.id;});
     var rowSelected=allIds.length&&allIds.every(function(id){return selectedRowIds.indexOf(id)>=0;});
@@ -3289,7 +3333,7 @@ function renderMpDeliveriesQueue(){
   rows.forEach(function(r){
     var isAttention=MPQ_ATTENTION_STATUSES.indexOf(r.status)>=0;
     var borderColor=r.status==="skip_requested"?"#F59E0B":(r.status==="request_submitted"?"#DC2626":"var(--ink-xsoft)");
-    var tagCls=r.mp_type==="lc"?"tag-lc":"tag-hp";
+    var tagCls=mpTypeCls(r.mp_type);
     h+="<div style='background:#fff;border:1px solid var(--ink-xsoft);border-left:4px solid "+borderColor+";border-radius:10px;padding:10px 12px'>";
     h+="<div style='display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:12px'>";
     h+="<input type='date' value='"+(r.delivery_date||"")+"' onchange=\"updateMpDeliveryDate('"+r.id+"',this.value)\" style='padding:4px 6px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:12px;font-family:inherit'>";

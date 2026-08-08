@@ -1617,7 +1617,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -1662,6 +1662,7 @@ async function init() {
     (val(cfgR).data || []).forEach(row => { cfgMap[row.key] = row.data; });
     // แท็กสัปดาห์ของแต่ละเมนู (แอดมินติดที่หน้า HE) — { "S103": "2026-08-03", ... }
     menuWeeks = (cfgMap[WEEK_KEY] && typeof cfgMap[WEEK_KEY] === 'object') ? cfgMap[WEEK_KEY] : {};
+    pkgPlanTypes = (cfgMap[PKGPLAN_KEY] && typeof cfgMap[PKGPLAN_KEY] === 'object') ? cfgMap[PKGPLAN_KEY] : {};
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
     const dbCats = (cfgMap.appConfig && Array.isArray(cfgMap.appConfig.categories)) ? cfgMap.appConfig.categories : [];
     dbCats.forEach(c => { if (c && c.key) customCatLabels[c.key] = c.label || c.name || c.key; });
@@ -1901,6 +1902,20 @@ function refreshItemViews(){
 //   ⛔ เลิกใช้ระบบเติม x นำหน้า (xS3) แล้ว — วันที่บอกได้ตรงกว่าและไม่ต้อง maintain
 const WEEK_KEY = 'menu_special_weeks';   // kitchen_data — { "S103": "2026-08-03", ... }
 let menuWeeks = {};
+
+// เซ็ตที่ครัวเป็นคนจัดเมนูให้ (ต้องเข้าหน้า "แพลนเมนู" เหมือน Meal Plan)
+//   kitchen_data คีย์ pkg_plan_type = { "<package id>": "hyrox" }
+const PKGPLAN_KEY = 'pkg_plan_type';
+let pkgPlanTypes = {};
+// กี่กล่องจริงของเซ็ต — เซ็ตเขียนจำนวนไว้ในชื่อ ("HYROX SET 6 กล่อง") แต่ qty=1
+//   ถ้าไม่แกะออกมา แถวแพลนจะได้ box_count ผิด แล้วครัวเห็นยอดต่ำกว่าจริง
+function setBoxCount(c){
+  if (!c) return 1;
+  var inName = String(c.name || '').match(/(\d+)\s*กล่อง/);
+  if (inName) return parseInt(inName[1], 10);
+  if (Array.isArray(c.items) && c.items.length) return c.items.reduce((s,i)=>s+(i.qty||1),0);
+  return c.qty || 1;
+}
 
 // สัปดาห์เริ่มวันจันทร์ (ตรงกับที่ร้านใช้ในชีท: 340 = 27 ก.ค.–2 ส.ค. · 341 = 3–9 ส.ค.)
 function weekStartOf(dateLike){
@@ -2770,6 +2785,36 @@ async function submitOrder() {
         (rows || []).forEach(r => mpRoundsAll.push(r));
       }
     }
+
+    // 2b-2. เซ็ตที่ "ครัวเป็นคนจัดเมนูให้" (เช่น Hyrox) — นัทเคาะ 8 ส.ค. 2569:
+    //   *"hyrox มีสถานะเดียวกับมีลแพลน ออเดอร์ต้องเข้ามาแพลนเมนูด้วยนะ หน้า oh"*
+    //   เดิมเซ็ตพวกนี้ลงเป็น order_items บรรทัดเดียว ("HYROX SET 6 กล่อง") = แอดมินไม่มีที่ใส่เมนู
+    //   → สร้างแถวใน mp_deliveries ให้ด้วย จะได้โผล่ในหน้า "แพลนเมนู" เหมือน Meal Plan
+    //   ตั้งค่าที่ kitchen_data คีย์ pkg_plan_type = { "<package id>": "hyrox" } — ไม่ต้องรัน SQL
+    try {
+      const planRows = [];
+      for (const c of cart) {
+        const ptype = (c.type === 'package' && c.package_id) ? pkgPlanTypes[c.package_id] : null;
+        if (!ptype) continue;
+        planRows.push({
+          order_id: ord.id,
+          customer_id: customer?.id || null,
+          line_uid: lineProfile.userId,
+          customer_name: recipientName || lineProfile.displayName,
+          line_display_name: lineProfile.displayName,
+          mp_type: ptype,
+          mp_set: (c.code || String(c.name || '').slice(0, 40)),
+          round_no: 1, total_rounds: 1,
+          delivery_date: selDate,
+          time_slot: slot?.key || selSlot,
+          time_slot_label: slot?.time || '',
+          delivery_address: addrFinal,
+          box_count: setBoxCount(c),
+          status: 'scheduled'
+        });
+      }
+      if (planRows.length) await sb.from('mp_deliveries').insert(planRows);
+    } catch(e) { console.error('สร้างแถวแพลนเมนูของเซ็ตไม่สำเร็จ (ออเดอร์บันทึกแล้ว):', e); }
 
     // 2c. เซ็ตแบ่งส่งหลายรอบ: สร้าง order แยกรอบ 2..N (ยอด 0 — จ่ายรวมกับ order หลักแล้ว)
     //     1 รอบ = 1 order (ตรงกับที่แอดมินทำมือ) · KQ อ่าน orders ตาม delivery_date อยู่แล้ว
