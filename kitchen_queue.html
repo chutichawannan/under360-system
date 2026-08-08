@@ -605,23 +605,96 @@ function render(){
 
 // TAB 1: รายสินค้า aggregated
 var saveTimers={};
+// เมนูพิเศษประจำสัปดาห์ = รหัส S… / D… (หมุนทุกสัปดาห์) · No… / A… = เมนูประจำ
+// นัทเน้นเอง 8 ส.ค.: *"ไม่รู้ว่าจะผลิตอะไรกี่กล่อง โดยเฉพาะเมนูพิเศษประจำสัปดาห์"*
+function isWeeklyCode(code){ return /^[SD]\d/i.test(String(code||"")); }
+
+// หัวใบสั่งผลิต — ตัวเลขที่ครัว/น้องนิว ใช้ตัดสินใจสั่งของได้ทันที
+//   แยก 2 ชั้นให้ชัด: "รับมาแล้วกี่กล่อง" (รู้ตั้งแต่ลูกค้าสั่ง) vs "แพลนเมนูแล้วกี่กล่อง" (รอแอดมิน)
+function prodHeadHtml(nOrders, boxTotal, plannedBoxes, waiting){
+  var waitBoxes=waiting.reduce(function(s,w){return s+w.boxes;},0);
+  var h="<div style='background:#fff;border:1px solid var(--xsoft);border-radius:12px;padding:12px 14px;margin-bottom:10px'>"
+    +"<div style='display:flex;gap:14px;flex-wrap:wrap;align-items:baseline'>"
+    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ต้องส่งทั้งหมด</div>"
+    +"<div style='font-size:26px;font-weight:800;color:var(--ink)'>"+boxTotal+" <span style='font-size:13px;font-weight:600;color:var(--soft)'>กล่อง / "+nOrders+" ใบ</span></div></div>"
+    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>แพลนเมนูแล้ว</div>"
+    +"<div style='font-size:20px;font-weight:800;color:var(--g)'>"+plannedBoxes+" กล่อง</div></div>";
+  if(waitBoxes){
+    h+="<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ยังไม่ได้แพลน</div>"
+      +"<div style='font-size:20px;font-weight:800;color:var(--r)'>"+waitBoxes+" กล่อง</div></div>";
+  }
+  h+="</div>";
+  if(waiting.length){
+    // ⚠️ ตัวสำคัญ: ถ้าไม่โชว์ตรงนี้ ใบพวกนี้จะหายจากใบสั่งผลิตไปเงียบ ๆ
+    //    ครัวคิดว่าทำครบแล้ว แต่จริง ๆ ยังมีของค้างรอแอดมินแพลน
+    h+="<div style='margin-top:10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 12px'>"
+      +"<div style='font-size:12.5px;font-weight:800;color:#B91C1C;margin-bottom:5px'>🔴 ยังไม่รู้ว่าจะทำเมนูอะไร — "+waiting.length+" ใบ · "+waitBoxes+" กล่อง</div>"
+      +"<div style='font-size:12px;color:#7F1D1D;line-height:1.7'>"
+      + waiting.map(function(w){
+          return "<span style='display:inline-block;background:#fff;border:1px solid #FECACA;border-radius:7px;padding:1px 7px;margin:0 4px 4px 0'>"
+            +escH(String(w.o.customer_name||"ลูกค้า").slice(0,16))+" <b>"+w.boxes+"</b></span>";
+        }).join("")
+      +"</div><div style='font-size:11px;color:#B91C1C;margin-top:4px'>แอดมินต้องเข้าไปใส่เมนูที่หน้า “แพลนเมนู” ก่อน ครัวถึงจะเห็นว่าต้องทำอะไร</div></div>";
+  }
+  return h+"</div>";
+}
+
+// 📦 กี่กล่องจริง ๆ ของใบนี้ — ตัวเลขที่ครัวใช้สั่งของ
+//   ⚠️ เซ็ต/แพค 1 บรรทัด ≠ 1 กล่อง: เขียนจำนวนไว้ในชื่อ ("HYROX SET 6 กล่อง") แต่ quantity=1
+//      → ใครนับจาก quantity จะได้ยอดต่ำกว่าจริงแบบเงียบ ๆ (นัทเจอเอง 8 ส.ค.)
+//   ลำดับความน่าเชื่อ: แพลน MP (box_count) > จำนวนที่เขียนในชื่อ > quantity
+function orderBoxCount(o, items){
+  var m=findMpFor(o);
+  if(m && m.box_count) return m.box_count;
+  var q=items.reduce(function(s,i){return s+(i.qty||1);},0);
+  var inName=items.reduce(function(s,i){
+    var mm=String(i.name||"").match(/(\d+)\s*กล่อง/);
+    return s+(mm?parseInt(mm[1],10):0);
+  },0);
+  return Math.max(q, inName);
+}
+
 function renderProd(){
   var orders=filteredOrders();
   var tgt=getTargetDate();
-  var agg={};
+  var agg={}, waiting=[], boxTotal=0, plannedBoxes=0;
   orders.forEach(function(o){
-    getOrderItems(o.id).forEach(function(i){
-      if(!agg[i.menu_item_id])agg[i.menu_item_id]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
-      agg[i.menu_item_id].qty+=i.qty;
+    var items=getOrderItems(o.id);
+    var boxes=orderBoxCount(o,items);
+    boxTotal+=boxes;
+    // ใบที่ยัง "ไม่รู้ว่าจะทำเมนูอะไร" = แพลนเมนูยังไม่ถูกใส่ (หรือใบเก่าที่ไม่มีรายการติดมา)
+    //   ครัวต้องเห็นว่ามีของค้างกี่กล่อง ไม่ใช่หายไปเงียบ ๆ จากใบสั่งผลิต
+    var real=items.filter(function(i){ return i.code&&i.code!=="—"&&!/^(MP-|SET-|HX30$)/.test(i.code); });
+    if(!real.length){ waiting.push({o:o,boxes:boxes}); return; }
+    plannedBoxes+=boxes;
+    real.forEach(function(i){
+      // 🔴 เดิมใช้ agg[i.menu_item_id] — แต่เมนูที่มาจากแพลน MP มี menu_item_id = null ทุกตัว
+      //    = ทุกเมนูของทุกคนยุบรวมเป็นบรรทัดเดียว ครัวเลยไม่มีทางรู้ว่าต้องทำอะไรกี่กล่อง
+      var key=(i.code||i.name||"?");
+      if(!agg[key])agg[key]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
+      agg[key].qty+=(i.qty||1);
+      if(i.menu_item_id&&!agg[key].id) agg[key].id=i.menu_item_id;
     });
   });
-  var rows=Object.values(agg).sort(function(a,b){return (a.code||"").localeCompare(b.code||"");});
-  if(!rows.length){
+  // เมนูพิเศษประจำสัปดาห์ขึ้นก่อน (นัทเน้น: "โดยเฉพาะเมนูพิเศษประจำสัปดาห์")
+  var rows=Object.values(agg).sort(function(a,b){
+    var sa=isWeeklyCode(a.code)?0:1, sb=isWeeklyCode(b.code)?0:1;
+    if(sa!==sb) return sa-sb;
+    return (a.code||"").localeCompare(b.code||"",undefined,{numeric:true});
+  });
+  var headHtml=prodHeadHtml(orders.length,boxTotal,plannedBoxes,waiting);
+  if(!rows.length && !orders.length){
     document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
     renderMpQueue();
     return;
   }
-  var html="<div class='prod-wrap'>"
+  if(!rows.length){
+    document.getElementById("prodView").innerHTML=headHtml
+      +"<div style='text-align:center;padding:26px 16px;color:var(--soft);font-size:13px'>ยังไม่มีเมนูให้ผลิตสักรายการ — ทุกใบรอแพลนเมนูอยู่</div>";
+    renderMpQueue();
+    return;
+  }
+  var html=headHtml+"<div class='prod-wrap'>"
     +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>สต็อค</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
@@ -632,6 +705,7 @@ function renderProd(){
     // ชื่อเมนูตัดบรรทัดได้ ไม่ตัดข้อความทิ้ง (เดิม ellipsis+nowrap = ชื่อยาวอ่านไม่จบว่าต้องผลิตอะไร)
     html+="<div class='pt-row "+rowCls+"'>"
       +"<div style='display:flex;align-items:baseline;gap:6px;min-width:0'>"
+      +(isWeeklyCode(r.code)?"<span title='เมนูพิเศษประจำสัปดาห์' style='color:#B45309;font-size:13px;flex-shrink:0'>⭐</span>":"")
       +"<span class='code-tag'>"+escH(getCodeDisplay(r.code,r.name))+"</span>"
       +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;white-space:normal;word-break:break-word;min-width:0'>"+escH(r.name)+"</span>":"")
       +"</div>"
