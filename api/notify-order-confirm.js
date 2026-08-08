@@ -182,10 +182,40 @@ function buildFlex(o, items) {
   };
 }
 
+// ── หา token ให้ได้ ──────────────────────────────────────────────
+// 2 ทาง (เอาทางไหนก็ได้ที่นัทตั้งไว้):
+//   1. LINE_CHANNEL_ACCESS_TOKEN — วางตรงๆ · อายุ 30 วัน ต้องมาต่อเอง
+//   2. LINE_CHANNEL_SECRET (+ LINE_CHANNEL_ID) — ระบบขอ token เองทุกครั้ง
+//      → ไม่มีวันหมดอายุ ไม่ต้องกลับมาแตะอีกเลย  ✅ แนะนำทางนี้
+let cachedToken = null, cachedUntil = 0;
+async function getToken() {
+  const direct = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  if (direct) return direct;
+
+  const secret = process.env.LINE_CHANNEL_SECRET;
+  if (!secret) return null;
+  if (cachedToken && Date.now() < cachedUntil) return cachedToken;
+
+  const r = await fetch("https://api.line.me/v2/oauth/accessToken", {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: new URLSearchParams({
+      grant_type: "client_credentials",
+      client_id: process.env.LINE_CHANNEL_ID || "2005639534",
+      client_secret: secret,
+    }),
+  });
+  const j = await r.json().catch(() => ({}));
+  if (!j.access_token) return null;
+  cachedToken = j.access_token;
+  cachedUntil = Date.now() + 6 * 3600 * 1000; // ใช้ซ้ำ 6 ชม. แล้วค่อยขอใหม่
+  return cachedToken;
+}
+
 export default async function handler(req, res) {
   const dry = String(req.query?.dry || "") === "1";
   const only = String(req.query?.order || "").trim();
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const token = dry ? null : await getToken();
 
   try {
     // 1) ใบที่ส่งไปแล้ว (กันส่งซ้ำ)
@@ -213,7 +243,7 @@ export default async function handler(req, res) {
     for (const o of todo) {
       const msg = buildFlex(o, o.order_items || []);
       if (dry) { report.push({ order: o.order_number, to: o.line_uid.slice(0, 10) + "…", total: o.total, altText: msg.altText }); continue; }
-      if (!token) { report.push({ order: o.order_number, error: "ยังไม่ได้ตั้ง LINE_CHANNEL_ACCESS_TOKEN" }); continue; }
+      if (!token) { report.push({ order: o.order_number, error: "ยังไม่ได้ตั้ง LINE_CHANNEL_SECRET หรือ LINE_CHANNEL_ACCESS_TOKEN ใน Vercel" }); continue; }
 
       const r = await fetch("https://api.line.me/v2/bot/message/push", {
         method: "POST",
