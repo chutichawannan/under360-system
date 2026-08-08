@@ -1286,6 +1286,58 @@ async function odDelItem(itemId, orderId){
   }catch(e){ alert("ลบไม่สำเร็จ: "+(e.message||e)); }
 }
 
+// ── 🧾 สลิปโอนเงิน — แอดมินอัพเองได้ (นัทสั่ง 8 ส.ค. 2569) ────────────────
+// เก็บที่เดียวกับที่ลูกค้าแนบผ่าน LIFF เป๊ะ: bucket `payment-slips` + `orders.slip_url`
+//   ชื่อไฟล์ = เลขออเดอร์ + สุ่ม (เดาลิงก์ไม่ได้) · ไม่ทับของเดิม (upsert:false)
+// ⚠️ อัพทับ = ลิงก์เก่าไม่ได้ถูกลบ (anon ลบไฟล์ใน bucket ไม่ได้) แค่เลิกอ้างถึง — ตั้งใจ
+//    ให้ของเดิมยังอยู่เป็นหลักฐาน เผื่ออัพผิดใบแล้วต้องย้อน
+function odSlipBox(o){
+  var has=!!o.slip_url;
+  var h="";
+  if(has){
+    h+="<div style='margin-bottom:8px'><a href='"+esc2(o.slip_url)+"' target='_blank' rel='noopener'>"
+      +"<img src='"+esc2(o.slip_url)+"' style='max-width:100%;max-height:260px;border-radius:10px;border:1px solid #E5E7EB;display:block'></a>"
+      +"<div style='font-size:11px;color:#6B7280;margin-top:4px'>แตะรูปเพื่อเปิดเต็มจอ</div></div>";
+  } else {
+    h+="<div style='color:#9CA3AF;font-size:12.5px;margin-bottom:8px'>— ยังไม่มีสลิปในระบบ —</div>";
+  }
+  h+="<input type='file' accept='image/*' id='odSlipFile_"+o.id+"' style='display:none' onchange=\"odUploadSlip('"+o.id+"',event)\">"
+    +"<button class='btn' onclick=\"document.getElementById('odSlipFile_"+o.id+"').click()\">"
+    +(has?"🔄 เปลี่ยนรูปสลิป":"📎 แนบสลิปให้ลูกค้า")+"</button>"
+    +"<div id='odSlipMsg_"+o.id+"' style='font-size:12px;margin-top:6px'></div>";
+  return h;
+}
+async function odUploadSlip(orderId, ev){
+  var f=ev&&ev.target&&ev.target.files&&ev.target.files[0]; if(!f) return;
+  var msg=document.getElementById("odSlipMsg_"+orderId);
+  var say=function(t,c){ if(msg){ msg.textContent=t; msg.style.color=c||"#6B7280"; } };
+  if(!/^image\//.test(f.type)){ say("ไฟล์นี้ไม่ใช่รูปภาพ","#B91C1C"); return; }
+  if(f.size>8*1024*1024){ say("รูปใหญ่เกิน 8 MB — ย่อก่อนนะครับ","#B91C1C"); return; }
+  var sb_=getSB(); if(!sb_){ say("ต่อฐานข้อมูลไม่ได้","#B91C1C"); return; }
+  say("กำลังอัพโหลด…");
+  try{
+    var o=(ordRows||[]).find(function(x){return x.id===orderId;});
+    if(!o){ var r0=await sb_.from("orders").select("id,order_number,payment_status").eq("id",orderId).maybeSingle(); o=r0.data; }
+    var num=(o&&o.order_number)||"order";
+    var ext=(f.name.split(".").pop()||"jpg").toLowerCase().replace("jpeg","jpg");
+    if(ext.length>5) ext="jpg";
+    var path=num+"_admin_"+Math.random().toString(36).slice(2)+Date.now().toString(36)+"."+ext;
+    var up=await sb_.storage.from("payment-slips").upload(path,f,{contentType:f.type,upsert:false});
+    if(up.error) throw up.error;
+    var url=(sb_.storage.from("payment-slips").getPublicUrl(path)||{}).data;
+    url=url&&url.publicUrl;
+    if(!url) throw new Error("ไม่ได้ลิงก์รูปกลับมา");
+    // แอดมินแนบเอง = เห็นสลิปกับตาแล้ว → ตั้งเป็น "โอนแล้ว" เลย ไม่ต้องรอตรวจซ้ำ
+    var patch={slip_url:url,updated_at:new Date().toISOString()};
+    if(!o||o.payment_status!=="paid") patch.payment_status="paid";
+    var res=await sb_.from("orders").update(patch).eq("id",orderId);
+    if(res.error) throw res.error;
+    say("✅ แนบสลิปแล้ว","#15803D");
+    openOrderDetail(orderId);   // วาดใหม่ให้เห็นรูปทันที
+    loadAll(true);
+  }catch(e){ console.error(e); say("อัพโหลดไม่สำเร็จ: "+(e.message||e),"#B91C1C"); }
+}
+
 // ── 🔁 เลื่อนวันส่ง (นัทสั่ง 7 ส.ค. 2569) ─────────────────────────────────
 // WHY: แอดมิน(กิฟ)รายงานว่าลูกค้าเลื่อนวันรับบ่อย (คุณโอ๋เป็นประจำ) แต่เดิม:
 //   · ออเดอร์ปกติ/คอร์ส  → แอดมินแก้วันส่งเองไม่ได้เลย ต้องไปแก้ที่ Hato
@@ -1424,6 +1476,11 @@ async function openOrderDetail(id){
       +row("ค่าจัดส่ง", fmtB(o.delivery_fee))
       +"<div style='border-top:1px solid #E5E7EB;margin-top:5px;padding-top:5px'>"+row("<b>รวมทั้งหมด</b>", "<b style='color:#DC2626;font-size:15px'>"+fmtB(o.total)+"</b>")+"</div>"
       +row("วิธีจ่าย", esc2(o.payment_method||"—")+(o.payment_account?" / "+esc2(o.payment_account):"")));
+    // 🧾 สลิปโอนเงิน — แอดมินอัพเองได้ (นัทสั่ง 8 ส.ค. 2569)
+    //   WHY: ลูกค้าโอนแล้วส่งสลิปมาทางไลน์บ่อย (ไม่ได้แนบในแอป) → เดิมไม่มีที่เก็บ
+    //   เก็บ **ที่เดียวกับที่ลูกค้าแนบเป๊ะ**: bucket `payment-slips` + ผูก `orders.slip_url`
+    //   → เปิดย้อนดูได้จากที่เดียว ไม่ต้องไล่หาในแชท
+    h+=box("🧾 สลิปโอนเงิน", odSlipBox(o));
     // สมาชิก
     var pts=odPoints(o.subtotal,o.discount_amount);
     var spent=hist.reduce(function(s,x){return s+(x.total||0);},0);
