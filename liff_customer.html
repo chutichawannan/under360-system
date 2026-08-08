@@ -1562,11 +1562,19 @@ async function insertOrderWithRetry(payload, mmdd, startNum){
 // ══════════════════════════════════════
 // 📅 PRE-ORDER / NEXT-WEEK HELPERS — v0.3.5
 // ══════════════════════════════════════
-function isNextWeekItem(item) {
-  if (!item || !item.available_from) return false;
+// 📅 พรีออเดอร์ — นัทสั่ง 8 ส.ค. 2569: *"ทุกครั้งต้องเปิดก่อนล่วงหน้า 2-3 วันให้ลูกค้ากดสั่งล่วงหน้า
+//    แต่ลูกค้ากดสั่งมันจะต้องเด้งว่าสินค้าพร้อมส่งเมื่อไหร่"*
+// เดิมดูจาก available_from อย่างเดียว → แต่เมนูรอบใหม่ 13 ตัวที่เพิ่งเปิดขาย **available_from ว่างหมด**
+//    = ลูกค้ากดสั่งได้เลยโดยไม่มีอะไรบอกว่าของยังไม่พร้อม
+// → ใช้ "แท็กสัปดาห์" เป็นตัวบอกด้วย (แอดมินติดอยู่แล้วทุกสัปดาห์ ไม่ต้องกรอกวันเพิ่ม)
+//    เมนูของรอบที่ยังไม่ถึง = พรีออเดอร์ · วันพร้อมส่ง = วันจันทร์ต้นรอบนั้น
+function itemReadyFrom(item){
+  if (!item) return null;
   const today = new Date(); today.setHours(0,0,0,0);
-  return new Date(item.available_from) > today;
+  if (item.available_from && new Date(item.available_from) > today) return item.available_from;
+  return weekReadyDate(item);
 }
+function isNextWeekItem(item) { return !!itemReadyFrom(item); }
 
 function cartWeekType() {
   // 'next' | 'current' | null
@@ -1919,10 +1927,33 @@ function weekStartOf(dateLike){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 // ⚠️ ยึดเวลาไทยเสมอ — เจ้าของร้านอยู่อเมริกา ถ้าคิดจากเครื่องจะเพี้ยนไปคนละสัปดาห์
-function thisWeekStart(){
+function bkkToday(){
   const now = new Date();
-  const bkk = new Date(now.getTime() + (now.getTimezoneOffset() + 420) * 60000);
-  return weekStartOf(bkk);
+  return new Date(now.getTime() + (now.getTimezoneOffset() + 420) * 60000);
+}
+// 🔑 รอบขายของร้าน "ไม่ได้เริ่มวันจันทร์" — นัทอธิบายเอง 8 ส.ค. 2569:
+//    ครัวทำถึง **ศุกร์** = วันสุดท้ายของรอบ · **เสาร์เริ่มรับออเดอร์รอบใหม่** · แต่ส่งของรอบใหม่จริงเริ่ม **จันทร์**
+//    → พอถึงเสาร์ เมนู "รอบปัจจุบัน" คือรอบของสัปดาห์หน้าแล้ว (ที่ลูกค้าสั่งล่วงหน้าได้)
+// เดิมผมคิดจากวันจันทร์ล้วน → วันเสาร์ระบบยังนับรอบเก่าเป็นปัจจุบัน = ป้ายผิดทั้งจอ (นัทจับได้)
+function thisWeekStart(){
+  const d = bkkToday(); d.setHours(0,0,0,0);
+  const g = d.getDay();
+  if (g === 6) d.setDate(d.getDate() + 2);        // เสาร์ → จันทร์ถัดไป
+  else if (g === 0) d.setDate(d.getDate() + 1);   // อาทิตย์ → จันทร์พรุ่งนี้
+  return weekStartOf(d);
+}
+// วันแรกที่ของรอบนั้น "ส่งได้จริง" = วันจันทร์ต้นรอบ · ถ้ารอบเริ่มไปแล้วก็ส่งได้เลย
+function weekReadyDate(m){
+  const w = menuWeek(m);
+  if (!w) return null;
+  const today = bkkToday(); today.setHours(0,0,0,0);
+  return (new Date(w + 'T00:00:00') > today) ? w : null;
+}
+const THAI_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function thaiDayDate(ymd){
+  if (!ymd) return '';
+  const d = new Date(ymd + 'T00:00:00');
+  return `${['อา','จ','อ','พ','พฤ','ศ','ส'][d.getDay()]} ${d.getDate()} ${THAI_MON[d.getMonth()]}`;
 }
 const MON_EN = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 // รูปแบบตามที่นัทเขียนมาเอง: "3-9 Aug" · ข้ามเดือนก็ยังใช้เดือนปลายสัปดาห์ → "27-2 Aug"
@@ -2040,7 +2071,7 @@ function renderMenu() {
       : isMealPlan
       ? `<span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 7px;border-radius:8px">🥗 Meal Plan</span>`
       : isNextWk
-      ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 อาทิตย์หน้า</span>`
+      ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 พร้อมส่ง ${thaiDayDate(itemReadyFrom(item))}</span>`
       : '';
     const specialBadge = weeklyBadgeHtml(item);
     // N-46 · ซ่อนแคล/โปรตีนออกจากลิสต์ (นัทบอกว่ารก) — ย้ายไปโชว์ในป้อบอัพตอนกดชื่อเมนูแทน
@@ -2077,8 +2108,8 @@ function addItem(id) {
   // Week-type check: block mixed cart (A)
   const _isNext = isNextWeekItem(item);
   const _cwt   = cartWeekType();
-  if (_cwt === 'current' && _isNext)  { toast('เมนูนี้ส่งอาทิตย์หน้า — กรุณาสั่งแยกออเดอร์'); return; }
-  if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูอาทิตย์หน้าอยู่ — กรุณาสั่งแยกออเดอร์'); return; }
+  if (_cwt === 'current' && _isNext)  { toast('เมนูนี้พร้อมส่ง '+thaiDayDate(itemReadyFrom(item))+' — สั่งแยกออเดอร์นะคะ'); return; }
+  if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูรอบหน้าอยู่ — สั่งแยกออเดอร์นะคะ'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
   saveCart(); refreshItemViews();
@@ -2184,9 +2215,14 @@ function renderCart() {
   }
   // Next-week notice banner
   const _cwt = cartWeekType();
+  // วันพร้อมส่งจริง = วันที่ช้าที่สุดในตะกร้า (ทุกอย่างต้องพร้อมถึงจะส่งได้)
+  const _ready = cart.map(c => {
+      const mi = menuItems.find(m => m.id === c.id);
+      return mi ? itemReadyFrom(mi) : null;
+    }).filter(Boolean).sort().pop();
   const weekBanner = _cwt === 'next'
     ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1D4ED8;">
-        📅 <b>ออเดอร์นี้ส่งอาทิตย์หน้า</b> — ระบบจะเลือกวันส่งให้อัตโนมัติ
+        📅 <b>ออเดอร์นี้เป็นการสั่งล่วงหน้า</b>${_ready?` — เริ่มส่งได้ตั้งแต่ <b>${thaiDayDate(_ready)}</b>`:''}
        </div>` : '';
   el.insertAdjacentHTML('afterbegin', weekBanner);
   const rows = cart.map(c => {
