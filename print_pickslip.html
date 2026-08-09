@@ -162,7 +162,7 @@ document.getElementById('pr').onclick = () => window.print();
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
-let MENU = {};   // code -> {subcode, isNew}
+let MENU = {};   // code -> { sub: ชื่อเล่นเมนู }
 
 async function load(){
   const sheet = document.getElementById('sheet');
@@ -171,13 +171,9 @@ async function load(){
 
   // เมนู: เอาชื่อเล่น (subcode) + ดูว่าเป็นเมนูใหม่ไหม — ทำก่อน แล้วค่อยโหลดออเดอร์ (อ่านทีละอย่าง)
   try{
-    const r = await fetch(`${SB}menu_items?select=code,subcode,created_at&limit=1000`, {headers:HDR});
+    const r = await fetch(`${SB}menu_items?select=code,subcode&limit=1000`, {headers:HDR});
     const j = await r.json();
-    const NEW_DAYS = 21, now = Date.now();
-    MENU = {}; for (const m of j) MENU[m.code] = {
-      sub: (m.subcode||'').trim(),
-      isNew: m.created_at ? (now - new Date(m.created_at).getTime()) < NEW_DAYS*864e5 : false
-    };
+    MENU = {}; for (const m of j) MENU[m.code] = { sub: (m.subcode||'').trim() };
   }catch(e){ MENU = {}; }
 
   const cols = 'order_number,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
@@ -236,12 +232,17 @@ function slip(o, PKG){
     }
   }
 
+  // ชื่อเล่นเข้ม + โค้ดจาง + ชื่อเมนู — รูปแบบเดียวกับหน้าครัว (KQ) ครัวจะได้อ่านแบบเดียวกันทุกที่
+  // โค้ดจางตัดตัวอักษรนำหน้าออกเหมือน KQ (S022 -> 022 · No1 คงไว้เพราะเมนูประจำเรียก No1 จริง)
+  const shortCode = c => /^Nod/i.test(c||'') ? c : String(c||'').replace(/^[A-Za-z]+/,'') || String(c||'');
   const nameOf = it => {
     const m = MENU[it.code] || {};
     const sub = m.sub ? `<span class="code">${esc(m.sub)}</span> ` : '';
-    const cd  = it.code ? `<span class="dim">${esc(it.code)}</span> ` : '';
-    const nw  = m.isNew ? '<span class="new">NEW</span>' : '';
-    return sub + cd + esc(it.name) + nw;
+    const cd  = it.code ? `<span class="dim">${esc(shortCode(it.code))}</span> ` : '';
+    // NEW เอาจากชื่อเมนูจริงเท่านั้น ไม่เดาจากวันที่สร้าง (เคยเดาแล้วติด NEW เกือบทุกตัว = ไร้ความหมาย)
+    const nm  = String(it.name||'').replace(/s*NEWs*$/i,'');
+    const nw  = /NEWs*$/i.test(it.name||'') ? ' <span class="new">NEW</span>' : '';
+    return sub + cd + esc(nm) + nw;
   };
 
   let boxes = 0, body = '';
