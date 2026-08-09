@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ใบจัดของ — Under360</title>
 <!--
-  N-63 · ใบจัดของ/ใบแปะกล่อง — ค่าเริ่มต้น = ป้ายสติกเกอร์ 4 นิ้ว (HPRT HT400 ที่ร้านมีอยู่)
+  N-63 · ใบจัดของ/ใบแปะกล่อง — ค่าเริ่มต้น = กระดาษม้วน 57/58 มม. (เครื่อง POS SUNMI ที่ร้านใช้)
   ครัวใช้: ดูรายการ → หยิบของ → แปะหน้ากล่อง → ยกใส่ถุงส่งลูกค้า
 
   เปิดยังไง
@@ -24,7 +24,7 @@
   อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูล
 -->
 <style>
-  :root{ --paper: 100mm; --ink: 96mm; --fs: 12.5px; }
+  :root{ --paper: 57mm; --ink: 48mm; --fs: 10.5px; }
   *{ box-sizing:border-box; }
   body{
     margin:0; background:#e9edf1; color:#000;
@@ -112,9 +112,9 @@
   <label>วันส่ง <input type="date" id="d"></label>
   <label>หรือเลขใบ <input type="text" id="o" placeholder="U-0809-001" size="12"></label>
   <select id="w">
-    <option value="100">ป้าย 4 นิ้ว (100 มม.) — HPRT HT400</option>
-    <option value="57">กระดาษ 57 มม.</option>
+    <option value="57">กระดาษ 57/58 มม. (POS SUNMI)</option>
     <option value="80">กระดาษ 80 มม.</option>
+    <option value="100">ป้ายสติกเกอร์ 4 นิ้ว</option>
   </select>
   <button class="ghost" id="go">โหลด</button>
   <span class="count" id="cnt">—</span>
@@ -186,10 +186,10 @@ $o.value = qs.get('order') || '';
 // ค่าเริ่มต้น = ป้าย 4 นิ้ว เพราะเครื่องที่ร้านมีจริงคือ HPRT HT400 (ป้ายสติกเกอร์ 4")
 // 57/80 มม. เก็บไว้เผื่อไปซื้อเครื่องใบเสร็จแบบม้วนทีหลัง
 const PAPER = { '100': [100, 96], '80': [80, 72], '57': [57, 48] };   // [กระดาษ, พื้นที่พิมพ์จริง]
-$w.value = PAPER[qs.get('w')] ? qs.get('w') : '100';
+$w.value = PAPER[qs.get('w')] ? qs.get('w') : '57';
 applyWidth();
 function applyWidth(){
-  const w = PAPER[$w.value] || PAPER['100'];
+  const w = PAPER[$w.value] || PAPER['57'];
   document.documentElement.style.setProperty('--paper', w[0]+'mm');
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
   // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
