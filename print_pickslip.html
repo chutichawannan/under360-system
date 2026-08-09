@@ -6,6 +6,9 @@
 <title>ใบจัดของ — Under360</title>
 <!--
   N-63 · ใบจัดของ/ใบแปะกล่อง
+  (9 ส.ค. นัทสั่งเอาโลโก้กับ QR ออก — เหลือแค่หัวบิล "Under 360" + เลขออเดอร์
+   กระดาษ 58 มม. พื้นที่จำกัด โลโก้กับ QR กินที่ไปเปล่าๆ ครัวใช้เลขออเดอร์อ่านด้วยตาอยู่แล้ว
+   ผลพลอยได้: ไม่ต้องพึ่ง CDN อีกต่อไป หน้านี้ทำงานได้แม้เน็ตครัวล่ม)
 
   เครื่องพิมพ์จริงที่ร้านใช้ (นัทยืนยัน 9 ส.ค. 2026): **SUNMI V2 Pro**
     · เครื่อง POS มือถือ Android · เครื่องพิมพ์ความร้อนในตัว **กระดาษ 58 มม.**
@@ -59,17 +62,9 @@
   }
   .in{ width:var(--ink); }
 
-  .logo{
-    width:16mm; height:16mm; margin:0 auto 1mm; background:#12a150; color:#fff; border-radius:1.5mm;
-    display:flex; align-items:center; justify-content:center; text-align:center;
-    font-weight:800; font-size:9px; line-height:1.15; letter-spacing:.3px;
-  }
-  .shop{ text-align:center; font-weight:700; font-size:12px; }
+  .shop{ text-align:center; font-weight:700; font-size:12px; margin-top:1mm; }
   .ordno{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.3px;
           font-family:'IBM Plex Mono',ui-monospace,monospace; margin:.5mm 0; }
-  .qrwrap{ text-align:center; margin:1mm 0 .5mm; }
-  .qrwrap canvas{ image-rendering:pixelated; width:26mm; height:26mm; }
-  .qrcap{ text-align:center; font-size:9px; }
 
   .dash{ border-top:1px dashed #000; margin:1.5mm 0; }
   .sec{ font-weight:700; }
@@ -133,46 +128,6 @@
 <div class="sheet" id="sheet"></div>
 
 <script>
-/* ════════════ QR เลขออเดอร์ ════════════
-   ⚠️ บันทึกไว้กันคนหลัง: เคยเขียนตัวสร้าง QR เองในไฟล์นี้ (byte mode / EC M / v1-4)
-   ลายออกมาหน้าตาถูก ตาไก่+เส้นจับเวลาตรงกับของมาตรฐานทุกช่อง **แต่สแกนไม่ออก**
-   ตรวจด้วย jsQR แล้วอ่านไม่ได้ทั้ง 13 ใบ → ถอดทิ้ง ใช้ไลบรารีที่พิสูจน์แล้วแทน
-   บทเรียน: QR ที่ "ดูเหมือนใช้ได้" แต่สแกนไม่ได้ = อันตรายกว่าไม่มี QR เลย
-            เพราะครัวจะเชื่อว่ามันใช้ได้ → ต้องทดสอบด้วยการอ่านกลับเสมอ
-
-   โหลดจาก CDN · ถ้าโหลดไม่ได้ (เน็ตครัวล่ม) ใบยังปริ้นได้ปกติ เพียงแต่ไม่มี QR
-   — เลขออเดอร์พิมพ์ตัวใหญ่อยู่เหนือ QR อยู่แล้ว ครัวอ่านด้วยตาได้ ไม่มีอะไรหาย */
-const QR = (() => {
-  let lib = null;
-  async function ready(){
-    if (lib) return lib;
-    if (window.qrcode) return (lib = window.qrcode);
-    await new Promise((res) => {
-      const s = document.createElement('script');
-      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
-      s.onload = res; s.onerror = res;      // โหลดไม่ได้ก็ไปต่อ ไม่ throw
-      document.head.appendChild(s);
-    });
-    return (lib = window.qrcode || null);
-  }
-  async function draw(text, px){
-    const q = await ready();
-    if (!q) return null;
-    const qr = q(0, 'M');                    // 0 = เลือกเวอร์ชันเล็กสุดที่พอ
-    qr.addData(String(text), 'Byte'); qr.make();
-    const n = qr.getModuleCount(), quiet = 4, s = px || 4;
-    const cv = document.createElement('canvas');
-    cv.width = cv.height = (n + quiet * 2) * s;
-    const x = cv.getContext('2d');
-    x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
-    x.fillStyle = '#000';
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
-      if (qr.isDark(r, c)) x.fillRect((c + quiet) * s, (r + quiet) * s, s, s);
-    return cv;
-  }
-  return { draw };
-})();
-
 /* ════════════ ข้อมูล ════════════ */
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/';
 const ANON= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
@@ -259,14 +214,6 @@ async function load(){
   document.getElementById('cnt').textContent = rows.length + ' ใบ';
   sheet.innerHTML = rows.map(o => slip(o, PKG)).join('');
 
-  // วาด QR หลังใส่ HTML แล้ว
-  for (const el of document.querySelectorAll('[data-qr]')) {
-    try {
-      const cv = await QR.draw(el.dataset.qr, 4);
-      if (cv) el.appendChild(cv);
-      else { el.remove(); document.querySelectorAll('.qrcap').forEach(x => x.remove()); }
-    } catch(e){ el.remove(); }
-  }
 }
 
 function slip(o, PKG){
@@ -321,11 +268,8 @@ function slip(o, PKG){
 
   return `
   <div class="slip"><div class="in">
-    <div class="logo">UNDER<br>360</div>
     <div class="shop">Under 360</div>
     <div class="ordno">#${esc(o.order_number)}</div>
-    <div class="qrwrap" data-qr="${esc(o.order_number)}"></div>
-    <div class="qrcap">QR Code เลขออเดอร์</div>
 
     <div class="dash"></div>
     <div class="sec">ข้อมูลการจัดส่ง</div>
