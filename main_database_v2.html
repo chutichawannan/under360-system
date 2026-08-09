@@ -97,6 +97,11 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .subcode-input{font-family:'IBM Plex Mono',monospace;font-size:11.5px;font-weight:600;width:64px;padding:2px 6px;border:1.5px dashed var(--turmeric);border-radius:6px;color:var(--turmeric);background:var(--turmeric-soft);outline:none;min-width:0;flex-shrink:0;}
 .subcode-input:focus{border-style:solid;background:#fff;}
 .subcode-input::placeholder{color:rgba(217,140,43,.45);font-weight:400;}
+/* ส่งได้ตั้งแต่วันไหน (N-50) — ยุบเป็นชิป ไม่แย่งที่คอลัมน์ชื่อเมนู */
+.avail-chip{font-size:11px;line-height:1;padding:4px 6px;border:1.5px dashed var(--line);border-radius:6px;color:var(--ink-xsoft,#bbb);background:var(--surface-2);cursor:pointer;flex-shrink:0;white-space:nowrap;}
+.avail-chip:hover{border-color:var(--forest);color:var(--forest);}
+.avail-chip.has-date{border-style:solid;border-color:var(--forest);color:var(--forest);background:#EAF2ED;font-weight:700;}
+.avail-input{font-size:11px;padding:2px 5px;border:1.5px solid var(--forest);border-radius:6px;color:var(--forest);background:#fff;outline:none;flex-shrink:0;width:124px;}
 .subcode-badge{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;background:var(--turmeric-soft);color:var(--turmeric);padding:2px 7px;border-radius:6px;white-space:nowrap;flex-shrink:0;border:1px solid rgba(217,140,43,.3);}
 .row .name{font-size:14.5px;font-weight:500;}
 .row .meta{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;font-family:'IBM Plex Mono',monospace;}
@@ -803,7 +808,7 @@ function autoClassifyIngredient(name){
 
 
 
-let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, pinModeEnabled:false, sortMode:'category', activeCatTab:'__all__', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
+let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, availEditId:null, pinModeEnabled:false, sortMode:'category', activeCatTab:'__all__', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
   mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpProdDate:null,
   showOnlineOnly: false,  // toggle: แสดงเฉพาะเมนูออนไลน์
@@ -2660,6 +2665,7 @@ async function init(){
     if(r.pinSubCode===undefined) r.pinSubCode = null;
     if(r.stock===undefined || r.stock===null) r.stock = 0;
     if(r.available_online===undefined) r.available_online = false;
+    if(r.availableFrom===undefined) r.availableFrom = null;  /* วันแรกที่ส่งได้ (N-50) — ว่าง = ขายได้เลย */
     if(r.no_morning===undefined) r.no_morning = false;
     if(r.he_group===undefined) r.he_group = '';
     if(r.description===undefined) r.description = '';
@@ -2734,6 +2740,53 @@ async function init(){
   }
   await loadActivityLog();
   render();
+  syncMenuMetaFromDB();   /* ชื่อเล่น + วันพร้อมส่ง = ของจริงอยู่ที่ menu_items ไม่ใช่ในหน้านี้ */
+}
+
+/* ── N-50: ดึง subcode + available_from ของจริงจาก menu_items มาโชว์ ──────────
+   หน้านี้เคย "เขียนอย่างเดียว ไม่เคยอ่านกลับ" → ช่องว่างเปล่าทั้งที่ DB มีค่าอยู่
+   อ่านอย่างเดียว ไม่เขียนทับ DB (ถ้าอ่านพลาดก็แค่ไม่โชว์ ไม่ทำข้อมูลหาย) */
+async function syncMenuMetaFromDB(){
+  try{
+    const sb = getSB(); if(!sb) return;
+    const codes = state.recipes.map(r=>r.code).filter(Boolean);
+    if(!codes.length) return;
+    let changed = 0;
+    for(let i=0;i<codes.length;i+=200){
+      const { data, error } = await sb.from('menu_items')
+        .select('code,subcode,available_from').in('code', codes.slice(i,i+200));
+      if(error || !data) continue;
+      data.forEach(m=>{
+        const r = state.recipes.find(x=>x.code===m.code); if(!r) return;
+        const sc = m.subcode||'', af = m.available_from||null;
+        if((r.subcode||'')!==sc){ r.subcode = sc; changed++; }
+        if((r.availableFrom||null)!==af){ r.availableFrom = af; changed++; }
+      });
+    }
+    if(changed){ persistRecipesDebounced(); render(); }
+  }catch(e){ console.warn('syncMenuMetaFromDB', e); }
+}
+
+/* วันเริ่มส่งของสัปดาห์ปัจจุบัน — ตั้งครั้งเดียวตอนกด "ขึ้นสัปดาห์ใหม่"
+   แล้วเมนูที่ตั้งชื่อเล่นใหม่หลังจากนั้นจะได้วันนี้อัตโนมัติ (ไม่ต้องพึ่งความจำใคร) */
+async function getWeekStartDate(){
+  try{ const v = await getStored('week_start_date', true); return (v && v.date) || null; }catch(e){ return null; }
+}
+function nextMondayYMD(){
+  const now = new Date();
+  const bkk = new Date(now.getTime() + (now.getTimezoneOffset()+420)*60000);
+  bkk.setHours(0,0,0,0);
+  const g = bkk.getDay();                 /* 0=อา 1=จ ... 6=ส */
+  const add = g===1 ? 7 : ((8-g)%7 || 7);  /* จันทร์ถัดไปเสมอ */
+  bkk.setDate(bkk.getDate()+add);
+  return bkk.toLocaleDateString('en-CA');
+}
+async function setAvailableFrom(r, ymd){
+  r.availableFrom = ymd || null;
+  persistRecipesDebounced();
+  const sb = getSB(); if(!sb || !r.code) return;
+  const { error } = await sb.from('menu_items').update({ available_from: ymd || null }).eq('code', r.code);
+  if(error) throw error;
 }
 
 function migrateRatingV2(){
@@ -2776,25 +2829,45 @@ async function weeklyRollSubcodes(){
   if(!requireUser()) return;
   const online = state.recipes.filter(r=>r.available_online && r.status==='active' && (r.subcode||'').trim());
   if(!online.length){ showToast('ยังไม่มีเมนูออนไลน์ที่ตั้งชื่อเล่นไว้'); return; }
+  /* ── ถามวันเริ่มส่งของสัปดาห์นี้ก่อน (N-50) ──────────────────────────────
+     เก็บไว้ที่เดียว แล้วเมนูที่ตั้งชื่อเล่นใหม่หลังจากนี้จะได้วันนี้อัตโนมัติ
+     → ลูกค้าเห็นเมนูล่วงหน้าได้ แต่ระบบรู้ว่าเริ่มส่งจริงวันไหน */
+  const defYmd = nextMondayYMD();
+  const ans = window.prompt(
+    'สัปดาห์นี้ "เริ่มส่ง" วันไหน?\n\n'
+    + 'ใส่เป็น ปี-เดือน-วัน เช่น '+defYmd+'\n'
+    + '(เมนูที่ตั้งชื่อเล่นใหม่หลังจากนี้ จะโชว์ให้ลูกค้าเห็นล่วงหน้าได้ แต่เลือกวันส่งได้ตั้งแต่วันนี้เป็นต้นไป)\n\n'
+    + 'เว้นว่างแล้วกด OK = ไม่ตั้งวัน (ขายส่งได้ทันทีเหมือนเดิม)', defYmd);
+  if(ans===null) return;                                   /* กด Cancel = ไม่ทำอะไรเลย */
+  const weekStart = (ans||'').trim();
+  if(weekStart && !/^\d{4}-\d{2}-\d{2}$/.test(weekStart)){ showToast('รูปแบบวันที่ไม่ถูก ต้องเป็น 2026-08-10'); return; }
+
   const preview = online.slice(0,8).map(r=>r.subcode+' → x'+r.subcode).join('\n');
   const more = online.length>8 ? `\n…และอีก ${online.length-8} เมนู` : '';
-  if(!window.confirm(`ขึ้นสัปดาห์ใหม่: เติม x ให้ชื่อเล่น ${online.length} เมนูที่ยังออนไลน์อยู่\n\n${preview}${more}\n\n(หลังจากนี้ค่อยตั้งชื่อเล่นใหม่ s1–s8 ให้เมนูของสัปดาห์นี้)\n\nยืนยัน?`)) return;
+  if(!window.confirm(`ขึ้นสัปดาห์ใหม่: เติม x ให้ชื่อเล่น ${online.length} เมนูที่ยังออนไลน์อยู่\n\n${preview}${more}\n\n`
+    + (weekStart ? `เมนูที่ค้างมา (มี x) = ส่งได้เลย ไม่ต้องรอ\nเมนูใหม่ที่ตั้งชื่อเล่นหลังจากนี้ = เริ่มส่ง ${weekStart}\n\n` : '')
+    + `(หลังจากนี้ค่อยตั้งชื่อเล่นใหม่ s1–s8 ให้เมนูของสัปดาห์นี้)\n\nยืนยัน?`)) return;
+
+  await setStored('week_start_date', { date: weekStart || null, set_by: state.currentUser||'', set_at: new Date().toISOString() }, true);
+
   const sb = getSB();
   let ok=0, fail=0;
   for(const r of online){
     const nv = 'x' + r.subcode.trim();
     try{
       if(sb && r.code){
-        const { error } = await sb.from('menu_items').update({ subcode: nv }).eq('code', r.code);
+        /* ของค้างสัปดาห์ก่อน = ทำไว้แล้ว ส่งได้ทันที → ล้างวันพร้อมส่งทิ้ง */
+        const { error } = await sb.from('menu_items').update({ subcode: nv, available_from: null }).eq('code', r.code);
         if(error) throw error;
       }
-      r.subcode = nv; ok++;
+      r.subcode = nv; r.availableFrom = null; ok++;
     }catch(e){ console.error('weeklyRoll', r.code, e); fail++; }
   }
   persistRecipes();
-  logActivity('stock', `ขึ้นสัปดาห์ใหม่ — เติม x ให้ชื่อเล่น ${ok} เมนู` + (fail?` (พลาด ${fail})`:''));
+  logActivity('stock', `ขึ้นสัปดาห์ใหม่ — เติม x ให้ชื่อเล่น ${ok} เมนู` + (weekStart?` · เริ่มส่งสัปดาห์นี้ ${weekStart}`:'') + (fail?` (พลาด ${fail})`:''));
   render();
-  showToast(fail ? `เติม x แล้ว ${ok} เมนู · พลาด ${fail}` : `✅ ขึ้นสัปดาห์ใหม่แล้ว — เติม x ให้ ${ok} เมนู`);
+  showToast(fail ? `เติม x แล้ว ${ok} เมนู · พลาด ${fail}`
+    : `✅ ขึ้นสัปดาห์ใหม่แล้ว — เติม x ให้ ${ok} เมนู` + (weekStart?` · เมนูใหม่จะเริ่มส่ง ${weekStart}`:''));
 }
 
 async function exportOnlineMenus(){
@@ -3418,6 +3491,17 @@ function toggleCatCollapse(key){
   if(arrow)   arrow.style.transform  = isCollapsed ? 'rotate(-90deg)' : 'rotate(0deg)';
 }
 
+/* ── N-50: ช่อง "ส่งได้ตั้งแต่" — ยุบเป็นชิปเล็ก กางเป็นช่องวันที่เฉพาะแถวที่กำลังแก้
+   (ช่อง date เต็มกว้าง 126px กินคอลัมน์ชื่อเมนูหายครึ่งนึงที่จอ 900px) */
+function availShort(ymd){ return ymd ? (+ymd.slice(8,10))+'/'+(+ymd.slice(5,7)) : ''; }
+function renderAvailCell(r){
+  if(state.availEditId === r.id)
+    return `<input type="date" class="avail-input" data-id="${r.id}" value="${r.availableFrom||''}" autofocus>`;
+  const t = 'ส่งได้ตั้งแต่วันไหน — ว่าง = ส่งได้เลย · ถ้าใส่วันไว้ ลูกค้าเห็นเมนูล่วงหน้าได้ แต่เลือกวันส่งก่อนวันนั้นไม่ได้';
+  return r.availableFrom
+    ? `<button class="avail-chip has-date" data-avail-id="${r.id}" title="${t}">📅 ${availShort(r.availableFrom)}</button>`
+    : `<button class="avail-chip" data-avail-id="${r.id}" title="${t}">📅</button>`;
+}
 function renderPttCard(r){
   const isOpen = state.openId === r.id;
   const isOnline = r.available_online && r.status === 'active';
@@ -3532,6 +3616,7 @@ function renderRecipeCard(r, tot, pinInfo){
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
       ${r.available_online?`<input type="text" class="subcode-input" data-id="${r.id}" value="${(r.subcode||'').replace(/"/g,'&quot;')}" placeholder="ชื่อเล่น" maxlength="6" title="ชื่อเล่นที่ครัว/ลูกค้าเรียก เช่น s1 · xs3 (x = ค้างมากี่สัปดาห์) — กรอกได้เฉพาะสินค้าที่ออนไลน์">`:''}
+      ${r.available_online?renderAvailCell(r):''}
       <span class="meta">${tot.cost>0?'฿'+fmtMoney(tot.cost):'—'}${r.selling_price?' · ขาย ฿'+r.selling_price:''}</span>
       <button type="button" class="expand-btn" data-id="${r.id}" title="${isOpen?'ปิดแผงแก้ไข':'เปิดแผงแก้ไข'}">${isOpen?'▲':'▼'}</button>
     </div>`;
@@ -4201,8 +4286,42 @@ function attachHandlers(){
           const { error } = await sb.from('menu_items').update({ subcode: val || null }).eq('code', r.code);
           if(error) throw error;
           logActivity('stock', `ตั้งชื่อเล่น "${val||'(ล้าง)'}" ให้ ${r.code} ${r.name||''}`);
-          showToast(val ? `ชื่อเล่น "${val}" ✓` : 'ล้างชื่อเล่นแล้ว');
+          /* N-50: ชื่อเล่นใหม่ที่ไม่มี x = เมนูของสัปดาห์นี้ → ตั้งวันเริ่มส่งให้อัตโนมัติ
+             (ตัวที่ขึ้นต้นด้วย x = ของค้าง ส่งได้เลย ไม่ต้องตั้ง) */
+          let extra = '';
+          if(val && !/^x/.test(val)){
+            const ws = await getWeekStartDate();
+            if(ws && ws > new Date().toLocaleDateString('en-CA',{timeZone:'Asia/Bangkok'})){
+              await setAvailableFrom(r, ws);
+              extra = ` · เริ่มส่ง ${ws}`;
+            }
+          }
+          showToast(val ? `ชื่อเล่น "${val}" ✓${extra}` : 'ล้างชื่อเล่นแล้ว');
+          if(extra) render(true);
         }catch(err){ console.error(err); showToast('บันทึกชื่อเล่นไม่สำเร็จ: '+(err.message||'')); }
+      };
+    });
+    /* ── N-50: ช่อง "ส่งได้ตั้งแต่" ต่อแถวเมนู ── */
+    document.querySelectorAll('[data-avail-id]').forEach(btn=>{
+      btn.onclick = (e)=>{ e.stopPropagation(); state.availEditId = btn.dataset.availId; render(); };
+    });
+    document.querySelectorAll('.avail-input').forEach(inp=>{
+      inp.onclick = e => e.stopPropagation();
+      inp.focus();
+      inp.onblur = ()=>{ if(state.availEditId){ state.availEditId = null; render(true); } };
+      inp.onchange = async (e)=>{
+        e.stopPropagation();
+        state.availEditId = null;
+        if(!requireUser()) return;
+        const r = state.recipes.find(x=>x.id===inp.dataset.id);
+        if(!r) return;
+        const ymd = (inp.value||'').trim() || null;
+        try{
+          await setAvailableFrom(r, ymd);
+          logActivity('stock', ymd ? `ตั้งวันเริ่มส่ง ${ymd} ให้ ${r.code} ${r.name||''}` : `ล้างวันเริ่มส่งของ ${r.code}`);
+          showToast(ymd ? `${r.code} เริ่มส่งได้ ${ymd}` : `${r.code} ส่งได้เลย (ล้างวันแล้ว)`);
+          inp.blur(); render(true);   /* render ปกติถูกกันไว้ตอน input ยังโฟกัส → ชิปจะไม่กลับมา */
+        }catch(err){ console.error(err); showToast('บันทึกวันเริ่มส่งไม่สำเร็จ: '+(err.message||'')); }
       };
     });
     document.querySelectorAll('.online-toggle-btn').forEach(btn=>{
