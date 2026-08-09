@@ -124,133 +124,41 @@
 <div class="sheet" id="sheet"></div>
 
 <script>
-/* ════════════ QR (byte mode · EC level M · version 1-4) ════════════
-   ทำเองในไฟล์ ไม่ดึงจากเน็ต — ครัวจะได้ปริ้นได้แม้เน็ตอืด
-   ตรวจแล้วด้วย BarcodeDetector ของ Chrome ว่าอ่านกลับได้ตรงเลขออเดอร์ */
+/* ════════════ QR เลขออเดอร์ ════════════
+   ⚠️ บันทึกไว้กันคนหลัง: เคยเขียนตัวสร้าง QR เองในไฟล์นี้ (byte mode / EC M / v1-4)
+   ลายออกมาหน้าตาถูก ตาไก่+เส้นจับเวลาตรงกับของมาตรฐานทุกช่อง **แต่สแกนไม่ออก**
+   ตรวจด้วย jsQR แล้วอ่านไม่ได้ทั้ง 13 ใบ → ถอดทิ้ง ใช้ไลบรารีที่พิสูจน์แล้วแทน
+   บทเรียน: QR ที่ "ดูเหมือนใช้ได้" แต่สแกนไม่ได้ = อันตรายกว่าไม่มี QR เลย
+            เพราะครัวจะเชื่อว่ามันใช้ได้ → ต้องทดสอบด้วยการอ่านกลับเสมอ
+
+   โหลดจาก CDN · ถ้าโหลดไม่ได้ (เน็ตครัวล่ม) ใบยังปริ้นได้ปกติ เพียงแต่ไม่มี QR
+   — เลขออเดอร์พิมพ์ตัวใหญ่อยู่เหนือ QR อยู่แล้ว ครัวอ่านด้วยตาได้ ไม่มีอะไรหาย */
 const QR = (() => {
-  const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
-  for (let i = 0, x = 1; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
-  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
-  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
-
-  function rsGen(n){ let g = [1];
-    for (let i = 0; i < n; i++){ const ng = new Array(g.length + 1).fill(0);
-      for (let j = 0; j < g.length; j++){ ng[j] ^= mul(g[j], EXP[i]); ng[j + 1] ^= g[j]; } g = ng; }
-    return g; }
-  function rsEnc(data, n){ const g = rsGen(n), res = new Array(n).fill(0);
-    for (const b of data){ const f = b ^ res[0]; res.shift(); res.push(0);
-      for (let i = 0; i < n; i++) res[i] ^= mul(g[i + 1], f); }
-    return res; }
-
-  // ระดับ M: [ข้อมูล(codeword), EC(codeword)] — เวอร์ชัน 1-4 บล็อกเดียว ยกเว้น v4 = 2 บล็อก
-  const V = { 1:{d:16,e:10,b:1}, 2:{d:28,e:16,b:1}, 3:{d:44,e:26,b:1}, 4:{d:64,e:18,b:2} };
-  const ALIGN = { 1:[], 2:[6,18], 3:[6,22], 4:[6,26] };
-
-  function make(text){
-    const bytes = new TextEncoder().encode(text);
-    let ver = 0;
-    for (const v of [1,2,3,4]) if (bytes.length + 2 <= V[v].d) { ver = v; break; }
-    if (!ver) throw new Error('ข้อความยาวเกินสำหรับ QR ขนาดนี้');
-    const { d: dataCw, e: ecCw, b: blocks } = V[ver];
-    const size = 17 + 4 * ver;
-
-    // ── ต่อบิต: โหมด byte(0100) + ความยาว 8 บิต + ข้อมูล + ปิดท้าย + ไบต์เติม
-    const bits = [];
-    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
-    push(4, 4); push(bytes.length, 8);
-    for (const b of bytes) push(b, 8);
-    for (let i = 0; i < 4 && bits.length < dataCw * 8; i++) bits.push(0);
-    while (bits.length % 8) bits.push(0);
-    const dat = [];
-    for (let i = 0; i < bits.length; i += 8) dat.push(parseInt(bits.slice(i, i + 8).join(''), 2));
-    const PAD = [0xEC, 0x11];
-    for (let i = 0; dat.length < dataCw; i++) dat.push(PAD[i % 2]);
-
-    // ── แบ่งบล็อก + คำนวณ EC แล้ว interleave
-    const per = dataCw / blocks, dBlocks = [], eBlocks = [];
-    for (let i = 0; i < blocks; i++){ const chunk = dat.slice(i * per, (i + 1) * per);
-      dBlocks.push(chunk); eBlocks.push(rsEnc(chunk, ecCw)); }
-    const final = [];
-    for (let i = 0; i < per; i++) for (const b of dBlocks) final.push(b[i]);
-    for (let i = 0; i < ecCw; i++) for (const b of eBlocks) final.push(b[i]);
-
-    // ── วางลายบนตาราง
-    const m = Array.from({length:size}, () => new Array(size).fill(null));
-    const set = (r, c, v) => { if (r >= 0 && r < size && c >= 0 && c < size) m[r][c] = v; };
-    const finder = (r, c) => { for (let i = -1; i <= 7; i++) for (let j = -1; j <= 7; j++){
-      const inb = i >= 0 && i <= 6 && j >= 0 && j <= 6;
-      set(r + i, c + j, inb && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4))); } };
-    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
-    for (const a of ALIGN[ver]) for (const b of ALIGN[ver]){
-      if ((a < 8 && b < 8) || (a < 8 && b > size - 9) || (a > size - 9 && b < 8)) continue;
-      for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++)
-        set(a + i, b + j, Math.max(Math.abs(i), Math.abs(j)) !== 1); }
-    for (let i = 8; i < size - 8; i++){ m[6][i] = i % 2 === 0; m[i][6] = i % 2 === 0; }
-    m[size - 8][8] = true;                                  // โมดูลดำถาวร
-    for (let i = 0; i < 9; i++){ if (m[8][i] === null) m[8][i] = false; if (m[i][8] === null) m[i][8] = false; }
-    for (let i = 0; i < 8; i++){ if (m[8][size - 1 - i] === null) m[8][size - 1 - i] = false;
-                                if (m[size - 1 - i][8] === null) m[size - 1 - i][8] = false; }
-
-    const reserved = m.map(r => r.map(v => v !== null));
-
-    // ── ไล่ใส่ข้อมูลแบบซิกแซกจากขวาล่าง (ข้ามคอลัมน์จับเวลาที่ 6)
-    const dbits = []; for (const b of final) for (let i = 7; i >= 0; i--) dbits.push((b >> i) & 1);
-    let idx = 0, up = true;
-    for (let col = size - 1; col > 0; col -= 2){
-      if (col === 6) col--;
-      for (let n = 0; n < size; n++){ const row = up ? size - 1 - n : n;
-        for (const c of [col, col - 1]) if (!reserved[row][c]) m[row][c] = (dbits[idx++] || 0) === 1; }
-      up = !up; }
-
-    // ── เลือกมาสก์ที่คะแนนโทษต่ำสุด
-    const MASK = [ (r,c)=>(r+c)%2===0, (r,c)=>r%2===0, (r,c)=>c%3===0, (r,c)=>(r+c)%3===0,
-                   (r,c)=>((r>>1)+Math.floor(c/3))%2===0, (r,c)=>((r*c)%2+(r*c)%3)===0,
-                   (r,c)=>(((r*c)%2+(r*c)%3)%2)===0, (r,c)=>(((r+c)%2+(r*c)%3)%2)===0 ];
-    function penalty(g){
-      let p = 0, dark = 0;
-      for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (g[r][c]) dark++;
-      const runs = arr => { let run = 1, s = 0;
-        for (let i = 1; i < arr.length; i++){ if (arr[i] === arr[i-1]) run++; else { if (run >= 5) s += run - 2; run = 1; } }
-        if (run >= 5) s += run - 2; return s; };
-      for (let r = 0; r < size; r++) p += runs(g[r]);
-      for (let c = 0; c < size; c++) p += runs(g.map(row => row[c]));
-      for (let r = 0; r < size - 1; r++) for (let c = 0; c < size - 1; c++)
-        if (g[r][c] === g[r][c+1] && g[r][c] === g[r+1][c] && g[r][c] === g[r+1][c+1]) p += 3;
-      p += Math.floor(Math.abs(dark * 100 / (size * size) - 50) / 5) * 10;
-      return p; }
-
-    let best = null, bestMask = 0, bestP = Infinity;
-    for (let k = 0; k < 8; k++){
-      const g = m.map((row, r) => row.map((v, c) => reserved[r][c] ? v : (v !== (MASK[k](r, c)))));
-      // ใส่บิตฟอร์แมต (ระดับ M = 00) ก่อนคิดคะแนน
-      let fmt = (0 << 3) | k, rem = fmt;
-      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ (((rem >> 9) & 1) * 0x537);
-      const bitsF = (((fmt << 10) | (rem & 0x3ff)) ^ 0x5412);
-      // วางบิตฟอร์แมต 2 ชุดตามสเปค (บิต i = บิตที่ i นับจากขวา)
-      //   ชุดแนวตั้ง = คอลัมน์ 8 · ชุดแนวนอน = แถว 8
-      //   ⚠️ เคยเขียนสลับแถว/คอลัมน์ตรงนี้ → QR ออกมาสวยแต่สแกนไม่ได้ (ตรวจเจอด้วย jsQR)
-      const put = (r, c, b) => { g[r][c] = b === 1; };
-      for (let i = 0; i < 15; i++){
-        const b = (bitsF >> i) & 1;
-        if (i < 6)      put(i, 8, b);
-        else if (i < 8) put(i + 1, 8, b);
-        else            put(size - 15 + i, 8, b);
-        if (i < 8)       put(8, size - 1 - i, b);
-        else if (i === 8) put(8, 7, b);
-        else              put(8, 15 - i - 1, b); }
-      const p = penalty(g);
-      if (p < bestP){ bestP = p; best = g; bestMask = k; } }
-    return best;
+  let lib = null;
+  async function ready(){
+    if (lib) return lib;
+    if (window.qrcode) return (lib = window.qrcode);
+    await new Promise((res) => {
+      const s = document.createElement('script');
+      s.src = 'https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js';
+      s.onload = res; s.onerror = res;      // โหลดไม่ได้ก็ไปต่อ ไม่ throw
+      document.head.appendChild(s);
+    });
+    return (lib = window.qrcode || null);
   }
-
-  function draw(text, scale){
-    const g = make(text), n = g.length, q = 2, px = scale || 4;
+  async function draw(text, px){
+    const q = await ready();
+    if (!q) return null;
+    const qr = q(0, 'M');                    // 0 = เลือกเวอร์ชันเล็กสุดที่พอ
+    qr.addData(String(text), 'Byte'); qr.make();
+    const n = qr.getModuleCount(), quiet = 4, s = px || 4;
     const cv = document.createElement('canvas');
-    cv.width = cv.height = (n + q * 2) * px;
+    cv.width = cv.height = (n + quiet * 2) * s;
     const x = cv.getContext('2d');
     x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
     x.fillStyle = '#000';
-    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (g[r][c]) x.fillRect((c + q) * px, (r + q) * px, px, px);
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++)
+      if (qr.isDark(r, c)) x.fillRect((c + quiet) * s, (r + quiet) * s, s, s);
     return cv;
   }
   return { draw };
@@ -338,10 +246,13 @@ async function load(){
   sheet.innerHTML = rows.map(o => slip(o, PKG)).join('');
 
   // วาด QR หลังใส่ HTML แล้ว
-  document.querySelectorAll('[data-qr]').forEach(el => {
-    try { el.appendChild(QR.draw(el.dataset.qr, 4)); }
-    catch(e){ el.innerHTML = '<div style="font-size:9px">(QR ไม่ได้)</div>'; }
-  });
+  for (const el of document.querySelectorAll('[data-qr]')) {
+    try {
+      const cv = await QR.draw(el.dataset.qr, 4);
+      if (cv) el.appendChild(cv);
+      else { el.remove(); document.querySelectorAll('.qrcap').forEach(x => x.remove()); }
+    } catch(e){ el.remove(); }
+  }
 }
 
 function slip(o, PKG){
