@@ -447,24 +447,28 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <div class="tab-panel active" id="panel-orders">
       <div class="count-grid">
         <div class="count-card today">
-          <div class="count-label">ออเดอร์วันนี้</div>
+          <div class="count-label" id="lbl-today">ออเดอร์วันนี้</div>
           <div class="count-num" id="cnt-today">—</div>
           <div class="count-sub" id="rev-today">฿ 0</div>
         </div>
         <div class="count-card tomorrow">
-          <div class="count-label">ออเดอร์พรุ่งนี้</div>
+          <div class="count-label" id="lbl-tom">ออเดอร์พรุ่งนี้</div>
           <div class="count-num" id="cnt-tom">—</div>
           <div class="count-sub" id="rev-tom">฿ 0</div>
         </div>
         <div class="count-card advance">
-          <div class="count-label">ออเดอร์ล่วงหน้า</div>
+          <div class="count-label" id="lbl-adv">ออเดอร์ล่วงหน้า</div>
           <div class="count-num" id="cnt-adv">—</div>
-          <div class="count-sub">มะรืนขึ้นไป</div>
+          <div class="count-sub" id="sub-adv">มะรืนขึ้นไป</div>
         </div>
       </div>
       <div class="sec-header" style="flex-wrap:wrap;gap:8px">
         <div class="sec-title" id="orderListTitle" style="flex:1;min-width:180px">รายการออเดอร์</div>
         <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <!-- ดูตามวันส่ง vs วันสั่ง — คนละคำถามกัน: "วันนั้นต้องส่งใคร" vs "วันนั้นลูกค้าสั่งเข้ามากี่ใบ" (นัทขอ 9 ส.ค.) -->
+          <button class="dtab active" id="ob-deliv" onclick="setOrdBy('delivery')" title="ดูว่าวันนั้นต้องส่งใครบ้าง">📦 ตามวันส่ง</button>
+          <button class="dtab" id="ob-created" onclick="setOrdBy('created')" title="ดูว่าวันนั้นลูกค้ากดสั่งเข้ามากี่ใบ">🛒 ตามวันสั่ง</button>
+          <span style="width:1px;height:20px;background:var(--ink-xsoft);margin:0 3px"></span>
           <button class="dtab active" id="dt-today" onclick="setDate('today')">วันนี้</button>
           <button class="dtab" id="dt-tom" onclick="setDate('tomorrow')">พรุ่งนี้</button>
           <button class="dtab" id="dt-all" onclick="setDate('all')">ทั้งหมด</button>
@@ -1020,16 +1024,30 @@ async function loadAll(keepLoaded){
     // สถิติหัวหน้า — นับจาก DB ตรง (head:true = ไม่ดึงแถว) เลยไม่ช้าแม้ออเดอร์เยอะ
     function setTxt(id,v){var el=document.getElementById(id);if(el)el.textContent=v;}
     var NOTEST="source.is.null,source.neq.parallel_test";
-    var stat=await Promise.all([
-      sb_.from("orders").select("total").eq("delivery_date",todayStr).neq("status","cancelled").or(NOTEST),
-      sb_.from("orders").select("total").eq("delivery_date",tomStr).neq("status","cancelled").or(NOTEST),
-      sb_.from("orders").select("id",{count:"exact",head:true}).gte("delivery_date",dayStr).neq("status","cancelled").or(NOTEST),
+    /* การ์ดหัวหน้าเปลี่ยนความหมายตามโหมด — ไม่งั้นแอดมินอ่านเลขผิดเรื่อง
+       ตามวันส่ง: วันนี้ / พรุ่งนี้ / มะรืนขึ้นไป      ตามวันสั่ง: วันนี้ / เมื่อวาน / 7 วันล่าสุด */
+    var byCreated=ordByMode==="created";
+    var yestStr=ymdPlus(todayStr,-1), wk7=ymdPlus(todayStr,-6);
+    var col1=byCreated
+      ? sb_.from("orders").select("total").gte("created_at",bkkDayStart(todayStr)).lt("created_at",bkkDayStart(ymdPlus(todayStr,1))).neq("status","cancelled").or(NOTEST)
+      : sb_.from("orders").select("total").eq("delivery_date",todayStr).neq("status","cancelled").or(NOTEST);
+    var col2=byCreated
+      ? sb_.from("orders").select("total").gte("created_at",bkkDayStart(yestStr)).lt("created_at",bkkDayStart(todayStr)).neq("status","cancelled").or(NOTEST)
+      : sb_.from("orders").select("total").eq("delivery_date",tomStr).neq("status","cancelled").or(NOTEST);
+    var col3=byCreated
+      ? sb_.from("orders").select("id",{count:"exact",head:true}).gte("created_at",bkkDayStart(wk7)).neq("status","cancelled").or(NOTEST)
+      : sb_.from("orders").select("id",{count:"exact",head:true}).gte("delivery_date",dayStr).neq("status","cancelled").or(NOTEST);
+    var stat=await Promise.all([col1,col2,col3,
       sb_.from("orders").select("id",{count:"exact",head:true}).gte("delivery_date",todayStr).in("status",["confirmed","preparing"])
     ]);
     var todayO=stat[0].data||[], tomO=stat[1].data||[];
     var sum=function(a){return a.reduce(function(s,o){return s+(o.total||0);},0);};
     setTxt("cnt-today",todayO.length); setTxt("cnt-tom",tomO.length); setTxt("cnt-adv",stat[2].count||0);
     setTxt("rev-today",fmtB(sum(todayO))); setTxt("rev-tom",fmtB(sum(tomO)));
+    setTxt("lbl-today",byCreated?"ลูกค้าสั่งวันนี้":"ออเดอร์วันนี้");
+    setTxt("lbl-tom",  byCreated?"ลูกค้าสั่งเมื่อวาน":"ออเดอร์พรุ่งนี้");
+    setTxt("lbl-adv",  byCreated?"สั่งเข้ามา 7 วันล่าสุด":"ออเดอร์ล่วงหน้า");
+    setTxt("sub-adv",  byCreated?"รวมวันนี้":"มะรืนขึ้นไป");
     var pending=stat[3].count||0;
     var nb=document.getElementById("nb-orders"); if(nb){nb.textContent=pending;nb.classList.toggle("show",pending>0);}
     // รายการ = แบ่งหน้า (จำนวนต่อหน้าตั้งที่ ⚙️ ตั้งค่า) · keepLoaded=auto-refresh → อยู่หน้าเดิม
@@ -1062,6 +1080,32 @@ function clearOrderSearch(){
   ordSearchTyping(); fetchOrdersPage();
 }
 
+/* ── ดูตามวันส่ง / ตามวันสั่ง ────────────────────────────────────────────────
+   วันส่ง = คอลัมน์ delivery_date (เป็น date ตรงๆ เทียบเท่ากันได้)
+   วันสั่ง = created_at เป็น timestamp → ต้องเทียบเป็นช่วงเวลา และต้องยึดเวลาไทย
+             (นัทอยู่ PST ถ้าใช้เวลาเครื่องจะได้คนละวันกับที่ร้านนับ) */
+var ordByMode="delivery";
+function bkkDayStart(ymd){ return ymd+"T00:00:00+07:00"; }
+/* created_at เก็บเป็น UTC — ต้องแปลงเป็นวัน/เวลาไทยก่อนโชว์ ไม่งั้นเครื่องที่อยู่ PST จะเห็นคนละวัน */
+function bkkYmdOf(ts){ try{ return new Date(ts).toLocaleDateString("en-CA",{timeZone:"Asia/Bangkok"}); }catch(e){ return "—"; } }
+function bkkTimeOf(ts){ try{ return new Date(ts).toLocaleTimeString("th-TH",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit"}); }catch(e){ return ""; } }
+function ymdPlus(ymd,n){ var d=new Date(ymd+"T00:00:00Z"); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+function setOrdBy(mode){
+  ordByMode=mode; ordPage=0;
+  var a=document.getElementById("ob-deliv"), b=document.getElementById("ob-created");
+  if(a) a.classList.toggle("active",mode==="delivery");
+  if(b) b.classList.toggle("active",mode==="created");
+  loadAll();
+}
+/* ใส่เงื่อนไข "วันไหน" ให้ query ตามโหมดที่เลือก */
+function ordApplyDay(q,ymd){
+  if(ordByMode==="created") return q.gte("created_at",bkkDayStart(ymd)).lt("created_at",bkkDayStart(ymdPlus(ymd,1)));
+  return q.eq("delivery_date",ymd);
+}
+function ordApplyRange(q,from,to){
+  if(ordByMode==="created") return q.gte("created_at",bkkDayStart(from)).lt("created_at",bkkDayStart(ymdPlus(to,1)));
+  return q.gte("delivery_date",from).lte("delivery_date",to);
+}
 function ordBaseQuery(sb_,todayStr,tomStr){
   var NOTEST="source.is.null,source.neq.parallel_test";
   var q=sb_.from("orders").select("*",{count:"exact"});
@@ -1076,13 +1120,16 @@ function ordBaseQuery(sb_,todayStr,tomStr){
     return q.like("notes","*เลื่อนวัน*").or(NOTEST)
             .order("delivery_date",{ascending:true}).order("created_at",{ascending:false});
   }
-  if(dateMode==="today")                 q=q.eq("delivery_date",todayStr);
-  else if(dateMode==="tomorrow")         q=q.eq("delivery_date",tomStr);
-  else if(dateMode==="pick"&&pickedDate) q=q.eq("delivery_date",pickedDate);
-  else if(dateMode==="range"&&rangeFrom&&rangeTo) q=q.gte("delivery_date",rangeFrom).lte("delivery_date",rangeTo);
-  else                                   q=q.gte("delivery_date",todayStr);   // ทั้งหมด = วันนี้ → ไกลสุด
-  return q.neq("status","cancelled").or(NOTEST)
-          .order("delivery_date",{ascending:true}).order("time_slot",{ascending:true}).order("created_at",{ascending:true});
+  if(dateMode==="today")                 q=ordApplyDay(q,todayStr);
+  else if(dateMode==="tomorrow")         q=ordApplyDay(q,tomStr);
+  else if(dateMode==="pick"&&pickedDate) q=ordApplyDay(q,pickedDate);
+  else if(dateMode==="range"&&rangeFrom&&rangeTo) q=ordApplyRange(q,rangeFrom,rangeTo);
+  else if(ordByMode==="created")         q=q.gte("created_at",bkkDayStart(ymdPlus(todayStr,-29)));  // ทั้งหมด(วันสั่ง) = 30 วันล่าสุด
+  else                                   q=q.gte("delivery_date",todayStr);   // ทั้งหมด(วันส่ง) = วันนี้ → ไกลสุด
+  q=q.neq("status","cancelled").or(NOTEST);
+  return ordByMode==="created"
+    ? q.order("created_at",{ascending:false})                                  // วันสั่ง = ใบล่าสุดอยู่บนสุด
+    : q.order("delivery_date",{ascending:true}).order("time_slot",{ascending:true}).order("created_at",{ascending:true});
 }
 async function fetchOrdersPage(){
   var sb_=getSB(); if(!sb_||ordLoading)return;
@@ -1109,11 +1156,15 @@ async function fetchOrdersPage(){
       var hh3=document.getElementById("ordSearchHint");
       if(hh3) hh3.textContent=ordTotal?("เจอ "+ordTotal+" ใบ · เรียงตามวันส่งใหม่ (ทุกวัน)"):"ยังไม่มีใบไหนถูกเลื่อน";
     }
-    else if(dateMode==="today")            title="ออเดอร์วันนี้ ("+todayStr+")";
-    else if(dateMode==="tomorrow")         title="ออเดอร์พรุ่งนี้ ("+tomStr+")";
-    else if(dateMode==="pick"&&pickedDate) title="ออเดอร์วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
-    else if(dateMode==="range"&&rangeFrom&&rangeTo) title="ช่วง "+rangeFrom+" → "+rangeTo;
-    else                                   title="ทั้งหมด (วันนี้เป็นต้นไป)";
+    else{
+      var byW=ordByMode==="created"?"สั่งเข้ามา":"ส่ง";
+      if(dateMode==="today")                 title="ออเดอร์"+byW+"วันนี้ ("+todayStr+")";
+      else if(dateMode==="tomorrow")         title="ออเดอร์"+byW+"พรุ่งนี้ ("+tomStr+")";
+      else if(dateMode==="pick"&&pickedDate) title="ออเดอร์"+byW+"วันที่ "+pickedDate+(pickedDate<todayStr?" (ย้อนหลัง)":"");
+      else if(dateMode==="range"&&rangeFrom&&rangeTo) title="ช่วง"+(ordByMode==="created"?"วันสั่ง ":"วันส่ง ")+rangeFrom+" → "+rangeTo;
+      else if(ordByMode==="created")         title="ทั้งหมด (สั่งเข้ามา 30 วันล่าสุด)";
+      else                                   title="ทั้งหมด (วันนี้เป็นต้นไป)";
+    }
     var tEl=document.getElementById("orderListTitle");
     if(tEl) tEl.textContent=title+" · "+ordTotal+" ใบ";
     renderOrders(ordRows);
@@ -1181,22 +1232,27 @@ var ST={confirmed:{t:"รอครัว",cls:"p-wait"},preparing:{t:"ทำอ�
 function renderOrders(orders){
   var el=document.getElementById("ordersList"); if(!el)return;
   if(!orders||!orders.length){el.innerHTML="<div style='padding:32px;text-align:center;color:#6B7280'>ยังไม่มีออเดอร์</div>";return;}
-  var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ยอด</span><span>วันส่ง</span><span>สถานะ</span></div>";
+  /* หัวข้อกลุ่ม + คอลัมน์วัน ต้องเปลี่ยนตามโหมด ไม่งั้นดู "ตามวันสั่ง" แต่หัวข้อยังคั่นด้วยวันส่ง = อ่านไม่รู้เรื่อง */
+  var byCr=(typeof ordByMode!=="undefined"&&ordByMode==="created");
+  var ordDayOf=function(o){ return byCr ? bkkYmdOf(o.created_at) : o.delivery_date; };
+  var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ยอด</span><span>"+(byCr?"วันสั่ง":"วันส่ง")+"</span><span>สถานะ</span></div>";
   var lastDate=null;   // คั่นหัวข้อเมื่อข้ามวัน (โหมดหลายวันจะได้ไม่มั่ว)
   orders.slice(0,400).forEach(function(o){
-    if(o.delivery_date!==lastDate){
-      lastDate=o.delivery_date;
-      var dayCnt=orders.filter(function(x){return x.delivery_date===lastDate;});
+    if(ordDayOf(o)!==lastDate){
+      lastDate=ordDayOf(o);
+      var dayCnt=orders.filter(function(x){return ordDayOf(x)===lastDate;});
       var sum=dayCnt.reduce(function(s,x){return s+(x.total||0);},0);
       h+="<div style='grid-column:1/-1;padding:7px 12px;background:#EBF3EF;font-size:12px;font-weight:800;color:#1F4D3A;display:flex;justify-content:space-between'>"
-        +"<span>📅 "+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
+        +"<span>"+(byCr?"🛒 สั่งวันที่ ":"📅 ")+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
     h+="<div class='orders-mini-row' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
     h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
     h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
-    h+="<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
+    h+=byCr
+      ? "<div style='font-size:12px'><div>"+bkkYmdOf(o.created_at)+"</div><div style='color:#6B7280'>"+bkkTimeOf(o.created_at)+" น. · ส่ง "+(o.delivery_date||"—")+"</div></div>"
+      : "<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
     // สถานะครัว (pill) + สถานะการเงิน (badge กดสลับได้ — แอดมิน mark โอนแล้ว/รอโอนเอง กรณีโอนผ่านไลน์)
     var paid=o.payment_status==="paid";
     var review=o.payment_status==="pending_review";   // ลูกค้าอัพสลิปแล้ว รอแอดมินเปิดดูรูปแล้วยืนยัน (3 ส.ค. 2026)
