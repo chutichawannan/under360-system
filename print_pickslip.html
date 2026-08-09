@@ -226,12 +226,18 @@ const QR = (() => {
       let fmt = (0 << 3) | k, rem = fmt;
       for (let i = 0; i < 10; i++) rem = (rem << 1) ^ (((rem >> 9) & 1) * 0x537);
       const bitsF = (((fmt << 10) | (rem & 0x3ff)) ^ 0x5412);
+      // วางบิตฟอร์แมต 2 ชุดตามสเปค (บิต i = บิตที่ i นับจากขวา)
+      //   ชุดแนวตั้ง = คอลัมน์ 8 · ชุดแนวนอน = แถว 8
+      //   ⚠️ เคยเขียนสลับแถว/คอลัมน์ตรงนี้ → QR ออกมาสวยแต่สแกนไม่ได้ (ตรวจเจอด้วย jsQR)
       const put = (r, c, b) => { g[r][c] = b === 1; };
       for (let i = 0; i < 15; i++){
         const b = (bitsF >> i) & 1;
-        if (i < 6) put(8, i, b); else if (i < 8) put(8, i + 1, b);
-        else if (i === 8) put(7, 8, b); else put(14 - i, 8, b);
-        if (i < 8) put(size - 1 - i, 8, b); else put(8, size - 15 + i, b); }
+        if (i < 6)      put(i, 8, b);
+        else if (i < 8) put(i + 1, 8, b);
+        else            put(size - 15 + i, 8, b);
+        if (i < 8)       put(8, size - 1 - i, b);
+        else if (i === 8) put(8, 7, b);
+        else              put(8, 15 - i - 1, b); }
       const p = penalty(g);
       if (p < bestP){ bestP = p; best = g; bestMask = k; } }
     return best;
