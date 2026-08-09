@@ -54,6 +54,32 @@
   .bar .count{ font-weight:700; background:rgba(255,255,255,.15); padding:5px 11px; border-radius:999px; }
   .bar .hint{ font-size:12px; opacity:.85; }
 
+  /* ── แถบกรอง/เลือกใบที่จะปริ้น ── */
+  .bar2{
+    position:sticky; top:44px; z-index:8; background:#e8f0ea; border-bottom:1px solid #c9d9cf;
+    padding:8px 12px; display:flex; gap:6px; align-items:center; flex-wrap:wrap; font-size:13px;
+  }
+  .bar2 .lbl{ font-weight:700; color:#0f5132; margin-right:2px; }
+  .bar2 .grow{ flex:1 1 auto; }
+  .chip{
+    font:inherit; border:1px solid #b9cdc0; background:#fff; color:#2c4a3a;
+    padding:5px 12px; border-radius:999px; cursor:pointer; font-weight:600;
+  }
+  .chip.on{ background:#0f5132; color:#fff; border-color:#0f5132; }
+  .chip.pickall{ background:#fff7e0; border-color:#e5c25c; color:#6b5200; }
+  .bar2 .count{ font-weight:800; color:#0f5132; padding-left:6px; }
+
+  /* หัวติ๊กเลือกใบ — โผล่เฉพาะบนจอ ไม่ติดไปกับกระดาษ */
+  .pick{
+    display:flex; align-items:center; gap:8px; width:var(--paper);
+    background:#0f5132; color:#fff; border-radius:10px 10px 0 0;
+    padding:7px 10px; font-size:13px; font-weight:700; cursor:pointer; user-select:none;
+  }
+  .pick input{ width:18px; height:18px; accent-color:#ffd166; }
+  .pick .tag{ margin-left:auto; font-size:11px; background:rgba(255,255,255,.2); padding:2px 8px; border-radius:999px; font-weight:600; }
+  .slip.hide{ display:none; }
+  .pick.hide{ display:none; }
+
   /* ── ตัวใบ ── */
   .sheet{ padding:14px 0 60px; display:flex; flex-direction:column; align-items:center; gap:14px; }
   .slip{
@@ -102,10 +128,12 @@
   @media print{
     @page{ size: var(--paper) auto; margin:0; }
     body{ background:#fff; }
-    .bar{ display:none !important; }
+    .bar, .bar2, .pick{ display:none !important; }
     .sheet{ padding:0; gap:0; display:block; }
     .slip{ box-shadow:none; page-break-after:always; break-after:page; }
     .slip:last-child{ page-break-after:auto; break-after:auto; }
+    /* ใบที่ไม่ได้ติ๊ก / ถูกกรองออก = ไม่ออกกระดาษ */
+    .slip.hide, .slip.skip{ display:none !important; }
   }
 </style>
 </head>
@@ -120,10 +148,22 @@
     <option value="100">ป้ายสติกเกอร์ 4 นิ้ว</option>
   </select>
   <button class="ghost" id="go">โหลด</button>
-  <span class="count" id="cnt">—</span>
   <span class="grow"></span>
-  <span class="hint">SUNMI V2 Pro · กระดาษ 58 มม.</span>
-  <button id="pr">🖨 ปริ้น</button>
+  <span class="hint">SUNMI V2 Pro · 58 มม.</span>
+  <button id="pr">🖨 ปริ้นที่เลือก</button>
+</div>
+
+<div class="bar2">
+  <span class="lbl">กรองประเภท</span>
+  <button class="chip on" data-f="all">ทั้งหมด</button>
+  <button class="chip" data-f="single">เมนูเดี่ยว</button>
+  <button class="chip" data-f="set">เซ็ต / คอร์ส</button>
+  <button class="chip" data-f="mp">Meal Plan</button>
+  <button class="chip" data-f="nomp">ไม่เอา Meal Plan</button>
+  <span class="grow"></span>
+  <button class="chip pickall" id="all">เลือกทั้งหมด</button>
+  <button class="chip pickall" id="none">ไม่เลือกเลย</button>
+  <span class="count" id="cnt">—</span>
 </div>
 
 <div class="sheet" id="sheet"></div>
@@ -159,6 +199,48 @@ function applyWidth(){
   document.documentElement.style.setProperty('--fs', $w.value === '100' ? '12.5px' : '10.5px');
 }
 $w.addEventListener('change', applyWidth);
+
+/* ── กรองประเภท + ติ๊กเลือกใบที่จะปริ้น ──────────────────────────
+   นัทขอเอง 9 ส.ค.: "อยากปริ้นแค่ลูกค้าธรรมดา ไม่ใช่มีลแพลน"
+   กรอง = ซ่อนทั้งจอ · ติ๊ก = เลือกทีละใบ  → ปริ้นเฉพาะใบที่ทั้งไม่ถูกซ่อน และติ๊กอยู่ */
+let FILTER = 'all';
+const match = (t) => FILTER === 'all' ? true
+  : FILTER === 'nomp' ? t !== 'mp'
+  : t === FILTER;
+
+function applyFilter(){
+  document.querySelectorAll('.pick').forEach(p => {
+    const on = match(p.dataset.t);
+    p.classList.toggle('hide', !on);
+    p.nextElementSibling.classList.toggle('hide', !on);
+    if (!on) p.querySelector('.pk').checked = false;   // ถูกกรองออก = ไม่ปริ้น
+  });
+  updateCount();
+}
+function updateCount(){
+  const all = [...document.querySelectorAll('.pick')];
+  const shown = all.filter(p => !p.classList.contains('hide'));
+  const picked = shown.filter(p => p.querySelector('.pk').checked);
+  document.getElementById('cnt').textContent =
+    picked.length === 0 ? 'ยังไม่ได้เลือกใบไหน'
+    : `จะปริ้น ${picked.length} ใบ` + (shown.length !== all.length ? ` (จากทั้งหมด ${all.length})` : '');
+  document.getElementById('pr').disabled = picked.length === 0;
+  document.getElementById('pr').style.opacity = picked.length === 0 ? .5 : 1;
+}
+document.querySelectorAll('.chip[data-f]').forEach(b => b.onclick = () => {
+  document.querySelectorAll('.chip[data-f]').forEach(x => x.classList.toggle('on', x === b));
+  FILTER = b.dataset.f;
+  applyFilter();
+});
+document.getElementById('all').onclick  = () => { document.querySelectorAll('.pick:not(.hide) .pk').forEach(c => c.checked = true);  updateCount(); };
+document.getElementById('none').onclick = () => { document.querySelectorAll('.pk').forEach(c => c.checked = false); updateCount(); };
+document.addEventListener('change', e => { if (e.target.classList.contains('pk')) updateCount(); });
+
+// ก่อนสั่งพิมพ์ ติดธง skip ให้ใบที่ไม่ได้ติ๊ก → CSS @media print จะซ่อนให้
+window.addEventListener('beforeprint', () => {
+  document.querySelectorAll('.pick').forEach(p =>
+    p.nextElementSibling.classList.toggle('skip', !p.querySelector('.pk').checked));
+});
 document.getElementById('pr').onclick = () => window.print();
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
@@ -208,8 +290,8 @@ async function load(){
     }catch(e){}
   }
 
-  document.getElementById('cnt').textContent = rows.length + ' ใบ';
   sheet.innerHTML = rows.map(o => slip(o, PKG)).join('');
+  applyFilter();
 
 }
 
@@ -246,6 +328,15 @@ function slip(o, PKG){
     return sub + cd + esc(nm) + nw;
   };
 
+  // ประเภทของใบ — ใช้กรองว่าจะปริ้นอะไรบ้าง
+  //   mp     = Meal Plan (ทำสด จ/พ/ศ)
+  //   set    = เซ็ต / คอร์ส / แพคเกจ
+  //   single = เมนูเดี่ยว (ลูกค้าธรรมดา)
+  const hasMP  = [...groups.values()].some(g => g.mp) || /^MP-/i.test(o.order_number || '');
+  const hasPkg = [...groups.values()].some(g => g.pkg);
+  const type   = hasMP ? 'mp' : hasPkg ? 'set' : 'single';
+  const typeTH = hasMP ? 'Meal Plan' : hasPkg ? 'เซ็ต / คอร์ส' : 'เมนูเดี่ยว';
+
   let boxes = 0, body = '';
   for (const g of groups.values()){
     const p = g.pkg ? PKG[g.pkg] : null;
@@ -269,7 +360,12 @@ function slip(o, PKG){
              : o.payment_status === 'pending_review' ? 'แนบสลิปแล้ว รอตรวจ' : 'ยังไม่โอน';
 
   return `
-  <div class="slip"><div class="in">
+  <label class="pick" data-t="${type}">
+    <input type="checkbox" class="pk" checked>
+    <span>${esc(o.order_number)} · ${esc(o.customer_name || '-').slice(0,18)}</span>
+    <span class="tag">${typeTH}</span>
+  </label>
+  <div class="slip" data-t="${type}"><div class="in">
     <div class="shop">Under 360</div>
     <div class="ordno">#${esc(o.order_number)}</div>
 
