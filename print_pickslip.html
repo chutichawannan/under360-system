@@ -326,11 +326,12 @@ function slip(o, PKG){
     <div class="thead"><div class="q">จำนวน</div><div class="n">สินค้า</div><div class="p">ราคา</div></div>
     ${body}
 
-    <div class="tot"><span>รวม ${boxes} กล่อง</span><span>${baht(sub)}</span></div>
+    <div class="tot"><span>รวม ${boxes} รายการ</span><span>${baht(sub)}</span></div>
     <div class="tot"><span>ค่าส่ง</span><span>${baht(fee)}</span></div>
-    <div class="tot"><span>ยอดรวม</span><span>${baht(sub + fee)}</span></div>
     ${disc ? `<div class="tot"><span>ส่วนลด</span><span>-${baht(disc)}</span></div>` : ''}
     <div class="tot b"><span>ยอดชำระทั้งสิ้น</span><span>${baht(o.total)}</span></div>
+    ${Math.abs((sub + fee - disc) - Number(o.total||0)) > 1
+      ? '<div class="note">⚠️ ยอดย่อยบวกแล้วไม่ลงตัวกับยอดชำระ — <b>ยึดยอดชำระทั้งสิ้น</b> (ปัญหาข้อมูลส่วนลด N-61 ยังไม่แก้)</div>' : ''}
     <div class="tot"><span>การชำระเงิน</span><span>${pay}</span></div>
 
     <div class="sign"><div>ผู้จัดสินค้า</div><div>ผู้ส่ง</div></div>
