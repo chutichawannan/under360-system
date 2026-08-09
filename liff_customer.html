@@ -1600,6 +1600,17 @@ function isNextWeekItem(item) {
   return new Date(item.available_from) > today;
 }
 
+/* N-50③: ลูกค้าเห็นเมนูล่วงหน้าได้ แต่ต้องรู้ว่าจะได้กินวันไหน
+   ป้าย 📅 เงียบเกินไป — ลูกค้าจริงกดผ่านไปแล้ว (ใบ U-0809-001) */
+function readyDateLabel(item) {
+  if (!item || !item.available_from) return '';
+  const MONTHS = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const DAYS = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+  const d = new Date(item.available_from);
+  if (isNaN(d)) return '';
+  return `${DAYS[d.getDay()]}ที่ ${d.getDate()} ${MONTHS[d.getMonth()]}`;
+}
+
 function cartWeekType() {
   // 'next' | 'current' | null
   for (const c of cart) {
@@ -2066,7 +2077,7 @@ function renderMenu() {
       : isMealPlan
       ? `<span style="font-size:10px;font-weight:600;color:#1F4D3A;background:#EBF3EF;padding:2px 7px;border-radius:8px">🥗 Meal Plan</span>`
       : isNextWk
-      ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 อาทิตย์หน้า</span>`
+      ? `<span style="font-size:10px;font-weight:700;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:8px">📅 เริ่มส่ง ${readyDateLabel(item).replace(/^\S+ที่ /,'')}</span>`
       : '';
     const specialBadge = weeklyBadgeHtml(item);
     const tags = (specialBadge?`<span>${specialBadge}</span>`:'')
@@ -2108,6 +2119,8 @@ function addItem(id) {
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:Number(item.price), code:item.code||'', qty:1 });
   saveCart(); refreshItemViews();
+  /* N-50③ บอกวันพร้อมส่งทุกครั้งที่ใส่ตะกร้า — ไม่ใช่แค่ป้ายเล็กๆ ที่ลูกค้ามองข้าม */
+  if (_isNext) { const lbl = readyDateLabel(item); if (lbl) toast(`📅 เมนูนี้เริ่มส่งได้ ${lbl} — สั่งไว้ก่อนได้เลย`, 3600); }
 }
 
 function chgQty(id, delta) {
