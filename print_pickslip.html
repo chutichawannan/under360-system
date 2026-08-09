@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ใบจัดของ — Under360</title>
+<!--
+  ใบจัดของสำหรับปริ้นเตอร์ความร้อน (thermal 80mm / 58mm)
+  ครัวใช้: ดูรายการ → หยิบของ → แปะหน้ากล่อง → ยกใส่ถุงส่งลูกค้า
+
+  วิธีเปิด:
+    ?date=2026-08-09        ปริ้นทุกใบของวันส่งนั้น (ค่าเริ่มต้น = วันนี้ เวลาไทย)
+    ?order=U-0809-001       ปริ้นใบเดียว
+    &w=58                   สลับเป็นกระดาษ 58 มม. (ค่าเริ่มต้น 80 มม.)
+
+  หมายเหตุ: อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูล
+-->
+<style>
+  :root{ --w: 80mm; --pad: 3mm; }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0; background:#e9edf1;
+    font-family:'Sarabun','Noto Sans Thai',-apple-system,'Segoe UI',sans-serif;
+    color:#000; -webkit-font-smoothing:antialiased;
+  }
+
+  /* ── แถบเครื่องมือ (ไม่ปริ้น) ── */
+  .bar{
+    position:sticky; top:0; z-index:9; background:#0f5132; color:#fff;
+    padding:10px 12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
+    font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,.2);
+  }
+  .bar input,.bar select{
+    font:inherit; padding:6px 9px; border-radius:8px; border:1px solid #cfd8dc; min-width:0;
+  }
+  .bar button{
+    font:inherit; font-weight:700; padding:7px 16px; border-radius:8px; border:0;
+    background:#ffd166; color:#3b2f00; cursor:pointer;
+  }
+  .bar button.ghost{ background:rgba(255,255,255,.18); color:#fff; }
+  .bar .grow{ flex:1 1 auto; }
+  .bar .count{ font-weight:700; background:rgba(255,255,255,.15); padding:5px 11px; border-radius:999px; }
+
+  /* ── ใบเสร็จ ── */
+  .sheet{ padding:14px 0 60px; display:flex; flex-direction:column; align-items:center; gap:14px; }
+  .slip{
+    width:var(--w); background:#fff; padding:var(--pad);
+    font-size:12px; line-height:1.45;
+    box-shadow:0 2px 10px rgba(0,0,0,.15);
+  }
+  .logo{
+    width:26mm; height:26mm; margin:0 auto 4px; background:#12a150; color:#fff;
+    display:flex; align-items:center; justify-content:center; text-align:center;
+    font-weight:800; font-size:13px; letter-spacing:.5px; border-radius:3px;
+  }
+  .shop{ text-align:center; font-weight:700; font-size:14px; }
+  .ordno{
+    text-align:center; font-weight:800; font-size:19px; letter-spacing:.5px;
+    font-family:'IBM Plex Mono',ui-monospace,monospace; margin:2px 0 6px;
+  }
+  .hr{ border-top:1px dashed #000; margin:6px 0; }
+  .row{ display:flex; gap:6px; }
+  .row .k{ flex:0 0 22mm; color:#000; }
+  .row .v{ flex:1 1 auto; font-weight:600; word-break:break-word; }
+  .flag{
+    font-weight:800; font-size:13px; padding:4px 0; text-align:center;
+    border-top:1px solid #000; border-bottom:1px solid #000; margin:6px 0;
+  }
+  .ihead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:2px; }
+  .ihead .n{ flex:0 0 9mm; }
+  .ihead .p{ flex:0 0 18mm; text-align:right; }
+  .item{ display:flex; padding:4px 0; border-bottom:1px dotted #bbb; }
+  .item .n{ flex:0 0 9mm; font-weight:800; font-size:14px; }
+  .item .t{ flex:1 1 auto; font-weight:600; }
+  .item .p{ flex:0 0 18mm; text-align:right; }
+  .sub{ font-size:11.5px; padding-left:2mm; font-weight:500; }
+  .tot{ display:flex; justify-content:space-between; padding:3px 0; }
+  .tot.big{ font-weight:800; font-size:14px; border-top:1px solid #000; padding-top:5px; margin-top:3px; }
+  .note{ font-size:11px; margin-top:4px; padding:4px; border:1px dashed #000; }
+  .sign{ display:flex; gap:6px; margin-top:8px; font-size:11px; }
+  .sign div{ flex:1; border-top:1px solid #000; padding-top:3px; }
+  .src{ text-align:center; font-size:10px; margin-top:6px; color:#000; }
+  .empty{ background:#fff; padding:22px; border-radius:10px; max-width:520px; text-align:center; color:#555; }
+
+  /* ── ตอนปริ้นจริง ── */
+  @media print{
+    @page{ size: var(--w) auto; margin:0; }
+    body{ background:#fff; }
+    .bar{ display:none !important; }
+    .sheet{ padding:0; gap:0; display:block; }
+    .slip{ box-shadow:none; width:auto; page-break-after:always; break-after:page; }
+    .slip:last-child{ page-break-after:auto; break-after:auto; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <label>วันส่ง <input type="date" id="d"></label>
+  <label>หรือเลขใบ <input type="text" id="o" placeholder="U-0809-001" size="12"></label>
+  <select id="w">
+    <option value="80">กระดาษ 80 มม.</option>
+    <option value="58">กระดาษ 58 มม.</option>
+  </select>
+  <button class="ghost" id="go">โหลด</button>
+  <span class="count" id="cnt">—</span>
+  <span class="grow"></span>
+  <button id="pr">🖨 ปริ้นทั้งหมด</button>
+</div>
+
+<div class="sheet" id="sheet"></div>
+
+<script>
+const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/';
+const ANON= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const HDR = { apikey: ANON, Authorization: 'Bearer ' + ANON };
+
+// เวลาไทยเสมอ (นัท/ผู้ใช้บางคนอยู่คนละโซนเวลา — คำนวณจากเครื่องจะเพี้ยนไป 1 วัน)
+function todayTH(){
+  const p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+  const g = t => p.find(x=>x.type===t).value;
+  return `${g('year')}-${g('month')}-${g('day')}`;
+}
+const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const baht = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
+const thDate = ymd => { if(!ymd) return '-'; const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
+
+const qs = new URLSearchParams(location.search);
+const $d=document.getElementById('d'), $o=document.getElementById('o'), $w=document.getElementById('w');
+$d.value = qs.get('date') || todayTH();
+$o.value = qs.get('order') || '';
+$w.value = qs.get('w') === '58' ? '58' : '80';
+applyWidth();
+
+function applyWidth(){ document.documentElement.style.setProperty('--w', $w.value + 'mm'); }
+$w.addEventListener('change', applyWidth);
+document.getElementById('pr').onclick = () => window.print();
+document.getElementById('go').onclick = load;
+$o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
+
+// ชื่อเล่นเมนู: ตัดตัวอักษรนำหน้าออกเหมือนที่หน้าครัวใช้ (S022 -> 022)
+const shortCode = c => String(c||'').replace(/^[A-Za-z]+/,'') || String(c||'');
+
+async function load(){
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = '<div class="empty">กำลังโหลด…</div>';
+  document.getElementById('cnt').textContent = '—';
+
+  const cols = 'order_number,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
+  const filter = $o.value.trim()
+    ? `order_number=eq.${encodeURIComponent($o.value.trim())}`
+    : `delivery_date=eq.${$d.value}&status=neq.cancelled`;
+
+  let rows;
+  try{
+    const r = await fetch(`${SB}orders?select=${cols}&${filter}&order=time_slot.asc,order_number.asc&limit=300`, {headers:HDR});
+    if(!r.ok) throw new Error(await r.text());
+    rows = await r.json();
+  }catch(err){
+    sheet.innerHTML = `<div class="empty">โหลดไม่สำเร็จ<br><small>${esc(String(err).slice(0,300))}</small></div>`;
+    return;
+  }
+
+  if(!rows.length){
+    sheet.innerHTML = '<div class="empty">ไม่มีออเดอร์ของวันนี้ในระบบ<br><small>ช่วงรอยต่อ Hato — ใบที่ยังอยู่ใน Hato อย่างเดียวจะไม่ขึ้นที่นี่</small></div>';
+    document.getElementById('cnt').textContent = '0 ใบ';
+    return;
+  }
+
+  document.getElementById('cnt').textContent = rows.length + ' ใบ';
+  sheet.innerHTML = rows.map(slip).join('');
+}
+
+function slip(o){
+  const items = (o.order_items||[]);
+  // ยุบรายการซ้ำให้เหลือบรรทัดเดียว แล้วรวมจำนวน (ครัวเคยเจอบรรทัดซ้ำ 18 บรรทัด — N-40)
+  const map = new Map();
+  for(const it of items){
+    const key = (it.menu_code||'') + '|' + (it.menu_name||'');
+    const cur = map.get(key) || { code:it.menu_code, name:it.menu_name, qty:0, price:0 };
+    cur.qty  += Number(it.quantity||0);
+    cur.price = Number(it.unit_price||0);
+    map.set(key, cur);
+  }
+  const list = [...map.values()];
+  const boxes = list.reduce((s,i)=>s+i.qty,0);
+
+  const fee  = Number(o.delivery_fee||0);
+  const disc = Number(o.discount_amount||0);
+  const sub  = Number(o.subtotal|| (Number(o.total||0)-fee+disc) );
+
+  const paid = o.payment_status === 'paid' ? '✅ โอนแล้ว'
+             : o.payment_status === 'pending_review' ? '🧾 แนบสลิปแล้ว รอตรวจ'
+             : '⏳ ยังไม่โอน';
+
+  return `
+  <div class="slip">
+    <div class="logo">UNDER<br>360</div>
+    <div class="shop">Under 360</div>
+    <div class="ordno">#${esc(o.order_number)}</div>
+
+    <div class="hr"></div>
+    <div class="row"><div class="k">ชื่อ</div><div class="v">${esc(o.customer_name)||'-'}</div></div>
+    <div class="row"><div class="k">เบอร์โทร</div><div class="v">${esc(o.customer_phone)||'-'}</div></div>
+    <div class="row"><div class="k">วันเวลาส่ง</div><div class="v">${thDate(o.delivery_date)} · ${esc(o.time_slot_label||o.time_slot||'-')}</div></div>
+    <div class="row"><div class="k">ที่อยู่</div><div class="v">${esc(o.delivery_address)||'⚠️ ไม่มีที่อยู่'}</div></div>
+
+    <div class="flag">${o.want_utensils ? '✓ ใส่ช้อนส้อม' : '✗ ไม่รับช้อนส้อม / ตะเกียบ / หลอด'}</div>
+
+    <div class="ihead"><div class="n">จำนวน</div><div class="t">รายการ</div><div class="p">ราคา</div></div>
+    ${list.map(i => `
+      <div class="item">
+        <div class="n">${i.qty}</div>
+        <div class="t">${i.code ? `<b>${esc(shortCode(i.code))}</b> ` : ''}${esc(i.name)}</div>
+        <div class="p">${i.price ? baht(i.price*i.qty) : ''}</div>
+      </div>`).join('')}
+
+    <div class="hr"></div>
+    <div class="tot"><span>รวม ${boxes} กล่อง</span><span>${baht(sub)}</span></div>
+    ${fee  ? `<div class="tot"><span>ค่าส่ง</span><span>${baht(fee)}</span></div>` : ''}
+    ${disc ? `<div class="tot"><span>ส่วนลด</span><span>-${baht(disc)}</span></div>` : ''}
+    <div class="tot big"><span>ยอดชำระทั้งสิ้น</span><span>${baht(o.total)}</span></div>
+    <div class="tot"><span>การชำระเงิน</span><span>${paid}</span></div>
+
+    ${o.notes ? `<div class="note"><b>โน้ต:</b> ${esc(o.notes)}</div>` : ''}
+
+    <div class="sign"><div>ผู้จัดสินค้า</div><div>ผู้ส่ง</div></div>
+    <div class="src">พิมพ์จากระบบ Under360</div>
+  </div>`;
+}
+
+load();
+</script>
+</body>
+</html>
