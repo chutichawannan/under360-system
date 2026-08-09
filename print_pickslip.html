@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ใบจัดของ — Under360</title>
 <!--
-  N-63 · ใบจัดของ/ใบแปะกล่อง สำหรับปริ้นเตอร์ความร้อน 57 มม.
+  N-63 · ใบจัดของ/ใบแปะกล่อง — ค่าเริ่มต้น = ป้ายสติกเกอร์ 4 นิ้ว (HPRT HT400 ที่ร้านมีอยู่)
   ครัวใช้: ดูรายการ → หยิบของ → แปะหน้ากล่อง → ยกใส่ถุงส่งลูกค้า
 
   เปิดยังไง
     ?date=2026-08-10     ทุกใบของวันส่งนั้น (ค่าเริ่มต้น = วันนี้ เวลาไทย)
     ?order=U-0809-001    ใบเดียว
-    &w=80                สลับเป็นกระดาษ 80 มม. (ค่าเริ่มต้น 57)
+    &w=57 / &w=80        สลับเป็นกระดาษใบเสร็จแบบม้วน (ค่าเริ่มต้น 100 = ป้าย 4 นิ้ว)
 
-  ทำไมกว้าง 48 มม. ทั้งที่กระดาษ 57 มม.
-    กระดาษ 57/58 มม. พิมพ์ได้จริงแค่ ~48 มม. (384 dot ที่ 203dpi) ขอบที่เหลือหัวพิมพ์ไม่ถึง
-    → คุมความกว้างเนื้อหาไว้ 48 มม. ไม่อิงพิกเซล ไม่งั้นตัวหนังสือโดนตัดขอบขวา
+  ทำไมเนื้อหาแคบกว่ากระดาษเสมอ
+    หัวพิมพ์ไปไม่ถึงขอบ → เว้นไว้ข้างละ ~2 มม. เสมอ (4 นิ้ว 100→96 · 57→48 · 80→72)
+    ⚠️ ป้าย 4 นิ้วเป็นสติกเกอร์มีขนาดตายตัว — ถ้าใบยาวเกินป้าย เนื้อหาจะไหลไปป้ายถัดไป
+       ต้องรู้ขนาดป้ายที่ร้านใช้จริง (เช่น 100x150 มม.) แล้วล็อก @page ให้ตรง ยังไม่ได้ตั้ง
 
   ทำไมพิมพ์ผ่านเบราว์เซอร์ ไม่ใช่ ESC/POS
     ESC/POS text mode วางสระบน-ล่างภาษาไทยเพี้ยนบ่อย · พิมพ์ผ่านเบราว์เซอร์เป็นภาพ (raster) สระตรงเสมอ
@@ -23,7 +24,7 @@
   อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูล
 -->
 <style>
-  :root{ --paper: 57mm; --ink: 48mm; }
+  :root{ --paper: 100mm; --ink: 96mm; --fs: 12.5px; }
   *{ box-sizing:border-box; }
   body{
     margin:0; background:#e9edf1; color:#000;
@@ -47,7 +48,7 @@
   .slip{
     width:var(--paper); background:#fff;
     padding:2mm calc((var(--paper) - var(--ink)) / 2);
-    font-size:10.5px; line-height:1.42; box-shadow:0 2px 10px rgba(0,0,0,.15);
+    font-size:var(--fs); line-height:1.45; box-shadow:0 2px 10px rgba(0,0,0,.15);
   }
   .in{ width:var(--ink); }
 
@@ -60,7 +61,7 @@
   .ordno{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.3px;
           font-family:'IBM Plex Mono',ui-monospace,monospace; margin:.5mm 0; }
   .qrwrap{ text-align:center; margin:1mm 0 .5mm; }
-  .qrwrap canvas{ image-rendering:pixelated; width:24mm; height:24mm; }
+  .qrwrap canvas{ image-rendering:pixelated; width:26mm; height:26mm; }
   .qrcap{ text-align:center; font-size:9px; }
 
   .dash{ border-top:1px dashed #000; margin:1.5mm 0; }
@@ -111,6 +112,7 @@
   <label>วันส่ง <input type="date" id="d"></label>
   <label>หรือเลขใบ <input type="text" id="o" placeholder="U-0809-001" size="12"></label>
   <select id="w">
+    <option value="100">ป้าย 4 นิ้ว (100 มม.) — HPRT HT400</option>
     <option value="57">กระดาษ 57 มม.</option>
     <option value="80">กระดาษ 80 มม.</option>
   </select>
@@ -181,12 +183,17 @@ const qs = new URLSearchParams(location.search);
 const $d=document.getElementById('d'), $o=document.getElementById('o'), $w=document.getElementById('w');
 $d.value = qs.get('date') || todayTH();
 $o.value = qs.get('order') || '';
-$w.value = qs.get('w') === '80' ? '80' : '57';
+// ค่าเริ่มต้น = ป้าย 4 นิ้ว เพราะเครื่องที่ร้านมีจริงคือ HPRT HT400 (ป้ายสติกเกอร์ 4")
+// 57/80 มม. เก็บไว้เผื่อไปซื้อเครื่องใบเสร็จแบบม้วนทีหลัง
+const PAPER = { '100': [100, 96], '80': [80, 72], '57': [57, 48] };   // [กระดาษ, พื้นที่พิมพ์จริง]
+$w.value = PAPER[qs.get('w')] ? qs.get('w') : '100';
 applyWidth();
 function applyWidth(){
-  const w = $w.value === '80' ? [80,72] : [57,48];
+  const w = PAPER[$w.value] || PAPER['100'];
   document.documentElement.style.setProperty('--paper', w[0]+'mm');
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
+  // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
+  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '12.5px' : '10.5px');
 }
 $w.addEventListener('change', applyWidth);
 document.getElementById('pr').onclick = () => window.print();
