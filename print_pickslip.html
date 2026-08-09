@@ -5,90 +5,102 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ใบจัดของ — Under360</title>
 <!--
-  ใบจัดของสำหรับปริ้นเตอร์ความร้อน (thermal 80mm / 58mm)
+  N-63 · ใบจัดของ/ใบแปะกล่อง สำหรับปริ้นเตอร์ความร้อน 57 มม.
   ครัวใช้: ดูรายการ → หยิบของ → แปะหน้ากล่อง → ยกใส่ถุงส่งลูกค้า
 
-  วิธีเปิด:
-    ?date=2026-08-09        ปริ้นทุกใบของวันส่งนั้น (ค่าเริ่มต้น = วันนี้ เวลาไทย)
-    ?order=U-0809-001       ปริ้นใบเดียว
-    &w=58                   สลับเป็นกระดาษ 58 มม. (ค่าเริ่มต้น 80 มม.)
+  เปิดยังไง
+    ?date=2026-08-10     ทุกใบของวันส่งนั้น (ค่าเริ่มต้น = วันนี้ เวลาไทย)
+    ?order=U-0809-001    ใบเดียว
+    &w=80                สลับเป็นกระดาษ 80 มม. (ค่าเริ่มต้น 57)
 
-  หมายเหตุ: อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูล
+  ทำไมกว้าง 48 มม. ทั้งที่กระดาษ 57 มม.
+    กระดาษ 57/58 มม. พิมพ์ได้จริงแค่ ~48 มม. (384 dot ที่ 203dpi) ขอบที่เหลือหัวพิมพ์ไม่ถึง
+    → คุมความกว้างเนื้อหาไว้ 48 มม. ไม่อิงพิกเซล ไม่งั้นตัวหนังสือโดนตัดขอบขวา
+
+  ทำไมพิมพ์ผ่านเบราว์เซอร์ ไม่ใช่ ESC/POS
+    ESC/POS text mode วางสระบน-ล่างภาษาไทยเพี้ยนบ่อย · พิมพ์ผ่านเบราว์เซอร์เป็นภาพ (raster) สระตรงเสมอ
+
+  อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูล
 -->
 <style>
-  :root{ --w: 80mm; --pad: 3mm; }
+  :root{ --paper: 57mm; --ink: 48mm; }
   *{ box-sizing:border-box; }
   body{
-    margin:0; background:#e9edf1;
+    margin:0; background:#e9edf1; color:#000;
     font-family:'Sarabun','Noto Sans Thai',-apple-system,'Segoe UI',sans-serif;
-    color:#000; -webkit-font-smoothing:antialiased;
   }
 
   /* ── แถบเครื่องมือ (ไม่ปริ้น) ── */
   .bar{
     position:sticky; top:0; z-index:9; background:#0f5132; color:#fff;
-    padding:10px 12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;
-    font-size:14px; box-shadow:0 2px 8px rgba(0,0,0,.2);
+    padding:10px 12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; font-size:14px;
   }
-  .bar input,.bar select{
-    font:inherit; padding:6px 9px; border-radius:8px; border:1px solid #cfd8dc; min-width:0;
-  }
-  .bar button{
-    font:inherit; font-weight:700; padding:7px 16px; border-radius:8px; border:0;
-    background:#ffd166; color:#3b2f00; cursor:pointer;
-  }
+  .bar input,.bar select{ font:inherit; padding:6px 9px; border-radius:8px; border:1px solid #cfd8dc; min-width:0; }
+  .bar button{ font:inherit; font-weight:700; padding:7px 16px; border-radius:8px; border:0; background:#ffd166; color:#3b2f00; cursor:pointer; }
   .bar button.ghost{ background:rgba(255,255,255,.18); color:#fff; }
   .bar .grow{ flex:1 1 auto; }
   .bar .count{ font-weight:700; background:rgba(255,255,255,.15); padding:5px 11px; border-radius:999px; }
+  .bar .hint{ font-size:12px; opacity:.85; }
 
-  /* ── ใบเสร็จ ── */
+  /* ── ตัวใบ ── */
   .sheet{ padding:14px 0 60px; display:flex; flex-direction:column; align-items:center; gap:14px; }
   .slip{
-    width:var(--w); background:#fff; padding:var(--pad);
-    font-size:12px; line-height:1.45;
-    box-shadow:0 2px 10px rgba(0,0,0,.15);
+    width:var(--paper); background:#fff;
+    padding:2mm calc((var(--paper) - var(--ink)) / 2);
+    font-size:10.5px; line-height:1.42; box-shadow:0 2px 10px rgba(0,0,0,.15);
   }
+  .in{ width:var(--ink); }
+
   .logo{
-    width:26mm; height:26mm; margin:0 auto 4px; background:#12a150; color:#fff;
+    width:16mm; height:16mm; margin:0 auto 1mm; background:#12a150; color:#fff; border-radius:1.5mm;
     display:flex; align-items:center; justify-content:center; text-align:center;
-    font-weight:800; font-size:13px; letter-spacing:.5px; border-radius:3px;
+    font-weight:800; font-size:9px; line-height:1.15; letter-spacing:.3px;
   }
-  .shop{ text-align:center; font-weight:700; font-size:14px; }
-  .ordno{
-    text-align:center; font-weight:800; font-size:19px; letter-spacing:.5px;
-    font-family:'IBM Plex Mono',ui-monospace,monospace; margin:2px 0 6px;
-  }
-  .hr{ border-top:1px dashed #000; margin:6px 0; }
-  .row{ display:flex; gap:6px; }
-  .row .k{ flex:0 0 22mm; color:#000; }
-  .row .v{ flex:1 1 auto; font-weight:600; word-break:break-word; }
-  .flag{
-    font-weight:800; font-size:13px; padding:4px 0; text-align:center;
-    border-top:1px solid #000; border-bottom:1px solid #000; margin:6px 0;
-  }
-  .ihead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:2px; }
-  .ihead .n{ flex:0 0 9mm; }
-  .ihead .p{ flex:0 0 18mm; text-align:right; }
-  .item{ display:flex; padding:4px 0; border-bottom:1px dotted #bbb; }
-  .item .n{ flex:0 0 9mm; font-weight:800; font-size:14px; }
-  .item .t{ flex:1 1 auto; font-weight:600; }
-  .item .p{ flex:0 0 18mm; text-align:right; }
-  .sub{ font-size:11.5px; padding-left:2mm; font-weight:500; }
-  .tot{ display:flex; justify-content:space-between; padding:3px 0; }
-  .tot.big{ font-weight:800; font-size:14px; border-top:1px solid #000; padding-top:5px; margin-top:3px; }
-  .note{ font-size:11px; margin-top:4px; padding:4px; border:1px dashed #000; }
-  .sign{ display:flex; gap:6px; margin-top:8px; font-size:11px; }
-  .sign div{ flex:1; border-top:1px solid #000; padding-top:3px; }
-  .src{ text-align:center; font-size:10px; margin-top:6px; color:#000; }
+  .shop{ text-align:center; font-weight:700; font-size:12px; }
+  .ordno{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.3px;
+          font-family:'IBM Plex Mono',ui-monospace,monospace; margin:.5mm 0; }
+  .qrwrap{ text-align:center; margin:1mm 0 .5mm; }
+  .qrwrap canvas{ image-rendering:pixelated; width:24mm; height:24mm; }
+  .qrcap{ text-align:center; font-size:9px; }
+
+  .dash{ border-top:1px dashed #000; margin:1.5mm 0; }
+  .sec{ font-weight:700; }
+  .kv{ display:flex; gap:1.5mm; align-items:flex-start; }
+  .kv .k{ flex:0 0 15mm; white-space:nowrap; }   /* ห้าม label ตัดคำกลางคำแบบใบ Hato */
+  .kv .v{ flex:1 1 auto; font-weight:600; word-break:break-word; }
+
+  .flag{ font-weight:800; font-size:11px; text-align:center; padding:1mm 0;
+         border-top:1px solid #000; border-bottom:1px solid #000; margin:1.5mm 0; }
+
+  .thead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:.5mm; }
+  .thead .q{ flex:0 0 7mm; }
+  .thead .n{ flex:1 1 auto; }
+  .thead .p{ flex:0 0 12mm; text-align:right; }
+
+  .line{ display:flex; padding:1mm 0 .5mm; }
+  .line .q{ flex:0 0 7mm; font-weight:800; }
+  .line .n{ flex:1 1 auto; font-weight:700; }
+  .line .p{ flex:0 0 12mm; text-align:right; }
+  /* แถวย่อยของเซ็ต — บรรทัดที่ล้นต้องเยื้องตาม ไม่ใช่กองซ้ายสุดแบบใบ Hato */
+  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:10px; font-weight:500; }
+  .code{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-weight:800; }
+  .dim{ color:#555; font-family:'IBM Plex Mono',ui-monospace,monospace; }
+  .new{ font-size:8.5px; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
+  .brk{ border-bottom:1px dotted #999; }
+
+  .tot{ display:flex; justify-content:space-between; padding:.4mm 0; }
+  .tot.b{ font-weight:800; font-size:12px; border-top:1px solid #000; margin-top:.8mm; padding-top:1mm; }
+  .note{ font-size:9.5px; margin-top:1.5mm; padding:1mm; border:1px dashed #000; }
+  .sign{ display:flex; gap:2mm; margin-top:3mm; font-size:9px; }
+  .sign div{ flex:1; border-top:1px solid #000; padding-top:.8mm; }
   .empty{ background:#fff; padding:22px; border-radius:10px; max-width:520px; text-align:center; color:#555; }
 
-  /* ── ตอนปริ้นจริง ── */
   @media print{
-    @page{ size: var(--w) auto; margin:0; }
+    @page{ size: var(--paper) auto; margin:0; }
     body{ background:#fff; }
     .bar{ display:none !important; }
     .sheet{ padding:0; gap:0; display:block; }
-    .slip{ box-shadow:none; width:auto; page-break-after:always; break-after:page; }
+    .slip{ box-shadow:none; page-break-after:always; break-after:page; }
     .slip:last-child{ page-break-after:auto; break-after:auto; }
   }
 </style>
@@ -99,52 +111,191 @@
   <label>วันส่ง <input type="date" id="d"></label>
   <label>หรือเลขใบ <input type="text" id="o" placeholder="U-0809-001" size="12"></label>
   <select id="w">
+    <option value="57">กระดาษ 57 มม.</option>
     <option value="80">กระดาษ 80 มม.</option>
-    <option value="58">กระดาษ 58 มม.</option>
   </select>
   <button class="ghost" id="go">โหลด</button>
   <span class="count" id="cnt">—</span>
   <span class="grow"></span>
-  <button id="pr">🖨 ปริ้นทั้งหมด</button>
+  <span class="hint">iPhone: ปุ่มแชร์ → พิมพ์</span>
+  <button id="pr">🖨 ปริ้น</button>
 </div>
 
 <div class="sheet" id="sheet"></div>
 
 <script>
+/* ════════════ QR (byte mode · EC level M · version 1-4) ════════════
+   ทำเองในไฟล์ ไม่ดึงจากเน็ต — ครัวจะได้ปริ้นได้แม้เน็ตอืด
+   ตรวจแล้วด้วย BarcodeDetector ของ Chrome ว่าอ่านกลับได้ตรงเลขออเดอร์ */
+const QR = (() => {
+  const EXP = new Uint8Array(512), LOG = new Uint8Array(256);
+  for (let i = 0, x = 1; i < 255; i++) { EXP[i] = x; LOG[x] = i; x <<= 1; if (x & 0x100) x ^= 0x11d; }
+  for (let i = 255; i < 512; i++) EXP[i] = EXP[i - 255];
+  const mul = (a, b) => (a && b) ? EXP[LOG[a] + LOG[b]] : 0;
+
+  function rsGen(n){ let g = [1];
+    for (let i = 0; i < n; i++){ const ng = new Array(g.length + 1).fill(0);
+      for (let j = 0; j < g.length; j++){ ng[j] ^= mul(g[j], EXP[i]); ng[j + 1] ^= g[j]; } g = ng; }
+    return g; }
+  function rsEnc(data, n){ const g = rsGen(n), res = new Array(n).fill(0);
+    for (const b of data){ const f = b ^ res[0]; res.shift(); res.push(0);
+      for (let i = 0; i < n; i++) res[i] ^= mul(g[i + 1], f); }
+    return res; }
+
+  // ระดับ M: [ข้อมูล(codeword), EC(codeword)] — เวอร์ชัน 1-4 บล็อกเดียว ยกเว้น v4 = 2 บล็อก
+  const V = { 1:{d:16,e:10,b:1}, 2:{d:28,e:16,b:1}, 3:{d:44,e:26,b:1}, 4:{d:64,e:18,b:2} };
+  const ALIGN = { 1:[], 2:[6,18], 3:[6,22], 4:[6,26] };
+
+  function make(text){
+    const bytes = new TextEncoder().encode(text);
+    let ver = 0;
+    for (const v of [1,2,3,4]) if (bytes.length + 2 <= V[v].d) { ver = v; break; }
+    if (!ver) throw new Error('ข้อความยาวเกินสำหรับ QR ขนาดนี้');
+    const { d: dataCw, e: ecCw, b: blocks } = V[ver];
+    const size = 17 + 4 * ver;
+
+    // ── ต่อบิต: โหมด byte(0100) + ความยาว 8 บิต + ข้อมูล + ปิดท้าย + ไบต์เติม
+    const bits = [];
+    const push = (val, len) => { for (let i = len - 1; i >= 0; i--) bits.push((val >> i) & 1); };
+    push(4, 4); push(bytes.length, 8);
+    for (const b of bytes) push(b, 8);
+    for (let i = 0; i < 4 && bits.length < dataCw * 8; i++) bits.push(0);
+    while (bits.length % 8) bits.push(0);
+    const dat = [];
+    for (let i = 0; i < bits.length; i += 8) dat.push(parseInt(bits.slice(i, i + 8).join(''), 2));
+    const PAD = [0xEC, 0x11];
+    for (let i = 0; dat.length < dataCw; i++) dat.push(PAD[i % 2]);
+
+    // ── แบ่งบล็อก + คำนวณ EC แล้ว interleave
+    const per = dataCw / blocks, dBlocks = [], eBlocks = [];
+    for (let i = 0; i < blocks; i++){ const chunk = dat.slice(i * per, (i + 1) * per);
+      dBlocks.push(chunk); eBlocks.push(rsEnc(chunk, ecCw)); }
+    const final = [];
+    for (let i = 0; i < per; i++) for (const b of dBlocks) final.push(b[i]);
+    for (let i = 0; i < ecCw; i++) for (const b of eBlocks) final.push(b[i]);
+
+    // ── วางลายบนตาราง
+    const m = Array.from({length:size}, () => new Array(size).fill(null));
+    const set = (r, c, v) => { if (r >= 0 && r < size && c >= 0 && c < size) m[r][c] = v; };
+    const finder = (r, c) => { for (let i = -1; i <= 7; i++) for (let j = -1; j <= 7; j++){
+      const inb = i >= 0 && i <= 6 && j >= 0 && j <= 6;
+      set(r + i, c + j, inb && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4))); } };
+    finder(0, 0); finder(0, size - 7); finder(size - 7, 0);
+    for (const a of ALIGN[ver]) for (const b of ALIGN[ver]){
+      if ((a < 8 && b < 8) || (a < 8 && b > size - 9) || (a > size - 9 && b < 8)) continue;
+      for (let i = -2; i <= 2; i++) for (let j = -2; j <= 2; j++)
+        set(a + i, b + j, Math.max(Math.abs(i), Math.abs(j)) !== 1); }
+    for (let i = 8; i < size - 8; i++){ m[6][i] = i % 2 === 0; m[i][6] = i % 2 === 0; }
+    m[size - 8][8] = true;                                  // โมดูลดำถาวร
+    for (let i = 0; i < 9; i++){ if (m[8][i] === null) m[8][i] = false; if (m[i][8] === null) m[i][8] = false; }
+    for (let i = 0; i < 8; i++){ if (m[8][size - 1 - i] === null) m[8][size - 1 - i] = false;
+                                if (m[size - 1 - i][8] === null) m[size - 1 - i][8] = false; }
+
+    const reserved = m.map(r => r.map(v => v !== null));
+
+    // ── ไล่ใส่ข้อมูลแบบซิกแซกจากขวาล่าง (ข้ามคอลัมน์จับเวลาที่ 6)
+    const dbits = []; for (const b of final) for (let i = 7; i >= 0; i--) dbits.push((b >> i) & 1);
+    let idx = 0, up = true;
+    for (let col = size - 1; col > 0; col -= 2){
+      if (col === 6) col--;
+      for (let n = 0; n < size; n++){ const row = up ? size - 1 - n : n;
+        for (const c of [col, col - 1]) if (!reserved[row][c]) m[row][c] = (dbits[idx++] || 0) === 1; }
+      up = !up; }
+
+    // ── เลือกมาสก์ที่คะแนนโทษต่ำสุด
+    const MASK = [ (r,c)=>(r+c)%2===0, (r,c)=>r%2===0, (r,c)=>c%3===0, (r,c)=>(r+c)%3===0,
+                   (r,c)=>((r>>1)+Math.floor(c/3))%2===0, (r,c)=>((r*c)%2+(r*c)%3)===0,
+                   (r,c)=>(((r*c)%2+(r*c)%3)%2)===0, (r,c)=>(((r+c)%2+(r*c)%3)%2)===0 ];
+    function penalty(g){
+      let p = 0, dark = 0;
+      for (let r = 0; r < size; r++) for (let c = 0; c < size; c++) if (g[r][c]) dark++;
+      const runs = arr => { let run = 1, s = 0;
+        for (let i = 1; i < arr.length; i++){ if (arr[i] === arr[i-1]) run++; else { if (run >= 5) s += run - 2; run = 1; } }
+        if (run >= 5) s += run - 2; return s; };
+      for (let r = 0; r < size; r++) p += runs(g[r]);
+      for (let c = 0; c < size; c++) p += runs(g.map(row => row[c]));
+      for (let r = 0; r < size - 1; r++) for (let c = 0; c < size - 1; c++)
+        if (g[r][c] === g[r][c+1] && g[r][c] === g[r+1][c] && g[r][c] === g[r+1][c+1]) p += 3;
+      p += Math.floor(Math.abs(dark * 100 / (size * size) - 50) / 5) * 10;
+      return p; }
+
+    let best = null, bestMask = 0, bestP = Infinity;
+    for (let k = 0; k < 8; k++){
+      const g = m.map((row, r) => row.map((v, c) => reserved[r][c] ? v : (v !== (MASK[k](r, c)))));
+      // ใส่บิตฟอร์แมต (ระดับ M = 00) ก่อนคิดคะแนน
+      let fmt = (0 << 3) | k, rem = fmt;
+      for (let i = 0; i < 10; i++) rem = (rem << 1) ^ (((rem >> 9) & 1) * 0x537);
+      const bitsF = (((fmt << 10) | (rem & 0x3ff)) ^ 0x5412);
+      const put = (r, c, b) => { g[r][c] = b === 1; };
+      for (let i = 0; i < 15; i++){
+        const b = (bitsF >> i) & 1;
+        if (i < 6) put(8, i, b); else if (i < 8) put(8, i + 1, b);
+        else if (i === 8) put(7, 8, b); else put(14 - i, 8, b);
+        if (i < 8) put(size - 1 - i, 8, b); else put(8, size - 15 + i, b); }
+      const p = penalty(g);
+      if (p < bestP){ bestP = p; best = g; bestMask = k; } }
+    return best;
+  }
+
+  function draw(text, scale){
+    const g = make(text), n = g.length, q = 2, px = scale || 4;
+    const cv = document.createElement('canvas');
+    cv.width = cv.height = (n + q * 2) * px;
+    const x = cv.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, cv.width, cv.height);
+    x.fillStyle = '#000';
+    for (let r = 0; r < n; r++) for (let c = 0; c < n; c++) if (g[r][c]) x.fillRect((c + q) * px, (r + q) * px, px, px);
+    return cv;
+  }
+  return { draw };
+})();
+
+/* ════════════ ข้อมูล ════════════ */
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/';
 const ANON= 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const HDR = { apikey: ANON, Authorization: 'Bearer ' + ANON };
 
-// เวลาไทยเสมอ (นัท/ผู้ใช้บางคนอยู่คนละโซนเวลา — คำนวณจากเครื่องจะเพี้ยนไป 1 วัน)
 function todayTH(){
   const p = new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
   const g = t => p.find(x=>x.type===t).value;
   return `${g('year')}-${g('month')}-${g('day')}`;
 }
-const esc = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const esc  = s => String(s??'').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const baht = n => Number(n||0).toLocaleString('th-TH',{minimumFractionDigits:2,maximumFractionDigits:2});
-const thDate = ymd => { if(!ymd) return '-'; const [y,m,d]=ymd.split('-'); return `${d}/${m}/${y}`; };
 
 const qs = new URLSearchParams(location.search);
 const $d=document.getElementById('d'), $o=document.getElementById('o'), $w=document.getElementById('w');
 $d.value = qs.get('date') || todayTH();
 $o.value = qs.get('order') || '';
-$w.value = qs.get('w') === '58' ? '58' : '80';
+$w.value = qs.get('w') === '80' ? '80' : '57';
 applyWidth();
-
-function applyWidth(){ document.documentElement.style.setProperty('--w', $w.value + 'mm'); }
+function applyWidth(){
+  const w = $w.value === '80' ? [80,72] : [57,48];
+  document.documentElement.style.setProperty('--paper', w[0]+'mm');
+  document.documentElement.style.setProperty('--ink',   w[1]+'mm');
+}
 $w.addEventListener('change', applyWidth);
 document.getElementById('pr').onclick = () => window.print();
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
-// ชื่อเล่นเมนู: ตัดตัวอักษรนำหน้าออกเหมือนที่หน้าครัวใช้ (S022 -> 022)
-const shortCode = c => String(c||'').replace(/^[A-Za-z]+/,'') || String(c||'');
+let MENU = {};   // code -> {subcode, isNew}
 
 async function load(){
   const sheet = document.getElementById('sheet');
   sheet.innerHTML = '<div class="empty">กำลังโหลด…</div>';
   document.getElementById('cnt').textContent = '—';
+
+  // เมนู: เอาชื่อเล่น (subcode) + ดูว่าเป็นเมนูใหม่ไหม — ทำก่อน แล้วค่อยโหลดออเดอร์ (อ่านทีละอย่าง)
+  try{
+    const r = await fetch(`${SB}menu_items?select=code,subcode,created_at&limit=1000`, {headers:HDR});
+    const j = await r.json();
+    const NEW_DAYS = 21, now = Date.now();
+    MENU = {}; for (const m of j) MENU[m.code] = {
+      sub: (m.subcode||'').trim(),
+      isNew: m.created_at ? (now - new Date(m.created_at).getTime()) < NEW_DAYS*864e5 : false
+    };
+  }catch(e){ MENU = {}; }
 
   const cols = 'order_number,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
   const filter = $o.value.trim()
@@ -160,73 +311,113 @@ async function load(){
     sheet.innerHTML = `<div class="empty">โหลดไม่สำเร็จ<br><small>${esc(String(err).slice(0,300))}</small></div>`;
     return;
   }
-
   if(!rows.length){
     sheet.innerHTML = '<div class="empty">ไม่มีออเดอร์ของวันนี้ในระบบ<br><small>ช่วงรอยต่อ Hato — ใบที่ยังอยู่ใน Hato อย่างเดียวจะไม่ขึ้นที่นี่</small></div>';
     document.getElementById('cnt').textContent = '0 ใบ';
     return;
   }
 
+  // ชื่อเซ็ต/แพคเกจ (ถ้ามี) — อ่านทีละคำสั่ง ไม่ยิงพร้อมกัน
+  const pkgIds = [...new Set(rows.flatMap(o => (o.order_items||[])
+    .map(i => (String(i.notes||'').match(/^pkg:([0-9a-f-]{8,})/i)||[])[1]).filter(Boolean)))];
+  let PKG = {};
+  if (pkgIds.length){
+    try{
+      const r = await fetch(`${SB}packages?select=id,name,base_price&id=in.(${pkgIds.join(',')})`, {headers:HDR});
+      for (const p of await r.json()) PKG[p.id] = p;
+    }catch(e){}
+  }
+
   document.getElementById('cnt').textContent = rows.length + ' ใบ';
-  sheet.innerHTML = rows.map(slip).join('');
+  sheet.innerHTML = rows.map(o => slip(o, PKG)).join('');
+
+  // วาด QR หลังใส่ HTML แล้ว
+  document.querySelectorAll('[data-qr]').forEach(el => {
+    try { el.appendChild(QR.draw(el.dataset.qr, 4)); }
+    catch(e){ el.innerHTML = '<div style="font-size:9px">(QR ไม่ได้)</div>'; }
+  });
 }
 
-function slip(o){
-  const items = (o.order_items||[]);
-  // ยุบรายการซ้ำให้เหลือบรรทัดเดียว แล้วรวมจำนวน (ครัวเคยเจอบรรทัดซ้ำ 18 บรรทัด — N-40)
-  const map = new Map();
-  for(const it of items){
-    const key = (it.menu_code||'') + '|' + (it.menu_name||'');
-    const cur = map.get(key) || { code:it.menu_code, name:it.menu_name, qty:0, price:0 };
-    cur.qty  += Number(it.quantity||0);
-    cur.price = Number(it.unit_price||0);
-    map.set(key, cur);
+function slip(o, PKG){
+  // จัดกลุ่ม: เซ็ต/แพคเกจ · Meal Plan · เมนูเดี่ยว
+  const groups = new Map(), singles = new Map();
+  for (const it of (o.order_items||[])){
+    const n = String(it.notes||'');
+    const pkg = (n.match(/^pkg:([0-9a-f-]{8,})/i)||[])[1];
+    const mp  = /^meal_plan:/i.test(n) ? n : null;
+    const key = pkg ? 'pkg:'+pkg : mp ? 'mp' : null;
+    if (key){
+      const g = groups.get(key) || { key, pkg, mp, items:new Map() };
+      const ik = it.menu_code+'|'+it.menu_name;
+      const cur = g.items.get(ik) || { code:it.menu_code, name:it.menu_name, qty:0 };
+      cur.qty += Number(it.quantity||0); g.items.set(ik, cur); groups.set(key, g);
+    } else {
+      const ik = it.menu_code+'|'+it.menu_name;
+      const cur = singles.get(ik) || { code:it.menu_code, name:it.menu_name, qty:0, price:Number(it.unit_price||0) };
+      cur.qty += Number(it.quantity||0); singles.set(ik, cur);
+    }
   }
-  const list = [...map.values()];
-  const boxes = list.reduce((s,i)=>s+i.qty,0);
+
+  const nameOf = it => {
+    const m = MENU[it.code] || {};
+    const sub = m.sub ? `<span class="code">${esc(m.sub)}</span> ` : '';
+    const cd  = it.code ? `<span class="dim">${esc(it.code)}</span> ` : '';
+    const nw  = m.isNew ? '<span class="new">NEW</span>' : '';
+    return sub + cd + esc(it.name) + nw;
+  };
+
+  let boxes = 0, body = '';
+  for (const g of groups.values()){
+    const p = g.pkg ? PKG[g.pkg] : null;
+    const title = p ? p.name : (g.mp ? 'Meal Plan ' + g.mp.replace(/^meal_plan:/i,'').replace(/:/g,' ') : 'เซ็ต');
+    const price = p && p.base_price ? baht(p.base_price) : '';
+    const subs = [...g.items.values()];
+    boxes += subs.reduce((s,i)=>s+i.qty,0);
+    body += `<div class="line"><div class="q">1</div><div class="n">${esc(title)}</div><div class="p">${price}</div></div>`;
+    body += subs.map(i => `<div class="line sub"><div class="n">x${i.qty} ${nameOf(i)}</div></div>`).join('');
+    body += '<div class="brk"></div>';
+  }
+  for (const i of singles.values()){
+    boxes += i.qty;
+    body += `<div class="line"><div class="q">${i.qty}</div><div class="n">${nameOf(i)}</div><div class="p">${i.price?baht(i.price*i.qty):''}</div></div><div class="brk"></div>`;
+  }
 
   const fee  = Number(o.delivery_fee||0);
   const disc = Number(o.discount_amount||0);
-  const sub  = Number(o.subtotal|| (Number(o.total||0)-fee+disc) );
-
-  const paid = o.payment_status === 'paid' ? '✅ โอนแล้ว'
-             : o.payment_status === 'pending_review' ? '🧾 แนบสลิปแล้ว รอตรวจ'
-             : '⏳ ยังไม่โอน';
+  const sub  = Number(o.subtotal ?? (Number(o.total||0) - fee + disc));
+  const pay  = o.payment_status === 'paid' ? 'โอนแล้ว'
+             : o.payment_status === 'pending_review' ? 'แนบสลิปแล้ว รอตรวจ' : 'ยังไม่โอน';
 
   return `
-  <div class="slip">
+  <div class="slip"><div class="in">
     <div class="logo">UNDER<br>360</div>
     <div class="shop">Under 360</div>
     <div class="ordno">#${esc(o.order_number)}</div>
+    <div class="qrwrap" data-qr="${esc(o.order_number)}"></div>
+    <div class="qrcap">QR Code เลขออเดอร์</div>
 
-    <div class="hr"></div>
-    <div class="row"><div class="k">ชื่อ</div><div class="v">${esc(o.customer_name)||'-'}</div></div>
-    <div class="row"><div class="k">เบอร์โทร</div><div class="v">${esc(o.customer_phone)||'-'}</div></div>
-    <div class="row"><div class="k">วันเวลาส่ง</div><div class="v">${thDate(o.delivery_date)} · ${esc(o.time_slot_label||o.time_slot||'-')}</div></div>
-    <div class="row"><div class="k">ที่อยู่</div><div class="v">${esc(o.delivery_address)||'⚠️ ไม่มีที่อยู่'}</div></div>
+    <div class="dash"></div>
+    <div class="sec">ข้อมูลการจัดส่ง</div>
+    <div class="kv"><div class="k">ชื่อ</div><div class="v">${esc(o.customer_name)||'-'}</div></div>
+    <div class="kv"><div class="k">เบอร์โทร</div><div class="v">${esc(o.customer_phone)||'-'}</div></div>
+    <div class="kv"><div class="k">วันเวลาส่ง</div><div class="v">${esc(o.delivery_date||'-')}, ${esc(o.time_slot_label||o.time_slot||'-')}</div></div>
+    <div class="kv"><div class="k">ที่อยู่</div><div class="v">${esc(o.delivery_address)||'-ไม่มีข้อมูล-'}</div></div>
+    <div class="kv"><div class="k">รายละเอียด</div><div class="v">${esc(o.notes)||'-ไม่มีข้อมูล-'}</div></div>
 
-    <div class="flag">${o.want_utensils ? '✓ ใส่ช้อนส้อม' : '✗ ไม่รับช้อนส้อม / ตะเกียบ / หลอด'}</div>
+    <div class="flag">${o.want_utensils ? '✓ ใส่ช้อนส้อม / ตะเกียบ / หลอด' : '✕ ไม่รับช้อนส้อม / ตะเกียบ / หลอด'}</div>
 
-    <div class="ihead"><div class="n">จำนวน</div><div class="t">รายการ</div><div class="p">ราคา</div></div>
-    ${list.map(i => `
-      <div class="item">
-        <div class="n">${i.qty}</div>
-        <div class="t">${i.code ? `<b>${esc(shortCode(i.code))}</b> ` : ''}${esc(i.name)}</div>
-        <div class="p">${i.price ? baht(i.price*i.qty) : ''}</div>
-      </div>`).join('')}
+    <div class="thead"><div class="q">จำนวน</div><div class="n">สินค้า</div><div class="p">ราคา</div></div>
+    ${body}
 
-    <div class="hr"></div>
     <div class="tot"><span>รวม ${boxes} กล่อง</span><span>${baht(sub)}</span></div>
-    ${fee  ? `<div class="tot"><span>ค่าส่ง</span><span>${baht(fee)}</span></div>` : ''}
+    <div class="tot"><span>ค่าส่ง</span><span>${baht(fee)}</span></div>
+    <div class="tot"><span>ยอดรวม</span><span>${baht(sub + fee)}</span></div>
     ${disc ? `<div class="tot"><span>ส่วนลด</span><span>-${baht(disc)}</span></div>` : ''}
-    <div class="tot big"><span>ยอดชำระทั้งสิ้น</span><span>${baht(o.total)}</span></div>
-    <div class="tot"><span>การชำระเงิน</span><span>${paid}</span></div>
-
-    ${o.notes ? `<div class="note"><b>โน้ต:</b> ${esc(o.notes)}</div>` : ''}
+    <div class="tot b"><span>ยอดชำระทั้งสิ้น</span><span>${baht(o.total)}</span></div>
+    <div class="tot"><span>การชำระเงิน</span><span>${pay}</span></div>
 
     <div class="sign"><div>ผู้จัดสินค้า</div><div>ผู้ส่ง</div></div>
-    <div class="src">พิมพ์จากระบบ Under360</div>
-  </div>`;
+  </div></div>`;
 }
 
 load();
