@@ -18,11 +18,18 @@
   .tools{display:flex;gap:6px;margin-bottom:10px}
   .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
 
-  .warnbox{background:var(--yelbg);border:1.5px solid #FCD34D;border-radius:10px;padding:10px 12px;margin-bottom:12px}
-  .warnbox .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
-  .warnbox ul{margin:0;padding-left:18px}
-  .warnbox li{font-size:12.5px;font-weight:700;color:#78350F;margin:4px 0;line-height:1.35}
-  .warnbox .tot{margin-top:8px;font-size:12.5px;font-weight:900;color:var(--yel)}
+  .bigred{background:var(--redbg);border:3px solid var(--red);border-radius:12px;padding:14px 14px;margin-bottom:14px}
+  .bigred .t{font-weight:900;color:var(--red);font-size:20px;margin-bottom:8px;text-align:center;letter-spacing:.3px}
+  .bigred ul{margin:0;padding-left:20px}
+  .bigred li{font-size:14px;font-weight:800;color:#7F1D1D;margin:7px 0;line-height:1.4}
+  .bigred li b{font-size:16px}
+  .bigred .tot{margin-top:10px;font-size:14px;font-weight:900;color:var(--red);text-align:center;border-top:2px dashed #FCA5A5;padding-top:8px}
+
+  .postpone{background:#F3F4F6;border:1px dashed #9CA3AF;border-radius:10px;padding:8px 11px;margin-bottom:12px;font-size:12.5px;color:#374151;font-weight:700}
+
+  .alert{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .alert .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
+  .alert ul{margin:0;padding-left:18px}.alert li{font-size:12px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.3}
 
   .infobox{background:#F3F4F6;border:1px solid var(--line);border-radius:10px;padding:8px 11px;margin-bottom:12px;font-size:12px;color:#374151;font-weight:700;line-height:1.4}
 
@@ -54,34 +61,44 @@
 <div class="wrap">
 
 <h1>📦 ใบจัดของ — จันทร์ 10 ส.ค.</h1>
-<div class="sub">16 ออเดอร์ทำแน่ · 98 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ</div>
+<div class="sub">15 ออเดอร์ทำแน่ · 91 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ</div>
 <div class="tools">
   <button onclick="clearAll()">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()">🖨 พิมพ์</button>
 </div>
 
-<div class="warnbox">
-  <div class="t">⚠️ รอแอดมินยืนยันก่อนจัด — ยังไม่นับรวมในยอด 98 กล่อง</div>
+<div class="bigred">
+  <div class="t">⛔ ยังไม่มีเมนู — ติดต่อกิฟ</div>
   <ul>
-    <li><b>โมจิ (Moji Phavinee)</b> — HP รอบ 4/12 · เป้า 7 กล่อง · สถานะ "ขอข้ามรอบ" ยังไม่ยืนยัน — เมนูยังว่าง</li>
-    <li><b>ฝน (Numfon)</b> — HP รอบ 15/12 · สถานะ "ขอข้ามรอบ" + ตัวเลขในระบบขัดกันเอง (2 / 3 / 0 กล่อง แล้วแต่จุดที่ดู) — ห้ามจัดจนกว่าจะเช็ค</li>
-    <li><b>สิริพร ตาจุมปา</b> — LC รอบ 1/3 · เป้า 7 กล่อง · ยังไม่มีใครแพลนเมนูให้เลย</li>
-    <li><b>New|YD.K🏸</b> — Meal Plan HP ทดลอง 7 กล่อง ×2 ใบ (สั่งซ้ำ? เบอร์เดียวกัน วันเดียวกัน) — สถานะออเดอร์กับสถานะแผนส่งขัดกันเอง (ใบหนึ่งบอกยืนยัน อีกระบบบอกยกเลิก)</li>
-    <li><b>ZINE 🧿🪬</b> — HYROX SET 6 กล่อง เลื่อนจาก 11 มา 10 ส.ค. — สถานะขัดแย้งเหมือนกัน + เมนูยังไม่จัด (ต้องให้ครัวเลือกเอง)</li>
-    <li><b>พีช (Peachyz Sumota)</b> — ไม่มีออเดอร์ในระบบเลย ทั้งที่เป็นลูกค้าประจำ — ถามแอดมินว่าจะสั่งแทนไหม</li>
+    <li><b>สิริพร ตาจุมปา</b> — LC รอบ 1/3 — ค้าง <b>7 กล่อง</b> — ยังไม่มีใครจัดเมนู</li>
+    <li><b>โมจิ (Moji Phavinee)</b> — HP รอบ 4/12 — ค้าง <b>7 กล่อง</b> — ยังไม่มีเมนูจริงในระบบ</li>
+    <li><b>จุฑามณี เขตขุนทด (ApplePie)</b> — LC ทดลอง — ค้าง <b>7 กล่อง</b> — ออเดอร์ไม่มีรายการอาหาร (กิฟแจ้ง "ไม่มีป้าย Meal")</li>
   </ul>
-  <div class="tot">ทำแน่ 98 กล่อง · ค้างรอยืนยันอีก ~30 กล่อง + พีชไม่ทราบจำนวน</div>
+  <div class="tot">รวมค้าง = 21 กล่อง — ยังไม่ต้องจัด รอกิฟยืนยันเมนูก่อน</div>
+</div>
+
+<div class="postpone">
+  🕒 <b>ฝน (Numfon) — เลื่อนรับ</b> (กิฟแจ้ง 10 ส.ค.) — MP-0810-017 เดิม 2 กล่อง — <b>ไม่ต้องจัดวันนี้</b>
+</div>
+
+<div class="alert">
+  <div class="t">📌 หมายเหตุอื่น (ไม่ต้องทำอะไรตอนนี้)</div>
+  <ul>
+    <li>New|YD.K🏸 ×2 ใบ และ ZINE (HYROX SET) — สถานะขัดแย้งในระบบ ไม่อยู่ใน 15 รายชื่อวันนี้</li>
+    <li>พีช (Peachyz Sumota) — ไม่มีออเดอร์ในระบบเลย ยังไม่อยู่ในรายชื่อวันนี้</li>
+  </ul>
 </div>
 
 <div class="infobox">
-  ℹ️ หน้า KQ แจ้งฝั่งสต็อค = 22 ออเดอร์/29 รายการ แต่ฟ้าตรวจ DB ตรงๆ ได้แค่ 4 ออเดอร์/14 กล่อง — ตัวเลขไม่ตรงกัน ช่วยแอดมินดูให้ทีว่ากรองต่างกันตรงไหน (ดู <code>docs/FAH_20260810_today.md</code>)
+  ℹ️ หน้า KQ ฝั่งสต็อคเคยแจ้ง 22 ออเดอร์/29 รายการ แต่ฟ้าตรวจ DB ตรงๆ ได้แค่ 4 ออเดอร์/14 กล่อง — ยังไม่ตรงกัน ช่วยแอดมินดูให้ที (ดู <code>docs/FAH_20260810_today.md</code>)
 </div>
 
 <div id="app"></div>
 
 <div class="foot">
-  <b>รวมทำแน่ 98 กล่อง — LC 9 คน · HP 3 คน · สต็อก 4 ออเดอร์</b><br>
-  LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง · เมนูสต็อคใช้สูตรเดิม
+  <b>รวมทำแน่ 91 กล่อง — LC 8 คน · HP 3 คน · สต็อก 4 ออเดอร์</b><br>
+  LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง · เมนูสต็อคใช้สูตรเดิม<br>
+  ⛔ ค้างรอเมนู 21 กล่อง (ดูกล่องแดงบนสุด) · 🕒 ฝนเลื่อนรับ ไม่นับในยอดวันนี้
 </div>
 </div>
 
@@ -95,10 +112,9 @@ var M = {
  '8':{n:'ข้าวคลุกกะปิ', p:'เนื้อรวม'},
  '14':{n:'เกี๊ยวน้ำอกไก่และกุ้ง', p:'อกไก่+กุ้ง'},
  '16':{n:'ไข่ม้วนไส้ผักโขมชีส ขนมปัง สลัดผัก', p:'ไข่'},
- '76':{n:'แซลมอนซอสทาท่า มันบด', p:'แซลมอน'},
- '70':{n:'Sushi Bake แซลมอน อโวคาโด', p:'แซลมอน'}
+ '76':{n:'แซลมอนซอสทาท่า มันบด', p:'แซลมอน'}
 };
-// ── ลูกค้า (กล่องทำแน่เท่านั้น — คนค้างสถานะอยู่ในกล่องเหลืองด้านบน ไม่อยู่ที่นี่) ──
+// ── ลูกค้า (เฉพาะ 15 ออเดอร์ทำแน่ตามที่กิฟยืนยัน — ฝนถูกตัดออก, 3 คนขาดเมนูอยู่กล่องแดงด้านบนไม่ได้อยู่ที่นี่) ──
 var C = [
  {g:'lc', n:'โอ๋ (Oh thanaporn) — LC', line:'MP-0810-018 · 0994639369', box:7, items:['1','2','6','8','14','16','76'],
   note:'🔴 แพ้ทูน่า/เนื้อ/ของดิบ — ตัดเมนู 3 แทนด้วย 76'},
@@ -109,8 +125,6 @@ var C = [
  {g:'lc', n:'Milk', line:'MP-0810-015 · 0837035353', box:7, items:['1','1','2','3','6','8','14'],
   note:'📌 6 กล่อง+เมนู 1 ซ้ำ 1 กล่อง = รวม 7 — ไม่มีเมนู 16'},
  {g:'lc', n:'มิ้ม (Mimchan)', line:'U-0810-004 · 0995969636', box:7, items:['1','2','3','6','8','14','16']},
- {g:'lc', n:'จุฑามณี (ApplePie)', line:'U-0810-008 · 0896111956', box:7, items:['76','70','1','6','8','14','16'],
-  note:'🔴 ไม่มีเมนู 2 และ 3 — แทนด้วย 76 + 70'},
  {g:'lc', n:'มีมี่ (Mimi)', line:'U-0810-009 · 0813451461', box:7, items:['1','2','3','6','8','14','16']},
  {g:'lc', n:'กนกวรรณ (kanokwan)', line:'U-0810-011 · 0894976818', box:7, items:['1','2','3','6','8','14','16']},
  {g:'lc', n:'พงศ์พลืน (Chyz/120)', line:'U-0810-010 · 0656425669', box:7, items:['1','2','3','6','8','14','16']},
@@ -126,8 +140,8 @@ var C = [
   note:'📌 คอนโด The Parkland จรัญ-ปิ่นเกล้า อาคาร C'},
  {g:'stk', n:'Pattarin Pattarangoon', line:'U-0810-007 · 0850728228', box:4, stock:['S205 ข้าวผัดกิมจิอกไก่ซอสเผ็ด','S068 ข้าวอกไก่ผัดขิง','No5 เส้นหมี่น้ำยาทูน่า(ไร้)กะทิอกไก่','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม']}
 ];
-var G = { lc:'■ LC — เนื้อ 120g (9 คน)', hp:'■ HP — เนื้อ 170g (3 คน)', stk:'■ สต็อก/ทั่วไป (4 ออเดอร์)' };
-var done = JSON.parse(localStorage.getItem('pack0810')||'{}');
+var G = { lc:'■ LC — เนื้อ 120g (8 คน)', hp:'■ HP — เนื้อ 170g (3 คน)', stk:'■ สต็อก/ทั่วไป (4 ออเดอร์)' };
+var done = JSON.parse(localStorage.getItem('pack0810b')||'{}');
 function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
 function render(){
   var h='', lastG='';
@@ -155,8 +169,8 @@ function render(){
   });
   document.getElementById('app').innerHTML=h;
 }
-function tog(k,el){ done[k]=!done[k]; if(!done[k]) delete done[k]; localStorage.setItem('pack0810',JSON.stringify(done)); el.classList.toggle('done'); }
-function clearAll(){ done={}; localStorage.removeItem('pack0810'); render(); }
+function tog(k,el){ done[k]=!done[k]; if(!done[k]) delete done[k]; localStorage.setItem('pack0810b',JSON.stringify(done)); el.classList.toggle('done'); }
+function clearAll(){ done={}; localStorage.removeItem('pack0810b'); render(); }
 render();
 </script>
 </body>
