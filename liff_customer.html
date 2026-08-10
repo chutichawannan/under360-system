@@ -2727,7 +2727,11 @@ async function submitOrder() {
       delivery_lng:    cusPin ? cusPin.getPosition().lng() : null,
       delivery_distance_km: (distKm!=null) ? Number(distKm.toFixed(3)) : null,
       subtotal:         o.sub,
-      discount_amount:  o.discount,
+      // N-61 · เดิมเก็บ o.discount ตรงๆ ซึ่งบางใบไม่ตรงกับที่ลดจริง
+      //   U-0810-003 เก็บ 137 ทั้งที่ไม่มีโค้ดและเก็บเงินเต็ม · U-0810-002 เก็บ 187 แต่ลดจริง ฿50
+      //   → f-track เอาไปคิดกำไรแล้วเพี้ยนแบบเงียบๆ ไม่มีอะไรฟ้อง
+      // คิดจากเลขที่เชื่อได้แทน: ส่วนลดจริง = (ค่าของ + ค่าส่ง) − ยอดที่เก็บเงินจริง
+      discount_amount:  Math.max(0, Math.round((Number(o.sub)||0) + (Number(deliveryFee)||0) - (Number(grandTotal)||0))),
       promotion_code:   allPromoCodes.length ? allPromoCodes.join(',') : null, // โค้ดกรอกเอง + โปรอัตโนมัติ (คั่นด้วย , · เก็บรายงาน parity เท่านั้น ไม่ใช่ FK)
       total:            grandTotal,
       status:           'confirmed',
@@ -2768,6 +2772,32 @@ async function submitOrder() {
         }
       } catch(e){ console.error('slip upload failed:', e); }
     }
+    /* ── N-60 · กันลูกค้าสั่งซ้ำโดยไม่ตั้งใจ ─────────────────────────────────
+       เคสจริง 8 ส.ค.: New|YD.K กดสั่ง HP ทดลอง 7 กล่อง 2 ใบ ห่างกัน 4 ชม.
+       ที่อยู่คนละบรรทัดแต่พิกัดห่างกัน 10 เมตร = ที่เดียวกัน · ทั้งคู่ยังไม่จ่าย
+       ถ้าไม่มีใครเห็น = ครัวทำ 14 กล่อง ส่ง 2 ชุด ฟรี
+       → เตือนก่อนบันทึก ให้ลูกค้ายืนยันเอง (ไม่บล็อก เพราะบางคนตั้งใจสั่ง 2 ใบจริง) */
+    try {
+      const _uid = lineProfile && lineProfile.userId;
+      if (_uid) {
+        const since = new Date(Date.now() - 24*3600*1000).toISOString();
+        const dup = await sb.from('orders')
+          .select('order_number,total,created_at')
+          .eq('line_uid', _uid).eq('delivery_date', selDate)
+          .neq('status', 'cancelled').gte('created_at', since).limit(3);
+        const hit = (dup.data || []).find(x => Math.abs(Number(x.total) - Number(grandTotal)) < 1);
+        if (hit) {
+          const ok = confirm(
+            'คุณเพิ่งสั่งรายการที่เหมือนกันไปแล้วนะครับ\n\n' +
+            'เลขออเดอร์ ' + hit.order_number + ' · ยอด ฿' + Number(hit.total).toLocaleString() + '\n' +
+            'ส่งวันเดียวกัน (' + selDate + ')\n\n' +
+            'ถ้าตั้งใจสั่งเพิ่มอีกชุด กด "ตกลง" ได้เลย\n' +
+            'ถ้าไม่ได้ตั้งใจ กด "ยกเลิก" — ออเดอร์เดิมยังอยู่ครบ');
+          if (!ok) { if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } return; }
+        }
+      }
+    } catch(e) { console.error('dup check:', e); }   // เช็คไม่ได้ = ปล่อยผ่าน ห้ามบล็อกการสั่งของลูกค้า
+
     let { data: ord, error: oErr } = await sb.from('orders').insert(orderPayload).select().single();
     // ยังไม่ได้รัน sql_slip_url.sql → คอลัมน์ slip_url ไม่มี → ถอยคอลัมน์นั้นแล้วสั่งใหม่ (ห้ามให้ออเดอร์ลูกค้าพังเพราะ SQL ยังไม่รัน)
     if (oErr && 'slip_url' in orderPayload && /slip_url/i.test(oErr.message||'')) {
