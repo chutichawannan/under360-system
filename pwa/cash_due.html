@@ -26,6 +26,10 @@ header{position:sticky;top:0;z-index:20;background:rgba(14,21,18,.97);
   border-radius:10px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer}
 .btn:active{background:var(--g-dim)}
 .btn.p{border-color:var(--g);color:var(--g)}
+/* ปุ่มยืนยันเงินเข้า = ปุ่มหลักของหน้านี้ ต้องเด่นกว่าปุ่มก๊อป */
+.btn.ok{background:var(--g);border-color:var(--g);color:#fff}
+.btn.ok:active{filter:brightness(.92)}
+.btn.ok:disabled{opacity:.6;cursor:default}
 .right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
 main{padding:14px}
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:18px}
@@ -83,7 +87,7 @@ a{color:var(--blue)}
 
 <main>
   <div class="note">
-    <b>หน้านี้อ่านอย่างเดียว</b> — ไม่แก้สถานะเงินในระบบ (การกด “โอนแล้ว” ทำที่หน้าออเดอร์ใน OH เหมือนเดิม)<br>
+    กด <b>✅ ได้เงินแล้ว</b> ที่ใบไหนก็ได้ — บันทึกลงระบบทันที พร้อมจดว่าใครกด (ไม่ต้องเปิดหน้าออเดอร์อีกจอ)<br>
     กรอง <b>ยอด &gt; ฿0</b> · ตัดออเดอร์ทดสอบออกอัตโนมัติ · นับเฉพาะ <b>ยังไม่จ่าย + สลิปรอตรวจ</b><br>
     ⛔ <b>ไม่นับใบยุค Hato (ก่อน 8 ส.ค. 2026) เลย</b> — จบไปแล้วที่นั่น แอดมินเคลียร์เองเรียบร้อย (นัทยืนยัน 10 ส.ค.)
   </div>
@@ -124,9 +128,10 @@ async function load(){
 
   // sequential read เท่านั้น (กฎโปรเจค) + มี filter วันที่กัน 1000-cap
   const { data, error } = await sb.from('orders')
-    .select('order_number,customer_name,customer_phone,total,delivery_date,payment_status,status,source,slip_url,payment_slip_url,notes,created_at')
+    .select('id,order_number,customer_name,customer_phone,total,delivery_date,payment_status,status,source,slip_url,payment_slip_url,notes,created_at')
     .gt('total', 0)
-    .in('payment_status', ['unpaid','pending'])
+    /* ระบบใช้ 'pending_review' ตอนลูกค้าอัพสลิปเอง — ของเดิมใส่แค่ 'pending' ใบพวกนั้นเลยหายจากใบทวง */
+    .in('payment_status', ['unpaid','pending','pending_review'])
     .gte('delivery_date', from > BETA_START ? from : BETA_START)
     .neq('status','cancelled')
     .order('delivery_date', {ascending:true})
@@ -177,12 +182,14 @@ function render(today){
           <span>${esc(r.order_number)}</span>
           <span>ส่ง ${r.delivery_date} · ${lateTxt}</span>
           ${r.customer_phone?`<span>📞 ${esc(r.customer_phone)}</span>`:'<span style="color:var(--warn)">ไม่มีเบอร์</span>'}
-          ${r.payment_status==='pending'
+          ${(r.payment_status==='pending'||r.payment_status==='pending_review')
             ? `<span class="tag slip">🧾 มีสลิป รอตรวจ</span>`
             : `<span class="tag no">ยังไม่จ่าย</span>`}
           ${slip?`<a href="${esc(slip)}" target="_blank">ดูสลิป</a>`:''}
         </div>
         <div class="acts">
+          <!-- ติ๊กได้ในหน้าเดียว ไม่ต้องเด้งไปหน้าออเดอร์ (นัทเคาะ 10 ส.ค.) · บันทึกด้วยว่าใครกด -->
+          <button class="btn ok" onclick="markPaid('${id}',this)">✅ ได้เงินแล้ว</button>
           <button class="btn" onclick="toggleMsg('${id}')">✏️ ข้อความทวง</button>
           <button class="btn p" onclick="copyMsg('${id}')">📋 คัดลอก</button>
           ${r.customer_phone?`<button class="btn" onclick="copyTxt('${esc(r.customer_phone)}')">📞 คัดลอกเบอร์</button>`:''}
@@ -201,7 +208,7 @@ function render(today){
 }
 
 function mkMsg(r){
-  const slipDone = r.payment_status==='pending';
+  const slipDone = (r.payment_status==='pending'||r.payment_status==='pending_review');
   if(slipDone){
     return `สวัสดีค่ะคุณ${r.customer_name} 🙏
 ทางร้าน Under360 ได้รับสลิปของออเดอร์ ${r.order_number} (${baht(r.total)}) แล้วนะคะ
@@ -214,6 +221,39 @@ function mkMsg(r){
 โอนแล้วส่งสลิปกลับมาในแชทนี้ได้เลยค่ะ ขอบคุณมากค่ะ`;
 }
 
+/* ── ติ๊ก "ได้เงินแล้ว" จากหน้านี้เลย ─────────────────────────────────────
+   เดิมหน้านี้อ่านอย่างเดียว กิ๊ฟต้องเปิดหน้าออเดอร์อีกจอเพื่อกดสถานะ = หลายจังหวะเกินไป
+   บันทึกชื่อคนกดด้วย (payment_confirmed_by/at) เพราะเป็นการยืนยันว่าเงินเข้าจริง — ต้องรู้ว่าใครยืนยัน */
+function whoAmI(){
+  let n=''; try{ n=localStorage.getItem('lastNickname')||''; }catch(e){}
+  if(!n){
+    n=(window.prompt('ใส่ชื่อคนกดก่อนนะคะ (จำไว้ในเครื่องนี้)\nเช่น กิ๊ฟ')||'').trim();
+    if(!n) return null;
+    try{ localStorage.setItem('lastNickname',n); }catch(e){}
+  }
+  return n;
+}
+async function markPaid(id, btn){
+  const r=(window._IDX||{})[id]; if(!r) return;
+  const who=whoAmI(); if(!who) return toast('ยังไม่ได้ใส่ชื่อคนกด');
+  if(!window.confirm(`ยืนยันว่าได้รับเงินแล้ว?\n\n${r.customer_name} · ${r.order_number}\nยอด ${baht(r.total)}\n\nคนกด: ${who}`)) return;
+  btn.disabled=true; const old=btn.textContent; btn.textContent='กำลังบันทึก…';
+  try{
+    const { error } = await sb.from('orders').update({
+      payment_status:'paid',
+      payment_confirmed_by:who,
+      payment_confirmed_at:new Date().toISOString()
+    }).eq('id', r.id);
+    if(error) throw error;
+    /* เอาออกจากลิสต์ทันที — กิ๊ฟจะได้ไม่ทวงซ้ำคนที่จ่ายแล้ว */
+    ROWS = ROWS.filter(x=>x.id!==r.id);
+    render(thToday());
+    toast('✅ บันทึกแล้ว · '+r.customer_name);
+  }catch(e){
+    btn.disabled=false; btn.textContent=old;
+    toast('บันทึกไม่สำเร็จ: '+(e.message||e));
+  }
+}
 function toggleMsg(id){ document.getElementById('m-'+id).classList.toggle('on'); }
 function copyMsg(id){ copyTxt(mkMsg(window._IDX[id])); }
 function copyTxt(t){
@@ -228,7 +268,7 @@ function copyAll(){
     const late = daysBetween(r.delivery_date, today);
     out += `${late>0?'🔴':(late===0?'🟡':'🟢')} ${r.customer_name} · ${baht(r.total)} · ${r.order_number} · ส่ง ${r.delivery_date}`
         + (r.customer_phone?` · ${r.customer_phone}`:' · ไม่มีเบอร์')
-        + (r.payment_status==='pending'?' · มีสลิปรอตรวจ':'') + `\n`;
+        + ((r.payment_status==='pending'||r.payment_status==='pending_review')?' · มีสลิปรอตรวจ':'') + `\n`;
   });
   copyTxt(out);
 }
