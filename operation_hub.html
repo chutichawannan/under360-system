@@ -4060,7 +4060,7 @@ async function initOnbehalf(){
   try{ await sb_.from('orders').select('created_by').limit(1); obHasCreatedBy=true; }catch(e){ obHasCreatedBy=false; }
   var res=await Promise.all([
     sb_.from('menu_items').select('id,code,name,price,category,subcode').eq('is_available',true).order('sort_order'),
-    sb_.from('packages').select('id,name,base_price,qty,groups,free_shipping,delivery_rounds').eq('is_active',true).order('display_order'),
+    sb_.from('packages').select('id,name,size,base_price,qty,groups,free_shipping,delivery_rounds').eq('is_active',true).order('display_order'),
     sb_.from('mp_offer_sets').select('set_key,label,boxes,price_hp,price_lc').eq('is_active',true).order('display_order'),
     sb_.from('kitchen_data').select('key,data').in('key',['pkg_plan_type','pkg_fixed_dates'])
   ]);
@@ -4100,7 +4100,7 @@ function obRenderSets(){
 function obAddPkg(i){
   var p=obPkgs[i]; if(!p)return;
   obPush({kind:'pkg',key:'pkg:'+p.id,pkgId:p.id,code:obPkgSku(p),name:p.name,price:p.base_price||0,
-          boxes:p.qty||0,freeShip:!!p.free_shipping,planType:obPlanType[p.id]||null,fixedDate:obFixedDate[p.id]||null,rounds:p.delivery_rounds||1});
+          boxes:p.qty||0,size:p.size||'',freeShip:!!p.free_shipping,planType:obPlanType[p.id]||null,fixedDate:obFixedDate[p.id]||null,rounds:p.delivery_rounds||1});
 }
 function obAddMp(i,type){
   var s=obMpSets[i]; if(!s)return;
@@ -4239,14 +4239,21 @@ async function obSubmit(){
     /* แถวแพลนเมนู — Meal Plan + เซ็ตที่ตั้ง pkg_plan_type ไว้ (Hyrox) ต้องโผล่หน้า "แพลนเมนู" เหมือนที่ลูกค้าสั่งผ่าน LIFF */
     var planRows=obCart.filter(function(c){return c.planType;}).map(function(c){
       return { order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
-        mp_type:c.planType, mp_set:c.setKey||null, round_no:1, total_rounds:1,
+        mp_type:c.planType, mp_set:c.setKey||c.size||('SET-'+String(c.pkgId||'').slice(0,6).toUpperCase()), round_no:1, total_rounds:1,
         delivery_date:date, time_slot:slot, time_slot_label:slotLabels[slot]||'',
         delivery_address:addr||null, box_count:(c.boxes||0)*c.qty, status:'scheduled' };
     });
     var planMsg='';
     if(planRows.length){
       var pr=await sb_.from('mp_deliveries').insert(planRows);
-      planMsg=pr.error?' · ⚠️ สร้างแถวแพลนเมนูไม่สำเร็จ ('+(pr.error.message||'')+') แจ้งนัท':' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+      if(pr.error){
+        planMsg=' · ⚠️ ไม่เข้าแพลนเมนู';
+        /* ต้องเด้งให้เห็น ไม่ใช่ต่อท้ายข้อความ "บันทึกแล้ว" สีเขียว
+           เคสจริง 10 ส.ค.: เซ็ต Hyrox 4 ใบเขียนแถวแพลนไม่ผ่าน (mp_set เป็น NOT NULL)
+           แต่จอยังขึ้นว่าบันทึกสำเร็จ → แอดมินไม่รู้ว่าลูกค้าหายจากหน้าแพลนเมนู */
+        alert('⚠️ ออเดอร์บันทึกแล้ว แต่ยังไม่เข้าหน้า "แพลนเมนู"\n\n'
+          +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
+      } else planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
     }
     msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg);
     obCart=[]; obRenderCart(); obClearCust();
