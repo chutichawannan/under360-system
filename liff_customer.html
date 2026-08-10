@@ -1086,6 +1086,7 @@ function renderPkgBand() {
 }
 
 function openPackage(pkgId) {
+  trk("open_package","package",pkgId);
   currentPkg = packages.find(p => p.id === pkgId);
   if (!currentPkg) return;
   pkgSelection = {};
@@ -1382,6 +1383,7 @@ function removePkgFromCart(id) {
 // ══════════════════════════════════════
 
 function openMealPlanPicker(offerSetKey) {
+  trk("open_mealplan","mealplan",offerSetKey);
   mpType = ''; mpRequest = ''; mpReqSel = [];
   if (offerSetKey) {
     // การ์ด HE ลิ้งด้วย uuid จริง (rowId) — เช็คทั้ง id (set_key) และ rowId (uuid) กันไม่เจอ
@@ -1641,6 +1643,36 @@ function startPresence(){
   document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState === 'visible') _pingPresence(); }); // กลับมาดู → ping ทันที
 }
 
+/* ── N-52 · เก็บว่าลูกค้าเดินดูอะไรใน LIFF ─────────────────────────────────────
+   เดิมมีแค่ live_presence (บอกได้แค่ว่าตอนนี้มีคนเปิดอยู่กี่คน) — ไม่รู้ว่าเขาดูอะไร
+   เว็บ /web มี web_events มานานแล้ว แต่ LIFF ซึ่งเป็นที่ที่เงินเข้าจริงกลับไม่เก็บอะไรเลย
+   เขียนลงตารางเดิม (web_events) จะได้ดูรวมที่เดียว · page ขึ้นต้น 'liff:' แยกจากเว็บได้
+   กฎเหล็ก: ยิงแล้วลืม + เงียบทุกกรณี + ไม่ await ในเส้นทางที่ลูกค้ารออยู่
+            ห้ามให้การเก็บสถิติทำให้ลูกค้าช้าลงหรือสั่งของไม่ได้ */
+let _trkLast = 0; const _trkOpenAt = Date.now();
+function trk(event, page, note){
+  try{
+    if(!sb) return;
+    const now = Date.now();
+    if(event === 'view_menu' && now - _trkLast < 400) return;   // กันรัวตอนเลื่อนเร็วๆ
+    _trkLast = now;
+    sb.from('web_events').insert({
+      event: String(event).slice(0,40),
+      page: 'liff:' + String(page||'').slice(0,60),
+      utm_source: note ? String(note).slice(0,80) : null,
+      referrer: _presSid || null,
+      ua: (navigator.userAgent||'').slice(0,180)
+    }).then(function(){}, function(){});
+  }catch(e){}
+}
+// อยู่ในแอปนานแค่ไหน — ส่งตอนสลับออก/ปิด (ใช้ตัดสินว่ากิมมิค/มินิเกมควรยาวแค่ไหน)
+function _trkLeave(){
+  const sec = Math.round((Date.now() - _trkOpenAt)/1000);
+  if(sec >= 3 && sec < 7200) trk('leave','session', sec + 's');
+}
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') _trkLeave(); });
+window.addEventListener('pagehide', _trkLeave);
+
 async function init() {
   // Init Supabase
   try {
@@ -1651,6 +1683,7 @@ async function init() {
   // เบามาก: upsert ทุก 15 วิ + catch เงียบ (ตาราง live_presence ยังไม่รัน SQL ก็ไม่พัง)
   // ปรับ: ping เฉพาะตอนแอปโชว์อยู่จริง — พับ/สลับแท็บ = หยุด (ลด write ทิ้ง + ตรงความจริง)
   startPresence();
+    trk("open_app","home");
 
   // Init LIFF
   try {
@@ -1811,6 +1844,7 @@ async function loadPaymentAccount(){
 }
 
 function goCart() {
+  trk("view_cart","cart",String(cart.length)+" items");
   renderCart(); renderDatePick(); renderRoundSplit(); renderTimePick(); refreshCouponUI(); showScr('s-cart');
   updateCartTotals();
   loadSuggestedPromosIfNeeded().then(renderSuggestedPromoChips);
@@ -3923,6 +3957,7 @@ function jumpToMenuItem(code) {
 }
 
 function jumpCat(cat) {
+  trk("open_category","menu",cat);
   if (!cat) return;
   if (cat === '__anchor__') {
     var el = document.getElementById('ctabsInner');
@@ -4413,6 +4448,7 @@ function closeLB(e) {
 // ══ MENU DETAIL ══
 let mdCurrentId = null;
 function openMenuDetail(id) {
+  trk("view_menu","menu",id);
   const item = menuItems.find(m => m.id === id);
   if (!item) return;
   mdCurrentId = id;
