@@ -301,19 +301,33 @@ async function loadAll(manual){
   if(manual) toast('รีเฟรชแล้ว');
 }
 
+// ── ยอดขาย = นับเฉพาะ "ระบบเราเอง" (U- / MP-) ───────────────────────────────
+// นัทเคาะเอง 10 ส.ค. 2026: "ดูตามยอดของระบบเราเลย ย้ายทั้งทีไม่มองหลังแล้ว move forward"
+// เดิมนับแต่ HT- (ผ่าน Hato) ซึ่ง ① ไม่นับยอดระบบเราเลยสักบาท
+// ② ข้อมูล HT- หยุด sync ตั้งแต่ 5 ส.ค. (ห้อง P ปิด) → เลขต่ำกว่าจริงและร่วงทุกวัน
+// = เปิดมาเห็นแล้วท้อ ทั้งที่ยอดจริงกำลังย้ายบ้านสำเร็จ
 async function loadBiz(){
   const today=thaiDate(); const tmrw=addDays(today,1);
   const d30=addDays(today,-30), d60=addDays(today,-60);
+  const OURS='order_number.like.U-%,order_number.like.MP-%';
+  const isTest=n=>/test|เทส|ทดลอบ/i.test(n||'');
   try{
-    const q=await sb.from('orders').select('total,created_at').like('order_number','HT-%').gt('total',0).gte('created_at',d60).limit(3000);
+    const q=await sb.from('orders').select('total,created_at,customer_name')
+      .or(OURS).gt('total',0).neq('status','cancelled').gte('created_at',d60).limit(3000);
     let cur=0,prev=0,latest='';
+    const daily={};
     for(const o of (q.data||[])){
+      if(isTest(o.customer_name)) continue;
       const d=(o.created_at||'').slice(0,10);
-      if(d>=d30)cur+=+o.total; else prev+=+o.total;
+      if(d>=d30){ cur+=+o.total; daily[d]=(daily[d]||0)+ +o.total; } else prev+=+o.total;
       if(o.created_at>latest)latest=o.created_at;
     }
-    const tq=await sb.from('orders').select('total').eq('delivery_date',tmrw).like('order_number','HT-%').limit(500);
-    biz={cur,prev,latest:latest?latest.slice(0,10):'',today,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
+    // แท่ง = 14 วันล่าสุด (เดิมเป็นรายเดือนยุค Hato — เปลี่ยนเป็นมองไปข้างหน้า)
+    const bars=[];
+    for(let i=13;i>=0;i--){ const d=addDays(today,-i);
+      bars.push([d.slice(8,10)+'/'+d.slice(5,7), daily[d]||0]); }
+    const tq=await sb.from('orders').select('total').eq('delivery_date',tmrw).or(OURS).neq('status','cancelled').limit(500);
+    biz={cur,prev,latest:latest?latest.slice(0,10):'',today,bars,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
   }catch(e){biz={err:1};}
 }
 
@@ -341,19 +355,15 @@ function renderHome(){
 
 function cardBiz(){
   if(biz.err) return '<div class="card"><h3>💰 ธุรกิจ ณ ตอนนี้</h3><div class="muted">ดึงข้อมูลไม่ได้</div></div>';
-  const diff=biz.prev?((biz.cur-biz.prev)/biz.prev*100):0;
-  const cmp=biz.prev?`<span class="${diff>=0?'up':'down'}">${diff>=0?'▲':'▼'} ${Math.abs(diff).toFixed(0)}%</span> เทียบ 30 วันก่อนหน้า`:'';
-  // spark = เดือนที่จบแล้ว (ไม่รวมเดือนปัจจุบันที่ยังไม่จบ กันเส้นดิ่ง)
-  const series=HIST.map(x=>x[1]);
-  const labels=HIST.map(x=>x[0]);
-  const yst=addDays(biz.today,-1);
-  const stale = biz.latest && biz.latest<yst;
-  const daysBehind = stale? Math.round((new Date(biz.today+'T00:00:00Z')-new Date(biz.latest+'T00:00:00Z'))/86400000):0;
-  const fresh = stale
-    ? `<div class="fresh bad">⚠️ ข้อมูลค้าง ${daysBehind} วัน (ล่าสุด ${thDisp(biz.latest)}) — ให้ P-track sync</div>`
-    : `<div class="fresh ok">✓ ข้อมูลอัปเดตล่าสุด ${thDisp(biz.latest||biz.today)}</div>`;
+  const bars=biz.bars||[];
+  const wk=(n)=>bars.slice(bars.length-n).reduce((a,b)=>a+b[1],0);
+  const w1=wk(7), w2=bars.slice(bars.length-14,bars.length-7).reduce((a,b)=>a+b[1],0);
+  // เทียบ 7 วันล่าสุด vs 7 วันก่อนหน้า — ไม่เทียบ 30 วัน เพราะช่วงย้ายระบบยังไม่มีของเก่าให้เทียบ
+  const cmp = w2>0
+    ? `<span class="${w1>=w2?'up':'down'}">${w1>=w2?'▲':'▼'} ${Math.abs((w1-w2)/w2*100).toFixed(0)}%</span> 7 วันล่าสุดเทียบ 7 วันก่อนหน้า`
+    : `<span class="muted">เพิ่งเริ่มนับจากระบบเราเอง ยังไม่มีของเก่าให้เทียบ</span>`;
   return `<div class="card span-all">
-    <h3>💰 ธุรกิจ ณ ตอนนี้ <span class="r">ช่องออนไลน์ (LIFF)</span></h3>
+    <h3>💰 ธุรกิจ ณ ตอนนี้ <span class="r">ระบบเราเอง (LIFF 360)</span></h3>
     <div class="biz-top">
       <div class="biz-main">
         <div class="biz-lbl">ยอดขาย 30 วันล่าสุด</div>
@@ -361,11 +371,12 @@ function cardBiz(){
         <div class="biz-cmp">${cmp}</div>
       </div>
       <div class="biz-side">
+        <div class="stat"><div class="v">${baht(w1)}</div><div class="k">7 วันล่าสุด</div></div>
         <div class="stat"><div class="v">${biz.tmrwCount}</div><div class="k">ออเดอร์พรุ่งนี้</div></div>
       </div>
     </div>
-    <div class="bars-wrap">${barsChart(HIST)}</div>
-    ${fresh}
+    <div class="bars-wrap">${barsChart(bars)}</div>
+    <div class="fresh ok">✓ นับจากออเดอร์ในระบบเราเอง อัปเดตสดทุกครั้งที่เปิดหน้า · ไม่รวมยอดที่ยังผ่าน Hato</div>
   </div>`;
 }
 function thDisp(ymd){if(!ymd)return '-';const[a,b,c]=ymd.split('-');return `${+c} ${['','ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][+b]}`;}
@@ -423,7 +434,7 @@ function cardRoutine(){
 function weekOf(ymd){const d=new Date(ymd+'T00:00:00Z');const on=(d.getUTCDay()+6)%7;d.setUTCDate(d.getUTCDate()-on);return d.toISOString().slice(0,10);}
 function toggleR(key,isAuto){
   const j=ROUTINE.find(x=>x.key===key);
-  if(j&&j.auto==='fresh'){toast('อันนี้ระบบเช็คเอง — รัน P-track sync เพื่อให้เขียว');return;}
+  if(j&&j.auto==='fresh'){toast('อันนี้ระบบเช็คเอง');return;}
   if(rdone[key]===biz.today||(j.weekly&&rdone[key]&&weekOf(rdone[key])===weekOf(biz.today))) delete rdone[key];
   else rdone[key]=biz.today;
   localStorage.setItem('cc_routine',JSON.stringify(rdone)); renderHome();
