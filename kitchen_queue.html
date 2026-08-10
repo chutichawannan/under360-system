@@ -10,7 +10,10 @@
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--golds:#FFF8EC;--r:#DC2626;--rs:#FEF2F2;--blue:#1D4ED8;--blues:#EFF6FF;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;--rad:12px;}
-body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
+/* N-62 · iPhone: 100vh ของ Safari สูงกว่าพื้นที่ที่เห็นจริง (แถบล่างทับ) → ใช้ dvh ถ้ามี
+   + กัน Safari ขยายตัวหนังสือเองตอนหมุนจอ (text-size-adjust) ซึ่งทำให้หน้าล้นออกข้าง */
+html{-webkit-text-size-adjust:100%;text-size-adjust:100%;}
+body{font-family:var(--sans);background:var(--bg);min-height:100vh;min-height:100dvh;overflow-x:hidden;}
 
 /* HEADER */
 .hdr{background:var(--g);padding:10px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
@@ -73,11 +76,24 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .mp-chip{font-family:var(--mono);font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FE;padding:2px 6px;border-radius:4px;}
 .mp-chip.empty{font-family:inherit;font-style:italic;font-weight:400;color:var(--xsoft);background:none;padding:0;}
 .btn-mp-done{margin-top:6px;font-size:12px;font-weight:700;color:var(--g);background:var(--gs);border:1px solid var(--g);border-radius:8px;padding:0 14px;min-height:44px;cursor:pointer;}
+/* N-62 · iPhone: ช่องกรอกที่ตัวอักษรเล็กกว่า 16px → Safari จะซูมหน้าจอเข้าเองตอนแตะ
+   แล้วหน้าค้างอยู่สภาพซูม = ครัวเห็นจอเพี้ยน/ล้น ทั้งที่โค้ดไม่ได้พัง
+   → บังคับ 16px เฉพาะจอเล็ก (เดสก์ท็อป/แท็บเล็ตยังเล็กเท่าเดิม ไม่กินที่) */
 .actual-input{width:44px;border:1.5px solid var(--g);border-radius:6px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g);padding:2px 0;background:var(--gs);}
+@media(max-width:820px){
+  .actual-input{font-size:16px;width:52px;}
+  input,select,textarea{font-size:16px;}
+}
 
 /* SLOT SECTION */
 .slot-sec{margin-bottom:14px;}
 .slot-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--g);border-radius:10px 10px 0 0;color:#fff;}
+/* N-51 · แยกสีหัวกลุ่มตามช่วงเวลา — เดิมเขียวเหมือนกันหมด ครัวกวาดตาแล้วแยกไม่ออกว่าใบไหนต้องรีบ
+   เรียงตามความเร่ง: ด่วน(แดง) → เช้า(ส้ม) → บ่าย(น้ำเงิน) → รับได้ตลอดวัน(เขียวเดิม = ยืดหยุ่นสุด) */
+.slot-hdr.s-morning{background:#C2410C;}
+.slot-hdr.s-afternoon{background:#1D4ED8;}
+.slot-hdr.s-express{background:#B91C1C;}
+.slot-hdr.s-other{background:#4B5563;}
 .slot-hdr-label{font-size:13px;font-weight:700;flex:1;}
 .slot-hdr-count{font-size:12px;background:rgba(255,255,255,.2);padding:2px 9px;border-radius:10px;}
 .slot-body{background:var(--w);border:1px solid var(--xsoft);border-top:none;border-radius:0 0 10px 10px;padding:8px;}
@@ -980,8 +996,11 @@ function renderOrders(){
     if(!bySlot[s]||!bySlot[s].length)return;
     var isExtra=known.indexOf(s)<0;
     var label=SLOT_LABELS[s]||(isExtra?("🕐 นัดเวลา "+escH(s)):"⏰ ไม่ระบุช่วงเวลา");
+    // N-51 · สีหัวกลุ่มตามช่วงเวลา (all_day คงเขียวเดิม)
+    var slotCls={morning:" s-morning",afternoon:" s-afternoon",express:" s-express",all_day:""}[s];
+    if(slotCls===undefined) slotCls=" s-other";
     html+="<div class='slot-sec'>"
-      +"<div class='slot-hdr'><span class='slot-hdr-label'>"+label+"</span><span class='slot-hdr-count'>"+bySlot[s].length+" ออเดอร์</span></div>"
+      +"<div class='slot-hdr"+slotCls+"'><span class='slot-hdr-label'>"+label+"</span><span class='slot-hdr-count'>"+bySlot[s].length+" ออเดอร์</span></div>"
       +"<div class='slot-body'>"+bySlot[s].map(renderCard).join("")+"</div></div>";
   });
   document.getElementById("orderView").innerHTML=html;

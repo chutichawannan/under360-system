@@ -215,6 +215,7 @@ function renderTier(pts){
 // ════════════════════════════════════════════════════════════════
 const LIFF_ID = '2010442513-NI3JGTkb';
 let _lineUid = null;
+let _lineProf = null;     // N-54: เก็บโปรไฟล์ LINE ไว้ทั้งก้อน (เดิมหยิบแต่ userId แล้วทิ้งรูป/ชื่อ)
 async function currentLineUid(){
   if(_lineUid) return _lineUid;
   try{
@@ -222,6 +223,7 @@ async function currentLineUid(){
     await liff.init({ liffId: LIFF_ID });
     if(!liff.isLoggedIn()){ liff.login(); return null; }
     const prof = await liff.getProfile();
+    _lineProf = prof || null;
     _lineUid = prof && prof.userId;
   }catch(e){ console.error('LIFF init failed:', e); _lineUid = null; }
   if(!_lineUid){
@@ -233,6 +235,57 @@ async function currentLineUid(){
   }
   localStorage.setItem('line_uid', _lineUid);
   return _lineUid;
+}
+
+/* ── N-55 · "เคยเป็นลูกค้าเราอยู่แล้ว? ใส่เบอร์เพื่อดึงประวัติ/แต้มกลับมา" ──────────
+   ลูกค้ายุค Hato ถูก migrate เข้ามาแล้ว แต่แถวเก่าไม่มี line_uid → พอเปิดผ่าน LINE ใหม่
+   ระบบหาไม่เจอ เลยกลายเป็น "ยังไม่ได้สมัครสมาชิก" ทั้งที่ซื้อกับเรามาหลายปี
+   🔒 กันสวมสิทธิ์: ผูกได้เฉพาะแถวที่ line_uid ยังว่างเท่านั้น — ถ้าแถวนั้นมีเจ้าของแล้วจะไม่แตะ */
+function showClaimBox(){
+  if(document.getElementById('claimBox')) return;
+  const host=document.querySelector('.main'); if(!host) return;
+  const d=document.createElement('div');
+  d.className='card'; d.id='claimBox';
+  d.innerHTML=
+    '<div class="ch">🔗 เคยสั่งกับเราแล้ว?</div>'+
+    '<div class="cb">'+
+      '<div style="font-size:13px;color:var(--ink-soft);line-height:1.6;margin-bottom:10px">'+
+        'ใส่เบอร์ที่เคยใช้สั่ง เพื่อดึง<b>ประวัติการสั่งและแต้มสะสม</b>กลับมาผูกกับ LINE นี้</div>'+
+      '<div style="display:flex;gap:8px">'+
+        '<input id="claimPhone" type="tel" inputmode="numeric" maxlength="15" placeholder="08x-xxx-xxxx" '+
+          'style="flex:1;min-width:0;padding:11px 12px;border:1px solid var(--line,#ddd);border-radius:10px;font-size:15px;font-family:inherit">'+
+        '<button id="claimBtn" style="background:var(--forest);color:#fff;border:none;border-radius:10px;padding:0 18px;font-size:14px;font-weight:700;font-family:inherit;cursor:pointer">ดึงกลับ</button>'+
+      '</div>'+
+      '<div id="claimMsg" style="font-size:12.5px;margin-top:9px;line-height:1.6"></div>'+
+    '</div>';
+  host.insertBefore(d, host.firstChild);
+  document.getElementById('claimBtn').onclick=doClaim;
+  document.getElementById('claimPhone').addEventListener('keydown',e=>{ if(e.key==='Enter') doClaim(); });
+}
+async function doClaim(){
+  const msg=document.getElementById('claimMsg');
+  const raw=(document.getElementById('claimPhone').value||'').replace(/\D/g,'');
+  const say=(t,c)=>{ msg.style.color=c||'var(--ink-soft)'; msg.innerHTML=t; };
+  if(raw.length<9){ say('กรอกเบอร์ให้ครบก่อนนะครับ','#B91C1C'); return; }
+  const uid=await currentLineUid(); if(!uid) return;
+  const sb_=getSB(); if(!sb_){ say('เชื่อมข้อมูลไม่ได้ ลองใหม่อีกครั้ง','#B91C1C'); return; }
+  say('กำลังค้นหา…');
+  try{
+    const tail=raw.slice(-9);
+    const r=await sb_.from('customers').select('id,display_name,phone,line_uid,loyalty_points')
+      .ilike('phone','%'+tail).limit(5);
+    if(r.error) throw r.error;
+    const rows=r.data||[];
+    if(!rows.length){ say('ไม่พบเบอร์นี้ในระบบ — ถ้าเพิ่งเคยสั่งครั้งแรก กด "สมัครสมาชิก" ได้เลยครับ'); return; }
+    const free=rows.find(x=>!x.line_uid);
+    const mine=rows.find(x=>x.line_uid===uid);
+    if(mine){ say('เบอร์นี้ผูกกับ LINE นี้อยู่แล้ว ✓','#065F46'); setTimeout(()=>location.reload(),900); return; }
+    if(!free){ say('เบอร์นี้ผูกกับบัญชี LINE อื่นไว้แล้ว — รบกวนทักแอดมินให้ช่วยตรวจสอบนะครับ','#B91C1C'); return; }
+    const up=await sb_.from('customers').update({ line_uid:uid }).eq('id',free.id).is('line_uid',null);
+    if(up.error) throw up.error;
+    say('เชื่อมสำเร็จ ✓ กำลังโหลดประวัติของคุณ…','#065F46');
+    setTimeout(()=>location.reload(),900);
+  }catch(e){ console.error('claim:',e); say('เชื่อมไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักแอดมินได้ครับ','#B91C1C'); }
 }
 
 async function loadProfile(){
@@ -247,21 +300,40 @@ async function loadProfile(){
       if(!r.error)p=r.data;
     }catch(e){ console.error("loadProfile:",e); }
   }
+  // N-54: รูป+ชื่อ LINE เอาจาก LINE โดยตรงเสมอ — ไม่ต้องรอให้มีแถวใน DB
+  // (เดิมอ่านจาก DB อย่างเดียว ลูกค้าที่ยังไม่สมัครเลยเห็นแต่ "—" ทั้งที่เปิดผ่าน LINE อยู่แท้ๆ)
+  if(_lineProf){
+    if(_lineProf.pictureUrl){
+      const av=document.getElementById("hAv"); av.src=_lineProf.pictureUrl; av.style.display="";
+      document.getElementById("hEmoji").style.display="none";
+    }
+    if(_lineProf.displayName){
+      document.getElementById("hName").textContent=_lineProf.displayName;
+      document.getElementById("hLine").textContent="@"+_lineProf.displayName;
+      document.getElementById("infoLine").textContent=_lineProf.displayName;
+    }
+  }
   // ❌ เดิมมี mock "Test User · 4,200 แต้ม · ออเดอร์ปลอม" → ลูกค้าจริงที่ยังไม่สมัครเห็นข้อมูลคนอื่น (แก้ 3 ส.ค. 2026)
   if(!p){
-    document.getElementById("hName").textContent="ยังไม่ได้สมัครสมาชิก";
-    document.getElementById("hLine").textContent="สมัครเพื่อสะสมแต้มและดูประวัติ";
-    document.getElementById("histBody").innerHTML='<div style="text-align:center;padding:18px"><div style="color:var(--ink-soft);font-size:13px;margin-bottom:10px">ยังไม่มีข้อมูลสมาชิก</div><a href="liff_register.html" style="display:inline-block;background:var(--forest);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700">สมัครสมาชิก →</a></div>';
+    if(!(_lineProf&&_lineProf.displayName)) document.getElementById("hName").textContent="ยังไม่ได้สมัครสมาชิก";
+    document.getElementById("hLine").textContent="ยังไม่ได้สมัครสมาชิก";
+    document.getElementById("histBody").innerHTML=
+      '<div style="text-align:center;padding:18px">'+
+      '<div style="color:var(--ink-soft);font-size:13px;margin-bottom:10px">ยังไม่มีข้อมูลสมาชิก</div>'+
+      '<a href="liff_register.html" style="display:inline-block;background:var(--forest);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700">สมัครสมาชิก →</a></div>';
+    showClaimBox();     // N-55: เคยเป็นลูกค้าเก่า? ใส่เบอร์ดึงประวัติกลับมา
     return;
   }
   // ชื่อคอลัมน์จริงใน DB: display_name / date_of_birth / picture_url (เดิมอ้าง name/birth_date/line_picture_url ที่ไม่มีจริง → ขึ้น "—" ทั้งที่กรอกไว้)
-  document.getElementById("hName").textContent=p.display_name||p.line_display_name||"—";
-  document.getElementById("hLine").textContent="@"+(p.line_display_name||"—");
+  const nm = p.display_name || (_lineProf&&_lineProf.displayName) || p.line_display_name || "—";
+  document.getElementById("hName").textContent=nm;
+  document.getElementById("hLine").textContent="@"+(p.line_display_name||(_lineProf&&_lineProf.displayName)||"—");
   document.getElementById("infoName").textContent=p.display_name||"—";
   document.getElementById("infoPhone").textContent=p.phone||"—";
   document.getElementById("infoDob").textContent=p.date_of_birth||"—";
-  document.getElementById("infoLine").textContent=p.line_display_name||"—";
-  if(p.picture_url){document.getElementById("hAv").src=p.picture_url;document.getElementById("hEmoji").style.display="none";}
+  document.getElementById("infoLine").textContent=p.line_display_name||(_lineProf&&_lineProf.displayName)||"—";
+  if(p.picture_url && !(_lineProf&&_lineProf.pictureUrl)){document.getElementById("hAv").src=p.picture_url;document.getElementById("hEmoji").style.display="none";}
+  if(!p.phone) showClaimBox();   // N-55: มีแถวแล้วแต่ยังไม่มีเบอร์ = ยังผูกประวัติเก่าไม่ได้
   renderTier(p.loyalty_points||0);
   // history
   const orders=p.orders||[];
