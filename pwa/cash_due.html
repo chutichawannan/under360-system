@@ -84,7 +84,8 @@ a{color:var(--blue)}
 <main>
   <div class="note">
     <b>หน้านี้อ่านอย่างเดียว</b> — ไม่แก้สถานะเงินในระบบ (การกด “โอนแล้ว” ทำที่หน้าออเดอร์ใน OH เหมือนเดิม)<br>
-    กรอง <b>ยอด &gt; ฿0</b> · ตัดออเดอร์ทดสอบออกอัตโนมัติ · นับเฉพาะ <b>ยังไม่จ่าย + สลิปรอตรวจ</b>
+    กรอง <b>ยอด &gt; ฿0</b> · ตัดออเดอร์ทดสอบออกอัตโนมัติ · นับเฉพาะ <b>ยังไม่จ่าย + สลิปรอตรวจ</b><br>
+    ⛔ <b>ไม่นับใบยุค Hato (ก่อน 8 ส.ค. 2026) เลย</b> — จบไปแล้วที่นั่น แอดมินเคลียร์เองเรียบร้อย (นัทยืนยัน 10 ส.ค.)
   </div>
   <div class="kpis" id="kpis"></div>
   <div id="list"></div>
@@ -126,7 +127,7 @@ async function load(){
     .select('order_number,customer_name,customer_phone,total,delivery_date,payment_status,status,source,slip_url,payment_slip_url,notes,created_at')
     .gt('total', 0)
     .in('payment_status', ['unpaid','pending'])
-    .gte('delivery_date', from)
+    .gte('delivery_date', from > BETA_START ? from : BETA_START)
     .neq('status','cancelled')
     .order('delivery_date', {ascending:true})
     .limit(1000);
@@ -138,12 +139,10 @@ async function load(){
 }
 
 function render(today){
-  const od=[], due=[], fut=[], legacy=[];
+  const od=[], due=[], fut=[];
   ROWS.forEach(r=>{
     const d = daysBetween(r.delivery_date, today); // >0 = เลยกำหนดมาแล้ว d วัน
     r._late = d;
-    // ใบยุค Hato (ก่อนเราเปิดระบบเอง 8 ส.ค.) = ข้อมูลย้ายมา ไม่ใช่หนี้จริง → ห้ามเอาไปทวง
-    if(r.delivery_date < BETA_START){ legacy.push(r); return; }
     if(d>0) od.push(r); else if(d===0) due.push(r); else fut.push(r);
   });
   const sum = a => a.reduce((s,x)=>s+Number(x.total||0),0);
@@ -159,7 +158,6 @@ function render(today){
     ['🔴 เลยวันส่งแล้ว — ทวงก่อน', od, 'od'],
     ['🟡 ส่งวันนี้ ยังไม่ได้เงิน', due, 'due'],
     ['🟢 ส่งวันข้างหน้า — เก็บก่อนของออก', fut, 'fut'],
-    [`⚪ ข้อมูลเก่าก่อน ${BETA_START} (ยุค Hato) — <b style="color:var(--warn)">ห้ามทวง</b> ต้องตรวจว่าจ่ายแล้วหรือยัง`, legacy, 'lg'],
   ];
   let html='';
   blocks.forEach(([name, arr, cls])=>{
@@ -198,7 +196,7 @@ function render(today){
   document.getElementById('sub').textContent =
     `อัปเดต ${new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'})} น. · ย้อนหลัง ${LOOKBACK_DAYS} วัน`;
   window._IDX = {}; window._ALL = all;
-  [...od.map((r,i)=>['od-'+i,r]),...due.map((r,i)=>['due-'+i,r]),...fut.map((r,i)=>['fut-'+i,r]),...legacy.map((r,i)=>['lg-'+i,r])]
+  [...od.map((r,i)=>['od-'+i,r]),...due.map((r,i)=>['due-'+i,r]),...fut.map((r,i)=>['fut-'+i,r])]
     .forEach(([k,v])=>window._IDX[k]=v);
 }
 
