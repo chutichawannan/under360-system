@@ -3071,6 +3071,7 @@ async function submitOrder() {
     setDeliverOnce = false; extraRoundDates = [];
     appliedPromos = []; refreshCouponUI();
     if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
+    trk('order_done','checkout', String(grandTotal));
     showScr('s-ok');
 
   } catch(e) {
