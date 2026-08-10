@@ -534,6 +534,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <div>
           <div class="sec-title">แพลนเมนูผลิต + assign ลูกค้า</div>
           <div style="font-size:11px;color:var(--ink-soft);margin-top:2px;" id="planSubHint">ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · เห็นทุกรอบที่ยังไม่ส่ง (ลูกค้าสั่งยาวแค่ไหนก็เลื่อนดูได้หมด)</div>
+          <!-- N-65 · เลือกวันที่จะทำงานด้วย — กดแล้วตารางเหลือคอลัมน์เดียว -->
+          <div id="planDayChips" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:8px"></div>
         </div>
         <div style="display:flex;gap:6px;align-items:center;">
           <a class="btn" href="main_database_v2.html" target="_blank" style="font-size:12px;">🗄️ DB ↗</a>
@@ -1896,6 +1898,22 @@ function togglePlanColumn(dateStr,type){
   updateSelectHint();
 }
 // คลิกวันที่ที่ header → กรองตารางให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle: คลิกวันเดิมซ้ำ = เอาตัวกรองออก)
+/* N-65 · ปุ่มเลือกวัน — เดิมต้องรู้เองว่าคลิกหัวตารางได้ (ไม่มีใครเดาออก) */
+function renderPlanDayChips(dates){
+  var box=document.getElementById("planDayChips"); if(!box)return;
+  var todayStr=today2();
+  var h="<button class='dtab"+(planDateFilter?"":" active")+"' onclick=\"setPlanDay(null)\">ทุกวัน ("+dates.length+")</button>";
+  dates.forEach(function(d){
+    var lbl=fmtD(new Date(d+"T00:00:00"))+(d===todayStr?" (วันนี้)":"");
+    h+="<button class='dtab"+(planDateFilter===d?" active":"")+"' onclick=\"setPlanDay('"+d+"')\">"+lbl+"</button>";
+  });
+  box.innerHTML=h;
+}
+function setPlanDay(d){
+  planDateFilter=d;
+  _buildPlanTable();
+  renderLeftPanel();
+}
 function toggleDateFilter(dateStr){
   planDateFilter=(planDateFilter===dateStr)?null:dateStr;
   _buildPlanTable();
@@ -2449,8 +2467,13 @@ function _buildPlanTable(){
   // วันที่เลยมาแล้ว (< วันนี้) ไม่โชว์ในตารางหลักอีกต่อไป — เก็บไว้ดูย้อนหลังในส่วนประวัติด้านล่างแทน
   var todayStr=today2();
   var pastDates=allDatesFull.filter(function(d){return d<todayStr;});
-  var allDates=allDatesFull.filter(function(d){return d>=todayStr;});
+  var upcoming=allDatesFull.filter(function(d){return d>=todayStr;});
   renderPlanHistory(pastDates,subs);
+
+  /* N-65 · เลือกวันแล้วต้องเหลือ "คอลัมน์เดียว" ไม่ใช่แค่กรองแถว
+     เดิมทุกวันขึ้นพร้อมกันเป็นสิบคอลัมน์ แอดมินบอกตรงๆ ว่า "ลายตา" */
+  var allDates=planDateFilter&&upcoming.indexOf(planDateFilter)>=0 ? [planDateFilter] : upcoming;
+  renderPlanDayChips(upcoming);
 
   var visibleSubs=planDateFilter?subs.filter(function(s){return s.rows.some(function(r){return r.delivery_date===planDateFilter;});}):subs;
 
@@ -3479,14 +3502,19 @@ function renderMpDeliveriesQueue(){
     if(mpqExpandedId===r.id){
       h+="<div style='margin-top:8px;border-top:1px dashed var(--ink-xsoft);padding-top:8px'>";
       h+="<div style='font-size:11px;font-weight:700;color:var(--ink-soft);margin-bottom:6px'>เลือกเมนู (สูงสุด "+(r.box_count||7)+" รายการ) — "+(r.mp_type||"").toUpperCase()+"</div>";
-      h+="<div style='display:flex;flex-wrap:wrap;gap:6px'>";
+      // N-67 · ช่องค้นหาเมนู — เดิมต้องเลื่อนหาจาก 82 เมนู แอดมินบอกช้ามาก
+      //   กรองด้วย DOM ตรงๆ ไม่ re-render ทั้งลิสต์ ไม่งั้นโฟกัสหลุดทุกตัวอักษรที่พิมพ์
+      h+="<input type='search' placeholder='🔍 พิมพ์ค้นเมนู (โค้ด / ชื่อ)' oninput=\"filterMpPickList('"+r.id+"',this.value)\" "
+        +"style='width:100%;padding:6px 9px;margin-bottom:7px;border:1.5px solid var(--ink-xsoft);border-radius:7px;font-size:11.5px;font-family:inherit'>";
+      h+="<div id='mpqPick-"+r.id+"' style='display:flex;flex-wrap:wrap;gap:6px;max-height:240px;overflow-y:auto'>";
       MENU_POOL.filter(function(m){return m.type===r.mp_type;}).forEach(function(m){
         var checked=mpqExpandedSel.indexOf(m.code)>=0;
-        h+="<label style='display:flex;align-items:center;gap:4px;font-size:11px;background:#F3F4F6;border-radius:6px;padding:4px 8px;cursor:pointer'>";
+        h+="<label data-find=\""+esc2((m.code+" "+m.name).toLowerCase())+"\" style='display:flex;align-items:center;gap:4px;font-size:11px;background:#F3F4F6;border-radius:6px;padding:4px 8px;cursor:pointer'>";
         h+="<input type='checkbox'"+(checked?" checked":"")+" onchange=\"toggleMpMenuSel('"+m.code+"',this.checked)\">"+esc2(m.code)+" "+esc2(m.name);
         h+="</label>";
       });
       h+="</div>";
+      h+="<div id='mpqPickHint-"+r.id+"' style='font-size:10.5px;color:var(--ink-soft);margin-top:4px'></div>";
       h+="<div style='margin-top:8px;display:flex;gap:6px'>";
       h+="<button class='btn btn-primary' onclick=\"saveMpMenuPicker('"+r.id+"')\" style='font-size:11px;padding:5px 10px'>💾 บันทึกเมนู</button>";
       h+="<button class='btn' onclick=\"closeMpMenuPicker()\" style='font-size:11px;padding:5px 10px'>ยกเลิก</button>";
@@ -3547,6 +3575,21 @@ function closeMpMenuPicker(){
   mpqExpandedId=null;
   mpqExpandedSel=[];
   renderMpDeliveriesQueue();
+}
+/* N-67 · กรองลิสต์เมนูในป้อบอัพ — ซ่อน/โชว์ที่ DOM ไม่วาดใหม่ (โฟกัสช่องพิมพ์จะได้ไม่หลุด)
+   เมนูที่ติ๊กไว้แล้วโชว์เสมอ ไม่ว่าจะค้นคำอะไร — ไม่งั้นแอดมินพิมพ์ค้นแล้วนึกว่าของที่เลือกหาย */
+function filterMpPickList(rowId,q){
+  var box=document.getElementById("mpqPick-"+rowId); if(!box)return;
+  q=String(q||"").trim().toLowerCase();
+  var shown=0, labels=box.querySelectorAll("label");
+  labels.forEach(function(l){
+    var checked=l.querySelector("input") && l.querySelector("input").checked;
+    var hit=!q || String(l.getAttribute("data-find")||"").indexOf(q)>=0 || checked;
+    l.style.display=hit?"":"none";
+    if(hit)shown++;
+  });
+  var hint=document.getElementById("mpqPickHint-"+rowId);
+  if(hint) hint.textContent=q?("เจอ "+shown+" จาก "+labels.length+" เมนู (ตัวที่ติ๊กไว้แล้วโชว์เสมอ)"):"";
 }
 function toggleMpMenuSel(code,checked){
   var i=mpqExpandedSel.indexOf(code);
