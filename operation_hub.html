@@ -405,6 +405,10 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
     <div class="sb-item" onclick="openApp('kitchen_queue.html','🍳 หน้าครัว (KQ)',this)">
       <span class="sb-icon">🍳</span><span>หน้าครัว (KQ)</span>
     </div>
+    <!-- ใบงานผลิตรายวันที่ห้องฟ้าทำให้ครัว — เดิมเข้าได้ทางหน้า /k เท่านั้น (นัทขอ 11 ส.ค.) -->
+    <div class="sb-item" onclick="openApp('kitchen/index.html','📋 ใบงานผลิตครัว (รายวัน)',this)">
+      <span class="sb-icon">📋</span><span>ใบงานผลิตครัว</span>
+    </div>
     <div class="sb-item" onclick="openApp('pwa/orders_upcoming.html','📆 ออเดอร์ล่วงหน้า 7 วัน',this)">
       <span class="sb-icon">📆</span><span>ออเดอร์ล่วงหน้า</span>
     </div>
@@ -490,6 +494,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <button class="btn" onclick="runOrderSearch()" style="background:var(--forest);color:#fff;border-color:var(--forest)">ค้นหา</button>
         <button class="btn" id="ordSearchClear" onclick="clearOrderSearch()" style="display:none">✕ ล้าง</button>
         <button class="btn" id="ordMovedBtn" onclick="toggleMovedOnly()" title="ดูเฉพาะใบที่ถูกเลื่อนวันส่ง — ทั้งที่แอดมินเลื่อนและลูกค้าเลื่อนเอง">🔁 ใบที่ถูกเลื่อน</button>
+        <button class="btn" id="ordCancelBtn" onclick="toggleCancelledOnly()" title="ดูใบที่ถูกยกเลิก — กดเข้าไปแล้วกู้คืนได้">🗑️ ใบที่ยกเลิก</button>
         <span id="ordSearchHint" style="font-size:11.5px;color:var(--ink-soft)"></span>
       </div>
       <!-- เลือกช่วงวันที่ -->
@@ -1125,6 +1130,11 @@ function ordBaseQuery(sb_,todayStr,tomStr){
     return q.like("notes","*เลื่อนวัน*").or(NOTEST)
             .order("delivery_date",{ascending:true}).order("created_at",{ascending:false});
   }
+  /* ใบที่ยกเลิก — ข้ามตัวกรองวันเหมือนการค้นหา เพราะแอดมินไม่รู้ว่าใบที่เผลอยกเลิกอยู่วันไหน */
+  if(ordCancelledOnly){
+    return q.eq("status","cancelled").or(NOTEST)
+            .order("updated_at",{ascending:false});
+  }
   if(dateMode==="today")                 q=ordApplyDay(q,todayStr);
   else if(dateMode==="tomorrow")         q=ordApplyDay(q,tomStr);
   else if(dateMode==="pick"&&pickedDate) q=ordApplyDay(q,pickedDate);
@@ -1160,6 +1170,11 @@ async function fetchOrdersPage(){
       title="🔁 ใบที่ถูกเลื่อนวันส่ง";
       var hh3=document.getElementById("ordSearchHint");
       if(hh3) hh3.textContent=ordTotal?("เจอ "+ordTotal+" ใบ · เรียงตามวันส่งใหม่ (ทุกวัน)"):"ยังไม่มีใบไหนถูกเลื่อน";
+    }
+    else if(ordCancelledOnly){
+      title="🗑️ ใบที่ยกเลิก";
+      var hh4=document.getElementById("ordSearchHint");
+      if(hh4) hh4.textContent=ordTotal?("เจอ "+ordTotal+" ใบ · กดเข้าไปแล้วกู้คืนได้"):"ยังไม่มีใบไหนถูกยกเลิก";
     }
     else{
       var byW=ordByMode==="created"?"สั่งเข้ามา":"ส่ง";
@@ -1579,12 +1594,85 @@ async function openOrderDetail(id){
         +(o.admin_notes?"<div style='color:#6B7280'><b>แอดมิน:</b> "+esc2(o.admin_notes)+"</div>":"")
         +(o.created_by?row("คนกดสั่ง", esc2(o.created_by)):""));
     }
+    /* ── ยกเลิกออเดอร์ (กิ๊ฟขอ 11 ส.ค. · เคสใบซ้ำ นวภัท U-0811-007/008) ────────
+       ⚠️ ไม่ทำเป็น "ลบ" เพราะฐานข้อมูลไม่ให้ลบจริง — ทดสอบแล้ว คำสั่งลบตอบ HTTP 200
+          แต่แถวยังอยู่ครบ (สิทธิ์กันไว้) → ถ้าทำปุ่มลบ แอดมินจะกดแล้วนึกว่าลบได้ทั้งที่ไม่หาย
+       ยกเลิกแล้วใบหายจากทุกหน้าที่ใช้งานจริง (รายการออเดอร์ · ครัว · แพลนเมนู · ใบทวงเงิน · ตัวนับ)
+       แต่ยังเปิดดูย้อนหลังและกู้คืนได้ */
+    if(o.status==="cancelled"){
+      h+="<div style='background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:12px 14px;margin-top:10px'>"
+        +"<div style='font-weight:800;color:#991B1B;font-size:13px'>ใบนี้ถูกยกเลิกแล้ว</div>"
+        +"<div style='font-size:11.5px;color:#7F1D1D;margin:3px 0 9px'>ไม่ขึ้นในรายการออเดอร์ · ครัวไม่เห็น · ไม่นับเป็นยอดขาย</div>"
+        +"<button class='btn' onclick=\"odUncancel('"+id+"')\">↩ กู้คืนออเดอร์นี้</button></div>";
+    }else{
+      h+="<div style='margin-top:12px;padding-top:10px;border-top:1px dashed var(--ink-xsoft)'>"
+        +"<button class='btn' onclick=\"odCancelOrder('"+id+"')\" style='color:#B91C1C;border-color:#FECACA'>🗑️ ยกเลิกออเดอร์นี้</button>"
+        +"<span style='font-size:11px;color:#9CA3AF;margin-left:8px'>ใบซ้ำ / ลูกค้าไม่เอาแล้ว — ยกเลิกแล้วกู้คืนได้</span></div>";
+    }
     body.innerHTML=h;
   }catch(e){ body.innerHTML="โหลดรายละเอียดไม่ได้: "+esc2(e.message||""); }
 }
 
 // สลับสถานะการเงิน (โอนแล้ว ⇄ รอโอน) — beta: assume อัพสลิป=จริง, แอดมินแก้เองได้ (โอนผ่านไลน์) แล้วไล่เช็คสลิปจริงตกเย็น
 // เขียนไม่ติดต้องรู้ทันที — supabase v2 ไม่ throw ถ้าไม่เช็ค .error จะขึ้นสำเร็จทั้งที่ DB ไม่ขยับ (audit 3 ส.ค. 2026)
+/* ── ยกเลิก / กู้คืนออเดอร์ ─────────────────────────────────────────────────
+   จดชื่อคนกดเสมอ — ยกเลิกใบของลูกค้าจริงต้องรู้ว่าใครสั่งยกเลิก
+   และต้อง "อ่านกลับมาดู" หลังเขียนทุกครั้ง เพราะเคยเจอว่าคำสั่งผ่านแต่ข้อมูลไม่ขยับ */
+function odWho(){
+  var n=""; try{ n=localStorage.getItem("lastNickname")||""; }catch(e){}
+  if(!n){
+    n=(window.prompt("ใส่ชื่อคนกดก่อนนะคะ (จำไว้ในเครื่องนี้)\nเช่น กิ๊ฟ")||"").trim();
+    if(!n) return null;
+    try{ localStorage.setItem("lastNickname",n); }catch(e){}
+  }
+  return n;
+}
+async function odCancelOrder(id){
+  var sb_=getSB(); if(!sb_)return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
+  if(!o) return alert("ไม่พบออเดอร์");
+  var who=odWho(); if(!who) return;
+  if(!window.confirm("ยกเลิกออเดอร์นี้?\n\n"+(o.order_number||"")+" · "+(o.customer_name||"")+"\nยอด "+fmtB(o.total)+" · ส่ง "+(o.delivery_date||"—")
+    +"\n\nใบนี้จะหายจากรายการออเดอร์ · หน้าครัว · แพลนเมนู · ใบทวงเงิน\n(กู้คืนได้ที่ปุ่ม \"ใบที่ยกเลิก\")\n\nคนกด: "+who)) return;
+  try{
+    var stamp="[ยกเลิกโดย "+who+" "+today2()+"]";
+    var up=await sb_.from("orders").update({
+      status:"cancelled",
+      notes:String(o.notes||"").indexOf("[ยกเลิกโดย")>=0?o.notes:((o.notes?o.notes+" ":"")+stamp),
+      updated_at:new Date().toISOString()
+    }).eq("id",id).select("id,status");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].status!=="cancelled")
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    /* รอบส่ง Meal Plan/Hyrox ที่ผูกกับใบนี้ต้องยกเลิกตาม ไม่งั้นลูกค้ายังค้างอยู่ในหน้าแพลนเมนู */
+    await sb_.from("mp_deliveries").update({status:"cancelled",updated_at:new Date().toISOString()}).eq("order_id",id);
+    closeOrderDetail();
+    loadAll();
+    alert("ยกเลิกแล้ว: "+(o.order_number||""));
+  }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+async function odUncancel(id){
+  var sb_=getSB(); if(!sb_)return;
+  if(!window.confirm("กู้คืนออเดอร์นี้กลับมาใช้งาน?")) return;
+  try{
+    var up=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id).select("id,status");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
+    await sb_.from("mp_deliveries").update({status:"scheduled",updated_at:new Date().toISOString()}).eq("order_id",id);
+    closeOrderDetail(); loadAll();
+    alert("กู้คืนแล้ว");
+  }catch(e){ alert("กู้คืนไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+/* ดูใบที่ยกเลิก — ถ้าไม่มีที่ให้ดู การยกเลิกจะกลายเป็น "หายถาวร" ในสายตาแอดมิน */
+var ordCancelledOnly=false;
+function toggleCancelledOnly(){
+  ordCancelledOnly=!ordCancelledOnly; ordPage=0;
+  if(ordCancelledOnly){ ordMovedOnly=false; var mb=document.getElementById("ordMovedBtn"); if(mb){mb.style.background="";mb.style.color="";mb.style.borderColor="";} }
+  var b=document.getElementById("ordCancelBtn");
+  if(b){ b.style.background=ordCancelledOnly?"#B91C1C":""; b.style.color=ordCancelledOnly?"#fff":""; b.style.borderColor=ordCancelledOnly?"#B91C1C":""; }
+  loadAll();
+}
 async function togglePayment(id,current,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var sb_=getSB(); if(!sb_)return;
