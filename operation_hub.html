@@ -2036,7 +2036,38 @@ async function mpFindOrderForRound(sb_,r){
 // ถ้าไม่แทนที่ของเก่า จะกลายเป็นครัวเห็น 14 กล่องทั้งที่ลูกค้าสั่ง 7 (เทสจับได้ 6 ส.ค. ใบ MP-0807-009)
 var MPPLAN_SRC=["จากชีทแอดมิน"];
 
-async function syncPlanToOrderItems(r){
+/* ── กันเขียนซ้อน (เจอของจริง 10 ส.ค. 2026) ────────────────────────────────
+   ทางเขียนแผนมี 2 ประตู (ตารางแพลนเมนู debounce 500ms + ป้อบอัพเลือกเมนู)
+   ถ้าแอดมินแก้แล้วกดบันทึกในป้อบอัพก่อน debounce ทำงาน → 2 คำสั่งวิ่งพร้อมกัน
+   ลำดับจริงที่เกิด: อ่าน → อ่าน → ลบ → ลบ → เขียน 7 → เขียน 7 = **14 กล่อง**
+   ผลจริง: มิ้ม ครัวเห็น 15 กล่องทั้งที่สั่ง 7 · วิไลลักษณ์ 13 → ครัวทำอาหารทิ้ง
+   แก้: ต่อคิวต่อรอบ (ห้ามวิ่งพร้อมกัน) + กวาดแถวซ้ำทิ้งหลังเขียนทุกครั้ง */
+var mpSyncChain={};
+function syncPlanToOrderItems(r){
+  var key=String((r&&r.id)||"x");
+  var prev=mpSyncChain[key]||Promise.resolve();
+  var next=prev.catch(function(){}).then(function(){ return _syncPlanToOrderItems(r); });
+  mpSyncChain[key]=next.catch(function(){});
+  return next;
+}
+/* กวาดแถวซ้ำ — โค้ดเดียวกัน + ป้ายรอบเดียวกัน ต้องเหลือแถวเดียวเท่านั้น
+   ทำหลังเขียนเสมอ เพื่อให้ตัวเลขที่ครัวเห็นถูกต้อง แม้จะมีอะไรหลุดคิวมาได้ */
+async function dedupeOrderBoxRows(sb_,orderId){
+  try{
+    var res=await sb_.from("order_items").select("id,menu_code,notes").eq("order_id",orderId).limit(500);
+    if(res.error||!res.data) return 0;
+    var seen={}, kill=[];
+    res.data.forEach(function(i){
+      var n=String(i.notes||"");
+      if(n.indexOf(MPBOX_TAG)!==0) return;              // แตะเฉพาะแถวที่ระบบนี้เขียนเอง
+      var k=i.menu_code+"|"+n;
+      if(seen[k]) kill.push(i.id); else seen[k]=1;
+    });
+    for(var j=0;j<kill.length;j++) await sb_.from("order_items").delete().eq("id",kill[j]);
+    return kill.length;
+  }catch(e){ console.warn("dedupeOrderBoxRows:",e); return 0; }
+}
+async function _syncPlanToOrderItems(r){
   var sb_=getSB(); if(!sb_||!r) return null;
   var tgt=await mpFindOrderForRound(sb_,r);
   if(!tgt) return null;
@@ -2092,7 +2123,8 @@ async function syncPlanToOrderItems(r){
     });
     var ins=await sb_.from("order_items").insert(rows);
     if(ins.error) throw ins.error;
-    return {id:tgt.id,order_number:tgt.order_number,bad:bad,written:rows.length};
+    var cleaned=await dedupeOrderBoxRows(sb_,tgt.id);
+    return {id:tgt.id,order_number:tgt.order_number,bad:bad,written:rows.length,cleaned:cleaned};
   }catch(e){ console.error("syncPlanToOrderItems:",e); return null; }
 }
 
