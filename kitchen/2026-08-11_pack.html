@@ -56,6 +56,13 @@
   .it .tx{flex:1;font-size:13.5px;font-weight:700;line-height:1.25}
   .it .tx small{color:var(--soft);font-size:11.5px;font-weight:600}
   .it .tx small::before{content:' · '}
+  .lang{border:1px solid var(--line);border-radius:9px;padding:6px 10px;margin-bottom:10px;background:#F9FAFB}
+  .lang summary{font-size:12px;font-weight:800;color:var(--soft);cursor:pointer}
+  .langbtn{display:flex;gap:6px;margin-top:8px}
+  .langbtn button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#fff;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
+  .langbtn button.on{background:var(--head);border-color:var(--head);color:#fff}
+  .langnote{font-size:11px;color:var(--soft);margin-top:6px;font-weight:600}
+  .vbanner{display:none;background:var(--yelbg);border:1px solid #FCD34D;border-radius:9px;padding:7px 10px;margin-bottom:10px;font-size:12px;font-weight:800;color:var(--yel);line-height:1.4}
   .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
   @media print{.wrap{max-width:100%} body{font-size:12.5px} .tools{display:none} .c{break-inside:avoid}}
 </style>
@@ -68,6 +75,26 @@
 <div class="tools">
   <button onclick="clearAll()">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()">🖨 พิมพ์</button>
+</div>
+
+<details class="lang">
+  <summary>🌏 ภาษา / ဘာသာ / ၽႃႇသႃႇ — แตะเพื่อเปลี่ยน</summary>
+  <div class="langbtn">
+    <button onclick="setLang('th')" id="lb-th" class="on">ไทย</button>
+    <button onclick="setLang('my')" id="lb-my">မြန်မာ (พม่า)</button>
+    <button onclick="setLang('shn')" id="lb-shn">တႆး (ไทใหญ่)</button>
+  </div>
+  <div class="langnote">ตัวเลข · กรัม · รหัสเมนู (LC01 · HP76 · S022) = สากล ไม่แปล</div>
+</details>
+<div id="vbanner" class="vbanner"></div>
+
+<div class="bigred">
+  <div class="t" data-i="mixup">🚨 วันนี้เกิดเคสส่งผิดแล้ว — เช็คของในกล่อง 3 คนนี้ก่อนปิดฝา</div>
+  <ul>
+    <li data-i="mixup1"><b>มีมี่ (LC) · มิ้ม (LC) · TooN (HP)</b> — เคยถูกจัดเป็น <b>เมนู Hyrox 1–7</b> ซึ่ง <b>ผิด</b> · อูโทรแจ้งเอง</li>
+    <li data-i="mixup2">เมนูที่ถูกต้องของ 3 คนนี้ = <b>รหัส LC / HP</b> ในการ์ดข้างล่าง (ดึงจากออเดอร์จริงในระบบ)</li>
+    <li data-i="mixup3">⛔ <b>เมนู Hyrox 1–7 ใช้ได้กับลูกค้า Hyrox 9 คนเท่านั้น</b> — "กินสูตรเดียวกันต่างแค่กรัม" จริงเฉพาะฝั่ง Hyrox</li>
+  </ul>
 </div>
 
 <div class="bigred">
@@ -87,10 +114,10 @@
 </div>
 
 <div class="banred">
-  <div class="t">🔴 ข้อห้ามรายคน — ผิดข้อนี้เสียลูกค้า</div>
+  <div class="t" data-i="ban_t">🔴 ข้อห้ามรายคน — ผิดข้อนี้เสียลูกค้า</div>
   <ul>
-    <li><b>กวาง (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2 (เนื้อบูลโกกิ)</b> · ได้เมนู 7 ทูน่าสเต๊ก 1 กล่องแทน</li>
-    <li><b>Muse (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2</b> · ได้เมนู 3 หมูย่าง เพิ่มเป็น 3 กล่อง + เมนู 7 ทูน่า 2 กล่องแทน</li>
+    <li data-i="ban1"><b>กวาง (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2 (เนื้อบูลโกกิ)</b> · ได้เมนู 7 ทูน่าสเต๊ก 1 กล่องแทน</li>
+    <li data-i="ban2"><b>Muse (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2</b> · ได้เมนู 3 หมูย่าง เพิ่มเป็น 3 กล่อง + เมนู 7 ทูน่า 2 กล่องแทน</li>
   </ul>
 </div>
 
@@ -115,8 +142,15 @@
 </div>
 
 <script>
-// ── เมนู Meal Plan/Hyrox วันนี้ (เลข → ชื่อ + โปรตีนหลัก) — ตรงกับใบผลิต kitchen/2026-08-11.html ──
-var M = {
+// ══════════════════════════════════════════════════════════════
+// เมนู 2 ชุด แยกกันเด็ดขาด — บทเรียน OPEN_LOOPS #15 (11 ส.ค. อูโทรแจ้ง)
+//   HX = เมนู Hyrox รอบนี้ (1–7) ← ใช้ได้กับลูกค้า Hyrox เท่านั้น
+//   M  = เมนู Meal Plan รายคน ดึงจาก order_items ใน DB ← LC/HP ต้องใช้ชุดนี้
+// ⛔ ห้ามเอา HX ไปให้ลูกค้า LC/HP — "กินสูตรเดียวกันต่างแค่กรัม" จริงเฉพาะฝั่ง Hyrox
+// ══════════════════════════════════════════════════════════════
+
+// ── เมนู Hyrox วันนี้ (เลข → ชื่อ + โปรตีนหลัก) — ตรงกับใบผลิต kitchen/2026-08-11.html ──
+var HX = {
  '1':{n:'อกไก่ย่างซอสเทริยากิ + บรอกโคลี/แครอท/ข้าวโพดอ่อน', p:'อกไก่'},
  '2':{n:'เนื้อบูลโกกิ + ถั่วงอกลวก/แครอทเส้น/ผักกาดหอม', p:'เนื้อวัวไม่ติดมัน'},
  '3':{n:'หมูย่างน้ำผึ้งกระเทียม + บรอกโคลี/แครอทนึ่ง/ถั่วแขก', p:'สันในหมู'},
@@ -124,6 +158,24 @@ var M = {
  '5':{n:'แซลมอนซอสมิโสะ + หน่อไม้ฝรั่ง/ถั่วแขก/เห็ด', p:'แซลมอน'},
  '6':{n:'กระพง Herb Butter + หน่อไม้ฝรั่ง/ถั่วแขก/มะเขือเทศเชอร์รี่', p:'กระพง'},
  '7':{n:'ทูน่าสเต๊กซีซาร์ (สำรอง) + ร็อกเก็ต/มะเขือเทศ/หน่อไม้ฝรั่ง', p:'ทูน่าเนื้อล้วน'}
+};
+
+// ── เมนู Meal Plan รายคน — ชื่อจาก order_items ใน DB ตรงๆ (ไม่ใช่เมนู Hyrox) ──
+var M = {
+ 'LC01':{n:'อกไก่ย่างสมุนไพร + มันหวานนึ่ง + บร็อกโคลีลวก', p:'อกไก่ 120g'},
+ 'LC02':{n:'แซลมอนย่างเกลือ + ข้าวกล้อง + หน่อไม้ฝรั่งย่าง', p:'แซลมอน 120g'},
+ 'LC03':{n:'ปลาทูน่าสเต๊ก + มันฝรั่งต้ม + ถั่วลันเตานึ่ง', p:'ทูน่า 120g'},
+ 'LC06':{n:'หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง + ผักรวมลวก', p:'สันในหมู 120g'},
+ 'LC08':{n:'ข้าวคลุกกะปิ', p:'เนื้อรวม 120g'},
+ 'LC14':{n:'เกี๊ยวน้ำอกไก่และกุ้ง', p:'อกไก่+กุ้ง 120g'},
+ 'LC16':{n:'ไข่ม้วนไส้ผักโขมชีส ขนมปัง สลัดผัก', p:'ไข่'},
+ 'HP01':{n:'อกไก่ย่างสมุนไพร + มันหวานนึ่ง + บร็อกโคลีลวก', p:'อกไก่ 170g'},
+ 'HP02':{n:'แซลมอนย่างเกลือ + ข้าวกล้อง + หน่อไม้ฝรั่งย่าง', p:'แซลมอน 170g'},
+ 'HP03':{n:'ปลาทูน่าสเต๊ก + มันฝรั่งต้ม + ถั่วลันเตานึ่ง', p:'ทูน่า 170g'},
+ 'HP06':{n:'หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง + ผักรวมลวก', p:'สันในหมู 170g'},
+ 'HP08':{n:'ข้าวคลุกกะปิ', p:'เนื้อรวม 170g'},
+ 'HP16':{n:'ไข่ม้วนไส้ผักโขมชีส ขนมปัง สลัดผัก', p:'ไข่'},
+ 'HP76':{n:'แซลมอนซอสทาท่า มันบด', p:'แซลมอน 170g'}
 };
 
 // ── ลูกค้าที่จัดแน่วันนี้ (2 ใบที่ขัดกัน + 3 ใบที่ยกเลิกแล้ว ไม่อยู่ในนี้ = อยู่กล่องบนสุด) ──
@@ -143,14 +195,14 @@ var C = [
  {g:'hx', n:'Belle (ปริญญารัตน์)', line:'U-0811-013 · 0868785983', box:6, items:['1','2','3','4','5','6']},
  {g:'hx', n:'Nuchnuch (นุชนันทน์)', line:'U-0811-014 · 0894445144', box:6, items:['1','2','3','4','5','6']},
 
- // ─ LC 2 คน · 14 กล่อง ─
- {g:'lc', n:'มีมี่ (Mimi)', line:'U-0810-009 · 0813451461', box:7, items:['1','2','3','4','5','6','7'],
+ // ─ LC 2 คน · 14 กล่อง — เมนู Meal Plan รายคนจาก DB (ไม่ใช่เมนู Hyrox) ─
+ {g:'lc', n:'มีมี่ (Mimi)', line:'U-0810-009 · 0813451461', box:7, mp:['LC01','LC02','LC03','LC06','LC08','LC14','LC16'],
   note:'📦 ส่ง Nim Express — แพ็คแบบส่งต่างจังหวัด'},
- {g:'lc', n:'มิ้ม (Mimchan)', line:'U-0810-004 · 0995969636', box:7, items:['1','2','3','4','5','6','7'],
-  note:'📌 หลังที่ 2 ขวามือ'},
+ {g:'lc', n:'มิ้ม (Mimchan)', line:'U-0810-004 · 0995969636', box:7, mp:['LC01','LC02','LC03','LC06','LC08','LC14','LC16'],
+  note:'📌 หลังที่ 2 ขวามือ · คอร์ส LC สัปดาห์ รอบ 1/3'},
 
  // ─ HP 1 คน · 7 กล่อง ─
- {g:'hp', n:'Supatcha (TooN)', line:'U-0810-013 · 0962463656', box:7, items:['1','2','3','4','5','6','7'],
+ {g:'hp', n:'Supatcha (TooN)', line:'U-0810-013 · 0962463656', box:7, mp:['HP01','HP02','HP03','HP06','HP08','HP16','HP76'],
   note:'⚠️ อาจซ้ำกับ TooN ฝั่ง Hyrox — เช็คกับกิฟก่อนแพ็ค'},
 
  // ─ สต็อค ส่งวันนี้ (ของทำไว้แล้ว ไม่กระทบยอดผลิต) · 4 ใบ 78 กล่อง ─
@@ -193,8 +245,12 @@ function render(){
             + '<span class="bx">'+c.box+' กล่อง</span></div>';
       if(c.note) html += '<div class="note">'+c.note+'</div>';
       var rows = [];
-      if(c.items){
-        c.items.forEach(function(code){ var m = M[code]||{n:'(ไม่พบเมนู '+code+')',p:'?'};
+      if(c.items){ // Hyrox — เลขเมนูรอบนี้ 1–7
+        c.items.forEach(function(code){ var m = HX[code]||{n:'(ไม่พบเมนู Hyrox '+code+')',p:'?'};
+          rows.push({no:code, tx:m.n+'<small>'+m.p+'</small>'}); });
+      }
+      if(c.mp){ // Meal Plan — รหัสเมนูรายคนจาก DB
+        c.mp.forEach(function(code){ var m = M[code]||{n:'(ไม่พบเมนู MP '+code+')',p:'?'};
           rows.push({no:code, tx:m.n+'<small>'+m.p+'</small>'}); });
       }
       if(c.stock){ c.stock.forEach(function(s){ rows.push({no:'', tx:s}); }); }
@@ -218,11 +274,54 @@ function render(){
 function clearAll(){ save({}); render(); }
 render();
 
+// ══ ภาษา — ไทยเป็นค่าเริ่มต้น · พม่า/ไทใหญ่ พับไว้ด้านบน (นัทเคาะ OPEN_LOOPS #5, 11 ส.ค.) ══
+// แปลเฉพาะ "ข้อห้าม + คำเตือน" (ของสำคัญที่ต้องอ่านออก) — ชื่อเมนู/รหัส/ตัวเลข ไม่แปล
+var T = {
+  ban_t:{th:'🔴 ข้อห้ามรายคน — ผิดข้อนี้เสียลูกค้า',
+         my:'🔴 လူတစ်ဦးချင်း မတားမြစ်ချက် — မှားလျှင် ဝယ်သူ ဆုံးရှုံးမည်',
+         shn:'🔴 ၶေႃႈႁၢမ်ႈ ၵူၼ်းသိုဝ်ႉတီႈ — ၽိတ်းသေ လႆႈသုမ်း'},
+  ban1:{th:'กวาง (Hyrox) — ไม่ทานเนื้อวัว → ไม่ได้เมนู 2 (เนื้อบูลโกกิ) · ได้เมนู 7 ทูน่าสเต๊ก 1 กล่องแทน',
+        my:'กวาง (Hyrox) — အမဲသား မစားပါ → menu 2 မရ · menu 7 (ทูน่า) 1 ဘူး အစား',
+        shn:'กวาง (Hyrox) — ဢမ်ႇၵိၼ်ၼိူဝ်ႉမူး → menu 2 ဢမ်ႇလႆႈ · menu 7 (ทูน่า) 1 ဢၼ် လႅၵ်ႈ'},
+  ban2:{th:'Muse (Hyrox) — ไม่ทานเนื้อวัว → ไม่ได้เมนู 2 · ได้เมนู 3 หมูย่าง เพิ่มเป็น 3 กล่อง + เมนู 7 ทูน่า 2 กล่องแทน',
+        my:'Muse (Hyrox) — အမဲသား မစားပါ → menu 2 မရ · menu 3 (ဝက်သား) 3 ဘူး + menu 7 (ทูน่า) 2 ဘူး အစား',
+        shn:'Muse (Hyrox) — ဢမ်ႇၵိၼ်ၼိူဝ်ႉမူး → menu 2 ဢမ်ႇလႆႈ · menu 3 (ၼိူဝ်ႉမူ) 3 ဢၼ် + menu 7 (ทูน่า) 2 ဢၼ် လႅၵ်ႈ'},
+  mixup:{th:'🚨 วันนี้เกิดเคสส่งผิดแล้ว — เช็คของในกล่อง 3 คนนี้ก่อนปิดฝา',
+         my:'🚨 ဒီနေ့ မှားပို့မိပြီ — ဒီ 3 ဦး ဘူးထဲ အရင်စစ်ပါ',
+         shn:'🚨 ဝၼ်းၼႆႉ သူင်ႇၽိတ်းယဝ်ႉ — ၵူတ်ႇထတ်း 3 ၵေႃႉၼႆႉ ဢွၼ်တၢင်း'},
+  mixup1:{th:'มีมี่ (LC) · มิ้ม (LC) · TooN (HP) — เคยถูกจัดเป็นเมนู Hyrox 1–7 ซึ่งผิด · อูโทรแจ้งเอง',
+          my:'มีมี่ (LC) · มิ้ม (LC) · TooN (HP) — Hyrox menu 1–7 ထည့်မိသည် မှားသည်',
+          shn:'มีมี่ (LC) · มิ้ม (LC) · TooN (HP) — သႂ်ႇ Hyrox menu 1–7 ၼၼ်ႉ ၽိတ်း'},
+  mixup2:{th:'เมนูที่ถูกต้องของ 3 คนนี้ = รหัส LC / HP ในการ์ดข้างล่าง (ดึงจากออเดอร์จริงในระบบ)',
+          my:'ဒီ 3 ဦး အတွက် မှန်သော menu = အောက်ကဒ်တွင် LC / HP ကုဒ်',
+          shn:'menu ထုၵ်ႇမႅၼ်ႈ 3 ၵေႃႉၼႆႉ = ၶူတ်ႉ LC / HP တီႈတႂ်ႈ'},
+  mixup3:{th:'⛔ เมนู Hyrox 1–7 ใช้ได้กับลูกค้า Hyrox 9 คนเท่านั้น',
+          my:'⛔ Hyrox menu 1–7 ကို Hyrox ဝယ်သူ 9 ဦး အတွက်သာ',
+          shn:'⛔ Hyrox menu 1–7 ၸႂ်ႉတႃႇ Hyrox 9 ၵေႃႉ ၼၼ်ႉၵူၺ်း'}
+};
+var VB = {th:'',
+  my:'⚠️ မြန်မာ = AI ဘာသာပြန် — ဝန်ထမ်း စစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ',
+  shn:'⚠️ ၽၢႆႇတႆး = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ် ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ'};
+
+function setLang(l){
+  document.querySelectorAll('[data-i]').forEach(function(e){
+    var k = e.getAttribute('data-i');
+    if(T[k] && T[k][l] != null) e.textContent = T[k][l];
+  });
+  ['th','my','shn'].forEach(function(x){
+    var b = document.getElementById('lb-' + x);
+    if(b) b.className = (x === l ? 'on' : '');
+  });
+  var v = document.getElementById('vbanner');
+  v.textContent = VB[l] || '';
+  v.style.display = (l === 'th' ? 'none' : 'block');
+}
+
 // ── ตรวจยอดในตัวเอง: กล่องที่ประกาศ = จำนวนบรรทัดจริง (กันใบโกหก) ──
 (function(){
   var bad = [];
   C.forEach(function(c){
-    var n = c.items ? c.items.length : 0;
+    var n = (c.items ? c.items.length : 0) + (c.mp ? c.mp.length : 0);
     if(c.stock){ c.stock.forEach(function(s){ var m = s.match(/×(\d+)\s*$/); n += m ? parseInt(m[1],10) : 1; }); }
     if(n !== c.box) bad.push(c.n+': ประกาศ '+c.box+' แต่นับได้ '+n);
   });
