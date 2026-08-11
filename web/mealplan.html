@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>คอร์สอาหารสุขภาพ Meal Plan โปรตีนสูง & Low Carb — ทดลอง 7 กล่อง ส่งฟรีทั่วกรุงเทพ | Under360</title>
-<meta name="description" content="คอร์สอาหารทำสดรายวัน จัดเมนูตามเป้าหมาย — โปรตีนสูง (HP 170g) หรือ Low Carb (LC 120g) ตัดของแพ้อัตโนมัติ เมนูไม่ซ้ำจำเจ เริ่มทดลอง 7 กล่อง 1,399.- ส่งฟรีทั่วกรุงเทพ สั่งจบใน LINE">
+<meta name="description" content="คอร์สอาหารทำสดรายวัน 3 สาย — โปรตีนสูง (HP 170g) · Low Carb (LC 120g) · HX สำหรับสายซ้อมหนัก/Hyrox ตัดของแพ้อัตโนมัติ เมนูไม่ซ้ำจำเจ เริ่มทดลอง 7 กล่อง 1,399.- ส่งฟรีทั่วกรุงเทพ สั่งเองได้ 24 ชม.">
 <link rel="canonical" href="https://www.360foodbox.com/mealplan">
 <meta property="og:title" content="Meal Plan โปรตีนสูง & Low Carb — ทดลอง 7 กล่อง ส่งฟรี">
 <meta property="og:description" content="คอร์สอาหารทำสดรายวัน จัดเมนูตามเป้าหมายของคุณ ส่งฟรีทั่วกรุงเทพ">
@@ -33,12 +33,12 @@
     {
       "@type": "Question",
       "name": "Meal Plan ของ Under360 คืออะไร",
-      "acceptedAnswer": { "@type": "Answer", "text": "คอร์สอาหารสุขภาพทำสดรายวัน ครัวจัดเมนูให้ตามเป้าหมายของคุณ มี 2 สาย คือโปรตีนสูง (HP เนื้อสัตว์ 170 กรัมต่อกล่อง) และ Low Carb (LC เนื้อสัตว์ 120 กรัมต่อกล่อง) เมนูหมุนเวียนไม่ซ้ำจำเจ ตัดของแพ้ให้อัตโนมัติ ส่งฟรีทั่วกรุงเทพ" }
+      "acceptedAnswer": { "@type": "Answer", "text": "คอร์สอาหารสุขภาพทำสดรายวัน ครัวจัดเมนูให้ตามเป้าหมายของคุณ มี 3 สาย คือโปรตีนสูง (HP เนื้อสัตว์ 170 กรัมต่อกล่อง) Low Carb (LC เนื้อสัตว์ 120 กรัมต่อกล่อง) และ HX สำหรับคนซ้อมหนักหรือเตรียมลงแข่ง เช่น Hyrox ไตรกีฬา วิ่งระยะไกล เมนูหมุนเวียนไม่ซ้ำจำเจ ตัดของแพ้ให้อัตโนมัติ ส่งฟรีทั่วกรุงเทพ" }
     },
     {
       "@type": "Question",
       "name": "ราคาเริ่มต้นเท่าไหร่",
-      "acceptedAnswer": { "@type": "Answer", "text": "ชุดทดลอง 7 กล่อง เริ่มต้น 1,399 บาท (LC) และ 1,699 บาท (HP) มีแบบรายสัปดาห์ 21 กล่อง และรายเดือน 84 กล่อง ทุกแพ็กเกจส่งฟรี" }
+      "acceptedAnswer": { "@type": "Answer", "text": "ชุดทดลอง 7 กล่อง เริ่มต้น 1,399 บาท (LC) และ 1,699 บาท (HP) มีแบบรายสัปดาห์ 21 กล่อง รายเดือน 84 กล่อง และ Hyrox Set 21 กล่อง 4,500 บาท สำหรับสายซ้อมหนัก ทุกแพ็กเกจส่งฟรี" }
     },
     {
       "@type": "Question",
@@ -89,9 +89,12 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 .hero .mini b{font-family:'Prompt';color:#9FE3AE}
 
 /* HP/LC compare */
-.duo{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:32px}
+.duo{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:32px}
 .plan{background:var(--paper);border-radius:var(--radius);padding:30px;box-shadow:0 6px 24px rgba(20,56,35,.08);border-top:6px solid var(--green)}
 .plan.hp{border-top-color:var(--chili)}
+.plan.hx{border-top-color:#1B5E8C}
+.plan.hx .lbl{color:#1B5E8C}
+@media(max-width:1000px) and (min-width:761px){.duo{grid-template-columns:1fr 1fr}}
 .plan .lbl{font-family:'Prompt';font-weight:700;font-size:.85rem;letter-spacing:.1em}
 .plan.hp .lbl{color:var(--chili)}
 .plan.lc .lbl{color:var(--green)}
@@ -105,7 +108,7 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 @media(max-width:760px){.duo{grid-template-columns:1fr}}
 
 /* pricing */
-.prices{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:32px}
+.prices{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:22px;margin-top:32px}
 .price{background:var(--paper);border-radius:var(--radius);padding:28px 24px;box-shadow:0 4px 18px rgba(20,56,35,.07);text-align:center;position:relative}
 .price.best{outline:3px solid var(--green)}
 .price .badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green);color:#fff;font-family:'Prompt';font-weight:600;font-size:.78rem;padding:4px 16px;border-radius:999px;white-space:nowrap}
@@ -190,7 +193,7 @@ footer a{color:rgba(250,246,236,.85)}
 <section>
   <div class="wrap">
     <p class="eyebrow">เลือกสายของคุณ</p>
-    <h2 class="sec">2 สาย เป้าหมายต่างกัน — คุณภาพเดียวกัน</h2>
+    <h2 class="sec">3 สาย เป้าหมายต่างกัน — คุณภาพเดียวกัน</h2>
     <div class="duo">
       <div class="plan hp">
         <span class="lbl">HIGH PROTEIN</span>
@@ -212,6 +215,17 @@ footer a{color:rgba(250,246,236,.85)}
           <li>เหมาะกับช่วงลดไขมัน / คุมน้ำหนัก</li>
           <li>คาร์บต่ำ แต่รสชาติจัดเต็ม</li>
           <li>เมนูหมุนเวียน ไม่จำเจ</li>
+        </ul>
+      </div>
+      <div class="plan hx">
+        <span class="lbl">HYROX / ATHLETE</span>
+        <h3>HX — สายซ้อมหนัก</h3>
+        <div class="g">คาร์บ+โปรตีน <small>จัดสัดส่วนเพื่อการซ้อม</small></div>
+        <p>สำหรับคนซ้อมหนักและเตรียมลงแข่ง — เน้นคาร์บคุณภาพเป็นพลังงานควบคู่โปรตีน ไม่ใช่แค่คุมแคลอรี่</p>
+        <ul>
+          <li>เหมาะกับ Hyrox · ไตรกีฬา · วิ่งระยะไกล · ครอสฟิต</li>
+          <li>เมนูออกแบบร่วมกับรอบซ้อม (ช่วงสะสมพลังงานก่อนแข่ง)</li>
+          <li>เมนูเฉพาะสาย HX — ปลา กุ้ง เนื้อ ไก่ หมู สลับทุกวัน</li>
         </ul>
       </div>
     </div>
@@ -242,6 +256,12 @@ footer a{color:rgba(250,246,236,.85)}
         <div class="boxes">84 กล่อง · คุ้มสุดต่อกล่อง</div>
         <div class="row"><span>LC</span><span><b>12,000.-</b> <span class="per">(~143/กล่อง)</span></span></div>
         <div class="row hp-p"><span>HP</span><span><b>15,900.-</b> <span class="per">(~189/กล่อง)</span></span></div>
+      </div>
+      <div class="price">
+        <h3>Hyrox Set</h3>
+        <div class="boxes">21 กล่อง · 7 วัน · สายซ้อมหนัก</div>
+        <div class="row"><span>HX</span><span><b>4,500.-</b> <span class="per">(~214/กล่อง)</span></span></div>
+        <div class="row" style="border-top:1px dashed rgba(20,56,35,.15);color:var(--muted);font-size:.88rem;display:block;text-align:left">เมนูสาย HX โดยเฉพาะ · จัดสัดส่วนคาร์บ-โปรตีนสำหรับรอบซ้อม</div>
       </div>
     </div>
   </div>
