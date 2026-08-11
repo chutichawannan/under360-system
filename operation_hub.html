@@ -3142,6 +3142,65 @@ function mpSyncBadge(rowId,tgt){
   b.style.color="#15803D"; b.textContent="✓ ครัวเห็นแล้ว"+(tgt.order_number?" ("+tgt.order_number+")":"");
 }
 
+/* ── N-66 · จัดการรอบส่งจากหน้าแพลนเมนูโดยตรง ───────────────────────────────
+   ทั้ง 2 ฟังก์ชันแตะ mp_deliveries เป็นหลัก และขยับใบออเดอร์ตามถ้ารอบนี้มีใบของตัวเอง
+   ⚠️ ไม่ยกเลิกใบออเดอร์ให้อัตโนมัติ — 1 ใบอาจครอบหลายรอบ ยกเลิกใบเดียวกระทบรอบอื่นด้วย
+      (ถ้าจะยกเลิกทั้งใบ ให้ไปทำที่หน้าออเดอร์ซึ่งเห็นภาพรวมทั้งใบ) */
+async function planMoveRound(rowId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var r=getMpRow(rowId); if(!r) return alert("ไม่พบรอบนี้");
+  var who=odWho(); if(!who) return;
+  var cur=r.delivery_date||today2();
+  var nd=(window.prompt("เลื่อนวันส่งของ "+(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")
+    +"\n\nวันเดิม: "+cur+"\nใส่วันใหม่ (ปปปป-ดด-วว)", cur)||"").trim();
+  if(!nd || nd===cur) return;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(nd)) return alert("รูปแบบวันที่ไม่ถูก ต้องเป็น 2026-08-14");
+  try{
+    var up=await sb_.from("mp_deliveries").update({delivery_date:nd,updated_at:new Date().toISOString()})
+             .eq("id",rowId).select("id,delivery_date");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].delivery_date!==nd)
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    /* ใบออเดอร์ของรอบนี้ต้องขยับตาม ไม่งั้นครัว/แมสยังเห็นวันเดิม = ของไปผิดวัน */
+    var om=mpOrderMap[rowId];
+    if(om&&om.id) await sb_.from("orders").update({delivery_date:nd,updated_at:new Date().toISOString()}).eq("id",om.id);
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"kq_status",
+      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เลื่อนวันส่ง "+cur+" → "+nd+(om?(" (ใบ "+om.num+")"):""),
+      detail:{mp_id:rowId, from:cur, to:nd, order_id:(om&&om.id)||null, by:"oh_plan"} }); }catch(e){}
+    await loadMpPlanData();
+    alert("เลื่อนเป็น "+nd+" แล้ว"+(om?"\nใบ "+om.num+" ขยับตามแล้ว":"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
+  }catch(e){ alert("เลื่อนวันไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+async function planCancelRound(rowId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var r=getMpRow(rowId); if(!r) return alert("ไม่พบรอบนี้");
+  var who=odWho(); if(!who) return;
+  var om=mpOrderMap[rowId];
+  if(!window.confirm("ยกเลิกรอบนี้?\n\n"+(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")
+    +"\nส่ง "+(r.delivery_date||"—")+" · "+(r.box_count||7)+" กล่อง"
+    +"\n\nรอบนี้จะหายจากแพลนเมนูและหน้าครัว"
+    +(om?("\n⚠️ ใบ "+om.num+" ยังอยู่ตามเดิม — ถ้าจะยกเลิกทั้งใบ ให้ไปทำที่หน้าออเดอร์"):"")
+    +"\n\nคนกด: "+who)) return;
+  try{
+    var up=await sb_.from("mp_deliveries").update({status:"cancelled",updated_at:new Date().toISOString()})
+             .eq("id",rowId).select("id,status");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].status!=="cancelled")
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"kq_status",
+      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" ("+(r.delivery_date||"")+") — ยกเลิกรอบจากหน้าแพลนเมนู",
+      detail:{mp_id:rowId, date:r.delivery_date, order_id:(om&&om.id)||null, by:"oh_plan"} }); }catch(e){}
+    selectedRowIds=selectedRowIds.filter(function(id){return id!==rowId;});
+    await loadMpPlanData();
+    alert("ยกเลิกรอบแล้ว");
+  }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
 function renderPlanCell(rowId){
   var td=document.querySelector(".assign-cell[data-rowid='"+rowId+"']"); if(!td)return;
   var r=getMpRow(rowId); if(!r)return;
@@ -3153,7 +3212,14 @@ function renderPlanCell(rowId){
   var orderTag = (om===undefined) ? ""
     : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"
          : "<span style='font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — หน้าครัวและหน้าแมสจะมองไม่เห็น'>⚠ ไม่มีใบ</span>";
-  var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+orderTag+"</div>";
+  /* N-66 · เลื่อนวัน/ยกเลิกรอบ ทำได้จากหน้านี้เลย (กิ๊ฟขอ)
+     เดิมมีแต่ที่หน้าออเดอร์ → แอดมินกำลังจัดเมนูอยู่ ต้องออกไปอีกหน้าแล้วหากลับมาใหม่ */
+  var planActs="<span style='float:right'>"
+    +"<span onclick='planMoveRound(\""+rowId+"\",event)' title='เลื่อนวันส่งรอบนี้' "
+    +"style='cursor:pointer;font-size:10px;padding:0 3px;border-radius:4px;background:#EFF6FF;color:#1E40AF'>📅</span> "
+    +"<span onclick='planCancelRound(\""+rowId+"\",event)' title='ยกเลิกรอบนี้' "
+    +"style='cursor:pointer;font-size:10px;padding:0 4px;border-radius:4px;background:#FEE2E2;color:#B91C1C'>✕</span></span>";
+  var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+orderTag+planActs+"</div>";
 
   if(planView==="Compact"){
     td.innerHTML=roundLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
