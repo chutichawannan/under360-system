@@ -116,12 +116,15 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
 .oc-collapsed .oc-caret{transform:rotate(-90deg);}
 .oc-boxn{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--soft);}
-.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed /* ❄️ แถบของที่แช่ตู้ — ต้องเด่นกว่าปกติ เพราะเป็นของที่ครัวพลาดแล้วลูกค้าไม่ได้ของ */
+/* ⚠️ กฎพับการ์ด — ห้ามเอาคอมเมนต์มาคั่นกลางรายชื่อ selector
+   (เคยพลาดมาแล้ว: คอมเมนต์กินท้ายรายชื่อ ทำให้ .oc-note โดน display:none ทั้งหน้า = ครัวไม่เห็นโน้ตลูกค้าเลย
+    และ .oc-fridge เสียสีพื้นทั้งหมด = แถบของแช่ตู้ไม่เด่นอีกต่อไป) */
+.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:none;}
+/* ❄️ แถบของที่แช่ตู้ — ต้องเด่นกว่าปกติ เพราะเป็นของที่ครัวพลาดแล้วลูกค้าไม่ได้ของ */
 .oc-fridge{background:#DBEAFE;color:#1E40AF;font-size:13.5px;font-weight:800;padding:7px 12px;border-radius:8px;margin-bottom:8px;line-height:1.4;}
 .oc-fridge.take{background:#FEF3C7;color:#92400E;}
 body.tablet .oc-fridge{font-size:17px;padding:10px 14px;}
 @media print{.oc-fridge{border:1px solid #333;background:#fff!important;color:#000!important;}}
-.oc-note{display:none;}
 .oc-collapsed .oc-2col{display:block;}
 .oc-collapsed .oc-top{margin-bottom:0;}
 .oc-collapsed{padding-top:9px;padding-bottom:9px;}
@@ -226,6 +229,26 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 }
 @media (min-width:1400px){
   body.tablet .slot-body{grid-template-columns:1fr 1fr 1fr;}
+}
+
+/* ── 📱 จอแคบ = เครื่องที่ครัวใช้จริง (iPhone) — N-62 ─────────────────
+   ที่วัดได้บนหน้าจริงที่ 375px ก่อนแก้: หัว 107px + แถบปุ่มกรอง 195px + แท็บ 42px
+   = 344px จาก 812px (42% ของจอ) หมดไปกับปุ่ม ก่อนเห็นออเดอร์สักใบ
+   แก้: หัวกับแถบกรองเป็น "แถวเดียวเลื่อนแนวนอน" แทนการพับลงมา 3-5 แถว
+   (ปุ่มยังอยู่ครบทุกตัว แค่ปัดนิ้วซ้าย-ขวาแทนการกินพื้นที่แนวตั้ง) */
+@media (max-width:699px){
+  .hdr{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:8px 10px;}
+  .hdr-title{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;}
+  .hdr-btn{flex-shrink:0;}
+  /* ปุ่มโหมดแท็บเล็ตไม่มีความหมายบนจอแคบ (ดู applyTabletMode) — ซ่อนไว้ กันกดแล้วงงว่าไม่มีอะไรเกิดขึ้น */
+  #tabletBtn{display:none;}
+  .ctrl-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 10px;}
+  .chip{min-height:36px;padding:0 12px;}
+  .date-sel{min-height:36px;}
+  .hdr::-webkit-scrollbar,.ctrl-bar::-webkit-scrollbar{height:0;display:none;}
+  /* ตารางรายสินค้า: บีบคอลัมน์ตัวเลขให้แคบลง คืนความกว้างให้ชื่อเมนู
+     — ชื่อไทยไม่มีช่องว่างคั่นคำ ถ้าช่องแคบไปจะหักกลางคำ/ทีละตัวอักษร */
+  .pt-head,.pt-row{grid-template-columns:1fr 40px 40px 48px;padding-left:8px;padding-right:8px;}
 }
 
 /* PRINT MODAL */
@@ -474,14 +497,24 @@ async function kqKeepAwake(){
   try{ if("wakeLock" in navigator && !_wakeLock){ _wakeLock=await navigator.wakeLock.request("screen"); _wakeLock.addEventListener("release",function(){_wakeLock=null;}); } }catch(e){}
 }
 function kqReleaseAwake(){ try{ if(_wakeLock){_wakeLock.release();_wakeLock=null;} }catch(e){} }
+// N-62: โหมดแท็บเล็ตขยายตัวอักษร/ปุ่ม ~40% — บนจอแคบ (iPhone) มันพังหนัก
+// วัดจริงที่ 375px ตอนคลาสนี้ติด: ช่องชื่อเมนูเหลือกว้าง 0px สูง 475px = ชื่อไทยหักลงมาทีละตัวอักษร
+// + หัวสูง 212px แถบกรอง 321px = 533px จาก 812px หมดไปกับปุ่ม
+// → จำค่าที่ผู้ใช้ตั้งไว้เหมือนเดิม แต่ "ลงมือใส่คลาส" เฉพาะตอนจอกว้างพอ (≥700px) เท่านั้น
+var _tabletWant=false;
+function tabletFits(){ return window.innerWidth>=700; }
 function applyTabletMode(on,save){
-  document.body.classList.toggle("tablet",!!on);
+  _tabletWant=!!on;
+  var eff=_tabletWant&&tabletFits();
+  document.body.classList.toggle("tablet",eff);
   var b=document.getElementById("tabletBtn");
-  if(b){ b.textContent=on?"📱 แท็บเล็ต: เปิด":"📱 แท็บเล็ต"; b.style.background=on?"rgba(255,255,255,.38)":""; }
-  if(save) localStorage.setItem("kq_tablet",on?"1":"0");
-  if(on) kqKeepAwake(); else kqReleaseAwake();
+  if(b){ b.textContent=_tabletWant?"📱 แท็บเล็ต: เปิด":"📱 แท็บเล็ต"; b.style.background=_tabletWant?"rgba(255,255,255,.38)":""; }
+  if(save) localStorage.setItem("kq_tablet",_tabletWant?"1":"0");
+  if(eff) kqKeepAwake(); else kqReleaseAwake();
 }
-function toggleTablet(){ applyTabletMode(!document.body.classList.contains("tablet"),true); }
+function toggleTablet(){ applyTabletMode(!_tabletWant,true); }
+// หมุนจอ/เปลี่ยนขนาดหน้าต่าง → คำนวณใหม่ (แท็บเล็ตหมุนเป็นแนวตั้งแคบก็ยังต้องอ่านออก)
+window.addEventListener("resize",function(){ applyTabletMode(_tabletWant,false); });
 // จอดับแล้วกลับมา → ขอ wake lock ใหม่ (browser ปล่อยเองตอน tab ไม่ active)
 document.addEventListener("visibilitychange",function(){
   if(document.visibilityState==="visible"&&document.body.classList.contains("tablet")) kqKeepAwake();
