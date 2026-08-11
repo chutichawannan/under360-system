@@ -1217,6 +1217,20 @@ async function fetchOrdersPage(){
         });
       }catch(e){ console.warn("movedAway:",e); }
     }
+    /* ใบที่ยกเลิกของวันนั้น — ต่อท้ายไว้แบบจางๆ (นัทเจอเอง 11 ส.ค.: ยกเลิก U-0811-007 แล้วหายไปเลย)
+       ยกเลิกแล้วหายวับ = แอดมินไม่แน่ใจว่ากดติดไหม หรือกดผิดใบ แล้วไม่รู้จะตามกลับยังไง */
+    ordCancelledToday=[];
+    if(oneDay && ordByMode!=="created" && !ordSearchQ && !ordMovedOnly && !ordCancelledOnly){
+      try{
+        var cx=await sb_.from("orders")
+          .select("id,order_number,customer_name,total,delivery_date,notes,updated_at")
+          .eq("delivery_date",oneDay).eq("status","cancelled")
+          .order("updated_at",{ascending:false}).limit(50);
+        if(!cx.error) ordCancelledToday=(cx.data||[]).filter(function(o){
+          return !/parallel_test|\[TEST|\[PARALLEL/.test(String(o.notes||"")+String(o.customer_name||""));
+        });
+      }catch(e){ console.warn("cancelledToday:",e); }
+    }
     // เผื่อหน้าปัจจุบันเกินจำนวนจริง (เช่น ลบออเดอร์ไป) → ถอยมาหน้าสุดท้าย
     var maxPage=Math.max(0,Math.ceil(ordTotal/size)-1);
     if(ordPage>maxPage&&ordTotal>0){ ordPage=maxPage; ordLoading=false; return fetchOrdersPage(); }
@@ -1350,6 +1364,7 @@ function renderOrders(orders){
     h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:2px'><span class='pill "+st.cls+"'>"+st.t+"</span>"+payBadge+"</div></div>";
   });
   h+=ordMovedAwayHtml();
+  h+=ordCancelledTodayHtml();
   el.innerHTML=h;
   if(ordFlashId) setTimeout(ordFlashRow,60);   // รอ DOM วางเสร็จก่อนค่อยเลื่อนไปหา (ติดซ้ำได้ทุกครั้งที่วาดใหม่)
 }
@@ -1371,6 +1386,30 @@ function ordMovedAwayHtml(){
       +"<div style='font-family:var(--mono);font-weight:600;color:#9CA3AF'>"+fmtB(o.total)+"</div>"
       +"<div style='font-size:12px;color:#9CA3AF'>"+(o.delivery_date||"")+"</div>"
       +"<div><span class='pill p-done' style='opacity:.7'>ย้ายแล้ว</span></div></div>";
+  });
+  return h;
+}
+/* ── ใบที่ยกเลิกของวันนั้น — ต่อท้ายตาราง ไม่ให้หายวับ ────────────────────────
+   นัทเจอเอง 11 ส.ค.: กดยกเลิก U-0811-007 แล้ว "มันหายไปเลย"
+   หายวับ = ไม่รู้ว่ากดติดไหม / กดผิดใบหรือเปล่า / จะตามกลับยังไง
+   โชว์ไว้จางๆ พร้อมปุ่มกู้คืนในตัว กดทีเดียวกลับมาใช้งานได้ */
+var ordCancelledToday=[];
+function ordCancelledTodayHtml(){
+  if(!ordCancelledToday.length) return "";
+  var h="<div style='grid-column:1/-1;padding:7px 12px;background:#FEF2F2;font-size:12px;font-weight:800;color:#991B1B;display:flex;justify-content:space-between'>"
+    +"<span>🗑️ ยกเลิกแล้วในวันนี้ (ครัวไม่เห็น · ไม่นับเป็นยอด)</span><span style='font-weight:600'>"+ordCancelledToday.length+" ใบ</span></div>";
+  ordCancelledToday.forEach(function(o){
+    var who=(String(o.notes||"").match(/\[ยกเลิกโดย ([^\]]+)\]/)||[])[1]||"";
+    h+="<div class='orders-mini-row' data-oid='"+o.id+"' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer;opacity:.6' title='กดเพื่อดูรายละเอียด / กู้คืน'>"
+      +"<div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>"
+      +"<div style='font-size:13px;font-weight:500;text-decoration:line-through'>"+esc2(o.customer_name||"ลูกค้า")+"</div>"
+      +(who?"<div style='font-size:11px;color:#B91C1C'>ยกเลิกโดย "+esc2(who)+"</div>":"")+"</div>"
+      +"<div style='font-family:var(--mono);font-weight:600;color:#9CA3AF'>"+fmtB(o.total)+"</div>"
+      +"<div style='font-size:12px;color:#9CA3AF'>"+(o.delivery_date||"")+"</div>"
+      +"<div style='display:flex;flex-direction:column;align-items:flex-end;gap:3px'>"
+      +"<span class='pill p-done' style='opacity:.7'>ยกเลิกแล้ว</span>"
+      +"<button class='btn' onclick=\"event.stopPropagation();odUncancel('"+o.id+"')\" style='font-size:10px;padding:2px 8px'>↩ กู้คืน</button>"
+      +"</div></div>";
   });
   return h;
 }
