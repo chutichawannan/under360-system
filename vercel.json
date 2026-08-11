@@ -1,5 +1,14 @@
 {
   "crons": [
     { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" }
+  ],
+  "rewrites": [
+    { "source": "/k",       "destination": "/kitchen/index.html" },
+    { "source": "/money",   "destination": "/pwa/cash_due.html" },
+    { "source": "/o",       "destination": "/pwa/orders_upcoming.html" },
+    { "source": "/cc",      "destination": "/command_center.html" },
+    { "source": "/kq",      "destination": "/kitchen_queue.html" },
+    { "source": "/oh",      "destination": "/operation_hub.html" },
+    { "source": "/db",      "destination": "/main_database_v2.html" }
   ]
 }
