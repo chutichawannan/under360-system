@@ -1,5 +1,5 @@
 // ============================================================
-//  Under360 — บอทผู้ช่วยครัว (LINE group bot)   · สร้าง 5 ส.ค. 2026
+//  Under360 — น้องกะปัน (Kapan) · ผู้ช่วยในกลุ่ม LINE   · สร้าง 5 ส.ค. 2026 · ตั้งชื่อ+บุคลิก 12 ส.ค.
 //  endpoint: /api/line-webhook   → ตั้งเป็น Webhook URL ในคอนโซล LINE
 //  ------------------------------------------------------------
 //  ทำ 2 อย่างตามที่นัทสั่ง:
@@ -156,9 +156,9 @@ export default async function handler(req, res) {
     // บอทเพิ่งถูกเชิญเข้ากลุ่ม → ทักทาย + บอก groupId (นัทเอาไปใช้อ้างอิงได้)
     if (ev.type === 'join' && groupId) {
       await lineReply(ev.replyToken,
-        'สวัสดีครับ ผมคือผู้ช่วยครัว Under360 🍳\n\n' +
-        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" แล้วผมจะดึงยอดสั่งจากระบบมาให้ทันที\n' +
-        '(ผมจะตอบเฉพาะตอนถูกเรียกเท่านั้น ไม่พูดแทรก)\n\n' +
+        'อาโนเนะ~ 🌸 หนูชื่อกะปันค่ะ ผู้ช่วยของร้าน Under360\n\n' +
+        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวหนูดึงยอดสั่งจากระบบมาให้ทันทีค่ะ\n' +
+        '(หนูจะพูดเฉพาะตอนถูกเรียกนะคะ ไม่แทรกค่ะ)\n\n' +
         'groupId: ' + groupId, token);
       continue;
     }
@@ -192,8 +192,8 @@ export default async function handler(req, res) {
     else { const d = t.match(/(\d{4}-\d{2}-\d{2})/); if (d) { target = d[1]; label = d[1]; } }
 
     let reply;
-    try { reply = `ยอดสั่ง${label}\n${await orderSummary(target)}`; }
-    catch (e) { console.error(e); reply = '⚠️ ดึงยอดจากระบบไม่ได้ตอนนี้ ลองใหม่อีกครั้งครับ'; }
+    try { reply = `ยอดสั่ง${label}ค่ะ 🌸\n${await orderSummary(target)}`; }
+    catch (e) { console.error(e); reply = '⚠️ ตอนนี้หนูดึงยอดจากระบบไม่ได้ค่ะ ลองใหม่อีกทีนะคะ'; }
 
     await lineReply(ev.replyToken, reply, token);
     await logMessage({
