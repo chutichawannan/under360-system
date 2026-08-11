@@ -112,13 +112,25 @@
   .tc .tn{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .tc .ts{font-size:11px;color:var(--faint);margin-top:4px;line-height:1.35;height:29px;overflow:hidden}
 
-  /* links */
-  .lnk{display:flex;align-items:center;gap:11px;border:1px solid var(--line);border-radius:12px;padding:12px 13px;margin-bottom:8px;text-decoration:none;color:var(--ink);font-size:14.5px;font-weight:600}
-  .lnk:active{background:#F3F4F6}
-  .lnk .ic{font-size:19px;width:24px;text-align:center;flex-shrink:0}
-  .lnk .ld{font-size:11px;color:var(--faint);font-weight:400;margin-top:1px}
-  .lnk .arw{margin-left:auto;color:var(--faint)}
-  .dgrp{font-size:11px;font-weight:700;color:var(--faint);margin:10px 2px 6px}
+  /* แถบหมวด ครัว/แอดมิน/อื่นๆ — เต็มความกว้าง แบ่ง 3 ช่องเท่ากัน (นัทสั่ง 12 ส.ค.) */
+  .tabbar{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;width:100%;
+    background:#E7EBE8;border-radius:14px;padding:5px;margin-bottom:16px}
+  .tab{width:100%;border:none;background:transparent;font-family:inherit;font-size:15px;font-weight:700;
+    color:#6B7280;padding:11px 4px;border-radius:10px;cursor:pointer;transition:.15s;-webkit-tap-highlight-color:transparent}
+  .tab.on{background:#fff;color:var(--nut);box-shadow:0 1px 3px rgba(0,0,0,.12)}
+
+  /* การ์ดลิงก์ — ไอคอนเส้นในกรอบมน · ชื่อกับคำอธิบายคนละบรรทัด */
+  .lnk{display:flex;align-items:center;gap:12px;background:#fff;border:1px solid var(--line);
+    border-radius:14px;padding:13px 14px;margin-bottom:9px;text-decoration:none;color:var(--ink);
+    font-size:15px;font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .lnk:active{background:#F6F8F6}
+  .lnk .ic{width:38px;height:38px;flex-shrink:0;border:1px solid var(--line);border-radius:11px;
+    display:flex;align-items:center;justify-content:center;color:var(--nut);background:#FAFBFA}
+  .lnk .ic svg{width:20px;height:20px}
+  .lnk .lt{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+  .lnk .ld{font-size:11.5px;color:var(--faint);font-weight:400;margin-top:2px}
+  .lnk .arw{margin-left:auto;color:#C3CBC5;font-size:20px;flex-shrink:0}
+  .dgrp{font-size:11px;font-weight:700;color:var(--faint);margin:14px 2px 7px;letter-spacing:.3px}
   .cctxt{font-size:13.5px;white-space:pre-wrap;line-height:1.6;color:var(--ink)}
   .cct{font-size:11px;color:var(--faint);margin-top:8px}
 
@@ -560,7 +572,9 @@ function cardLinks(){
   for(const g of tab.groups){
     h+=`<div class="dgrp">${esc(g.grp)}</div>`;
     for(const it of g.items)
-      h+=`<a class="lnk" href="${it.u}" target="_blank" rel="noopener">
+      // เปิดในแท็บเดิม — เดิม target="_blank" ทำให้กด back แล้วหลุดออกจากแอปเลย (นัทแจ้ง 12 ส.ค.)
+      // ยกเว้นลิงก์ออกนอกบ้าน (LINE / Google รีวิว) ต้องเปิดแท็บใหม่ ไม่งั้นกลับเข้าแอปไม่ได้
+      h+=`<a class="lnk" href="${it.u}"${/^https?:\/\/(?!under360-system)/.test(it.u)?' target="_blank" rel="noopener"':''}>
         <span class="ic">${svg(it.ic)}</span>
         <span class="lt">${esc(it.t)}${it.d?`<span class="ld">${esc(it.d)}</span>`:''}</span>
         <span class="arw">›</span></a>`;
