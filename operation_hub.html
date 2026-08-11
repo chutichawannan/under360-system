@@ -1433,6 +1433,7 @@ async function odSetStatus(id,next,ev){
     if(up.error) throw up.error;
     if(!up.data||!up.data.length||up.data[0].status!==next) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
     if(o) o.status=next;
+    if(next!=="cancelled") await odClearCancelStamp(sb_,id);
     /* รอบส่ง Meal Plan/Hyrox — หน้าครัวอ่านสถานะจากตารางนี้ ต้องขยับตามกัน */
     var mpNext=next==="delivered"?"delivered":(next==="confirmed"||next==="preparing"?"menu_assigned":null);
     if(mpNext) await sb_.from("mp_deliveries").update({status:mpNext,updated_at:new Date().toISOString()})
@@ -2053,6 +2054,18 @@ async function odCancelOrder(id){
     alert("ยกเลิกแล้ว: "+(o.order_number||""));
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
+/* ป้าย "[ยกเลิกโดย ...]" ที่ค้างในโน้ตหลังกู้คืน ทำให้ครัว/ใบจัดของอ่านว่าใบนี้ยกเลิก แล้วไม่แพ็คของ
+   (เกิดจริง 11 ส.ค. — U-0811-003 + U-0811-005 รวม 46 กล่อง สถานะใช้งานอยู่ แต่โน้ตยังเขียนว่ายกเลิก)
+   → ออกจากสถานะยกเลิกเมื่อไหร่ ต้องลบป้ายทิ้งด้วย ไม่งั้นข้อมูล 2 ที่ขัดกันเอง */
+async function odClearCancelStamp(sb_,id){
+  try{
+    var r=await sb_.from("orders").select("notes").eq("id",id).maybeSingle();
+    var n=String((r.data&&r.data.notes)||"");
+    if(n.indexOf("[ยกเลิกโดย")<0) return;
+    var clean=n.replace(/[ยกเลิกโดย[^]]*]/g,"").replace(/s+/g," ").trim();
+    await sb_.from("orders").update({notes:clean||null}).eq("id",id);
+  }catch(e){}
+}
 async function odUncancel(id){
   var sb_=getSB(); if(!sb_)return;
   if(!window.confirm("กู้คืนออเดอร์นี้กลับมาใช้งาน?")) return;
@@ -2060,6 +2073,7 @@ async function odUncancel(id){
     var up=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id).select("id,status");
     if(up.error) throw up.error;
     if(!up.data||!up.data.length) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
+    await odClearCancelStamp(sb_,id);
     await sb_.from("mp_deliveries").update({status:"scheduled",updated_at:new Date().toISOString()}).eq("order_id",id);
     closeOrderDetail(); loadAll();
     alert("กู้คืนแล้ว");
