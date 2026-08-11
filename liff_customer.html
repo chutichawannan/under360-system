@@ -2909,6 +2909,8 @@ async function submitOrder() {
           notes: 'คอร์ส ' + setNameJoin + ' รอบ ' + r + '/' + roundCount + ' — จ่ายรวมกับออเดอร์ ' + orderNum
         };
         if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); rPayload.want_utensils = utEl ? utEl.checked : false; }
+        /* ยอด ฿0 = เก็บเงินไปแล้วที่ใบแรก → ห้ามปล่อยเป็น unpaid ไม่งั้นไปโผล่ในใบทวงเงิน กิ๊ฟจะไล่ทวงผิดคน */
+        if (hasPaymentStatusColumn) rPayload.payment_status = 'paid';
         try {
           const { data: rOrd, error: rErr } = await sb.from('orders').insert(rPayload).select().single();
           if (rErr) throw rErr;
@@ -2959,7 +2961,11 @@ async function submitOrder() {
             notes: rLabel + ' — จ่ายรวมกับออเดอร์ ' + orderNum
           };
           if (hasUtensilColumn) { const utEl = document.getElementById('utensil-input'); mpPayload.want_utensils = utEl ? utEl.checked : false; }
-          if (hasPaymentStatusColumn) mpPayload.payment_status = orderPayload.payment_status || 'unpaid';
+          /* 🔴 ใบรอบ 2..N ยอด ฿0 = จ่ายรวมกับใบแรกไปแล้ว ไม่ต้องเก็บเงินอีก
+             เดิมรับ payment_status ต่อจากใบแม่ → ถ้าใบแม่เป็น pending_review ใบพวกนี้จะค้าง
+             "รอตรวจสลิป" ตลอดกาล ทั้งที่ไม่มีสลิปและไม่ต้องจ่าย = ป้ายโกหก แล้วแอดมินจะเลิกเชื่อป้ายนี้
+             (เจอจริง 2 ใบของมิ้ม U-0812-003 / U-0814-001 · PM แจ้ง 9 ส.ค.) */
+          if (hasPaymentStatusColumn) mpPayload.payment_status = 'paid';
           const mpOrd = await insertOrderWithRetry(mpPayload, rMmdd, rStart);
           await sb.from('order_items').insert(rounds.map(r => ({
             order_id: mpOrd.id, menu_item_id: null,

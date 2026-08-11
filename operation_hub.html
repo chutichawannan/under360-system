@@ -450,6 +450,10 @@ body.fs-scaled{zoom:var(--u-fs)}
     <div class="sb-item" onclick="openApp('pwa/orders_upcoming.html','📆 ออเดอร์ล่วงหน้า 7 วัน',this)">
       <span class="sb-icon">📆</span><span>ออเดอร์ล่วงหน้า</span>
     </div>
+    <!-- ตรวจสลิปในที่เดียว — เดิมต้องไล่หาเองในรายการออเดอร์ แล้วเปิดสลิปแท็บใหม่ (PM ขอ 9 ส.ค.) -->
+    <div class="sb-item" onclick="openTab('slips',this)">
+      <span class="sb-icon">🧾</span><span>ตรวจสลิป</span><span class="sb-badge" id="nb-slips"></span>
+    </div>
     <div class="sb-item" onclick="openApp('pwa/cash_due.html','💰 ใบทวงเงิน',this)">
       <span class="sb-icon">💰</span><span>ใบทวงเงิน</span>
     </div>
@@ -811,6 +815,15 @@ body.fs-scaled{zoom:var(--u-fs)}
 
     <!-- TAB: SETTINGS -->
     <!-- TAB: สั่งแทนลูกค้า (admin order-on-behalf) — customer_id=ลูกค้าจริง แยกจาก created_by=แอดมิน -->
+    <!-- 🧾 ตรวจสลิป — งานจริงคือ "เทียบตัวเลขในรูปกับยอดบิล" ยอดจึงต้องอยู่ติดรูป ไม่ให้ต้องจำข้ามหน้าจอ -->
+    <div class="tab-panel" id="panel-slips">
+      <div class="sec-header" style="flex-wrap:wrap;gap:8px">
+        <div class="sec-title" id="slipTitle" style="flex:1;min-width:180px">🧾 สลิปรอตรวจ</div>
+        <button class="btn" onclick="loadSlips()">🔄 รีเฟรช</button>
+      </div>
+      <div id="slipList"></div>
+    </div>
+
     <div class="tab-panel" id="panel-onbehalf">
       <div style="max-width:760px;margin:0 auto;padding:4px 2px 40px">
         <div style="background:#FEF3C7;border:1px solid #FDE68A;border-radius:10px;padding:10px 14px;font-size:13px;color:#92400E;margin-bottom:16px">
@@ -1017,7 +1030,7 @@ function toggleSidebar(){
   if(fb) fb.classList.toggle("show",sidebarMini);
 }
 
-var TAB_TITLES={orders:"📋 ออเดอร์",onbehalf:"➕ สั่งแทนลูกค้า",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
+var TAB_TITLES={orders:"📋 ออเดอร์",slips:"🧾 ตรวจสลิป",onbehalf:"➕ สั่งแทนลูกค้า",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
 
 function _autoCollapseBar(){
   sidebarMini=true;
@@ -1043,6 +1056,7 @@ function openTab(name,el){
   if(el)el.classList.add("active");
   document.getElementById("topTitle").textContent=TAB_TITLES[name]||name;
   if(name==="orders")loadAll();
+  if(name==="slips")loadSlips();
   if(name==="onbehalf")initOnbehalf();
   if(name==="menu")loadMenus();
   if(name==="plan"){buildPlan();loadMpDeliveries();}
@@ -2057,6 +2071,67 @@ function toggleCancelledOnly(){
   var b=document.getElementById("ordCancelBtn");
   if(b){ b.style.background=ordCancelledOnly?"#B91C1C":""; b.style.color=ordCancelledOnly?"#fff":""; b.style.borderColor=ordCancelledOnly?"#B91C1C":""; }
   loadAll();
+}
+/* ── 🧾 ตรวจสลิป (PM ขอ 9 ส.ค.) ─────────────────────────────────────────────
+   งานตรวจสลิปจริงๆ คือ "เทียบตัวเลขในรูปกับยอดบิล" → ยอดต้องอยู่ติดรูป
+   ไม่งั้นแอดมินต้องจำเลขข้ามหน้าจอ ซึ่งคือจุดที่คนพลาด
+   ⚠️ กรอง total>0 และต้องมีรูปสลิปจริง — ใบรอบ 2-3 ของคอร์ส (ยอด ฿0) เคยค้างอยู่ตรงนี้
+      ทั้งที่ไม่มีสลิปและไม่ต้องจ่ายเงิน = ป้าย "รอตรวจสลิป" โกหก แล้วแอดมินจะเลิกเชื่อป้ายนี้ */
+async function loadSlips(){
+  var el=document.getElementById("slipList"); if(!el)return;
+  var sb_=getSB(); if(!sb_){ el.innerHTML="<div style='padding:24px;text-align:center;color:#6B7280'>Offline</div>"; return; }
+  el.innerHTML="<div style='padding:24px;text-align:center;color:#6B7280'>กำลังโหลด…</div>";
+  try{
+    var r=await sb_.from("orders")
+      .select("id,order_number,customer_name,customer_phone,total,delivery_date,slip_url,payment_status,created_at")
+      .eq("payment_status","pending_review").gt("total",0).not("slip_url","is",null)
+      .order("created_at",{ascending:true}).limit(100);
+    if(r.error) throw r.error;
+    var rows=r.data||[];
+    var t=document.getElementById("slipTitle"); if(t) t.textContent="🧾 สลิปรอตรวจ · "+rows.length+" ใบ";
+    var nb=document.getElementById("nb-slips");
+    if(nb){ nb.textContent=rows.length; nb.classList.toggle("show", rows.length>0); }
+    if(!rows.length){
+      el.innerHTML="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:12px;padding:26px;text-align:center;color:#166534;font-size:15px;font-weight:700'>✅ ไม่มีสลิปรอตรวจ</div>"
+        +"<div style='text-align:center;font-size:12px;color:#9CA3AF;margin-top:8px'>ลูกค้าอัพสลิปเมื่อไหร่จะมาโผล่ที่นี่</div>";
+      return;
+    }
+    var h="";
+    rows.forEach(function(o){
+      var waited=Math.max(0,Math.round((Date.now()-new Date(o.created_at).getTime())/3600000));
+      h+="<div style='display:flex;gap:14px;background:#fff;border:1px solid var(--ink-xsoft);border-radius:12px;padding:12px;margin-bottom:10px;flex-wrap:wrap'>"
+        +"<a href='"+esc2(o.slip_url)+"' target='_blank' rel='noopener' style='flex-shrink:0'>"
+        +"<img src='"+esc2(o.slip_url)+"' alt='สลิป' style='width:130px;height:170px;object-fit:cover;border-radius:9px;border:1px solid var(--ink-xsoft);background:#F3F4F6'></a>"
+        +"<div style='flex:1;min-width:190px'>"
+        +"<div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(o.order_number||"—")+"</div>"
+        +"<div style='font-size:16px;font-weight:700'>"+esc2(o.customer_name||"ลูกค้า")+"</div>"
+        +"<div style='font-size:12px;color:#6B7280;margin-top:2px'>ส่ง "+(o.delivery_date||"—")+(o.customer_phone?" · 📞 "+esc2(o.customer_phone):"")+"</div>"
+        +"<div style='margin-top:9px;font-size:12px;color:#6B7280'>ยอดที่ต้องได้รับ</div>"
+        +"<div style='font-size:27px;font-weight:800;color:#1F4D3A;line-height:1.1'>"+fmtB(o.total)+"</div>"
+        +"<div style='font-size:11.5px;color:"+(waited>=24?"#B91C1C":"#9CA3AF")+";margin-top:3px'>รอมาแล้ว "+(waited>=24?Math.round(waited/24)+" วัน":waited+" ชม.")+"</div>"
+        +"<div style='display:flex;gap:8px;margin-top:11px;flex-wrap:wrap'>"
+        +"<button class='btn' onclick=\"slipDecide('"+o.id+"',true)\" style='background:#1F4D3A;color:#fff;border-color:#1F4D3A;font-weight:700'>✅ ยืนยันโอนแล้ว</button>"
+        +"<button class='btn' onclick=\"slipDecide('"+o.id+"',false)\" style='color:#B91C1C;border-color:#FECACA'>❌ สลิปไม่ถูกต้อง</button>"
+        +"<button class='btn' onclick=\"openOrderDetail('"+o.id+"')\">ดูใบเต็ม</button>"
+        +"</div></div></div>";
+    });
+    el.innerHTML=h;
+  }catch(e){ el.innerHTML="<div style='padding:24px;text-align:center;color:#B91C1C'>โหลดไม่สำเร็จ: "+esc2(e.message||e)+"</div>"; }
+}
+async function slipDecide(id, ok){
+  var sb_=getSB(); if(!sb_)return;
+  var who=odWho(); if(!who) return;
+  if(!window.confirm((ok?"ยืนยันว่าได้รับเงินแล้ว":"ตีกลับ — สลิปไม่ถูกต้อง")+"\n\nคนกด: "+who)) return;
+  try{
+    var patch = ok
+      ? {payment_status:"paid", payment_confirmed_by:who, payment_confirmed_at:new Date().toISOString()}
+      : {payment_status:"unpaid"};
+    patch.updated_at=new Date().toISOString();
+    var up=await sb_.from("orders").update(patch).eq("id",id).select("id,payment_status");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
+    loadSlips();
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 async function togglePayment(id,current,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
