@@ -2773,81 +2773,56 @@ async function syncMenuMetaFromDB(){
         liveOnline[m.code] = !!m.is_available;
       });
     }
-    renderOnlineMismatch();
     if(changed){ persistRecipesDebounced(); render(); }
+    await pushOnlineToCustomer();   // หน้านี้ว่าอะไร ฝั่งลูกค้าตามนั้น
   }catch(e){ console.warn('syncMenuMetaFromDB', e); }
 }
 
-/* ── ตัวเช็คว่า "หน้านี้" กับ "ที่ลูกค้าเห็นจริง" ตรงกันไหม (CC ส่งมา 11 ส.ค.) ──────
-   ปัญหาจริง: แอดมินกดปิดออนไลน์ในหน้านี้ แต่ลูกค้ายังเห็นเมนูอยู่
-   เพราะค่าไปอยู่แค่ใน kitchen_data.recipes ส่วน menu_items.is_available ยังเป็น true
-   (ตัว sync ทันทีเพิ่งใส่ 3 ส.ค. — อะไรที่กดปิดก่อนหน้านั้นไม่เคยเดินทางไปถึงลูกค้าเลย)
+/* ── หน้านี้ = ความจริงหนึ่งเดียว (นัทเคาะเอง 11 ส.ค. 2026) ───────────────────
+   "มันควรจะจบที่หน้า db นะ แอดมินก็รู้ที่หน้า db แล้ว
+    อะไรที่ขึ้นโชว์ในวันนี้คือของจริงที่มี อัพเดทให้ตรงกับของจริงแล้วจบไปเลย"
 
-   ⚠️ ห้ามทำปุ่ม "ซิงค์ทั้งชุด" เด็ดขาด — ตอนนี้มี 15 เมนูที่หน้านี้บอกปิด แต่เป็นเมนูสัปดาห์นี้ที่ขายจริง
-      กดรวดเดียว = เมนูสัปดาห์นี้ดับหมด ลูกค้าสั่งอะไรไม่ได้เลย → แก้ได้ทีละตัวเท่านั้น
-   เมนูหมุนทุกสัปดาห์ = เรื่องนี้จะกลับมาอีกแน่ ต้องมีตัวฟ้องถาวร ไม่ใช่ไล่แก้มือทุกรอบ */
+   เดิมค่าเปิด/ปิดขายอยู่ 2 ที่ (หน้านี้ กับ ตารางที่ลูกค้าอ่าน) แล้วหลุดจากกันเงียบๆ
+   → เลิกให้คนมานั่งเลือกว่าฝั่งไหนถูก · หน้านี้ว่าอะไร ฝั่งลูกค้าตามนั้น จบ
+   ทำตอนเปิดหน้า ไม่ต้องกดอะไร แต่ **ไม่เงียบ** — เปลี่ยนอะไรไปต้องบอกทุกครั้ง
+   (ถ้าเงียบ = เครื่องมือที่ไปแก้ของที่ลูกค้าเห็นลับหลังคน อันตรายกว่าไม่ทำ) */
 let liveOnline = {};
-function onlineMismatch(){
-  const leak=[], miss=[];      // leak = หน้านี้ปิด แต่ลูกค้ายังเห็น · miss = หน้านี้เปิด แต่ลูกค้าไม่เห็น
+/* กล่องนี้อยู่ใน html ที่ถูกวาดใหม่ทุกครั้ง → เก็บข้อความไว้แล้วทาสีกลับหลัง render ไม่งั้นหายทุกรอบ */
+let onlineSyncNote="";
+async function pushOnlineToCustomer(){
+  const box=document.getElementById('onlineMismatch');
+  const sb=getSB(); if(!sb){ if(box)box.innerHTML=''; return; }
+  const todo=[];
   state.recipes.forEach(r=>{
-    if(!r.code || !(r.code in liveOnline)) return;
-    if(r.status!=='active') return;
-    const here = !!r.available_online, there = !!liveOnline[r.code];
-    if(here===there) return;
-    (there ? leak : miss).push(r);
+    if(!r.code || !(r.code in liveOnline) || r.status!=='active') return;
+    const here=!!r.available_online, there=!!liveOnline[r.code];
+    if(here!==there) todo.push({r:r, want:here});
   });
-  return {leak, miss};
-}
-function renderOnlineMismatch(){
-  const box=document.getElementById('onlineMismatch'); if(!box) return;
-  const {leak,miss}=onlineMismatch();
-  if(!leak.length && !miss.length){
-    box.innerHTML="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ หน้านี้ตรงกับที่ลูกค้าเห็นทุกเมนู</div>";
+  if(!todo.length){
+    onlineSyncNote="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ ลูกค้าเห็นตรงกับหน้านี้ทุกเมนู</div>";
+    if(box) box.innerHTML=onlineSyncNote;
     return;
   }
-  /* ให้ 2 ปุ่มเสมอ — ไม่ตัดสินแทนว่าฝั่งไหนถูก
-     เคสจริง 11 ส.ค.: 13 ตัวที่ "หน้านี้ปิด แต่ลูกค้ายังเห็น" คือเมนูสัปดาห์นี้ที่ขายอยู่จริง
-     = ฝั่งที่ผิดคือหน้านี้ ไม่ใช่ฝั่งลูกค้า · ถ้ามีปุ่มเดียวว่า "ปิดให้ลูกค้าด้วย" แล้วกดตามๆ กัน = เมนูสัปดาห์นี้ดับหมด */
-  const row=(r)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid rgba(0,0,0,.06);flex-wrap:wrap">
-      <span style="font-family:var(--mono,monospace);font-size:11.5px;font-weight:700;min-width:52px">${escapeHtml(r.code)}</span>
-      ${r.subcode?`<span style="font-size:11px;font-weight:800;color:var(--turmeric)">${escapeHtml(r.subcode)}</span>`:''}
-      <span style="flex:1;font-size:12px;min-width:120px">${escapeHtml(String(r.name||'').slice(0,42))}</span>
-      <button class="btn btn-sm" onclick="fixOnlineOne('${r.id}',true)" style="font-size:11px;padding:3px 9px;background:#EAF7EF;color:#166534;border:1px solid #BBE5CB">✅ ให้ลูกค้าสั่งได้</button>
-      <button class="btn btn-sm" onclick="fixOnlineOne('${r.id}',false)" style="font-size:11px;padding:3px 9px;background:#FDECEB;color:#A02A1F;border:1px solid #F3C7C2">🚫 ปิดไม่ให้สั่ง</button>
-    </div>`;
-  let h="<div style='background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px 14px'>"
-    +"<div style='font-weight:800;font-size:13.5px;color:#9A3412'>⚠️ หน้านี้ไม่ตรงกับที่ลูกค้าเห็น</div>"
-    +"<div style='font-size:11.5px;color:#7C2D12;margin:3px 0 8px'>แก้ทีละตัวเท่านั้น — ไม่มีปุ่มซิงค์รวม เพราะกดรวดเดียวแล้วเมนูสัปดาห์นี้ดับหมด</div>";
-  if(leak.length){
-    h+="<div style='font-weight:800;font-size:12px;color:#B91C1C;margin-top:6px'>🔴 หน้านี้ปิดแล้ว แต่ลูกค้ายังสั่งได้ · "+leak.length+" เมนู</div>";
-    leak.forEach(r=>h+=row(r));
+  const done=[], fail=[];
+  for(const t of todo){
+    try{
+      const { error } = await sb.from('menu_items').update({ is_available: t.want }).eq('code', t.r.code);
+      if(error) throw error;
+      liveOnline[t.r.code]=t.want;
+      done.push((t.want?'เปิด ':'ปิด ')+t.r.code+(t.r.subcode?' ('+t.r.subcode+')':''));
+    }catch(e){ fail.push(t.r.code); }
   }
-  if(miss.length){
-    h+="<div style='font-weight:800;font-size:12px;color:#B45309;margin-top:10px'>🟡 หน้านี้เปิดอยู่ แต่ลูกค้าไม่เห็น (เสียยอด) · "+miss.length+" เมนู</div>";
-    miss.forEach(r=>h+=row(r));
-  }
-  box.innerHTML=h+"</div>";
+  if(done.length) logActivity('stock','ซิงค์ให้ลูกค้าตามหน้า DB — '+done.join(' · '));
+  onlineSyncNote="<div style='background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:11px 13px'>"
+    +"<div style='font-weight:800;font-size:13px;color:#1E40AF'>🔄 อัปเดตให้ลูกค้าตรงกับหน้านี้แล้ว "+done.length+" เมนู</div>"
+    +"<div style='font-size:11.5px;color:#1E3A8A;margin-top:3px;line-height:1.6'>"+done.map(escapeHtml).join(' · ')+"</div>"
+    +(fail.length?"<div style='margin-top:6px;font-size:11.5px;color:#B91C1C;font-weight:700'>⚠️ ทำไม่สำเร็จ "+fail.length+" เมนู ("+fail.join(', ')+") — แจ้งห้องระบบ</div>":"")
+    +"</div>";
+  if(box) box.innerHTML=onlineSyncNote;
 }
-async function fixOnlineOne(id,want){
-  if(!requireUser()) return;
-  const r=state.recipes.find(x=>x.id===id); if(!r) return;
-  want = !!want;   /* แอดมินเลือกผลลัพธ์เอง แล้วระบบตั้งให้ตรงกันทั้ง 2 ฝั่ง */
-  /* เตือนพิเศษถ้ากำลังจะปิดเมนูที่มีชื่อเล่น = เมนูของสัปดาห์นี้ที่ขายอยู่จริง
-     (ชื่อเล่นขึ้นต้นด้วย x = ของค้างสัปดาห์ก่อน ปิดได้ไม่เจ็บ) */
-  const warn=(!want && String(r.subcode||'').trim() && !/^x/i.test(String(r.subcode)))
-    ? '\n\n⚠️ ตัวนี้มีชื่อเล่น "'+r.subcode+'" = เมนูของสัปดาห์นี้ ปิดแล้วลูกค้าสั่งไม่ได้ทันที' : '';
-  if(!window.confirm((want?'ให้ลูกค้าสั่งได้':'ปิดไม่ให้ลูกค้าสั่ง')+'\n\n'+r.code+' '+(r.name||'')+warn+'\n\nจะตั้งให้ตรงกันทั้งหน้านี้และฝั่งลูกค้า')) return;
-  try{
-    const sb=getSB(); if(!sb) throw new Error('ต่อฐานข้อมูลไม่ได้');
-    const { error } = await sb.from('menu_items').update({ is_available: want }).eq('code', r.code);
-    if(error) throw error;
-    liveOnline[r.code]=want;
-    r.available_online=want;            // ให้ 2 ฝั่งตรงกันทันที ไม่ต้องรอรอบหน้า
-    persistRecipesDebounced();
-    logActivity('stock', (want?'เปิด':'ปิด')+'ให้ลูกค้าเห็น '+r.code+' '+(r.name||''));
-    showToast((want?'เปิดแล้ว ':'ปิดแล้ว ')+r.code);
-    renderOnlineMismatch(); render(true);
-  }catch(e){ showToast('แก้ไม่สำเร็จ: '+(e.message||e)); }
+function renderOnlineMismatch(){
+  const box=document.getElementById("onlineMismatch");
+  if(box && onlineSyncNote) box.innerHTML=onlineSyncNote;
 }
 
 /* วันเริ่มส่งของสัปดาห์ปัจจุบัน — ตั้งครั้งเดียวตอนกด "ขึ้นสัปดาห์ใหม่"
