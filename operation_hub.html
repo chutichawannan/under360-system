@@ -264,6 +264,13 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   vertical-align:middle;
 }
 .plan-table tr:hover td{background:var(--forest-soft)}
+/* ดูวันเดียว = ไม่มีคอลัมน์อื่นมาแย่งที่ → ให้ช่องเมนูกินพื้นที่ที่เหลือทั้งหมด
+   (เดิมช่องกว้าง 110px แล้วเหลือพื้นเขียวว่างครึ่งจอ — นัทเรียกว่า dead space 11 ส.ค.) */
+.plan-table.single-day{table-layout:fixed;width:100%}
+.plan-table.single-day th:first-child,
+.plan-table.single-day td:first-child{width:210px;max-width:210px}
+.plan-table.single-day th:last-child{white-space:normal}
+.plan-table.single-day td:last-child{width:auto}
 .customer-tag{
   display:inline-block;padding:2px 8px;border-radius:20px;
   font-size:11px;font-weight:600;
@@ -603,7 +610,7 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
         <!-- RIGHT: Customer Table — ต้องมีแถบเลื่อนให้เห็น ไม่งั้นไม่รู้ว่ามีวันถัดไปให้ดูต่อ (นัท 6 ส.ค. 2569) -->
         <div class="plan-scroll" style="flex:1;min-width:0;overflow-x:auto;border-radius:var(--radius);border:1px solid var(--ink-xsoft);">
-          <table class="plan-table" id="planTable" style="min-width:500px;">
+          <table class="plan-table" id="planTable" style="min-width:500px;width:100%;">
             <thead><tr id="planHead"></tr></thead>
             <tbody id="planBody"></tbody>
           </table>
@@ -2153,6 +2160,89 @@ function togglePlanColumn(dateStr,type){
   updateSelectHint();
 }
 // คลิกวันที่ที่ header → กรองตารางให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle: คลิกวันเดิมซ้ำ = เอาตัวกรองออก)
+/* ── 🤖 จัดเมนูให้อัตโนมัติ (นัทขอ 11 ส.ค.) ─────────────────────────────────
+   ⚠️ ข้อจำกัดที่ต้องพูดให้ชัด: ระบบ "ยังไม่รู้ว่าใครไม่กินอะไร"
+      ตาราง customer_preferences = 0 แถว · customers.admin_notes ไม่มีใครบันทึกของแพ้ไว้เลย
+      → ตัวนี้จึงจัดจาก 2 อย่างที่มีข้อมูลจริงเท่านั้น:
+        1) เมนูของประเภทเดียวกัน (LC / HP / HYROX ไม่ปนกัน)
+        2) เลี่ยงเมนูที่ลูกค้าคนนั้นเพิ่งได้ไปในรอบก่อน
+      และ **ต้องให้คนกดยืนยันก่อนบันทึกเสมอ** ห้ามเงียบ ๆ ลงให้เอง
+   หมุนชุดเมนูทีละคน (ไม่ใช่สุ่ม) เพื่อให้ครัวทำเมนูน้อยชนิดแต่ลูกค้าไม่ได้ชุดเดียวกันเป๊ะ */
+function planRecentCodes(sub, dateStr){
+  var seen={};
+  (sub.rows||[]).forEach(function(r){
+    if(r.delivery_date>=dateStr) return;              // เอาเฉพาะรอบก่อนหน้า
+    (r.menu_items||[]).forEach(function(e){ if(e&&e.code) seen[e.code]=1; });
+  });
+  return seen;
+}
+async function planAutoAssign(dateStr){
+  if(!MENU_POOL.length){ alert("ยังโหลดเมนูไม่เสร็จ ลองใหม่อีกครั้ง"); return; }
+  var subs=mpPlanSubs();
+  var targets=[];
+  subs.forEach(function(s){
+    (s.rows||[]).forEach(function(r){
+      if(r.delivery_date!==dateStr) return;
+      if(r.status==="cancelled"||r.status==="skip_requested") return;
+      if((r.menu_items||[]).length) return;            // มีคนกรอกไว้แล้ว ไม่ทับ
+      targets.push({row:r, sub:s});
+    });
+  });
+  if(!targets.length){ alert("วันนี้ไม่มีใครที่ยังไม่ได้กรอกเมนู (ตัวนี้ไม่ทับของที่กรอกไว้แล้ว)"); return; }
+
+  var plan=[], offset=0;
+  targets.forEach(function(t){
+    var r=t.row;
+    var pool=MENU_POOL.filter(function(m){return m.type===r.mp_type;});
+    if(!pool.length){ plan.push({t:t, codes:[], err:"ไม่มีเมนูประเภท "+String(r.mp_type).toUpperCase()+" ในระบบ"}); return; }
+    var need=r.box_count||7;
+    var recent=planRecentCodes(t.sub, dateStr);
+    var picked=[], i=0;
+    /* รอบแรก: เลี่ยงเมนูที่เพิ่งได้ไป · รอบสอง: ถ้ายังไม่ครบค่อยยอมซ้ำ (ของมีจำกัด) */
+    while(picked.length<need && i<pool.length*2){
+      var m=pool[(offset+i)%pool.length]; i++;
+      if(picked.indexOf(m.code)>=0) continue;
+      if(i<=pool.length && recent[m.code]) continue;
+      picked.push(m.code);
+    }
+    offset+=1;                                          // คนถัดไปเลื่อนชุดไป 1 ตัว
+    plan.push({t:t, codes:picked, short:picked.length<need});
+  });
+
+  var lines=plan.map(function(p){
+    var nm=String(p.t.row.customer_name||"ลูกค้า").slice(0,22);
+    if(p.err) return "  ✗ "+nm+" — "+p.err;
+    return "  • "+nm+" ("+String(p.t.row.mp_type).toUpperCase()+" "+(p.t.row.box_count||7)+" กล่อง)\n      "+p.codes.join(", ")+(p.short?"   ⚠️ เมนูไม่พอ":"");
+  }).join("\n");
+  var ok=window.confirm(
+    "จะจัดเมนูให้ "+plan.filter(function(p){return p.codes.length;}).length+" คน (ส่ง "+dateStr+")\n\n"+lines
+    +"\n\n────────────────\n⚠️ ระบบยังไม่รู้ว่าใครแพ้อะไร / ไม่กินอะไร (ยังไม่มีใครกรอกข้อมูลนี้เข้าระบบเลย)\n"
+    +"ตัวนี้จัดจาก: เมนูประเภทเดียวกัน + เลี่ยงของที่เพิ่งได้ไปรอบก่อน เท่านั้น\n"
+    +"กรุณาตรวจก่อนยืนยัน — ยืนยันแล้วครัวเห็นทันที\n\nยืนยันจัดตามนี้?");
+  if(!ok) return;
+
+  var okN=0, failN=0;
+  for(var k=0;k<plan.length;k++){
+    var p=plan[k]; if(!p.codes.length) continue;
+    var r=p.t.row;
+    var items=p.codes.map(function(c){
+      var m=MENU_POOL.find(function(x){return x.code===c;});
+      return {code:c, name:m?m.name:c};
+    });
+    r.menu_items=items;
+    try{
+      var sb_=getSB();
+      var up=await sb_.from("mp_deliveries").update({menu_items:items,status:"menu_assigned",updated_at:new Date().toISOString()}).eq("id",r.id).select("id");
+      if(up.error||!up.data||!up.data.length) throw (up.error||new Error("ไม่ได้แถวกลับมา"));
+      r.status="menu_assigned";
+      await syncPlanToOrderItems(r);                    // ส่งต่อให้ครัวเห็นทันที
+      okN++;
+    }catch(e){ console.error("autoAssign:",e); failN++; }
+  }
+  alert("จัดเมนูแล้ว "+okN+" คน"+(failN?"  · พลาด "+failN+" คน (ดูใน console)":"")
+    +"\n\nแก้รายคนได้ที่ตารางเลย ถ้ามีใครไม่กินอะไรก็เปลี่ยนได้");
+  loadMpPlanData();
+}
 /* ── ใบที่ "ไม่มีที่ให้กรอกเมนู" ────────────────────────────────────────────
    เคสจริง 11 ส.ค.: กิ๊ฟบอก "หน้าแพลนเมนูมันไม่ขึ้นในระบบค่ะ Hyrox"
    ของจริงคือ 3 ใบ (Monchuta · พัดชา · นวภัท) มาจาก Hato มี order_items แค่บรรทัดควบคุม
@@ -2802,7 +2892,7 @@ function _buildPlanTable(){
       : "ลากเมนูจากซ้ายไปใส่ในช่องรอบ · คลิก × เพื่อเอาออก · "+subs.length+" แพลนที่กำลังทำงาน · "+allDates.length+" วันจัดส่ง (คลิกวันที่ที่หัวตารางเพื่อกรองดูแค่วันนั้น)";
   }
 
-  var hh="<th style='width:130px'>ลูกค้า</th>";
+  var hh="<th style='width:"+(allDates.length===1?"210px":"130px")+"'>ลูกค้า</th>";
   allDates.forEach(function(dateStr){
     var hasLc=subs.some(function(s){return s.first.mp_type==="lc"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
     var hasHp=subs.some(function(s){return s.first.mp_type==="hp"&&s.rows.some(function(r){return r.delivery_date===dateStr;});});
@@ -2811,9 +2901,14 @@ function _buildPlanTable(){
     hh+="<span onclick='toggleDateFilter(\""+dateStr+"\")' style='cursor:pointer;text-decoration:underline dotted;' title='คลิกเพื่อกรองดูแค่วันนี้'>"+fmtD(new Date(dateStr+'T00:00:00'))+(isFiltered?" 🔎":"")+"</span><br>";
     if(hasLc)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"lc\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:5px;padding:1px 5px;margin-right:3px'>⚡LC ทั้งคอลัมน์</span>";
     if(hasHp)hh+="<span onclick='togglePlanColumn(\""+dateStr+"\",\"hp\")' style='cursor:pointer;font-size:9px;font-weight:700;color:#1E40AF;background:#DBEAFE;border-radius:5px;padding:1px 5px'>⚡HP ทั้งคอลัมน์</span>";
+    /* ปุ่มจัดเมนูให้อัตโนมัติ — โผล่เฉพาะตอนเลือกดูวันเดียว (นัทขอ 11 ส.ค.) */
+    if(allDates.length===1)
+      hh+=" <button class='btn' onclick='planAutoAssign(\""+dateStr+"\")' style='margin-left:8px;font-size:11px;padding:3px 10px;background:#fff;color:var(--forest);border-color:#fff;font-weight:700'>🤖 จัดเมนูให้อัตโนมัติ</button>";
     hh+="</th>";
   });
   head.innerHTML=hh;
+  var tbl=document.getElementById("planTable");
+  if(tbl) tbl.classList.toggle("single-day", allDates.length===1);
 
   if(!visibleSubs.length){
     body.innerHTML="<tr><td colspan='"+(allDates.length+1)+"' style='padding:30px;text-align:center;color:#9CA3AF'>"+(planDateFilter?"ไม่มีลูกค้าส่งวันนี้":"ยังไม่มี Meal Plan ที่ทำงานอยู่")+"</td></tr>";
