@@ -21,8 +21,19 @@ const SB = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const H = { apikey: KEY, Authorization: 'Bearer ' + KEY };
 
-/** ชื่อลูกค้าที่เป็นออเดอร์เทส (เจอจริงในระบบ 27 ก.ค. — เติมได้ถ้าเจอเพิ่ม) */
+/** ชื่อลูกค้าที่เป็นออเดอร์เทส — เทียบแบบ "ตรงเป๊ะ" (ชื่อสั้น เสี่ยงชนลูกค้าจริง) */
 const TEST_NAMES = ['nut', 'test user', 'ทดลอบ 1', 'ploy ♡', 'schematest'];
+
+/**
+ * คำที่ถ้า "โผล่ที่ไหนก็ได้ในชื่อ" = ออเดอร์เทสแน่ๆ
+ * เพิ่ม 11 ส.ค. หลังเจอ `U-0817-001` ชื่อ "🎡test" เบอร์ 0620000000 หลุดเข้าใบทวงเงิน
+ * (ตัวกรองเดิมเทียบตรงเป๊ะ → จับชื่อที่มี emoji/ต่อท้ายไม่ได้)
+ * ⚠️ เติมคำใหม่ต้องระวังชนชื่อลูกค้าจริง — คำที่ใส่ต้องไม่มีทางเป็นชื่อคนไทย
+ */
+const TEST_SUBSTRINGS = ['test', 'ทดลอ', 'schema'];
+
+/** เบอร์ปลอม = มีเลข 0 ติดกัน 6 ตัวขึ้นไป (เช่น 0620000000) — เบอร์มือถือไทยจริงแทบไม่มีทางเป็นแบบนี้ */
+const isFakePhone = (p) => /0{6,}/.test(String(p || '').replace(/\D/g, ''));
 
 /** ดึงทุกแถว ไม่ติดเพดาน 1,000 ของ PostgREST */
 export async function fetchAll(path) {
@@ -41,7 +52,12 @@ export function isTestOrder(o) {
   if (o.source === 'parallel_test') return true;
   if (o.created_by === '[TEST-P] Claude') return true;
   if ((o.notes || '').startsWith('[PARALLEL]')) return true;
-  return TEST_NAMES.includes((o.customer_name || '').trim().toLowerCase());
+  if ((o.created_by || '').includes('[TEST-')) return true;
+  const name = (o.customer_name || '').trim().toLowerCase();
+  if (TEST_NAMES.includes(name)) return true;
+  if (TEST_SUBSTRINGS.some((s) => name.includes(s))) return true;
+  // เบอร์ปลอม + ยอดน้อย = ออเดอร์เทส · ต้องมี 2 เงื่อนไขคู่กัน กันเผลอตัดลูกค้าจริงที่กรอกเบอร์ผิด
+  return isFakePhone(o.customer_phone) && Number(o.total) < 1000;
 }
 
 /**
@@ -73,7 +89,7 @@ export const isSale = (o) => Number(o.total) > 0 && !isLoyaltyLog(o);
 /** โหลดออเดอร์ในช่วง แล้วกรองของปนออกให้เรียบร้อย */
 export async function loadOrders(fromISO, toISO) {
   const sel =
-    'select=order_number,total,created_at,source,created_by,customer_name,customer_id,notes,status';
+    'select=order_number,total,created_at,source,created_by,customer_name,customer_phone,customer_id,notes,status';
   const raw = await fetchAll(
     `orders?${sel}&created_at=gte.${fromISO}&created_at=lt.${toISO}&order=created_at.asc`
   );
