@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบจัดของ 11 ส.ค. — รายชื่อลูกค้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FFF7ED;
+    --stk:#0F766E;--stkbg:#E8F5F2;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai",sans-serif;font-size:14px;line-height:1.35}
+  .wrap{max-width:820px;margin:0 auto;padding:12px 12px 40px}
+  h1{font-size:18px;font-weight:900;margin:2px 0 1px}
+  .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
+  .tools{display:flex;gap:6px;margin-bottom:10px}
+  .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
+
+  .bigred{background:var(--redbg);border:3px solid var(--red);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bigred .t{font-weight:900;color:var(--red);font-size:20px;margin-bottom:8px;text-align:center;letter-spacing:.3px}
+  .bigred ul{margin:0;padding-left:20px}
+  .bigred li{font-size:14px;font-weight:800;color:#7F1D1D;margin:7px 0;line-height:1.4}
+  .bigred li b{font-size:16px}
+  .bigred .tot{margin-top:10px;font-size:14px;font-weight:900;color:var(--red);text-align:center;border-top:2px dashed #FCA5A5;padding-top:8px}
+
+  .postpone{background:#F3F4F6;border:1px dashed #9CA3AF;border-radius:10px;padding:8px 11px;margin-bottom:12px;font-size:12.5px;color:#374151;font-weight:700;line-height:1.5}
+
+  .alert{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .alert .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
+  .alert ul{margin:0;padding-left:18px}.alert li{font-size:12px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.3}
+
+  .banred{background:var(--redbg);border:1px solid #FCA5A5;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .banred .t{font-weight:900;color:var(--red);font-size:14px;margin-bottom:6px}
+  .banred ul{margin:0;padding-left:18px}.banred li{font-size:12.5px;font-weight:800;color:#7F1D1D;margin:3px 0;line-height:1.35}
+
+  .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
+  .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.hx{color:var(--hx)}.sec.stk{color:var(--stk)}
+  .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
+  .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}.c.hx{border-color:#FDBA74}.c.stk{border-color:#99D6C9}
+  .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}.c.hx .ch{background:var(--hxbg)}.c.stk .ch{background:var(--stkbg)}
+  .ch .nm{font-weight:900;font-size:14.5px;line-height:1.2}
+  .ch .pl{font-size:11.5px;font-weight:800;margin-top:1px}
+  .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}.c.hx .ch .pl{color:var(--hx)}.c.stk .ch .pl{color:var(--stk)}
+  .ch .bx{flex:none;font-size:13px;font-weight:900;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
+  .note{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .it{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center;cursor:pointer;user-select:none}
+  .it:hover{background:#FAFAFA}
+  .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
+  .it.done .bo{background:var(--head);border-color:var(--head)}
+  .it.done .tx{text-decoration:line-through;color:var(--soft)}
+  .it .no{flex:none;font-weight:900;color:var(--soft);width:26px;font-size:12px;text-align:right}
+  .it .tx{flex:1;font-size:13.5px;font-weight:700;line-height:1.25}
+  .it .tx small{color:var(--soft);font-size:11.5px;font-weight:600}
+  .it .tx small::before{content:' · '}
+  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:12.5px} .tools{display:none} .c{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>📦 ใบจัดของ — อังคาร 11 ส.ค.</h1>
+<div class="sub">จัดแน่ 16 ออเดอร์ · 156 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ</div>
+<div class="tools">
+  <button onclick="clearAll()">ล้างติ๊กทั้งหมด</button>
+  <button onclick="window.print()">🖨 พิมพ์</button>
+</div>
+
+<div class="bigred">
+  <div class="t">⛔ 2 ใบนี้ยังไม่ต้องจัด — ระบบขัดกันเอง</div>
+  <ul>
+    <li><b>ชนาพร ชลวิศิษฎ์</b> — U-0811-003 — <b>25 กล่อง</b> — โน้ตเขียน "ยกเลิกโดยพี่นัท" แต่สถานะในระบบยังเป็น <b>confirmed</b> · ยังไม่จ่ายเงิน (฿2,170)</li>
+    <li><b>BooM</b> — U-0811-005 — <b>21 กล่อง</b> — โน้ตเขียน "ยกเลิกโดยพี่นัท" แต่สถานะยังเป็น <b>confirmed</b> · <b>จ่ายเงินแล้ว ฿1,447</b> ← ยิ่งต้องเช็ค</li>
+  </ul>
+  <div class="tot">รวม 46 กล่อง — ถามพี่นัท/กิฟให้ชัดก่อน แล้วค่อยจัด</div>
+</div>
+
+<div class="postpone">
+  🚫 <b>ยกเลิกแล้วจริง — ไม่ต้องจัด</b> (สถานะในระบบ = cancelled)<br>
+  · <b>nuit 🌙</b> U-0811-006 (13 กล่อง) — เดิมเอกสาร <code>FAH_20260811_final.md</code> นับเป็น "ส่งวันนี้" <b>ผิด</b><br>
+  · <b>นวภัท จะบัง (007)</b> U-0811-007 / U-0811-008 — ชีทกิฟบอกส่ง <b>14 ส.ค.</b> ไม่ใช่วันนี้<br>
+  · U-0808-902 ใบเทสของ CC
+</div>
+
+<div class="banred">
+  <div class="t">🔴 ข้อห้ามรายคน — ผิดข้อนี้เสียลูกค้า</div>
+  <ul>
+    <li><b>กวาง (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2 (เนื้อบูลโกกิ)</b> · ได้เมนู 7 ทูน่าสเต๊ก 1 กล่องแทน</li>
+    <li><b>Muse (Hyrox)</b> — ไม่ทานเนื้อวัว → <b>ไม่ได้เมนู 2</b> · ได้เมนู 3 หมูย่าง เพิ่มเป็น 3 กล่อง + เมนู 7 ทูน่า 2 กล่องแทน</li>
+  </ul>
+</div>
+
+<div class="alert">
+  <div class="t">📌 รอยืนยัน (ยังจัดได้ แต่ให้รู้ไว้)</div>
+  <ul>
+    <li><b>Supatcha (TooN)</b> U-0810-013 — อาจเป็นคนเดียวกับ TooN ฝั่ง Hyrox เดิม ถ้าใช่ยอดจะเกิน 7 กล่อง — <b>เช็คกับกิฟก่อนแพ็ค</b></li>
+    <li><b>เมนู 5</b> — ชีทเขียน "แซลมอนสไปซี่" แต่สูตร R&amp;D เขียน "ซอสมิโสะ" — ครัวทำมิโสะไปก่อนตามใบผลิต</li>
+    <li><b>ยอด Hyrox รายเมนู</b> — ชีทกิฟไม่ได้ติ๊กรายกล่อง ตัวเลขในใบผลิตเป็นการกระจายประมาณการ (ยกเว้นกวาง/Muse ที่ระบุชัด)</li>
+    <li><b>KantaponT.59</b> — นับจาก DB ได้ <b>42 กล่อง</b> (เอกสารเดิมเขียน 39) — ใบนี้ใช้ 42</li>
+  </ul>
+</div>
+
+<div id="app"></div>
+
+<div class="foot">
+  <b>รวมจัดแน่ 156 กล่อง — Hyrox 9 คน 57 · LC 2 คน 14 · HP 1 คน 7 · สต็อค 4 ใบ 78</b><br>
+  LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง · HYROX = เนื้อ 160–185g + คาร์บสูง<br>
+  ⛔ ค้างรอยืนยัน 46 กล่อง (กล่องแดงบนสุด) · 🚫 ยกเลิกแล้ว 13+ กล่อง ไม่นับในยอดวันนี้<br>
+  เมนู Meal Plan ยึดตาม <code>kitchen/2026-08-11.html</code> (ใบผลิต) · เลขออเดอร์/เบอร์/เมนูสต็อคจาก DB จริง 11 ส.ค.
+</div>
+</div>
+
+<script>
+// ── เมนู Meal Plan/Hyrox วันนี้ (เลข → ชื่อ + โปรตีนหลัก) — ตรงกับใบผลิต kitchen/2026-08-11.html ──
+var M = {
+ '1':{n:'อกไก่ย่างซอสเทริยากิ + บรอกโคลี/แครอท/ข้าวโพดอ่อน', p:'อกไก่'},
+ '2':{n:'เนื้อบูลโกกิ + ถั่วงอกลวก/แครอทเส้น/ผักกาดหอม', p:'เนื้อวัวไม่ติดมัน'},
+ '3':{n:'หมูย่างน้ำผึ้งกระเทียม + บรอกโคลี/แครอทนึ่ง/ถั่วแขก', p:'สันในหมู'},
+ '4':{n:'กุ้งผัดพริกขี้หนู + ถั่วฝักยาว/พริกหยวก/ใบกะเพรา', p:'กุ้งแกะเปลือก'},
+ '5':{n:'แซลมอนซอสมิโสะ + หน่อไม้ฝรั่ง/ถั่วแขก/เห็ด', p:'แซลมอน'},
+ '6':{n:'กระพง Herb Butter + หน่อไม้ฝรั่ง/ถั่วแขก/มะเขือเทศเชอร์รี่', p:'กระพง'},
+ '7':{n:'ทูน่าสเต๊กซีซาร์ (สำรอง) + ร็อกเก็ต/มะเขือเทศ/หน่อไม้ฝรั่ง', p:'ทูน่าเนื้อล้วน'}
+};
+
+// ── ลูกค้าที่จัดแน่วันนี้ (2 ใบที่ขัดกัน + 3 ใบที่ยกเลิกแล้ว ไม่อยู่ในนี้ = อยู่กล่องบนสุด) ──
+var C = [
+ // ─ Hyrox 9 คน · 57 กล่อง ─
+ {g:'hx', n:'Monchuta T. (Influ Hyrox)', line:'HT-1394939703 · 0897774411', box:6, items:['1','2','3','4','5','6'],
+  note:'📦 ส่ง Nim Express — แพ็คแบบส่งต่างจังหวัด'},
+ {g:'hx', n:'พัดชา กิจวิบูลย์ (pat)', line:'HT-1933398303 · 0932462654', box:6, items:['1','2','3','4','5','6']},
+ {g:'hx', n:'กวาง (Farung) — Influ', line:'U-0811-015 · 0954964694', box:6, items:['1','3','4','5','6','7'],
+  note:'🔴 ไม่ทานเนื้อ — ไม่ได้เมนู 2 · ได้เมนู 7 แทน'},
+ {g:'hx', n:'Yupa (พี่พลอย)', line:'U-0811-016 · 0954964694', box:6, items:['1','2','3','4','5','6']},
+ {g:'hx', n:'Palita (พี่พลอย)', line:'U-0811-017 · 0830107306', box:6, items:['1','2','3','4','5','6']},
+ {g:'hx', n:'คุณชัย (Chai)', line:'U-0811-001 · 0992622991', box:6, items:['1','2','3','4','5','6'],
+  note:'📌 เผ็ดน้อย · วางบนโต๊ะฝากอาหารตึกบี · รอบเช้า'},
+ {g:'hx', n:'Muse (วณัสม์ณา)', line:'U-0811-012 · 0826916695', box:9, items:['1','3','3','3','4','5','6','7','7'],
+  note:'🔴 ไม่ทานเนื้อ — ไม่ได้เมนู 2 · เมนู 3 รวม 3 กล่อง + เมนู 7 อีก 2 กล่อง'},
+ {g:'hx', n:'Belle (ปริญญารัตน์)', line:'U-0811-013 · 0868785983', box:6, items:['1','2','3','4','5','6']},
+ {g:'hx', n:'Nuchnuch (นุชนันทน์)', line:'U-0811-014 · 0894445144', box:6, items:['1','2','3','4','5','6']},
+
+ // ─ LC 2 คน · 14 กล่อง ─
+ {g:'lc', n:'มีมี่ (Mimi)', line:'U-0810-009 · 0813451461', box:7, items:['1','2','3','4','5','6','7'],
+  note:'📦 ส่ง Nim Express — แพ็คแบบส่งต่างจังหวัด'},
+ {g:'lc', n:'มิ้ม (Mimchan)', line:'U-0810-004 · 0995969636', box:7, items:['1','2','3','4','5','6','7'],
+  note:'📌 หลังที่ 2 ขวามือ'},
+
+ // ─ HP 1 คน · 7 กล่อง ─
+ {g:'hp', n:'Supatcha (TooN)', line:'U-0810-013 · 0962463656', box:7, items:['1','2','3','4','5','6','7'],
+  note:'⚠️ อาจซ้ำกับ TooN ฝั่ง Hyrox — เช็คกับกิฟก่อนแพ็ค'},
+
+ // ─ สต็อค ส่งวันนี้ (ของทำไว้แล้ว ไม่กระทบยอดผลิต) · 4 ใบ 78 กล่อง ─
+ {g:'stk', n:'Som.Kamala[DSD]', line:'U-0811-009 · 0948965236', box:6,
+  stock:['S069 พาสต้าเส้นเกลียวอกไก่สับผัดโชริโซ่ ×2','S025 สตูวหมูอบมันบดผักย่าง ×2','No14 ข้าวหมกไก่ลีน ×2'],
+  note:'⏰ ส่งตอน 10.00 — รอบเช้า จัดก่อน'},
+ {g:'stk', n:'มันตรินี บัวองค์', line:'U-0811-002 · 0952399393', box:14,
+  stock:['S006 ข้าวผัดน้ำพริกลงเรือ หมูหวาน ไข่เค็ม','S022 ข้าวญี่ปุ่นอบสาหร่าย แซลมอน ×2','S070 ข้าวแซลมอนสมุนไพรลุยสวน','S105 ข้าวแซลมอนย่างเกลือ+น้ำจิ้มซีฟู๊ด','S144 ข้าวหมูมะนาว','S181 ข้าวปลากระพงนึ่งราดซอสไข่เค็ม','No1 เส้นหมี่คลุกอกไก่ฉีก','No2 ข้าวปลาแซลมอนย่าง น้ำจิ้มซีฟู้ด+พริกย่าง','No3 ข้าวสะโพกไก่ตุ๋นเกาลัด','No4 ข้าวไรซ์ + ปลากะพงราดซอสต้มยำ','No5 เส้นหมี่น้ำยาทูน่า(ไร้)กะทิอกไก่','No14 ข้าวหมกไก่ลีน','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม'],
+  note:'🔴 ลูกค้าเคยเจอกล่องแตกหลายกล่อง — แจ้งขนส่งอย่าเก็บไว้ที่คลังนาน + แพ็คกันกระแทกเพิ่ม'},
+ {g:'stk', n:'Miww', line:'U-0811-011 · 0950515654', box:16,
+  stock:['S181 ข้าวปลากระพงนึ่งราดซอสไข่เค็ม ×2','S054 ข้าวยำมะม่วงอกไก่ฉีก ×2','S063 ข้าวไก่ย่างราดพริกสามรส','S025 สตูวหมูอบมันบดผักย่าง','No11 เส้นหมี่ก๋วยเตี๋ยวหลอดหมูสับทรงเครื่อง ×2','No14 ข้าวหมกไก่ลีน ×2','No7 ข้าวอบหน้าไก่กุนเชียง','No8 ข้าวผัดสับปะรดแครนเบอร์รี่หมูลีน','No12 ข้าวผัดกิมจิอกไก่','No13 ข้าวอกไก่ผัดพริกเหลืองโหระพา','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม','A17 อกไก่นิวออลีน'],
+  note:'📌 เข้าหมู่บ้านทางถนนคู่ขนานมอเตอร์เวย์ (ฝั่งมหาลัยสแตมฟอร์ด)'},
+ {g:'stk', n:'KantaponT.59💝💫🧿', line:'U-0811-010 · 0895252552', box:42,
+  stock:['A11 อกไก่พันผักกาดซีอิ๊วงา ×8','D061 ผัดผักกาดขาวกุ้งแห้งราดไก่สับผัดกระเทียม ×8','A13 แฮมเบิร์กหมูผสมไก่ซอสบาบีคิว ×3','A12 ทอดมันทูน่าอกไก่ ×3','D016 ไก่ผัดเม็ดมะม่วงหิมพานต์ ×2','A10 สันในหมูหมักซอสเกาหลี ×2','A9 เครื่องราดหน้าไก่กุนเชียง ×2','D033 อกไก่สับย่างขมิ้น+น้ำจิ้มอาจาด ×2','A20 หมูสับต้มมะระยัดไส้ ×2','A19 อกไก่ย่างแมกซิกัน ×2','A17 อกไก่นิวออลีน ×2','A16 อกไก่ย่างเครื่องแกง ×2','A15 แกงหมูสับบ๊วยดอง ×2','A14 อกไก่คั่วพริกแห้งเสฉวน ×2'],
+  note:'📌 แพคนี้ส่งฟรี (แก้ค่าส่งแล้ว 11 ส.ค.) · ใบใหญ่สุดของวัน 42 กล่อง'}
+];
+
+var GN = {hx:'HYROX', lc:'LC (Meal Plan)', hp:'HP (Meal Plan)', stk:'เมนูสต็อค (ทำไว้แล้ว)'};
+var SEC = [
+  ['hx','🏋️ HYROX — 9 คน · 57 กล่อง'],
+  ['lc','🥗 LC — 2 คน · 14 กล่อง'],
+  ['hp','💪 HP — 1 คน · 7 กล่อง'],
+  ['stk','📦 เมนูสต็อค ส่งวันนี้ — 4 ใบ · 78 กล่อง']
+];
+var KEY = 'pack20260811';
+
+function load(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } }
+function save(s){ try{ localStorage.setItem(KEY, JSON.stringify(s)); }catch(e){} }
+
+function render(){
+  var st = load(), html = '';
+  SEC.forEach(function(sc){
+    var g = sc[0], list = C.filter(function(c){ return c.g===g; });
+    if(!list.length) return;
+    html += '<div class="sec '+g+'">'+sc[1]+'</div>';
+    list.forEach(function(c, ci){
+      var id = g+'-'+ci;
+      html += '<div class="c '+g+'">';
+      html += '<div class="ch"><div><div class="nm">'+c.n+'</div><div class="pl">'+GN[g]+' · '+c.line+'</div></div>'
+            + '<span class="bx">'+c.box+' กล่อง</span></div>';
+      if(c.note) html += '<div class="note">'+c.note+'</div>';
+      var rows = [];
+      if(c.items){
+        c.items.forEach(function(code){ var m = M[code]||{n:'(ไม่พบเมนู '+code+')',p:'?'};
+          rows.push({no:code, tx:m.n+'<small>'+m.p+'</small>'}); });
+      }
+      if(c.stock){ c.stock.forEach(function(s){ rows.push({no:'', tx:s}); }); }
+      rows.forEach(function(r, ri){
+        var k = id+'-'+ri, done = st[k] ? ' done' : '';
+        html += '<div class="it'+done+'" data-k="'+k+'"><span class="bo">✓</span>'
+              + '<span class="no">'+r.no+'</span><span class="tx">'+r.tx+'</span></div>';
+      });
+      html += '</div>';
+    });
+  });
+  document.getElementById('app').innerHTML = html;
+  document.querySelectorAll('.it').forEach(function(el){
+    el.addEventListener('click', function(){
+      var s = load(), k = el.getAttribute('data-k');
+      if(s[k]){ delete s[k]; el.classList.remove('done'); } else { s[k] = 1; el.classList.add('done'); }
+      save(s);
+    });
+  });
+}
+function clearAll(){ save({}); render(); }
+render();
+
+// ── ตรวจยอดในตัวเอง: กล่องที่ประกาศ = จำนวนบรรทัดจริง (กันใบโกหก) ──
+(function(){
+  var bad = [];
+  C.forEach(function(c){
+    var n = c.items ? c.items.length : 0;
+    if(c.stock){ c.stock.forEach(function(s){ var m = s.match(/×(\d+)\s*$/); n += m ? parseInt(m[1],10) : 1; }); }
+    if(n !== c.box) bad.push(c.n+': ประกาศ '+c.box+' แต่นับได้ '+n);
+  });
+  var tot = C.reduce(function(s,c){ return s + c.box; }, 0);
+  if(tot !== 156) bad.push('ยอดรวม: ประกาศ 156 แต่นับได้ '+tot);
+  if(bad.length){
+    var d = document.createElement('div');
+    d.className = 'bigred';
+    d.innerHTML = '<div class="t">🐞 ใบนี้ตัวเลขไม่ตรงกันเอง — อย่าใช้ บอกฟ้า/พี่นัท</div><ul><li>'
+      + bad.join('</li><li>') + '</li></ul>';
+    document.querySelector('.wrap').insertBefore(d, document.getElementById('app'));
+  }
+})();
+</script>
+</body>
+</html>
