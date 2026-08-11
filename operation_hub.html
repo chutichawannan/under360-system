@@ -311,6 +311,26 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   padding:10px 16px;border-bottom:1px solid var(--ink-xsoft);align-items:center;gap:12px;
   font-size:13px;
 }
+/* ไฮไลต์ใบที่เพิ่งวาร์ปมาจาก "ย้ายไปวันที่ …" — กะพริบ 3 ครั้งแล้วค้างสีไว้ให้เห็นว่าอยู่ตรงไหน
+   (นัทสั่ง 11 ส.ค.: ไม่ต้องเปิดหน้ารายละเอียด แค่ชี้ให้เห็นว่าอยู่ตรงนี้) */
+.orders-mini-row.ord-flash{
+  position:relative;background:#FEF9C3;
+  box-shadow:inset 4px 0 0 #F59E0B;
+  animation:ordFlashPulse .75s ease-in-out 4;
+}
+.orders-mini-row.ord-flash::after{
+  content:"👉 ใบที่ย้ายมา";
+  position:absolute;top:6px;right:12px;
+  background:#F59E0B;color:#fff;font-size:10px;font-weight:800;
+  border-radius:999px;padding:2px 9px;white-space:nowrap;pointer-events:none;
+}
+@keyframes ordFlashPulse{
+  0%,100%{background:#FEF9C3}
+  50%{background:#FDE68A}
+}
+@media (prefers-reduced-motion:reduce){
+  .orders-mini-row.ord-flash{animation:none}
+}
 .orders-mini-row:last-child{border-bottom:none}
 .orders-mini-head{background:var(--bg);font-size:11px;font-weight:600;color:var(--ink-soft)}
 .pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
@@ -1282,7 +1302,7 @@ function renderOrders(orders){
         +"<span>"+(byCr?"🛒 สั่งวันที่ ":"📅 ")+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
-    h+="<div class='orders-mini-row' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
+    h+="<div class='orders-mini-row' data-oid='"+o.id+"' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
     h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
     h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
@@ -1302,6 +1322,7 @@ function renderOrders(orders){
   });
   h+=ordMovedAwayHtml();
   el.innerHTML=h;
+  if(ordFlashId) setTimeout(ordFlashRow,60);   // รอ DOM วางเสร็จก่อนค่อยเลื่อนไปหา (ติดซ้ำได้ทุกครั้งที่วาดใหม่)
 }
 /* ── ใบที่ "เคยอยู่วันนี้ แต่ย้ายไปวันอื่นแล้ว" ────────────────────────────────
    นัทสั่งเอง 11 ส.ค.: ย้ายแล้วห้ามหายเงียบจากวันเดิม ให้เหลือข้อมูลจางๆ ท้ายตาราง
@@ -1324,10 +1345,29 @@ function ordMovedAwayHtml(){
   });
   return h;
 }
+/* กดแถวจาง "ย้ายไปวันที่ …" แล้ววาร์ปไปวันนั้น — แล้ว **ชี้ให้เห็นเลยว่าใบอยู่ตรงไหน**
+   นัทสั่งเอง 11 ส.ค.: ไม่ต้องเปิดหน้ารายละเอียด ให้กะพริบ/ติดสัญลักษณ์พอ
+   (เปิดป้อบอัพทับ = ต้องกดปิดอีกที แล้วยังต้องไล่หาแถวเองอยู่ดี) */
+/* ยึด "ถึงเวลาไหน" ไม่ใช่ยิงครั้งเดียว — เพราะตารางถูกวาดใหม่ได้หลายรอบ
+   (โหลดจบ + รีเฟรชอัตโนมัติทุก 30 วิ) ถ้าติดคลาสรอบเดียวจะโดนล้างทิ้งทันที */
+var ordFlashId=null, ordFlashUntil=0, ordFlashScrolled=false;
 function ordJumpToDate(d,id){
   ordCancelledOnly=false; ordMovedOnly=false; ordSearchQ="";
+  ordFlashId=id||null; ordFlashUntil=id?(new Date().getTime()+12000):0; ordFlashScrolled=false;
   setPickDate(d);
-  if(id) setTimeout(function(){ openOrderDetail(id); }, 900);
+}
+function ordFlashRow(){
+  if(!ordFlashId) return;
+  if(new Date().getTime()>ordFlashUntil){ ordFlashId=null; return; }
+  var el=document.querySelector('.orders-mini-row[data-oid="'+ordFlashId+'"]');
+  if(!el){
+    /* ใบอาจอยู่คนละหน้า (แบ่งหน้าละ 20) — บอกให้รู้ ไม่ปล่อยให้งงว่ากดแล้วไม่มีอะไรเกิดขึ้น */
+    var hint=document.getElementById("ordSearchHint");
+    if(hint) hint.textContent="ใบที่ย้ายมาอยู่หน้าถัดไป — กดเลื่อนหน้าด้านล่าง หรือค้นด้วยเลขออเดอร์";
+    return;
+  }
+  el.classList.add("ord-flash");
+  if(!ordFlashScrolled){ el.scrollIntoView({behavior:"smooth",block:"center"}); ordFlashScrolled=true; }
 }
 // ── 🧾 รายละเอียดออเดอร์ (กดแถวไหนก็ได้) ──────────────────
 function closeOrderDetail(){ var o=document.getElementById("odOverlay"); if(o)o.style.display="none"; }
