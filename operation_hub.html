@@ -1335,6 +1335,70 @@ function applyRange(){
   loadAll();
 }
 var ST={confirmed:{t:"รอครัว",cls:"p-wait"},preparing:{t:"ทำอยู่",cls:"p-cook"},ready:{t:"พร้อมส่ง",cls:"p-ready"},delivered:{t:"ส่งแล้ว",cls:"p-done"}};
+
+/* ── แอดมินกดสถานะเองได้จากหน้าออเดอร์ (นัทสั่ง 11 ส.ค.) ──────────────────────
+   "ไม่ต้องรอแมสกด หรือครัวกด บายพาสเลย แอดมินกดให้"
+   ใช้ค่าเดียวกับที่หน้าครัวเขียนเป๊ะ (confirmed → ready → delivered)
+   ไม่งั้นครัว/แมสจะเห็นคนละสถานะกับที่แอดมินกด = กลายเป็นความจริง 2 ชุด
+   ⚠️ "ส่งแล้ว" ต้องอัปเดตรอบส่ง Meal Plan ที่ผูกกันด้วย เพราะหน้าครัวโชว์ MP จากตารางนั้น */
+var OD_FLOW=[
+  {v:"confirmed", t:"รอครัว"},
+  {v:"preparing", t:"ครัวกำลังทำ"},
+  {v:"ready",     t:"จัดของแล้ว (พร้อมส่ง)"},
+  {v:"delivered", t:"ส่งแมสแล้ว"}
+];
+function odStatusPicker(o,st){
+  if(o.status==="cancelled")
+    return "<span class='pill "+st.cls+"'>"+st.t+"</span>";
+  var cur=String(o.status||"confirmed");
+  var color=cur==="delivered"?"#065F46":cur==="ready"?"#1D4ED8":cur==="preparing"?"#B45309":"#6B7280";
+  var bg   =cur==="delivered"?"#D1FAE5":cur==="ready"?"#DBEAFE":cur==="preparing"?"#FEF3C7":"#F3F4F6";
+  var h="<select onclick='event.stopPropagation()' onchange=\"odSetStatus('"+o.id+"',this.value,event)\" "
+    +"title='เปลี่ยนสถานะได้เลย ไม่ต้องรอครัว/แมสกด — ครัวกับหน้าแมสจะเห็นตามนี้' "
+    +"style='font-family:inherit;font-size:11px;font-weight:700;border-radius:8px;padding:3px 6px;cursor:pointer;"
+    +"border:1px solid "+color+"33;color:"+color+";background:"+bg+"'>";
+  OD_FLOW.forEach(function(s){
+    var known=OD_FLOW.some(function(x){return x.v===cur;});
+    h+="<option value='"+s.v+"'"+(s.v===cur?" selected":"")+">"+s.t+"</option>";
+    if(!known&&s.v==="confirmed") h+="<option value='"+esc2(cur)+"' selected>"+esc2(cur)+"</option>";
+  });
+  return h+"</select>";
+}
+async function odSetStatus(id,next,ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  /* ใบที่ไม่ได้อยู่ในหน้าที่เปิดอยู่ ต้องดึงมาก่อน ไม่งั้นประวัติจะจดว่า "ออเดอร์" ลอยๆ ตามกลับไม่ได้ */
+  if(!o){ try{ var _r=await sb_.from("orders").select("id,order_number,customer_name,status").eq("id",id).maybeSingle(); o=_r.data||null; }catch(e){} }
+  var prev=o?o.status:"";
+  var who=odWho(); if(!who){ loadAll(true); return; }
+  var label=(OD_FLOW.find(function(x){return x.v===next;})||{}).t||next;
+  try{
+    var up=await sb_.from("orders").update({status:next,updated_at:new Date().toISOString()}).eq("id",id).select("id,status");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].status!==next) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
+    if(o) o.status=next;
+    /* รอบส่ง Meal Plan/Hyrox — หน้าครัวอ่านสถานะจากตารางนี้ ต้องขยับตามกัน */
+    var mpNext=next==="delivered"?"delivered":(next==="confirmed"||next==="preparing"?"menu_assigned":null);
+    if(mpNext) await sb_.from("mp_deliveries").update({status:mpNext,updated_at:new Date().toISOString()})
+                        .eq("order_id",id).neq("status","cancelled");
+    /* จดว่าใครกด — สถานะพวกนี้แปลว่า "ของออกไปแล้ว" ต้องตามกลับได้ว่าใครเป็นคนบอก */
+    try{
+      await sb_.from("activity_log").insert({
+        session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+        actor: who||"ไม่ทราบชื่อ",
+        source:"oh",
+        action_type:"kq_status",
+        summary:((o&&o.order_number)||"ออเดอร์")+" "+((o&&o.customer_name)||"")+" — แอดมินตั้งสถานะเป็น \""+label+"\" (เดิม "+((ST[prev]&&ST[prev].t)||prev||"—")+")",
+        detail:{order_id:id, order_number:(o&&o.order_number)||null, from:prev, to:next, by:"oh_admin"}
+      });
+    }catch(e){}
+    loadAll(true);
+  }catch(e){
+    alert("เปลี่ยนสถานะไม่สำเร็จ: "+((e&&e.message)||e));
+    loadAll(true);
+  }
+}
 function renderOrders(orders){
   var el=document.getElementById("ordersList"); if(!el)return;
   if(!orders||!orders.length){el.innerHTML="<div style='padding:32px;text-align:center;color:#6B7280'>ยังไม่มีออเดอร์</div>";return;}
@@ -1368,7 +1432,7 @@ function renderOrders(orders){
     var payStyle=paid?"background:#D1FAE5;color:#065F46":(review?"background:#E0E7FF;color:#3730A3":"background:#FEF3C7;color:#92400E");
     var payText =paid?"💰 โอนแล้ว":(review?"🧾 รอตรวจสลิป":"⏳ รอโอน");
     var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+(review?"ตรวจสลิปแล้วคลิกเพื่อยืนยันว่าโอนแล้ว":"คลิกเพื่อสลับสถานะการโอนเงิน")+"'>"+payText+slipTag+"</span>"+slipBtn;
-    h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:2px'><span class='pill "+st.cls+"'>"+st.t+"</span>"+payBadge+"</div></div>";
+    h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:3px'>"+odStatusPicker(o,st)+payBadge+"</div></div>";
   });
   h+=ordMovedAwayHtml();
   h+=ordCancelledTodayHtml();
