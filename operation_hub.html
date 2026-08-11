@@ -2318,11 +2318,14 @@ function planFamilySelected(){
   return "mp";
 }
 // เลือกโค้ดจริงให้ตรงกับแผนของลูกค้าแถวนั้น (ไม่มีของแผนนั้น → หยิบตัวที่มี)
+// ⚠️ คืน null ถ้าตระกูลนั้นไม่มีเมนูเบอร์นี้จริง — ห้ามคืนเลขเปล่า
+//    เคยคืน "04" แล้วถูกบันทึกลงแผนของลูกค้า Hyrox ทั้งโค้ดและชื่อ (เจอจริง 11 ส.ค. · วณัสม์ณา 6 ช่อง)
+//    ครัวเปิดใบมาเห็นแค่ "04" ทำอาหารไม่ได้ · ผิดแบบเงียบ ไม่มีอะไรฟ้อง
 function mpCodeFor(no, mpType){
   var fam=mpFamilyOf(mpType);
-  var b=mpBaseByNo(no,fam); if(!b) return no;
-  if(fam==="hyrox") return b.codes.HX || Object.values(b.codes)[0] || no;
-  return b.codes[mpPrefixOf(mpType)] || b.codes.LC || b.codes.HP || Object.values(b.codes)[0] || no;
+  var b=mpBaseByNo(no,fam); if(!b) return null;
+  if(fam==="hyrox") return b.codes.HX || Object.values(b.codes)[0] || null;
+  return b.codes[mpPrefixOf(mpType)] || b.codes.LC || b.codes.HP || Object.values(b.codes)[0] || null;
 }
 
 // 🔴 MENU_POOL ข้างบนเป็นรายการที่ฝังไว้ในไฟล์แค่ 16 ตัว — ค้นหาเมนูเลยเจอไม่ครบ
@@ -2688,13 +2691,16 @@ function clickMenu(code){
     if(hint){hint.textContent="👆 คลิกชื่อลูกค้า/ช่องรอบก่อน (เลือกได้หลายอัน)";hint.style.opacity="1";setTimeout(function(){if(!selectedRowIds.length&&hint)hint.style.opacity="0";},1600);}
     return;
   }
-  var added=0, full=0;
+  var added=0, full=0, noMenu=[];
   var baseNo=mpBaseNo(code);                      // รับได้ทั้ง "01" และ "LC01" (ของเก่า)
   selectedRowIds.forEach(function(rowId){
     var r=getMpRow(rowId); if(!r)return;
     if(mpRowTotalQty(rowId)>=mpRowBoxCount(rowId)){ full++; return; }
     // 🍱 เลือกโค้ดให้ตรงกับแผนของลูกค้าแถวนี้เอง — กดครั้งเดียว ลูกค้า HP ได้ HP· LC ได้ LC
     var realCode=mpCodeFor(baseNo, r.mp_type);
+    // ชุด Hyrox เป็นคนละเมนูกับ Meal Plan — ถ้าเบอร์นี้ไม่มีในชุดของเขา ต้องข้ามและบอก
+    // ไม่ใช่ยัดเลขเปล่าลงไป (ครัวจะเปิดใบมาเจอ "04" แล้วทำอาหารไม่ได้)
+    if(!realCode){ noMenu.push((r.customer_name||"ลูกค้า").split("(")[0].trim()); return; }
     var items=r.menu_items?r.menu_items.slice():[];
     var entry=items.find(function(e){return e.code===realCode;});
     if(entry){ entry.qty=(entry.qty||1)+1; }
@@ -2714,7 +2720,9 @@ function clickMenu(code){
   var hint=document.getElementById("selectHint");
   if(hint){
     var b=mpBaseByNo(baseNo,planFamilySelected());
-    hint.textContent="✅ ใส่ "+(b?b.name:code)+" ให้ "+added+" ช่อง (ระบบเลือก HP/LC ให้ตามแผนของแต่ละคน)"
+    if(noMenu.length) hint.textContent="⚠️ "+noMenu.join(" · ")+" เป็นชุด Hyrox — ไม่มีเมนูเบอร์นี้ในชุดของเขา เลือกจากเมนู HX ให้แทน"
+      +(added?(" · ใส่ให้คนอื่นแล้ว "+added+" ช่อง"):"");
+    else hint.textContent="✅ ใส่ "+(b?b.name:code)+" ให้ "+added+" ช่อง (ระบบเลือก HP/LC ให้ตามแผนของแต่ละคน)"
       +(full?(" · เต็มแล้ว "+full+" ช่อง"):"")+(selectedRowIds.length?(" — เหลือเลือกอยู่ "+selectedRowIds.length+" ช่อง"):"");
     hint.style.opacity="1";
   }
