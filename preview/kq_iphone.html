@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — ครัว</title>
+<link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
+<link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--golds:#FFF8EC;--r:#DC2626;--rs:#FEF2F2;--blue:#1D4ED8;--blues:#EFF6FF;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;--rad:12px;}
+body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
+
+/* HEADER */
+.hdr{background:var(--g);padding:10px 14px;display:flex;align-items:center;gap:8px;position:sticky;top:0;z-index:100;flex-wrap:wrap;}
+.hdr-title{font-size:15px;font-weight:700;color:#fff;flex:1;}
+.hdr-btn{background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:8px;padding:5px 11px;font-size:12px;cursor:pointer;font-family:var(--sans);text-decoration:none;white-space:nowrap;}
+.hdr-btn.active{background:rgba(255,255,255,.35);}
+.live-dot{width:8px;height:8px;border-radius:50%;background:#22C55E;box-shadow:0 0 0 3px rgba(34,197,94,.2);animation:blink 2s infinite;flex-shrink:0;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* TABS */
+.tab-bar{display:flex;background:var(--w);border-bottom:2px solid var(--xsoft);overflow-x:auto;}
+.tab-btn{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--soft);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;white-space:nowrap;}
+.tab-btn.active{color:var(--g);border-bottom-color:var(--g);}
+.stk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--xsoft);}
+.stk-name{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
+.stk-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
+.stk-btn{width:44px;height:44px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:22px;font-weight:800;cursor:pointer;color:var(--g);line-height:1;}
+.stk-btn:active{background:var(--g);color:#fff;}
+.stk-btn:disabled{opacity:.3;cursor:default;}
+.stk-num{width:58px;height:44px;text-align:center;border:1.5px solid var(--xsoft);border-radius:10px;font-size:18px;font-weight:800;font-family:monospace;}
+.stk-inf{width:44px;height:44px;border:1.5px solid var(--xsoft);background:#fff;border-radius:10px;font-size:18px;cursor:pointer;color:var(--soft);}
+.stk-inf.on{background:var(--g);color:#fff;border-color:var(--g);}
+
+/* DATE + SLOT BAR */
+.ctrl-bar{background:var(--w);border-bottom:1px solid var(--xsoft);padding:8px 12px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
+.chip{flex-shrink:0;padding:0 14px;min-height:40px;display:inline-flex;align-items:center;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;font-weight:500;cursor:pointer;background:var(--w);color:var(--soft);}
+.chip.on{background:var(--g);color:#fff;border-color:var(--g);}
+.sep{width:1px;height:20px;background:var(--xsoft);flex-shrink:0;}
+.date-sel{padding:0 10px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
+
+/* MAIN */
+/* N-53: ใบสุดท้ายของวันเลื่อนไม่ถึงบนมือถือ (เห็น 10 จาก 11 · ใบที่หายคือใบท้ายสุด หายเงียบไม่มีอะไรเตือน)
+   สาเหตุ: หน้านี้เลื่อนด้วย body ไม่มี container — แถบล่างของ Chrome Android ทับใบสุดท้ายไว้
+   เว้นที่ท้ายหน้าให้เลื่อนพ้นแถบเบราว์เซอร์ได้ (เห็นชัดตอนพับการ์ด เพราะการ์ดเตี้ย หน้าสั้น) */
+.main{padding:12px 12px 140px;max-width:940px;margin:0 auto;}
+
+/* PROD TABLE */
+.prod-wrap{background:var(--w);border-radius:var(--rad);border:1px solid var(--xsoft);overflow:hidden;margin-bottom:12px;}
+.pt-head{display:grid;grid-template-columns:1fr 52px 52px 62px;gap:4px;padding:7px 12px;background:var(--gs);border-bottom:2px solid var(--xsoft);}
+.pt-head span{font-size:10px;font-weight:700;color:var(--soft);text-transform:uppercase;letter-spacing:.4px;text-align:center;}
+.pt-head span:first-child{text-align:left;}
+.pt-row{display:grid;grid-template-columns:1fr 52px 52px 62px;gap:4px;padding:7px 12px;border-bottom:1px solid var(--xsoft);align-items:center;}
+.pt-row:last-child{border-bottom:none;}
+.pt-row.warn{background:#FFFBEB;}
+.pt-row.danger{background:#FFF1F1;}
+.code-tag{font-family:var(--mono);font-size:10px;font-weight:700;color:var(--g);background:var(--gs);padding:2px 5px;border-radius:4px;white-space:nowrap;flex-shrink:0;}
+.pt-n{font-family:var(--mono);font-size:13px;font-weight:700;text-align:center;}
+.mp-wrap{background:var(--w);border-radius:var(--rad);border:1px solid var(--xsoft);border-left:4px solid #7C3AED;overflow:hidden;margin-bottom:12px;}
+.mp-head{padding:9px 12px;background:#F5F3FF;border-bottom:2px solid var(--xsoft);font-size:12px;font-weight:700;color:#5B21B6;}
+.mp-row{padding:8px 12px;border-bottom:1px solid var(--xsoft);}
+.mp-row:last-child{border-bottom:none;}
+.mp-row-top{display:flex;align-items:center;gap:6px;flex-wrap:wrap;}
+.mp-name{font-size:13px;font-weight:700;}
+.mp-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;}
+.mp-tag.hp{background:#FEF3C7;color:#92400E;}
+.mp-tag.lc{background:#D1FAE5;color:#065F46;}
+.mp-round{font-size:11px;color:var(--soft);font-weight:600;}
+.mp-meta{font-size:11px;color:var(--soft);margin-top:3px;}
+.mp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
+.mp-chip{font-family:var(--mono);font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FE;padding:2px 6px;border-radius:4px;}
+.mp-chip.empty{font-family:inherit;font-style:italic;font-weight:400;color:var(--xsoft);background:none;padding:0;}
+.btn-mp-done{margin-top:6px;font-size:12px;font-weight:700;color:var(--g);background:var(--gs);border:1px solid var(--g);border-radius:8px;padding:0 14px;min-height:44px;cursor:pointer;}
+.actual-input{width:44px;border:1.5px solid var(--g);border-radius:6px;text-align:center;font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g);padding:2px 0;background:var(--gs);}
+
+/* SLOT SECTION */
+.slot-sec{margin-bottom:14px;}
+.slot-hdr{display:flex;align-items:center;gap:8px;padding:9px 12px;background:var(--g);border-radius:10px 10px 0 0;color:#fff;}
+.slot-hdr-label{font-size:13px;font-weight:700;flex:1;}
+.slot-hdr-count{font-size:12px;background:rgba(255,255,255,.2);padding:2px 9px;border-radius:10px;}
+.slot-body{background:var(--w);border:1px solid var(--xsoft);border-top:none;border-radius:0 0 10px 10px;padding:8px;}
+
+/* ORDER CARD */
+/* ป้ายกำกับวันที่กำลังดู (N-32) */
+.date-banner{margin:0 14px 10px;padding:10px 14px;border-radius:10px;font-size:13px;line-height:1.5;}
+.date-banner.ahead{background:#FEF3C7;color:#92400E;border:1.5px solid #F59E0B;}
+.date-banner.past{background:#E5E7EB;color:#374151;border:1.5px solid #9CA3AF;}
+.db-back{display:inline-block;margin-left:6px;font-weight:700;text-decoration:underline;cursor:pointer;}
+body.tablet .date-banner{font-size:16px;padding:14px 18px;}
+.oc{border:1px solid var(--xsoft);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--w);}
+/* 🖥️ ดูบนเว็บ/จอกว้าง: แบ่ง 2 คอลัมน์ — ซ้ายข้อมูลลูกค้า ขวาของที่ต้องจัด+ปุ่ม (นัทสั่ง 6 ส.ค. 2569)
+   จอแคบกว่า 720px ยุบเป็นคอลัมน์เดียวเหมือนเดิม มือถือแอดมินไม่กระทบ */
+.oc-2col{display:block;}
+.oc-left{min-width:0;}
+.oc-right{min-width:0;}
+@media(min-width:720px){
+  .oc-2col{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.05fr);gap:16px;align-items:start;}
+  .oc-right{border-left:1px solid var(--xsoft);padding-left:16px;}
+}
+.oc-done{opacity:.55;}                                  /* ส่งแล้ว = จางลง แต่ยังอยู่ให้กดยกเลิกได้ */
+.oc-state{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;}
+.oc-state.packed{background:var(--gs);color:var(--g);}
+.oc-state.shipped{background:#DBEAFE;color:#1E40AF;}
+.oc-pay{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;}
+.oc-pay.is-paid{background:#D1FAE5;color:#065F46;}
+.oc-pay.is-unpaid{background:#FEF3C7;color:#92400E;}
+.oc-meta-sm{font-size:11px;}
+.btn-ship{background:#1E40AF;color:#fff;border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
+.oc:last-child{margin-bottom:0;}
+.oc.pkg{border-color:var(--gold);background:var(--golds);}
+.oc.mealplan{border-color:var(--g);background:var(--gs);}
+.oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;}
+/* ── พับ/กางการ์ด (N-13) ── ค่าเริ่มต้น = กางไว้ · พับแล้วเหลือ ชื่อ+กล่อง+สถานะ ── */
+.oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
+.oc-collapsed .oc-caret{transform:rotate(-90deg);}
+.oc-boxn{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--soft);}
+/* ⚠️ กฎพับการ์ด — ห้ามเอาคอมเมนต์มาคั่นกลางรายชื่อ selector
+   (เคยพลาดมาแล้ว: คอมเมนต์กินท้ายรายชื่อ ทำให้ .oc-note โดน display:none ทั้งหน้า = ครัวไม่เห็นโน้ตลูกค้าเลย
+    และ .oc-fridge เสียสีพื้นทั้งหมด = แถบของแช่ตู้ไม่เด่นอีกต่อไป) */
+.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:none;}
+/* ❄️ แถบของที่แช่ตู้ — ต้องเด่นกว่าปกติ เพราะเป็นของที่ครัวพลาดแล้วลูกค้าไม่ได้ของ */
+.oc-fridge{background:#DBEAFE;color:#1E40AF;font-size:13.5px;font-weight:800;padding:7px 12px;border-radius:8px;margin-bottom:8px;line-height:1.4;}
+.oc-fridge.take{background:#FEF3C7;color:#92400E;}
+body.tablet .oc-fridge{font-size:17px;padding:10px 14px;}
+@media print{.oc-fridge{border:1px solid #333;background:#fff!important;color:#000!important;}}
+.oc-collapsed .oc-2col{display:block;}
+.oc-collapsed .oc-top{margin-bottom:0;}
+.oc-collapsed{padding-top:9px;padding-bottom:9px;}
+.fold-bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:0 2px 10px;}
+.fold-btn{padding:0 14px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);background:var(--w);color:var(--soft);font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.fold-hint{font-size:11px;color:var(--xsoft);}
+body.tablet .fold-btn{font-size:16px;padding:0 20px;min-height:50px;border-radius:26px;}
+body.tablet .fold-hint{font-size:14px;}
+body.tablet .oc-boxn{font-size:14px;}
+body.tablet .oc-caret{font-size:19px;}
+.oc-badge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;margin-top:2px;}
+.oc-badge.hp{background:#FEF3C7;color:#92400E;}
+.oc-badge.lc{background:#D1FAE5;color:#065F46;}
+.oc-badge.pkg{background:var(--golds);color:var(--gold);border:1px solid var(--gold);}
+.oc-badge.mp{background:var(--gs);color:var(--g);}
+.oc-name{font-size:16px;font-weight:800;}
+.oc-meta{font-size:13px;color:var(--soft);margin-top:2px;line-height:1.45;}
+.oc-order-num{font-family:var(--mono);font-size:12.5px;color:var(--soft);}
+/* N-58: 1 เมนู = 1 บรรทัด ไม่มีกรอบ — ครัวกวาดสายตาลงแนวตั้งทีเดียวจบ
+   (เดิมเป็นชิปมีกรอบไหลต่อกันหลายตัวต่อบรรทัด ใบ 12 รายการอัดกันเป็นพรืด) */
+.items-grid{display:flex;flex-direction:column;gap:1px;margin-top:6px;}
+/* ชื่อเมนูต้องอ่านครบเสมอ — ให้ตัดบรรทัดได้ ห้ามตัดข้อความทิ้ง (ครัวใช้เช็คว่าลูกค้ารับอะไรบ้าง) */
+.item-chip{font-size:13px;background:transparent;border:none;border-radius:0;padding:3px 0;display:flex;align-items:baseline;gap:6px;max-width:100%;border-bottom:1px solid rgba(0,0,0,.045);}
+.item-chip:last-child{border-bottom:none;}
+.item-chip .ic-code{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--g);flex-shrink:0;}
+.item-chip .ic-code .ic-nick{font-weight:800;color:var(--ink);}
+.item-chip .ic-code .ic-dim{font-weight:600;color:var(--xsoft);}
+.code-tag .ic-nick{font-weight:800;color:var(--ink);}
+.code-tag .ic-dim{font-weight:600;color:var(--xsoft);}
+.item-chip .ic-name{font-size:12.5px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;flex:1;}
+/* โน้ตรายกล่อง — ต้องเด่นพอให้ครัวไม่พลาด (เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่") */
+.item-chip .ic-note{font-size:12px;font-weight:700;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;white-space:normal;word-break:break-word;}
+body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
+/* เซ็ต/คอร์ส = กล่องแยก มีหัวข้อ ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน */
+.set-box{margin-top:6px;border:1px dashed var(--xsoft);border-radius:8px;padding:5px 7px;background:rgba(0,0,0,.015);}
+.set-hdr{font-size:13px;font-weight:700;color:var(--g);display:flex;align-items:center;gap:6px;margin-bottom:2px;}
+.set-hdr .set-n{font-family:var(--mono);font-weight:700;color:var(--ink);}
+.set-box .items-grid{margin-top:3px;}
+.item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
+.oc-note{font-size:13px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
+.oc-utensil{font-size:13.5px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
+.oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
+.oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
+.oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+.btn-print-slip{background:#fff;color:var(--g);border:1.5px solid var(--g);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+body.tablet .btn-print-slip{font-size:16px;padding:10px 16px;}
+.btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 18px;min-height:46px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 16px;min-height:46px;font-size:13.5px;cursor:pointer;font-family:var(--sans);}
+.btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
+.empty-slot{text-align:center;padding:16px;color:var(--xsoft);font-size:12px;}
+
+/* ── 📱 โหมดแท็บเล็ต (แท็บเล็ตติดผนังครัว) ──
+   ออกแบบสำหรับ: อ่านห่าง 50-80 ซม. · แตะด้วยมือเปียก/ใส่ถุงมือ · ยืนดูทั้งวัน
+   หลัก: ตัวใหญ่ขึ้น ~40% · ปุ่มขั้นต่ำ 56px · คอนทราสต์สูง · หัวติดบนเสมอ · จอไม่ดับ */
+body.tablet{font-size:17px;}
+body.tablet .hdr{padding:14px 18px;}
+body.tablet .hdr-title{font-size:22px;}
+body.tablet .hdr-btn{font-size:15px;padding:11px 16px;border-radius:10px;}
+body.tablet .tab-bar{position:sticky;top:0;z-index:90;box-shadow:0 2px 8px rgba(0,0,0,.06);}
+body.tablet .tab-btn{font-size:19px;padding:18px 10px;}
+body.tablet .ctrl-bar{padding:12px 16px;gap:9px;position:sticky;top:56px;z-index:89;}
+body.tablet .chip{font-size:16px;padding:0 22px;border-radius:26px;min-height:52px;display:inline-flex;align-items:center;}
+body.tablet .date-sel{font-size:16px;padding:0 14px;border-radius:26px;min-height:52px;}
+body.tablet .main{max-width:100%;padding:16px 20px;}
+/* ตารางรายสินค้า — เลขต้องอ่านออกจากระยะไกล */
+body.tablet .pt-head{padding:11px 16px;}
+body.tablet .pt-head span{font-size:13px;}
+body.tablet .pt-row{padding:15px 16px;grid-template-columns:1fr 78px 78px 92px;}
+body.tablet .pt-row>div:first-child{font-size:18px;}
+body.tablet .pt-n{font-size:23px;}
+body.tablet .code-tag{font-size:14px;padding:4px 9px;}
+/* การ์ดออเดอร์ */
+body.tablet .oc{padding:16px 18px;border-radius:14px;border-width:2px;margin-bottom:10px;}
+body.tablet .oc-name{font-size:19px;}
+body.tablet .oc-meta,body.tablet .oc-order-num{font-size:15px;}
+body.tablet .oc-badge{font-size:13px;padding:4px 10px;}
+body.tablet .item-chip{font-size:17px;padding:8px 13px;border-radius:9px;}
+body.tablet .item-chip .ic-code{font-size:15px;}
+body.tablet .item-chip .ic-name{font-size:15px;}
+body.tablet .item-chip .ic-qty{font-size:19px;}
+body.tablet .oc-note{font-size:16px;padding:7px 11px;}
+body.tablet .oc-utensil{font-size:16px;padding:7px 12px;}
+/* ปุ่มกดสถานะ — เป้าใหญ่ กันกดพลาดตอนมือเปียก */
+body.tablet .btn-pack,body.tablet .btn-done,body.tablet .btn-undo,body.tablet .btn-mp-done{
+  font-size:17px;padding:15px 26px;border-radius:12px;min-height:56px;}
+body.tablet .oc-actions{gap:10px;margin-top:12px;}
+/* แท็บตั้งสต็อค */
+body.tablet .stk-row{padding:12px 14px;}
+body.tablet .stk-name{font-size:18px;}
+body.tablet .stk-btn{width:58px;height:58px;font-size:30px;}
+body.tablet .stk-num{width:82px;height:58px;font-size:24px;}
+body.tablet .stk-inf{width:58px;height:58px;font-size:24px;}
+body.tablet .slot-hdr{padding:12px 16px;}
+body.tablet .slot-hdr-label{font-size:19px;}
+body.tablet .slot-hdr-count{font-size:16px;padding:4px 12px;}
+body.tablet .mp-name{font-size:18px;}
+body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
+/* จอกว้าง = วางการ์ด 2 คอลัมน์ ใช้พื้นที่แนวนอนให้คุ้ม */
+@media (min-width:1000px){
+  body.tablet .slot-body{display:grid;grid-template-columns:1fr 1fr;gap:10px;align-items:start;}
+  body.tablet .slot-body .oc{margin-bottom:0;}
+}
+@media (min-width:1400px){
+  body.tablet .slot-body{grid-template-columns:1fr 1fr 1fr;}
+}
+
+/* ── 📱 จอแคบ = เครื่องที่ครัวใช้จริง (iPhone) — N-62 ─────────────────
+   ที่วัดได้บนหน้าจริงที่ 375px ก่อนแก้: หัว 107px + แถบปุ่มกรอง 195px + แท็บ 42px
+   = 344px จาก 812px (42% ของจอ) หมดไปกับปุ่ม ก่อนเห็นออเดอร์สักใบ
+   แก้: หัวกับแถบกรองเป็น "แถวเดียวเลื่อนแนวนอน" แทนการพับลงมา 3-5 แถว
+   (ปุ่มยังอยู่ครบทุกตัว แค่ปัดนิ้วซ้าย-ขวาแทนการกินพื้นที่แนวตั้ง) */
+@media (max-width:699px){
+  .hdr{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:8px 10px;}
+  .hdr-title{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;}
+  .hdr-btn{flex-shrink:0;}
+  /* ปุ่มโหมดแท็บเล็ตไม่มีความหมายบนจอแคบ (ดู applyTabletMode) — ซ่อนไว้ กันกดแล้วงงว่าไม่มีอะไรเกิดขึ้น */
+  #tabletBtn{display:none;}
+  .ctrl-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:7px 10px;}
+  .chip{min-height:36px;padding:0 12px;}
+  .date-sel{min-height:36px;}
+  .hdr::-webkit-scrollbar,.ctrl-bar::-webkit-scrollbar{height:0;display:none;}
+  /* ตารางรายสินค้า: บีบคอลัมน์ตัวเลขให้แคบลง คืนความกว้างให้ชื่อเมนู
+     — ชื่อไทยไม่มีช่องว่างคั่นคำ ถ้าช่องแคบไปจะหักกลางคำ/ทีละตัวอักษร */
+  .pt-head,.pt-row{grid-template-columns:1fr 40px 40px 48px;padding-left:8px;padding-right:8px;}
+}
+
+/* PRINT MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:200;display:flex;align-items:center;justify-content:center;}
+.modal{background:var(--w);border-radius:16px;padding:20px;width:320px;max-width:90vw;}
+.modal h3{font-size:15px;font-weight:700;margin-bottom:14px;}
+.print-opt{display:block;padding:12px 14px;border:1.5px solid var(--xsoft);border-radius:10px;margin-bottom:8px;cursor:pointer;font-size:13px;font-weight:500;background:var(--w);width:100%;text-align:left;font-family:var(--sans);}
+.print-opt:hover{border-color:var(--g);background:var(--gs);}
+.modal-close{width:100%;padding:10px;border:none;background:var(--bg);border-radius:8px;cursor:pointer;font-size:13px;font-family:var(--sans);margin-top:4px;}
+
+/* PRINT CSS */
+@media print{
+  .hdr,.tab-bar,.ctrl-bar,.oc-actions,.no-print,.oc-caret,.date-banner .db-back{display:none!important;}
+  /* พิมพ์ = ต้องได้ของครบทุกใบ แม้ครัวพับการ์ดไว้บนจอ (N-13) */
+  .oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:block!important;}
+  .oc-collapsed .oc-2col{display:block!important;}
+  body{background:#fff;font-size:11px;}
+  .main{padding:0;max-width:100%;}
+  .slot-hdr{background:#1F4D3A!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .oc{break-inside:avoid;border:1px solid #ccc;}
+  @page{margin:6mm;size:80mm auto;}
+}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-title">🍳 ครัว Under360</div>
+  <div class="live-dot"></div>
+  <!-- code toggle -->
+  <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">#️⃣ Sub</button>
+  <!-- ชื่อผู้ใช้ — ผูกกับปุ่มกดสถานะ (จัดกล่องเสร็จ/ส่งแล้ว) เพื่อเก็บ log ว่าใครกด กันมือลั่นแล้วหาไม่เจอ -->
+  <button class="hdr-btn no-print" id="whoamiBtn" onclick="promptNickname()">👋 ตั้งชื่อ</button>
+  <!-- print -->
+  <button class="hdr-btn no-print" id="tabletBtn" onclick="toggleTablet()" title="ขยายตัวอักษร/ปุ่มให้กดง่ายบนแท็บเล็ตครัว">📱 แท็บเล็ต</button>
+  <button class="hdr-btn no-print" onclick="openPrint()">🖨️ พิมพ์</button>
+  <button class="hdr-btn no-print" onclick="loadAll()">🔄</button>
+  <a href="main_database_v2.html" target="_blank" class="hdr-btn no-print">📖 สูตร</a>
+</div>
+
+<div class="tab-bar">
+  <button class="tab-btn active" id="tab1" onclick="switchTab(1)">📋 รายสินค้า</button>
+  <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 รายออเดอร์</button>
+  <button class="tab-btn" id="tab3" onclick="switchTab(3)">📊 ตั้งสต็อค</button>
+</div>
+
+<!-- DATE + SLOT FILTER -->
+<div class="ctrl-bar" id="ctrlBar">
+  <button class="chip on" id="d-today" onclick="setDate('today',this)">วันนี้</button>
+  <button class="chip" id="d-tomorrow" onclick="setDate('tomorrow',this)">พรุ่งนี้</button>
+  <button class="chip" id="d-all" onclick="setDate('all',this)">ทั้งหมด</button>
+  <select class="date-sel" id="calPicker" onchange="setDate('custom',this)"><option value="">📅 เลือกวัน...</option></select>
+  <div class="sep"></div>
+  <button class="chip on" id="s-all" onclick="setSlot('all',this)">ทุกช่วง</button>
+  <button class="chip" id="s-all_day" onclick="setSlot('all_day',this)">ตลอดวัน</button>
+  <button class="chip" id="s-morning" onclick="setSlot('morning',this)">เช้า</button>
+  <button class="chip" id="s-afternoon" onclick="setSlot('afternoon',this)">บ่าย</button>
+  <button class="chip" id="s-express" onclick="setSlot('express',this)">ด่วน</button>
+  <div class="sep"></div>
+  <!-- แยกดูทั่วไป / Meal Plan — ครัวทำคนละจังหวะ: สต็อคทำล่วงหน้า · MP ปรุงสดเช้าวันส่ง (นัทขอ 9 ส.ค.) -->
+  <button class="chip on" id="t-all" onclick="setType('all',this)">ทุกประเภท</button>
+  <button class="chip" id="t-normal" onclick="setType('normal',this)">🍱 ทั่วไป</button>
+  <button class="chip" id="t-mp" onclick="setType('mp',this)">🥗 Meal Plan</button>
+</div>
+
+<!-- ป้ายบอกว่ากำลังดูวันไหน — ครัวต้องแยกออกว่า "ของล่วงหน้า" ไม่ใช่ "ของที่ต้องทำวันนี้" (N-32) -->
+<div id="dateBanner"></div>
+
+<!-- TAB 1: รายสินค้า -->
+<div class="main" id="tabContent1">
+  <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+  <div id="mpQueueView"></div>
+</div>
+
+<!-- TAB 2: รายออเดอร์ -->
+<div class="main" id="tabContent2" style="display:none">
+  <div id="orderView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+</div>
+
+<!-- TAB 3: ตั้งสต็อค -->
+<div class="main" id="tabContent3" style="display:none">
+  <div id="stockView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
+</div>
+
+<!-- PRINT MODAL -->
+<div class="modal-bg" id="printModal" style="display:none">
+  <div class="modal">
+    <h3>🖨️ พิมพ์เอกสาร</h3>
+    <button class="print-opt" onclick="doPrint('daily')">📋 สรุปรายสินค้าวันนี้</button>
+    <button class="print-opt" onclick="doPrint('orders')">📦 ใบจัดกล่องรายออเดอร์</button>
+    <div style="font-size:11px;color:var(--soft);margin:8px 0 4px;line-height:1.6">
+      🖨️ รองรับ: HT400 (Hprt) และเครื่องพิมพ์ทุกรุ่นที่ผ่าน browser<br>
+      ตั้งค่า: กระดาษ 80mm · ไม่มีขอบ · แนวตั้ง
+    </div>
+    <button class="modal-close" onclick="closePrint()">ยกเลิก</button>
+  </div>
+</div>
+
+<script>
+const SB_URL="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+var sb=null;
+function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+// d.toISOString() แปลงเป็น UTC ก่อนตัด — เที่ยงคืนเวลาไทย (UTC+7) = 17:00 UTC เมื่อวาน ทำให้วันที่ผิดไป 1 วันตอนเช้ามืด
+// ⏰ ยึดเวลาไทยเสมอ — ครัวอยู่ไทย · เจ้าของอาจเปิดจากต่างประเทศ (เดิมใช้เวลาเครื่อง = ได้วันของประเทศนั้น) แก้ 3 ส.ค. 2026
+function toISO(d){return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(d||new Date());}
+function today(){return toISO(new Date());}
+function tomorrow(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
+function fmtDate(iso){var d=new Date(iso+"T00:00:00");return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
+// created_at เป็น timestamp เต็ม (มี T อยู่แล้ว) ต้องแยกจาก fmtDate ที่รับแค่วันที่เปล่า
+function fmtOrderPlaced(iso){
+  if(!iso)return "—";
+  var d=new Date(iso);
+  return d.toLocaleDateString("th-TH",{day:"numeric",month:"short"})+" "+d.toLocaleTimeString("th-TH",{hour:"2-digit",minute:"2-digit"});
+}
+
+// ── ชื่อผู้ใช้ + Activity Log (ใครกดปุ่มสถานะ เมื่อไหร่ — กันมือลั่นแล้วหาไม่เจอ) ──
+var kqCurrentUser=null;
+function loadNickname(){
+  try{ kqCurrentUser=localStorage.getItem("lastNickname")||null; }catch(e){ kqCurrentUser=null; }
+  updateWhoamiBtn();
+}
+function updateWhoamiBtn(){
+  var btn=document.getElementById("whoamiBtn");
+  if(btn)btn.textContent=kqCurrentUser?("👋 "+kqCurrentUser):"👋 ตั้งชื่อ";
+}
+function promptNickname(){
+  var name=prompt("ใส่ชื่อเล่นของคุณ (ระบบจะจำไว้ใช้ตอนกดปุ่มสถานะต่างๆ เช่น จัดกล่องเสร็จ/ส่งแล้ว)",kqCurrentUser||"");
+  if(name===null)return;
+  name=name.trim();
+  if(!name)return;
+  kqCurrentUser=name;
+  try{ localStorage.setItem("lastNickname",name); }catch(e){}
+  updateWhoamiBtn();
+}
+// ต้องมีชื่อก่อนถึงกดปุ่มสถานะได้ — ถ้ายังไม่มี เด้ง prompt ให้กรอกทันที (prompt เป็น blocking ทำให้กดปุ่มเดิมซ้ำได้เลยไม่ต้องกด 2 รอบ)
+function requireKqUser(){
+  if(kqCurrentUser&&kqCurrentUser.trim())return true;
+  promptNickname();
+  return !!(kqCurrentUser&&kqCurrentUser.trim());
+}
+// เขียนทุกครั้งที่กด ไม่ debounce/รวมแถว (ต่างจาก DB) เพราะเป็นการกดที่มีผลจริงต่อออเดอร์ ไม่ใช่ปรับตัวเลขรัวๆ — ต้องมี record แยกทุกครั้งเพื่อสอบย้อนหลังได้
+async function logKqActivity(summary){
+  var sb_=getSB(); if(!sb_)return;
+  try{
+    await sb_.from("activity_log").insert({
+      session_id:"kq_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+      actor:kqCurrentUser||"ไม่ทราบชื่อ",
+      source:"kq",
+      action_type:"kq_status",
+      summary:summary,
+      detail:{}
+    });
+  }catch(e){ console.warn("logKqActivity failed:",e); }
+}
+
+// ── STATE ────────────────────────────────────────────────
+var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
+var dateMode="today", slotMode="all", tabMode=1;
+var typeMode="all";  // all | normal | mp — แยกดูออเดอร์ทั่วไป vs Meal Plan
+var codeMode="subcode"; // subcode | code | name — ตั้งต้นที่ชื่อเล่น เพราะครัว/ลูกค้าเรียกชื่อนี้จริง
+var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
+
+// ── DATE / SLOT / TAB ────────────────────────────────────
+function getTargetDate(){
+  if(dateMode==="today")return today();
+  if(dateMode==="tomorrow")return tomorrow();
+  if(dateMode==="custom"){var s=document.getElementById("calPicker");return s?s.value:null;}
+  return null; // all
+}
+function setDate(mode,el){
+  dateMode=mode;
+  // กดชิป วันนี้/พรุ่งนี้/ทั้งหมด → ล้างค่าในปฏิทินด้วย ไม่งั้นจอโชว์วันหนึ่งแต่กรองอีกวัน
+  if(mode!=="custom"){var _cp=document.getElementById("calPicker"); if(_cp)_cp.value="";}
+  document.querySelectorAll("#ctrlBar .chip[id^='d-']").forEach(function(b){b.classList.remove("on");});
+  if(el&&el.classList)el.classList.add("on");
+  render();
+}
+function setSlot(mode,el){
+  slotMode=mode;
+  document.querySelectorAll("#ctrlBar .chip[id^='s-']").forEach(function(b){b.classList.remove("on");});
+  if(el&&el.classList)el.classList.add("on");
+  render();
+}
+function setType(mode,el){
+  typeMode=mode;
+  document.querySelectorAll("#ctrlBar .chip[id^='t-']").forEach(function(b){b.classList.remove("on");});
+  if(el&&el.classList)el.classList.add("on");
+  render();
+}
+/* ออเดอร์ใบนี้เป็น Meal Plan ไหม — ดู 2 ทาง เพราะใบที่แอดมินแพลนเมนูให้ยังไม่มี order_items ตอนแรก
+   (ถ้าดูแต่รหัสเมนู ใบที่รอแพลนจะถูกจัดเป็น "ทั่วไป" แล้วหายจากตัวกรอง Meal Plan) */
+function isMpOrder(o){
+  var m=findMpFor(o);
+  if(m && m.status!=="cancelled") return true;
+  return getOrderItems(o.id).some(function(i){ return /^(HP|LC|HX)/i.test(String(i.code||"")); });
+}
+function switchTab(n){
+  tabMode=n;
+  [1,2,3].forEach(function(i){
+    document.getElementById("tab"+i).classList.toggle("active",i===n);
+    document.getElementById("tabContent"+i).style.display=i===n?"block":"none";
+  });
+  render();
+}
+
+// ── CODE TOGGLE ──────────────────────────────────────────
+var CODE_MODES=["subcode","code","name"];
+var CODE_LABELS={"code":"🏷️ Code","name":"📝 ชื่อ","subcode":"#️⃣ Sub"};
+function cycleCodeMode(){
+  var idx=CODE_MODES.indexOf(codeMode);
+  codeMode=CODE_MODES[(idx+1)%CODE_MODES.length];
+  document.getElementById("codeToggleBtn").textContent=CODE_LABELS[codeMode];
+  render();
+}
+/* ── N-59: ชื่อเล่นเมนูของจริงอยู่ที่ menu_items.subcode ──────────────────────
+   เดิมโหมด "Sub" แค่ตัดตัวอักษรหน้าโค้ดทิ้ง (S022→022 · No1→1) ไม่เคยอ่านชื่อเล่นจริงเลย
+   ผลข้างเคียงที่ห้อง bug จับได้: เมนูเดียวกันขึ้น "1" กับ "No1" ในจอเดียวกัน ครัวอ่านเป็นคนละเมนู
+   → รวมเหลือทางเดียว ใช้ที่หน้าใบสั่งผลิต/ใบออเดอร์/ตั้งสต็อค เหมือนกันหมด */
+function menuSubcodeOf(code){
+  if(!code) return "";
+  var m=(allMenus||[]).find(function(x){return String(x.code||"").toUpperCase()===String(code).toUpperCase();});
+  return m && String(m.subcode||"").trim() ? String(m.subcode).trim() : "";
+}
+/* ตัวเลขท้ายโค้ด — ใช้เป็นตัวจางคู่กับชื่อเล่น (s1 022) */
+function codeTail(code){ return String(code||"").replace(/^[A-Za-z]+/,"") || String(code||""); }
+/* คืน HTML ของ "ชื่อรหัส" 1 ชุด — bold=ชื่อเล่น · จาง=โค้ดจริง */
+function codeHtml(code,name){
+  if(codeMode==="name") return "<span class='ic-nick'>"+escH(name||"—")+"</span>";
+  if(codeMode==="code") return "<span class='ic-dim'>"+escH(code||"—")+"</span>";
+  var sub=menuSubcodeOf(code);
+  return sub ? "<span class='ic-nick'>"+escH(sub)+"</span> <span class='ic-dim'>"+escH(codeTail(code))+"</span>"
+             : "<span class='ic-dim'>"+escH(code||"—")+"</span>";   /* ไม่มีชื่อเล่น = โชว์โค้ดเต็ม (No1 ไม่ใช่ 1) */
+}
+/* เวอร์ชันข้อความล้วน สำหรับที่ที่ยัดเป็น HTML ไม่ได้ */
+function getCodeDisplay(code,name){
+  if(codeMode==="name")return name;
+  if(codeMode==="subcode")return menuSubcodeOf(code) || code || "—";
+  return code||"—";
+}
+
+// ── 📱 โหมดแท็บเล็ต (ครัวติดผนัง) ──────────────────────────
+// เปิดครั้งเดียวจำไว้ในเครื่องนั้น · เครื่องอื่น (มือถือแอดมิน) ไม่กระทบ
+var _wakeLock=null;
+async function kqKeepAwake(){
+  try{ if("wakeLock" in navigator && !_wakeLock){ _wakeLock=await navigator.wakeLock.request("screen"); _wakeLock.addEventListener("release",function(){_wakeLock=null;}); } }catch(e){}
+}
+function kqReleaseAwake(){ try{ if(_wakeLock){_wakeLock.release();_wakeLock=null;} }catch(e){} }
+// N-62: โหมดแท็บเล็ตขยายตัวอักษร/ปุ่ม ~40% — บนจอแคบ (iPhone) มันพังหนัก
+// วัดจริงที่ 375px ตอนคลาสนี้ติด: ช่องชื่อเมนูเหลือกว้าง 0px สูง 475px = ชื่อไทยหักลงมาทีละตัวอักษร
+// + หัวสูง 212px แถบกรอง 321px = 533px จาก 812px หมดไปกับปุ่ม
+// → จำค่าที่ผู้ใช้ตั้งไว้เหมือนเดิม แต่ "ลงมือใส่คลาส" เฉพาะตอนจอกว้างพอ (≥700px) เท่านั้น
+var _tabletWant=false;
+function tabletFits(){ return window.innerWidth>=700; }
+function applyTabletMode(on,save){
+  _tabletWant=!!on;
+  var eff=_tabletWant&&tabletFits();
+  document.body.classList.toggle("tablet",eff);
+  var b=document.getElementById("tabletBtn");
+  if(b){ b.textContent=_tabletWant?"📱 แท็บเล็ต: เปิด":"📱 แท็บเล็ต"; b.style.background=_tabletWant?"rgba(255,255,255,.38)":""; }
+  if(save) localStorage.setItem("kq_tablet",_tabletWant?"1":"0");
+  if(eff) kqKeepAwake(); else kqReleaseAwake();
+}
+function toggleTablet(){ applyTabletMode(!_tabletWant,true); }
+// หมุนจอ/เปลี่ยนขนาดหน้าต่าง → คำนวณใหม่ (แท็บเล็ตหมุนเป็นแนวตั้งแคบก็ยังต้องอ่านออก)
+window.addEventListener("resize",function(){ applyTabletMode(_tabletWant,false); });
+// จอดับแล้วกลับมา → ขอ wake lock ใหม่ (browser ปล่อยเองตอน tab ไม่ active)
+document.addEventListener("visibilitychange",function(){
+  if(document.visibilityState==="visible"&&document.body.classList.contains("tablet")) kqKeepAwake();
+});
+(function initTablet(){
+  var saved=null; try{ saved=localStorage.getItem("kq_tablet"); }catch(e){}
+  // ยังไม่เคยตั้ง + เป็นจอสัมผัสขนาดแท็บเล็ตขึ้นไป → เปิดให้เลย (กดปิดได้ 1 ปุ่ม)
+  var looksTablet = (typeof screen!=="undefined") && Math.min(screen.width,screen.height)>=700 && ("ontouchstart" in window);
+  applyTabletMode(saved==="1"||(saved===null&&looksTablet),false);
+})();
+
+// ── LOAD ─────────────────────────────────────────────────
+var kitchenUtensilSize="normal";
+var catLabelMap={}; // cat_xxx → ชื่อหมวดสวย (จาก appConfig.categories)
+// ดึง order_items เฉพาะออเดอร์ที่โหลดมา (chunk 80/ครั้ง กัน URL ยาว + cap 1000/ครั้ง)
+async function fetchItemsFor(sb_, ids){
+  var out=[];
+  for(var i=0;i<ids.length;i+=80){
+    var r=await sb_.from("order_items").select("*").in("order_id",ids.slice(i,i+80));
+    if(r&&r.data) out=out.concat(r.data);
+  }
+  return out;
+}
+async function loadAll(){
+  var sb_=getSB();
+  if(!sb_){render();return;}
+  try{
+    // ⚠️ เดิม select("*") ไม่มี limit → Supabase cap 1000 + เรียงวันเก่าสุด = ครัวเห็นออเดอร์ 2024 ไม่เห็นวันนี้ (พังเงียบหลัง migrate 15,844 ใบ)
+    // แก้: ดึงเฉพาะออเดอร์ตั้งแต่ 3 วันก่อนเป็นต้นไป (เครื่องครัว=เวลาไทย · buffer 3 วันกัน TZ เพี้ยน) → ได้วันนี้+อนาคตครบ · order_items ดึงตาม id
+    // 🔴 N-32: ขยายฝั่งย้อนหลังให้ครอบตัวเลือกใน calPicker (KQ_PAST_DAYS) ไม่งั้นเลือกวันเก่าแล้วขึ้นว่าง
+    //    ⚠️ ห้ามใส่ lte/upper bound เด็ดขาด — วันอนาคตต้องติดมาด้วย (คิว Meal Plan ล่วงหน้าอยู่ตรงนี้)
+    //    ใช้ toISO (Asia/Bangkok) แทนวันเครื่อง — เจ้าของเปิดจากอเมริกาจะได้ไม่เพี้ยนไป 1 วัน
+    var startDate=toISO(kqDayOffset(-(KQ_PAST_DAYS+2)));
+    var ordRes=await sb_.from("orders").select("*").gte("delivery_date",startDate).order("delivery_date").order("time_slot").limit(3000);
+    if(ordRes.error) throw ordRes.error;   // เดิมไม่เช็ค → โหลดพลาดแล้วขึ้น "ไม่มีออเดอร์" ทั้งที่ DB มีเต็ม (แก้ 3 ส.ค. 2026)
+    allOrders=ordRes.data||[];
+    var ids=allOrders.map(function(o){return o.id;});
+    // N-13: ทิ้งสถานะ "พับ" ของออเดอร์ที่หลุดช่วงวันไปแล้ว กัน localStorage บวมสะสมไปเรื่อยๆ
+    (function(){var keep={},ch=false; ids.forEach(function(i){if(kqCollapsed[i])keep[i]=1;});
+      for(var k in kqCollapsed){if(!keep[k]){ch=true;break;}} if(ch){kqCollapsed=keep;saveCollapsed();}})();
+    var rest=await Promise.all([
+      sb_.from("menu_items").select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
+      sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
+      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig"])
+    ]);
+    allItems=await fetchItemsFor(sb_,ids);
+    allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
+    var _kd=rest[2].data||[];
+    var _gs=(_kd.find(function(x){return x.key==="globalSettings";})||{}).data||{};
+    var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
+    kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
+    catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
+  }catch(e){ console.error(e); alert("⚠️ โหลดออเดอร์ไม่สำเร็จ — ที่เห็นบนจออาจไม่ครบ\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชอีกครั้ง"); }
+  render();
+}
+
+// เขียนไม่ติด = ต้องรู้ทันที (supabase v2 ไม่ throw → ถ้าไม่เช็ค .error จะเงียบสนิท) — เพิ่ม 3 ส.ค. 2026
+function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชแล้วลองใหม่"); }
+
+// ── FILTER ───────────────────────────────────────────────
+/* ❄️ ใบที่ "ทำแล้วแช่ตู้ รอส่งวันหลัง" — ต้องโผล่ 2 วัน (วันที่จัด + วันที่ส่ง)
+   ถ้าโผล่แค่วันส่ง = ครัววันที่จัดไม่เห็น เลยไม่ได้ทำ · ถ้าโผล่แค่วันจัด = วันส่งไม่มีใครรู้ว่าต้องไปหยิบ
+   (ของหายจริงมาแล้ว — ห้องฟ้าเจอเคสนวภัท 11 ส.ค.) */
+var KQ_FRIDGE_RE=/\[เก็บตู้ จัด (\d{4}-\d{2}-\d{2}) ส่ง (\d{4}-\d{2}-\d{2})/;
+function kqFridge(o){
+  var m=String((o&&o.notes)||"").match(KQ_FRIDGE_RE);
+  return m?{prep:m[1], ship:m[2]}:null;
+}
+function filteredOrders(){
+  var tgt=getTargetDate();
+  return allOrders.filter(function(o){
+    if(tgt&&o.delivery_date!==tgt){
+      var f=kqFridge(o);
+      if(!(f&&f.prep===tgt)) return false;   // ดึงใบที่ "จัดวันนี้ แต่ส่งวันอื่น" กลับมาให้ครัวเห็น
+    }
+    if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
+    // 🔴 ใบที่ยกเลิก + ออเดอร์เทส ต้องไม่โผล่หน้าครัว — ครัวเคยเห็น 13 ใบทั้งที่งานจริง 12
+    //    (นัทเปิดจอจริงเจอ 5 ส.ค. 2569 · ตัวเกินคือ U-0805-001 ที่ cancelled ไปแล้ว)
+    if(o.status==="cancelled") return false;
+    if(o.source==="parallel_test") return false;
+    // ส่งแล้วยังโชว์อยู่ถ้าเลือกวันเจาะจง — ครัวเห็นความคืบหน้าทั้งวัน + กดยกเลิกย้อนได้
+    // (ดูรวมทุกวันค่อยซ่อน ไม่งั้นรายการยาวไปด้วยของที่จบแล้ว)
+    if(o.status==="delivered") return !!tgt;
+    return true;
+  }).filter(function(o){
+    if(typeMode==="all") return true;
+    var mp=isMpOrder(o);
+    return typeMode==="mp" ? mp : !mp;
+  });
+}
+// บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
+var KQ_CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
+
+// จับคู่ออเดอร์ ↔ รอบส่ง Meal Plan — แยกออกมาเป็นฟังก์ชันเดียว ใช้ทั้งตอนดึงเมนูและตอนนับกล่อง
+// ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
+function findMpFor(o){
+  if(!o||!(allMpDeliveries||[]).length) return null;
+  var m=null;
+  if(o.id)              m=allMpDeliveries.find(function(x){return x.order_id&&x.order_id===o.id;});
+  if(!m&&o.line_uid)    m=allMpDeliveries.find(function(x){return x.line_uid&&x.line_uid===o.line_uid&&x.delivery_date===o.delivery_date;});
+  if(!m&&o.customer_id) m=allMpDeliveries.find(function(x){return x.customer_id&&x.customer_id===o.customer_id&&x.delivery_date===o.delivery_date;});
+  return m;
+}
+function getOrderItems(orderId){
+  var o=(allOrders||[]).find(function(x){return x.id===orderId;});
+  var raw=allItems.filter(function(i){return i.order_id===orderId;});
+  var food=raw.filter(function(i){
+    if(KQ_CTRL[i.menu_code]) return false;                       // บรรทัดควบคุม
+    return !!String(i.menu_name||"").trim();                     // บรรทัดไม่มีชื่อ = ครัวใช้ไม่ได้
+  });
+  // 🔁 ไม่มีของให้ทำเลย → ดึงเมนูจากแพลนเมนู (mp_deliveries) แบบเดียวกับหน้าแมสใน OH
+  //    ที่มา: แอดมินแก้เมนูที่หน้า "แพลนเมนู" ซึ่งเขียนลง mp_deliveries — ถ้าครัวอ่านแต่ order_items จะไม่เห็นการแก้เลย
+  //    ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
+  if(!food.length && o && (allMpDeliveries||[]).length){
+    var m=findMpFor(o);
+    if(m&&m.status!=="cancelled"&&Array.isArray(m.menu_items)&&m.menu_items.length){
+      return m.menu_items.map(function(x){
+        // โน้ตจากหน้าแพลนเมนู — ทั้งแบบใช้ทุกกล่อง (note) และแยกรายกล่อง (notes[])
+        // ครัวต้องเห็น ไม่งั้นแอดมินกรอก "ข้าวไรซ์เบอร์รี่ กล่อง 2" ไปก็ไม่มีใครอ่าน
+        var parts=[];
+        if(String(x.note||"").trim()) parts.push("ทุกกล่อง: "+String(x.note).trim());
+        (x.notes||[]).forEach(function(v,i){ if(String(v||"").trim()) parts.push("กล่อง "+(i+1)+": "+String(v).trim()); });
+        return {code:x.code||"—", name:(x.name||"—"), qty:x.qty||1, menu_item_id:null, notes:"",
+                _fromPlan:String(m.mp_type||"MP").toUpperCase(), _boxNote:parts.join(" · ")};
+      });
+    }
+  }
+  return (food.length?food:raw).map(function(i){
+    var m=allMenus.find(function(x){return x.id===i.menu_item_id;});
+    return {
+      code: i.menu_code || (m&&m.code) || "—",
+      name: i.menu_name || (m&&m.name) || "—",
+      qty: i.quantity||1,
+      menu_item_id: i.menu_item_id,
+      notes: i.notes||""      // ใช้แยกว่าอยู่ในเซ็ต/คอร์สไหน (รูปแบบ pkg:{id}:course:r/N)
+    };
+  });
+}
+
+// รวมรายการซ้ำ + จัดกลุ่มเซ็ต/คอร์ส (นัทเจอบนจอครัว 5 ส.ค. 2569)
+//  · เดิมเมนูเดียวกัน 6 กล่อง ขึ้น 6 บรรทัดเหมือนกันเป๊ะ → ครัวนับเอง
+//  · เดิมเซ็ต/คอร์สขึ้นปนกับเมนูเดี่ยว → ครัวไม่รู้ว่าอันไหนอยู่ในเซ็ตเดียวกัน
+function groupOrderItems(items){
+  var groups=[], byKey={};
+  items.forEach(function(i){
+    var pk=(String(i.notes||"").match(/^pkg:([^:\s]+)/)||[])[1]||null;
+    var gk=pk?("pkg:"+pk):"_single";
+    if(!byKey[gk]){ byKey[gk]={pkg:pk,round:null,fromPlan:null,items:[],_seen:{}}; groups.push(byKey[gk]); }
+    var g=byKey[gk];
+    if(i._fromPlan) g.fromPlan=i._fromPlan;
+    var cr=String(i.notes||"").match(/course:(\d+)\s*\/\s*(\d+)/);
+    if(cr) g.round=cr[1]+"/"+cr[2];
+    var ik=(i.code||"")+"|"+(i.name||"");
+    if(g._seen[ik]) g._seen[ik].qty+=(i.qty||1);
+    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1),boxNote:i._boxNote||""}; g.items.push(g._seen[ik]); }
+  });
+  groups.sort(function(a,b){ return (a.pkg?1:0)-(b.pkg?1:0); });   // เมนูเดี่ยวก่อน แล้วค่อยเซ็ต
+  return groups;
+}
+function detectBadge(items){
+  if(items.some(function(i){return (i.code||"").match(/^HP/i);}))return "hp";
+  if(items.some(function(i){return (i.code||"").match(/^LC/i);}))return "lc";
+  return "normal";
+}
+
+// ── RENDER ───────────────────────────────────────────────
+// ป้ายกำกับวัน (N-32) — วันล่วงหน้าต้องเตือนชัด กันครัวลงมือทำของวันอื่นโดยไม่รู้ตัว
+function updateDateBanner(){
+  var el=document.getElementById("dateBanner"); if(!el)return;
+  var tgt=getTargetDate();
+  if(!tgt){ el.innerHTML=""; return; }
+  var t=today();
+  if(tgt===t){ el.innerHTML=""; return; }   // วันนี้ = ปกติ ไม่ต้องรบกวนสายตา
+  var ahead=Math.round((new Date(tgt+"T00:00:00")-new Date(t+"T00:00:00"))/86400000);
+  if(ahead>0){
+    el.innerHTML="<div class='date-banner ahead'>🔜 กำลังดู<b>ของล่วงหน้า</b> "+fmtDate(tgt)
+      +" (อีก "+ahead+" วัน) — <b>ไม่ใช่ของที่ต้องทำวันนี้</b> ใช้ดูเพื่อเตรียมของ/เช็ครอบ Meal Plan"
+      +" <span class='db-back' onclick=\"setDate('today',document.getElementById('d-today'))\">↩ กลับไปวันนี้</span></div>";
+  }else{
+    el.innerHTML="<div class='date-banner past'>↩ กำลังดูวัน<b>ย้อนหลัง</b> "+fmtDate(tgt)+" ("+(-ahead)+" วันก่อน)"
+      +" <span class='db-back' onclick=\"setDate('today',document.getElementById('d-today'))\">↩ กลับไปวันนี้</span></div>";
+  }
+}
+function render(){
+  // ถ้าเปิดหน้าค้างข้ามวัน (ครัวไม่เคยปิดจอ) ตัวเลือกวันจะเก่า → สร้างใหม่เมื่อวันไทยเปลี่ยน
+  if(kqPickerBuiltFor && kqPickerBuiltFor!==today()) buildDatePicker();
+  updateDateBanner();
+  if(tabMode===1)renderProd();
+  else if(tabMode===3)renderStock();
+  else renderOrders();
+}
+
+// TAB 1: รายสินค้า aggregated
+var saveTimers={};
+// เมนูพิเศษประจำสัปดาห์ = รหัส S… / D… (หมุนทุกสัปดาห์) · No… / A… = เมนูประจำ
+// นัทเน้นเอง 8 ส.ค.: *"ไม่รู้ว่าจะผลิตอะไรกี่กล่อง โดยเฉพาะเมนูพิเศษประจำสัปดาห์"*
+function isWeeklyCode(code){ return /^[SD]\d/i.test(String(code||"")); }
+
+// หัวใบสั่งผลิต — ตัวเลขที่ครัว/น้องนิว ใช้ตัดสินใจสั่งของได้ทันที
+//   แยก 2 ชั้นให้ชัด: "รับมาแล้วกี่กล่อง" (รู้ตั้งแต่ลูกค้าสั่ง) vs "แพลนเมนูแล้วกี่กล่อง" (รอแอดมิน)
+function prodHeadHtml(nOrders, boxTotal, plannedBoxes, waiting){
+  var waitBoxes=waiting.reduce(function(s,w){return s+w.boxes;},0);
+  var h="<div style='background:#fff;border:1px solid var(--xsoft);border-radius:12px;padding:12px 14px;margin-bottom:10px'>"
+    +"<div style='display:flex;gap:14px;flex-wrap:wrap;align-items:baseline'>"
+    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ต้องส่งทั้งหมด</div>"
+    +"<div style='font-size:26px;font-weight:800;color:var(--ink)'>"+boxTotal+" <span style='font-size:13px;font-weight:600;color:var(--soft)'>กล่อง / "+nOrders+" ใบ</span></div></div>"
+    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>แพลนเมนูแล้ว</div>"
+    +"<div style='font-size:20px;font-weight:800;color:var(--g)'>"+plannedBoxes+" กล่อง</div></div>";
+  if(waitBoxes){
+    h+="<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ยังไม่ได้แพลน</div>"
+      +"<div style='font-size:20px;font-weight:800;color:var(--r)'>"+waitBoxes+" กล่อง</div></div>";
+  }
+  h+="</div>";
+  if(waiting.length){
+    // ⚠️ ตัวสำคัญ: ถ้าไม่โชว์ตรงนี้ ใบพวกนี้จะหายจากใบสั่งผลิตไปเงียบ ๆ
+    //    ครัวคิดว่าทำครบแล้ว แต่จริง ๆ ยังมีของค้างรอแอดมินแพลน
+    h+="<div style='margin-top:10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 12px'>"
+      +"<div style='font-size:12.5px;font-weight:800;color:#B91C1C;margin-bottom:5px'>🔴 ยังไม่รู้ว่าจะทำเมนูอะไร — "+waiting.length+" ใบ · "+waitBoxes+" กล่อง</div>"
+      +"<div style='font-size:12px;color:#7F1D1D;line-height:1.7'>"
+      + waiting.map(function(w){
+          return "<span style='display:inline-block;background:#fff;border:1px solid #FECACA;border-radius:7px;padding:1px 7px;margin:0 4px 4px 0'>"
+            +escH(String(w.o.customer_name||"ลูกค้า").slice(0,16))+" <b>"+w.boxes+"</b></span>";
+        }).join("")
+      +"</div><div style='font-size:11px;color:#B91C1C;margin-top:4px'>แอดมินต้องเข้าไปใส่เมนูที่หน้า “แพลนเมนู” ก่อน ครัวถึงจะเห็นว่าต้องทำอะไร</div></div>";
+  }
+  return h+"</div>";
+}
+
+// 📦 กี่กล่องจริง ๆ ของใบนี้ — ตัวเลขที่ครัวใช้สั่งของ
+//   ⚠️ เซ็ต/แพค 1 บรรทัด ≠ 1 กล่อง: เขียนจำนวนไว้ในชื่อ ("HYROX SET 6 กล่อง") แต่ quantity=1
+//      → ใครนับจาก quantity จะได้ยอดต่ำกว่าจริงแบบเงียบ ๆ (นัทเจอเอง 8 ส.ค.)
+//   ลำดับความน่าเชื่อ: แพลน MP (box_count) > จำนวนที่เขียนในชื่อ > quantity
+function orderBoxCount(o, items){
+  var m=findMpFor(o);
+  if(m && m.box_count) return m.box_count;
+  var q=items.reduce(function(s,i){return s+(i.qty||1);},0);
+  var inName=items.reduce(function(s,i){
+    var mm=String(i.name||"").match(/(\d+)\s*กล่อง/);
+    return s+(mm?parseInt(mm[1],10):0);
+  },0);
+  return Math.max(q, inName);
+}
+
+function renderProd(){
+  var orders=filteredOrders();
+  var tgt=getTargetDate();
+  var agg={}, waiting=[], boxTotal=0, plannedBoxes=0;
+  orders.forEach(function(o){
+    var items=getOrderItems(o.id);
+    var boxes=orderBoxCount(o,items);
+    boxTotal+=boxes;
+    // ใบที่ยัง "ไม่รู้ว่าจะทำเมนูอะไร" = แพลนเมนูยังไม่ถูกใส่ (หรือใบเก่าที่ไม่มีรายการติดมา)
+    //   ครัวต้องเห็นว่ามีของค้างกี่กล่อง ไม่ใช่หายไปเงียบ ๆ จากใบสั่งผลิต
+    var real=items.filter(function(i){ return i.code&&i.code!=="—"&&!/^(MP-|SET-|HX30$)/.test(i.code); });
+    if(!real.length){ waiting.push({o:o,boxes:boxes}); return; }
+    plannedBoxes+=boxes;
+    real.forEach(function(i){
+      // 🔴 เดิมใช้ agg[i.menu_item_id] — แต่เมนูที่มาจากแพลน MP มี menu_item_id = null ทุกตัว
+      //    = ทุกเมนูของทุกคนยุบรวมเป็นบรรทัดเดียว ครัวเลยไม่มีทางรู้ว่าต้องทำอะไรกี่กล่อง
+      var key=(i.code||i.name||"?");
+      if(!agg[key])agg[key]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
+      agg[key].qty+=(i.qty||1);
+      if(i.menu_item_id&&!agg[key].id) agg[key].id=i.menu_item_id;
+    });
+  });
+  // เมนูพิเศษประจำสัปดาห์ขึ้นก่อน (นัทเน้น: "โดยเฉพาะเมนูพิเศษประจำสัปดาห์")
+  var rows=Object.values(agg).sort(function(a,b){
+    var sa=isWeeklyCode(a.code)?0:1, sb=isWeeklyCode(b.code)?0:1;
+    if(sa!==sb) return sa-sb;
+    return (a.code||"").localeCompare(b.code||"",undefined,{numeric:true});
+  });
+  var headHtml=prodHeadHtml(orders.length,boxTotal,plannedBoxes,waiting);
+  if(!rows.length && !orders.length){
+    document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
+    renderMpQueue();
+    return;
+  }
+  if(!rows.length){
+    document.getElementById("prodView").innerHTML=headHtml
+      +"<div style='text-align:center;padding:26px 16px;color:var(--soft);font-size:13px'>ยังไม่มีเมนูให้ผลิตสักรายการ — ทุกใบรอแพลนเมนูอยู่</div>";
+    renderMpQueue();
+    return;
+  }
+  var html=headHtml+"<div class='prod-wrap'>"
+    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>สต็อค</span><span>เหลือ</span></div>";
+  rows.forEach(function(r){
+    var m=allMenus.find(function(x){return x.id===r.id;})||{};
+    var unlimited=(m.stock_total==null);
+    var stk=unlimited?null:m.stock_total;
+    var rem=unlimited?null:(stk-r.qty);
+    var rowCls=(rem!=null&&rem<0)?"danger":(rem!=null&&rem<3)?"warn":"";
+    // ชื่อเมนูตัดบรรทัดได้ ไม่ตัดข้อความทิ้ง (เดิม ellipsis+nowrap = ชื่อยาวอ่านไม่จบว่าต้องผลิตอะไร)
+    html+="<div class='pt-row "+rowCls+"'>"
+      +"<div style='display:flex;align-items:baseline;gap:6px;min-width:0'>"
+      +(isWeeklyCode(r.code)?"<span title='เมนูพิเศษประจำสัปดาห์' style='color:#B45309;font-size:13px;flex-shrink:0'>⭐</span>":"")
+      +"<span class='code-tag'>"+codeHtml(r.code,r.name)+"</span>"
+      +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;white-space:normal;word-break:break-word;min-width:0'>"+escH(r.name)+"</span>":"")
+      +"</div>"
+      +"<div class='pt-n' style='color:var(--gold)'>"+r.qty+"</div>"
+      +"<div class='pt-n'>"+(unlimited?"∞":stk)+"</div>"
+      +"<div class='pt-n' style='color:"+((rem!=null&&rem<0)?"var(--r)":"var(--g)")+"'>"+(unlimited?"∞":rem)+"</div>"
+      +"</div>";
+  });
+  html+="<div style='padding:8px 12px;font-size:11px;color:var(--soft);border-top:1px solid var(--xsoft)'>"
+    +"รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ"
+    +"<span style='float:right;color:var(--g);font-weight:600;cursor:pointer' onclick='switchTab(3)'>📊 ตั้งสต็อคที่แท็บ \"ตั้งสต็อค\" →</span></div></div>";
+  document.getElementById("prodView").innerHTML=html;
+  renderMpQueue();
+}
+
+// MEAL PLAN QUEUE (คิวส่งระยะยาว)
+function renderMpQueue(){
+  var tgt=getTargetDate();
+  var rows=allMpDeliveries.filter(function(x){
+    if(x.status==="skipped"||x.status==="cancelled")return false;
+    if(!tgt)return false; // ไม่แสดงถ้าเลือก "ทั้งหมด" — คิวนี้ผูกกับวันเดียว
+    if(x.delivery_date!==tgt)return false;
+    return true;
+  }).sort(function(a,b){return (a.round_no||0)-(b.round_no||0);});
+  var el=document.getElementById("mpQueueView");
+  if(!el)return;
+  if(!rows.length){el.innerHTML="";return;}
+  var html="<div class='mp-wrap'>"
+    +"<div class='mp-head'>📦 Meal Plan ระยะยาว — คิวส่ง"+(tgt?"วันที่ "+fmtDate(tgt):"วันนี้")+"</div>";
+  rows.forEach(function(r){
+    var tagCls=(r.mp_type||"").toLowerCase()==="hp"?"hp":"lc";
+    var tagLabel=(r.mp_type||"").toUpperCase();
+    var menuItems=r.menu_items||[];
+    var chipsHtml=menuItems.length
+      ?menuItems.map(function(m){return "<span class='mp-chip'>"+escH(m.code||m.name||"—")+"</span>";}).join("")
+      :"<span class='mp-chip empty'>ยังไม่กำหนดเมนู</span>";
+    html+="<div class='mp-row'>"
+      +"<div class='mp-row-top'>"
+      +"<span class='mp-name'>"+escH(r.customer_name||"ลูกค้า")+"</span>"+lineTag(r)
+      +"<span class='mp-tag "+tagCls+"'>"+escH(tagLabel)+"</span>"
+      +"<span class='mp-round'>รอบ "+(r.round_no||"—")+"/"+(r.total_rounds||"—")+"</span>"
+      +"<span class='mp-round'>📦 "+(r.box_count||7)+" กล่อง</span>"
+      +"</div>"
+      +"<div class='mp-chips'>"+chipsHtml+"</div>"
+      +"<div class='mp-meta'>📍 "+escH(r.delivery_address||"—")+"</div>"
+      +"<div class='mp-meta'>⏰ "+escH(r.time_slot_label||r.time_slot||"—")+"</div>"
+      +(r.status==="delivered"
+        ?"<span style='font-size:11px;color:var(--g);font-weight:700'>✅ ส่งแล้ว</span><button class='btn-undo' onclick='markMpUndelivered(\""+r.id+"\")'>↩ ยกเลิก</button>"
+        :"<button class='btn-mp-done' onclick='markMpDelivered(\""+r.id+"\")'>✅ ส่งแล้ว</button>")
+      +"</div>";
+  });
+  html+="</div>";
+  el.innerHTML=html;
+}
+async function markMpDelivered(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var _w1=await sb_.from("mp_deliveries").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id); if(_w1.error){kqWriteFail(_w1.error,"ส่งแล้ว (Meal Plan)");return;}
+  var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="delivered";
+  logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ✅ ส่งแล้ว");
+  renderMpQueue();
+}
+async function markMpUndelivered(id){
+  if(!requireKqUser())return;
+  if(!confirm("ยกเลิกสถานะ \"ส่งแล้ว\" ใช่ไหม? (เผื่อกดพลาด)"))return;
+  var sb_=getSB(); if(!sb_)return;
+  var _w2=await sb_.from("mp_deliveries").update({status:"menu_assigned",updated_at:new Date().toISOString()}).eq("id",id); if(_w2.error){kqWriteFail(_w2.error,"ยกเลิกส่งแล้ว");return;}
+  var r=allMpDeliveries.find(function(x){return x.id===id;}); if(r)r.status="menu_assigned";
+  logKqActivity((r?r.customer_name+" — ":"")+"Meal Plan รอบ "+(r?r.round_no:"?")+"/"+(r?r.total_rounds:"?")+" ↩ ยกเลิกส่งแล้ว");
+  renderMpQueue();
+}
+
+// debounce save 600ms หลังพิมเสร็จ
+function schedSave(inp){
+  var menuId=inp.dataset.menuId;
+  var val=parseInt(inp.value)||0;
+  // update local ให้ rem re-calc
+  var m=allMenus.find(function(x){return x.id===menuId;});
+  if(m){ m.actual_stock=val; if(m.stock_total!=null) m.stock_total=val; }   // ผลิตได้จริงเท่าไหร่ = ลูกค้าซื้อได้เท่านั้น
+  // update rem display ทันที
+  var row=inp.closest(".pt-row");
+  if(row){
+    var ordered=parseInt(row.querySelectorAll(".pt-n")[0].textContent)||0;
+    var rem=val-ordered;
+    var remEl=row.querySelectorAll(".pt-n")[2];
+    if(remEl){remEl.textContent=rem;remEl.style.color=rem<0?"var(--r)":"var(--g)";}
+    row.className="pt-row"+(rem<0?" danger":rem<3?" warn":"");
+  }
+  clearTimeout(saveTimers[menuId]);
+  saveTimers[menuId]=setTimeout(async function(){
+    var sb_=getSB(); if(!sb_)return;
+    // 🔗 ครัวกรอก "ผลิตได้จริง" → ตั้งเลขที่ลูกค้าซื้อได้ (stock_total) ให้ตรงกันทันที (3 ส.ค. 2026)
+    //    เดิมเก็บแค่ actual_stock อย่างเดียว → ไม่มีอะไรเชื่อมกับเลขขาย → ครัวผลิตได้ 0 แต่ลูกค้ายังสั่งได้ 10
+    // 🆕 11 ส.ค. 2026 (นัทสั่ง) — เมนูที่ตั้ง "ไม่จำกัด" ก็ต้องคุมด้วย
+    //    เดิมไม่แตะ → ครัวกรอก "ผลิตได้ 5" แต่ลูกค้ายังสั่งได้ไม่อั้น (วันนี้มี 41 เมนูอยู่ในสภาพนี้)
+    //    ครัวกรอกเลข = ประกาศว่ามีเท่านี้ → เลิก "ไม่จำกัด" ให้อัตโนมัติ
+    //    อยากกลับไปไม่จำกัด กดปุ่ม ∞ ที่แท็บ "ตั้งสต็อค" ได้ตลอด
+    var mm=allMenus.find(function(x){return x.id===menuId;})||{};
+    var wasUnlimited=(mm.stock_total==null);
+    var patch={actual_stock:val, stock_total:val};
+    if(wasUnlimited) kqUnlimitedHint(inp, mm);
+    var _w3=await sb_.from("menu_items").update(patch).eq("id",menuId);
+    if(_w3.error) kqWriteFail(_w3.error,"ผลิตได้จริง/สต็อคขาย");
+    else { mm.stock_total=val;
+      logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")"
+        +(wasUnlimited?" · เลิกไม่จำกัดให้อัตโนมัติ":"")); }
+  },600);
+}
+
+// เตือนเมื่อกรอก "ผลิตได้จริง" ให้เมนูที่ตั้งไว้ว่า "ขายไม่จำกัด" — เลขนี้จะไม่คุมการขาย
+function kqUnlimitedHint(inp, mm){
+  try{
+    var row=inp.closest(".pt-row"); if(!row)return;
+    if(row.querySelector(".kq-unl-hint"))return;
+    var d=document.createElement("div");
+    d.className="kq-unl-hint";
+    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#EAF7EF;border:1px solid #BBE5CB;border-radius:8px;padding:5px 8px;font-size:11px;color:#166534;font-weight:600;line-height:1.4";
+    d.textContent="เมนูนี้เคยตั้งไว้ ขายไม่จำกัด (∞) — ตอนนี้เปลี่ยนเป็นขายได้ตามเลขที่กรอกแล้ว ลูกค้าสั่งเกินไม่ได้";
+    row.appendChild(d);
+    setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 8000);
+  }catch(e){}
+}
+
+// ── TAB 3: ตั้งสต็อค (canonical = stock_total · ทุกหน้ารวม LIFF อ่านตัวนี้) ──
+var CATLBL_STK={no_regular:"🍚 ข้าวกล่อง",no_special:"⭐ เมนูพิเศษ",pack_regular:"📦 แพคกับข้าว",pack_special:"📦 แพคพิเศษ",trend:"🔥 เมนูกระแส"};
+function renderStock(){
+  var el=document.getElementById("stockView"); if(!el)return;
+  var menus=(allMenus||[]).filter(function(m){ return m.category!=="meal_hp"&&m.category!=="meal_lc"; })
+    .sort(function(a,b){ return (a.category||"").localeCompare(b.category||"")||(a.code||"").localeCompare(b.code||""); });
+  if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
+  var om={}; filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
+  var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>ตั้งจำนวนที่ทำวันนี้ต่อเมนู — <b>ลูกค้าสั่งได้ไม่เกินนี้</b> (LIFF อ่านตัวนี้) · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
+  var lastCat=null;
+  menus.forEach(function(m){
+    if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
+    var unlimited=(m.stock_total==null);
+    var val=unlimited?0:m.stock_total;
+    var ordered=om[m.id]||0;
+    html+="<div class='stk-row'>"
+      +"<div class='stk-name'><span class='code-tag'>"+codeHtml(m.code,m.name)+"</span> "+escH(m.name||"")
+      +(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":"")+"</div>"
+      +"<div class='stk-ctrl'>"
+      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',-1)\" "+(unlimited?"disabled":"")+">−</button>"
+      +"<input class='stk-num' type='number' min='0' value='"+val+"' data-id='"+m.id+"' oninput='stkType(this)'"+(unlimited?" disabled style='opacity:.35'":"")+">"
+      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',1)\" "+(unlimited?"disabled":"")+">+</button>"
+      +"<button class='stk-inf "+(unlimited?"on":"")+"' onclick=\"stkInf('"+m.id+"')\" title='ขายไม่จำกัด'>∞</button>"
+      +"</div></div>";
+  });
+  el.innerHTML=html;
+}
+function stkWrite(menuId,val){ // val = ตัวเลข หรือ null (ไม่จำกัด)
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=val;
+  clearTimeout(saveTimers["stk_"+menuId]);
+  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_){ var _w4=await sb_.from("menu_items").update({stock_total:val}).eq("id",menuId); if(_w4.error) kqWriteFail(_w4.error,"ตั้งสต็อค (ลูกค้าเห็นเลขนี้)"); } },500);
+}
+function stkAdj(menuId,d){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; var cur=(m.stock_total==null)?0:m.stock_total; stkWrite(menuId,Math.max(0,cur+d)); renderStock(); }
+function stkType(inp){ stkWrite(inp.dataset.id,Math.max(0,parseInt(inp.value)||0)); } // ไม่ re-render ระหว่างพิม กัน cursor เด้ง
+function stkInf(menuId){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; stkWrite(menuId, (m.stock_total!=null)?null:0); renderStock(); }
+
+// ── พับ/กางการ์ด (N-13) ──────────────────────────────────
+// วันที่ออเดอร์เยอะ หน้ายาวมากจนครัวเลื่อนหาของไม่เจอ → กดหัวการ์ดพับเก็บได้
+// กติกา: ค่าเริ่มต้น "กางไว้" เสมอ (ครัวต้องเห็นของโดยไม่ต้องกด) · พับเองเมื่ออยากเก็บ
+// เก็บสถานะไว้ใน localStorage → auto-refresh 30 วิ (loadAll→render) ไม่เด้งกางเอง
+var kqCollapsed={};
+try{ kqCollapsed=JSON.parse(localStorage.getItem("kqCollapsedOrders")||"{}")||{}; }catch(e){ kqCollapsed={}; }
+function saveCollapsed(){ try{ localStorage.setItem("kqCollapsedOrders",JSON.stringify(kqCollapsed)); }catch(e){} }
+function toggleCard(id){
+  if(kqCollapsed[id]) delete kqCollapsed[id]; else kqCollapsed[id]=1;
+  saveCollapsed();
+  // ขยับเฉพาะการ์ดใบนั้น ไม่ re-render ทั้งหน้า = ไม่กระโดดหลุดตำแหน่งที่ครัวเลื่อนค้างไว้
+  var el=document.querySelector(".oc[data-oid='"+id+"']");
+  if(el) el.classList.toggle("oc-collapsed",!!kqCollapsed[id]);
+  else render();
+}
+function foldAll(on){
+  filteredOrders().forEach(function(o){ if(on)kqCollapsed[o.id]=1; else delete kqCollapsed[o.id]; });
+  saveCollapsed(); render();
+}
+function boxCount(items){ return (items||[]).reduce(function(s,i){return s+(i.qty||1);},0); }
+
+// TAB 2: รายออเดอร์ by slot
+function renderOrders(){
+  var orders=filteredOrders();
+  if(!orders.length){
+    document.getElementById("orderView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์</div>";
+    return;
+  }
+  // group by slot
+  var slotOrder=["all_day","morning","afternoon","express",""];
+  var bySlot={};
+  orders.forEach(function(o){
+    var s=o.time_slot||"";
+    if(!bySlot[s])bySlot[s]=[];
+    bySlot[s].push(o);
+  });
+  // 🍳 ในแต่ละช่วงเวลา: Meal Plan ขึ้นก่อน แล้วเรียงตามเวลาที่ลูกค้าสั่งเข้ามา (นัทสั่ง 6 ส.ค. 2569)
+  //    เดิมไม่ได้กำหนดลำดับในกลุ่มเลย → สลับที่ทุกครั้งที่โหลด ครัวจำตำแหน่งไม่ได้
+  //    ที่เอา Meal Plan ขึ้นบน เพราะเป็นของทำสดต้องลงมือก่อน · สต็อก/เซ็ตหยิบทีหลังได้
+  Object.keys(bySlot).forEach(function(s){
+    bySlot[s].forEach(function(o){
+      var it=getOrderItems(o.id);
+      o._isMp = it.some(function(i){ return /^(HP|LC|MP)/i.test(i.code||""); }) || it.some(function(i){ return i._fromPlan; });
+    });
+    bySlot[s].sort(function(a,b){
+      if(a._isMp!==b._isMp) return a._isMp?-1:1;                                   // Meal Plan ก่อน
+      return String(a.created_at||"").localeCompare(String(b.created_at||""));      // แล้วใครสั่งก่อนอยู่ก่อน
+    });
+  });
+  // 🔴 เดิมวนแค่ slotOrder 5 ค่านี้ → ออเดอร์ที่ time_slot เป็นค่าอื่น "หายเงียบ" จากจอครัว
+  //    เคสจริง: ลูกค้าเลือก "ส่งระบุเวลา" ใน LIFF → time_slot เก็บเป็นเวลาจริง เช่น "14:30"
+  //    (liff_customer: `time_slot: selSlot==='express' ? expressTime : selSlot`)
+  //    → ครัวไม่เห็นออเดอร์นั้นเลย ทั้งที่นับรวมอยู่ในระบบ = อาการ "สั่งจริงแล้วไม่ขึ้นหน้าครัว" (แก้ 5 ส.ค. 2569)
+  //    กติกาใหม่: ช่วงเวลาที่ไม่รู้จัก ต้องโผล่ท้ายจอเสมอ ห้ามตกหล่นเด็ดขาด
+  var known=slotOrder.slice();
+  var extra=Object.keys(bySlot).filter(function(s){return known.indexOf(s)<0;}).sort();
+  // N-13: ปุ่มพับ/กางทั้งหมด — วันออเดอร์เยอะครัวพับเก็บทีเดียวแล้วค่อยกางทีละใบที่กำลังทำ
+  var html="<div class='fold-bar no-print'>"
+    +"<button class='fold-btn' onclick='foldAll(true)'>⊟ พับทั้งหมด</button>"
+    +"<button class='fold-btn' onclick='foldAll(false)'>⊞ กางทั้งหมด</button>"
+    +"<span class='fold-hint'>แตะชื่อลูกค้าเพื่อพับ/กางทีละใบ</span></div>";
+  known.concat(extra).forEach(function(s){
+    if(!bySlot[s]||!bySlot[s].length)return;
+    var isExtra=known.indexOf(s)<0;
+    var label=SLOT_LABELS[s]||(isExtra?("🕐 นัดเวลา "+escH(s)):"⏰ ไม่ระบุช่วงเวลา");
+    html+="<div class='slot-sec'>"
+      +"<div class='slot-hdr'><span class='slot-hdr-label'>"+label+"</span><span class='slot-hdr-count'>"+bySlot[s].length+" ออเดอร์</span></div>"
+      +"<div class='slot-body'>"+bySlot[s].map(renderCard).join("")+"</div></div>";
+  });
+  document.getElementById("orderView").innerHTML=html;
+}
+
+function renderCard(o){
+  var items=getOrderItems(o.id);
+  var badge=detectBadge(items);
+  var isPkg=!!(o.package_type);
+  var isMp=items.some(function(i){return (i.code||"").match(/^HP|^LC/i);});
+  var cardCls=isPkg?"oc pkg":isMp?"oc mealplan":"oc";
+  var badgeHtml=isPkg?"<span class='oc-badge pkg'>📦 แพ็ค</span>"
+    :isMp?"<span class='oc-badge mp'>🥗 Meal</span>"
+    :badge!=="normal"?"<span class='oc-badge "+badge+"'>"+badge.toUpperCase()+"</span>":"";
+  // 🔴 เดิม i.name.slice(0,12) → ตัดชื่อเมนูทิ้งจริงใน JS (ไม่ใช่แค่ CSS) ครัวกดดูก็ไม่เห็น
+  //    ชื่อเมนูไทยยาว 20-40 ตัว เช่น "สเต็กไก่อบน้ำผึ้งผักย่าง" เหลือ "สเต็กไก่อบน้ำ" = อ่านไม่รู้เรื่องว่ารับอะไร
+  //    (นัทเห็นกับตาบนจอครัวจริง 5 ส.ค. 2569) → โชว์เต็ม แล้วให้ CSS ตัดบรรทัดเอา
+  var chip=function(i){
+    return "<div class='item-chip'><span class='ic-code'>"+codeHtml(i.code,i.name)+"</span>"
+      +(codeMode!=="name"?" <span class='ic-name'>"+escH(i.name)+"</span>":"")
+      +" <span class='ic-qty'>×"+i.qty+"</span>"
+      // 📌 โน้ตรายกล่องจากแพลนเมนู เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่" — ครัวต้องเห็นตอนจัดกล่อง
+      +(i.boxNote?"<span class='ic-note'>📌 "+escH(i.boxNote)+"</span>":"")
+      +"</div>";
+  };
+  var itemsHtml="";
+  if(items.length){
+    groupOrderItems(items).forEach(function(g){
+      var boxes=g.items.reduce(function(s,i){return s+(i.qty||1);},0);
+      if(g.fromPlan){
+        // เมนูมาจากหน้า "แพลนเมนู" ไม่ใช่จากตะกร้าลูกค้า — บอกครัวให้ชัด กันเข้าใจผิดว่าลูกค้าสั่งเอง
+        itemsHtml+="<div class='set-box'><div class='set-hdr'>🥗 เมนูจากแพลน "+escH(g.fromPlan)
+          +" <span class='set-n'>"+boxes+" กล่อง</span></div>"
+          +"<div class='items-grid'>"+g.items.map(chip).join("")+"</div></div>";
+      }else if(g.pkg){
+        // เซ็ต/คอร์ส → หัวข้อ + รายการย่อยข้างใน ครัวจะได้รู้ว่าของพวกนี้อยู่ชุดเดียวกัน
+        itemsHtml+="<div class='set-box'><div class='set-hdr'>📦 เซ็ต/คอร์ส"
+          +(g.round?" · รอบ "+escH(g.round):"")+" <span class='set-n'>"+boxes+" กล่อง</span></div>"
+          +"<div class='items-grid'>"+g.items.map(chip).join("")+"</div></div>";
+      }else{
+        itemsHtml+="<div class='items-grid'>"+g.items.map(chip).join("")+"</div>";
+      }
+    });
+  }else itemsHtml="<span style='color:var(--xsoft);font-size:11px'>ไม่พบรายการ</span>";
+  // Meal Plan = ซื้อทั้ง subscription ครั้งเดียว ไม่ใช่ของที่ต้องจัดกล่องในวันนี้วันเดียว
+  // รอบส่งจริง + เมนูที่กำหนด อยู่ที่ mp_deliveries → ลิ้งไปดูที่แท็บ "รายสินค้า" แทนปุ่มจัดกล่อง
+  // ปุ่ม 2 ขั้น: จัดกล่องเสร็จ → ส่งแมสแล้ว · ยกเลิกย้อนได้ทั้งคู่ (นัทสั่ง 6 ส.ค. 2569)
+  var packed = (o.status==="ready"||o.status==="delivered");
+  var shipped = (o.status==="delivered");
+  var actions;
+  if(isMp){
+    actions="<div class='oc-actions'><span onclick='switchTab(1)' style='color:var(--g);font-weight:700;cursor:pointer;text-decoration:underline'>📋 ดูรอบส่ง & เมนูที่แท็บ \"รายสินค้า\" →</span></div>";
+  }else{
+    var b="";
+    if(!packed) b+="<button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button>";
+    else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
+    if(packed&&!shipped) b+="<button class='btn-ship' onclick='markShipped(\""+o.id+"\")'>🛵 ส่งแมสแล้ว</button>";
+    if(shipped)          b+="<button class='btn-undo' onclick='markUnship(\""+o.id+"\")'>↩ ยังไม่ส่ง</button>";
+    /* N-63 · ปุ่มพิมพ์สลิปแปะกล่อง — เปิดหน้าใหม่ ครัวกดพิมพ์เอง (iOS บล็อกการสั่งพิมพ์อัตโนมัติ) */
+    b+="<button class='btn-print-slip' onclick='window.open(\"print_slip.html?id="+o.id+"\",\"_blank\")'>🖨️ สลิปแปะกล่อง</button>";
+    actions="<div class='oc-actions'>"+b+"</div>";
+  }
+  var wantsUtensils=o.want_utensils!==false;
+  var utensilHtml="<div class='oc-utensil"+(kitchenUtensilSize==="large"?" oc-utensil-lg":"")+(wantsUtensils?"":" oc-utensil-no")+"'>"
+    +(wantsUtensils?"🥄🍴 ใส่ช้อนส้อม":"❌ ไม่ต้องช้อนส้อม")+"</div>";
+  var stateTag = shipped?"<span class='oc-state shipped'>🛵 ส่งแมสแล้ว</span>"
+               : packed?"<span class='oc-state packed'>✅ จัดกล่องแล้ว</span>":"";
+  // N-13: พับได้ — ตอนพับยังต้องเห็น ชื่อ · จำนวนกล่อง · สถานะ (ข้อมูลที่ครัวใช้ตัดสินใจ)
+  var isCol=!!kqCollapsed[o.id];
+  var nBox=boxCount(items);
+  // Meal Plan ที่แอดมินยังไม่ assign เมนู จะไม่มี order_items เลย → นับกล่องจากรอบส่ง (mp_deliveries.box_count)
+  // ไม่งั้นตอนพับจะขึ้น "0 กล่อง" ทั้งที่จริงมีของต้องทำ
+  if(!nBox){ var _mp=findMpFor(o); if(_mp&&_mp.box_count) nBox=_mp.box_count; }
+  var boxTag="<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
+  // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
+  /* ❄️ แถบบอกสถานะของที่แช่ตู้ — ข้อความต่างกันตามว่ากำลังดูวันไหน */
+  var _fr=kqFridge(o), _tgt=getTargetDate(), frBar="";
+  if(_fr && _tgt===_fr.prep)
+    frBar="<div class='oc-fridge'>❄️ จัดวันนี้ แล้วเก็บเข้าตู้เย็น · ส่งวันที่ "+escH(_fr.ship)+"</div>";
+  else if(_fr && _tgt===_fr.ship)
+    frBar="<div class='oc-fridge take'>❄️ ของอยู่ในตู้แล้ว (จัดเมื่อ "+escH(_fr.prep)+") — ไปหยิบ ไม่ต้องทำใหม่</div>";
+  else if(_fr)
+    frBar="<div class='oc-fridge'>❄️ เก็บตู้ · จัด "+escH(_fr.prep)+" · ส่ง "+escH(_fr.ship)+"</div>";
+  return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+"' data-oid='"+escH(o.id)+"'>"
+    +frBar
+    +"<div class='oc-2col'>"
+      +"<div class='oc-left'>"
+        +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
+        +"<span class='oc-caret'>▾</span>"+badgeHtml+"<div style='flex:1;min-width:0'>"
+        +"<div style='display:flex;align-items:center;gap:6px;flex-wrap:wrap'><div class='oc-name'>"+escH(o.customer_name||"ลูกค้า")+"</div>"+lineTag(o)
+        +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
+        +boxTag
+        +"<span class='oc-pay "+(o.payment_status==="paid"?"is-paid":"is-unpaid")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
+        +stateTag+"</div>"
+        +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
+        +(o.customer_phone?"<div class='oc-meta'>📞 "+escH(o.customer_phone)+"</div>":"")
+        +"<div class='oc-meta oc-meta-sm'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
+        +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
+      +"</div>"
+      +"<div class='oc-right'>"+itemsHtml+utensilHtml+actions+"</div>"
+    +"</div></div>";
+}
+
+// ── ACTIONS ──────────────────────────────────────────────
+// ส่งแมสแล้ว = ปิดงานของครัวใบนั้น · ยังเห็นการ์ดอยู่ (จางลง) เพื่อกดยกเลิกย้อนได้
+async function markShipped(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var w=await sb_.from("orders").update({status:"delivered",updated_at:new Date().toISOString()}).eq("id",id);
+  if(w.error){kqWriteFail(w.error,"ส่งแมสแล้ว");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="delivered";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"🛵 ส่งแมสแล้ว");
+  render();
+}
+async function markUnship(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var w=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id);
+  if(w.error){kqWriteFail(w.error,"ย้อนสถานะส่ง");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกส่งแมส");
+  render();
+}
+
+async function markPacked(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var _w5=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id); if(_w5.error){kqWriteFail(_w5.error,"จัดกล่องเสร็จ");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
+  render();
+}
+async function markUnpack(id){
+  if(!requireKqUser())return;
+  var sb_=getSB(); if(!sb_)return;
+  var _w6=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id); if(_w6.error){kqWriteFail(_w6.error,"ย้อนสถานะ");return;}
+  var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดกล่อง");
+  render();
+}
+
+// ── PRINT ─────────────────────────────────────────────────
+function openPrint(){document.getElementById("printModal").style.display="flex";}
+function closePrint(){document.getElementById("printModal").style.display="none";}
+function doPrint(type){
+  closePrint();
+  if(type==="daily")switchTab(1);
+  else switchTab(2);
+  setTimeout(function(){window.print();},300);
+}
+
+// ── UTIL ─────────────────────────────────────────────────
+function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
+// โชว์ชื่อ LINE ต่อท้าย เฉพาะตอนไม่ตรงกับชื่อผู้รับ — กันสั่งซ้ำ 2 รอบให้คนละคน
+function lineTag(o){
+  if(!o||!o.line_display_name||o.line_display_name===o.customer_name) return "";
+  return " <span style='font-size:10px;color:#9CA3AF;font-weight:400'>(LINE: "+escH(o.line_display_name)+")</span>";
+}
+
+// ── INIT ─────────────────────────────────────────────────
+// 🔴 N-32 (6 ส.ค. 2569): เดิมลูป d.setDate(getDate()-i) i=0..13 = สร้างแต่ "วันย้อนหลัง" ล้วน
+//    → ครัวเลือกวันข้างหน้าไม่ได้เลย = เตรียมของล่วงหน้าไม่ได้ + เช็ครอบ Meal Plan วันหน้าไม่ได้
+//    (ตัวเลือกวันสร้างจาก "ช่วงวันคงที่" ไม่ได้สร้างจากออเดอร์จริง — ข้อมูลวันอนาคตมีใน DB อยู่แล้ว)
+//    แก้: ล่วงหน้า 14 วัน (optgroup "ล่วงหน้า") + ย้อนหลัง 7 วัน แยกกลุ่มกันครัวกดผิด
+var KQ_FUTURE_DAYS=14, KQ_PAST_DAYS=7;
+var kqPickerBuiltFor=null;
+function kqDayOffset(n){var d=new Date();d.setDate(d.getDate()+n);return d;}
+function buildDatePicker(){
+  var sel=document.getElementById("calPicker");
+  if(!sel)return;
+  var keep=sel.value;
+  sel.innerHTML="<option value=''>📅 เลือกวัน...</option>";
+  var gF=document.createElement("optgroup");gF.label="🔜 ล่วงหน้า";
+  var gP=document.createElement("optgroup");gP.label="↩ ย้อนหลัง";
+  function mk(n){
+    var d=kqDayOffset(n);
+    var lbl=d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});
+    var pre=n===0?"วันนี้ · ":n===1?"พรุ่งนี้ · ":n>1?"🔜 ":"↩ ";
+    var opt=document.createElement("option");opt.value=toISO(d);opt.textContent=pre+lbl;
+    return opt;
+  }
+  for(var i=0;i<=KQ_FUTURE_DAYS;i++) gF.appendChild(mk(i));
+  for(var j=1;j<=KQ_PAST_DAYS;j++)   gP.appendChild(mk(-j));
+  sel.appendChild(gF); sel.appendChild(gP);
+  if(keep) sel.value=keep;                 // auto-refresh ต้องไม่เขี่ยวันที่ครัวเลือกไว้ทิ้ง
+  kqPickerBuiltFor=today();
+}
+buildDatePicker();
+
+loadNickname();
+loadAll();
+setInterval(loadAll,30000);
+</script>
+</body>
+</html>
