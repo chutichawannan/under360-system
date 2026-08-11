@@ -2531,7 +2531,15 @@ function attachPackagesHandlers(){
           flexible_delivery: !!panel.querySelector('.pkg-f-flexdeliv')?.checked
         };
       }
-      if(state.hasFreeShipCol){ setFields.free_shipping = !!panel.querySelector('.pkg-f-freeship')?.checked; }
+      if(state.hasFreeShipCol){
+        const wantFree = !!panel.querySelector('.pkg-f-freeship')?.checked;
+        /* กันบั๊กเงียบที่เพิ่งเกิดจริง 11 ส.ค.: แพค 8 ตัวไม่เคยติ๊กส่งฟรี → ลูกค้าโดนคิดค่าส่ง 7 ใบ ฿833
+           ค่า default = คิดค่าส่ง แล้วไม่มีใครสังเกต → ต้องถามตอนบันทึก ไม่ปล่อยผ่านเงียบ */
+        if(active && !wantFree){
+          if(!window.confirm('แพคนี้เปิดขายอยู่ แต่ยัง "ไม่ได้ติ๊กส่งฟรี"\n\n= ลูกค้าจะโดนคิดค่าส่งเพิ่มจากราคาแพค\n\nแน่ใจว่าแพคนี้คิดค่าส่งจริงใช่ไหม?\n(ถ้าไม่ใช่ กด Cancel แล้วไปติ๊ก 🚚 ส่งฟรี ก่อน)')) return;
+        }
+        setFields.free_shipping = wantFree;
+      }
       btn.disabled = true;
       btn.textContent = 'กำลังบันทึก...';
       try {
@@ -2752,19 +2760,94 @@ async function syncMenuMetaFromDB(){
     const codes = state.recipes.map(r=>r.code).filter(Boolean);
     if(!codes.length) return;
     let changed = 0;
+    liveOnline = {};   /* ค่าจริงที่ลูกค้าเห็น — เก็บไว้เทียบ ไม่เอาไปทับค่าในหน้านี้ */
     for(let i=0;i<codes.length;i+=200){
       const { data, error } = await sb.from('menu_items')
-        .select('code,subcode,available_from').in('code', codes.slice(i,i+200));
+        .select('code,subcode,available_from,is_available').in('code', codes.slice(i,i+200));
       if(error || !data) continue;
       data.forEach(m=>{
         const r = state.recipes.find(x=>x.code===m.code); if(!r) return;
         const sc = m.subcode||'', af = m.available_from||null;
         if((r.subcode||'')!==sc){ r.subcode = sc; changed++; }
         if((r.availableFrom||null)!==af){ r.availableFrom = af; changed++; }
+        liveOnline[m.code] = !!m.is_available;
       });
     }
+    renderOnlineMismatch();
     if(changed){ persistRecipesDebounced(); render(); }
   }catch(e){ console.warn('syncMenuMetaFromDB', e); }
+}
+
+/* ── ตัวเช็คว่า "หน้านี้" กับ "ที่ลูกค้าเห็นจริง" ตรงกันไหม (CC ส่งมา 11 ส.ค.) ──────
+   ปัญหาจริง: แอดมินกดปิดออนไลน์ในหน้านี้ แต่ลูกค้ายังเห็นเมนูอยู่
+   เพราะค่าไปอยู่แค่ใน kitchen_data.recipes ส่วน menu_items.is_available ยังเป็น true
+   (ตัว sync ทันทีเพิ่งใส่ 3 ส.ค. — อะไรที่กดปิดก่อนหน้านั้นไม่เคยเดินทางไปถึงลูกค้าเลย)
+
+   ⚠️ ห้ามทำปุ่ม "ซิงค์ทั้งชุด" เด็ดขาด — ตอนนี้มี 15 เมนูที่หน้านี้บอกปิด แต่เป็นเมนูสัปดาห์นี้ที่ขายจริง
+      กดรวดเดียว = เมนูสัปดาห์นี้ดับหมด ลูกค้าสั่งอะไรไม่ได้เลย → แก้ได้ทีละตัวเท่านั้น
+   เมนูหมุนทุกสัปดาห์ = เรื่องนี้จะกลับมาอีกแน่ ต้องมีตัวฟ้องถาวร ไม่ใช่ไล่แก้มือทุกรอบ */
+let liveOnline = {};
+function onlineMismatch(){
+  const leak=[], miss=[];      // leak = หน้านี้ปิด แต่ลูกค้ายังเห็น · miss = หน้านี้เปิด แต่ลูกค้าไม่เห็น
+  state.recipes.forEach(r=>{
+    if(!r.code || !(r.code in liveOnline)) return;
+    if(r.status!=='active') return;
+    const here = !!r.available_online, there = !!liveOnline[r.code];
+    if(here===there) return;
+    (there ? leak : miss).push(r);
+  });
+  return {leak, miss};
+}
+function renderOnlineMismatch(){
+  const box=document.getElementById('onlineMismatch'); if(!box) return;
+  const {leak,miss}=onlineMismatch();
+  if(!leak.length && !miss.length){
+    box.innerHTML="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ หน้านี้ตรงกับที่ลูกค้าเห็นทุกเมนู</div>";
+    return;
+  }
+  /* ให้ 2 ปุ่มเสมอ — ไม่ตัดสินแทนว่าฝั่งไหนถูก
+     เคสจริง 11 ส.ค.: 13 ตัวที่ "หน้านี้ปิด แต่ลูกค้ายังเห็น" คือเมนูสัปดาห์นี้ที่ขายอยู่จริง
+     = ฝั่งที่ผิดคือหน้านี้ ไม่ใช่ฝั่งลูกค้า · ถ้ามีปุ่มเดียวว่า "ปิดให้ลูกค้าด้วย" แล้วกดตามๆ กัน = เมนูสัปดาห์นี้ดับหมด */
+  const row=(r)=>`<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-top:1px solid rgba(0,0,0,.06);flex-wrap:wrap">
+      <span style="font-family:var(--mono,monospace);font-size:11.5px;font-weight:700;min-width:52px">${escapeHtml(r.code)}</span>
+      ${r.subcode?`<span style="font-size:11px;font-weight:800;color:var(--turmeric)">${escapeHtml(r.subcode)}</span>`:''}
+      <span style="flex:1;font-size:12px;min-width:120px">${escapeHtml(String(r.name||'').slice(0,42))}</span>
+      <button class="btn btn-sm" onclick="fixOnlineOne('${r.id}',true)" style="font-size:11px;padding:3px 9px;background:#EAF7EF;color:#166534;border:1px solid #BBE5CB">✅ ให้ลูกค้าสั่งได้</button>
+      <button class="btn btn-sm" onclick="fixOnlineOne('${r.id}',false)" style="font-size:11px;padding:3px 9px;background:#FDECEB;color:#A02A1F;border:1px solid #F3C7C2">🚫 ปิดไม่ให้สั่ง</button>
+    </div>`;
+  let h="<div style='background:#FFF7ED;border:1px solid #FED7AA;border-radius:12px;padding:12px 14px'>"
+    +"<div style='font-weight:800;font-size:13.5px;color:#9A3412'>⚠️ หน้านี้ไม่ตรงกับที่ลูกค้าเห็น</div>"
+    +"<div style='font-size:11.5px;color:#7C2D12;margin:3px 0 8px'>แก้ทีละตัวเท่านั้น — ไม่มีปุ่มซิงค์รวม เพราะกดรวดเดียวแล้วเมนูสัปดาห์นี้ดับหมด</div>";
+  if(leak.length){
+    h+="<div style='font-weight:800;font-size:12px;color:#B91C1C;margin-top:6px'>🔴 หน้านี้ปิดแล้ว แต่ลูกค้ายังสั่งได้ · "+leak.length+" เมนู</div>";
+    leak.forEach(r=>h+=row(r));
+  }
+  if(miss.length){
+    h+="<div style='font-weight:800;font-size:12px;color:#B45309;margin-top:10px'>🟡 หน้านี้เปิดอยู่ แต่ลูกค้าไม่เห็น (เสียยอด) · "+miss.length+" เมนู</div>";
+    miss.forEach(r=>h+=row(r));
+  }
+  box.innerHTML=h+"</div>";
+}
+async function fixOnlineOne(id,want){
+  if(!requireUser()) return;
+  const r=state.recipes.find(x=>x.id===id); if(!r) return;
+  want = !!want;   /* แอดมินเลือกผลลัพธ์เอง แล้วระบบตั้งให้ตรงกันทั้ง 2 ฝั่ง */
+  /* เตือนพิเศษถ้ากำลังจะปิดเมนูที่มีชื่อเล่น = เมนูของสัปดาห์นี้ที่ขายอยู่จริง
+     (ชื่อเล่นขึ้นต้นด้วย x = ของค้างสัปดาห์ก่อน ปิดได้ไม่เจ็บ) */
+  const warn=(!want && String(r.subcode||'').trim() && !/^x/i.test(String(r.subcode)))
+    ? '\n\n⚠️ ตัวนี้มีชื่อเล่น "'+r.subcode+'" = เมนูของสัปดาห์นี้ ปิดแล้วลูกค้าสั่งไม่ได้ทันที' : '';
+  if(!window.confirm((want?'ให้ลูกค้าสั่งได้':'ปิดไม่ให้ลูกค้าสั่ง')+'\n\n'+r.code+' '+(r.name||'')+warn+'\n\nจะตั้งให้ตรงกันทั้งหน้านี้และฝั่งลูกค้า')) return;
+  try{
+    const sb=getSB(); if(!sb) throw new Error('ต่อฐานข้อมูลไม่ได้');
+    const { error } = await sb.from('menu_items').update({ is_available: want }).eq('code', r.code);
+    if(error) throw error;
+    liveOnline[r.code]=want;
+    r.available_online=want;            // ให้ 2 ฝั่งตรงกันทันที ไม่ต้องรอรอบหน้า
+    persistRecipesDebounced();
+    logActivity('stock', (want?'เปิด':'ปิด')+'ให้ลูกค้าเห็น '+r.code+' '+(r.name||''));
+    showToast((want?'เปิดแล้ว ':'ปิดแล้ว ')+r.code);
+    renderOnlineMismatch(); render(true);
+  }catch(e){ showToast('แก้ไม่สำเร็จ: '+(e.message||e)); }
 }
 
 /* วันเริ่มส่งของสัปดาห์ปัจจุบัน — ตั้งครั้งเดียวตอนกด "ขึ้นสัปดาห์ใหม่"
@@ -3266,6 +3349,8 @@ function renderRecipesTab(){
       <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
     </div>
   </div>`;
+  /* ตัวฟ้องว่าหน้านี้ไม่ตรงกับที่ลูกค้าเห็น — วางบนสุดของแท็บเมนู เห็นทันทีที่เปิดหน้า */
+  html += `<div id="onlineMismatch" style="margin:0 0 10px"></div>`;
   html += `<div class="toolbar">
     <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมด PTT (Pin to Top)':'เปิดโหมด PTT — ปักหมุดเมนูไว้บนสุด'}">📌</button>
     <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
@@ -4324,6 +4409,8 @@ function attachHandlers(){
         }catch(err){ console.error(err); showToast('บันทึกวันเริ่มส่งไม่สำเร็จ: '+(err.message||'')); }
       };
     });
+    /* กล่องนี้อยู่ใน html ที่ถูกวาดใหม่ทุกครั้ง → ต้องเติมกลับหลัง render ไม่งั้นหายทุกรอบ */
+    renderOnlineMismatch();
     document.querySelectorAll('.online-toggle-btn').forEach(btn=>{
       btn.onclick = (e)=>{
         e.stopPropagation();
