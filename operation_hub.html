@@ -1989,6 +1989,8 @@ async function openOrderDetail(id){
         h+="<button class='btn' onclick=\"odFridge('"+id+"')\" style='color:#1E40AF;border-color:#BFDBFE'>❄️ เก็บไว้ส่งวันหลัง</button>"
           +"<span style='font-size:11px;color:#9CA3AF;margin-left:8px'>จัดของวันนี้ แช่ตู้ไว้ ส่งวันอื่น — ครัวจะเห็นทั้ง 2 วัน</span><br>";
       }
+      /* N-63 · สลิปแปะกล่อง — แทนใบของ Hato ที่หายไปตอนปิดระบบ (เปิดเป็นหน้าต่างใหม่ ไม่ทับหน้านี้) */
+      h+="<button class='btn' onclick=\"window.open('print_slip.html?id="+id+"','_blank')\" style='margin-top:8px;margin-right:8px'>🖨️ พิมพ์สลิปแปะกล่อง</button>";
       h+="<button class='btn' onclick=\"odCancelOrder('"+id+"')\" style='margin-top:8px;color:#B91C1C;border-color:#FECACA'>🗑️ ยกเลิกออเดอร์นี้</button>"
         +"<span style='font-size:11px;color:#9CA3AF;margin-left:8px'>ใบซ้ำ / ลูกค้าไม่เอาแล้ว — ยกเลิกแล้วกู้คืนได้</span></div>";
     }

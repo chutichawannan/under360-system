@@ -166,6 +166,8 @@ body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
 .oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
 .oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
 .oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
+.btn-print-slip{background:#fff;color:var(--g);border:1.5px solid var(--g);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
+body.tablet .btn-print-slip{font-size:16px;padding:10px 16px;}
 .btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 18px;min-height:46px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 16px;min-height:46px;font-size:13.5px;cursor:pointer;font-family:var(--sans);}
 .btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
@@ -1056,6 +1058,8 @@ function renderCard(o){
     else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
     if(packed&&!shipped) b+="<button class='btn-ship' onclick='markShipped(\""+o.id+"\")'>🛵 ส่งแมสแล้ว</button>";
     if(shipped)          b+="<button class='btn-undo' onclick='markUnship(\""+o.id+"\")'>↩ ยังไม่ส่ง</button>";
+    /* N-63 · ปุ่มพิมพ์สลิปแปะกล่อง — เปิดหน้าใหม่ ครัวกดพิมพ์เอง (iOS บล็อกการสั่งพิมพ์อัตโนมัติ) */
+    b+="<button class='btn-print-slip' onclick='window.open(\"print_slip.html?id="+o.id+"\",\"_blank\")'>🖨️ สลิปแปะกล่อง</button>";
     actions="<div class='oc-actions'>"+b+"</div>";
   }
   var wantsUtensils=o.want_utensils!==false;

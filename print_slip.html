@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>สลิปแปะกล่อง — Under360</title>
+<!--
+  N-63 · สลิปแปะกล่อง (แทนใบของ Hato ที่จะหายไปตอนปิดระบบ)
+  ทำเป็นไฟล์แยก ไม่แตะหน้าครัว/หน้าออเดอร์ → ไม่ชนกับใครที่กำลังแก้ไฟล์เดิม
+
+  ⚠️ กับดักที่ห้อง bug เตือนไว้ และวิธีที่เลือก:
+  1) กระดาษ 57 มม. พิมพ์จริงได้ราว 48 มม. → ตั้ง @page 57mm แล้วเว้นขอบ 3.5mm ทั้ง 2 ข้าง
+  2) ฟอนต์ไทยสระลอย/เพี้ยน ถ้าสั่งพิมพ์ผ่าน ESC/POS text mode
+     → **ไม่ใช้ ESC/POS** ใช้การพิมพ์ผ่านเบราว์เซอร์ (เครื่องพิมพ์รับเป็นรูป) สระไทยจึงตรงเสมอ
+  3) เครื่องที่ครัวใช้จริงคือ iPhone → หน้านี้เป็น HTML ล้วน สั่งพิมพ์จาก Safari ได้ตรงๆ
+     และปุ่มพิมพ์ต้องกดเอง ไม่ auto-print (iOS บล็อก print() ที่ไม่ได้มาจากการกดของผู้ใช้)
+
+  เปิดด้วย:  print_slip.html?order=U-0811-001        (เลขออเดอร์)
+             print_slip.html?date=2026-08-11         (ทั้งวัน — พิมพ์ทีเดียวทุกใบ)
+-->
+<style>
+:root{ --ink:#000; --soft:#555; }
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:#E9E9E6}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai","Sarabun",sans-serif;color:var(--ink)}
+
+/* ── แถบเครื่องมือ (ไม่พิมพ์ออกมา) ── */
+.bar{position:sticky;top:0;z-index:9;background:#1F4D3A;color:#fff;padding:11px 14px;
+  display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+.bar b{font-size:15px}
+.bar .sub{font-size:12px;opacity:.85}
+.btn{background:#fff;color:#1F4D3A;border:none;border-radius:9px;padding:9px 15px;
+  font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+.btn.ghost{background:transparent;color:#fff;border:1.5px solid rgba(255,255,255,.5)}
+.wrap{padding:14px;display:flex;flex-direction:column;align-items:center;gap:14px}
+
+/* ── ตัวสลิป: กว้าง 57 มม. พื้นที่พิมพ์จริง 50 มม. ── */
+.slip{width:57mm;background:#fff;padding:3.5mm;color:#000;
+  box-shadow:0 2px 10px rgba(0,0,0,.14);line-height:1.35}
+.hd{text-align:center;border-bottom:1px dashed #000;padding-bottom:2mm;margin-bottom:2mm}
+.hd .logo{font-size:15px;font-weight:900;letter-spacing:.5px}
+.hd .tel{font-size:10px}
+.num{font-family:"Courier New",monospace;font-size:13px;font-weight:700;text-align:center;margin-bottom:1.5mm}
+.nm{font-size:15px;font-weight:900;text-align:center;line-height:1.25;margin-bottom:1mm}
+.meta{font-size:11px;text-align:center;margin-bottom:2mm}
+.line{border-top:1px dashed #000;margin:2mm 0}
+.it{display:flex;gap:2mm;font-size:11.5px;margin-bottom:1.2mm;align-items:baseline}
+.it .c{font-family:"Courier New",monospace;font-weight:700;flex-shrink:0}
+.it .n{flex:1;word-break:break-word}
+.it .q{font-weight:900;flex-shrink:0}
+.tot{display:flex;justify-content:space-between;font-size:13px;font-weight:900;margin-top:1.5mm}
+.flag{font-size:11.5px;font-weight:800;text-align:center;border:1.5px solid #000;
+  border-radius:2mm;padding:1mm;margin-top:2mm}
+.note{font-size:11px;border:1px dashed #000;padding:1.5mm;margin-top:2mm;word-break:break-word}
+.ft{text-align:center;font-size:10px;margin-top:2.5mm;padding-top:1.5mm;border-top:1px dashed #000}
+.empty{background:#fff;padding:26px;border-radius:12px;text-align:center;color:#666;font-size:15px;max-width:420px}
+
+@media print{
+  @page{ size:57mm auto; margin:0; }
+  html,body{background:#fff}
+  .bar,.noprint{display:none!important}
+  .wrap{padding:0;gap:0}
+  .slip{width:57mm;box-shadow:none;page-break-after:always;break-after:page}
+  .slip:last-child{page-break-after:auto;break-after:auto}
+}
+</style>
+</head>
+<body>
+
+<div class="bar">
+  <b>🖨️ สลิปแปะกล่อง</b>
+  <span class="sub" id="sub">กำลังโหลด…</span>
+  <span style="flex:1"></span>
+  <button class="btn" onclick="window.print()">พิมพ์</button>
+  <button class="btn ghost" onclick="history.back()">กลับ</button>
+</div>
+
+<div class="wrap" id="out"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+const SHOP_TEL='064 173 6519';
+
+/* บรรทัดควบคุมของยุค Hato ไม่ใช่ของที่ครัวต้องแปะ (ตรงกับที่หน้าครัวกรอง) */
+const CTRL={"1":1,"0":1,"000":1};
+let PLACEHOLDER={};   /* SKU ตัวแทนเซ็ต เช่น HX30 = ปุ่มยืนยันเซ็ต ไม่ใช่กล่องอาหาร — ถ้านับด้วยจะได้ 7 กล่องทั้งที่จริง 6 */
+const esc = s => String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;'}[c]));
+const q = new URLSearchParams(location.search);
+
+function slipHtml(o, items){
+  const food = items.filter(i=>!CTRL[String(i.menu_code)] && !PLACEHOLDER[String(i.menu_code).toUpperCase()]);
+  const boxes = food.reduce((s,i)=>s+(i.quantity||1),0);
+  const when = (o.delivery_date||'') + (o.time_slot_label? '  '+String(o.time_slot_label).replace(/\s*–\s*/,'-') : '');
+  return `<div class="slip">
+    <div class="hd">
+      <div class="logo">UNDER360</div>
+      <div class="tel">โทร ${SHOP_TEL}</div>
+    </div>
+    <div class="num">${esc(o.order_number||'—')}</div>
+    <div class="nm">${esc(o.customer_name||'ลูกค้า')}</div>
+    <div class="meta">${esc(when)}${o.customer_phone? '<br>โทร '+esc(o.customer_phone):''}</div>
+    <div class="line"></div>
+    ${food.length
+      ? food.map(i=>`<div class="it"><span class="c">${esc(i.menu_code||'')}</span><span class="n">${esc(i.menu_name||'')}</span><span class="q">x${i.quantity||1}</span></div>`).join('')
+      : '<div class="it"><span class="n">— ยังไม่ได้กำหนดเมนู —</span></div>'}
+    <div class="line"></div>
+    <div class="tot"><span>รวม</span><span>${boxes} กล่อง</span></div>
+    ${o.want_utensils===false ? '<div class="flag">ไม่ต้องช้อนส้อม</div>' : '<div class="flag">ใส่ช้อนส้อม</div>'}
+    ${o.notes && !/^\[/.test(String(o.notes).trim()) ? `<div class="note">${esc(String(o.notes).replace(/\[[^\]]*\]/g,'').trim())}</div>` : ''}
+    <div class="ft">ขอบคุณที่อุดหนุนค่ะ 💚</div>
+  </div>`;
+}
+
+async function load(){
+  const out=document.getElementById('out'), sub=document.getElementById('sub');
+  const num=q.get('order'), id=q.get('id'), date=q.get('date');
+  let sel = sb.from('orders').select('id,order_number,customer_name,customer_phone,delivery_date,time_slot_label,want_utensils,notes,status');
+  if(id)        sel = sel.eq('id', id);
+  else if(num)  sel = sel.eq('order_number', num);
+  else if(date) sel = sel.eq('delivery_date', date).neq('status','cancelled').order('order_number');
+  else { out.innerHTML='<div class="empty">ใส่เลขออเดอร์หรือวันที่ก่อน<br><small>เช่น ?order=U-0811-001 หรือ ?date=2026-08-11</small></div>'; sub.textContent=''; return; }
+
+  /* ดึง SKU ตัวแทนเซ็ตมาก่อน เพื่อไม่ให้ถูกนับเป็นกล่อง (กติกาเดียวกับหน้าแพลนเมนู) */
+  try{ const pr=await sb.from("packages").select("groups").eq("is_active",true).limit(200);
+    (pr.data||[]).forEach(p=>(p.groups||[]).forEach(g=>(g.skus||[]).forEach(k=>PLACEHOLDER[String(k).toUpperCase()]=1)));
+  }catch(e){}
+
+  const { data, error } = await sel.limit(200);
+  if(error){ sub.textContent='โหลดไม่สำเร็จ'; out.innerHTML='<div class="empty">โหลดไม่สำเร็จ: '+esc(error.message)+'</div>'; return; }
+  const orders=(data||[]).filter(o=>o.status!=='cancelled');
+  if(!orders.length){ sub.textContent=''; out.innerHTML='<div class="empty">ไม่พบออเดอร์</div>'; return; }
+
+  /* ดึงรายการอาหารทีเดียวทุกใบ — กันยิงทีละใบตอนพิมพ์ทั้งวัน */
+  const ids=orders.map(o=>o.id);
+  const it=await sb.from('order_items').select('order_id,menu_code,menu_name,quantity').in('order_id',ids).limit(3000);
+  const byOrder={};
+  (it.data||[]).forEach(i=>{ (byOrder[i.order_id]=byOrder[i.order_id]||[]).push(i); });
+
+  out.innerHTML = orders.map(o=>slipHtml(o, byOrder[o.id]||[])).join('');
+  sub.textContent = orders.length===1 ? esc(orders[0].order_number) : (orders.length+' ใบ · '+(date||''));
+  document.title = (orders.length===1? orders[0].order_number : 'สลิป '+(date||'')) + ' — Under360';
+}
+load();
+</script>
+</body>
+</html>
