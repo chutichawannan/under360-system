@@ -2317,15 +2317,18 @@ function planFamilySelected(){
   if(k.length>1)  return null;      // เลือกคร่อมตระกูล = โชว์ทุกเมนู ให้แอดมินเห็นว่าปนกันอยู่
   return "mp";
 }
-// เลือกโค้ดจริงให้ตรงกับแผนของลูกค้าแถวนั้น (ไม่มีของแผนนั้น → หยิบตัวที่มี)
-// ⚠️ คืน null ถ้าตระกูลนั้นไม่มีเมนูเบอร์นี้จริง — ห้ามคืนเลขเปล่า
-//    เคยคืน "04" แล้วถูกบันทึกลงแผนของลูกค้า Hyrox ทั้งโค้ดและชื่อ (เจอจริง 11 ส.ค. · วณัสม์ณา 6 ช่อง)
-//    ครัวเปิดใบมาเห็นแค่ "04" ทำอาหารไม่ได้ · ผิดแบบเงียบ ไม่มีอะไรฟ้อง
+// เลือกโค้ดจริงให้ตรงกับแผนของลูกค้าแถวนั้น
+// 🍱 LC · HP · HX = "เมนูชุดเดียวกันทั้งหมด ต่างแค่มาโคร/สัดส่วนที่ผลิต" (นัทยืนยันเอง 11 ส.ค.)
+//    → ไม่ล็อกตระกูลอีกต่อไป · หาโค้ดของแผนเขาก่อน ไม่มีก็ใช้จานเดียวกันจากชุดอื่น
+//    เดิมล็อกไว้แล้วคืนเลขเปล่า "04" ลงแผนของลูกค้า Hyrox (วณัสม์ณา 6 ช่อง) ครัวเปิดใบมาทำอาหารไม่ได้
 function mpCodeFor(no, mpType){
   var fam=mpFamilyOf(mpType);
-  var b=mpBaseByNo(no,fam); if(!b) return null;
-  if(fam==="hyrox") return b.codes.HX || Object.values(b.codes)[0] || null;
-  return b.codes[mpPrefixOf(mpType)] || b.codes.LC || b.codes.HP || Object.values(b.codes)[0] || null;
+  var b=mpBaseByNo(no,fam) || mpBaseByNo(no,null);   // ไม่มีในชุดเขา = ยังเป็นจานเดียวกันอยู่ดี
+  if(!b) return no;
+  var pref = fam==="hyrox" ? ["HX","HP","LC"]
+           : (mpPrefixOf(mpType)==="LC" ? ["LC","HP","HX"] : ["HP","LC","HX"]);
+  for(var i=0;i<pref.length;i++){ if(b.codes[pref[i]]) return b.codes[pref[i]]; }
+  return Object.values(b.codes)[0] || no;
 }
 
 // 🔴 MENU_POOL ข้างบนเป็นรายการที่ฝังไว้ในไฟล์แค่ 16 ตัว — ค้นหาเมนูเลยเจอไม่ครบ
@@ -2361,6 +2364,23 @@ async function loadMenuPool(){
 // ── ข้อมูลจริงจาก mp_deliveries (ไม่ใช้ mock customer แล้ว) ─────────────
 var mpPlanRows=[];   // แถว mp_deliveries ที่ยังไม่ส่ง/ไม่ข้าม/ไม่ยกเลิก — ทุกรอบ ทุกวันในอนาคต ไม่จำกัดว่าไกลแค่ไหน
 
+/* ใบออเดอร์ถูกยกเลิกไปแล้ว แต่แถวรอบส่งอยู่คนละตาราง เลยค้างโผล่ในแพลนเมนูต่อ
+   เจอจริง: "Nut เทสสสส" ใบถูกปิดตั้งแต่ 6 ส.ค. แต่ยังขึ้นในแผน 12 ส.ค. — แอดมินงงว่าทำไมยังอยู่
+   กันที่ต้นทางตรงนี้ทีเดียว ไม่ต้องไล่ตามเก็บทีละแถว และครอบคลุมของเก่าที่ค้างมาก่อนหน้าด้วย
+   ⚠️ ถ้าเช็คไม่ได้ (เน็ตล่ม/error) คืนของเดิมไปทั้งชุด — โชว์เกินดีกว่าลูกค้าหายจากแผน */
+async function dropCancelledOrderRows(rows){
+  var sb_=getSB(); if(!sb_||!rows.length) return rows;
+  var ids=[]; rows.forEach(function(r){ if(r.order_id&&ids.indexOf(r.order_id)<0) ids.push(r.order_id); });
+  if(!ids.length) return rows;
+  try{
+    var r2=await sb_.from("orders").select("id").in("id",ids).eq("status","cancelled").limit(2000);
+    if(r2.error||!r2.data||!r2.data.length) return rows;
+    var dead={}; r2.data.forEach(function(o){ dead[o.id]=1; });
+    var kept=rows.filter(function(r){ return !(r.order_id&&dead[r.order_id]); });
+    if(kept.length!==rows.length) console.log("แพลนเมนู: ซ่อน "+(rows.length-kept.length)+" รอบที่ใบออเดอร์ถูกยกเลิกไปแล้ว");
+    return kept;
+  }catch(e){ return rows; }
+}
 async function loadMpPlanData(){
   var sb_=getSB();
   if(!sb_){ mpPlanRows=[]; renderLeftPanel(); _buildPlanTable(); return; }
@@ -2369,7 +2389,7 @@ async function loadMpPlanData(){
       .not("status","in","(delivered,skipped,cancelled)")
       .order("customer_name").order("round_no");
     if(res.error)throw res.error;
-    mpPlanRows=res.data||[];
+    mpPlanRows=await dropCancelledOrderRows(res.data||[]);
     await loadPlanAvoid();
   }catch(e){ console.error("loadMpPlanData:",e); mpPlanRows=[]; }
   renderLeftPanel();
@@ -2696,10 +2716,8 @@ function clickMenu(code){
   selectedRowIds.forEach(function(rowId){
     var r=getMpRow(rowId); if(!r)return;
     if(mpRowTotalQty(rowId)>=mpRowBoxCount(rowId)){ full++; return; }
-    // 🍱 เลือกโค้ดให้ตรงกับแผนของลูกค้าแถวนี้เอง — กดครั้งเดียว ลูกค้า HP ได้ HP· LC ได้ LC
+    // 🍱 จานเดียวกันทุกคน — เลือกโค้ดให้ตรงสัดส่วนของแต่ละคน (HP/LC/HX) ให้อัตโนมัติ
     var realCode=mpCodeFor(baseNo, r.mp_type);
-    // ชุด Hyrox เป็นคนละเมนูกับ Meal Plan — ถ้าเบอร์นี้ไม่มีในชุดของเขา ต้องข้ามและบอก
-    // ไม่ใช่ยัดเลขเปล่าลงไป (ครัวจะเปิดใบมาเจอ "04" แล้วทำอาหารไม่ได้)
     if(!realCode){ noMenu.push((r.customer_name||"ลูกค้า").split("(")[0].trim()); return; }
     var items=r.menu_items?r.menu_items.slice():[];
     var entry=items.find(function(e){return e.code===realCode;});
@@ -3034,11 +3052,10 @@ function renderLeftPanel(){
 
   // N-29 · โชว์ทุกเมนูใน DB ไม่ใช่แค่ 14 ตัวของวันนั้น (เดิมต้องพิมพ์ค้นหา ตอนนี้เลื่อนหาเอา)
   // N-30 · สลับเป็น "เฉพาะที่ต้องผลิตวันนั้น" ได้ — เอาไว้ใช้ตอนสั่งของ/เช็คงานครัว
-  // 🔑 โชว์เมนูเฉพาะ "ตระกูล" ที่ตรงกับแถวที่เลือกอยู่
-  //    เลือกแถว Hyrox → เห็นเฉพาะ HX · เลือกแถว Meal Plan → เห็นเฉพาะ LC/HP
-  //    ไม่งั้นแอดมินกดเมนู Hyrox ใส่ให้ลูกค้า Meal Plan ได้ — คนละชุดอาหารกันคนละเรื่อง
-  var famSel=planFamilySelected();
-  var bases=mpMenuBases(famSel);
+  // 🍱 เมนู LC · HP · HX เป็นชุดเดียวกันทั้งหมด ต่างแค่มาโคร/สัดส่วนที่ผลิต (นัทยืนยัน 11 ส.ค.)
+  //    → โชว์รวมกันหมด ไม่แยกตามตระกูลอีกแล้ว · ครัวทำจานเดียวกันให้ทุกคนอยู่แล้ว
+  //    ตอนกดใส่ ระบบเลือกโค้ดตามสัดส่วนของแต่ละคนให้เอง (ดู mpCodeFor)
+  var bases=mpMenuBases(null);
   var todaySet=todayPlan.map(mpBaseNo);
   bases.forEach(function(b){ if(todaySet.indexOf(b.no)<0) todaySet.push(0); });   // คงลำดับเดิมไว้
   var list=bases.slice().sort(function(a,b2){
