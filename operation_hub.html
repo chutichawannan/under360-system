@@ -512,6 +512,11 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
           onkeydown="if(event.key==='Enter')runOrderSearch()" oninput="ordSearchTyping()"
           style="flex:1;min-width:220px;padding:9px 12px;border:1.5px solid var(--ink-xsoft);border-radius:9px;font-family:var(--sans);font-size:13px">
         <button class="btn" onclick="runOrderSearch()" style="background:var(--forest);color:#fff;border-color:var(--forest)">ค้นหา</button>
+        <!-- ขอบเขตการค้น (นัทขอ 11 ส.ค.) — ค้นชื่อลูกค้าแล้วขึ้นย้อนไปถึงปีที่แล้วทุกใบ -->
+        <span style="display:inline-flex;border:1.5px solid var(--ink-xsoft);border-radius:9px;overflow:hidden">
+          <button class="dtab active" id="ss-all" onclick="setSearchScope('all')" title="ค้นทุกวัน — ใช้ตอนตามหาลูกค้า ไม่รู้ว่าใบอยู่วันไหน" style="border:none;border-radius:0">ทุกวัน</button>
+          <button class="dtab" id="ss-day" onclick="setSearchScope('day')" title="ค้นเฉพาะวันที่เลือกอยู่ตอนนี้" style="border:none;border-radius:0">เฉพาะวันที่เลือก</button>
+        </span>
         <button class="btn" id="ordSearchClear" onclick="clearOrderSearch()" style="display:none">✕ ล้าง</button>
         <button class="btn" id="ordMovedBtn" onclick="toggleMovedOnly()" title="ดูเฉพาะใบที่ถูกเลื่อนวันส่ง — ทั้งที่แอดมินเลื่อนและลูกค้าเลื่อนเอง">🔁 ใบที่ถูกเลื่อน</button>
         <button class="btn" id="ordCancelBtn" onclick="toggleCancelledOnly()" title="ดูใบที่ถูกยกเลิก — กดเข้าไปแล้วกู้คืนได้">🗑️ ใบที่ยกเลิก</button>
@@ -1094,6 +1099,14 @@ var ordRows=[], ordPage=0, ordLoading=false, ordTotal=0, rangeFrom=null, rangeTo
 // ต้องยิงหาที่ฐานข้อมูล ไม่ใช่กรองแถวที่โหลดมาแล้ว — หน้านี้โหลดทีละ 20 ใบจาก 15,000+
 // ตอนค้นหา = มองข้ามตัวกรองวัน (แอดมินไม่รู้ว่าใบอยู่วันไหน ถึงต้องค้น) และ **เห็นใบที่ยกเลิกด้วย**
 var ordSearchQ="";
+var ordSearchScope="all";   // all = ค้นทุกวัน (ตามหาลูกค้า) · day = เฉพาะวันที่เลือกอยู่
+function setSearchScope(s){
+  ordSearchScope=s; ordPage=0;
+  var a=document.getElementById("ss-all"), b=document.getElementById("ss-day");
+  if(a) a.classList.toggle("active",s==="all");
+  if(b) b.classList.toggle("active",s==="day");
+  if(ordSearchQ) fetchOrdersPage();   // มีคำค้นอยู่แล้วให้ค้นใหม่ทันที ไม่ต้องกดค้นซ้ำ
+}
 function ordSearchClean(s){ return String(s||"").trim().replace(/[,()*\\]/g," ").replace(/\s+/g," "); }
 function ordSearchTyping(){
   var b=document.getElementById("ordSearchClear");
@@ -1143,9 +1156,18 @@ function ordBaseQuery(sb_,todayStr,tomStr){
   var q=sb_.from("orders").select("*",{count:"exact"});
   if(ordSearchQ){
     var t=ordSearchQ;
-    return q.or("order_number.ilike.*"+t+"*,customer_name.ilike.*"+t+"*,customer_phone.ilike.*"+t+"*,line_display_name.ilike.*"+t+"*")
-            .or(NOTEST)
-            .order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
+    q=q.or("order_number.ilike.*"+t+"*,customer_name.ilike.*"+t+"*,customer_phone.ilike.*"+t+"*,line_display_name.ilike.*"+t+"*")
+       .or(NOTEST);
+    /* ขอบเขตการค้น (นัทขอ 11 ส.ค.) — ค้น "กวาง" แล้วขึ้นย้อนไปถึงปีที่แล้วทุกใบ
+       ทุกวัน = ตามหาลูกค้า ไม่รู้ว่าใบอยู่วันไหน · เฉพาะวันที่เลือก = หาใบของวันที่กำลังทำงานอยู่ */
+    if(ordSearchScope==="day"){
+      if(dateMode==="today")                 q=ordApplyDay(q,todayStr);
+      else if(dateMode==="tomorrow")         q=ordApplyDay(q,tomStr);
+      else if(dateMode==="pick"&&pickedDate) q=ordApplyDay(q,pickedDate);
+      else if(dateMode==="range"&&rangeFrom&&rangeTo) q=ordApplyRange(q,rangeFrom,rangeTo);
+      else                                   q=ordApplyDay(q,todayStr);
+    }
+    return q.order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
   }
   // 🔁 ใบที่ถูกเลื่อน — ข้ามตัวกรองวัน เพราะแอดมินอยากรู้ว่า "ที่เลื่อนไปแล้วไปอยู่วันไหน"
   if(ordMovedOnly){
@@ -1202,7 +1224,12 @@ async function fetchOrdersPage(){
     if(ordSearchQ){
       title="ผลค้นหา \""+ordSearchQ+"\"";
       var hh2=document.getElementById("ordSearchHint");
-      if(hh2) hh2.textContent=ordTotal?("เจอ "+ordTotal+" ใบ (ค้นทุกวัน รวมใบที่ยกเลิก)"):"ไม่เจอใบไหนเลย — ลองพิมพ์แค่บางส่วนของชื่อหรือเบอร์";
+      var scopeTxt=(ordSearchScope==="day")
+        ? "ค้นเฉพาะ"+(ordByMode==="created"?"วันสั่ง ":"วันส่ง ")+(dateMode==="today"?todayStr:dateMode==="tomorrow"?tomStr:(pickedDate||todayStr))
+        : "ค้นทุกวัน";
+      if(hh2) hh2.textContent=ordTotal
+        ? ("เจอ "+ordTotal+" ใบ ("+scopeTxt+" รวมใบที่ยกเลิก)")
+        : ("ไม่เจอใบไหนเลย — "+(ordSearchScope==="day"?"ลองสลับเป็น \"ทุกวัน\" ดู":"ลองพิมพ์แค่บางส่วนของชื่อหรือเบอร์"));
     }
     else if(ordMovedOnly){
       title="🔁 ใบที่ถูกเลื่อนวันส่ง";
