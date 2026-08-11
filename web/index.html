@@ -215,6 +215,24 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 .sets tr:last-child td{border-bottom:0}
 .sets-wrap{overflow-x:auto}
 
+/* ── เมนูจริงจากครัว ── */
+.menu-sec{background:var(--paper)}
+.mtabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.mtabs button{font-family:'Prompt';font-weight:600;font-size:.9rem;padding:8px 16px;border-radius:999px;border:1.5px solid rgba(20,56,35,.15);background:transparent;color:var(--ink);cursor:pointer;transition:all .15s}
+.mtabs button:hover{border-color:var(--green)}
+.mtabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-top:24px}
+.mcard{background:var(--cream);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.mcard .ph{aspect-ratio:1/1;background:#EDE7D8;overflow:hidden}
+.mcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.mcard:hover img{transform:scale(1.04)}
+.mcard .mb{padding:12px 13px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.mcard h4{font-family:'Sarabun';font-weight:500;font-size:.92rem;color:var(--ink);line-height:1.45;flex:1}
+.mcard .mp{font-family:'Prompt';font-weight:700;color:var(--deep);font-size:1rem}
+.mcard .mp small{font-weight:400;color:var(--muted);font-size:.78rem}
+.menu-note{color:var(--muted);font-size:.9rem;margin-top:18px}
+@media(max-width:520px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px}.mcard h4{font-size:.86rem}}
+
 /* ── soul ── */
 .soul{background:var(--deep);color:var(--cream)}
 .soul .wrap{max-width:720px;text-align:center}
@@ -326,6 +344,19 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- เมนูจริงจากครัว -->
+<section class="menu-sec" id="menu">
+  <div class="wrap">
+    <p class="eyebrow">เมนูของเรา</p>
+    <h2 class="sec">อาหารจริงจากครัวเรา — สั่งทีละกล่องก็ได้</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">ไม่ต้องสมัครคอร์สก็สั่งได้ · เมนูหมุนเวียนทุกสัปดาห์ ทำจากครัวของเราเอง <b>รูปทุกใบคืออาหารจริงที่เราส่งให้ลูกค้า</b> ไม่ใช่ภาพสต็อก</p>
+    <div class="mtabs" id="mtabs"></div>
+    <div class="mgrid" id="mgrid"><p style="color:var(--muted)">กำลังโหลดเมนู…</p></div>
+    <p class="menu-note" id="mnote"></p>
+    <p style="margin-top:18px"><a class="btn-line" href="#" onclick="return orderNow(this)">ดูเมนูทั้งหมด + สั่งในแอป →</a></p>
   </div>
 </section>
 
@@ -617,6 +648,61 @@ const FALLBACK_POSTS = [
       <h3>${p.title}</h3>
       <span>อ่านต่อ →</span>
     </a>`).join('');
+})();
+
+/* ═══ เมนูจริงจากครัว — ดึงสดจาก Supabase (เมนูเปลี่ยน เว็บอัปเดตเอง) ═══ */
+(async function loadMenu(){
+  const grid = document.getElementById('mgrid');
+  const tabs = document.getElementById('mtabs');
+  const note = document.getElementById('mnote');
+  if(!grid) return;
+
+  /* หมวดที่โชว์บนเว็บ + ลำดับ (เว็บสาธารณะไม่โชว์ HP/LC/HX เพราะเป็นเมนูที่ครัวจัดให้ ไม่ให้เลือกเอง) */
+  const SHOW = ['no_special','pack_regular','cat_mqz5oz7oey9','cat_mqwg0bh3vho','cat_mqz49my7l8r','cat_mqz6m6b7gkm'];
+  const thumb = code => `${SB_URL}/storage/v1/render/image/public/menu-images/${encodeURIComponent(code)}.jpg?width=400&quality=70`;
+
+  let items = [], labels = {};
+  try{
+    const [mRes, cRes] = await Promise.all([
+      sb.from('menu_items').select('code,name,price,category,image_urls').eq('is_available',true).limit(300),
+      sb.from('kitchen_data').select('data').eq('key','appConfig').limit(1)
+    ]);
+    if(mRes.error) throw mRes.error;
+    items = (mRes.data||[]).filter(x => Array.isArray(x.image_urls) && x.image_urls[0] && +x.price > 0);
+    ((cRes.data && cRes.data[0] && cRes.data[0].data && cRes.data[0].data.categories) || [])
+      .forEach(c => { labels[c.key] = c.label; });
+  }catch(e){
+    grid.innerHTML = '<p style="color:var(--muted)">ดูเมนูทั้งหมดได้ในแอป — กดปุ่มด้านล่างได้เลย</p>';
+    return;
+  }
+  if(!items.length){ grid.innerHTML = '<p style="color:var(--muted)">ดูเมนูทั้งหมดได้ในแอป</p>'; return; }
+
+  const cats = SHOW.filter(k => items.some(i => i.category === k));
+  if(!cats.length){ grid.innerHTML=''; return; }
+  let active = cats[0];
+
+  function render(){
+    const list = items.filter(i => i.category === active);
+    grid.innerHTML = list.slice(0,12).map(i => `
+      <div class="mcard">
+        <div class="ph"><img src="${thumb(i.code)}" alt="${(i.name||'').replace(/"/g,'')}" loading="lazy"
+             onerror="this.closest('.mcard').style.display='none'"></div>
+        <div class="mb">
+          <h4>${i.name||''}</h4>
+          <div class="mp">฿${Math.round(i.price)}</div>
+        </div>
+      </div>`).join('');
+    note.textContent = list.length > 12
+      ? `แสดง 12 จาก ${list.length} เมนูในหมวดนี้ — ดูครบทุกเมนูได้ในแอป`
+      : `${list.length} เมนูในหมวดนี้`;
+    [...tabs.children].forEach(b => b.classList.toggle('on', b.dataset.k === active));
+  }
+
+  tabs.innerHTML = cats.map(k =>
+    `<button data-k="${k}">${labels[k] || k} <span style="opacity:.6">(${items.filter(i=>i.category===k).length})</span></button>`
+  ).join('');
+  tabs.onclick = e => { const b = e.target.closest('button'); if(!b) return; active = b.dataset.k; render(); };
+  render();
 })();
 </script>
 </body>
