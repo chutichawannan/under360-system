@@ -1727,6 +1727,71 @@ async function odUploadSlip(orderId, ev){
 // เก็บประวัติลง activity_log (ตารางที่มีอยู่แล้ว) แทนการฝังเป็นข้อความในโน้ต
 //   → ค้นได้ ย้อนดูได้ว่าใครเลื่อน เมื่อไหร่ จากวันไหนไปวันไหน · ไม่ต้องรัน SQL เพิ่ม
 var OD_MOVE_TAG="[เลื่อนวันส่ง";
+
+/* ── ❄️ เก็บไว้ส่งวันหลัง (ห้องฟ้าส่งสเปค · นัทสั่ง bypass 11 ส.ค.) ────────────
+   ปัญหาจริง: ครัวจัดของล่วงหน้าแล้วแช่เย็น พอถึงวันส่งจริง **ของหาย**
+   เพราะไม่มีอะไรในระบบบอกว่า "ทำไว้แล้ว อยู่ในตู้"
+   ⚠️ ห้ามลดรูปเหลือ "เปลี่ยน delivery_date เฉยๆ" — ครัววันที่จัดจะมองไม่เห็น แล้วไม่ได้ทำ
+   วิธี: delivery_date = วันส่งจริง (ขนส่ง/แมสถูกต้อง) + ประทับป้ายบอกวันที่จัด
+         แล้วให้หน้าครัวดึงใบที่ "จัดวันนี้" กลับมาโชว์เพิ่ม = โผล่ทั้ง 2 วัน */
+var OD_FRIDGE_RE=/\[เก็บตู้ จัด (\d{4}-\d{2}-\d{2}) ส่ง (\d{4}-\d{2}-\d{2})\]/;
+function odFridgeInfo(o){
+  var m=String((o&&o.notes)||"").match(OD_FRIDGE_RE);
+  return m?{prep:m[1], ship:m[2]}:null;
+}
+async function odFridge(id){
+  var sb_=getSB(); if(!sb_)return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
+  if(!o) return alert("ไม่พบออเดอร์");
+  var who=odWho(); if(!who) return;
+  var prep=o.delivery_date||today2();       // วันที่จัด = วันที่ใบอยู่ตอนนี้ (ครัวทำวันนั้น)
+  var ship=window.prompt("จัดของวันไหน: "+prep+"\n\nแล้วจะเอาไปส่งวันไหน? (ปปปป-ดด-วว)\nเช่น 2026-08-14","");
+  if(!ship) return;
+  ship=String(ship).trim();
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(ship)) return alert("รูปแบบวันที่ไม่ถูก ต้องเป็น 2026-08-14");
+  if(ship<=prep) return alert("วันส่งต้องอยู่หลังวันที่จัด\nถ้าจะเลื่อนไปทำวันใหม่ ให้ใช้ปุ่ม 📅 เลื่อนวัน แทน");
+  if(new Date(ship+"T00:00:00").getDay()===6) return alert("วันเสาร์ร้านไม่ส่ง — เลือกวันอื่น");
+  if(!window.confirm("❄️ เก็บไว้ส่งวันหลัง\n\n"+(o.order_number||"")+" · "+(o.customer_name||"")
+      +"\nจัดของ "+prep+"  →  ส่ง "+ship
+      +"\n\nครัวจะเห็นใบนี้ 2 วัน:\n· "+prep+" = ทำแล้วเก็บตู้\n· "+ship+" = ไปหยิบจากตู้ ไม่ต้องทำใหม่\n\nคนกด: "+who)) return;
+  try{
+    var tag="[เก็บตู้ จัด "+prep+" ส่ง "+ship+" โดย "+who+"]";
+    var notes=String(o.notes||"").replace(OD_FRIDGE_RE,"").trim();
+    notes=(notes?notes+" ":"")+tag;
+    var up=await sb_.from("orders").update({delivery_date:ship,notes:notes,updated_at:new Date().toISOString()}).eq("id",id).select("id,delivery_date");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].delivery_date!==ship) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
+    /* รอบผลิต Meal Plan ต้องตามไปวันส่งด้วย (เหมือนตอนเลื่อนวัน) */
+    await sb_.from("mp_deliveries").update({delivery_date:ship,updated_at:new Date().toISOString()})
+             .eq("order_id",id).neq("status","cancelled");
+    try{
+      await sb_.from("activity_log").insert({
+        session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+        actor:who, source:"oh", action_type:"order_fridge",
+        summary:(o.order_number||"ออเดอร์")+" "+(o.customer_name||"")+" — เก็บตู้ จัด "+prep+" ส่ง "+ship,
+        detail:{order_id:id, prep:prep, ship:ship}
+      });
+    }catch(e){}
+    alert("❄️ บันทึกแล้ว — ครัวจะเห็นใบนี้ทั้งวันที่ "+prep+" และ "+ship);
+    closeOrderDetail(); loadAll(true);
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+async function odUnfridge(id){
+  var sb_=getSB(); if(!sb_)return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  if(!o){ var r1=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r1.data; }
+  if(!o) return;
+  var fr=odFridgeInfo(o); if(!fr) return;
+  if(!window.confirm("ยกเลิกการเก็บตู้?\n\nใบจะกลับไปอยู่วันที่ "+fr.prep+" ตามเดิม\n(ครัววันที่ "+fr.ship+" จะไม่เห็นใบนี้แล้ว)")) return;
+  try{
+    var notes=String(o.notes||"").replace(OD_FRIDGE_RE,"").trim();
+    var up=await sb_.from("orders").update({delivery_date:fr.prep,notes:notes,updated_at:new Date().toISOString()}).eq("id",id).select("id");
+    if(up.error) throw up.error;
+    await sb_.from("mp_deliveries").update({delivery_date:fr.prep,updated_at:new Date().toISOString()}).eq("order_id",id).neq("status","cancelled");
+    closeOrderDetail(); loadAll(true);
+  }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
 // รับได้ทั้งที่แอดมินเลื่อนใน OH และที่ลูกค้าเลื่อนเองใน LIFF (คนละข้อความ ความหมายเดียวกัน)
 function odIsMoved(o){ return /\[เลื่อนวัน(ส่ง|โดยลูกค้า)/.test(String(o&&o.notes||"")); }
 function odMoveBadge(o){
@@ -1911,8 +1976,20 @@ async function openOrderDetail(id){
         +"<div style='font-size:11.5px;color:#7F1D1D;margin:3px 0 9px'>ไม่ขึ้นในรายการออเดอร์ · ครัวไม่เห็น · ไม่นับเป็นยอดขาย</div>"
         +"<button class='btn' onclick=\"odUncancel('"+id+"')\">↩ กู้คืนออเดอร์นี้</button></div>";
     }else{
-      h+="<div style='margin-top:12px;padding-top:10px;border-top:1px dashed var(--ink-xsoft)'>"
-        +"<button class='btn' onclick=\"odCancelOrder('"+id+"')\" style='color:#B91C1C;border-color:#FECACA'>🗑️ ยกเลิกออเดอร์นี้</button>"
+      /* ❄️ เก็บไว้ส่งวันหลัง — คนละเรื่องกับ "เลื่อนวันส่ง" (ห้ามรวมเป็นปุ่มเดียว ตามที่ฟ้าย้ำ)
+         เลื่อนวันส่ง = ยังไม่ได้ทำ ยกไปทำวันใหม่ · อันนี้ = ทำแล้ว แช่ตู้ไว้ รอวันส่ง */
+      var fr=odFridgeInfo(o);
+      h+="<div style='margin-top:12px;padding-top:10px;border-top:1px dashed var(--ink-xsoft)'>";
+      if(fr){
+        h+="<div style='background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 12px;margin-bottom:8px'>"
+          +"<div style='font-weight:800;color:#1E40AF;font-size:13px'>❄️ ของทำแล้ว เก็บในตู้เย็น</div>"
+          +"<div style='font-size:12px;color:#1E3A8A;margin-top:2px'>จัดเมื่อ "+esc2(fr.prep)+" · ส่ง "+esc2(fr.ship)+"</div>"
+          +"<button class='btn' onclick=\"odUnfridge('"+id+"')\" style='margin-top:8px;font-size:11.5px;padding:4px 10px'>↩ ยกเลิกการเก็บตู้</button></div>";
+      }else{
+        h+="<button class='btn' onclick=\"odFridge('"+id+"')\" style='color:#1E40AF;border-color:#BFDBFE'>❄️ เก็บไว้ส่งวันหลัง</button>"
+          +"<span style='font-size:11px;color:#9CA3AF;margin-left:8px'>จัดของวันนี้ แช่ตู้ไว้ ส่งวันอื่น — ครัวจะเห็นทั้ง 2 วัน</span><br>";
+      }
+      h+="<button class='btn' onclick=\"odCancelOrder('"+id+"')\" style='margin-top:8px;color:#B91C1C;border-color:#FECACA'>🗑️ ยกเลิกออเดอร์นี้</button>"
         +"<span style='font-size:11px;color:#9CA3AF;margin-left:8px'>ใบซ้ำ / ลูกค้าไม่เอาแล้ว — ยกเลิกแล้วกู้คืนได้</span></div>";
     }
     body.innerHTML=h;

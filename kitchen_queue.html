@@ -116,7 +116,12 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
 .oc-collapsed .oc-caret{transform:rotate(-90deg);}
 .oc-boxn{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--soft);}
-.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:none;}
+.oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed /* ❄️ แถบของที่แช่ตู้ — ต้องเด่นกว่าปกติ เพราะเป็นของที่ครัวพลาดแล้วลูกค้าไม่ได้ของ */
+.oc-fridge{background:#DBEAFE;color:#1E40AF;font-size:13.5px;font-weight:800;padding:7px 12px;border-radius:8px;margin-bottom:8px;line-height:1.4;}
+.oc-fridge.take{background:#FEF3C7;color:#92400E;}
+body.tablet .oc-fridge{font-size:17px;padding:10px 14px;}
+@media print{.oc-fridge{border:1px solid #333;background:#fff!important;color:#000!important;}}
+.oc-note{display:none;}
 .oc-collapsed .oc-2col{display:block;}
 .oc-collapsed .oc-top{margin-bottom:0;}
 .oc-collapsed{padding-top:9px;padding-bottom:9px;}
@@ -535,10 +540,21 @@ async function loadAll(){
 function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชแล้วลองใหม่"); }
 
 // ── FILTER ───────────────────────────────────────────────
+/* ❄️ ใบที่ "ทำแล้วแช่ตู้ รอส่งวันหลัง" — ต้องโผล่ 2 วัน (วันที่จัด + วันที่ส่ง)
+   ถ้าโผล่แค่วันส่ง = ครัววันที่จัดไม่เห็น เลยไม่ได้ทำ · ถ้าโผล่แค่วันจัด = วันส่งไม่มีใครรู้ว่าต้องไปหยิบ
+   (ของหายจริงมาแล้ว — ห้องฟ้าเจอเคสนวภัท 11 ส.ค.) */
+var KQ_FRIDGE_RE=/\[เก็บตู้ จัด (\d{4}-\d{2}-\d{2}) ส่ง (\d{4}-\d{2}-\d{2})/;
+function kqFridge(o){
+  var m=String((o&&o.notes)||"").match(KQ_FRIDGE_RE);
+  return m?{prep:m[1], ship:m[2]}:null;
+}
 function filteredOrders(){
   var tgt=getTargetDate();
   return allOrders.filter(function(o){
-    if(tgt&&o.delivery_date!==tgt)return false;
+    if(tgt&&o.delivery_date!==tgt){
+      var f=kqFridge(o);
+      if(!(f&&f.prep===tgt)) return false;   // ดึงใบที่ "จัดวันนี้ แต่ส่งวันอื่น" กลับมาให้ครัวเห็น
+    }
     if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
     // 🔴 ใบที่ยกเลิก + ออเดอร์เทส ต้องไม่โผล่หน้าครัว — ครัวเคยเห็น 13 ใบทั้งที่งานจริง 12
     //    (นัทเปิดจอจริงเจอ 5 ส.ค. 2569 · ตัวเกินคือ U-0805-001 ที่ cancelled ไปแล้ว)
@@ -1055,7 +1071,16 @@ function renderCard(o){
   if(!nBox){ var _mp=findMpFor(o); if(_mp&&_mp.box_count) nBox=_mp.box_count; }
   var boxTag="<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
+  /* ❄️ แถบบอกสถานะของที่แช่ตู้ — ข้อความต่างกันตามว่ากำลังดูวันไหน */
+  var _fr=kqFridge(o), _tgt=getTargetDate(), frBar="";
+  if(_fr && _tgt===_fr.prep)
+    frBar="<div class='oc-fridge'>❄️ จัดวันนี้ แล้วเก็บเข้าตู้เย็น · ส่งวันที่ "+escH(_fr.ship)+"</div>";
+  else if(_fr && _tgt===_fr.ship)
+    frBar="<div class='oc-fridge take'>❄️ ของอยู่ในตู้แล้ว (จัดเมื่อ "+escH(_fr.prep)+") — ไปหยิบ ไม่ต้องทำใหม่</div>";
+  else if(_fr)
+    frBar="<div class='oc-fridge'>❄️ เก็บตู้ · จัด "+escH(_fr.prep)+" · ส่ง "+escH(_fr.ship)+"</div>";
   return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+"' data-oid='"+escH(o.id)+"'>"
+    +frBar
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
         +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
