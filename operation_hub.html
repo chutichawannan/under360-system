@@ -2448,6 +2448,19 @@ function mpPlanSubs(){
 }
 function getMpRow(rowId){ return mpPlanRows.find(function(x){return x.id===rowId;}); }
 function mpRowItems(rowId){ var r=getMpRow(rowId); return (r&&Array.isArray(r.menu_items))?r.menu_items:[]; }
+/* ชื่อจานสำหรับแสดงผล — บางแถวเก็บไว้เป็นเลขฐานเปล่า ("04") ทั้งรหัสและชื่อ
+   ซึ่ง "ไม่ผิด" เพราะใบงานครัวก็เรียกเมนูด้วยเลขฐานเหมือนกัน (ฟ้าจัด 04/05/07/11/13/22 ให้ทุกคน)
+   แต่บนหน้าจอมันอ่านไม่ออก → หาชื่อจริงมาโชว์ตอน render โดยไม่ไปแก้ข้อมูลของลูกค้า
+   LC · HP · HX ใช้เมนูชุดเดียวกัน ต่างแค่สัดส่วน จึงหาข้ามตระกูลได้เลย */
+function mpDishName(e){
+  if(!e) return "";
+  var nm=String(e.name||"").trim(), code=String(e.code||"").trim();
+  if(nm && nm!==code && !/^\d+$/.test(nm)) return nm;
+  var m=(MENU_POOL||[]).find(function(x){return x.code===code;});
+  if(m&&m.name) return m.name;
+  var b=mpBaseByNo(mpBaseNo(code), null);
+  return (b&&b.name) ? b.name : nm;
+}
 function mpRowTotalQty(rowId){ return mpRowItems(rowId).reduce(function(s,e){return s+(e.qty||1);},0); }
 function mpRowBoxCount(rowId){ var r=getMpRow(rowId); return (r&&r.box_count)||7; }
 function getEntry(rowId,code){ return mpRowItems(rowId).find(function(e){return e.code===code;}); }
@@ -3160,6 +3173,7 @@ function renderPlanCell(rowId){
   var h=roundLabel+"<div class='assign-grid'>";
   arr.forEach(function(e){
     var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc",name:e.name||""};
+    m={type:m.type||"lc", name:mpDishName(e)};
     h+="<div class='assign-chip-full "+m.type+"'>";
     h+="<div class='acf-top'><span class='rm-chip' onclick='event.stopPropagation();removeMenuEntry(\""+rowId+"\",\""+e.code+"\")' title='ลบ'>×</span><b>"+e.code+"</b>";
     if((e.qty||1)>1)h+="<span class='qty-badge'>×"+e.qty+"</span>";
