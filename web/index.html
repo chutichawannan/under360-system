@@ -188,6 +188,39 @@ footer a{color:rgba(250,246,236,.85);text-decoration:none;margin-right:16px}
 footer a:hover{text-decoration:underline}
 
 h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
+
+/* ── trust strip (hero) ── */
+.trust{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:16px}
+.trust span{font-size:.9rem;color:rgba(250,246,236,.75)}
+.trust b{font-family:'Prompt';font-weight:700;color:#9FE3AE;font-size:1.02rem}
+
+/* ── ราคาเริ่มต้นบนการ์ด ── */
+.price-from{font-family:'Prompt';font-weight:600;color:var(--deep);font-size:.98rem;margin:-2px 0 2px}
+.price-from small{font-weight:400;color:var(--muted);font-size:.86rem}
+
+/* ── how it works ── */
+.how{background:var(--paper)}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:28px}
+.how-step{background:var(--cream);border-radius:var(--radius);padding:22px}
+.how-step b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-family:'Prompt';margin-bottom:10px}
+.how-step h3{font-size:1.05rem;color:var(--deep);margin-bottom:6px}
+.how-step p{font-size:.93rem;color:var(--muted)}
+@media(max-width:760px){.how-steps{grid-template-columns:1fr}}
+
+/* ── ตารางเซ็ต/คอร์ส ── */
+.sets{width:100%;border-collapse:collapse;margin-top:24px;font-size:.95rem;background:var(--paper);border-radius:var(--radius);overflow:hidden}
+.sets th,.sets td{padding:12px 14px;text-align:left;border-bottom:1px solid rgba(20,56,35,.08)}
+.sets th{background:rgba(46,125,67,.08);font-family:'Prompt';color:var(--deep);font-weight:600}
+.sets td b{font-family:'Prompt';color:var(--deep)}
+.sets tr:last-child td{border-bottom:0}
+.sets-wrap{overflow-x:auto}
+
+/* ── soul ── */
+.soul{background:var(--deep);color:var(--cream)}
+.soul .wrap{max-width:720px;text-align:center}
+.soul h2{color:#fff;font-size:clamp(1.4rem,3vw,1.95rem)}
+.soul p{color:rgba(250,246,236,.85);margin-top:14px;font-size:1.02rem}
+.soul .sig{margin-top:18px;font-family:'Prompt';color:#9FE3AE;font-size:.95rem}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -231,7 +264,12 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         </a>
         <a class="btn-ghost" style="border-color:rgba(255,255,255,.5);color:var(--cream)" href="mealplan.html">ดู Meal Plan →</a>
       </div>
-      <p class="note">สั่งง่าย จบใน LINE · แอดมินตอบไว · แจ้งช่วงเวลาที่สะดวกรับได้</p>
+      <p class="note">🕐 <b>สั่งเองได้ตลอด 24 ชม.</b> — เลือกเมนู ดูราคา จ่ายจบในแอป ไม่ต้องรอแอดมินตอบ · แจ้งช่วงเวลาที่สะดวกรับได้</p>
+      <div class="trust">
+        <span><b>10 ปี</b> ทำครัวเอง</span>
+        <span><b>8,000+</b> ลูกค้าที่เคยสั่ง</span>
+        <span><b>13,000+</b> ครั้งที่ส่งถึงบ้าน</span>
+      </div>
     </div>
     <div class="hero-img">
       <img src="img/img12.png" alt="ข้าวกล่องอาหารสุขภาพ Under360 โปรตีนแน่น" loading="eager">
@@ -261,7 +299,8 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         <div class="body">
           <span class="tag hot">⭐ ยอดนิยม</span>
           <h3>Meal Plan — โปรตีนสูง (HP) &amp; Low Carb (LC)</h3>
-          <p>คอร์สอาหารทำสดรายวัน จัดเมนูให้ตามเป้าหมาย ไม่ซ้ำจำเจ ตัดของแพ้อัตโนมัติ เนื้อสัตว์ 170 g (HP) หรือ 120 g (LC) ต่อกล่อง เริ่มทดลอง 7 กล่อง — ส่งฟรีทั่วกรุงเทพ</p>
+          <p class="price-from">เริ่ม ฿1,399 <small>· ชุดทดลอง 7 กล่อง · ส่งฟรี</small></p>
+          <p>คอร์สอาหารทำสดรายวัน จัดเมนูให้ตามเป้าหมาย ไม่ซ้ำจำเจ ตัดของแพ้อัตโนมัติ เนื้อสัตว์ 170 g (HP) หรือ 120 g (LC) ต่อกล่อง — ทำสดส่งบ่าย จันทร์ พุธ ศุกร์</p>
           <a class="more" href="mealplan.html">ดูรายละเอียด + ราคา →</a>
         </div>
       </div>
@@ -270,7 +309,8 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         <div class="body">
           <span class="tag">พร้อมทาน · เลือกเอง</span>
           <h3>ข้าวกล่องสุขภาพ &amp; คอร์สเลือกเมนูเอง</h3>
-          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ — สั่งทีละกล่อง หรือจัดเป็น<b>คอร์ส/เซ็ต เลือกเมนูเอง แบ่งส่งหลายรอบ เลือกวันรับเองได้</b> เหมาะกับคนอยากคุมเมนู/ไซส์เอง สั่งล่วงหน้า 1 วัน ส่งทั่วกรุงเทพ</p>
+          <p class="price-from">เริ่ม ฿125/กล่อง <small>· สั่งทีละกล่องก็ได้</small></p>
+          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ — สั่งทีละกล่อง หรือจัดเป็น<b>คอร์ส/เซ็ต เลือกเมนูเอง แบ่งส่งหลายรอบ เลือกวันรับเองได้</b> เหมาะกับคนอยากคุมเมนู/ไซส์เอง</p>
           <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
         </div>
       </div>
@@ -279,11 +319,52 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         <div class="body">
           <span class="tag">ฟรีซแพ็ค · ส่งทั่วไทย</span>
           <h3>แพ็คกับข้าวฟรีซแพ็ค</h3>
+          <p class="price-from">เริ่ม ฿70/แพ็ค <small>· ตุนไว้ทานได้นาน</small></p>
           <p>กับข้าวล้วนโปรตีน 120 g ปรุงเสร็จแช่แข็งทันทีเพื่อคงคุณภาพ เหมาะกับการตุนไว้ทานหรืออยู่ต่างจังหวัด จัดส่งรถควบคุมอุณหภูมิทั่วประเทศ</p>
           <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
         </div>
       </div>
     </div>
+  </div>
+</section>
+
+<!-- SETS / COURSES -->
+<section id="sets" style="background:var(--cream)">
+  <div class="wrap">
+    <p class="eyebrow">เซ็ต &amp; คอร์ส</p>
+    <h2 class="sec">สั่งเป็นเซ็ต — ถูกกว่าซื้อทีละกล่อง</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">เซ็ตทำจากเมนูที่เตรียมล่วงหน้า จึง<b>เลือกเมนูเองได้ และเลือกวันรับเองได้</b> · เซ็ตใหญ่แบ่งส่งหลายรอบ ไม่ต้องรับทีเดียวหมด · <b>ทุกเซ็ตส่งฟรี</b></p>
+    <div class="sets-wrap">
+      <table class="sets">
+        <thead><tr><th>เซ็ต</th><th>จำนวน</th><th>ราคา</th><th>ตกกล่องละ</th><th>รับของ</th></tr></thead>
+        <tbody>
+          <tr><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
+          <tr><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
+          <tr><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
+          <tr><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
+          <tr><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:12px">* ซื้อทีละกล่องเริ่ม ฿125 — เซ็ตจึงคุ้มกว่าตั้งแต่เซ็ตเล็กสุด · ราคาอาจมีปรับตามเมนูพรีเมียมที่เลือก</p>
+    <p style="margin-top:20px"><a class="btn-line" href="#" onclick="return orderNow(this)">เลือกเซ็ตในแอป →</a></p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="wrap">
+    <p class="eyebrow">สั่งยังไง</p>
+    <h2 class="sec">3 ขั้น จบในแอป — ไม่ต้องรอใครตอบ</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">เราทำระบบสั่งอาหารของร้านเอง เปิดจาก LINE ได้เลย <b>เลือกเมนู เห็นราคา เห็นค่าส่งก่อนจ่าย</b> — สั่งตอนตีสองก็ได้</p>
+    <div class="how-steps">
+      <div class="how-step"><b>1</b><h3>เปิดเมนูใน LINE</h3><p>เห็นเมนูทั้งหมดพร้อมรูปและราคา เลือกใส่ตะกร้าเหมือนช้อปออนไลน์ทั่วไป</p></div>
+      <div class="how-step"><b>2</b><h3>ปักหมุดที่อยู่</h3><p>ระบบคิดค่าส่งจากระยะทางจริงให้เห็นก่อนจ่าย ไม่มีบวกทีหลัง</p></div>
+      <div class="how-step"><b>3</b><h3>เลือกวันรับ แล้วจ่าย</h3><p>โอนแล้วแนบสลิปในแอป ครัวเห็นออเดอร์ทันที · Meal Plan ทำสดส่งบ่าย จ/พ/ศ</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:.92rem;margin-top:18px">ยังอยากคุยกับคนอยู่? ทักแชทมาได้เหมือนเดิม — แอดมินช่วยจัดให้ทุกขั้นตอน</p>
   </div>
 </section>
 
@@ -302,6 +383,17 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
         <li><b>ซื่อสัตย์กับคนกิน</b> — เราไม่เคลมว่าสมบูรณ์แบบ แต่เลี่ยงของ ultra-processed ให้มากที่สุด และบอกตรงๆ ว่าแต่ละเมนูคืออะไร</li>
       </ul>
     </div>
+  </div>
+</section>
+
+<!-- SOUL -->
+<section class="soul">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#9FE3AE">สิ่งที่เราไม่ยอมเปลี่ยน</p>
+    <h2>ร้านนี้โตมาเพราะ "คนดูแลคน"</h2>
+    <p>Under360 เริ่มจากครัวเล็กๆ ที่เจ้าของตอบแชทลูกค้าเอง จำได้ว่าใครไม่กินอะไร ใครกำลังลดน้ำหนักอยู่ ใครสั่งให้พ่อแม่ที่ต่างจังหวัด — <b>ความสัมพันธ์แบบนั้นคือสิ่งที่เราหวงที่สุด</b></p>
+    <p>เราเอาเทคโนโลยีมาใช้เต็มที่ แต่ใช้กับ<b>หลังบ้าน</b> — ครัว ออเดอร์ การจัดส่ง — เพื่อ<b>คืนเวลาให้คนของเราไปดูแลลูกค้าได้มากขึ้น</b> ไม่ใช่เอาระบบมาแทนคน</p>
+    <p class="sig">— ทำครัวเอง ตอบเอง ส่งเอง มา 10 ปี</p>
   </div>
 </section>
 
@@ -377,7 +469,12 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 <section class="final">
   <div class="wrap">
     <h2>บอกเป้าหมายของคุณมา<br>ที่เหลือให้ครัวเราจัดการ</h2>
-    <p>เริ่มจากทดลอง Meal Plan 7 กล่อง หรือสั่งข้าวกล่องทีละมื้อก็ได้ — ทักมาคุยกันก่อนได้ ไม่มีข้อผูกมัด</p>
+    <p>เริ่มจากข้าวกล่องมื้อเดียว ฿125 · เซ็ตลองทาน ฿1,350 · หรือ Meal Plan ทดลอง 7 กล่อง ฿1,399 — <b>สั่งเองในแอปได้เลย</b> หรือทักมาคุยกันก่อนก็ได้ ไม่มีข้อผูกมัด</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:center;margin:0 auto 24px;max-width:36em;font-size:.92rem;color:rgba(250,246,236,.75)">
+      <span>⭐ <b style="color:#9FE3AE">4.1</b> บน Wongnai</span>
+      <span>👥 ชุมชนกว่า <b style="color:#9FE3AE">150,000</b> คนบน FB + IG</span>
+      <span>🍱 เมนูหมุนเวียนกว่า <b style="color:#9FE3AE">100</b> รายการ</span>
+    </div>
     <a class="btn-line" href="#" onclick="return orderNow(this)">
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
       เริ่มสั่งใน LINE
