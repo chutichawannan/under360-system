@@ -126,6 +126,15 @@
   .chatbtn{width:100%;background:var(--nut);color:#fff;border:none;border-radius:var(--radius);padding:15px;font-size:15.5px;font-weight:800;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:9px;margin-bottom:13px}
   .chatbtn .cb-badge{background:#fff;color:var(--nut);border-radius:10px;font-size:12px;padding:1px 8px}
 
+  /* แถบนำทาง 2 ปุ่มบนหน้าแรก — แดชบอร์ด / แชททีม (11 ส.ค. · หน้าแรกเหลือแต่ลิงก์) */
+  .navrow{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+  .navbtn{position:relative;background:var(--nut);color:#fff;border:none;border-radius:var(--radius);
+    padding:13px 12px;font-size:15px;font-weight:800;cursor:pointer;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;gap:3px;line-height:1.25;min-height:64px;font-family:inherit}
+  .navbtn:active{opacity:.85}
+  .navbtn .nsub{font-size:11px;font-weight:500;opacity:.85}
+  .navbtn .cb-badge{position:absolute;top:7px;right:9px;background:#fff;color:var(--nut);border-radius:10px;font-size:11px;font-weight:800;padding:1px 7px}
+
   /* chat list */
   .room{display:flex;align-items:flex-start;gap:11px;padding:13px 15px;border-bottom:1px solid var(--line);cursor:pointer;background:var(--card)}
   .room:active{background:#F3F4F6}
@@ -166,9 +175,22 @@
     </div>
     <div class="wrap"><div class="body">
       <div id="banner"></div>
-      <button class="chatbtn" onclick="goChatList()">💬 แชททีม <span class="cb-badge" id="cbBadge" style="display:none">0</span></button>
+      <div class="navrow">
+        <button class="navbtn" onclick="goDash()">📊 แดชบอร์ด<span class="nsub">ยอดขาย · สต็อก · งานวันนี้</span></button>
+        <button class="navbtn" onclick="goChatList()">💬 แชททีม<span class="nsub">คุยกับทุกห้อง</span><span class="cb-badge" id="cbBadge" style="display:none">0</span></button>
+      </div>
       <div id="homeCards"></div>
     </div></div>
+  </section>
+
+  <!-- ===== DASHBOARD (ของเดิมที่เคยอยู่หน้าแรก — ยอดขาย/สต็อก/AI/ความคืบหน้า) ===== -->
+  <section class="page" id="pgDash">
+    <div class="top">
+      <button class="bk" onclick="goHome()">‹</button>
+      <div class="tt"><b>แดชบอร์ด</b><span class="s">ยอดขาย · สต็อก · งานวันนี้</span></div>
+      <button class="rf" onclick="loadAll(true)" title="รีเฟรช">⟳</button>
+    </div>
+    <div class="wrap"><div class="body"><div id="dashCards"></div></div></div>
   </section>
 
   <!-- ===== CHAT LIST ===== -->
@@ -223,31 +245,40 @@ const ROOMS=[
 const RMAP=Object.fromEntries(ROOMS.map(r=>[r.id,r]));
 const STCOL={idle:'var(--idle)',working:'var(--work)',blocked:'var(--block)'};
 
+/* ── ลิงก์บนหน้าแรก ────────────────────────────────────────────────────────────
+   นัทสั่งเอง 11 ส.ค. 2026: *"ตอนนี้จะให้ admin และครัวทุกคนใช้ · หน้า home ขอ clean
+   โล่งๆ เป็นแค่ลิงก์ · จัดหมวดหมู่หน่อย จะได้ไม่เยอะจนเกินไป"*
+   → เรียงตาม "ใครใช้ + ใช้บ่อยแค่ไหน" ไม่ใช่ตามชนิดของไฟล์
+   → ของที่เป็นแดชบอร์ด/ตัวเงิน/AI ย้ายไปหน้า "แดชบอร์ด" หมดแล้ว ไม่อยู่หน้านี้ */
 const LINKS=[
-  {grp:'ลูกค้า / แอดมิน', items:[
-    {ic:'🍱',t:'LIFF ลูกค้า (สั่งอาหาร)',d:'หน้าที่ลูกค้าเห็น',u:'https://liff.line.me/2010442513-NI3JGTkb'},
-    {ic:'🗂️',t:'Operation Hub',d:'จัดออเดอร์/เมนู/โปร',u:BASE+'/operation_hub.html'},
-    {ic:'👨‍🍳',t:'ครัว (Kitchen Queue)',d:'',u:BASE+'/kitchen_queue.html'},
-    {ic:'📆',t:'ออเดอร์ล่วงหน้า (PIN 0360)',d:'',u:BASE+'/pwa/orders_upcoming.html'},
-    {ic:'👤',t:'ข้อมูลลูกค้า',d:'ค้น/แก้ประวัติ+แต้มรายคน',u:BASE+'/customer.html'},
+  {grp:'🍳 ครัว — ใช้ทุกวัน', items:[
+    {ic:'🖨️',t:'ใบจัดของ — พิมพ์',d:'เปิดมาเป็นออเดอร์ของวันนี้',u:BASE+'/print_pickslip.html'},
+    {ic:'👨‍🍳',t:'หน้าครัว — ออเดอร์วันนี้',d:'ดูรายการ + กดสถานะเมื่อจัดเสร็จ',u:BASE+'/kitchen_queue.html'},
+    {ic:'📄',t:'ใบงานครัวรายวัน',d:'ใบผลิต + ใบจัดของของวัน',u:BASE+'/kitchen/'},
+    {ic:'📆',t:'ออเดอร์ล่วงหน้า 7 วัน',d:'เตรียมของล่วงหน้า · รหัส 0360',u:BASE+'/pwa/orders_upcoming.html'},
+    {ic:'📦',t:'เมนู & สต็อค',d:'กรอกผลิตได้จริง · ตั้งสต็อค',u:BASE+'/main_database_v2.html'},
   ]},
-  {grp:'ครัว (ใหม่ · ส.ค.)', items:[
-    {ic:'📄',t:'ใบงานครัวรายวัน',d:'แผ่นงานผลิตของวัน — 6 ส.ค.',u:BASE+'/kitchen/'},
-    {ic:'💬',t:'คุยงานครัว (Console)',d:'หน้าคุยงานครัว 2 ทาง',u:BASE+'/kitchen_console.html'},
+  {grp:'🧾 แอดมิน — ใช้ทุกวัน', items:[
+    {ic:'🗂️',t:'Operation Hub',d:'ออเดอร์ · แพลนเมนู · แมส · โปร',u:BASE+'/operation_hub.html'},
+    {ic:'💰',t:'ใบทวงเงิน',d:'ใครยังไม่จ่าย · ติ๊กจบในหน้าเดียว',u:BASE+'/pwa/cash_due.html'},
+    {ic:'👤',t:'ข้อมูลลูกค้า',d:'ค้น/แก้ประวัติ + แต้มรายคน',u:BASE+'/customer.html'},
+    {ic:'🍱',t:'หน้าลูกค้า (LIFF)',d:'ดูสิ่งที่ลูกค้าเห็นจริง',u:'https://liff.line.me/2010442513-NI3JGTkb'},
   ]},
-  {grp:'R&D · เซ็ต Hyrox', items:[
-    {ic:'🏋️',t:'Set HYROX — หน้าลูกค้า',d:'เมนูที่ลูกค้าจะได้รับ',u:BASE+'/rnd/hyrox_set.html'},
-    {ic:'🧪',t:'R&D 01 Recipe Tracker',d:'สูตร/ความคืบหน้าเซ็ต Hyrox',u:BASE+'/rnd/hyrox_rd01.html'},
-  ]},
-  {grp:'จัดการ / เว็บ', items:[
-    {ic:'📋',t:'ฐานข้อมูลเมนู (DB)',d:'',u:BASE+'/main_database_v2.html'},
-    {ic:'🏠',t:'จัดหน้าแรก (Home Editor)',d:'',u:BASE+'/home_editor.html'},
-    {ic:'📊',t:'รายงาน',d:'แก้ตัวเลขผิด 3 จุดแล้ว 5 ส.ค.',u:BASE+'/report.html'},
+  {grp:'⚙️ ตั้งค่า / จัดการ', items:[
+    {ic:'🏠',t:'จัดหน้าแรกลูกค้า',d:'เรียงการ์ดหน้าแรก LIFF',u:BASE+'/home_editor.html'},
     {ic:'🖼️',t:'คลังรูปเมนู',d:'',u:BASE+'/web/menu_vault.html'},
-    {ic:'🌐',t:'เว็บสาธารณะใหม่',d:'',u:BASE+'/web/'},
-    {ic:'📈',t:'Web Dashboard',d:'สถิติเว็บ (web_events)',u:BASE+'/web/web_dashboard.html'},
-    {ic:'✍️',t:'Blog Admin',d:'61 บทความ · published หมดแล้ว',u:BASE+'/web/blog_admin.html'},
-    {ic:'⭐',t:'ลิงก์ขอรีวิว Google',d:'',u:'https://g.page/r/CTHTcnneZEtoEBI/review'},
+    {ic:'📊',t:'รายงาน',d:'',u:BASE+'/report.html'},
+    {ic:'✅',t:'ใบตรวจงาน',d:'ช่วยกันตรวจระบบ · แนบรูปได้ · รหัส 0360',u:BASE+'/pwa/checklist.html'},
+  ]},
+  {grp:'🌐 เว็บ / การตลาด', items:[
+    {ic:'🌐',t:'เว็บสาธารณะ',d:'',u:BASE+'/web/'},
+    {ic:'✍️',t:'Blog Admin',d:'',u:BASE+'/web/blog_admin.html'},
+    {ic:'📈',t:'สถิติเว็บ',d:'',u:BASE+'/web/web_dashboard.html'},
+    {ic:'⭐',t:'ลิงก์ขอรีวิว Google',d:'ส่งให้ลูกค้าประจำ',u:'https://g.page/r/CTHTcnneZEtoEBI/review'},
+  ]},
+  {grp:'🧪 R&D · เซ็ต Hyrox', items:[
+    {ic:'🏋️',t:'Set HYROX — หน้าลูกค้า',d:'',u:BASE+'/rnd/hyrox_set.html'},
+    {ic:'🧫',t:'Recipe Tracker',d:'สูตร/ความคืบหน้า',u:BASE+'/rnd/hyrox_rd01.html'},
   ]},
 ];
 const PILLARS=[
@@ -291,7 +322,7 @@ async function loadCore(){
     statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
   }catch(e){tablesOk=false;}
 }
-function refreshUI(){ renderBanner(); renderHome(); renderRoomList(); if(activeRoom) renderChat(); }
+function refreshUI(){ renderBanner(); renderHome(); renderDash(); renderRoomList(); if(activeRoom) renderChat(); }
 async function loadAll(manual){
   await loadCore();
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
@@ -336,21 +367,27 @@ function renderBanner(){
 }
 
 /* ---------- HOME ---------- */
+/* หน้าแรก = ลิงก์อย่างเดียว (นัทสั่ง 11 ส.ค. — แอดมินกับครัวทุกคนใช้หน้านี้)
+   ของที่เป็นตัวเลข/ตัวเงิน/AI ย้ายไปหน้า "แดชบอร์ด" ทั้งหมด */
 function renderHome(){
+  document.getElementById('homeCards').innerHTML = cardLinks();
+  const unread=ROOMS.reduce((a,r)=>a+unreadOf(r.id),0);
+  const b=document.getElementById('cbBadge'); if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';
+}
+
+/* หน้ารอง = ของเดิมที่เคยกองอยู่หน้าแรก */
+function renderDash(){
   let h='';
   h+=cardBiz();
   h+=cardOOS();
-  h+=cardCutover();
   h+=cardNiw();
+  h+=cardCutover();
   h+=cardRoutine();
   h+=cardAction();
   h+=cardTeam();
   h+=cardProgress();
-  h+=cardLinks();
   h+=cardCatchup();
-  document.getElementById('homeCards').innerHTML=h;
-  const unread=ROOMS.reduce((a,r)=>a+unreadOf(r.id),0);
-  const b=document.getElementById('cbBadge'); if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';
+  const el=document.getElementById('dashCards'); if(el) el.innerHTML=h;
 }
 
 function cardBiz(){
@@ -437,14 +474,14 @@ function toggleR(key,isAuto){
   if(j&&j.auto==='fresh'){toast('อันนี้ระบบเช็คเอง');return;}
   if(rdone[key]===biz.today||(j.weekly&&rdone[key]&&weekOf(rdone[key])===weekOf(biz.today))) delete rdone[key];
   else rdone[key]=biz.today;
-  localStorage.setItem('cc_routine',JSON.stringify(rdone)); renderHome();
+  localStorage.setItem('cc_routine',JSON.stringify(rdone)); renderDash();
 }
 async function sendComp(){
   const el=document.getElementById('clink'); const v=(el.value||'').trim(); if(!v)return;
   el.value='';
   await sb.from('session_messages').insert({room:'eath',sender:'nut',role:'nut',text:'[คู่แข่ง/IG วันนี้] '+v});
   rdone['compet']=biz.today; localStorage.setItem('cc_routine',JSON.stringify(rdone));
-  toast('ส่งให้เอิธแล้ว'); renderHome();
+  toast('ส่งให้เอิธแล้ว'); renderDash();
 }
 
 function cardAction(){
@@ -548,6 +585,7 @@ function onKey(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();send();}}
 function showPage(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('on'));document.getElementById(id).classList.add('on');window.scrollTo(0,0);}
 function goHome(){activeRoom=null;showPage('pgHome');renderHome();}
 function goChatList(){showPage('pgList');renderRoomList();}
+function goDash(){showPage('pgDash');renderDash();}
 
 function toast(msg){let t=document.getElementById('_toast');if(!t){t=document.createElement('div');t.id='_toast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#14201B;color:#fff;padding:9px 16px;border-radius:20px;font-size:13px;z-index:99;opacity:0;transition:.2s';document.body.appendChild(t);}
   t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',1600);}
