@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ออฟฟิศฟ้า — Under360</title>
+<meta name="theme-color" content="#0E1512">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="ออฟฟิศฟ้า">
+<link rel="apple-touch-icon" href="./icon-192.png">
+<link rel="icon" href="./icon-192.png">
+<style>
+:root{
+  --bg:#0E1512; --panel:#16211C; --panel2:#1D2A24; --line:#2A3A32;
+  --tx:#EAF2ED; --soft:#93A79B; --g:#35D07F; --g-dim:#1F7A4D;
+  --hp:#5AA9FF; --lc:#F2B33D; --hx:#C77DFF; --warn:#FF6B6B; --y:#F2C33D; --ice:#5AD1FF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai","Helvetica Neue",sans-serif;
+  font-size:16px; line-height:1.45; padding-bottom:50px; padding-top:env(safe-area-inset-top);
+}
+header{
+  position:sticky; top:0; z-index:20; background:rgba(14,21,18,.97);
+  backdrop-filter:blur(8px); border-bottom:1px solid var(--line);
+  padding:calc(env(safe-area-inset-top) + 10px) 14px 10px;
+}
+.hrow{display:flex;align-items:center;gap:10px}
+.htitle{font-size:18px;font-weight:800;letter-spacing:.2px}
+.hsub{font-size:11.5px;color:var(--soft);margin-top:2px}
+.btn{
+  margin-left:auto; background:var(--panel2); color:var(--tx); border:1px solid var(--line);
+  border-radius:10px; padding:9px 13px; font-size:13.5px; font-weight:700; cursor:pointer; white-space:nowrap;
+}
+.btn:active{background:var(--g-dim)}
+.datenav{display:flex;align-items:center;gap:8px;margin-top:10px}
+.dbtn{background:var(--panel2);border:1px solid var(--line);color:var(--tx);border-radius:10px;
+  padding:9px 14px;font-size:16px;font-weight:800;cursor:pointer;flex:0 0 auto}
+.dbtn:active{border-color:var(--g)}
+.dlabel{flex:1;text-align:center;font-size:15px;font-weight:800}
+.dlabel .sm{display:block;font-size:11px;color:var(--soft);font-weight:600;margin-top:1px}
+.quickbar{display:flex;gap:6px;margin-top:8px;overflow-x:auto;scrollbar-width:none}
+.quickbar::-webkit-scrollbar{display:none}
+.qchip{flex:0 0 auto;background:var(--panel);border:1px solid var(--line);color:var(--soft);
+  border-radius:999px;padding:5px 12px;font-size:12.5px;font-weight:700;cursor:pointer}
+.qchip.on{border-color:var(--g);color:var(--tx);background:var(--panel2)}
+
+main{padding:16px 14px 0}
+.sec{margin-bottom:22px}
+.sechead{display:flex;align-items:baseline;gap:8px;margin-bottom:10px}
+.sechead .ti{font-size:16px;font-weight:800}
+.sechead .n{font-size:12px;color:var(--soft);margin-left:auto}
+
+/* ── Block 1: ตาราง ── */
+.tblwrap{background:var(--panel);border:1px solid var(--line);border-radius:14px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{border-collapse:collapse;width:100%;min-width:720px;font-size:13.5px}
+thead th{position:sticky;top:0;background:var(--panel2);color:var(--soft);font-weight:700;
+  text-align:left;padding:9px 10px;font-size:11.5px;letter-spacing:.3px;border-bottom:1px solid var(--line);white-space:nowrap}
+tbody td{padding:9px 10px;border-bottom:1px solid rgba(42,58,50,.6);vertical-align:top}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:active{background:var(--panel2)}
+.tname{font-weight:700;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.tono{font-size:11px;color:var(--soft);font-variant-numeric:tabular-nums;white-space:nowrap}
+a.tel{color:var(--tx);text-decoration:none;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tybadge{display:inline-block;border-radius:8px;padding:3px 8px;font-size:11.5px;font-weight:800;white-space:nowrap}
+.ty-lc{background:#3A2F12;color:var(--lc);border:1px solid #6B5622}
+.ty-hp{background:#122536;color:var(--hp);border:1px solid #2B4A6B}
+.ty-hx{background:#2A1B3A;color:var(--hx);border:1px solid #5B3B7A}
+.ty-normal{background:var(--panel2);color:var(--soft);border:1px solid var(--line)}
+.ty-ice{background:#0F2E3A;color:var(--ice);border:1px solid #1E5468}
+.tbox{font-weight:800;color:var(--g);white-space:nowrap}
+.tmoney{font-variant-numeric:tabular-nums;white-space:nowrap}
+.tmoney.zero{color:var(--soft)}
+.ttime{font-size:12px;color:var(--soft);white-space:nowrap}
+.empty{color:var(--soft);font-size:14px;padding:22px 14px;text-align:center}
+
+/* ── Block 2: สรุปตัวใหญ่ ── */
+.bigline{background:linear-gradient(135deg,var(--panel2),var(--panel));border:1px solid var(--g-dim);
+  border-radius:16px;padding:18px 16px;text-align:center}
+.bigline .num{font-size:30px;font-weight:900;color:var(--g);line-height:1.1}
+.bigline .lbl{font-size:13px;color:var(--soft);margin-top:4px}
+.bigline .note{font-size:11px;color:#6C8175;margin-top:6px}
+
+/* ── Block 3 / 4: การ์ดลิสต์ ── */
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 14px;margin-bottom:9px}
+.card.rec-g{border-left:4px solid var(--g)}
+.card.rec-r{border-left:4px solid var(--warn)}
+.card.rec-y{border-left:4px solid var(--y)}
+.cr1{display:flex;align-items:center;gap:8px}
+.crname{font-size:16px;font-weight:800;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.crmoney{font-size:15px;font-weight:800;color:var(--warn);white-space:nowrap}
+.cr2{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;align-items:center;font-size:12.5px;color:var(--soft)}
+.chip{border-radius:8px;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);font-size:12px}
+.rec-badge{border-radius:999px;padding:3px 10px;font-size:12px;font-weight:800}
+.rec-badge.g{background:#123A26;color:var(--g)}
+.rec-badge.r{background:#3A1414;color:var(--warn)}
+.rec-badge.y{background:#3A3212;color:var(--y)}
+.cr3{margin-top:7px;font-size:13px;color:var(--tx);opacity:.9}
+.allclear{background:var(--panel);border:1px dashed var(--g-dim);border-radius:16px;padding:26px 16px;text-align:center}
+.allclear .big{font-size:18px;font-weight:800;color:var(--g)}
+.allclear .sub{font-size:12.5px;color:var(--soft);margin-top:5px}
+.actrow{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:9px}
+.actname{font-weight:800;font-size:15px}
+.actwhy{font-size:12.5px;color:var(--soft);margin-top:3px}
+.actdo{font-size:13.5px;color:var(--y);margin-top:6px;font-weight:700}
+
+/* ── Block 5: ลิงก์ใบงาน ── */
+.linkrow{display:flex;gap:10px}
+a.klink{flex:1;display:flex;flex-direction:column;gap:3px;background:var(--panel2);border:1px solid var(--g-dim);
+  border-radius:14px;padding:14px 14px;text-decoration:none;color:var(--tx)}
+a.klink .kt{font-size:14.5px;font-weight:800}
+a.klink .ks{font-size:11.5px;color:var(--soft)}
+a.klink.off{border-color:var(--line);opacity:.55;pointer-events:none}
+a.klink.off .kt{color:var(--soft)}
+
+.state{text-align:center;color:var(--soft);padding:50px 20px;font-size:15px}
+.err{color:var(--warn)}
+.foot{text-align:center;color:var(--soft);font-size:11.5px;padding:16px}
+
+/* ล็อกหน้าด้วย PIN (กันคนหลงเข้า — ไม่ใช่ระบบความปลอดภัยจริง) */
+.lock{position:fixed;inset:0;z-index:99;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:24px}
+.lock.off{display:none}
+.lockbox{width:100%;max-width:300px;text-align:center}
+.lockbox .lt{font-size:20px;font-weight:700}
+.lockbox .ls{font-size:14px;color:var(--soft);margin:6px 0 18px}
+#pin{width:100%;background:var(--panel);border:1px solid var(--line);border-radius:12px;color:var(--tx);
+  font-size:30px;text-align:center;letter-spacing:14px;padding:14px 0 14px 14px;font-variant-numeric:tabular-nums}
+#pin:focus{outline:none;border-color:var(--g)}
+.pinerr{color:var(--warn);font-size:13px;height:18px;margin-top:10px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div>
+      <div class="htitle">🧑‍🍳 ออฟฟิศฟ้า</div>
+      <div class="hsub" id="stamp">กำลังโหลด…</div>
+    </div>
+    <button class="btn" id="btnRefresh" type="button">🔄 อัปเดตเดี๋ยวนี้</button>
+  </div>
+  <div class="datenav">
+    <button class="dbtn" id="btnPrev" type="button">‹</button>
+    <div class="dlabel" id="dlabel">—</div>
+    <button class="dbtn" id="btnNext" type="button">›</button>
+  </div>
+  <div class="quickbar">
+    <div class="qchip" data-off="-1">เมื่อวาน</div>
+    <div class="qchip" data-off="0">วันนี้</div>
+    <div class="qchip" data-off="1">พรุ่งนี้</div>
+    <div class="qchip" data-off="2">มะรืนนี้</div>
+  </div>
+</header>
+
+<div class="lock" id="lock">
+  <div class="lockbox">
+    <div class="lt">ออฟฟิศฟ้า</div>
+    <div class="ls">ใส่รหัส 4 ตัว</div>
+    <input id="pin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="รหัสผ่าน">
+    <div class="pinerr" id="pinerr"></div>
+  </div>
+</div>
+
+<main id="main"><div class="state">กำลังโหลด…</div></main>
+<div class="foot">อ่านอย่างเดียว · ไม่แก้ไขข้อมูล — แก้ที่ Operation Hub</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* Under360 — fah.html (PWA) · ออฟฟิศฟ้า
+   อ่านอย่างเดียว: ตารางออเดอร์วัน X + สรุปกล่อง + ทวงเงิน + ใบต้องกด + ลิงก์ใบงานครัว
+   ยึด Asia/Bangkok เสมอ · sequential reads · ไม่เขียน DB */
+var SB_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
+var SB_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+var sb = supabase.createClient(SB_URL, SB_KEY);
+
+var TH_DAY = ["อาทิตย์","จันทร์","อังคาร","พุธ","พฤหัสบดี","ศุกร์","เสาร์"];
+var TH_DAY_SHORT = ["อา.","จ.","อ.","พ.","พฤ.","ศ.","ส."];
+var TH_MON = ["ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+var MP_PROD_DAYS = [1,3,5]; // จันทร์/พุธ/ศุกร์ = วันผลิต Meal Plan
+
+/* ── วันที่: ยึดเวลาไทยเสมอ ─────────────────────────── */
+function bkkToday(){
+  return new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok",year:"numeric",month:"2-digit",day:"2-digit"}).format(new Date());
+}
+function addDays(iso,n){
+  var d = new Date(iso+"T00:00:00Z");
+  d.setUTCDate(d.getUTCDate()+n);
+  return d.toISOString().slice(0,10);
+}
+function dObj(iso){ return new Date(iso+"T00:00:00Z"); }
+function fmtDayFull(iso){ var d=dObj(iso); return TH_DAY[d.getUTCDay()]; }
+function fmtDM(iso){ var d=dObj(iso); return d.getUTCDate()+" "+TH_MON[d.getUTCMonth()]; }
+function fmtStamp(){
+  return new Intl.DateTimeFormat("th-TH",{timeZone:"Asia/Bangkok",hour:"2-digit",minute:"2-digit"}).format(new Date());
+}
+function isProdDay(iso){
+  var wd = dObj(iso).getUTCDay();
+  return MP_PROD_DAYS.indexOf(wd) !== -1;
+}
+function fmtPhone(p){
+  var s=(p||"").replace(/[^0-9]/g,"");
+  if(s.length===9) s="0"+s;
+  if(s.length===10) return s.slice(0,3)+"-"+s.slice(3,6)+"-"+s.slice(6);
+  return s||"—";
+}
+function telHref(p){ return "tel:"+(p||"").replace(/[^0-9+]/g,""); }
+function esc(s){ return String(s==null?"":s).replace(/[&<>"']/g,function(c){
+  return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];
+}); }
+function money(n){ return Number(n||0).toLocaleString("th-TH"); }
+
+/* ── STATE ─────────────────────────────────────────── */
+var today = bkkToday();
+var selDate = addDays(today,1); // default = พรุ่งนี้
+var loading = false;
+var orders = [];
+var itemsBy = {};
+var mpdByOrderId = {};
+var mpdAll = []; // mp_deliveries ของวันนั้น (ทุกแถว รวมที่ไม่ผูก order)
+
+/* ── กันใบเทส (parallel_test / [TEST / Test / RLS probe / เทส) ──── */
+function isTestRow(name, source, createdBy, notes){
+  var n = String(name||""), s = String(source||""), c = String(createdBy||""), nt = String(notes||"");
+  if(s === "parallel_test") return true;
+  if(/^\[TEST/i.test(n)) return true;
+  if(/^test( user)?$/i.test(n.trim())) return true;
+  if(/RLS probe/i.test(n)) return true;
+  if(/^\[TEST-/i.test(c)) return true;
+  if(/^\[PARALLEL\]/i.test(nt)) return true;
+  if(/เทสส{1,}/i.test(n)) return true; // เช่น "Nut เทสสสส"
+  return false;
+}
+
+/* ── โหลดข้อมูลทั้งหมดของวันที่เลือก (sequential) ─────── */
+async function loadAll(){
+  if(loading) return;
+  loading = true;
+  document.getElementById("stamp").textContent = "กำลังโหลด…";
+  try{
+    var d = selDate;
+
+    // 1) orders ของวันนั้น
+    var r1 = await sb.from("orders")
+      .select("id,order_number,customer_name,customer_phone,delivery_date,time_slot_label,status,payment_status,total,notes,source,created_by,line_display_name")
+      .eq("delivery_date", d)
+      .neq("status","cancelled")
+      .limit(500);
+    if(r1.error) throw r1.error;
+    orders = (r1.data||[]).filter(function(o){
+      return !isTestRow(o.customer_name, o.source, o.created_by, o.notes);
+    });
+
+    // 2) order_items ของออเดอร์เหล่านั้น (chunk 120)
+    itemsBy = {};
+    var ids = orders.map(function(o){ return o.id; });
+    for(var s=0; s<ids.length; s+=120){
+      var part = ids.slice(s,s+120);
+      if(!part.length) continue;
+      var r2 = await sb.from("order_items")
+        .select("order_id,menu_code,menu_name,quantity,notes")
+        .in("order_id", part).limit(4000);
+      if(r2.error) throw r2.error;
+      (r2.data||[]).forEach(function(it){
+        (itemsBy[it.order_id] = itemsBy[it.order_id] || []).push(it);
+      });
+    }
+
+    // 3) mp_deliveries ของวันนั้น (แหล่งจริงของ mp_type/box_count/menu_items)
+    var r3 = await sb.from("mp_deliveries")
+      .select("id,order_id,customer_name,line_display_name,delivery_date,status,mp_type,mp_set,box_count,menu_items")
+      .eq("delivery_date", d)
+      .neq("status","cancelled")
+      .limit(500);
+    if(r3.error) throw r3.error;
+    mpdAll = (r3.data||[]).filter(function(m){
+      return !isTestRow(m.customer_name, "", "", "");
+    });
+    mpdByOrderId = {};
+    mpdAll.forEach(function(m){ if(m.order_id) mpdByOrderId[m.order_id] = m; });
+
+    // 4) เคยสั่งกี่ครั้ง + เคยค้างกี่ใบ — เฉพาะลูกค้าที่ยังไม่โอนวันนี้ (total>0)
+    var unpaid = orders.filter(function(o){ return o.payment_status === "unpaid" && Number(o.total||0) > 0; });
+    var phones = unpaid.map(function(o){ return o.customer_phone; }).filter(function(p,i,a){ return p && a.indexOf(p)===i; });
+    var histByPhone = {}; // phone -> {count, unpaidCount}
+    if(phones.length){
+      var r4 = await sb.from("orders")
+        .select("customer_phone,payment_status,total")
+        .in("customer_phone", phones)
+        .neq("status","cancelled")
+        .limit(5000);
+      if(r4.error) throw r4.error;
+      (r4.data||[]).forEach(function(o){
+        var p = o.customer_phone; if(!p) return;
+        var h = histByPhone[p] = histByPhone[p] || {count:0, unpaidCount:0};
+        h.count++;
+        if(o.payment_status === "unpaid" && Number(o.total||0) > 0) h.unpaidCount++;
+      });
+    }
+
+    document.getElementById("stamp").textContent = "ข้อมูล ณ "+fmtStamp()+" น. (เวลาไทย)";
+    render(unpaid, histByPhone);
+  }catch(e){
+    console.error(e);
+    document.getElementById("stamp").innerHTML = '<span class="err">โหลดไม่สำเร็จ — กดอัปเดตใหม่</span>';
+    document.getElementById("main").innerHTML = '<div class="state err">ดึงข้อมูลไม่ได้<br>'+esc(e.message||e)+'</div>';
+  }
+  loading = false;
+}
+
+/* ── จำแนกประเภทออเดอร์: ❄️เก็บตู้ > MP (จาก mp_deliveries ก่อน แล้วค่อย order_items) > ปกติ ── */
+function classify(o){
+  var its = itemsBy[o.id] || [];
+  var boxes = 0;
+  its.forEach(function(it){ boxes += (it.quantity||1); });
+
+  // ❄️ เก็บตู้ — ทีมพิมพ์แท็กนี้ลง orders.notes ตรงๆ เวลาตัดสินใจทำล่วงหน้าแล้วเก็บไว้ส่ง (ดู BRIEF_FAH_KITCHEN 11 ส.ค.)
+  var isFridge = /เก็บตู้/i.test(o.notes||"");
+
+  var mpd = mpdByOrderId[o.id];
+  var mpType = "";
+  if(mpd && mpd.mp_type){
+    mpType = String(mpd.mp_type).toLowerCase();
+    if(mpd.box_count) boxes = mpd.box_count; // mp_deliveries.box_count แม่นกว่า (โค้ด Hyrox เป็นเลขล้วน นับจาก item ไม่ตรง)
+  } else {
+    // fallback: เดาจาก order_items (ลูกค้าสั่งเองผ่าน LIFF บางรอบไม่มีแถว mp_deliveries)
+    var hasHP=false, hasLC=false;
+    its.forEach(function(it){
+      var code=(it.menu_code||"").toUpperCase(), nt=it.notes||"";
+      if(/^HP/.test(code) || /meal_plan:hp/i.test(nt)) hasHP=true;
+      if(/^LC/.test(code) || /meal_plan:lc/i.test(nt)) hasLC=true;
+    });
+    if((o.notes||"").match(/meal_plan:hyrox/i)) mpType="hyrox";
+    else if(hasHP) mpType="hp";
+    else if(hasLC) mpType="lc";
+  }
+
+  var type, cls;
+  if(isFridge){ type="❄️ อยู่ในตู้"; cls="ty-ice"; }
+  else if(mpType==="hyrox"){ type="MP·Hyrox"; cls="ty-hx"; }
+  else if(mpType==="hp"){ type="MP·HP"; cls="ty-hp"; }
+  else if(mpType==="lc"){ type="MP·LC"; cls="ty-lc"; }
+  else { type="ปกติ"; cls="ty-normal"; }
+
+  return { boxes: boxes, type: type, cls: cls, isFridge: isFridge, isMP: !!mpType };
+}
+
+/* ── RENDER ────────────────────────────────────────── */
+function render(unpaid, histByPhone){
+  document.getElementById("dlabel").innerHTML =
+    fmtDayFull(selDate)+" "+fmtDM(selDate)
+    + '<span class="sm">'+(selDate===today?"วันนี้": selDate===addDays(today,1)?"พรุ่งนี้": selDate===addDays(today,-1)?"เมื่อวาน":"")
+    + (isProdDay(selDate)?" · วันผลิต MP":" · ไม่ใช่วันผลิต MP")+'</span>';
+  Array.prototype.forEach.call(document.querySelectorAll(".qchip"), function(el){
+    var off = parseInt(el.getAttribute("data-off"),10);
+    el.classList.toggle("on", addDays(today,off) === selDate);
+  });
+
+  var html = "";
+  html += blockOrdersTable();
+  html += blockSummary();
+  html += blockUnpaid(unpaid, histByPhone);
+  html += blockAction();
+  html += blockLinks();
+  document.getElementById("main").innerHTML = html;
+
+  checkKitchenLinks();
+}
+
+/* Block 1 — ตารางออเดอร์ */
+function blockOrdersTable(){
+  var rows = orders.map(function(o,i){ o._c = classify(o); return o; })
+    .sort(function(a,b){ return (a.time_slot_label||"").localeCompare(b.time_slot_label||""); });
+
+  var body = rows.length ? rows.map(function(o,i){
+    var c = o._c;
+    var name = o.customer_name || o.line_display_name || "(ไม่ระบุชื่อ)";
+    return '<tr>'
+      + '<td>'+(i+1)+'</td>'
+      + '<td><div class="tname">'+esc(name)+'</div><div class="tono">'+esc(o.order_number||"")+'</div></td>'
+      + '<td><a class="tel" href="'+telHref(o.customer_phone)+'">'+esc(fmtPhone(o.customer_phone))+'</a></td>'
+      + '<td><span class="tybadge '+c.cls+'">'+esc(c.type)+'</span></td>'
+      + '<td class="tbox">'+c.boxes+' กล่อง</td>'
+      + '<td class="tmoney'+(Number(o.total||0)===0?" zero":"")+'">'+(Number(o.total||0)>0? money(o.total)+" ฿" : "—")+'</td>'
+      + '<td class="ttime">'+esc(o.time_slot_label||"—")+'</td>'
+      + '</tr>';
+  }).join("") : '<tr><td colspan="7"><div class="empty">ยังไม่มีออเดอร์วันนี้</div></td></tr>';
+
+  return '<div class="sec"><div class="sechead"><div class="ti">📋 ตารางออเดอร์</div><div class="n">'+rows.length+' ใบ</div></div>'
+    + '<div class="tblwrap"><table><thead><tr>'
+    + '<th>#</th><th>ลูกค้า</th><th>เบอร์</th><th>ประเภท</th><th>กล่อง</th><th>เงิน</th><th>เวลา</th>'
+    + '</tr></thead><tbody>'+body+'</tbody></table></div></div>';
+}
+
+/* Block 2 — สรุปตัวใหญ่ (❄️ ไม่นับรวม) */
+function blockSummary(){
+  var live = orders.filter(function(o){ return !o._c.isFridge; });
+  var boxes = live.reduce(function(s,o){ return s+o._c.boxes; }, 0);
+  var custKey = function(o){ return o.customer_phone || o.customer_name || o.id; };
+  var custs = live.map(custKey).filter(function(p,i,a){ return a.indexOf(p)===i; });
+  var iceCount = orders.length - live.length;
+
+  return '<div class="sec"><div class="bigline">'
+    + '<div class="num">ต้องผลิตรวม '+boxes+' กล่อง</div>'
+    + '<div class="lbl">'+custs.length+' คน'+(iceCount? ' · ไม่รวม ❄️ อยู่ในตู้ '+iceCount+' ใบ':'')+'</div>'
+    + '<div class="note">ยึดวัน '+fmtDayFull(selDate)+' '+fmtDM(selDate)+'</div>'
+    + '</div></div>';
+}
+
+/* Block 3 — ยังไม่โอน ต้องทวงก่อน 20:00 */
+function recommend(order_count, unpaid_count, total){
+  if(order_count >= 5) return {cls:"g", badge:"🟢 ทำให้เลย", why:"ลูกค้าประจำ — สั่งมาแล้ว "+order_count+" ครั้ง"};
+  if(order_count <= 1 && total >= 1000) return {cls:"r", badge:"🔴 รอโอนก่อน", why:"ลูกค้าใหม่ + ยอดสูง ("+money(total)+" ฿) — ยังไม่มีประวัติ"};
+  if(unpaid_count >= 1) return {cls:"y", badge:"🟡 ทวงให้ได้คำตอบ", why:"เคยค้างมาก่อน "+unpaid_count+" ใบ"};
+  return {cls:"y", badge:"🟡 ทวงให้ได้คำตอบ", why:"สั่งมา "+order_count+" ครั้ง — ทวงตามปกติ"};
+}
+function blockUnpaid(unpaid, histByPhone){
+  var head = '<div class="sec"><div class="sechead"><div class="ti">⏳ ยังไม่โอน — ต้องทวงก่อน 20:00</div><div class="n">'+unpaid.length+' ใบ</div></div>';
+  if(!unpaid.length){
+    return head + '<div class="allclear"><div class="big">✅ ไม่มีใบค้างโอน</div><div class="sub">ทุกใบวันนี้จ่ายแล้ว</div></div></div>';
+  }
+  var cards = unpaid.map(function(o){
+    var h = histByPhone[o.customer_phone] || {count:1, unpaidCount:0};
+    var oc = Math.max(h.count,1);
+    var uc = Math.max(h.unpaidCount - 1, 0); // หักใบวันนี้ออก
+    var r = recommend(oc, uc, Number(o.total||0));
+    var name = o.customer_name || o.line_display_name || "(ไม่ระบุชื่อ)";
+    return '<div class="card rec-'+r.cls+'">'
+      + '<div class="cr1"><div class="crname">'+esc(name)+'</div><div class="crmoney">'+money(o.total)+' ฿</div></div>'
+      + '<div class="cr2"><a class="tel" href="'+telHref(o.customer_phone)+'">'+esc(fmtPhone(o.customer_phone))+'</a>'
+      + '<span class="chip">เคยสั่ง '+oc+' ครั้ง</span>'
+      + '<span class="rec-badge '+r.cls+'">'+r.badge+'</span></div>'
+      + '<div class="cr3">'+esc(r.why)+'</div>'
+      + '</div>';
+  }).join("");
+  return head + cards + '</div>';
+}
+
+/* Block 4 — ใบต้องกด ส่งกิฟ */
+function blockAction(){
+  var items = [];
+  mpdAll.forEach(function(m){
+    var name = m.customer_name || m.line_display_name || "(ไม่ระบุชื่อ)";
+    var noMenu = !m.menu_items || (Array.isArray(m.menu_items) && m.menu_items.length===0);
+    if(noMenu){
+      items.push({name:name, why:"ยังไม่มีเมนู (mp_deliveries.menu_items ว่าง)", todo:'"ยังไม่มีเมนู ช่วยแพลนให้หน่อย"'});
+    }
+    if(!isProdDay(m.delivery_date) && m.status === "scheduled"){
+      items.push({name:name, why:"วันส่ง "+fmtDayFull(m.delivery_date)+" ไม่ใช่วันผลิต MP (จ/พ/ศ) แต่ยังไม่ยืนยันสถานะ", todo:'เช็ควันส่ง — ใช่ "เก็บตู้" ไหม ถ้าใช่กดโน้ต ถ้าไม่ใช่กดย้ายวัน'});
+    }
+  });
+
+  var head = '<div class="sec"><div class="sechead"><div class="ti">📌 ใบต้องกด — ส่งกิฟ</div><div class="n">'+items.length+' รายการ</div></div>';
+  if(!items.length){
+    return head + '<div class="allclear"><div class="big">✅ วันนี้ตรงหมด ไม่มีอะไรต้องกด</div><div class="sub">เทียบ mp_deliveries แล้วไม่เจอปัญหา</div></div></div>';
+  }
+  var rows = items.map(function(it){
+    return '<div class="actrow"><div class="actname">'+esc(it.name)+'</div>'
+      + '<div class="actwhy">'+esc(it.why)+'</div>'
+      + '<div class="actdo">👉 '+esc(it.todo)+'</div></div>';
+  }).join("");
+  return head + rows + '</div>';
+}
+
+/* Block 5 — ลิงก์ใบงานครัวของวันนั้น */
+function blockLinks(){
+  return '<div class="sec"><div class="sechead"><div class="ti">🗂 ใบงานครัววันนี้</div></div>'
+    + '<div class="linkrow">'
+    + '<a class="klink" id="lnkProd" href="../kitchen/'+selDate+'.html" target="_blank" rel="noopener">'
+      + '<div class="kt">📋 ใบผลิต</div><div class="ks" id="lnkProdSub">กำลังตรวจ…</div></a>'
+    + '<a class="klink" id="lnkPack" href="../kitchen/'+selDate+'_pack.html" target="_blank" rel="noopener">'
+      + '<div class="kt">📦 ใบจัดของ</div><div class="ks" id="lnkPackSub">กำลังตรวจ…</div></a>'
+    + '</div></div>';
+}
+function checkKitchenLinks(){
+  ["lnkProd","lnkPack"].forEach(function(id){
+    var el = document.getElementById(id);
+    if(!el) return;
+    var sub = document.getElementById(id+"Sub");
+    fetch(el.getAttribute("href"), {method:"HEAD", cache:"no-store"})
+      .then(function(r){
+        if(r.ok){ sub.textContent = "เปิดใบ →"; }
+        else { el.classList.add("off"); sub.textContent = "ยังไม่ได้ทำใบ"; }
+      })
+      .catch(function(){ el.classList.add("off"); sub.textContent = "ยังไม่ได้ทำใบ"; });
+  });
+}
+
+/* ── EVENTS ────────────────────────────────────────── */
+document.getElementById("btnRefresh").addEventListener("click", function(){ loadAll(); });
+document.getElementById("btnPrev").addEventListener("click", function(){ selDate = addDays(selDate,-1); loadAll(); });
+document.getElementById("btnNext").addEventListener("click", function(){ selDate = addDays(selDate,1); loadAll(); });
+Array.prototype.forEach.call(document.querySelectorAll(".qchip"), function(el){
+  el.addEventListener("click", function(){
+    selDate = addDays(today, parseInt(el.getAttribute("data-off"),10));
+    loadAll();
+  });
+});
+document.addEventListener("visibilitychange", function(){
+  if(document.visibilityState==="visible"){
+    if(!document.getElementById("lock").classList.contains("off")) return;
+    var t = bkkToday();
+    if(t !== today){ today = t; }
+    loadAll();
+  }
+});
+
+/* ── PIN ล็อกหน้า (เหมือน orders_upcoming.html) ───────
+   กันคนหลงเข้า/ลิงก์หลุด — ไม่ใช่ระบบความปลอดภัยจริง */
+var PIN = "0360";
+var PIN_KEY = "u360_fah_pin";
+var lockEl = document.getElementById("lock");
+function unlock(){ lockEl.classList.add("off"); loadAll(); }
+if(localStorage.getItem(PIN_KEY) === PIN){
+  unlock();
+}else{
+  var pinIn = document.getElementById("pin");
+  setTimeout(function(){ try{ pinIn.focus(); }catch(e){} }, 200);
+  pinIn.addEventListener("input", function(){
+    var v = pinIn.value.replace(/[^0-9]/g,"");
+    pinIn.value = v;
+    if(v.length < 4) { document.getElementById("pinerr").textContent = ""; return; }
+    if(v === PIN){
+      try{ localStorage.setItem(PIN_KEY, PIN); }catch(e){}
+      unlock();
+    }else{
+      document.getElementById("pinerr").textContent = "รหัสไม่ถูก";
+      pinIn.value = "";
+    }
+  });
+}
+</script>
+</body>
+</html>
