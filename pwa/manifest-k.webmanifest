@@ -1,7 +1,7 @@
 {
   "name": "ครัววันนี้ — Under360",
   "short_name": "ครัววันนี้",
-  "description": "ใบงานครัวประจำวัน (ใบผลิต + ใบจัดของ)",
+  "description": "หน้ารวมเครื่องมือครัว — ใบจัดของ ใบงานครัว ออเดอร์วันนี้ สต็อค",
   "start_url": "/k",
   "scope": "/",
   "display": "standalone",
@@ -9,7 +9,17 @@
   "background_color": "#0E1512",
   "theme_color": "#10221A",
   "icons": [
-    { "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" }
+    {
+      "src": "/pwa/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/pwa/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
   ]
 }
