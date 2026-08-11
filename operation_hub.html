@@ -744,6 +744,8 @@ body.fs-scaled{zoom:var(--u-fs)}
         <button class="btn" onclick="msgSetDay(0)">วันนี้</button>
         <button class="btn" onclick="msgSetDay(1)">พรุ่งนี้</button>
         <input type="date" id="msg-date" onchange="loadMessenger()" style="padding:6px 8px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-family:var(--sans);font-size:13px">
+        <!-- N-69 · ใบที่ยังไม่โอนเงิน — ติดป้ายเสมอ + กดซ่อนเองได้ (ไม่ซ่อนอัตโนมัติ ของจะได้ไม่หายเงียบ) -->
+        <button class="btn" id="msgUnpaidBtn" onclick="msgToggleHideUnpaid()" title="ซ่อนใบที่ยังไม่จ่ายเงินออกจากรอบส่ง">💸 ซ่อนใบที่ยังไม่จ่าย</button>
         <button class="btn" id="msg-plan-btn" onclick="msgPlanRoutes()" title="ถามราคาจริงจาก Lalamove แล้วเทียบว่าจัดรอบแบบไหนถูกสุด (ขอราคาอย่างเดียว ไม่จองรถ)">💰 คำนวณค่าส่งถูกสุด</button>
       </div>
       <div id="msg-summary" style="margin-bottom:10px"></div>
@@ -3349,6 +3351,48 @@ async function saveCourier(sel){
               :"บันทึกผู้ส่งไม่สำเร็จ: "+(e.message||e.code||e));
   }finally{ sel.disabled=false; }
 }
+/* ── หน้าแมส 3 ข้อที่กิ๊ฟขอ (N-69/70/71) ────────────────────────────────────
+   N-69 ใบที่ยังไม่โอนเงินต้องเห็นชัด — กิ๊ฟ: "จะได้ไม่เรียกแมสมางง"
+        เลือกติดป้ายแทนการซ่อน + มีปุ่มซ่อนให้กดเอง (ซ่อนอัตโนมัติ = ของหายเงียบ ซึ่งเป็นบั๊กประจำบ้านนี้)
+   N-70 ติดรอบส่งไว้กับใบเลย ไม่ต้องไล่ประกอบเอง
+   N-71 ติ๊ก "เรียกแล้ว" — เก็บเป็นป้ายในโน้ต ไม่ต้องเพิ่มคอลัมน์ใหม่ */
+var MSG_CALLED_RE=/[เรียกแมสแล้ว[^]]*]/;
+var msgHideUnpaid=false;
+function msgIsPaid(o){ return o.payment_status==="paid"; }
+function msgPayBadge(o){
+  if(msgIsPaid(o)) return "";
+  var t=(o.payment_status==="pending_review")?"🧾 มีสลิป รอตรวจ":"⏳ ยังไม่จ่ายเงิน";
+  var c=(o.payment_status==="pending_review")?"background:#E0E7FF;color:#3730A3":"background:#FEE2E2;color:#B91C1C";
+  return " <span style='font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 7px;"+c+"'>"+t+"</span>";
+}
+function msgCalled(o){ return MSG_CALLED_RE.test(String(o.notes||"")); }
+function msgCalledBtn(o){
+  var on=msgCalled(o);
+  return "<button class='btn' onclick=\"msgToggleCalled('"+o.id+"',event)\" style='font-size:11px;padding:3px 9px;"
+    +(on?"background:#D1FAE5;color:#065F46;border-color:#A7F3D0":"")+"'>"+(on?"✅ เรียกแล้ว":"เรียกแมสแล้ว?")+"</button>";
+}
+async function msgToggleCalled(id,ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var o=(_msgOrders||[]).find(function(x){return x.id===id;}); if(!o)return;
+  var who=odWho(); if(!who) return;
+  var on=msgCalled(o);
+  var notes=String(o.notes||"");
+  notes = on ? notes.replace(MSG_CALLED_RE,"").trim()
+             : (notes?notes+" ":"")+"[เรียกแมสแล้ว "+today2()+" โดย "+who+"]";
+  try{
+    var up=await sb_.from("orders").update({notes:notes,updated_at:new Date().toISOString()}).eq("id",id).select("id");
+    if(up.error) throw up.error;
+    o.notes=notes;
+    loadMessenger();
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+function msgToggleHideUnpaid(){
+  msgHideUnpaid=!msgHideUnpaid;
+  var b=document.getElementById("msgUnpaidBtn");
+  if(b){ b.style.background=msgHideUnpaid?"var(--forest)":""; b.style.color=msgHideUnpaid?"#fff":""; b.style.borderColor=msgHideUnpaid?"var(--forest)":""; }
+  loadMessenger();
+}
 async function loadMessenger(){
   var el=document.getElementById("messengerList"); if(!el)return;
   var sb_=getSB();
@@ -3362,6 +3406,8 @@ async function loadMessenger(){
     var res=await sb_.from("orders").select("*").eq("delivery_date",date).order("time_slot").order("created_at");
     if(res.error)throw res.error;
     var data=(res.data||[]).filter(function(o){return o.status!=="cancelled"&&o.source!=="parallel_test";});
+    var unpaidN=data.filter(function(o){return !msgIsPaid(o);}).length;
+    if(msgHideUnpaid) data=data.filter(msgIsPaid);
     // ── ดึงรายการของแต่ละใบ (แมสต้องรู้ว่าขนอะไรขึ้นรถ) ──
     var CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
     var itemsByOrder={};
@@ -3389,21 +3435,26 @@ async function loadMessenger(){
     // ── fallback: Meal Plan ที่ order_items ใช้ไม่ได้ → ดึงเมนูจาก mp_deliveries ── (_mpFallbackDone)
     // ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น
     //    ห้ามจับคู่ด้วย "ชื่อ+วันที่" — เคยทำให้ข้อมูลเทสชื่อซ้ำลูกค้าจริงโผล่มาแสดง (5 ส.ค. 2026)
-    if(data.some(function(o){return o._noFood;})){
+    /* N-70 · ดึงรอบส่ง Meal Plan มาให้ "ทุกใบ" ไม่ใช่เฉพาะใบที่ไม่มีของ
+       กิ๊ฟบอก "ตอนนี้ระบบมันกระจายอยู่ค่ะ" = แมสต้องไล่ประกอบเองว่าใบนี้คือรอบไหนของใคร */
+    if(data.length){
       try{
         var mpr=await sb_.from("mp_deliveries")
-          .select("order_id,line_uid,customer_id,menu_items,mp_type,status")
+          .select("order_id,line_uid,customer_id,menu_items,mp_type,status,round_no,total_rounds,box_count")
           .eq("delivery_date",date).neq("status","cancelled");
         var mprows=mpr.data||[];
         data.forEach(function(o){
-          if(!o._noFood)return;
           var m=null;
           if(o.id)              m=mprows.find(function(x){return x.order_id&&x.order_id===o.id;});
           if(!m&&o.line_uid)    m=mprows.find(function(x){return x.line_uid&&x.line_uid===o.line_uid;});
           if(!m&&o.customer_id) m=mprows.find(function(x){return x.customer_id&&x.customer_id===o.customer_id;});
-          if(m&&Array.isArray(m.menu_items)&&m.menu_items.length){
+          if(!m) return;
+          o._round=(m.round_no||1)+"/"+(m.total_rounds||1);
+          o._mpType=String(m.mp_type||"MP").toUpperCase();
+          o._mpBoxes=m.box_count||null;
+          if(o._noFood && Array.isArray(m.menu_items) && m.menu_items.length){
             o._food=m.menu_items.map(function(x){return {menu_code:x.code||"",menu_name:x.name||"",quantity:1};});
-            o._noFood=false; o._fromMp=String(m.mp_type||"MP").toUpperCase();
+            o._noFood=false; o._fromMp=o._mpType;
           }
         });
       }catch(e){ console.warn("mp fallback:",e); }
@@ -3418,6 +3469,7 @@ async function loadMessenger(){
       sumEl.innerHTML="<div style='background:#EBF3EF;border-radius:10px;padding:11px 13px'>"
         +"<div style='font-size:14px;font-weight:800;color:#1F4D3A'>📅 "+date+" — ส่ง "+data.length+" ราย · รวม "+boxN+" ชิ้น</div>"
         +"<div style='font-size:12px;color:#374151;margin-top:3px'>ช่วงเวลา: "+slotStr+"</div>"
+        +(unpaidN?"<div style='margin-top:6px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:7px 9px;font-size:12px;color:#B91C1C;font-weight:700'>💸 "+unpaidN+" ใบยังไม่จ่ายเงิน"+(msgHideUnpaid?" (ซ่อนอยู่)":" — ติดป้ายไว้ในรายการแล้ว")+"</div>":"")
         +(noFoodN?"<div style='margin-top:6px;background:#FEF2F2;border:1px solid #FCA5A5;border-radius:8px;padding:7px 9px;font-size:12px;color:#B91C1C;font-weight:700'>⚠️ "+noFoodN+" ใบไม่มีรายการของในระบบ (ใบแยกวันส่ง) — ต้องเช็คกับแอดมินก่อนจัดของ</div>":"")
         +"</div>";
     }
@@ -3434,7 +3486,9 @@ async function loadMessenger(){
         var maploc=(o.delivery_lat!=null&&o.delivery_lng!=null)?("https://www.google.com/maps?q="+o.delivery_lat+","+o.delivery_lng):"";
         h+="<div class='msg-card'>";
         h+="<div><div class='msg-order'>"+(o.order_number||"—")+"</div><div style='font-size:11px;color:#6B7280'>"+esc2(o.time_slot_label||o.time_slot||"")+(o._z.dist<99999?" · ~"+o._z.dist+" กม.":"")+"</div></div>";
-        h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+"</div>";
+        h+="<div><div class='msg-customer'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)
+          + (o._round?" <span style='font-size:10.5px;font-weight:800;background:#EDE9FE;color:#5B21B6;border-radius:6px;padding:1px 7px'>"+esc2(o._mpType)+" รอบ "+esc2(o._round)+(o._mpBoxes?" · "+o._mpBoxes+" กล่อง":"")+"</span>":"")
+          + msgPayBadge(o) + "</div>";
         h+="<div class='msg-addr'>📍 "+esc2(addr)+(maploc?" <a href='"+maploc+"' target='_blank' style='color:#1D4ED8;font-weight:600'>🗺️แผนที่</a>":"")+"</div>";
         h+=(o.customer_phone?"<div style='font-size:12px;margin-top:2px'>📞 <a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a></div>":"");
         // ⚠️ ไกลเกินเขตแมส — กันแมสรับงานไปแล้วขี่ไม่ถึง / กันกดจอง Lalamove แล้วโดนปฏิเสธ
@@ -3463,6 +3517,7 @@ async function loadMessenger(){
         var dopt=function(v,txt){return "<option value='"+v+"'"+(cur===v?" selected":"")+">"+txt+"</option>";};
         h+="<select class='driver-select"+(cur?" assigned":"")+"' data-oid='"+o.id+"' data-prev='"+cur+"' onchange='saveCourier(this)'>"
           +dopt("","เลือกผู้ส่ง...")+dopt("store","🛵 แมสร้าน")+dopt("lalamove","🟠 Lalamove")+dopt("grab","🟢 Grab")+"</select>";
+        h+=msgCalledBtn(o);
         h+="<span class='pill "+(o.status==="delivered"?"p-done":"p-ready")+"'>"+statusTh(o.status)+"</span></div></div>";
       });
     });
