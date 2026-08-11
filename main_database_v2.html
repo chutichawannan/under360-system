@@ -600,6 +600,7 @@ function getSB(){ if(!_sb) _sb = supabase.createClient(SB_URL, SB_KEY); return _
   <button class="tab-btn" data-tab="plan">แพลนซื้อวัตถุดิบ</button>
   <button class="tab-btn" data-tab="mealplan">📅 Meal Plan</button>
   <button class="tab-btn" data-tab="packages">📦 แพคเกจ</button>
+  <button class="tab-btn" data-tab="sale">🏷️ บ่อเซล</button>
 </div>
 <main id="app"><div class="empty">กำลังโหลดข้อมูล...</div></main>
 <button class="fab" id="fabNew">+ เมนูใหม่</button>
@@ -816,7 +817,9 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   // ── v0.3.2 packages tab ──
   packages: [], pkgItems: {}, pkgLoaded: false, pkgLoading: false,
   openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: '',
-  showActivityLog: false, dbMenuPageSize: 30
+  showActivityLog: false, dbMenuPageSize: 30,
+  // ── 🏷️ บ่อเซล (sale pools) — เก็บที่ kitchen_data คีย์ 'sale_pools' (ไม่ต้องรัน SQL) ──
+  salePools: [], salePoolsLoaded: false, salePickPool: null, saleSearch: '', pkgClearance: {}
 };
 
 // ── Storage Layer: Supabase (shared) + localStorage (private) ────────────
@@ -2045,6 +2048,238 @@ async function loadPackages(){
   render();
 }
 
+/* ══════════════════════════════════════════════════════════════════
+   🏷️ บ่อเซล (SALE POOLS)
+   แนวคิด: สร้าง "บ่อ" ได้เอง แต่ละบ่อตั้ง % ลดเอง (บ่อ 5% · บ่อ 10% · บ่อ 30%)
+   โยนเมนูที่ "ออนไลน์" ลงบ่อ → หน้าลูกค้า (LIFF) ขึ้นป้าย -N% + ราคาขีดทับอัตโนมัติ
+   เก็บที่ kitchen_data คีย์ 'sale_pools' — ไม่ต้องรัน SQL ใหม่
+   โครง: { pools: [ { id, name, percent, codes:[ "S103", ... ] } ] }
+   กติกา: 1 เมนูอยู่ได้บ่อเดียว (กันคิดลดซ้อน) — โยนลงบ่อใหม่ = ย้ายออกจากบ่อเดิมอัตโนมัติ
+   ══════════════════════════════════════════════════════════════════ */
+const SALE_KEY = 'sale_pools';
+
+async function loadSalePools(){
+  try{
+    const v = await getStored(SALE_KEY, true);
+    state.salePools = (v && Array.isArray(v.pools)) ? v.pools : [];
+  }catch(e){ state.salePools = []; }   // capability-safe: อ่านไม่ได้ = ถือว่าไม่มีบ่อ ไม่พังทั้งหน้า
+  state.salePools.forEach(p=>{
+    if(!p.id) p.id = 'sp'+Date.now()+Math.random().toString(36).slice(2,6);
+    if(!Array.isArray(p.codes)) p.codes = [];
+    p.percent = Math.max(0, Math.min(95, Number(p.percent)||0));
+  });
+  state.salePoolsLoaded = true;
+}
+async function saveSalePools(){
+  const ok = await setStored(SALE_KEY, { pools: state.salePools }, true);
+  if(!ok) alert('⚠️ บันทึกบ่อเซลไม่สำเร็จ (ออฟไลน์?) — ลองใหม่อีกครั้ง');
+  return ok;
+}
+/** map { CODE: percent } จากทุกบ่อที่ % > 0 */
+function salePctByCodeMap(){
+  const map = {};
+  (state.salePools||[]).forEach(p=>{
+    const pct = Number(p.percent)||0;
+    if(pct<=0) return;
+    (p.codes||[]).forEach(c=>{ if(c) map[String(c).trim().toUpperCase()] = pct; });
+  });
+  return map;
+}
+function salePctOf(code){
+  if(!code) return 0;
+  return salePctByCodeMap()[String(code).trim().toUpperCase()] || 0;
+}
+function salePoolOfCode(code){
+  const c = String(code||'').trim().toUpperCase();
+  return (state.salePools||[]).find(p => (p.codes||[]).some(x => String(x).trim().toUpperCase()===c)) || null;
+}
+
+function renderSaleTab(){
+  if(!state.salePoolsLoaded) return `<div class="empty" style="padding:60px 0;">⏳ กำลังโหลดบ่อเซล...</div>`;
+  const online = state.recipes.filter(r => r.available_online && r.status!=='retired');
+  const inPool = new Set();
+  (state.salePools||[]).forEach(p => (p.codes||[]).forEach(c => inPool.add(String(c).trim().toUpperCase())));
+  let html = `<div class="toolbar">
+    <button class="btn btn-primary btn-sm" onclick="saleAddPool()">+ สร้างบ่อใหม่</button>
+    <span style="font-size:12px;color:var(--ink-soft);margin-left:auto;">${state.salePools.length} บ่อ · ${inPool.size} เมนูกำลังลดราคา · ออนไลน์ทั้งหมด ${online.length}</span>
+  </div>
+  <div style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;line-height:1.7;">
+    โยนเมนูลงบ่อ → ลูกค้าเห็นป้าย <b>-N%</b> + ราคาเดิมขีดทับ ในหน้า LIFF ทันที (ไม่ต้อง deploy)<br>
+    เอาออกจากบ่อ = กลับราคาเดิมทันที · 1 เมนูอยู่ได้บ่อเดียว
+  </div>`;
+  if(!state.salePools.length) return html + `<div class="empty">ยังไม่มีบ่อเซล — กด "+ สร้างบ่อใหม่" (เช่น ตั้งชื่อ "บ่อ 10%" แล้วใส่ 10)</div>`;
+
+  state.salePools.forEach(p=>{
+    const isPicking = state.salePickPool === p.id;
+    const codes = (p.codes||[]);
+    const chips = codes.map(c=>{
+      const r = state.recipes.find(x => String(x.code||'').trim().toUpperCase()===String(c).trim().toUpperCase());
+      const nm = r ? r.name : '(ไม่พบเมนู)';
+      const oldP = r ? (Number(r.selling_price)||0) : 0;
+      const newP = oldP ? Math.round(oldP*(100-(Number(p.percent)||0))/100) : 0;
+      return `<span style="display:inline-flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:999px;padding:3px 6px 3px 10px;font-size:12px;margin:0 6px 6px 0;">
+        <b style="font-family:'IBM Plex Mono',monospace">${escapeHtml(c)}</b>
+        <span style="color:var(--ink-soft);max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(nm)}</span>
+        ${oldP?`<span style="color:#9CA3AF;text-decoration:line-through;">฿${oldP}</span><span style="color:#DC2626;font-weight:700;">฿${newP}</span>`:''}
+        <button type="button" title="เอาออกจากบ่อ" onclick="saleRemoveCode('${p.id}','${escapeHtml(c)}')"
+          style="border:none;background:none;color:#DC2626;font-size:14px;cursor:pointer;line-height:1;padding:0 4px;">✕</button>
+      </span>`;
+    }).join('') || `<span style="font-size:12px;color:var(--ink-soft);">ยังไม่มีเมนูในบ่อนี้</span>`;
+
+    html += `<div class="card" style="margin-bottom:10px;padding:12px;">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+        <input type="text" value="${escapeHtml(p.name||'')}" placeholder="ชื่อบ่อ เช่น บ่อ 10%"
+          onchange="saleSetName('${p.id}', this.value)"
+          style="flex:1;min-width:140px;border:1.5px solid var(--line);border-radius:8px;padding:6px 10px;font-size:14px;font-weight:700;font-family:inherit;">
+        <label style="display:flex;align-items:center;gap:4px;font-size:13px;">ลด
+          <input type="number" min="0" max="95" step="1" value="${Number(p.percent)||0}"
+            onchange="saleSetPercent('${p.id}', this.value)"
+            style="width:64px;border:1.5px solid var(--line);border-radius:8px;padding:6px 8px;font-size:14px;font-weight:800;text-align:center;color:#DC2626;font-family:inherit;">%
+        </label>
+        <button class="btn btn-ghost btn-sm" onclick="saleTogglePick('${p.id}')">${isPicking?'✕ ปิดรายการเมนู':'+ โยนเมนูลงบ่อ'}</button>
+        <button class="btn btn-ghost btn-sm" style="color:#DC2626;" onclick="saleDeletePool('${p.id}')">🗑 ลบบ่อ</button>
+      </div>
+      <div style="margin-top:10px;">${chips}</div>`;
+
+    if(isPicking){
+      const q = (state.saleSearch||'').trim().toLowerCase();
+      const list = online.filter(r=>{
+        const c = String(r.code||'').trim().toUpperCase();
+        const mine = (p.codes||[]).some(x=>String(x).trim().toUpperCase()===c);
+        if(mine) return false;
+        if(!q) return true;
+        return (r.name||'').toLowerCase().includes(q) || c.toLowerCase().includes(q);
+      });
+      html += `<div style="margin-top:10px;border-top:1px dashed var(--line);padding-top:10px;">
+        <input type="text" class="sale-search-input" placeholder="ค้นหาเมนู (ชื่อ/โค้ด)..." value="${escapeHtml(state.saleSearch||'')}"
+          style="width:100%;border:1.5px solid var(--line);border-radius:8px;padding:7px 10px;font-size:13px;font-family:inherit;margin-bottom:8px;">
+        <div style="max-height:320px;overflow:auto;">`;
+      if(!list.length) html += `<div class="empty" style="padding:20px 0;">ไม่พบเมนูออนไลน์ที่ตรงกับคำค้น</div>`;
+      list.slice(0,200).forEach(r=>{
+        const other = salePoolOfCode(r.code);
+        const oldP = Number(r.selling_price)||0;
+        const newP = oldP ? Math.round(oldP*(100-(Number(p.percent)||0))/100) : 0;
+        html += `<div style="display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--line);font-size:13px;">
+          <b style="font-family:'IBM Plex Mono',monospace;min-width:52px;">${escapeHtml(r.code||'-')}</b>
+          <span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${escapeHtml(r.name||'')}</span>
+          ${other?`<span style="font-size:11px;color:#D97706;">อยู่ใน ${escapeHtml(other.name||'บ่ออื่น')} — โยนแล้วจะย้ายมา</span>`:''}
+          ${oldP?`<span style="color:#9CA3AF;">฿${oldP}</span><span style="color:#DC2626;font-weight:700;">→ ฿${newP}</span>`:'<span style="color:#9CA3AF;">ยังไม่ตั้งราคา</span>'}
+          <button class="btn btn-ghost btn-sm" onclick="saleAddCode('${p.id}','${escapeHtml(r.code||'')}')">+ โยนลงบ่อ</button>
+        </div>`;
+      });
+      html += `</div></div>`;
+    }
+    html += `</div>`;
+  });
+  html += renderClearanceSection();
+  return html;
+}
+
+/* ── 🧹 แพค Clearance: "เลือกอย่างน้อย N อย่าง ลด X%" ────────────────────────
+   ต่างจากเซ็ตราคาเหมา — ราคาคิดจากของจริงที่ลูกค้าเลือกแล้วหัก X%
+   ตั้งค่าเก็บที่ kitchen_data 'pkg_clearance' = { "<package id>": {percent, min_items} }
+   รายการสินค้าในแพค = แก้ที่แท็บ 📦 แพคเกจ (กลุ่มการเลือก → เจาะจงรายเมนู) ตามเดิม */
+const PKGCLR_KEY = 'pkg_clearance';
+function renderClearanceSection(){
+  if(!state.pkgLoaded) return `<div style="margin-top:26px;font-size:12px;color:var(--ink-soft);">
+    🧹 แพค Clearance — <button class="btn btn-ghost btn-sm" onclick="loadPackages().then(()=>loadClearance()).then(render)">โหลดรายการแพค</button></div>`;
+  const cfg = state.pkgClearance || {};
+  let html = `<div style="margin-top:26px;border-top:2px solid var(--line);padding-top:14px;">
+    <div style="font-size:15px;font-weight:800;margin-bottom:4px;">🧹 แพค Clearance (ลด % จากราคาจริง)</div>
+    <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px;line-height:1.7;">
+      ต่างจากเซ็ตราคาเหมา — ลูกค้าเลือกกี่ชิ้นก็ได้ (ขั้นต่ำ N) แล้วระบบคิด <b>ราคาจริงรวม − X%</b><br>
+      รายการสินค้าในแพค แก้ที่แท็บ <b>📦 แพคเกจ</b> → กลุ่มการเลือก (เจาะจงรายเมนู)
+    </div>`;
+  state.packages.forEach(p=>{
+    const c = cfg[p.id] || null;
+    html += `<div class="card" style="padding:10px 12px;margin-bottom:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      <label style="display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;flex:1;min-width:180px;">
+        <input type="checkbox" ${c?'checked':''} onchange="clrToggle('${p.id}', this.checked)">
+        ${escapeHtml(p.name)} <span style="font-size:11px;color:var(--ink-soft);font-weight:400;">${p.is_active?'· เปิดขาย':'· ปิดอยู่'}</span>
+      </label>
+      ${c?`<label style="font-size:13px;display:flex;align-items:center;gap:4px;">ลด
+        <input type="number" min="1" max="95" value="${c.percent}" onchange="clrSet('${p.id}','percent',this.value)"
+          style="width:60px;border:1.5px solid var(--line);border-radius:8px;padding:5px 6px;text-align:center;font-weight:800;color:#DC2626;font-family:inherit;">%</label>
+      <label style="font-size:13px;display:flex;align-items:center;gap:4px;">ขั้นต่ำ
+        <input type="number" min="1" max="99" value="${c.min_items}" onchange="clrSet('${p.id}','min_items',this.value)"
+          style="width:60px;border:1.5px solid var(--line);border-radius:8px;padding:5px 6px;text-align:center;font-weight:800;font-family:inherit;">ชิ้น</label>`:''}
+    </div>`;
+  });
+  if(!state.packages.length) html += `<div class="empty">ยังไม่มีแพคในระบบ</div>`;
+  return html + `</div>`;
+}
+async function loadClearance(){
+  try{ const v = await getStored(PKGCLR_KEY, true); state.pkgClearance = (v && typeof v==='object') ? v : {}; }
+  catch(e){ state.pkgClearance = {}; }
+}
+async function saveClearance(){
+  const ok = await setStored(PKGCLR_KEY, state.pkgClearance||{}, true);
+  if(!ok) alert('⚠️ บันทึกไม่สำเร็จ — ลองใหม่อีกครั้ง');
+}
+function clrToggle(pkgId, on){
+  state.pkgClearance = state.pkgClearance || {};
+  if(on) state.pkgClearance[pkgId] = { percent:30, min_items:5 };
+  else delete state.pkgClearance[pkgId];
+  saveClearance(); render();
+}
+function clrSet(pkgId, field, v){
+  const c = (state.pkgClearance||{})[pkgId]; if(!c) return;
+  const n = Math.round(Number(v)||0);
+  c[field] = field==='percent' ? Math.max(1, Math.min(95, n)) : Math.max(1, Math.min(99, n));
+  saveClearance(); render();
+}
+
+function saleAddPool(){
+  state.salePools.push({ id:'sp'+Date.now()+Math.random().toString(36).slice(2,6), name:'บ่อใหม่', percent:10, codes:[] });
+  saveSalePools(); render();
+}
+function saleDeletePool(id){
+  const p = state.salePools.find(x=>x.id===id);
+  if(!p) return;
+  if(!confirm(`ลบบ่อ "${p.name}" ?\nเมนู ${(p.codes||[]).length} รายการจะกลับเป็นราคาเต็มทันที`)) return;
+  state.salePools = state.salePools.filter(x=>x.id!==id);
+  if(state.salePickPool===id) state.salePickPool = null;
+  saveSalePools(); render();
+}
+function saleSetName(id, v){
+  const p = state.salePools.find(x=>x.id===id); if(!p) return;
+  p.name = String(v||'').slice(0,40); saveSalePools(); render();
+}
+function saleSetPercent(id, v){
+  const p = state.salePools.find(x=>x.id===id); if(!p) return;
+  p.percent = Math.max(0, Math.min(95, Math.round(Number(v)||0)));
+  saveSalePools(); render();
+}
+function saleTogglePick(id){
+  state.salePickPool = (state.salePickPool===id) ? null : id;
+  state.saleSearch = '';
+  render();
+}
+function saleAddCode(poolId, code){
+  const c = String(code||'').trim();
+  if(!c){ alert('เมนูนี้ยังไม่มีโค้ด — ตั้งโค้ดก่อนถึงจะโยนลงบ่อได้'); return; }
+  const up = c.toUpperCase();
+  // 1 เมนูอยู่ได้บ่อเดียว → ถอดออกจากบ่ออื่นก่อน
+  state.salePools.forEach(p=>{ p.codes = (p.codes||[]).filter(x=>String(x).trim().toUpperCase()!==up); });
+  const p = state.salePools.find(x=>x.id===poolId); if(!p) return;
+  p.codes.push(c);
+  saveSalePools(); render();
+}
+function saleRemoveCode(poolId, code){
+  const p = state.salePools.find(x=>x.id===poolId); if(!p) return;
+  const up = String(code||'').trim().toUpperCase();
+  p.codes = (p.codes||[]).filter(x=>String(x).trim().toUpperCase()!==up);
+  saveSalePools(); render();
+}
+function attachSaleHandlers(){
+  const inp = document.querySelector('.sale-search-input');
+  if(inp){
+    inp.oninput = ()=>{ state.saleSearch = inp.value; };
+    inp.onkeydown = (e)=>{ if(e.key==='Enter'){ e.preventDefault(); render(); } };
+    inp.onblur = ()=>{ render(); };
+  }
+}
+
 function renderPackagesTab(){
   if(state.pkgLoading) return `<div class="empty" style="padding:60px 0;">⏳ กำลังโหลด...</div>`;
   const count = state.packages.length;
@@ -2619,6 +2854,9 @@ async function init(){
     state.dbMenuPageSize = (gs && gs.dbMenuPageSize != null) ? gs.dbMenuPageSize : 30;
   }catch(e){ state.dbMenuPageSize = 30; }
 
+  // ── 🏷️ บ่อเซล — โหลดแบบไม่บล็อก (อ่านไม่ได้ก็ไม่พังทั้งหน้า) แล้ว re-render ให้ป้าย -N% ขึ้น ──
+  loadSalePools().then(()=>{ try{ render(); }catch(e){} });
+
   // ── UNPACK CONFIG (with migration from old separate keys) ──────────────────
   let cats, sups, plan, appSettings, initFlags, mpData, mpDates;
   if(cfg){
@@ -3098,6 +3336,7 @@ function _doRender(force){
   else if(state.tab==='plan') app.innerHTML = renderPlanTab();
   else if(state.tab==='mealplan') app.innerHTML = renderMealPlanTab();
   else if(state.tab==='packages') app.innerHTML = renderPackagesTab();
+  else if(state.tab==='sale') app.innerHTML = renderSaleTab();
   app.innerHTML += `<datalist id="ingList">${state.ingredients.map(i=>`<option value="${escapeHtml(i.name)}">`).join('')}</datalist>`;
   if(state.showCategoryManager){ app.innerHTML += renderCategoryManager(); }
   if(state.showSupplierManager){ app.innerHTML += renderSupplierManager(); }
@@ -3106,6 +3345,7 @@ function _doRender(force){
   attachWhoamiHandlers();
   if(state.tab==='mealplan') attachMealPlanHandlers();
   if(state.tab==='packages') attachPackagesHandlers();
+  if(state.tab==='sale') attachSaleHandlers();
   if(state.showCategoryManager) attachCategoryManagerHandlers();
   if(state.showSupplierManager) attachSupplierManagerHandlers();
   if(state.showNameGate) attachNameGateModalHandlers();
@@ -3677,6 +3917,9 @@ function renderRecipeCard(r, tot, pinInfo){
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
       ${r.available_online?`<input type="text" class="subcode-input" data-id="${r.id}" value="${(r.subcode||'').replace(/"/g,'&quot;')}" placeholder="ชื่อเล่น" maxlength="6" title="ชื่อเล่นที่ครัว/ลูกค้าเรียก เช่น s1 · xs3 (x = ค้างมากี่สัปดาห์) — กรอกได้เฉพาะสินค้าที่ออนไลน์">`:''}
       ${r.available_online?renderAvailCell(r):''}
+      ${(()=>{ const pct = salePctOf(r.code); if(!pct) return '';
+        const np = r.selling_price ? Math.round(r.selling_price*(100-pct)/100) : 0;
+        return `<span title="อยู่ในบ่อเซล ${escapeHtml((salePoolOfCode(r.code)||{}).name||'')} — ลูกค้าเห็นราคาลดแล้ว" style="font-size:11px;font-weight:800;color:#fff;background:#DC2626;padding:2px 7px;border-radius:8px;white-space:nowrap;flex-shrink:0;">-${pct}%${np?' ฿'+np:''}</span>`; })()}
       <span class="meta">${tot.cost>0?'฿'+fmtMoney(tot.cost):'—'}${r.selling_price?' · ขาย ฿'+r.selling_price:''}</span>
       <button type="button" class="expand-btn" data-id="${r.id}" title="${isOpen?'ปิดแผงแก้ไข':'เปิดแผงแก้ไข'}">${isOpen?'▲':'▼'}</button>
     </div>`;
@@ -4083,7 +4326,7 @@ function setupCatTabDragScroll(){
 }
 
 function attachHandlers(){
-  document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.search=''; state.openId=null; render(); if(state.tab==='packages'&&!state.pkgLoaded&&!state.pkgLoading) loadPackages(); });
+  document.querySelectorAll('.tab-btn').forEach(b=>b.onclick=()=>{ state.tab=b.dataset.tab; state.search=''; state.openId=null; render(); if(state.tab==='packages'&&!state.pkgLoaded&&!state.pkgLoading) loadPackages(); if(state.tab==='sale'){ if(!state.salePoolsLoaded) loadSalePools().then(render); if(!state.pkgLoaded&&!state.pkgLoading) loadPackages().then(loadClearance).then(render); else loadClearance().then(render); } });
   setupCatTabDragScroll();
 
   // Close all floating pickers on outside click
