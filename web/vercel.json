@@ -115,5 +115,15 @@
       "destination": "/blog.html?legacy=:rest*",
       "statusCode": 301
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/fah",
+      "destination": "https://under360-system.vercel.app/pwa/fah.html"
+    },
+    {
+      "source": "/k",
+      "destination": "https://under360-system.vercel.app/k.html"
+    }
   ]
 }
