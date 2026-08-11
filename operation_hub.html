@@ -606,6 +606,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 
       </div>
 
+      <!-- ใบที่ยังไม่มีที่ให้กรอกเมนู — กันลูกค้าหลุดแบบเงียบๆ (กิ๊ฟเจอเอง 11 ส.ค.) -->
+      <div id="planMissingWrap" style="margin-top:10px;"></div>
       <!-- วันที่ผ่านมาแล้ว — เก็บไว้ดูย้อนหลัง ไม่โชว์ในตารางหลักอีกต่อไป -->
       <div id="planHistoryWrap" style="margin-top:8px;"></div>
 
@@ -2085,6 +2087,68 @@ function togglePlanColumn(dateStr,type){
   updateSelectHint();
 }
 // คลิกวันที่ที่ header → กรองตารางให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle: คลิกวันเดิมซ้ำ = เอาตัวกรองออก)
+/* ── ใบที่ "ไม่มีที่ให้กรอกเมนู" ────────────────────────────────────────────
+   เคสจริง 11 ส.ค.: กิ๊ฟบอก "หน้าแพลนเมนูมันไม่ขึ้นในระบบค่ะ Hyrox"
+   ของจริงคือ 3 ใบ (Monchuta · พัดชา · นวภัท) มาจาก Hato มี order_items แค่บรรทัดควบคุม
+   → ไม่มีแถวใน mp_deliveries → ไม่โผล่ในตารางนี้ → ไม่มีช่องให้กรอก และไม่มีอะไรเตือน
+   ตอนนี้เอามาโชว์ตรงนี้ พร้อมปุ่มเปิดแถวให้กรอกได้ทันที */
+async function loadPlanMissing(dateStr){
+  var wrap=document.getElementById("planMissingWrap"); if(!wrap)return;
+  var sb_=getSB(); if(!sb_||!dateStr){ wrap.innerHTML=""; return; }
+  try{
+    var ords=await sb_.from("orders")
+      .select("id,order_number,customer_name,total,delivery_date,source")
+      .eq("delivery_date",dateStr).neq("status","cancelled").limit(200);
+    if(ords.error||!ords.data){ wrap.innerHTML=""; return; }
+    var list=ords.data.filter(function(o){ return o.source!=="parallel_test"; });
+    if(!list.length){ wrap.innerHTML=""; return; }
+    var ids=list.map(function(o){return o.id;});
+    var mps=await sb_.from("mp_deliveries").select("order_id").in("order_id",ids).neq("status","cancelled").limit(500);
+    var hasPlan={}; (mps.data||[]).forEach(function(m){ hasPlan[m.order_id]=1; });
+    var its=await sb_.from("order_items").select("order_id,menu_code").in("order_id",ids).limit(2000);
+    var CTRL={"1":1,"0":1,"000":1};
+    var realItems={};
+    (its.data||[]).forEach(function(i){ if(!CTRL[String(i.menu_code)]) realItems[i.order_id]=(realItems[i.order_id]||0)+1; });
+    /* เข้าข่าย = ไม่มีแถวแพลน และไม่มีเมนูจริงสักรายการ = ครัวไม่รู้ว่าจะทำอะไรให้คนนี้ */
+    var missing=list.filter(function(o){ return !hasPlan[o.id] && !realItems[o.id]; });
+    if(!missing.length){ wrap.innerHTML=""; return; }
+    var h="<div style='background:#FEF2F2;border:1px solid #FECACA;border-radius:12px;padding:12px 14px'>"
+      +"<div style='font-weight:800;color:#991B1B;font-size:13.5px'>⚠️ ใบที่ยังไม่มีที่ให้กรอกเมนู · "+missing.length+" ใบ (ส่ง "+dateStr+")</div>"
+      +"<div style='font-size:11.5px;color:#7F1D1D;margin:3px 0 9px'>ครัวจะไม่รู้ว่าต้องทำอะไรให้ลูกค้าพวกนี้ — กด \"เปิดให้กรอกเมนู\" แล้วชื่อจะขึ้นในตารางด้านบนทันที</div>";
+    missing.forEach(function(o){
+      h+="<div style='display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:6px 0;border-top:1px solid #FECACA'>"
+        +"<span style='font-family:var(--mono);font-size:11px;color:#7F1D1D'>"+esc2(o.order_number||"—")+"</span>"
+        +"<span style='font-size:13px;font-weight:600;flex:1;min-width:120px'>"+esc2(o.customer_name||"ลูกค้า")+"</span>"
+        +"<span style='font-size:11px;color:#9CA3AF'>"+esc2(o.source||"")+"</span>"
+        +"<button class='btn' onclick=\"planAddMissing('"+o.id+"')\" style='font-size:11.5px;padding:4px 10px'>➕ เปิดให้กรอกเมนู</button></div>";
+    });
+    wrap.innerHTML=h+"</div>";
+  }catch(e){ console.warn("loadPlanMissing:",e); wrap.innerHTML=""; }
+}
+async function planAddMissing(orderId){
+  var sb_=getSB(); if(!sb_)return;
+  var o=(await sb_.from("orders").select("*").eq("id",orderId).maybeSingle()).data;
+  if(!o) return alert("ไม่พบออเดอร์");
+  var t=(window.prompt("ลูกค้ารายนี้เป็นแบบไหน?\n\nพิมพ์  hyrox  /  hp  /  lc","hyrox")||"").trim().toLowerCase();
+  if(!t) return;
+  if(["hyrox","hp","lc"].indexOf(t)<0) return alert("พิมพ์ได้แค่ hyrox / hp / lc");
+  var b=parseInt(window.prompt("กี่กล่อง?", t==="hyrox"?"6":"7"),10);
+  if(!b||b<1) return alert("จำนวนกล่องไม่ถูกต้อง");
+  try{
+    var res=await sb_.from("mp_deliveries").insert([{
+      order_id:o.id, customer_id:o.customer_id||null, line_uid:o.line_uid||null,
+      customer_name:o.customer_name||null, line_display_name:o.line_display_name||null,
+      mp_type:t, mp_set:(t==="hyrox"?"SET-HYROX6":"weekly"), round_no:1, total_rounds:1,
+      delivery_date:o.delivery_date, time_slot:o.time_slot||"afternoon",
+      time_slot_label:o.time_slot_label||"13:00 – 18:00",
+      delivery_address:o.delivery_address||null, box_count:b, status:"scheduled"
+    }]).select("id");
+    if(res.error) throw res.error;
+    if(!res.data||!res.data.length) throw new Error("คำสั่งผ่านแต่ไม่ได้แถวกลับมา");
+    alert("เปิดให้กรอกเมนูแล้ว — "+(o.customer_name||"")+" ("+b+" กล่อง)\nเลื่อนขึ้นไปกรอกในตารางได้เลย");
+    loadMpPlanData();
+  }catch(e){ alert("เปิดแถวไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
 /* N-65 · ปุ่มเลือกวัน — เดิมต้องรู้เองว่าคลิกหัวตารางได้ (ไม่มีใครเดาออก) */
 function renderPlanDayChips(dates){
   var box=document.getElementById("planDayChips"); if(!box)return;
@@ -2661,6 +2725,7 @@ function _buildPlanTable(){
      เดิมทุกวันขึ้นพร้อมกันเป็นสิบคอลัมน์ แอดมินบอกตรงๆ ว่า "ลายตา" */
   var allDates=planDateFilter&&upcoming.indexOf(planDateFilter)>=0 ? [planDateFilter] : upcoming;
   renderPlanDayChips(upcoming);
+  loadPlanMissing(planDateFilter||todayStr);
 
   var visibleSubs=planDateFilter?subs.filter(function(s){return s.rows.some(function(r){return r.delivery_date===planDateFilter;});}):subs;
 
