@@ -238,7 +238,8 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
    (ปุ่มยังอยู่ครบทุกตัว แค่ปัดนิ้วซ้าย-ขวาแทนการกินพื้นที่แนวตั้ง) */
 @media (max-width:699px){
   .hdr{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:6px;padding:8px 10px;}
-  .hdr-title{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;}
+  /* flex:0 0 auto = ห้ามหดหาย (ถ้าปล่อยให้หดจะเหลือ 0px ชื่อหน้าหายเกลี้ยง) · ปุ่มเลื่อนแทน */
+  .hdr-title{flex:0 0 auto;max-width:46%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px;}
   .hdr-btn{flex-shrink:0;}
   /* ปุ่มโหมดแท็บเล็ตไม่มีความหมายบนจอแคบ (ดู applyTabletMode) — ซ่อนไว้ กันกดแล้วงงว่าไม่มีอะไรเกิดขึ้น */
   #tabletBtn{display:none;}
