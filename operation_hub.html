@@ -264,6 +264,12 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   vertical-align:middle;
 }
 .plan-table tr:hover td{background:var(--forest-soft)}
+/* ── ขนาดตัวหนังสือทั้งหน้า (นัทขอ 11 ส.ค. — ของเดิมเล็กสุดตลอด) ──────────────
+   คูณจากขนาดเดิมทุกจุด แทนการไล่แก้ทีละที่ (หน้านี้ใช้ px ฝังในโค้ดเยอะมาก)
+   เล็ก = ของเดิมเป๊ะ · กลาง +12% · ใหญ่ +25% · ใหญ่มาก +40% */
+:root{--u-fs:1}
+body.fs-scaled{zoom:var(--u-fs)}
+@supports not (zoom:1){ body.fs-scaled{transform:scale(var(--u-fs));transform-origin:0 0;width:calc(100% / var(--u-fs))} }
 /* ดูวันเดียว = ไม่มีคอลัมน์อื่นมาแย่งที่ → ให้ช่องเมนูกินพื้นที่ที่เหลือทั้งหมด
    (เดิมช่องกว้าง 110px แล้วเหลือพื้นเขียวว่างครึ่งจอ — นัทเรียกว่า dead space 11 ส.ค.) */
 .plan-table.single-day{table-layout:fixed;width:100%}
@@ -889,6 +895,14 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
         <div class="sec-title">⚙️ ตั้งค่า</div>
       </div>
       <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">🔠 ขนาดตัวหนังสือทั้งหน้า</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">ขยายทั้งหน้าพร้อมกัน (ตาราง ปุ่ม ข้อความ) — เลือกแล้วเห็นผลทันที จำไว้ในเครื่องนี้</div>
+        <select id="set-font-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit;margin-bottom:16px" onchange="setUiFontSize(this.value,true)">
+          <option value="1">เล็ก (ค่าเดิม)</option>
+          <option value="1.12">กลาง</option>
+          <option value="1.25">ใหญ่</option>
+          <option value="1.4">ใหญ่มาก</option>
+        </select>
         <div style="font-size:14px;font-weight:700;margin-bottom:4px">🗄️ หน้าหลังบ้าน (DB)</div>
         <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">จำนวนเมนูที่โชว์ต่อหน้าในแท็บ "เมนูทั้งหมด" — ลดจำนวนลงถ้าหน้าดูรกหรือโหลดช้า</div>
         <select id="set-db-page-size" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit" onchange="saveGlobalSettings()">
@@ -3790,6 +3804,15 @@ async function savePromo(){
 }
 
 // ── ⚙️ Global Settings (kitchen_data key='globalSettings') — ตั้งค่าที่แชร์ข้าม DB/KQ ──
+/* ขนาดตัวหนังสือทั้งหน้า — เก็บในเครื่องนี้เท่านั้น (คนละคนใช้คนละจอ ไม่ควรบังคับกัน) */
+function setUiFontSize(v,save){
+  var n=parseFloat(v)||1;
+  document.documentElement.style.setProperty('--u-fs', n);
+  document.body.classList.toggle('fs-scaled', n!==1);
+  var sel=document.getElementById('set-font-size'); if(sel) sel.value=String(n);
+  if(save){ try{ localStorage.setItem('uiFontScale', String(n)); }catch(e){} }
+}
+try{ var _fs=localStorage.getItem('uiFontScale'); if(_fs) setTimeout(function(){ setUiFontSize(_fs,false); },0); }catch(e){}
 var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal",orderPageSize:20};
 async function loadGlobalSettings(){
   var sb_=getSB(); if(!sb_)return;
