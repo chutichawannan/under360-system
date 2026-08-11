@@ -3001,14 +3001,22 @@ async function syncMenuMetaFromDB(){
     liveOnline = {};   /* ค่าจริงที่ลูกค้าเห็น — เก็บไว้เทียบ ไม่เอาไปทับค่าในหน้านี้ */
     for(let i=0;i<codes.length;i+=200){
       const { data, error } = await sb.from('menu_items')
-        .select('code,subcode,available_from,is_available').in('code', codes.slice(i,i+200));
+        .select('code,subcode,available_from,is_available,stock_total').in('code', codes.slice(i,i+200));
       if(error || !data) continue;
       data.forEach(m=>{
         const r = state.recipes.find(x=>x.code===m.code); if(!r) return;
         const sc = m.subcode||'', af = m.available_from||null;
         if((r.subcode||'')!==sc){ r.subcode = sc; changed++; }
         if((r.availableFrom||null)!==af){ r.availableFrom = af; changed++; }
+        /* 📦 เลขสต็อกที่หน้านี้เคยเป็น "สำเนาของตัวเอง" ไม่เคยดึงของจริงกลับมาเลย
+           → ครัวกรอกที่หน้าครัว / ลูกค้าสั่งแล้วระบบตัดสต็อก หน้านี้ยังโชว์เลขเก่า
+           เจอจริง 11 ส.ค.: 51 เมนูไม่ตรง (หน้านี้ 0 · ของจริง 3-21) ถ้าแอดมินกดปุ่ม +/- ทับ
+           = เอาเลข 0 ไปทับของจริง เมนูหายจากหน้าลูกค้าทันที
+           ดึงกลับมาให้ตรงตอนเปิดหน้า · stock_total = null แปลว่า "ไม่จำกัด"
+           ซึ่งหน้านี้ไม่มีสถานะนั้น → ไม่แตะ ปล่อยตามเดิม */
+        if(m.stock_total!=null && Number(r.stock||0)!==Number(m.stock_total)){ r.stock = Number(m.stock_total); changed++; }
         liveOnline[m.code] = !!m.is_available;
+        liveStock[m.code]  = (m.stock_total==null) ? null : Number(m.stock_total);
       });
     }
     if(changed){ persistRecipesDebounced(); render(); }
@@ -3025,21 +3033,39 @@ async function syncMenuMetaFromDB(){
    ทำตอนเปิดหน้า ไม่ต้องกดอะไร แต่ **ไม่เงียบ** — เปลี่ยนอะไรไปต้องบอกทุกครั้ง
    (ถ้าเงียบ = เครื่องมือที่ไปแก้ของที่ลูกค้าเห็นลับหลังคน อันตรายกว่าไม่ทำ) */
 let liveOnline = {};
+let liveStock  = {};   /* สต็อกจริงฝั่งลูกค้า — ใช้กันไม่ให้ปิดเมนูที่ยังมีของอยู่ */
 /* กล่องนี้อยู่ใน html ที่ถูกวาดใหม่ทุกครั้ง → เก็บข้อความไว้แล้วทาสีกลับหลัง render ไม่งั้นหายทุกรอบ */
 let onlineSyncNote="";
 async function pushOnlineToCustomer(){
   const box=document.getElementById('onlineMismatch');
   const sb=getSB(); if(!sb){ if(box)box.innerHTML=''; return; }
-  const todo=[];
+  const todo=[], held=[];
   state.recipes.forEach(r=>{
     if(!r.code || !(r.code in liveOnline) || r.status!=='active') return;
     const here=!!r.available_online, there=!!liveOnline[r.code];
-    if(here!==there) todo.push({r:r, want:here});
+    if(here===there) return;
+    /* 🛑 กันปิดเมนูที่ยังมีของเหลืออยู่โดยอัตโนมัติ
+       เกิดจริง 11 ส.ค.: 16 เมนูที่ครัวนับว่ามีของ ถูกปิดจากลูกค้าเงียบๆ เพราะค่าในหน้านี้เก่ากว่า
+       (หน้านี้เปิดค้างไว้ตั้งแต่ก่อนแก้ → เซฟทับของใหม่ → ตัวซิงค์เลยไล่ปิดตาม)
+       ของหายจากหน้าร้านทั้งที่มีของ = เสียยอดแบบไม่มีใครรู้ → ไม่ปิดให้ ขึ้นเตือนให้คนตัดสินใจแทน
+       ปิดเองยังทำได้ตลอดด้วยปุ่ม 🛒 ออนไลน์ ที่แถวเมนู (กดแล้วมีผลทันที) */
+    if(!here && Number(liveStock[r.code]||0) > 0){ held.push(r); return; }
+    todo.push({r:r, want:here});
   });
-  if(!todo.length){
-    onlineSyncNote="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ ลูกค้าเห็นตรงกับหน้านี้ทุกเมนู</div>";
+  if(held.length){
+    onlineSyncNote="<div style='background:#FEF3C7;border:1px solid #FCD34D;border-radius:12px;padding:11px 13px'>"
+      +"<div style='font-weight:800;font-size:13px;color:#92400E'>⚠️ ไม่ได้ปิดให้ "+held.length+" เมนู — หน้านี้ว่าปิด แต่ยังมีของเหลืออยู่</div>"
+      +"<div style='font-size:11.5px;color:#78350F;margin-top:3px;line-height:1.6'>"
+      +held.map(r=>escapeHtml(r.code)+" ("+Number(liveStock[r.code]||0)+")").join(' · ')+"</div>"
+      +"<div style='font-size:11.5px;color:#78350F;margin-top:5px'>ถ้าจะปิดจริง กดปุ่ม 🛒 ออนไลน์ ที่แถวเมนูนั้นเอง · ถ้าของยังมี ไม่ต้องทำอะไร</div></div>";
     if(box) box.innerHTML=onlineSyncNote;
-    return;
+  }
+  if(!todo.length){
+    if(!held.length){
+      onlineSyncNote="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ ลูกค้าเห็นตรงกับหน้านี้ทุกเมนู</div>";
+      if(box) box.innerHTML=onlineSyncNote;
+    }
+    return;   /* มีแต่ตัวที่กันไว้ → โชว์คำเตือนไปแล้ว อย่าเขียนทับด้วยข้อความ "อัปเดต 0 เมนู" */
   }
   const done=[], fail=[];
   for(const t of todo){
