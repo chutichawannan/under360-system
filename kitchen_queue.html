@@ -870,16 +870,19 @@ function schedSave(inp){
     var sb_=getSB(); if(!sb_)return;
     // 🔗 ครัวกรอก "ผลิตได้จริง" → ตั้งเลขที่ลูกค้าซื้อได้ (stock_total) ให้ตรงกันทันที (3 ส.ค. 2026)
     //    เดิมเก็บแค่ actual_stock อย่างเดียว → ไม่มีอะไรเชื่อมกับเลขขาย → ครัวผลิตได้ 0 แต่ลูกค้ายังสั่งได้ 10
-    //    เมนูที่ตั้ง "ไม่จำกัด" (stock_total = null) ไม่แตะ — ยังขายได้เรื่อยๆ ตามเดิม
+    // 🆕 11 ส.ค. 2026 (นัทสั่ง) — เมนูที่ตั้ง "ไม่จำกัด" ก็ต้องคุมด้วย
+    //    เดิมไม่แตะ → ครัวกรอก "ผลิตได้ 5" แต่ลูกค้ายังสั่งได้ไม่อั้น (วันนี้มี 41 เมนูอยู่ในสภาพนี้)
+    //    ครัวกรอกเลข = ประกาศว่ามีเท่านี้ → เลิก "ไม่จำกัด" ให้อัตโนมัติ
+    //    อยากกลับไปไม่จำกัด กดปุ่ม ∞ ที่แท็บ "ตั้งสต็อค" ได้ตลอด
     var mm=allMenus.find(function(x){return x.id===menuId;})||{};
-    var patch={actual_stock:val};
-    if(mm.stock_total!=null) patch.stock_total=val;
-    // ⚠️ เมนูที่ตั้ง "ไม่จำกัด" (stock_total=null) → กรอกเลขนี้ไปก็ "ไม่คุมการขาย"
-    //    เดิมเงียบสนิท ครัวนึกว่าจำกัดแล้วแต่ลูกค้ายังสั่งได้ไม่อั้น → ต้องบอกให้รู้ (ไม่เปลี่ยนพฤติกรรมการขายเอง)
-    else kqUnlimitedHint(inp, mm);
+    var wasUnlimited=(mm.stock_total==null);
+    var patch={actual_stock:val, stock_total:val};
+    if(wasUnlimited) kqUnlimitedHint(inp, mm);
     var _w3=await sb_.from("menu_items").update(patch).eq("id",menuId);
     if(_w3.error) kqWriteFail(_w3.error,"ผลิตได้จริง/สต็อคขาย");
-    else if(patch.stock_total!=null) logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")");
+    else { mm.stock_total=val;
+      logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")"
+        +(wasUnlimited?" · เลิกไม่จำกัดให้อัตโนมัติ":"")); }
   },600);
 }
 
@@ -890,8 +893,8 @@ function kqUnlimitedHint(inp, mm){
     if(row.querySelector(".kq-unl-hint"))return;
     var d=document.createElement("div");
     d.className="kq-unl-hint";
-    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:8px;padding:5px 8px;font-size:11px;color:#9A3412;font-weight:600;line-height:1.4";
-    d.textContent="เมนูนี้ตั้งไว้ \u0e02\u0e32\u0e22\u0e44\u0e21\u0e48\u0e08\u0e33\u0e01\u0e31\u0e14 (\u221e) — เลขนี้บันทึกไว้ดูเฉยๆ ไม่ได้จำกัดยอดขาย ถ้าต้องการจำกัด ให้ตั้งเลขที่แท็บ \"ตั้งสต็อค\" ก่อน";
+    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#EAF7EF;border:1px solid #BBE5CB;border-radius:8px;padding:5px 8px;font-size:11px;color:#166534;font-weight:600;line-height:1.4";
+    d.textContent="เมนูนี้เคยตั้งไว้ ขายไม่จำกัด (∞) — ตอนนี้เปลี่ยนเป็นขายได้ตามเลขที่กรอกแล้ว ลูกค้าสั่งเกินไม่ได้";
     row.appendChild(d);
     setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 8000);
   }catch(e){}

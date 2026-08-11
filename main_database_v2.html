@@ -2986,7 +2986,26 @@ async function init(){
   }
   await loadActivityLog();
   render();
-  syncMenuMetaFromDB();   /* ชื่อเล่น + วันพร้อมส่ง = ของจริงอยู่ที่ menu_items ไม่ใช่ในหน้านี้ */
+  syncMenuMetaFromDB();   /* ชื่อเล่น + วันพร้อมส่ง + สต็อก = ของจริงอยู่ที่ menu_items ไม่ใช่ในหน้านี้ */
+  startStockAutoRefresh();
+}
+
+/* ── เลขสต็อกสดทุก 30 วินาที ─────────────────────────────────────────────────
+   ทำไม: หน้านี้เคยดึงของจริงแค่ตอนเปิดหน้า → เปิดค้างไว้ทั้งวันแล้วครัวกรอกเลขใหม่
+   /ลูกค้าสั่งจนสต็อกถูกตัด หน้านี้ยังโชว์เลขเก่า แล้วถ้าแอดมินกด +/- ทับ = เอาเลขเก่าไปทับของจริง
+   (เกิดจริง 11 ส.ค. — เมนูที่ยังมีของหายจากหน้าลูกค้า 16 ตัว)
+   ⚠️ หยุดดึงตอนแท็บถูกซ่อน (ไม่กินโควตา Supabase ฟรีๆ ตอนไม่มีคนดู)
+   ⚠️ ไม่ดึงตอนกำลังพิมพ์อยู่ในช่อง — กันเลขกระโดดใต้มือคนกรอก */
+let _stockPollTimer=null;
+function startStockAutoRefresh(){
+  if(_stockPollTimer) return;
+  _stockPollTimer=setInterval(function(){
+    if(document.hidden) return;
+    var a=document.activeElement;
+    if(a && (a.tagName==='INPUT' || a.tagName==='TEXTAREA' || a.isContentEditable)) return;
+    if(Object.keys(_stockSyncTimers||{}).length) return;   /* ยังมีคิวเขียนค้างอยู่ อย่าเพิ่งดึงทับ */
+    syncMenuMetaFromDB();
+  }, 30000);
 }
 
 /* ── N-50: ดึง subcode + available_from ของจริงจาก menu_items มาโชว์ ──────────
@@ -3885,6 +3904,7 @@ function syncStockDebounced(r){
       const { error } = await sb.from('menu_items').update({ stock_total: r.stock }).eq('code', r.code);
       if(error) throw error;
     }catch(e){ console.error('syncStockDebounced failed', e); showToast('⚠ ซิงค์สต็อกออนไลน์ไม่สำเร็จ'); }
+    finally{ delete _stockSyncTimers[r.id]; }   /* ต้องลบทิ้ง ไม่งั้นตัวดึงเลขสดจะนึกว่ายังมีคิวค้างตลอดกาล */
   }, 500);
 }
 
