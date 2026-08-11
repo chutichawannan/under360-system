@@ -115,8 +115,9 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 
 /* ── facts strip ── */
 .facts{background:var(--paper);border-bottom:1px solid rgba(20,56,35,.07);padding:28px 0}
-.facts .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;text-align:center}
-.facts b{display:block;font-family:'Prompt';font-size:1.35rem;color:var(--deep)}
+.facts .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;text-align:center}
+.facts b{display:block;font-family:'Prompt';font-size:1.22rem;color:var(--deep)}
+@media(max-width:900px){.facts .wrap{grid-template-columns:repeat(2,1fr);gap:22px 14px}}
 .facts span{font-size:.88rem;color:var(--muted)}
 @media(max-width:760px){.facts .wrap{grid-template-columns:repeat(2,1fr)}}
 
@@ -159,10 +160,15 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 
 /* ── blog ── */
 .blog-list{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:30px}
-.bpost{background:var(--paper);border-radius:var(--radius);padding:24px;box-shadow:0 4px 18px rgba(20,56,35,.06);text-decoration:none;display:flex;flex-direction:column;gap:8px;transition:transform .15s}
+.bpost{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 18px rgba(20,56,35,.06);text-decoration:none;display:flex;flex-direction:column;transition:transform .15s}
 .bpost:hover{transform:translateY(-4px)}
+.bpost .bcover{aspect-ratio:16/9;background:#EDE7D8;overflow:hidden}
+.bpost .bcover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.bpost:hover .bcover img{transform:scale(1.04)}
+.bpost .btext{padding:20px 22px 22px;display:flex;flex-direction:column;gap:7px;flex:1}
 .bpost h3{font-size:1.02rem;color:var(--deep)}
-.bpost span{font-size:.85rem;color:var(--muted)}
+.bpost .bex{font-size:.88rem;color:var(--muted);line-height:1.6;flex:1}
+.bpost span{font-size:.85rem;color:var(--green);font-family:'Prompt';font-weight:600}
 @media(max-width:860px){.blog-list{grid-template-columns:1fr}}
 
 /* ── instagram feed ── */
@@ -214,6 +220,9 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 .sets td b{font-family:'Prompt';color:var(--deep)}
 .sets tr:last-child td{border-bottom:0}
 .sets-wrap{overflow-x:auto}
+.sets td.sthumb{width:62px;padding:8px 0 8px 12px}
+.sets td.sthumb img{width:50px;height:50px;object-fit:cover;border-radius:9px;display:block}
+@media(max-width:640px){.sets td.sthumb{display:none}.sets th:first-child{display:none}}
 
 /* ── เมนูจริงจากครัว ── */
 .menu-sec{background:var(--paper)}
@@ -234,7 +243,9 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 @media(max-width:520px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px}.mcard h4{font-size:.86rem}}
 
 /* ── soul ── */
-.soul{background:var(--deep);color:var(--cream)}
+.soul{position:relative;color:var(--cream);background:var(--deep) url('https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S021.jpg?width=1400&quality=60') center/cover no-repeat}
+.soul::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,56,35,.93),rgba(20,56,35,.97))}
+.soul .wrap{position:relative;z-index:1}
 .soul .wrap{max-width:720px;text-align:center}
 .soul h2{color:#fff;font-size:clamp(1.4rem,3vw,1.95rem)}
 .soul p{color:rgba(250,246,236,.85);margin-top:14px;font-size:1.02rem}
@@ -291,7 +302,9 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
       </div>
     </div>
     <div class="hero-img">
-      <img src="img/img12.png" alt="ข้าวกล่องอาหารสุขภาพ Under360 โปรตีนแน่น" loading="eager">
+      <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S022.jpg?width=900&quality=80"
+           alt="ข้าวญี่ปุ่นอบสาหร่ายแซลมอน — อาหารจริงจากครัว Under360" loading="eager"
+           onerror="this.src='img/img12.png'">
     </div>
   </div>
 </div>
@@ -299,10 +312,11 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 <!-- FACTS -->
 <div class="facts">
   <div class="wrap">
-    <div><b>120–170 g</b><span>โปรตีนต่อกล่อง (LC / HP)</span></div>
-    <div><b>≤ 5 g</b><span>น้ำมันรำข้าวต่อเมนู</span></div>
-    <div><b>90 %</b><span>ของเมนู โซเดียมต่ำกว่าอาหารทั่วไป</span></div>
-    <div><b>10 ปี</b><span>ประสบการณ์ส่งถึงบ้านในกรุงเทพ</span></div>
+    <div><b>🥩 120–170 g</b><span>โปรตีนต่อกล่อง (LC / HP)</span></div>
+    <div><b>🫒 ≤ 5 g</b><span>น้ำมันรำข้าวต่อเมนู</span></div>
+    <div><b>🧂 90 %</b><span>ของเมนู โซเดียมต่ำกว่าอาหารทั่วไป</span></div>
+    <div><b>🍚 ข้าว กข 43</b><span>หอมนุ่ม ดัชนีน้ำตาลต่ำกว่า</span></div>
+    <div><b>👨‍🍳 10 ปี</b><span>ครัวของเราเอง ส่งเองทั่วกรุงเทพ</span></div>
   </div>
 </div>
 
@@ -314,7 +328,9 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
     <p style="color:var(--muted);font-size:1rem;margin-top:10px;max-width:640px">อาหารของเรามี <b>3 รูปแบบ</b> — <b>Meal Plan</b> คอร์สทำสดรายวัน · <b>ข้าวกล่อง/คอร์ส</b>เลือกเมนูเอง · <b>ฟรีซแพ็ค</b>ส่งทั่วไทย เลือกให้เข้ากับเป้าหมายและจังหวะชีวิตของคุณ</p>
     <div class="cards">
       <div class="card">
-        <img src="img/img11.png" alt="Meal Plan โปรตีนสูงและโลว์คาร์บ Under360" loading="lazy">
+        <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=600&quality=75"
+             alt="Meal Plan โปรตีนสูง โลว์คาร์บ และสายซ้อมหนัก Under360" loading="lazy"
+             onerror="this.src='img/img11.png'">
         <div class="body">
           <span class="tag hot">⭐ ยอดนิยม</span>
           <h3>Meal Plan — 3 สาย: HP · LC · HX</h3>
@@ -368,15 +384,15 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
     <p style="color:var(--muted);margin-top:10px;max-width:660px">เซ็ตทำจากเมนูที่เตรียมล่วงหน้า จึง<b>เลือกเมนูเองได้ และเลือกวันรับเองได้</b> · เซ็ตใหญ่แบ่งส่งหลายรอบ ไม่ต้องรับทีเดียวหมด · <b>ทุกเซ็ตส่งฟรี</b></p>
     <div class="sets-wrap">
       <table class="sets">
-        <thead><tr><th>เซ็ต</th><th>จำนวน</th><th>ราคา</th><th>ตกกล่องละ</th><th>รับของ</th></tr></thead>
+        <thead><tr><th colspan="2">เซ็ต</th><th>จำนวน</th><th>ราคา</th><th>ตกกล่องละ</th><th>รับของ</th></tr></thead>
         <tbody>
-          <tr><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
-          <tr><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
-          <tr><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
-          <tr><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
-          <tr><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
-          <tr><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
-          <tr><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S022.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S105.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D150.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D200.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D201.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/BB01.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
         </tbody>
       </table>
     </div>
@@ -638,15 +654,19 @@ const FALLBACK_POSTS = [
   let posts = [];
   try{
     const { data, error } = await sb.from('blog_posts')
-      .select('slug,title,created_at').eq('published',true)
+      .select('slug,title,created_at,cover_url,excerpt').eq('published',true)
       .order('created_at',{ascending:false}).limit(3);
-    if(!error && data && data.length) posts = data.map(p=>({title:p.title, url:'blog.html?post='+encodeURIComponent(p.slug), date:p.created_at}));
+    if(!error && data && data.length) posts = data.map(p=>({title:p.title, url:'blog.html?post='+encodeURIComponent(p.slug), date:p.created_at, cover:p.cover_url, excerpt:p.excerpt}));
   }catch(e){}
   if(!posts.length) posts = FALLBACK_POSTS;
   box.innerHTML = posts.map(p=>`
     <a class="bpost" href="${p.url}">
-      <h3>${p.title}</h3>
-      <span>อ่านต่อ →</span>
+      ${p.cover ? `<div class="bcover"><img src="${p.cover}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+      <div class="btext">
+        <h3>${p.title}</h3>
+        ${p.excerpt ? `<p class="bex">${String(p.excerpt).slice(0,90)}${String(p.excerpt).length>90?'…':''}</p>` : ''}
+        <span>อ่านต่อ →</span>
+      </div>
     </a>`).join('');
 })();
 
