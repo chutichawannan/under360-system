@@ -1157,6 +1157,22 @@ async function fetchOrdersPage(){
     if(res.error)throw res.error;
     ordRows=res.data||[];
     ordTotal=(typeof res.count==="number")?res.count:ordRows.length;
+    /* ดูวันเดียว → หาใบที่ "เคยอยู่วันนี้" แล้วถูกย้ายออกไป มาต่อท้ายแบบจางๆ
+       รับทั้ง 2 รูปแบบข้อความ: แอดมินเลื่อนใน OH ("วัน → วัน") กับลูกค้าเลื่อนใน LIFF ("วัน→วัน" ไม่มีเว้นวรรค) */
+    ordMovedAway=[];
+    var oneDay=(dateMode==="today")?todayStr:(dateMode==="tomorrow")?tomStr:(dateMode==="pick"?pickedDate:null);
+    if(oneDay && ordByMode!=="created" && !ordSearchQ && !ordMovedOnly && !ordCancelledOnly){
+      try{
+        var mv=await sb_.from("orders")
+          .select("id,order_number,customer_name,total,delivery_date,notes")
+          .or("notes.like.*"+oneDay+" → *,notes.like.*"+oneDay+"→*")
+          .neq("delivery_date",oneDay).neq("status","cancelled")
+          .limit(50);
+        if(!mv.error) ordMovedAway=(mv.data||[]).filter(function(o){
+          return !/parallel_test/.test(String(o.notes||""));
+        });
+      }catch(e){ console.warn("movedAway:",e); }
+    }
     // เผื่อหน้าปัจจุบันเกินจำนวนจริง (เช่น ลบออเดอร์ไป) → ถอยมาหน้าสุดท้าย
     var maxPage=Math.max(0,Math.ceil(ordTotal/size)-1);
     if(ordPage>maxPage&&ordTotal>0){ ordPage=maxPage; ordLoading=false; return fetchOrdersPage(); }
@@ -1284,7 +1300,34 @@ function renderOrders(orders){
     var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+(review?"ตรวจสลิปแล้วคลิกเพื่อยืนยันว่าโอนแล้ว":"คลิกเพื่อสลับสถานะการโอนเงิน")+"'>"+payText+slipTag+"</span>"+slipBtn;
     h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:2px'><span class='pill "+st.cls+"'>"+st.t+"</span>"+payBadge+"</div></div>";
   });
+  h+=ordMovedAwayHtml();
   el.innerHTML=h;
+}
+/* ── ใบที่ "เคยอยู่วันนี้ แต่ย้ายไปวันอื่นแล้ว" ────────────────────────────────
+   นัทสั่งเอง 11 ส.ค.: ย้ายแล้วห้ามหายเงียบจากวันเดิม ให้เหลือข้อมูลจางๆ ท้ายตาราง
+   บอกว่าไปอยู่วันไหน + กดแล้ววาร์ปไปวันนั้นได้
+   WHY: ของหายจากวันเดิมเงียบๆ = แอดมินหาไม่เจอ นึกว่าออเดอร์หลุด
+        (กิ๊ฟถึงไม่เชื่อใจระบบย้ายวันส่ง) — งานนี้คือกู้ความเชื่อใจ ไม่ใช่แค่ฟีเจอร์ */
+var ordMovedAway=[];
+function ordMovedAwayHtml(){
+  if(!ordMovedAway.length) return "";
+  var h="<div style='grid-column:1/-1;padding:7px 12px;background:#FFFBEB;font-size:12px;font-weight:800;color:#92400E;display:flex;justify-content:space-between'>"
+    +"<span>🔁 เคยอยู่วันนี้ · ย้ายไปวันอื่นแล้ว</span><span style='font-weight:600'>"+ordMovedAway.length+" ใบ</span></div>";
+  ordMovedAway.forEach(function(o){
+    h+="<div class='orders-mini-row' onclick=\"ordJumpToDate('"+o.delivery_date+"','"+o.id+"')\" style='cursor:pointer;opacity:.55' title='กดเพื่อไปดูวันที่เขารับจริง'>"
+      +"<div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>"
+      +"<div style='font-size:13px;font-weight:500;text-decoration:line-through'>"+esc2(o.customer_name||"ลูกค้า")+"</div>"
+      +"<div style='font-size:11px;color:#B45309;font-weight:700'>→ ย้ายไป "+(o.delivery_date||"—")+" (กดเพื่อไปดู)</div></div>"
+      +"<div style='font-family:var(--mono);font-weight:600;color:#9CA3AF'>"+fmtB(o.total)+"</div>"
+      +"<div style='font-size:12px;color:#9CA3AF'>"+(o.delivery_date||"")+"</div>"
+      +"<div><span class='pill p-done' style='opacity:.7'>ย้ายแล้ว</span></div></div>";
+  });
+  return h;
+}
+function ordJumpToDate(d,id){
+  ordCancelledOnly=false; ordMovedOnly=false; ordSearchQ="";
+  setPickDate(d);
+  if(id) setTimeout(function(){ openOrderDetail(id); }, 900);
 }
 // ── 🧾 รายละเอียดออเดอร์ (กดแถวไหนก็ได้) ──────────────────
 function closeOrderDetail(){ var o=document.getElementById("odOverlay"); if(o)o.style.display="none"; }
@@ -1484,8 +1527,24 @@ async function odMoveDate(id){
     var res=await sb_.from("orders").update({delivery_date:to,notes:notes,updated_at:new Date().toISOString()}).eq("id",id);
     if(res.error) throw res.error;
     o.delivery_date=to; o.notes=notes;
+    /* 🔴 รอบส่ง Meal Plan/Hyrox ต้องย้ายตามด้วย — ไม่งั้นครัว (KQ) · ตารางแพลนเมนู · ใบจัดของ
+       ยังเห็นลูกค้าค้างอยู่วันเก่า ทั้งที่ใบย้ายไปแล้ว
+       (นัทเน้นเอง 11 ส.ค.: "ต้องไปโชว์วันใหม่ที่เขารับซะที" — เมื่อวานลูกค้าตกหล่นเพราะข้อนี้) */
+    var mpMsg="";
+    var mpRows=await sb_.from("mp_deliveries").select("id,status").eq("order_id",id);
+    var movable=(mpRows.data||[]).filter(function(m){return m.status!=="cancelled";});
+    if(movable.length){
+      var mpUp=await sb_.from("mp_deliveries")
+        .update({delivery_date:to,updated_at:new Date().toISOString()})
+        .eq("order_id",id).neq("status","cancelled").select("id,delivery_date");
+      var okAll=!mpUp.error&&mpUp.data&&mpUp.data.length===movable.length
+                &&mpUp.data.every(function(m){return m.delivery_date===to;});
+      mpMsg=okAll
+        ? "\nรอบผลิต Meal Plan ย้ายตามแล้ว "+movable.length+" รอบ (ครัว/แพลนเมนูจะเห็นวันใหม่)"
+        : "\n⚠️ ย้ายรอบผลิตไม่สำเร็จ — ครัวจะยังเห็นวันเก่า แจ้งห้องระบบด่วน";
+    }
     await logMoveActivity(o,from,to,who);
-    alert("เลื่อนแล้ว "+from+" → "+to);
+    alert("เลื่อนแล้ว "+from+" → "+to+mpMsg);
     closeOrderDetail&&closeOrderDetail();
     loadAll(true);
   }catch(e){ console.error(e); alert("เลื่อนไม่สำเร็จ: "+(e.message||e)); }
