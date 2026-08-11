@@ -324,6 +324,11 @@ body.fs-scaled{zoom:var(--u-fs)}
   padding:10px 16px;border-bottom:1px solid var(--ink-xsoft);align-items:center;gap:12px;
   font-size:13px;
 }
+/* แบบย่อ — บีบบรรทัดให้ชิดกัน เห็นหลายใบพร้อมกัน (นัท: "ทำยังไงให้บรรทัดมันขยับมาใกล้กันมากขึ้น") */
+.orders-mini.compact .orders-mini-row{padding:5px 12px;gap:10px;font-size:12.5px}
+.orders-mini.compact .orders-mini-head{padding:6px 12px}
+.orders-mini.compact .orders-mini-row:nth-child(even){background:#FBFBFA}
+.orders-mini.compact .orders-mini-row:hover{background:var(--forest-soft)}
 /* ไฮไลต์ใบที่เพิ่งวาร์ปมาจาก "ย้ายไปวันที่ …" — กะพริบ 3 ครั้งแล้วค้างสีไว้ให้เห็นว่าอยู่ตรงไหน
    (นัทสั่ง 11 ส.ค.: ไม่ต้องเปิดหน้ารายละเอียด แค่ชี้ให้เห็นว่าอยู่ตรงนี้) */
 .orders-mini-row.ord-flash{
@@ -533,6 +538,11 @@ body.fs-scaled{zoom:var(--u-fs)}
         <button class="btn" id="ordSearchClear" onclick="clearOrderSearch()" style="display:none">✕ ล้าง</button>
         <button class="btn" id="ordMovedBtn" onclick="toggleMovedOnly()" title="ดูเฉพาะใบที่ถูกเลื่อนวันส่ง — ทั้งที่แอดมินเลื่อนและลูกค้าเลื่อนเอง">🔁 ใบที่ถูกเลื่อน</button>
         <button class="btn" id="ordCancelBtn" onclick="toggleCancelledOnly()" title="ดูใบที่ถูกยกเลิก — กดเข้าไปแล้วกู้คืนได้">🗑️ ใบที่ยกเลิก</button>
+        <!-- สลับมุมมองรายการ (นัทขอ 11 ส.ค.: "มันยังดูยากอยู่") -->
+        <span style="display:inline-flex;border:1.5px solid var(--ink-xsoft);border-radius:9px;overflow:hidden">
+          <button class="dtab active" id="ov-full" onclick="setOrdView('full')" title="เห็นครบ: ที่อยู่ ชื่อ LINE ปุ่มสลิป" style="border:none;border-radius:0">แบบเต็ม</button>
+          <button class="dtab" id="ov-compact" onclick="setOrdView('compact')" title="เอาแค่ รหัส / ชื่อ / เงิน / วันเวลา / สถานะ" style="border:none;border-radius:0">แบบย่อ</button>
+        </span>
         <span id="ordSearchHint" style="font-size:11.5px;color:var(--ink-soft)"></span>
       </div>
       <!-- เลือกช่วงวันที่ -->
@@ -1120,6 +1130,21 @@ var ordRows=[], ordPage=0, ordLoading=false, ordTotal=0, rangeFrom=null, rangeTo
 // ต้องยิงหาที่ฐานข้อมูล ไม่ใช่กรองแถวที่โหลดมาแล้ว — หน้านี้โหลดทีละ 20 ใบจาก 15,000+
 // ตอนค้นหา = มองข้ามตัวกรองวัน (แอดมินไม่รู้ว่าใบอยู่วันไหน ถึงต้องค้น) และ **เห็นใบที่ยกเลิกด้วย**
 var ordSearchQ="";
+/* มุมมองรายการออเดอร์ — จำไว้ในเครื่องนั้น (นัทกับกิ๊ฟชอบคนละแบบได้)
+   แบบย่อ = เอาแค่ที่นัทสั่ง: รหัส / ชื่อ / เงิน / วันเวลา / สถานะ + บีบบรรทัดให้ชิดกัน */
+var ordCompact=false;
+try{ ordCompact = localStorage.getItem("ordViewMode")==="compact"; }catch(e){}
+function setOrdView(v){
+  ordCompact=(v==="compact");
+  try{ localStorage.setItem("ordViewMode", ordCompact?"compact":"full"); }catch(e){}
+  var a=document.getElementById("ov-full"), b=document.getElementById("ov-compact");
+  if(a) a.classList.toggle("active",!ordCompact);
+  if(b) b.classList.toggle("active",ordCompact);
+  var el=document.getElementById("ordersList"); if(el) el.classList.toggle("compact",ordCompact);
+  renderOrders(ordRows||[]);
+}
+/* ตั้งค่าให้ตรงกับที่จำไว้ ตั้งแต่เปิดหน้า */
+setTimeout(function(){ if(typeof setOrdView==="function") setOrdView(ordCompact?"compact":"full"); },0);
 var ordSearchScope="all";   // all = ค้นทุกวัน (ตามหาลูกค้า) · day = เฉพาะวันที่เลือกอยู่
 function setSearchScope(s){
   ordSearchScope=s; ordPage=0;
@@ -1430,13 +1455,32 @@ function renderOrders(orders){
         +"<span>"+(byCr?"🛒 สั่งวันที่ ":"📅 ")+(lastDate||"ไม่ระบุวัน")+"</span><span style='font-weight:600'>"+dayCnt.length+" ใบ · "+fmtB(sum)+"</span></div>";
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
-    h+="<div class='orders-mini-row' data-oid='"+o.id+"' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div><div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
-    h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
-    h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div></div>";
+    h+="<div class='orders-mini-row' data-oid='"+o.id+"' onclick=\"openOrderDetail('"+o.id+"')\" style='cursor:pointer' title='กดดูรายละเอียดออเดอร์'><div>";
+    if(ordCompact){
+      /* โหมดย่อ — เอาแค่ที่นัทสั่ง: รหัส / ชื่อ / เงิน / วันเวลา / สถานะ
+         ที่อยู่กับชื่อ LINE ตัดออก (กดเข้าใบดูได้อยู่แล้ว) · ใบที่ถูกเลื่อนเหลือ 🔁 ตัวเดียว */
+      h+="<div style='display:flex;align-items:baseline;gap:8px;min-width:0'>"
+        +"<span style='font-family:var(--mono);font-size:11px;color:#9CA3AF;flex-shrink:0'>"+(o.order_number||"—")+"</span>"
+        +"<span style='font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"+esc2(o.customer_name||"ลูกค้า")+"</span>"
+        +(odIsMoved(o)?"<span title='ใบนี้ถูกเลื่อนวันส่ง' style='flex-shrink:0'>🔁</span>":"")
+        +"</div>";
+    }else{
+      h+="<div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
+      h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
+      h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div>";
+    }
+    h+="</div>";
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
-    h+=byCr
-      ? "<div style='font-size:12px'><div>"+bkkYmdOf(o.created_at)+"</div><div style='color:#6B7280'>"+bkkTimeOf(o.created_at)+" น. · ส่ง "+(o.delivery_date||"—")+"</div></div>"
-      : "<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
+    if(ordCompact){
+      /* โหมดย่อ — วัน+เวลาอยู่บรรทัดเดียว ไม่ซ้อน 2 ชั้น */
+      var dOne=byCr ? (bkkYmdOf(o.created_at)+" "+bkkTimeOf(o.created_at)+" น.")
+                    : ((o.delivery_date||"")+"  "+String(o.time_slot_label||o.time_slot||"").replace(/\s*–\s*/,"-"));
+      h+="<div style='font-size:11.5px;color:#4B5563;white-space:nowrap'>"+esc2(dOne)+"</div>";
+    }else{
+      h+=byCr
+        ? "<div style='font-size:12px'><div>"+bkkYmdOf(o.created_at)+"</div><div style='color:#6B7280'>"+bkkTimeOf(o.created_at)+" น. · ส่ง "+(o.delivery_date||"—")+"</div></div>"
+        : "<div style='font-size:12px'><div>"+(o.delivery_date||"")+"</div><div style='color:#6B7280'>"+(o.time_slot_label||o.time_slot||"")+"</div></div>";
+    }
     // สถานะครัว (pill) + สถานะการเงิน (badge กดสลับได้ — แอดมิน mark โอนแล้ว/รอโอนเอง กรณีโอนผ่านไลน์)
     var paid=o.payment_status==="paid";
     var review=o.payment_status==="pending_review";   // ลูกค้าอัพสลิปแล้ว รอแอดมินเปิดดูรูปแล้วยืนยัน (3 ส.ค. 2026)
@@ -1446,7 +1490,17 @@ function renderOrders(orders){
     var payStyle=paid?"background:#D1FAE5;color:#065F46":(review?"background:#E0E7FF;color:#3730A3":"background:#FEF3C7;color:#92400E");
     var payText =paid?"💰 โอนแล้ว":(review?"🧾 รอตรวจสลิป":"⏳ รอโอน");
     var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+(review?"ตรวจสลิปแล้วคลิกเพื่อยืนยันว่าโอนแล้ว":"คลิกเพื่อสลับสถานะการโอนเงิน")+"'>"+payText+slipTag+"</span>"+slipBtn;
-    h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:3px'>"+odStatusPicker(o,st)+payBadge+"</div></div>";
+    if(ordCompact){
+      /* โหมดย่อ: สถานะครัวเป็นตัวหลัก · สถานะเงินย่อเหลือจุดสีจุดเดียว (เรื่องเงินสำคัญเกินกว่าจะตัดทิ้ง) */
+      var payDot=paid?"#10B981":(review?"#6366F1":"#F59E0B");
+      var payTip=paid?"โอนแล้ว":(review?"มีสลิป รอตรวจ":"ยังไม่โอน");
+      h+="<div style='display:flex;align-items:center;justify-content:flex-end;gap:6px'>"
+        +"<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" title='"+payTip+" — คลิกเพื่อสลับ' "
+        +"style='width:11px;height:11px;border-radius:50%;background:"+payDot+";flex-shrink:0;cursor:pointer'></span>"
+        +odStatusPicker(o,st)+"</div></div>";
+    }else{
+      h+="<div style='display:flex;flex-direction:column;align-items:flex-end;gap:3px'>"+odStatusPicker(o,st)+payBadge+"</div></div>";
+    }
   });
   h+=ordMovedAwayHtml();
   h+=ordCancelledTodayHtml();
