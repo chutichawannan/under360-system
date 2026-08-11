@@ -414,6 +414,9 @@ function renderHome(){
 
 /* หน้ารอง = ของเดิมที่เคยกองอยู่หน้าแรก */
 function renderDash(){
+  // ล็อกอยู่ = ไม่วาดอะไรลงหน้าเลย (ไม่ใช่แค่ซ่อน) กันคนเปิดดูโค้ดหน้าเว็บแล้วเห็นยอดเงิน
+  const el0=document.getElementById("dashCards");
+  if(typeof dashUnlocked==="function" && !dashUnlocked()){ if(el0) el0.innerHTML=""; return; }
   let h='';
   h+=cardBiz();
   h+=cardOOS();
