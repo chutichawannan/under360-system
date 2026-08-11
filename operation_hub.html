@@ -2065,6 +2065,7 @@ async function loadMpPlanData(){
       .order("customer_name").order("round_no");
     if(res.error)throw res.error;
     mpPlanRows=res.data||[];
+    await loadPlanAvoid();
   }catch(e){ console.error("loadMpPlanData:",e); mpPlanRows=[]; }
   renderLeftPanel();
   _buildPlanTable();
@@ -2160,6 +2161,36 @@ function togglePlanColumn(dateStr,type){
   updateSelectHint();
 }
 // คลิกวันที่ที่ header → กรองตารางให้เห็นแค่ลูกค้าที่ส่งวันนั้น (toggle: คลิกวันเดิมซ้ำ = เอาตัวกรองออก)
+/* ── "ไม่รับอะไร" ของลูกค้าแต่ละคน ────────────────────────────────────────
+   นัทสั่ง 11 ส.ค.: ให้ขึ้นใต้ชื่อลูกค้าในตารางแพลนเมนู จะได้เห็นตอนจัดเมนูเลย
+   ⚠️ ตอนนี้ตาราง customer_preferences ยังว่าง 0 แถว → ส่วนใหญ่จะขึ้นว่า "ยังไม่มีข้อมูล"
+      ตั้งใจให้ขึ้นแบบนั้น ไม่ซ่อน — จะได้รู้ว่าที่ยังไม่รู้คือใครบ้าง (ไม่ใช่เข้าใจว่าไม่มีใครแพ้อะไร) */
+var planAvoidMap={};
+async function loadPlanAvoid(){
+  planAvoidMap={};
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var ids=[];
+    mpPlanRows.forEach(function(r){ if(r.customer_id && ids.indexOf(r.customer_id)<0) ids.push(r.customer_id); });
+    if(ids.length){
+      var cp=await sb_.from("customer_preferences").select("customer_id,dislikes,allergies").in("customer_id",ids).limit(500);
+      (cp.data||[]).forEach(function(p){
+        var t=[String(p.allergies||"").trim(),String(p.dislikes||"").trim()].filter(Boolean).join(" · ");
+        if(t) planAvoidMap["c:"+p.customer_id]=t;
+      });
+    }
+  }catch(e){ /* ตารางยังไม่มี/อ่านไม่ได้ = ไม่ใช่เรื่องคอขวด ปล่อยว่าง */ }
+  /* โน้ตที่ลูกค้าเขียนมากับรอบ — เป็นข้อมูลจริงที่มีอยู่แล้ว ใช้ก่อนได้ */
+  mpPlanRows.forEach(function(r){
+    var n=String(r.customer_note||"").trim();
+    if(n) planAvoidMap["r:"+r.id]=n;
+  });
+}
+function planAvoidHtml(first){
+  var t=(first.customer_id&&planAvoidMap["c:"+first.customer_id])||planAvoidMap["r:"+first.id]||"";
+  if(t) return "<div title='"+esc2(t)+"' style='margin-top:3px;font-size:10px;font-weight:700;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:2px 6px;white-space:normal;line-height:1.35'>🚫 ไม่รับ: "+esc2(t)+"</div>";
+  return "<div style='margin-top:3px;font-size:9.5px;color:#C7CBD1'>ยังไม่มีข้อมูลว่าไม่กินอะไร</div>";
+}
 /* ── 🤖 จัดเมนูให้อัตโนมัติ (นัทขอ 11 ส.ค.) ─────────────────────────────────
    ⚠️ ข้อจำกัดที่ต้องพูดให้ชัด: ระบบ "ยังไม่รู้ว่าใครไม่กินอะไร"
       ตาราง customer_preferences = 0 แถว · customers.admin_notes ไม่มีใครบันทึกของแพ้ไว้เลย
@@ -2190,35 +2221,53 @@ async function planAutoAssign(dateStr){
   });
   if(!targets.length){ alert("วันนี้ไม่มีใครที่ยังไม่ได้กรอกเมนู (ตัวนี้ไม่ทับของที่กรอกไว้แล้ว)"); return; }
 
-  var plan=[], offset=0;
+  /* 🔑 กติกาจากห้อง R&D + ฟ้า (นัทย้ำเอง 11 ส.ค.) — เป้าคือ "ครัวทำงานน้อยที่สุด"
+        → ทุกคนได้ "ชุดเดียวกัน" ไม่หมุนสลับให้ต่างกัน (ของเดิมผมหมุนสลับ = ผิดกติกา ครัวต้องทำเมนูเยอะขึ้นฟรีๆ)
+        → เปลี่ยนเฉพาะคนที่ระบุว่าไม่รับอะไร เท่านั้น
+        เมนูไม่ให้ซ้ำข้ามรอบ เกิดเองอยู่แล้วจากการหมุนเมนูรายสัปดาห์ ไม่ต้องให้โค้ดมาเดา */
+  var plan=[];
   targets.forEach(function(t){
     var r=t.row;
     var pool=MENU_POOL.filter(function(m){return m.type===r.mp_type;});
     if(!pool.length){ plan.push({t:t, codes:[], err:"ไม่มีเมนูประเภท "+String(r.mp_type).toUpperCase()+" ในระบบ"}); return; }
+    /* เอาโค้ดที่ขึ้นต้นตรงประเภทขึ้นก่อน — ในหมวด meal_hp มีโค้ดแปลกปน (เช่น HC27)
+       ถ้าไม่จัดลำดับ มันจะกลายเป็นเมนูแรกที่ทุกคนได้ ทั้งที่ไม่ใช่เมนู HP ปกติ */
+    var pref=String(r.mp_type||"").toUpperCase()==="HYROX"?"HX":String(r.mp_type||"").toUpperCase();
+    pool=pool.slice().sort(function(a,b){
+      var ax=String(a.code||"").toUpperCase().indexOf(pref)===0?0:1;
+      var bx=String(b.code||"").toUpperCase().indexOf(pref)===0?0:1;
+      if(ax!==bx) return ax-bx;
+      return String(a.code||"").localeCompare(String(b.code||""));
+    });
     var need=r.box_count||7;
-    var recent=planRecentCodes(t.sub, dateStr);
-    var picked=[], i=0;
-    /* รอบแรก: เลี่ยงเมนูที่เพิ่งได้ไป · รอบสอง: ถ้ายังไม่ครบค่อยยอมซ้ำ (ของมีจำกัด) */
-    while(picked.length<need && i<pool.length*2){
-      var m=pool[(offset+i)%pool.length]; i++;
-      if(picked.indexOf(m.code)>=0) continue;
-      if(i<=pool.length && recent[m.code]) continue;
+    var avoidTxt=((r.customer_id&&planAvoidMap["c:"+r.customer_id])||planAvoidMap["r:"+r.id]||"").toLowerCase();
+    var picked=[], swapped=[];
+    for(var i=0;i<pool.length && picked.length<need;i++){
+      var m=pool[i];
+      /* ตัดออกเฉพาะเมื่อ "ชื่อเมนูมีคำที่ลูกค้าบอกว่าไม่รับ" — ไม่มีข้อมูล = ไม่ตัดอะไรเลย */
+      if(avoidTxt && avoidTxt.split(/[,·\s]+/).filter(function(w){return w.length>=2;})
+          .some(function(w){ return String(m.name||"").toLowerCase().indexOf(w)>=0; })){
+        swapped.push(m.code); continue;
+      }
       picked.push(m.code);
     }
-    offset+=1;                                          // คนถัดไปเลื่อนชุดไป 1 ตัว
-    plan.push({t:t, codes:picked, short:picked.length<need});
+    plan.push({t:t, codes:picked, short:picked.length<need, swapped:swapped});
   });
 
   var lines=plan.map(function(p){
     var nm=String(p.t.row.customer_name||"ลูกค้า").slice(0,22);
     if(p.err) return "  ✗ "+nm+" — "+p.err;
-    return "  • "+nm+" ("+String(p.t.row.mp_type).toUpperCase()+" "+(p.t.row.box_count||7)+" กล่อง)\n      "+p.codes.join(", ")+(p.short?"   ⚠️ เมนูไม่พอ":"");
+    return "  • "+nm+" ("+String(p.t.row.mp_type).toUpperCase()+" "+(p.t.row.box_count||7)+" กล่อง)\n      "+p.codes.join(", ")
+      +(p.swapped&&p.swapped.length?"\n      ⤷ ตัดออกเพราะลูกค้าไม่รับ: "+p.swapped.join(", "):"")
+      +(p.short?"   ⚠️ เมนูไม่พอ":"");
   }).join("\n");
+  var nAvoid=plan.filter(function(p){return p.swapped&&p.swapped.length;}).length;
   var ok=window.confirm(
     "จะจัดเมนูให้ "+plan.filter(function(p){return p.codes.length;}).length+" คน (ส่ง "+dateStr+")\n\n"+lines
-    +"\n\n────────────────\n⚠️ ระบบยังไม่รู้ว่าใครแพ้อะไร / ไม่กินอะไร (ยังไม่มีใครกรอกข้อมูลนี้เข้าระบบเลย)\n"
-    +"ตัวนี้จัดจาก: เมนูประเภทเดียวกัน + เลี่ยงของที่เพิ่งได้ไปรอบก่อน เท่านั้น\n"
-    +"กรุณาตรวจก่อนยืนยัน — ยืนยันแล้วครัวเห็นทันที\n\nยืนยันจัดตามนี้?");
+    +"\n\n────────────────\nกติกา: ทุกคนได้ชุดเดียวกัน (ครัวทำงานน้อยที่สุด) · เปลี่ยนเฉพาะคนที่ระบุว่าไม่รับอะไร\n"
+    +(nAvoid?("มีคนที่ระบบตัดเมนูให้ตามข้อจำกัด "+nAvoid+" คน\n")
+            :"⚠️ ตอนนี้ยังไม่มีใครมีข้อมูล \"ไม่กินอะไร\" ในระบบเลย → ไม่มีการตัดเมนูให้ใคร ตรวจเองก่อนนะ\n")
+    +"ยืนยันแล้วครัวเห็นทันที · แก้รายคนได้ที่ตารางทีหลัง\n\nยืนยันจัดตามนี้?");
   if(!ok) return;
 
   var okN=0, failN=0;
@@ -2927,6 +2976,7 @@ function _buildPlanTable(){
     rows+="<div style='font-weight:600;font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"+(rowSelected?";color:#1F4D3A":"")+"'>"+esc2(first.customer_name||"ลูกค้า")+(rowSelected?" ✎":"")+"</div>";
     if(first.line_display_name&&first.line_display_name!==first.customer_name)rows+="<div style='font-size:9.5px;color:#9CA3AF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>LINE: "+esc2(first.line_display_name)+"</div>";
     rows+="<div style='font-size:10px;color:#6B7280'>"+doneCount+"/"+(first.total_rounds||s.rows.length)+" รอบ · "+(first.box_count||7)+" กล่อง/รอบ</div>";
+    rows+=planAvoidHtml(first);   // ไม่รับอะไร — ต้องเห็นตอนจัดเมนู ไม่ใช่ไปเปิดหาที่อื่น
     rows+="<div style='margin-top:3px'><span class='customer-tag "+typeCls+"' style='cursor:default;font-size:11px'>"+(first.mp_type||"").toUpperCase()+" "+esc2(first.mp_set||"")+"</span></div>";
     rows+="</td>";
     allDates.forEach(function(dateStr){
