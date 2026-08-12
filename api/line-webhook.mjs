@@ -51,7 +51,7 @@ async function lineReply(replyToken, text, token) {
 }
 
 // เจ้าของกะปัน — ตอบข้อมูลให้คนนี้คนเดียว (นัทเคาะ 12 ส.ค.)
-const OWNER = process.env.OWNER_LINE_USER_ID || '';
+const OWNER = process.env.OWNER_LINE_USER_ID || 'Ucc982b971a6676e02ecac6d668723003';   // นัท
 
 // ส่งข้อความหาใครก็ได้ ไม่ต้องรอ reply token (ใช้รายงานเข้าแชทนัท)
 async function linePush(to, text, token) {
