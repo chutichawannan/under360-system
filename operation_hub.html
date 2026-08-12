@@ -1434,6 +1434,10 @@ async function odSetStatus(id,next,ev){
     if(!up.data||!up.data.length||up.data[0].status!==next) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
     if(o) o.status=next;
     if(next!=="cancelled") await odClearCancelStamp(sb_,id);
+    /* สต็อกต้องเดินตามสถานะด้วย ไม่ใช่แค่ตอนกดปุ่มยกเลิกโดยตรง
+       เข้าสู่ยกเลิก = ของกลับเข้าตู้ (คืน) · ออกจากยกเลิก = ถูกจองอีกครั้ง (ตัด) */
+    if(prev!=="cancelled" && next==="cancelled")      await odRestock(id, +1, "คืนสต็อก");
+    else if(prev==="cancelled" && next!=="cancelled") await odRestock(id, -1, "ตัดสต็อกคืน");
     /* รอบส่ง Meal Plan/Hyrox — หน้าครัวอ่านสถานะจากตารางนี้ ต้องขยับตามกัน */
     var mpNext=next==="delivered"?"delivered":(next==="confirmed"||next==="preparing"?"menu_assigned":null);
     if(mpNext) await sb_.from("mp_deliveries").update({status:mpNext,updated_at:new Date().toISOString()})
@@ -2029,6 +2033,29 @@ function odWho(){
   }
   return n;
 }
+/* ══ คืน/ตัดสต็อกตามสถานะออเดอร์ ═══════════════════════════════════════════════
+   ตอนลูกค้าสั่ง หน้า LIFF ตัดสต็อกทันทีด้วย RPC adjust_stock
+   แต่ "ยกเลิกออเดอร์" ไม่เคยคืนสต็อกกลับเลย → ของอยู่ในตู้จริงแต่ระบบว่าขายไปแล้ว
+   = ขายได้น้อยกว่าที่มี แบบไม่มีใครรู้ (ยิ่งยกเลิกบ่อย ยิ่งเพี้ยนสะสม)
+   ⚠️ ใช้ RPC ตัวเดียวกับฝั่งลูกค้า (ทำใน DB ครั้งเดียว = กดพร้อมกันก็ไม่เพี้ยน)
+      และเมนูที่ตั้ง "ไม่จำกัด" ฟังก์ชันข้ามให้เอง ไม่ต้องเช็คซ้ำ
+   ⚠️ best-effort — คืนไม่สำเร็จห้ามทำให้การยกเลิกล้ม แค่บอกให้คนรู้ */
+async function odRestock(id, sign, label){
+  var sb_=getSB(); if(!sb_) return null;
+  try{
+    var r=await sb_.from("order_items").select("menu_item_id,quantity").eq("order_id",id).limit(500);
+    if(r.error||!r.data||!r.data.length) return null;
+    var need={};
+    r.data.forEach(function(it){ if(it.menu_item_id) need[it.menu_item_id]=(need[it.menu_item_id]||0)+(it.quantity||0); });
+    var keys=Object.keys(need); if(!keys.length) return null;
+    var res=await Promise.allSettled(keys.map(function(mid){
+      return sb_.rpc("adjust_stock",{p_menu_id:mid, p_delta: sign*Math.abs(need[mid])});
+    }));
+    var ok=res.filter(function(x){return x.status==="fulfilled" && !(x.value&&x.value.error);}).length;
+    var box=keys.reduce(function(s,k){return s+need[k];},0);
+    return {menus:keys.length, ok:ok, boxes:box, label:label};
+  }catch(e){ console.error("odRestock:",e); return null; }
+}
 async function odCancelOrder(id){
   var sb_=getSB(); if(!sb_)return;
   var o=(ordRows||[]).find(function(x){return x.id===id;});
@@ -2049,9 +2076,11 @@ async function odCancelOrder(id){
       throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
     /* รอบส่ง Meal Plan/Hyrox ที่ผูกกับใบนี้ต้องยกเลิกตาม ไม่งั้นลูกค้ายังค้างอยู่ในหน้าแพลนเมนู */
     await sb_.from("mp_deliveries").update({status:"cancelled",updated_at:new Date().toISOString()}).eq("order_id",id);
+    var rs=await odRestock(id, +1, "คืนสต็อก");   /* ของกลับเข้าตู้ = ต้องขายได้อีก */
     closeOrderDetail();
     loadAll();
-    alert("ยกเลิกแล้ว: "+(o.order_number||""));
+    alert("ยกเลิกแล้ว: "+(o.order_number||"")
+      +(rs?("\nคืนสต็อกให้แล้ว "+rs.boxes+" กล่อง ("+rs.ok+"/"+rs.menus+" เมนู)"):""));
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 /* ป้าย "[ยกเลิกโดย ...]" ที่ค้างในโน้ตหลังกู้คืน ทำให้ครัว/ใบจัดของอ่านว่าใบนี้ยกเลิก แล้วไม่แพ็คของ
@@ -2062,7 +2091,10 @@ async function odClearCancelStamp(sb_,id){
     var r=await sb_.from("orders").select("notes").eq("id",id).maybeSingle();
     var n=String((r.data&&r.data.notes)||"");
     if(n.indexOf("[ยกเลิกโดย")<0) return;
-    var clean=n.replace(/[ยกเลิกโดย[^]]*]/g,"").replace(/s+/g," ").trim();
+    /* ⚠️ ต้องมี \ หน้า [ ] และ \s — เคยหลุดหายตอนเขียนไฟล์ผ่าน shell แล้วกลายเป็น
+       character class ที่ไล่ลบตัวอักษรไทยทีละตัวออกจากโน้ตลูกค้า (เช่น "ห้อง 75 ตึกA")
+       ของแบบนี้ไม่มีอะไรฟ้อง เห็นอีกทีคือข้อความลูกค้าแหว่งไปแล้ว */
+    var clean=n.replace(/\[ยกเลิกโดย[^\]]*\]/g,"").replace(/\s+/g," ").trim();
     await sb_.from("orders").update({notes:clean||null}).eq("id",id);
   }catch(e){}
 }
@@ -2075,8 +2107,9 @@ async function odUncancel(id){
     if(!up.data||!up.data.length) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
     await odClearCancelStamp(sb_,id);
     await sb_.from("mp_deliveries").update({status:"scheduled",updated_at:new Date().toISOString()}).eq("order_id",id);
+    var rs=await odRestock(id, -1, "ตัดสต็อกคืน");   /* กลับมาขายแล้ว = ของถูกจองไว้อีกครั้ง */
     closeOrderDetail(); loadAll();
-    alert("กู้คืนแล้ว");
+    alert("กู้คืนแล้ว"+(rs?("\nตัดสต็อกกลับ "+rs.boxes+" กล่อง ("+rs.ok+"/"+rs.menus+" เมนู)"):""));
   }catch(e){ alert("กู้คืนไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 /* ดูใบที่ยกเลิก — ถ้าไม่มีที่ให้ดู การยกเลิกจะกลายเป็น "หายถาวร" ในสายตาแอดมิน */
