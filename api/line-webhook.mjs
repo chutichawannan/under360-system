@@ -66,12 +66,31 @@ async function linePush(to, text, token) {
 }
 
 // ส่งคำสั่งจากไลน์นัท เข้าบอร์ดห้อง PM (ตาราง session_messages ที่ทุกห้องใช้อยู่แล้ว)
+const ROOMS = ['pm','cc','u','k','f','m','bug','keng','niw','eath','tiang','rnd01','ploy','fah'];
+const ROOM_ALIAS = { เลขา:'pm', pm:'pm', cc:'cc', ยู:'u', u:'u', ครัว:'k', k:'k', ฟ้า:'fah', fah:'fah',
+  เงิน:'f', f:'f', เว็บ:'m', m:'m', บั๊ก:'bug', bug:'bug', เก่ง:'keng', keng:'keng',
+  นิว:'niw', niw:'niw', เอิธ:'eath', eath:'eath', เตียง:'tiang', tiang:'tiang', พลอย:'ploy', ploy:'ploy', rnd:'rnd01', rnd01:'rnd01' };
+
+// แยกว่านัทสั่งถึงห้องไหน — พิมพ์ชื่อห้องนำหน้าแล้วตามด้วย : หรือเว้นวรรค
+function routeRoom(text) {
+  const m = String(text).match(/^s*(?:@)?([A-Za-z0-9]+|[ก-๙]+)s*[:：]?s+([sS]+)$/);
+  if (!m) return { room: 'pm', body: text };
+  const key = m[1].toLowerCase();
+  const room = ROOM_ALIAS[key] || (ROOMS.includes(key) ? key : null);
+  return room ? { room, body: m[2] } : { room: 'pm', body: text };
+}
+
 async function toPmBoard(text) {
+  const { room, body } = routeRoom(text);
+  const rows = [{ room, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: body }];
+  // ถ้าสั่งห้องอื่น ให้เลขารู้ด้วยว่านัทสั่งอะไรไปที่ไหน
+  if (room !== 'pm') rows.push({ room: 'pm', sender: 'นัท (สั่งผ่านไลน์)', role: 'user',
+    text: '[ส่งต่อให้ห้อง ' + room + '] ' + body });
   try {
     await fetch(SB + '/session_messages', {
       method: 'POST',
       headers: { ...SBH, Prefer: 'return=minimal' },
-      body: JSON.stringify({ room: 'pm', sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text }),
+      body: JSON.stringify(rows),
     });
   } catch (e) { console.error('toPmBoard failed:', e); }
 }
