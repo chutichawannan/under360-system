@@ -331,7 +331,8 @@ export default async function handler(req, res) {
 
     // มีคนแท็กนัท / เรียกกะปัน / เรื่องเงิน -> ส่งเข้าแชทนัท
     const mentionedOwner = ((m.mention && m.mention.mentionees) || []).some(x => x.userId && x.userId === OWNER);
-    const calledKapan = /กะปัน|kapan/i.test(t);
+    // เรียกกะปันยังไงก็ติด — ครัวอ่านไทยได้ 2/6 คน พิมพ์เพี้ยนได้ (นัทสั่ง 12 ส.ค.)
+    const calledKapan = /กะปัน|กระปัน|กปน|กะปั้น|กะบัน|kapan|kapun|kapann|kpn|ကပန်/i.test(t);
     const aboutMoney  = /โอน|จ่าย|ค้าง|เงิน|ค่าแรง|บิล|ใบเสร็จ|มัดจำ|ค่าของ/.test(t);
     const tagNut      = /@\s?nut|@\s?นัท/i.test(t);
 
