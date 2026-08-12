@@ -24,6 +24,14 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .tab-bar{display:flex;background:var(--w);border-bottom:2px solid var(--xsoft);overflow-x:auto;}
 .tab-btn{flex:1;padding:11px 8px;font-size:13px;font-weight:600;color:var(--soft);border:none;background:none;cursor:pointer;font-family:var(--sans);border-bottom:2px solid transparent;margin-bottom:-2px;transition:.15s;white-space:nowrap;}
 .tab-btn.active{color:var(--g);border-bottom-color:var(--g);}
+/* แถบหมวด + ค้นหา ในแท็บตั้งสต็อค (12 ส.ค.) — ครัวกรอกทีละหมวด ไม่ต้องเลื่อนหาในลิสต์ 115 เมนู */
+.stk-cats{display:flex;gap:6px;overflow-x:auto;padding:2px 0 8px;-webkit-overflow-scrolling:touch;scrollbar-width:none;}
+.stk-cats::-webkit-scrollbar{display:none;}
+.stk-cat{flex:0 0 auto;border:1px solid var(--xsoft);background:#fff;color:var(--soft);border-radius:999px;padding:9px 14px;font-size:14px;font-weight:700;cursor:pointer;white-space:nowrap;}
+.stk-cat span{opacity:.6;font-weight:600;font-size:12px;}
+.stk-cat.on{background:var(--g);border-color:var(--g);color:#fff;}
+.stk-cat.on span{opacity:.75;}
+.stk-find{width:100%;box-sizing:border-box;border:1px solid var(--xsoft);border-radius:10px;padding:11px 12px;font-size:16px;margin-bottom:6px;font-family:inherit;}
 .stk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--xsoft);}
 .stk-name{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .stk-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
@@ -42,10 +50,7 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .date-sel{padding:0 10px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
 
 /* MAIN */
-/* N-53: ใบสุดท้ายของวันเลื่อนไม่ถึงบนมือถือ (เห็น 10 จาก 11 · ใบที่หายคือใบท้ายสุด หายเงียบไม่มีอะไรเตือน)
-   สาเหตุ: หน้านี้เลื่อนด้วย body ไม่มี container — แถบล่างของ Chrome Android ทับใบสุดท้ายไว้
-   เว้นที่ท้ายหน้าให้เลื่อนพ้นแถบเบราว์เซอร์ได้ (เห็นชัดตอนพับการ์ด เพราะการ์ดเตี้ย หน้าสั้น) */
-.main{padding:12px 12px 140px;max-width:940px;margin:0 auto;}
+.main{padding:12px;max-width:940px;margin:0 auto;}
 
 /* PROD TABLE */
 .prod-wrap{background:var(--w);border-radius:var(--rad);border:1px solid var(--xsoft);overflow:hidden;margin-bottom:12px;}
@@ -116,16 +121,7 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
 .oc-collapsed .oc-caret{transform:rotate(-90deg);}
 .oc-boxn{font-size:11px;font-weight:700;padding:2px 8px;border-radius:7px;background:var(--bg);color:var(--soft);}
-/* ⚠️ ห้ามเอาคอมเมนต์มาคั่นกลางรายชื่อ selector — เคยพลาดมาแล้ว คอมเมนต์กินท้ายรายชื่อไป
-   ผลคือ .oc-note โดน display:none ทั้งหน้า = ครัวไม่เห็นโน้ตลูกค้าเลยสักใบ (เช่น "แพ้นม/ไข่")
-   และ .oc-fridge เสียสีพื้น = แถบของแช่ตู้ไม่เด่น ทั้งที่เป็นของที่พลาดแล้วลูกค้าไม่ได้ของ */
 .oc-collapsed .oc-right,.oc-collapsed .oc-meta,.oc-collapsed .oc-note{display:none;}
-/* ❄️ แถบของที่แช่ตู้ — ต้องเด่นกว่าปกติ เพราะเป็นของที่ครัวพลาดแล้วลูกค้าไม่ได้ของ */
-.oc-fridge{background:#DBEAFE;color:#1E40AF;font-size:13.5px;font-weight:800;padding:7px 12px;border-radius:8px;margin-bottom:8px;line-height:1.4;}
-.oc-fridge.take{background:#FEF3C7;color:#92400E;}
-body.tablet .oc-fridge{font-size:17px;padding:10px 14px;}
-@media print{.oc-fridge{border:1px solid #333;background:#fff!important;color:#000!important;}}
-
 .oc-collapsed .oc-2col{display:block;}
 .oc-collapsed .oc-top{margin-bottom:0;}
 .oc-collapsed{padding-top:9px;padding-bottom:9px;}
@@ -144,18 +140,11 @@ body.tablet .oc-caret{font-size:19px;}
 .oc-name{font-size:16px;font-weight:800;}
 .oc-meta{font-size:13px;color:var(--soft);margin-top:2px;line-height:1.45;}
 .oc-order-num{font-family:var(--mono);font-size:12.5px;color:var(--soft);}
-/* N-58: 1 เมนู = 1 บรรทัด ไม่มีกรอบ — ครัวกวาดสายตาลงแนวตั้งทีเดียวจบ
-   (เดิมเป็นชิปมีกรอบไหลต่อกันหลายตัวต่อบรรทัด ใบ 12 รายการอัดกันเป็นพรืด) */
-.items-grid{display:flex;flex-direction:column;gap:1px;margin-top:6px;}
+.items-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
 /* ชื่อเมนูต้องอ่านครบเสมอ — ให้ตัดบรรทัดได้ ห้ามตัดข้อความทิ้ง (ครัวใช้เช็คว่าลูกค้ารับอะไรบ้าง) */
-.item-chip{font-size:13px;background:transparent;border:none;border-radius:0;padding:3px 0;display:flex;align-items:baseline;gap:6px;max-width:100%;border-bottom:1px solid rgba(0,0,0,.045);}
-.item-chip:last-child{border-bottom:none;}
+.item-chip{font-size:13px;background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:2px 8px;display:flex;align-items:baseline;gap:4px;max-width:100%;}
 .item-chip .ic-code{font-family:var(--mono);font-size:12px;font-weight:700;color:var(--g);flex-shrink:0;}
-.item-chip .ic-code .ic-nick{font-weight:800;color:var(--ink);}
-.item-chip .ic-code .ic-dim{font-weight:600;color:var(--xsoft);}
-.code-tag .ic-nick{font-weight:800;color:var(--ink);}
-.code-tag .ic-dim{font-weight:600;color:var(--xsoft);}
-.item-chip .ic-name{font-size:12.5px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;flex:1;}
+.item-chip .ic-name{font-size:12.5px;color:var(--soft);white-space:normal;word-break:break-word;min-width:0;}
 /* โน้ตรายกล่อง — ต้องเด่นพอให้ครัวไม่พลาด (เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่") */
 .item-chip .ic-note{font-size:12px;font-weight:700;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;white-space:normal;word-break:break-word;}
 body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
@@ -170,8 +159,6 @@ body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
 .oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
 .oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
 .oc-actions{margin-top:8px;display:flex;gap:6px;flex-wrap:wrap;}
-.btn-print-slip{background:#fff;color:var(--g);border:1.5px solid var(--g);border-radius:8px;padding:7px 12px;font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;}
-body.tablet .btn-print-slip{font-size:16px;padding:10px 16px;}
 .btn-pack{background:var(--g);color:#fff;border:none;border-radius:8px;padding:0 18px;min-height:46px;font-size:14px;font-weight:600;cursor:pointer;font-family:var(--sans);}
 .btn-undo{background:var(--bg);color:var(--soft);border:1px solid var(--xsoft);border-radius:8px;padding:0 16px;min-height:46px;font-size:13.5px;cursor:pointer;font-family:var(--sans);}
 .btn-done{background:#E5F3ED;color:var(--g);border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--sans);}
@@ -260,7 +247,7 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
   <div class="hdr-title">🍳 ครัว Under360</div>
   <div class="live-dot"></div>
   <!-- code toggle -->
-  <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">#️⃣ Sub</button>
+  <button class="hdr-btn" id="codeToggleBtn" onclick="cycleCodeMode()">🏷️ Code</button>
   <!-- ชื่อผู้ใช้ — ผูกกับปุ่มกดสถานะ (จัดกล่องเสร็จ/ส่งแล้ว) เพื่อเก็บ log ว่าใครกด กันมือลั่นแล้วหาไม่เจอ -->
   <button class="hdr-btn no-print" id="whoamiBtn" onclick="promptNickname()">👋 ตั้งชื่อ</button>
   <!-- print -->
@@ -288,11 +275,6 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
   <button class="chip" id="s-morning" onclick="setSlot('morning',this)">เช้า</button>
   <button class="chip" id="s-afternoon" onclick="setSlot('afternoon',this)">บ่าย</button>
   <button class="chip" id="s-express" onclick="setSlot('express',this)">ด่วน</button>
-  <div class="sep"></div>
-  <!-- แยกดูทั่วไป / Meal Plan — ครัวทำคนละจังหวะ: สต็อคทำล่วงหน้า · MP ปรุงสดเช้าวันส่ง (นัทขอ 9 ส.ค.) -->
-  <button class="chip on" id="t-all" onclick="setType('all',this)">ทุกประเภท</button>
-  <button class="chip" id="t-normal" onclick="setType('normal',this)">🍱 ทั่วไป</button>
-  <button class="chip" id="t-mp" onclick="setType('mp',this)">🥗 Meal Plan</button>
 </div>
 
 <!-- ป้ายบอกว่ากำลังดูวันไหน — ครัวต้องแยกออกว่า "ของล่วงหน้า" ไม่ใช่ "ของที่ต้องทำวันนี้" (N-32) -->
@@ -389,8 +371,7 @@ async function logKqActivity(summary){
 // ── STATE ────────────────────────────────────────────────
 var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
 var dateMode="today", slotMode="all", tabMode=1;
-var typeMode="all";  // all | normal | mp — แยกดูออเดอร์ทั่วไป vs Meal Plan
-var codeMode="subcode"; // subcode | code | name — ตั้งต้นที่ชื่อเล่น เพราะครัว/ลูกค้าเรียกชื่อนี้จริง
+var codeMode="code"; // code | name | subcode
 var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
 
 // ── DATE / SLOT / TAB ────────────────────────────────────
@@ -414,19 +395,6 @@ function setSlot(mode,el){
   if(el&&el.classList)el.classList.add("on");
   render();
 }
-function setType(mode,el){
-  typeMode=mode;
-  document.querySelectorAll("#ctrlBar .chip[id^='t-']").forEach(function(b){b.classList.remove("on");});
-  if(el&&el.classList)el.classList.add("on");
-  render();
-}
-/* ออเดอร์ใบนี้เป็น Meal Plan ไหม — ดู 2 ทาง เพราะใบที่แอดมินแพลนเมนูให้ยังไม่มี order_items ตอนแรก
-   (ถ้าดูแต่รหัสเมนู ใบที่รอแพลนจะถูกจัดเป็น "ทั่วไป" แล้วหายจากตัวกรอง Meal Plan) */
-function isMpOrder(o){
-  var m=findMpFor(o);
-  if(m && m.status!=="cancelled") return true;
-  return getOrderItems(o.id).some(function(i){ return /^(HP|LC|HX)/i.test(String(i.code||"")); });
-}
 function switchTab(n){
   tabMode=n;
   [1,2,3].forEach(function(i){
@@ -437,7 +405,7 @@ function switchTab(n){
 }
 
 // ── CODE TOGGLE ──────────────────────────────────────────
-var CODE_MODES=["subcode","code","name"];
+var CODE_MODES=["code","name","subcode"];
 var CODE_LABELS={"code":"🏷️ Code","name":"📝 ชื่อ","subcode":"#️⃣ Sub"};
 function cycleCodeMode(){
   var idx=CODE_MODES.indexOf(codeMode);
@@ -445,29 +413,9 @@ function cycleCodeMode(){
   document.getElementById("codeToggleBtn").textContent=CODE_LABELS[codeMode];
   render();
 }
-/* ── N-59: ชื่อเล่นเมนูของจริงอยู่ที่ menu_items.subcode ──────────────────────
-   เดิมโหมด "Sub" แค่ตัดตัวอักษรหน้าโค้ดทิ้ง (S022→022 · No1→1) ไม่เคยอ่านชื่อเล่นจริงเลย
-   ผลข้างเคียงที่ห้อง bug จับได้: เมนูเดียวกันขึ้น "1" กับ "No1" ในจอเดียวกัน ครัวอ่านเป็นคนละเมนู
-   → รวมเหลือทางเดียว ใช้ที่หน้าใบสั่งผลิต/ใบออเดอร์/ตั้งสต็อค เหมือนกันหมด */
-function menuSubcodeOf(code){
-  if(!code) return "";
-  var m=(allMenus||[]).find(function(x){return String(x.code||"").toUpperCase()===String(code).toUpperCase();});
-  return m && String(m.subcode||"").trim() ? String(m.subcode).trim() : "";
-}
-/* ตัวเลขท้ายโค้ด — ใช้เป็นตัวจางคู่กับชื่อเล่น (s1 022) */
-function codeTail(code){ return String(code||"").replace(/^[A-Za-z]+/,"") || String(code||""); }
-/* คืน HTML ของ "ชื่อรหัส" 1 ชุด — bold=ชื่อเล่น · จาง=โค้ดจริง */
-function codeHtml(code,name){
-  if(codeMode==="name") return "<span class='ic-nick'>"+escH(name||"—")+"</span>";
-  if(codeMode==="code") return "<span class='ic-dim'>"+escH(code||"—")+"</span>";
-  var sub=menuSubcodeOf(code);
-  return sub ? "<span class='ic-nick'>"+escH(sub)+"</span> <span class='ic-dim'>"+escH(codeTail(code))+"</span>"
-             : "<span class='ic-dim'>"+escH(code||"—")+"</span>";   /* ไม่มีชื่อเล่น = โชว์โค้ดเต็ม (No1 ไม่ใช่ 1) */
-}
-/* เวอร์ชันข้อความล้วน สำหรับที่ที่ยัดเป็น HTML ไม่ได้ */
 function getCodeDisplay(code,name){
   if(codeMode==="name")return name;
-  if(codeMode==="subcode")return menuSubcodeOf(code) || code || "—";
+  if(codeMode==="subcode")return (code||"").replace(/^[A-Za-z]+/,"") || code;
   return code||"—";
 }
 
@@ -527,7 +475,7 @@ async function loadAll(){
     (function(){var keep={},ch=false; ids.forEach(function(i){if(kqCollapsed[i])keep[i]=1;});
       for(var k in kqCollapsed){if(!keep[k]){ch=true;break;}} if(ch){kqCollapsed=keep;saveCollapsed();}})();
     var rest=await Promise.all([
-      sb_.from("menu_items").select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
+      sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
       sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig"])
     ]);
@@ -546,21 +494,10 @@ async function loadAll(){
 function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("⚠️ บันทึกไม่สำเร็จ: "+(what||"")+"\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชแล้วลองใหม่"); }
 
 // ── FILTER ───────────────────────────────────────────────
-/* ❄️ ใบที่ "ทำแล้วแช่ตู้ รอส่งวันหลัง" — ต้องโผล่ 2 วัน (วันที่จัด + วันที่ส่ง)
-   ถ้าโผล่แค่วันส่ง = ครัววันที่จัดไม่เห็น เลยไม่ได้ทำ · ถ้าโผล่แค่วันจัด = วันส่งไม่มีใครรู้ว่าต้องไปหยิบ
-   (ของหายจริงมาแล้ว — ห้องฟ้าเจอเคสนวภัท 11 ส.ค.) */
-var KQ_FRIDGE_RE=/\[เก็บตู้ จัด (\d{4}-\d{2}-\d{2}) ส่ง (\d{4}-\d{2}-\d{2})/;
-function kqFridge(o){
-  var m=String((o&&o.notes)||"").match(KQ_FRIDGE_RE);
-  return m?{prep:m[1], ship:m[2]}:null;
-}
 function filteredOrders(){
   var tgt=getTargetDate();
   return allOrders.filter(function(o){
-    if(tgt&&o.delivery_date!==tgt){
-      var f=kqFridge(o);
-      if(!(f&&f.prep===tgt)) return false;   // ดึงใบที่ "จัดวันนี้ แต่ส่งวันอื่น" กลับมาให้ครัวเห็น
-    }
+    if(tgt&&o.delivery_date!==tgt)return false;
     if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
     // 🔴 ใบที่ยกเลิก + ออเดอร์เทส ต้องไม่โผล่หน้าครัว — ครัวเคยเห็น 13 ใบทั้งที่งานจริง 12
     //    (นัทเปิดจอจริงเจอ 5 ส.ค. 2569 · ตัวเกินคือ U-0805-001 ที่ cancelled ไปแล้ว)
@@ -570,10 +507,6 @@ function filteredOrders(){
     // (ดูรวมทุกวันค่อยซ่อน ไม่งั้นรายการยาวไปด้วยของที่จบแล้ว)
     if(o.status==="delivered") return !!tgt;
     return true;
-  }).filter(function(o){
-    if(typeMode==="all") return true;
-    var mp=isMpOrder(o);
-    return typeMode==="mp" ? mp : !mp;
   });
 }
 // บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
@@ -680,96 +613,23 @@ function render(){
 
 // TAB 1: รายสินค้า aggregated
 var saveTimers={};
-// เมนูพิเศษประจำสัปดาห์ = รหัส S… / D… (หมุนทุกสัปดาห์) · No… / A… = เมนูประจำ
-// นัทเน้นเอง 8 ส.ค.: *"ไม่รู้ว่าจะผลิตอะไรกี่กล่อง โดยเฉพาะเมนูพิเศษประจำสัปดาห์"*
-function isWeeklyCode(code){ return /^[SD]\d/i.test(String(code||"")); }
-
-// หัวใบสั่งผลิต — ตัวเลขที่ครัว/น้องนิว ใช้ตัดสินใจสั่งของได้ทันที
-//   แยก 2 ชั้นให้ชัด: "รับมาแล้วกี่กล่อง" (รู้ตั้งแต่ลูกค้าสั่ง) vs "แพลนเมนูแล้วกี่กล่อง" (รอแอดมิน)
-function prodHeadHtml(nOrders, boxTotal, plannedBoxes, waiting){
-  var waitBoxes=waiting.reduce(function(s,w){return s+w.boxes;},0);
-  var h="<div style='background:#fff;border:1px solid var(--xsoft);border-radius:12px;padding:12px 14px;margin-bottom:10px'>"
-    +"<div style='display:flex;gap:14px;flex-wrap:wrap;align-items:baseline'>"
-    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ต้องส่งทั้งหมด</div>"
-    +"<div style='font-size:26px;font-weight:800;color:var(--ink)'>"+boxTotal+" <span style='font-size:13px;font-weight:600;color:var(--soft)'>กล่อง / "+nOrders+" ใบ</span></div></div>"
-    +"<div><div style='font-size:11px;color:var(--soft);font-weight:700'>แพลนเมนูแล้ว</div>"
-    +"<div style='font-size:20px;font-weight:800;color:var(--g)'>"+plannedBoxes+" กล่อง</div></div>";
-  if(waitBoxes){
-    h+="<div><div style='font-size:11px;color:var(--soft);font-weight:700'>ยังไม่ได้แพลน</div>"
-      +"<div style='font-size:20px;font-weight:800;color:var(--r)'>"+waitBoxes+" กล่อง</div></div>";
-  }
-  h+="</div>";
-  if(waiting.length){
-    // ⚠️ ตัวสำคัญ: ถ้าไม่โชว์ตรงนี้ ใบพวกนี้จะหายจากใบสั่งผลิตไปเงียบ ๆ
-    //    ครัวคิดว่าทำครบแล้ว แต่จริง ๆ ยังมีของค้างรอแอดมินแพลน
-    h+="<div style='margin-top:10px;background:#FEF2F2;border:1px solid #FECACA;border-radius:10px;padding:10px 12px'>"
-      +"<div style='font-size:12.5px;font-weight:800;color:#B91C1C;margin-bottom:5px'>🔴 ยังไม่รู้ว่าจะทำเมนูอะไร — "+waiting.length+" ใบ · "+waitBoxes+" กล่อง</div>"
-      +"<div style='font-size:12px;color:#7F1D1D;line-height:1.7'>"
-      + waiting.map(function(w){
-          return "<span style='display:inline-block;background:#fff;border:1px solid #FECACA;border-radius:7px;padding:1px 7px;margin:0 4px 4px 0'>"
-            +escH(String(w.o.customer_name||"ลูกค้า").slice(0,16))+" <b>"+w.boxes+"</b></span>";
-        }).join("")
-      +"</div><div style='font-size:11px;color:#B91C1C;margin-top:4px'>แอดมินต้องเข้าไปใส่เมนูที่หน้า “แพลนเมนู” ก่อน ครัวถึงจะเห็นว่าต้องทำอะไร</div></div>";
-  }
-  return h+"</div>";
-}
-
-// 📦 กี่กล่องจริง ๆ ของใบนี้ — ตัวเลขที่ครัวใช้สั่งของ
-//   ⚠️ เซ็ต/แพค 1 บรรทัด ≠ 1 กล่อง: เขียนจำนวนไว้ในชื่อ ("HYROX SET 6 กล่อง") แต่ quantity=1
-//      → ใครนับจาก quantity จะได้ยอดต่ำกว่าจริงแบบเงียบ ๆ (นัทเจอเอง 8 ส.ค.)
-//   ลำดับความน่าเชื่อ: แพลน MP (box_count) > จำนวนที่เขียนในชื่อ > quantity
-function orderBoxCount(o, items){
-  var m=findMpFor(o);
-  if(m && m.box_count) return m.box_count;
-  var q=items.reduce(function(s,i){return s+(i.qty||1);},0);
-  var inName=items.reduce(function(s,i){
-    var mm=String(i.name||"").match(/(\d+)\s*กล่อง/);
-    return s+(mm?parseInt(mm[1],10):0);
-  },0);
-  return Math.max(q, inName);
-}
-
 function renderProd(){
   var orders=filteredOrders();
   var tgt=getTargetDate();
-  var agg={}, waiting=[], boxTotal=0, plannedBoxes=0;
+  var agg={};
   orders.forEach(function(o){
-    var items=getOrderItems(o.id);
-    var boxes=orderBoxCount(o,items);
-    boxTotal+=boxes;
-    // ใบที่ยัง "ไม่รู้ว่าจะทำเมนูอะไร" = แพลนเมนูยังไม่ถูกใส่ (หรือใบเก่าที่ไม่มีรายการติดมา)
-    //   ครัวต้องเห็นว่ามีของค้างกี่กล่อง ไม่ใช่หายไปเงียบ ๆ จากใบสั่งผลิต
-    var real=items.filter(function(i){ return i.code&&i.code!=="—"&&!/^(MP-|SET-|HX30$)/.test(i.code); });
-    if(!real.length){ waiting.push({o:o,boxes:boxes}); return; }
-    plannedBoxes+=boxes;
-    real.forEach(function(i){
-      // 🔴 เดิมใช้ agg[i.menu_item_id] — แต่เมนูที่มาจากแพลน MP มี menu_item_id = null ทุกตัว
-      //    = ทุกเมนูของทุกคนยุบรวมเป็นบรรทัดเดียว ครัวเลยไม่มีทางรู้ว่าต้องทำอะไรกี่กล่อง
-      var key=(i.code||i.name||"?");
-      if(!agg[key])agg[key]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
-      agg[key].qty+=(i.qty||1);
-      if(i.menu_item_id&&!agg[key].id) agg[key].id=i.menu_item_id;
+    getOrderItems(o.id).forEach(function(i){
+      if(!agg[i.menu_item_id])agg[i.menu_item_id]={code:i.code,name:i.name,qty:0,id:i.menu_item_id};
+      agg[i.menu_item_id].qty+=i.qty;
     });
   });
-  // เมนูพิเศษประจำสัปดาห์ขึ้นก่อน (นัทเน้น: "โดยเฉพาะเมนูพิเศษประจำสัปดาห์")
-  var rows=Object.values(agg).sort(function(a,b){
-    var sa=isWeeklyCode(a.code)?0:1, sb=isWeeklyCode(b.code)?0:1;
-    if(sa!==sb) return sa-sb;
-    return (a.code||"").localeCompare(b.code||"",undefined,{numeric:true});
-  });
-  var headHtml=prodHeadHtml(orders.length,boxTotal,plannedBoxes,waiting);
-  if(!rows.length && !orders.length){
+  var rows=Object.values(agg).sort(function(a,b){return (a.code||"").localeCompare(b.code||"");});
+  if(!rows.length){
     document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
     renderMpQueue();
     return;
   }
-  if(!rows.length){
-    document.getElementById("prodView").innerHTML=headHtml
-      +"<div style='text-align:center;padding:26px 16px;color:var(--soft);font-size:13px'>ยังไม่มีเมนูให้ผลิตสักรายการ — ทุกใบรอแพลนเมนูอยู่</div>";
-    renderMpQueue();
-    return;
-  }
-  var html=headHtml+"<div class='prod-wrap'>"
+  var html="<div class='prod-wrap'>"
     +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>สต็อค</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
@@ -780,8 +640,7 @@ function renderProd(){
     // ชื่อเมนูตัดบรรทัดได้ ไม่ตัดข้อความทิ้ง (เดิม ellipsis+nowrap = ชื่อยาวอ่านไม่จบว่าต้องผลิตอะไร)
     html+="<div class='pt-row "+rowCls+"'>"
       +"<div style='display:flex;align-items:baseline;gap:6px;min-width:0'>"
-      +(isWeeklyCode(r.code)?"<span title='เมนูพิเศษประจำสัปดาห์' style='color:#B45309;font-size:13px;flex-shrink:0'>⭐</span>":"")
-      +"<span class='code-tag'>"+codeHtml(r.code,r.name)+"</span>"
+      +"<span class='code-tag'>"+escH(getCodeDisplay(r.code,r.name))+"</span>"
       +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;white-space:normal;word-break:break-word;min-width:0'>"+escH(r.name)+"</span>":"")
       +"</div>"
       +"<div class='pt-n' style='color:var(--gold)'>"+r.qty+"</div>"
@@ -874,19 +733,16 @@ function schedSave(inp){
     var sb_=getSB(); if(!sb_)return;
     // 🔗 ครัวกรอก "ผลิตได้จริง" → ตั้งเลขที่ลูกค้าซื้อได้ (stock_total) ให้ตรงกันทันที (3 ส.ค. 2026)
     //    เดิมเก็บแค่ actual_stock อย่างเดียว → ไม่มีอะไรเชื่อมกับเลขขาย → ครัวผลิตได้ 0 แต่ลูกค้ายังสั่งได้ 10
-    // 🆕 11 ส.ค. 2026 (นัทสั่ง) — เมนูที่ตั้ง "ไม่จำกัด" ก็ต้องคุมด้วย
-    //    เดิมไม่แตะ → ครัวกรอก "ผลิตได้ 5" แต่ลูกค้ายังสั่งได้ไม่อั้น (วันนี้มี 41 เมนูอยู่ในสภาพนี้)
-    //    ครัวกรอกเลข = ประกาศว่ามีเท่านี้ → เลิก "ไม่จำกัด" ให้อัตโนมัติ
-    //    อยากกลับไปไม่จำกัด กดปุ่ม ∞ ที่แท็บ "ตั้งสต็อค" ได้ตลอด
+    //    เมนูที่ตั้ง "ไม่จำกัด" (stock_total = null) ไม่แตะ — ยังขายได้เรื่อยๆ ตามเดิม
     var mm=allMenus.find(function(x){return x.id===menuId;})||{};
-    var wasUnlimited=(mm.stock_total==null);
-    var patch={actual_stock:val, stock_total:val};
-    if(wasUnlimited) kqUnlimitedHint(inp, mm);
+    var patch={actual_stock:val};
+    if(mm.stock_total!=null) patch.stock_total=val;
+    // ⚠️ เมนูที่ตั้ง "ไม่จำกัด" (stock_total=null) → กรอกเลขนี้ไปก็ "ไม่คุมการขาย"
+    //    เดิมเงียบสนิท ครัวนึกว่าจำกัดแล้วแต่ลูกค้ายังสั่งได้ไม่อั้น → ต้องบอกให้รู้ (ไม่เปลี่ยนพฤติกรรมการขายเอง)
+    else kqUnlimitedHint(inp, mm);
     var _w3=await sb_.from("menu_items").update(patch).eq("id",menuId);
     if(_w3.error) kqWriteFail(_w3.error,"ผลิตได้จริง/สต็อคขาย");
-    else { mm.stock_total=val;
-      logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")"
-        +(wasUnlimited?" · เลิกไม่จำกัดให้อัตโนมัติ":"")); }
+    else if(patch.stock_total!=null) logKqActivity((mm.code||"")+" "+(mm.name||"")+" — ผลิตได้จริง "+val+" (ตั้งสต็อคขาย = "+val+")");
   },600);
 }
 
@@ -897,14 +753,18 @@ function kqUnlimitedHint(inp, mm){
     if(row.querySelector(".kq-unl-hint"))return;
     var d=document.createElement("div");
     d.className="kq-unl-hint";
-    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#EAF7EF;border:1px solid #BBE5CB;border-radius:8px;padding:5px 8px;font-size:11px;color:#166534;font-weight:600;line-height:1.4";
-    d.textContent="เมนูนี้เคยตั้งไว้ ขายไม่จำกัด (∞) — ตอนนี้เปลี่ยนเป็นขายได้ตามเลขที่กรอกแล้ว ลูกค้าสั่งเกินไม่ได้";
+    d.style.cssText="grid-column:1/-1;margin-top:4px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:8px;padding:5px 8px;font-size:11px;color:#9A3412;font-weight:600;line-height:1.4";
+    d.textContent="เมนูนี้ตั้งไว้ \u0e02\u0e32\u0e22\u0e44\u0e21\u0e48\u0e08\u0e33\u0e01\u0e31\u0e14 (\u221e) — เลขนี้บันทึกไว้ดูเฉยๆ ไม่ได้จำกัดยอดขาย ถ้าต้องการจำกัด ให้ตั้งเลขที่แท็บ \"ตั้งสต็อค\" ก่อน";
     row.appendChild(d);
     setTimeout(function(){ if(d.parentNode) d.parentNode.removeChild(d); }, 8000);
   }catch(e){}
 }
 
 // ── TAB 3: ตั้งสต็อค (canonical = stock_total · ทุกหน้ารวม LIFF อ่านตัวนี้) ──
+var stkCat="all", stkQ="";
+function stkPick(c){ stkCat=c; renderStock(); }
+function stkSearch(inp){ stkQ=inp.value||""; renderStock();
+  var f=document.getElementById("stkFind"); if(f){ f.focus(); try{f.setSelectionRange(f.value.length,f.value.length);}catch(e){} } }
 var CATLBL_STK={no_regular:"🍚 ข้าวกล่อง",no_special:"⭐ เมนูพิเศษ",pack_regular:"📦 แพคกับข้าว",pack_special:"📦 แพคพิเศษ",trend:"🔥 เมนูกระแส"};
 function renderStock(){
   var el=document.getElementById("stockView"); if(!el)return;
@@ -913,14 +773,35 @@ function renderStock(){
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
   var om={}; filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>ตั้งจำนวนที่ทำวันนี้ต่อเมนู — <b>ลูกค้าสั่งได้ไม่เกินนี้</b> (LIFF อ่านตัวนี้) · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
+
+  // แถบหมวด + ช่องค้นหา (นัทสั่ง 12 ส.ค.) — ครัวกรอกสต็อกทีละหมวด (บ๊ะจ่าง/ข้าวกล่อง/แพคกับข้าว)
+  // เดิมเป็นรายการยาวรวดเดียว 115 เมนู ครัวต้องเลื่อนหาเอง = กรอกผิดแถวง่าย
+  var cats=[]; menus.forEach(function(m){ var c=m.category||"other"; if(cats.indexOf(c)<0)cats.push(c); });
+  var catName=function(c){ return catLabelMap[c]||CATLBL_STK[c]||c||"อื่นๆ"; };
+  html+="<div class='stk-cats'><button class='stk-cat"+(stkCat==="all"?" on":"")+"' onclick=\"stkPick('all')\">ทั้งหมด <span>"+menus.length+"</span></button>";
+  cats.forEach(function(c){
+    var n=menus.filter(function(m){return (m.category||"other")===c;}).length;
+    html+="<button class='stk-cat"+(stkCat===c?" on":"")+"' onclick=\"stkPick('"+escH(c)+"')\">"+escH(catName(c))+" <span>"+n+"</span></button>";
+  });
+  html+="</div><input class='stk-find' id='stkFind' placeholder='🔍 ค้นชื่อเมนูหรือโค้ด...' value='"+escH(stkQ)+"' oninput='stkSearch(this)'>";
+
+  var shown=menus.filter(function(m){
+    if(stkCat!=="all" && (m.category||"other")!==stkCat) return false;
+    if(stkQ){ var q=stkQ.toLowerCase();
+      return String(m.name||"").toLowerCase().indexOf(q)>=0 || String(m.code||"").toLowerCase().indexOf(q)>=0
+          || String(m.subcode||"").toLowerCase().indexOf(q)>=0; }
+    return true;
+  });
+  if(!shown.length) html+="<div style='text-align:center;padding:30px;color:var(--soft)'>ไม่เจอเมนูที่ค้น</div>";
+
   var lastCat=null;
-  menus.forEach(function(m){
+  shown.forEach(function(m){
     if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
     var unlimited=(m.stock_total==null);
     var val=unlimited?0:m.stock_total;
     var ordered=om[m.id]||0;
     html+="<div class='stk-row'>"
-      +"<div class='stk-name'><span class='code-tag'>"+codeHtml(m.code,m.name)+"</span> "+escH(m.name||"")
+      +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+escH(m.name||"")
       +(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":"")+"</div>"
       +"<div class='stk-ctrl'>"
       +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',-1)\" "+(unlimited?"disabled":"")+">−</button>"
@@ -1025,7 +906,7 @@ function renderCard(o){
   //    ชื่อเมนูไทยยาว 20-40 ตัว เช่น "สเต็กไก่อบน้ำผึ้งผักย่าง" เหลือ "สเต็กไก่อบน้ำ" = อ่านไม่รู้เรื่องว่ารับอะไร
   //    (นัทเห็นกับตาบนจอครัวจริง 5 ส.ค. 2569) → โชว์เต็ม แล้วให้ CSS ตัดบรรทัดเอา
   var chip=function(i){
-    return "<div class='item-chip'><span class='ic-code'>"+codeHtml(i.code,i.name)+"</span>"
+    return "<div class='item-chip'><span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
       +(codeMode!=="name"?" <span class='ic-name'>"+escH(i.name)+"</span>":"")
       +" <span class='ic-qty'>×"+i.qty+"</span>"
       // 📌 โน้ตรายกล่องจากแพลนเมนู เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่" — ครัวต้องเห็นตอนจัดกล่อง
@@ -1065,8 +946,6 @@ function renderCard(o){
     else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
     if(packed&&!shipped) b+="<button class='btn-ship' onclick='markShipped(\""+o.id+"\")'>🛵 ส่งแมสแล้ว</button>";
     if(shipped)          b+="<button class='btn-undo' onclick='markUnship(\""+o.id+"\")'>↩ ยังไม่ส่ง</button>";
-    /* N-63 · ปุ่มพิมพ์สลิปแปะกล่อง — เปิดหน้าใหม่ ครัวกดพิมพ์เอง (iOS บล็อกการสั่งพิมพ์อัตโนมัติ) */
-    b+="<button class='btn-print-slip' onclick='window.open(\"print_slip.html?id="+o.id+"\",\"_blank\")'>🖨️ สลิปแปะกล่อง</button>";
     actions="<div class='oc-actions'>"+b+"</div>";
   }
   var wantsUtensils=o.want_utensils!==false;
@@ -1082,16 +961,7 @@ function renderCard(o){
   if(!nBox){ var _mp=findMpFor(o); if(_mp&&_mp.box_count) nBox=_mp.box_count; }
   var boxTag="<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
-  /* ❄️ แถบบอกสถานะของที่แช่ตู้ — ข้อความต่างกันตามว่ากำลังดูวันไหน */
-  var _fr=kqFridge(o), _tgt=getTargetDate(), frBar="";
-  if(_fr && _tgt===_fr.prep)
-    frBar="<div class='oc-fridge'>❄️ จัดวันนี้ แล้วเก็บเข้าตู้เย็น · ส่งวันที่ "+escH(_fr.ship)+"</div>";
-  else if(_fr && _tgt===_fr.ship)
-    frBar="<div class='oc-fridge take'>❄️ ของอยู่ในตู้แล้ว (จัดเมื่อ "+escH(_fr.prep)+") — ไปหยิบ ไม่ต้องทำใหม่</div>";
-  else if(_fr)
-    frBar="<div class='oc-fridge'>❄️ เก็บตู้ · จัด "+escH(_fr.prep)+" · ส่ง "+escH(_fr.ship)+"</div>";
   return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+"' data-oid='"+escH(o.id)+"'>"
-    +frBar
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
         +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
