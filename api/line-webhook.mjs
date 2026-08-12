@@ -258,7 +258,12 @@ export default async function handler(req, res) {
     const text = m.type === 'text' ? (m.text || '') : '';
     const t = text.trim();
     const isOwner = OWNER && userId === OWNER;
-    const wantsData = /ยอด|กี่กล่อง|ออเดอร์|order/i.test(t);
+    // 🔒 ถือว่าเป็น "คำถามยอด" ต่อเมื่อพิมพ์สั้นๆ ตรงเป๊ะเท่านั้น
+    //    เดิมจับคำว่า 'ยอด' กลางประโยค -> คำสั่งงานยาวๆ ของนัทถูกตีเป็นคำถาม แล้วหายไปไม่ถึงใคร (เกิด 3 ครั้ง 12 ส.ค.)
+    const tq = t.replace(/[?？!。.\s]+$/, '').replace(/^กะปัน[\s,:：]*/i, '').trim();
+    const EXACT = /^(ยอด|ยอดวันนี้|ยอดพรุ่งนี้|ยอดมะรืน|ยอดมะรืนนี้|กี่กล่อง|ออเดอร์วันนี้|ออเดอร์พรุ่งนี้|order|orders)$/i;
+    const isDateQ = /^ยอด\s*\d{4}-\d{2}-\d{2}$/.test(tq);
+    const wantsData = t.length <= 40 && (EXACT.test(tq) || isDateQ);
 
     const buildAnswer = async () => {
       const today = bkkDate();
@@ -303,7 +308,7 @@ export default async function handler(req, res) {
           'เช็คทุก ' + (next.poll / 1000) + ' วิ', token);
         continue;
       }
-      if (wantsData) { await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
+      if (wantsData) { await toBoard(t); await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
 
       // ไม่ใช่คำถามยอด = ส่งเข้าห้องกะปัน (โมเดลเล็ก เปิดค้าง) แล้วเงียบ
       // ห้องกะปันเป็นคนตอบเอง หรือโยนต่อให้ห้องที่ใช่ — webhook ไม่คิดแทน ไม่เสียค่า API
