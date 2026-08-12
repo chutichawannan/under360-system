@@ -72,13 +72,55 @@ const ROOM_ALIAS = { เลขา:'pm', pm:'pm', cc:'cc', ยู:'u', u:'u', ค
   นิว:'niw', niw:'niw', เอิธ:'eath', eath:'eath', เตียง:'tiang', tiang:'tiang', พลอย:'ploy', ploy:'ploy', rnd:'rnd01', rnd01:'rnd01' };
 
 // แยกว่านัทสั่งถึงห้องไหน — พิมพ์ชื่อห้องนำหน้าแล้วตามด้วย : หรือเว้นวรรค
+// ⚠️ 12 ส.ค.: regex ตัวนี้เคยตกแบ็กสแลช (\s กลายเป็น s) = ไม่เคยแมตช์เลย ทุกคำสั่งตกไปห้อง pm หมด
+//    ห้ามแพตช์บรรทัดนี้ด้วยสคริปต์ที่มี \n/\s — แก้ด้วยมือแล้ว node --check เสมอ
 function routeRoom(text) {
-  const m = String(text).match(/^s*(?:@)?([A-Za-z0-9]+|[ก-๙]+)s*[:：]?s+([sS]+)$/);
+  const m = String(text).match(/^\s*@?([A-Za-z0-9]+|[ก-๙]+)(?:\s*[:：]\s*|\s+)([\s\S]+)$/);
   if (!m) return { room: 'pm', body: text };
   const key = m[1].toLowerCase();
   const room = ROOM_ALIAS[key] || (ROOMS.includes(key) ? key : null);
-  return room ? { room, body: m[2] } : { room: 'pm', body: text };
+  return room ? { room, body: m[2].trim() } : { room: 'pm', body: text };
 }
+
+// ── 🎭 บุคลิก 3 แบบ (นัทสั่ง 12 ส.ค.: "อยากได้บุคลิกที่รวดเร็วและดุเดือด ลดความมุ้งมิ้ง") ──
+//  โหมดเดียวคุมพร้อมกัน 3 อย่าง: น้ำเสียง · ความถี่ที่ตัวเฝ้าไปดูกล่องจดหมาย · โมเดลที่กะปันใช้ตอบเอง
+//  สลับจากไลน์: พิมพ์ "โหมดเร่ง" / "โหมดปกติ" / "โหมดเงียบ"  ·  ถามโหมดปัจจุบัน: "โหมด?"
+const PERSONAS = {
+  normal: {
+    label: 'ปกติ',
+    poll: 10000,
+    model: 'claude-sonnet-5',
+    maxWords: 150,
+    pushLevel: 'all',
+    hello: 'สวัสดีค่ะ กะปันเองค่ะ ผู้ช่วยของ Under360 มีอะไรเรียกได้เลยน้า',
+    okData: (label) => 'ยอดสั่ง' + label + 'มาแล้วค่า',
+    fail: 'ขอโทษค่ะ ตอนนี้ดึงยอดจากระบบไม่ได้ เดี๋ยวลองใหม่อีกครั้งนะคะ',
+    style: 'สุภาพแบบผู้หญิงทำงาน มีชีวิต โรยคำน่ารัก (น้า/ค่า) ได้ไม่เกิน 1 คำต่อข้อความ',
+  },
+  fast: {
+    label: 'เร่ง',
+    poll: 5000,
+    model: 'claude-haiku-4-5-20251001',
+    maxWords: 60,
+    pushLevel: 'all',
+    hello: 'กะปันค่ะ โหมดเร่ง พิมพ์สั่งได้เลย',
+    okData: (label) => 'ยอด' + label,
+    fail: 'ดึงยอดไม่ได้ ลองใหม่อีกที',
+    style: 'สั้น ห้วน ตรงประเด็น ไม่มีคำน่ารัก ไม่มีคำเกริ่น ตอบเป็นข้อๆ ให้กวาดตาจบใน 3 วินาที',
+  },
+  quiet: {
+    label: 'เงียบ',
+    poll: 60000,
+    model: 'claude-haiku-4-5-20251001',
+    maxWords: 60,
+    pushLevel: 'urgent',   // ในกลุ่ม: เตือนเฉพาะเรื่องเงิน + แท็กนัทตรงๆ (ยังเก็บลง DB ครบเหมือนเดิม)
+    hello: 'กะปันค่ะ (โหมดเงียบ — จะตอบเฉพาะตอนถูกเรียก)',
+    okData: (label) => 'ยอด' + label,
+    fail: 'ดึงยอดไม่ได้',
+    style: 'สั้นที่สุดเท่าที่จะสื่อสารได้ ไม่มีคำน่ารัก ไม่ทักทาย ไม่สรุปซ้ำ',
+  },
+};
+const MODE_WORD = { 'เร่ง': 'fast', 'ปกติ': 'normal', 'เงียบ': 'quiet' };
 
 // เก็บโหมดกะปันไว้ในบอร์ด (room=kapan) — ตัวเฝ้าฝั่งเลขาอ่านค่านี้ไปปรับความถี่
 async function setMode(mode) {
@@ -90,8 +132,21 @@ async function setMode(mode) {
   } catch (e) { console.error('setMode failed:', e); }
 }
 
-async function toPmBoard(text) {
-  const { room, body } = routeRoom(text);
+// อ่านโหมดล่าสุด — อ่านไม่ได้/ยังไม่เคยตั้ง = ปกติ (fail-safe ไม่ล้มทั้ง webhook)
+async function getPersona() {
+  try {
+    const r = await fetch(SB + '/session_messages?room=eq.kapan&sender=eq.mode&select=text&order=created_at.desc&limit=1', { headers: SBH });
+    const j = await r.json();
+    const key = Array.isArray(j) && j[0] ? j[0].text : 'normal';
+    return PERSONAS[key] ? { key, ...PERSONAS[key] } : { key: 'normal', ...PERSONAS.normal };
+  } catch { return { key: 'normal', ...PERSONAS.normal }; }
+}
+
+// forcedRoom = ห้องที่สมองเร็วอ่านออกเอง (ใช้เมื่อนัทไม่ได้พิมพ์ชื่อห้องนำหน้า)
+async function toPmBoard(text, forcedRoom) {
+  const explicit = routeRoom(text);
+  const room = (explicit.room !== 'pm' || !forcedRoom) ? explicit.room : forcedRoom;  // พิมพ์ชื่อห้องเองมา = ชนะเสมอ
+  const body = explicit.body;
   const rows = [{ room, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: body }];
   // ถ้าสั่งห้องอื่น ให้เลขารู้ด้วยว่านัทสั่งอะไรไปที่ไหน
   if (room !== 'pm') rows.push({ room: 'pm', sender: 'นัท (สั่งผ่านไลน์)', role: 'user',
@@ -150,6 +205,52 @@ async function translate(text) {
   } catch (e) { console.error('translate failed:', e); return {}; }   // แปลพัง = ยังเก็บต้นฉบับได้ ไม่ล้มทั้ง webhook
 }
 
+// ── ⚡ สมองเร็วของกะปัน (นัทบ่นว่าช้า 12 ส.ค.) ──────────────────
+//  เดิม: นัทพิมพ์ -> ลงบอร์ด -> ห้องเลขา poll เจอ -> Opus คิด -> ตอบกลับ  = ช้าหลายสิบวินาที
+//  ใหม่: เรื่องที่ไม่ต้องคิดหนัก กะปันตอบเองตรงนี้เลย (~2-3 วิ) · เรื่องหนักค่อยส่งเข้าห้อง
+//  โมเดลที่ใช้ = ตามโหมด (เร่ง/เงียบ = Haiku · ปกติ = Sonnet)
+//  ⚠️ ไม่มี ANTHROPIC_API_KEY = คืน null -> ระบบถอยไปใช้ทางเดิม (regex + ส่งเข้าบอร์ด) ไม่พัง
+const ROOM_GUIDE =
+  'pm=เลขา/ประสานงานรวม · cc=ศูนย์กลาง ตรวจ/ไล่โค้ด/ตามงานห้องอื่น · u=แก้โค้ดหน้าเว็บ-LIFF-ครัว · ' +
+  'k=งานครัว · fah=ใบงานครัว/วัตถุดิบ · keng=จัดส่ง · f=เงิน/บัญชี/ยอดขาย · m=เว็บ/SEO/บล็อก · ' +
+  'bug=บั๊กที่เจอจากการเทส · niw=วางแผนผลิต · eath=มาเก็ตติ้ง/broadcast · tiang=โพสต์โซเชียล · ' +
+  'rnd01=พัฒนาเมนูใหม่ · ploy=งานที่พลอยดูแล';
+
+async function kapanBrain(text, persona) {
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return null;
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', 'x-api-key': key, 'anthropic-version': '2023-06-01' },
+      body: JSON.stringify({
+        model: persona.model,
+        max_tokens: 500,
+        system:
+          'คุณคือ "กะปัน" ผู้ช่วยส่วนตัวของคุณนัท เจ้าของร้านอาหารสุขภาพ Under360\n' +
+          'น้ำเสียง: ' + persona.style + ' · ยาวไม่เกิน ' + persona.maxWords + ' คำ\n' +
+          'ตัวเลขต้องอยู่บรรทัดของตัวเอง ให้กวาดตาเจอทันที\n\n' +
+          'แยกให้ออกว่าข้อความของนัทเป็นแบบไหน แล้วตอบเป็น JSON เท่านั้น:\n' +
+          '{"kind":"task|chat","room":"ชื่อห้อง","reply":"ข้อความตอบ"}\n\n' +
+          'task = สั่งให้ลงมือทำ (แก้โค้ด · ขุดข้อมูล · ตามงาน · ทวงห้องอื่น · ให้ไปเช็คอะไรสักอย่าง) ' +
+          '-> ใส่ room ที่ตรงที่สุด · reply เว้นว่าง (ระบบจะเงียบไว้ตามที่นัทสั่ง)\n' +
+          'chat = ถาม/คุย/ขอความเห็นที่ตอบได้ทันทีโดยไม่ต้องเปิดระบบ -> ใส่ reply · room เว้นว่าง\n\n' +
+          'ห้องที่มี: ' + ROOM_GUIDE + '\n' +
+          'ไม่แน่ใจว่าห้องไหน = pm\n\n' +
+          'กฎเหล็ก: ห้ามเดาตัวเลขยอดขาย/ต้นทุน/สต็อก/จำนวนออเดอร์เด็ดขาด — ถ้านัทถามตัวเลขพวกนี้ ' +
+          'ให้ถือเป็น task ส่งห้องที่เกี่ยวข้อง ห้ามแต่งตัวเลขขึ้นมาเอง',
+        messages: [{ role: 'user', content: String(text).slice(0, 2000) }],
+      }),
+    });
+    if (!r.ok) { console.error('kapanBrain HTTP', r.status); return null; }
+    const raw = (await r.json())?.content?.[0]?.text || '';
+    const j = JSON.parse(raw.slice(raw.indexOf('{'), raw.lastIndexOf('}') + 1));
+    const kind = j.kind === 'chat' ? 'chat' : 'task';
+    const room = ROOMS.includes(j.room) ? j.room : 'pm';
+    return { kind, room, reply: (j.reply || '').trim() };
+  } catch (e) { console.error('kapanBrain failed:', e); return null; }
+}
+
 async function logMessage(row) {
   try {
     await fetch(SB + '/line_group_messages', {
@@ -204,6 +305,8 @@ export default async function handler(req, res) {
   let body; try { body = JSON.parse(raw || '{}'); } catch { return res.status(400).json({ ok: false }); }
   const events = body.events || [];
 
+  const persona = await getPersona();   // บุคลิกที่นัทตั้งไว้ล่าสุด (น้ำเสียง + โมเดล + ระดับการเตือน)
+
   for (const ev of events) {
     const groupId = ev.source?.groupId || ev.source?.roomId || null;
     const userId  = ev.source?.userId || null;
@@ -211,9 +314,9 @@ export default async function handler(req, res) {
     // บอทเพิ่งถูกเชิญเข้ากลุ่ม → ทักทาย + บอก groupId (นัทเอาไปใช้อ้างอิงได้)
     if (ev.type === 'join' && groupId) {
       await lineReply(ev.replyToken,
-        'สวัสดีค่ะ กะปันเองค่ะ ผู้ช่วยของ Under360 มีอะไรเรียกได้เลยน้า\n\n' +
-        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวดึงยอดสั่งจากระบบมาให้ค่า\n' +
-        '(จะตอบเฉพาะตอนถูกเรียกนะคะ ไม่พูดแทรกค่ะ)\n\n' +
+        persona.hello + '\n\n' +
+        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวดึงยอดสั่งจากระบบมาให้\n' +
+        '(ตอบเฉพาะตอนถูกเรียก ไม่พูดแทรก)\n\n' +
         'groupId: ' + groupId, token);
       continue;
     }
@@ -231,8 +334,8 @@ export default async function handler(req, res) {
       if (/พรุ่งนี้|พรุ้งนี้|tomorrow/i.test(t)) { target = addDays(today, 1); label = 'พรุ่งนี้'; }
       else if (/มะรืน/i.test(t)) { target = addDays(today, 2); label = 'มะรืนนี้'; }
       else { const d = t.match(/(\d{4}-\d{2}-\d{2})/); if (d) { target = d[1]; label = d[1]; } }
-      try { return 'ยอดสั่ง' + label + 'มาแล้วค่า\n' + (await orderSummary(target)); }
-      catch (e) { console.error(e); return 'ขอโทษค่ะ ตอนนี้ดึงยอดจากระบบไม่ได้ เดี๋ยวลองใหม่อีกครั้งนะคะ'; }
+      try { return persona.okData(label) + '\n' + (await orderSummary(target)); }
+      catch (e) { console.error(e); return persona.fail; }
     };
 
     // ===== แชทส่วนตัว (ไม่มี groupId) =====
@@ -248,17 +351,37 @@ export default async function handler(req, res) {
         await linePush(OWNER, 'มีคนทักกะปันส่วนตัวค่ะ\nuserId: ' + userId + '\n\n"' + t + '"', token);
         continue;
       }
+      // ถามว่าตอนนี้โหมดอะไร: พิมพ์ "โหมด" หรือ "โหมด?"
+      if (/^โหมด\s*[?？]?$/.test(t)) {
+        await lineReply(ev.replyToken,
+          'ตอนนี้โหมด' + persona.label + '\n' +
+          'เช็คกล่องจดหมายทุก ' + (persona.poll / 1000) + ' วิ\n' +
+          'ตอบเองด้วย ' + (persona.model.startsWith('claude-haiku') ? 'Haiku (เร็ว)' : 'Sonnet (ละเอียดกว่า)') + '\n\n' +
+          'สลับได้: โหมดเร่ง · โหมดปกติ · โหมดเงียบ', token);
+        continue;
+      }
       // สลับโหมด: พิมพ์ โหมดเร่ง / โหมดปกติ / โหมดเงียบ
       const mm = t.match(/^โหมด\s*(เร่ง|ปกติ|เงียบ)/);
       if (mm) {
-        const map = { 'เร่ง': 'fast', 'ปกติ': 'normal', 'เงียบ': 'quiet' };
-        await setMode(map[mm[1]]);
-        await lineReply(ev.replyToken, 'โหมด' + mm[1] + ' ✓', token);
+        const nextKey = MODE_WORD[mm[1]];
+        const next = PERSONAS[nextKey];
+        await setMode(nextKey);
+        await lineReply(ev.replyToken,
+          'โหมด' + mm[1] + ' ✓\n' +
+          'เช็คทุก ' + (next.poll / 1000) + ' วิ · ' +
+          (next.model.startsWith('claude-haiku') ? 'Haiku' : 'Sonnet'), token);
         continue;
       }
       if (wantsData) { await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
-      // ไม่ใช่คำถามยอด = ถือเป็นคำสั่งงาน -> ส่งเข้าบอร์ดห้อง PM ให้เลขาไปทำ
-      await toPmBoard(t);
+
+      // ⚡ ให้สมองเร็วตัดสินก่อน: คุย/ถาม = ตอบเองตรงนี้เลย · สั่งงาน = ส่งเข้าห้อง แล้วเงียบ (นัทสั่งเอง)
+      const brain = await kapanBrain(t, persona);
+      if (brain && brain.kind === 'chat' && brain.reply) {
+        await lineReply(ev.replyToken, brain.reply, token);
+        continue;
+      }
+      // ไม่มีคีย์ / สมองตอบไม่ได้ = ถอยไปทางเดิม (ส่งเข้าบอร์ดให้ห้องคนทำ)
+      await toPmBoard(t, brain ? brain.room : null);
       continue;
     }
 
@@ -283,7 +406,14 @@ export default async function handler(req, res) {
     const aboutMoney  = /โอน|จ่าย|ค้าง|เงิน|ค่าแรง|บิล|ใบเสร็จ|มัดจำ|ค่าของ/.test(t);
     const tagNut      = /@\s?nut|@\s?นัท/i.test(t);
 
-    if (OWNER && !isOwner && (mentionedOwner || calledKapan || aboutMoney || tagNut)) {
+    // โหมดเงียบ = เตือนเฉพาะเรื่องด่วนจริง (เงิน + แท็กนัทตรงๆ) · เรียกกะปันลอยๆ ไม่ต้องเด้ง
+    //  ⚠️ ทุกข้อความยังถูกเก็บลง DB ครบเหมือนเดิม — เงียบแค่ "ไม่เด้งเตือน" ไม่ใช่ "ไม่รับรู้"
+    const urgent = aboutMoney || mentionedOwner || tagNut;
+    const shouldPush = persona.pushLevel === 'all'
+      ? (mentionedOwner || calledKapan || aboutMoney || tagNut)
+      : urgent;
+
+    if (OWNER && !isOwner && shouldPush) {
       const head = aboutMoney ? 'เรื่องเงิน — มีคนฝากถึงคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
       await linePush(OWNER, head + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\ngroupId: ' + groupId + '\n\n"' + t + '"', token);
     }

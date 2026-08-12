@@ -5,7 +5,9 @@ const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6In
 const H={apikey:K,Authorization:'Bearer '+K};
 const SENDER=encodeURIComponent('นัท (สั่งผ่านไลน์)');
 const F='pm_inbox_last.txt';
+// ต้องตรงกับ PERSONAS ใน api/line-webhook.mjs — แก้ที่ไหนแก้ให้ครบทั้งสองที่
 const EVERY={fast:5000,normal:10000,quiet:60000};
+const LABEL={fast:'เร่ง (Haiku · สั้นห้วน)',normal:'ปกติ (Sonnet · โทน C+)',quiet:'เงียบ (Haiku · เตือนเฉพาะเรื่องเงิน/แท็กตรง)'};
 let last = fs.existsSync(F) ? fs.readFileSync(F,'utf8').trim() : new Date().toISOString();
 let mode='normal';
 for(;;){
@@ -15,7 +17,7 @@ for(;;){
       fetch(`${U}/session_messages?room=eq.kapan&sender=eq.mode&select=text&order=created_at.desc&limit=1`,{headers:H}).then(r=>r.json()),
     ]);
     if(Array.isArray(md)&&md.length&&EVERY[md[0].text]&&md[0].text!==mode){
-      mode=md[0].text; console.log('⚙️ กะปันเปลี่ยนเป็นโหมด: '+mode+' (เช็คทุก '+(EVERY[mode]/1000)+' วิ)');
+      mode=md[0].text; console.log('⚙️ กะปันเปลี่ยนเป็นโหมด '+(LABEL[mode]||mode)+' — เช็คทุก '+(EVERY[mode]/1000)+' วิ');
     }
     if(Array.isArray(inb)&&inb.length){
       for(const m of inb){ console.log('📲 นัทสั่งงานผ่านไลน์: ' + String(m.text).replace(/\s+/g,' ')); last=m.created_at; }
