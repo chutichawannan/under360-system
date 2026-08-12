@@ -65,6 +65,17 @@ async function linePush(to, text, token) {
   } catch (e) { console.error('linePush failed:', e); }
 }
 
+// ส่งคำสั่งจากไลน์นัท เข้าบอร์ดห้อง PM (ตาราง session_messages ที่ทุกห้องใช้อยู่แล้ว)
+async function toPmBoard(text) {
+  try {
+    await fetch(SB + '/session_messages', {
+      method: 'POST',
+      headers: { ...SBH, Prefer: 'return=minimal' },
+      body: JSON.stringify({ room: 'pm', sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text }),
+    });
+  } catch (e) { console.error('toPmBoard failed:', e); }
+}
+
 async function getDisplayName(groupId, userId, token) {
   if (!token || !groupId || !userId) return null;
   try {
@@ -208,8 +219,10 @@ export default async function handler(req, res) {
         await linePush(OWNER, 'มีคนทักกะปันส่วนตัวค่ะ\nuserId: ' + userId + '\n\n"' + t + '"', token);
         continue;
       }
-      if (wantsData) await lineReply(ev.replyToken, await buildAnswer(), token);
-      else await lineReply(ev.replyToken, 'รับทราบค่ะ จดไว้ให้แล้วน้า', token);
+      if (wantsData) { await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
+      // ไม่ใช่คำถามยอด = ถือเป็นคำสั่งงาน -> ส่งเข้าบอร์ดห้อง PM ให้เลขาไปทำ
+      await toPmBoard(t);
+      await lineReply(ev.replyToken, 'รับเรื่องแล้วค่ะ ส่งให้ห้อง PM แล้วน้า\nเดี๋ยวมีความคืบหน้าจะรีบบอกค่ะ', token);
       continue;
     }
 
