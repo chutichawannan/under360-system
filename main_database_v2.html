@@ -3166,6 +3166,145 @@ async function persistRecipes(){ await setStored('recipes', state.recipes, true)
 //   s1..s8 = ของสัปดาห์นี้ · ตัวที่ขายไม่หมดข้ามสัปดาห์ → xs3 → xxs3 …
 //   จำนวน x = ค้างมากี่สัปดาห์ (อ่านออกด้วยตาเปล่า ไม่ต้องเปิดรายงาน)
 // เดิมแอดมินต้องไล่เปลี่ยนชื่อสินค้าทีละตัวใน Hato — ตอนนี้กดปุ่มเดียวจบ
+
+/* ══ 📋 วางยอดจากครัว ════════════════════════════════════════════════════════
+   ทำไมต้องมี: ทุกวันครัวพิมพ์ยอดคงเหลือลงกลุ่มไลน์เป็นก้อน เช่น
+       A1-31 / A2-14 / No12-7 / S3-8 / XS3กุ้งอบวุ้นเส้น-3
+   เดิมต้องนั่งกรอกทีละช่อง 50-60 เมนู = เสียเวลา พิมพ์ผิดง่าย คนเลยไม่ทำ
+   พอไม่มีใครกรอก ระบบก็กันของเกินไม่ได้ (ต้นเหตุจริงของออเดอร์ที่ครัวไม่มีของ)
+
+   จับคู่ 3 ชั้น: รหัสเมนู → ชื่อเล่น (subcode) → ชื่อเมนู
+   ⚠️ ไม่เขียนอะไรจนกว่าคนจะเห็นตารางสรุปแล้วกดยืนยัน + บอกชัดว่าบรรทัดไหนจับคู่ไม่ได้
+      (เงียบแล้วเขียนทับ = อันตรายกว่าไม่ทำ) */
+let _pasteRows = [];
+function openPasteStock(){
+  let el = document.getElementById('pasteStockModal');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'pasteStockModal';
+    el.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:center;justify-content:center;padding:14px;';
+    el.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:620px;width:100%;max-height:88vh;overflow:auto;padding:18px;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      + '<div style="font-size:17px;font-weight:800;color:#1F4D3A;">📋 วางยอดจากครัว</div>'
+      + '<span style="flex:1"></span>'
+      + '<button onclick="closePasteStock()" style="border:none;background:#F3F4F6;border-radius:8px;padding:5px 11px;cursor:pointer;font-size:13px;">ปิด</button></div>'
+      + '<div style="font-size:12.5px;color:#6B7280;line-height:1.6;margin-bottom:9px;">ก๊อปข้อความที่ครัวพิมพ์ในกลุ่มไลน์มาวางทั้งก้อนได้เลย ไม่ต้องจัดรูปแบบ<br>'
+      + 'รับได้ทั้ง <b>รหัสเมนู</b> (A1-31) · <b>ชื่อเล่น</b> (S3-8 · xs3-3) · <b>ชื่อเมนู</b> (กุ้งอบวุ้นเส้น-3)</div>'
+      + '<textarea id="pasteStockText" placeholder="A1-31&#10;A2-14&#10;No12-7&#10;S3-8&#10;XS3กุ้งอบวุ้นเส้น-3" '
+      + 'style="width:100%;height:150px;border:1.5px solid #D6D3C6;border-radius:10px;padding:10px;font-size:14px;font-family:monospace;line-height:1.5;"></textarea>'
+      + '<div style="display:flex;gap:8px;margin-top:9px;">'
+      + '<button onclick="previewPasteStock()" style="flex:1;background:#1F4D3A;color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;">ตรวจก่อน →</button></div>'
+      + '<div id="pasteStockResult" style="margin-top:12px;"></div></div>';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'flex';
+  const t = document.getElementById('pasteStockText'); if(t){ t.value=''; t.focus(); }
+  const r = document.getElementById('pasteStockResult'); if(r) r.innerHTML='';
+  _pasteRows = [];
+}
+function closePasteStock(){
+  const el=document.getElementById('pasteStockModal'); if(el) el.style.display='none';
+}
+/* แกะบรรทัดเดียว → {key, qty} · รองรับ "A1-31" "A1 31" "A1 : 31" "XS3กุ้งอบวุ้นเส้น-3" */
+function parseStockLine(line){
+  const raw = String(line||'').replace(/[​﻿]/g,'').trim();
+  if(!raw) return null;
+  const m = raw.match(/^(.*?)[\s\-:=]+(\d+)\s*$/);
+  if(!m) return null;
+  const key = m[1].replace(/[\s\-:=]+$/,'').trim();
+  if(!key) return null;
+  return { key: key, qty: parseInt(m[2],10), raw: raw };
+}
+function findRecipeByKey(key){
+  const k = key.toLowerCase().replace(/\s+/g,'');
+  let r = state.recipes.find(function(x){ return String(x.code||'').toLowerCase() === k; });
+  if(r) return {r:r, how:'รหัส'};
+  r = state.recipes.find(function(x){ return String(x.subcode||'').toLowerCase() === k; });
+  if(r) return {r:r, how:'ชื่อเล่น'};
+  /* "XS3กุ้งอบวุ้นเส้น" = ชื่อเล่นติดกับชื่อเมนู → ลองตัดหัวออกมาจับคู่ */
+  const head = key.match(/^([A-Za-z]+\d*)/);
+  if(head){
+    const hk = head[1].toLowerCase();
+    r = state.recipes.find(function(x){ return String(x.subcode||'').toLowerCase() === hk; });
+    if(r) return {r:r, how:'ชื่อเล่น'};
+    r = state.recipes.find(function(x){ return String(x.code||'').toLowerCase() === hk; });
+    if(r) return {r:r, how:'รหัส'};
+  }
+  const norm = function(s){ return String(s||'').toLowerCase().replace(/[^฀-๿a-z0-9]/g,''); };
+  const nk = norm(k);
+  r = state.recipes.find(function(x){ return norm(x.name) === nk; });
+  if(r) return {r:r, how:'ชื่อเมนู'};
+  const cands = state.recipes.filter(function(x){ return nk.length>=4 && norm(x.name).indexOf(nk)>=0; });
+  if(cands.length===1) return {r:cands[0], how:'ชื่อเมนู (บางส่วน)'};
+  return null;
+}
+function previewPasteStock(){
+  const txt = (document.getElementById('pasteStockText')||{}).value || '';
+  const lines = txt.split(/\r?\n/);
+  const hit = [], miss = [], dup = {};
+  lines.forEach(function(ln){
+    const p = parseStockLine(ln);
+    if(!p){ if(String(ln||'').trim()) miss.push({raw:String(ln).trim(), why:'อ่านตัวเลขไม่ออก'}); return; }
+    const f = findRecipeByKey(p.key);
+    if(!f){ miss.push({raw:p.raw, why:'ไม่เจอเมนูนี้'}); return; }
+    if(dup[f.r.id]){ miss.push({raw:p.raw, why:'ซ้ำกับบรรทัดก่อนหน้า'}); return; }
+    dup[f.r.id] = 1;
+    hit.push({ r:f.r, how:f.how, qty:p.qty, before:(f.r.stock==null?null:Number(f.r.stock)) });
+  });
+  _pasteRows = hit;
+  const box = document.getElementById('pasteStockResult'); if(!box) return;
+  if(!hit.length && !miss.length){ box.innerHTML = '<div style="color:#6B7280;font-size:13px;">ยังไม่ได้วางข้อความ</div>'; return; }
+  let h = '';
+  if(hit.length){
+    const chg = hit.filter(function(x){ return x.before !== x.qty; });
+    h += '<div style="font-size:13.5px;font-weight:800;color:#166534;margin-bottom:6px;">จับคู่ได้ ' + hit.length + ' เมนู · เปลี่ยนจริง ' + chg.length + ' เมนู</div>'
+      + '<div style="max-height:240px;overflow:auto;border:1px solid #E5E7EB;border-radius:10px;">';
+    hit.forEach(function(x){
+      const same = x.before === x.qty;
+      h += '<div style="display:flex;gap:8px;align-items:center;padding:6px 10px;border-bottom:1px solid #F3F4F6;font-size:12.5px;' + (same?'opacity:.5;':'') + '">'
+        + '<span style="font-family:monospace;font-weight:700;min-width:64px;">' + escapeHtml(x.r.code||'') + '</span>'
+        + '<span style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + escapeHtml(x.r.name||'') + '</span>'
+        + '<span style="color:#9CA3AF;">' + (x.before==null?'ไม่จำกัด':x.before) + ' →</span>'
+        + '<span style="font-weight:800;color:' + (x.qty===0?'#DC2626':'#1F4D3A') + ';min-width:26px;text-align:right;">' + x.qty + '</span>'
+        + '<span style="font-size:10.5px;color:#9CA3AF;min-width:74px;text-align:right;">' + x.how + '</span></div>';
+    });
+    h += '</div>';
+  }
+  if(miss.length){
+    h += '<div style="margin-top:10px;background:#FEF3C7;border:1px solid #FCD34D;border-radius:10px;padding:9px 11px;">'
+      + '<div style="font-size:13px;font-weight:800;color:#92400E;">⚠️ จับคู่ไม่ได้ ' + miss.length + ' บรรทัด — ตัวนี้จะไม่ถูกอัปเดต</div>'
+      + '<div style="font-size:12px;color:#78350F;margin-top:4px;line-height:1.7;">'
+      + miss.map(function(m){ return escapeHtml(m.raw) + ' <span style="opacity:.7">(' + m.why + ')</span>'; }).join('<br>') + '</div></div>';
+  }
+  if(hit.length){
+    h += '<button onclick="applyPasteStock()" style="width:100%;margin-top:11px;background:#166534;color:#fff;border:none;border-radius:10px;padding:12px;font-size:14.5px;font-weight:800;cursor:pointer;">'
+      + 'อัปเดต ' + hit.length + ' เมนู</button>'
+      + '<div style="font-size:11.5px;color:#6B7280;margin-top:6px;text-align:center;">เลขนี้คือจำนวนที่ลูกค้าสั่งได้ · ตั้ง 0 = ขึ้น "หมดแล้ว" ทันที</div>';
+  }
+  box.innerHTML = h;
+}
+async function applyPasteStock(){
+  if(!_pasteRows.length) return;
+  const sb = getSB();
+  let ok=0, fail=0;
+  const done=[];
+  for(const x of _pasteRows){
+    x.r.stock = x.qty;
+    if(x.r.code && sb){
+      try{
+        const { error } = await sb.from('menu_items').update({ stock_total:x.qty, actual_stock:x.qty }).eq('code', x.r.code);
+        if(error) throw error;
+        ok++; if(x.before!==x.qty) done.push(x.r.code+'='+x.qty);
+      }catch(e){ fail++; console.error('อัปเดตสต็อกไม่สำเร็จ', x.r.code, e); }
+    }
+  }
+  persistRecipesDebounced();
+  render();
+  if(done.length) logActivity('stock','วางยอดจากครัว — '+done.join(' · '));
+  closePasteStock();
+  showToast(fail ? ('อัปเดตแล้ว '+ok+' เมนู · พลาด '+fail) : ('✅ อัปเดตสต็อกแล้ว '+ok+' เมนู'));
+}
+
 async function weeklyRollSubcodes(){
   if(!requireUser()) return;
   const online = state.recipes.filter(r=>r.available_online && r.status==='active' && (r.subcode||'').trim());
@@ -3605,6 +3744,7 @@ function renderRecipesTab(){
       ${state.showOnlineOnly?'<span style="font-size:11px;background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;margin-left:2px;">เฉพาะออนไลน์ ✕</span>':''}
     </button>
     <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+      <button class="btn btn-sm" id="pasteStockBtn" title="ก๊อปข้อความที่ครัวพิมพ์ในกลุ่มไลน์มาวางทั้งก้อน กดปุ่มเดียว — ระบบจับคู่เมนูให้เอง" style="background:#EAF7EF;color:#166534;border:1px solid #86C79E;font-size:12px;padding:5px 12px;">📋 วางยอดจากครัว</button>
       <button class="btn btn-sm" id="weekRollBtn" title="เมนูที่ยังออนไลน์อยู่และมีชื่อเล่น จะถูกเติม x ข้างหน้าทั้งหมด (x 1 ตัว = ค้างมา 1 สัปดาห์) — แล้วค่อยตั้งชื่อเล่นใหม่ให้เมนูของสัปดาห์นี้" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:5px 12px;">🔄 ขึ้นสัปดาห์ใหม่</button>
       <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
     </div>
@@ -4696,6 +4836,8 @@ function attachHandlers(){
     if(exportOnlineBtn) exportOnlineBtn.onclick = exportOnlineMenus;
     const weekRollBtn = document.getElementById('weekRollBtn');
     if(weekRollBtn) weekRollBtn.onclick = weeklyRollSubcodes;
+    const pasteStockBtn = document.getElementById('pasteStockBtn');
+    if(pasteStockBtn) pasteStockBtn.onclick = openPasteStock;
     // 🛒 Online filter toggle — กดตัวเลข "N ออนไลน์" เพื่อกรองเฉพาะออนไลน์
     const toggleOnlineBtn = document.getElementById('toggleOnlineFilterBtn');
     if(toggleOnlineBtn) toggleOnlineBtn.onclick = (e)=>{
