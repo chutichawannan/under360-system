@@ -156,9 +156,9 @@ export default async function handler(req, res) {
     // บอทเพิ่งถูกเชิญเข้ากลุ่ม → ทักทาย + บอก groupId (นัทเอาไปใช้อ้างอิงได้)
     if (ev.type === 'join' && groupId) {
       await lineReply(ev.replyToken,
-        'สวัสดีค่ะ กะปันนะคะ ผู้ช่วยของ Under360\n\n' +
-        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวดึงยอดสั่งจากระบบมาให้ค่ะ\n' +
-        '(จะตอบเฉพาะตอนถูกเรียก ไม่พูดแทรกค่ะ)\n\n' +
+        'สวัสดีค่ะ กะปันเองค่ะ ผู้ช่วยของ Under360 มีอะไรเรียกได้เลยน้า\n\n' +
+        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวดึงยอดสั่งจากระบบมาให้ค่า\n' +
+        '(จะตอบเฉพาะตอนถูกเรียกนะคะ ไม่พูดแทรกค่ะ)\n\n' +
         'groupId: ' + groupId, token);
       continue;
     }
@@ -192,8 +192,8 @@ export default async function handler(req, res) {
     else { const d = t.match(/(\d{4}-\d{2}-\d{2})/); if (d) { target = d[1]; label = d[1]; } }
 
     let reply;
-    try { reply = `ยอดสั่ง${label}ค่ะ\n${await orderSummary(target)}`; }
-    catch (e) { console.error(e); reply = '⚠️ ตอนนี้ดึงยอดจากระบบไม่ได้ค่ะ ลองใหม่อีกครั้งนะคะ'; }
+    try { reply = `ยอดสั่ง${label}มาแล้วค่า\n${await orderSummary(target)}`; }
+    catch (e) { console.error(e); reply = 'ขอโทษค่ะ ตอนนี้ดึงยอดจากระบบไม่ได้ เดี๋ยวลองใหม่อีกครั้งนะคะ'; }
 
     await lineReply(ev.replyToken, reply, token);
     await logMessage({
