@@ -249,7 +249,7 @@ export default async function handler(req, res) {
         continue;
       }
       // สลับโหมด: พิมพ์ โหมดเร่ง / โหมดปกติ / โหมดเงียบ
-      const mm = t.match(/^โหมดs*(เร่ง|ปกติ|เงียบ)/);
+      const mm = t.match(/^โหมด\s*(เร่ง|ปกติ|เงียบ)/);
       if (mm) {
         const map = { 'เร่ง': 'fast', 'ปกติ': 'normal', 'เงียบ': 'quiet' };
         await setMode(map[mm[1]]);
