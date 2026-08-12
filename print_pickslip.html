@@ -126,7 +126,10 @@
   .empty{ background:#fff; padding:22px; border-radius:10px; max-width:520px; text-align:center; color:#555; }
 
   @media print{
-    @page{ size: var(--paper) auto; margin:0; }
+    /* ⚠️ ห้ามใช้ var() ใน @page — เบราว์เซอร์ไม่รองรับ (ไม่มี error ด้วย มันเงียบแล้วถอยไปใช้ A4)
+       เจอจริง 12 ส.ค. 2569: อูสั่งพิมพ์จากมือถือ กล่องพิมพ์ขึ้น "ISO A4"
+       สลิปเลยไปกองอยู่มุมบนซ้ายของกระดาษ A4 ตัวเล็กจิ๋ว
+       → ขนาดกระดาษถูกฉีดเป็น @page จริงๆ ตอน applyWidth() แทน (ดู #pageSizeRule) */
     body{ background:#fff; }
     .bar, .bar2, .pick{ display:none !important; }
     .sheet{ padding:0; gap:0; display:block; }
@@ -197,6 +200,11 @@ function applyWidth(){
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
   // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
   document.documentElement.style.setProperty('--fs', $w.value === '100' ? '12.5px' : '10.5px');
+  /* บอกขนาดกระดาษให้เบราว์เซอร์เป็นตัวเลขจริง — ใส่ var() ใน @page ไม่ได้ (เงียบแล้วกลายเป็น A4)
+     ต้องเขียนกฎใหม่ทุกครั้งที่เปลี่ยนขนาด ไม่ใช่ตั้งครั้งเดียวตอนโหลด */
+  let st = document.getElementById('pageSizeRule');
+  if(!st){ st = document.createElement('style'); st.id = 'pageSizeRule'; document.head.appendChild(st); }
+  st.textContent = '@page{ size: ' + w[0] + 'mm auto; margin: 0; }';
 }
 $w.addEventListener('change', applyWidth);
 
