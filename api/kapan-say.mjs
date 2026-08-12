@@ -16,7 +16,10 @@ export default async function handler(req, res) {
   let j; try { j = JSON.parse(body || '{}'); } catch { return res.status(400).json({ ok: false }); }
   if (j.key !== KEY) return res.status(401).json({ ok: false });
 
-  const text = String(j.text || '').slice(0, 4900);
+  // เพดานความยาว: ไลน์ไว้คุยสั้นๆ ยาวกว่านี้ไปคุยต่อในแชท Claude (นัทสั่ง 12 ส.ค.)
+  const MAX = 700;   // ~150 คำไทย
+  let text = String(j.text || '').trim();
+  if (text.length > MAX) text = text.slice(0, MAX).trimEnd() + '…\n\n(ยาวเกินค่ะ ที่เหลือไปดูต่อในแชทนะคะ)';
   if (!text) return res.status(400).json({ ok: false, why: 'ไม่มีข้อความ' });
 
   const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
