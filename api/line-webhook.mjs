@@ -222,7 +222,6 @@ export default async function handler(req, res) {
       if (wantsData) { await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
       // ไม่ใช่คำถามยอด = ถือเป็นคำสั่งงาน -> ส่งเข้าบอร์ดห้อง PM ให้เลขาไปทำ
       await toPmBoard(t);
-      await lineReply(ev.replyToken, 'รับเรื่องแล้วค่ะ ส่งให้ห้อง PM แล้วน้า\nเดี๋ยวมีความคืบหน้าจะรีบบอกค่ะ', token);
       continue;
     }
 
