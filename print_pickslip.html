@@ -259,7 +259,7 @@ async function load(){
     MENU = {}; for (const m of j) MENU[m.code] = { sub: (m.subcode||'').trim() };
   }catch(e){ MENU = {}; }
 
-  const cols = 'order_number,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
+  const cols = 'order_number,created_at,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
   const filter = $o.value.trim()
     ? `order_number=eq.${encodeURIComponent($o.value.trim())}`
     : `delivery_date=eq.${$d.value}&status=neq.cancelled`;
@@ -316,12 +316,19 @@ function slip(o, PKG){
   }
 
   // ชื่อเล่นเข้ม + โค้ดจาง + ชื่อเมนู — รูปแบบเดียวกับหน้าครัว (KQ) ครัวจะได้อ่านแบบเดียวกันทุกที่
-  // โค้ดจางตัดตัวอักษรนำหน้าออกเหมือน KQ (S022 -> 022 · No1 คงไว้เพราะเมนูประจำเรียก No1 จริง)
-  const shortCode = c => /^Nod/i.test(c||'') ? c : String(c||'').replace(/^[A-Za-z]+/,'') || String(c||'');
+  // โค้ดจางตัดตัวอักษรนำหน้าออกเหมือน KQ (S022 -> 022) — แต่ตัดได้เฉพาะตอน "มีชื่อเล่นนำหน้าอยู่แล้ว"
+  // ⚠️ 12 ส.ค.: เดิมเขียน /^Nod/ (ตกเครื่องหมาย \) → No3 ถูกตัดเหลือ "3" ครัวอ่านไม่ออกว่าเมนูอะไร
+  //    กติกาใหม่: ไม่มีชื่อเล่น = โชว์โค้ดเต็ม เสมอ · เมนูประจำ No1-No15 คงไว้ทั้งชุดเพราะครัวเรียก "No3" จริง
+  const shortCode = (c, hasSub) => {
+    const s = String(c || '');
+    if (!hasSub) return s;                       // ไม่มีชื่อเล่น → ห้ามตัด ไม่งั้นเหลือเลขลอยๆ
+    if (/^No\d/i.test(s)) return s;              // เมนูประจำเรียกเต็มเสมอ
+    return s.replace(/^[A-Za-z]+/, '') || s;
+  };
   const nameOf = it => {
     const m = MENU[it.code] || {};
     const sub = m.sub ? `<span class="code">${esc(m.sub)}</span> ` : '';
-    const cd  = it.code ? `<span class="dim">${esc(shortCode(it.code))}</span> ` : '';
+    const cd  = it.code ? `<span class="dim">${esc(shortCode(it.code, !!m.sub))}</span> ` : '';
     // NEW เอาจากชื่อเมนูจริงเท่านั้น ไม่เดาจากวันที่สร้าง (เคยเดาแล้วติด NEW เกือบทุกตัว = ไร้ความหมาย)
     const nm  = String(it.name||'').replace(/s*NEWs*$/i,'');
     const nw  = /NEWs*$/i.test(it.name||'') ? ' <span class="new">NEW</span>' : '';
@@ -373,6 +380,7 @@ function slip(o, PKG){
     <div class="sec">ข้อมูลการจัดส่ง</div>
     <div class="kv"><div class="k">ชื่อ</div><div class="v">${esc(o.customer_name)||'-'}</div></div>
     <div class="kv"><div class="k">เบอร์โทร</div><div class="v">${esc(o.customer_phone)||'-'}</div></div>
+    <div class="kv"><div class="k">วันที่สั่ง</div><div class="v">${esc((o.created_at||'').slice(0,16).replace('T',' '))||'-'}</div></div>
     <div class="kv"><div class="k">วันเวลาส่ง</div><div class="v">${esc(o.delivery_date||'-')}, ${esc(o.time_slot_label||o.time_slot||'-')}</div></div>
     <div class="kv"><div class="k">ที่อยู่</div><div class="v">${esc(o.delivery_address)||'-ไม่มีข้อมูล-'}</div></div>
     <div class="kv"><div class="k">รายละเอียด</div><div class="v">${esc(o.notes)||'-ไม่มีข้อมูล-'}</div></div>
@@ -386,8 +394,7 @@ function slip(o, PKG){
     <div class="tot"><span>ค่าส่ง</span><span>${baht(fee)}</span></div>
     ${disc ? `<div class="tot"><span>ส่วนลด</span><span>-${baht(disc)}</span></div>` : ''}
     <div class="tot b"><span>ยอดชำระทั้งสิ้น</span><span>${baht(o.total)}</span></div>
-    ${Math.abs((sub + fee - disc) - Number(o.total||0)) > 1
-      ? '<div class="note">⚠️ ยอดย่อยบวกแล้วไม่ลงตัวกับยอดชำระ — <b>ยึดยอดชำระทั้งสิ้น</b> (ปัญหาข้อมูลส่วนลด N-61 ยังไม่แก้)</div>' : ''}
+<!-- 12 ส.ค. นัทสั่งเอาออก: กล่องเตือนยอดไม่ลงตัว (N-61) ไม่ต้องขึ้นบนบิลที่ครัว/ลูกค้าเห็น -->
     <div class="tot"><span>การชำระเงิน</span><span>${pay}</span></div>
 
     <div class="sign"><div>ผู้จัดสินค้า</div><div>ผู้ส่ง</div></div>
