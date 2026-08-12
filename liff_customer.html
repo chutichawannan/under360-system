@@ -2418,8 +2418,17 @@ const MP_CUTOFF_HOUR = 8, MP_CUTOFF_MIN = 30;
 // ── วันหยุดส่งของร้าน (นัทสั่ง 7 ส.ค. 2569: "ร้านเราไม่ส่งวันเสาร์") ──
 // 0=อา 1=จ 2=อ 3=พ 4=พฤ 5=ศ 6=ส  → ปิดเฉพาะเสาร์ · อาทิตย์ยังส่งปกติ
 const CLOSED_DOW = [6];
+// ── วันหยุดเฉพาะกิจ (ปิดทีละวัน ไม่เกี่ยวกับวันในสัปดาห์) ──────────────────
+// นัทสั่ง 12 ส.ค. 2569: วันแม่ 12 ส.ค. ครัวได้หยุดตามกฎหมาย → ร้านสลับให้มาทำ
+// วันแม่แทน แล้วไปหยุดวันอาทิตย์ 16 ส.ค. แทน → ปิดรับส่งเฉพาะวันนั้นวันเดียว
+// ⚠️ ปิดแล้วต้องมาลบออกเอง ไม่มีอะไรลบให้อัตโนมัติ — วันที่ผ่านไปแล้วปล่อยไว้ก็ไม่มีผล
+const CLOSED_DATES = ['2026-08-16'];
 function isClosedDay(dow){ return CLOSED_DOW.indexOf(dow) !== -1; }
-function isClosedYMD(ymd){ return !!ymd && isClosedDay(new Date(ymd + 'T00:00:00').getDay()); }
+function isClosedYMD(ymd){
+  if(!ymd) return false;
+  if(CLOSED_DATES.indexOf(ymd) !== -1) return true;
+  return isClosedDay(new Date(ymd + 'T00:00:00').getDay());
+}
 
 function renderDatePick() {
   const el = document.getElementById('dpick');
@@ -2465,7 +2474,7 @@ function renderDatePick() {
   for(let i = startOffset; i <= startOffset + spanDays; i++){
     const d = new Date(now); d.setDate(now.getDate() + i);
     const key  = localYMD(d);
-    const disabled = (isMeal && !isMWF(d.getDay())) || isClosedDay(d.getDay());   // ร้านไม่ส่งวันเสาร์
+    const disabled = (isMeal && !isMWF(d.getDay())) || isClosedYMD(key);   // ไม่ส่งวันเสาร์ + วันหยุดเฉพาะกิจ
     const isOn = selDate===key && !disabled ? 'on' : '';
     html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
       <div class="dd">${DAYS[d.getDay()]}</div>
@@ -2560,7 +2569,7 @@ function renderRoundDatePicker(idx){
   for(let i=1;i<=28;i++){
     const d=new Date(base); d.setDate(base.getDate()+i);
     const key=localYMD(d);
-    const disabled = (prevDate && key <= prevDate) || isClosedDay(d.getDay());   // ร้านไม่ส่งวันเสาร์
+    const disabled = (prevDate && key <= prevDate) || isClosedYMD(key);   // ไม่ส่งวันเสาร์ + วันหยุดเฉพาะกิจ
     if(disabled){
       html+=`<div class="dchip disabled" style="opacity:.35;cursor:not-allowed;">
         <div class="dd">${DAYS[d.getDay()]}</div><div class="dn">${d.getDate()}</div><div class="dm">${MONTHS[d.getMonth()]}</div></div>`;
