@@ -50,10 +50,10 @@ async function lineReply(replyToken, text, token) {
   } catch (e) { console.error('lineReply failed:', e); }
 }
 
-// 👑 เจ้าของกะปัน — ตอบข้อมูลให้คนนี้คนเดียว (นัทเคาะ 12 ส.ค. "ของฉันคนเดียว")
+// เจ้าของกะปัน — ตอบข้อมูลให้คนนี้คนเดียว (นัทเคาะ 12 ส.ค.)
 const OWNER = process.env.OWNER_LINE_USER_ID || '';
 
-// ส่งข้อความหาใครก็ได้แบบไม่ต้องรอ reply token (ใช้ส่งรายงานเข้าแชทนัท)
+// ส่งข้อความหาใครก็ได้ ไม่ต้องรอ reply token (ใช้รายงานเข้าแชทนัท)
 async function linePush(to, text, token) {
   if (!token || !to) return;
   try {
@@ -183,53 +183,37 @@ export default async function handler(req, res) {
     const text = m.type === 'text' ? (m.text || '') : '';
     const t = text.trim();
     const isOwner = OWNER && userId === OWNER;
-
-    // ── ตอบยอดสั่ง (ใช้ร่วมกันทั้งแชทส่วนตัวและกลุ่ม) ──
     const wantsData = /ยอด|กี่กล่อง|ออเดอร์|order/i.test(t);
+
     const buildAnswer = async () => {
       const today = bkkDate();
       let target = today, label = 'วันนี้';
-      if (/พรุ่งนี้|พรุ้งนี้|ทูมอร์|tomorrow/i.test(t)) { target = addDays(today, 1); label = 'พรุ่งนี้'; }
+      if (/พรุ่งนี้|พรุ้งนี้|tomorrow/i.test(t)) { target = addDays(today, 1); label = 'พรุ่งนี้'; }
       else if (/มะรืน/i.test(t)) { target = addDays(today, 2); label = 'มะรืนนี้'; }
-      else { const d = t.match(/(d{4}-d{2}-d{2})/); if (d) { target = d[1]; label = d[1]; } }
-      try { return `ยอดสั่ง${label}มาแล้วค่า
-${await orderSummary(target)}`; }
+      else { const d = t.match(/(\d{4}-\d{2}-\d{2})/); if (d) { target = d[1]; label = d[1]; } }
+      try { return 'ยอดสั่ง' + label + 'มาแล้วค่า\n' + (await orderSummary(target)); }
       catch (e) { console.error(e); return 'ขอโทษค่ะ ตอนนี้ดึงยอดจากระบบไม่ได้ เดี๋ยวลองใหม่อีกครั้งนะคะ'; }
     };
 
-    // ══════ แชทส่วนตัว (ไม่มี groupId) ══════
+    // ===== แชทส่วนตัว (ไม่มี groupId) =====
     if (!groupId) {
-      console.log('DM · userId=' + userId + ' · text=' + t.slice(0, 60));
-
-      // โหมดค้นหาเจ้าของ: ยังไม่ได้ตั้ง OWNER → บอก userId กลับไปเลย
+      console.log('DM userId=' + userId + ' text=' + t.slice(0, 60));
       if (!OWNER) {
         await lineReply(ev.replyToken,
-          'สวัสดีค่ะ กะปันเองค่ะ
-
-ตอนนี้ยังไม่ได้ตั้งค่าว่าใครเป็นเจ้าของนะคะ
-userId ของคุณคือ:
-' + userId, token);
+          'สวัสดีค่ะ กะปันเองค่ะ\n\nยังไม่ได้ตั้งค่าว่าใครเป็นเจ้าของนะคะ\nuserId ของคุณคือ:\n' + userId, token);
         continue;
       }
-
       if (!isOwner) {
-        // คนอื่นทักส่วนตัว = ฝากข้อความถึงนัท (ไม่ตอบข้อมูล)
         await lineReply(ev.replyToken, 'รับเรื่องแล้วค่ะ เดี๋ยวแจ้งคุณนัทให้นะคะ', token);
-        await linePush(OWNER, '📨 มีคนทักกะปันส่วนตัวค่ะ
-userId: ' + userId + '
-
-"' + t + '"', token);
+        await linePush(OWNER, 'มีคนทักกะปันส่วนตัวค่ะ\nuserId: ' + userId + '\n\n"' + t + '"', token);
         continue;
       }
-
-      // นัทเอง → ตอบได้เต็มที่
       if (wantsData) await lineReply(ev.replyToken, await buildAnswer(), token);
       else await lineReply(ev.replyToken, 'รับทราบค่ะ จดไว้ให้แล้วน้า', token);
       continue;
     }
 
-    // ══════ ในกลุ่ม ══════
-    // 1) 📝 เก็บทุกข้อความ + แปลไว้ในแถวเดียวกัน
+    // ===== ในกลุ่ม =====
     const [displayName, tr] = await Promise.all([
       getDisplayName(groupId, userId, token),
       translate(text),
@@ -244,26 +228,19 @@ userId: ' + userId + '
 
     if (!text) continue;
 
-    // 2) 🔔 "ตื่นมารู้" — มีคนแท็กนัท / เรียกกะปัน / เรื่องเงิน → ส่งเข้าแชทนัท
-    const mentionedOwner = (m.mention?.mentionees || []).some(x => x.userId && x.userId === OWNER);
-    const calledKapan    = /กะปัน|kapan/i.test(t);
-    const aboutMoney     = /โอน|จ่าย|ค้าง|เงิน|ค่าแรง|บิล|ใบเสร็จ|มัดจำ|ค่าของ|ราคา/.test(t);
-    const tagNut         = /@s?nut|@s?นัท/i.test(t);
+    // มีคนแท็กนัท / เรียกกะปัน / เรื่องเงิน -> ส่งเข้าแชทนัท
+    const mentionedOwner = ((m.mention && m.mention.mentionees) || []).some(x => x.userId && x.userId === OWNER);
+    const calledKapan = /กะปัน|kapan/i.test(t);
+    const aboutMoney  = /โอน|จ่าย|ค้าง|เงิน|ค่าแรง|บิล|ใบเสร็จ|มัดจำ|ค่าของ/.test(t);
+    const tagNut      = /@\s?nut|@\s?นัท/i.test(t);
 
     if (OWNER && !isOwner && (mentionedOwner || calledKapan || aboutMoney || tagNut)) {
-      const head = aboutMoney ? '💰 เรื่องเงิน — มีคนฝากถึงคุณนัทค่ะ' : '📨 มีคนเรียกหาคุณนัทค่ะ';
-      await linePush(OWNER,
-        head + '
-จาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') +
-        '
-groupId: ' + groupId + '
-
-"' + t + '"', token);
+      const head = aboutMoney ? 'เรื่องเงิน — มีคนฝากถึงคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
+      await linePush(OWNER, head + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\ngroupId: ' + groupId + '\n\n"' + t + '"', token);
     }
 
-    // 3) 💬 ตอบข้อมูล "เฉพาะนัท" เท่านั้น
     if (!wantsData) continue;
-    if (!isOwner) continue;   // คนอื่นถามยอด = ไม่ตอบ (ของนัทคนเดียว)
+    if (!isOwner) continue;   // ของนัทคนเดียว
 
     const reply = await buildAnswer();
     await lineReply(ev.replyToken, reply, token);
