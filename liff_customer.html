@@ -2418,15 +2418,19 @@ const MP_CUTOFF_HOUR = 8, MP_CUTOFF_MIN = 30;
 // ── วันหยุดส่งของร้าน (นัทสั่ง 7 ส.ค. 2569: "ร้านเราไม่ส่งวันเสาร์") ──
 // 0=อา 1=จ 2=อ 3=พ 4=พฤ 5=ศ 6=ส  → ปิดเฉพาะเสาร์ · อาทิตย์ยังส่งปกติ
 const CLOSED_DOW = [6];
-// ── วันหยุดเฉพาะกิจ (ปิดทีละวัน ไม่เกี่ยวกับวันในสัปดาห์) ──────────────────
+// ── วันหยุดเฉพาะกิจ (ปิดทีละวัน + บอกเหตุผลให้ลูกค้ารู้) ────────────────────
 // นัทสั่ง 12 ส.ค. 2569: วันแม่ 12 ส.ค. ครัวได้หยุดตามกฎหมาย → ร้านสลับให้มาทำ
-// วันแม่แทน แล้วไปหยุดวันอาทิตย์ 16 ส.ค. แทน → ปิดรับส่งเฉพาะวันนั้นวันเดียว
-// ⚠️ ปิดแล้วต้องมาลบออกเอง ไม่มีอะไรลบให้อัตโนมัติ — วันที่ผ่านไปแล้วปล่อยไว้ก็ไม่มีผล
-const CLOSED_DATES = ['2026-08-16'];
+// วันแม่แทน แล้วไปหยุดวันอาทิตย์ 16 ส.ค. แทน
+// เพิ่มวันหยุดใหม่ = เติมอีกบรรทัด  'YYYY-MM-DD': 'เหตุผลที่ลูกค้าจะเห็น'
+// ✅ ไม่ต้องมาลบเอง — ป้ายขึ้นเฉพาะวันที่ยังเลือกได้อยู่ในปฏิทิน วันผ่านไปก็หายเอง
+const CLOSED_DATES = {
+  '2026-08-16': 'หยุดชดเชยวันแม่',
+};
 function isClosedDay(dow){ return CLOSED_DOW.indexOf(dow) !== -1; }
+function closedReason(ymd){ return (ymd && CLOSED_DATES[ymd]) || ''; }
 function isClosedYMD(ymd){
   if(!ymd) return false;
-  if(CLOSED_DATES.indexOf(ymd) !== -1) return true;
+  if(CLOSED_DATES[ymd]) return true;
   return isClosedDay(new Date(ymd + 'T00:00:00').getDay());
 }
 
@@ -2468,6 +2472,14 @@ function renderDatePick() {
       🥗 <b>Meal Plan ส่งเฉพาะวันจันทร์/พุธ/ศุกร์</b> — เลือกวันแรกที่จะเริ่มรับได้เลย ระบบจะจัดส่งต่อเนื่องอัตโนมัติทุกรอบ (จ/พ/ศ) จนครบจำนวนกล่อง${beforeMpCutoff ? ' · สั่งวันนี้ทันภายใน 08:30 น.' : ' · เลย 08:30 น. ของวันนี้แล้ว เริ่มได้รอบถัดไป'}
     </div>`;
   }
+  // ป้ายวันหยุดเฉพาะกิจ — ขึ้นเฉพาะวันที่ยังอยู่ในช่วงที่ลูกค้าเลือกได้
+  // (วันผ่านไปแล้วจะไม่อยู่ในช่วงนี้ ป้ายเลยหายเอง ไม่ต้องมาลบ)
+  for(let i = startOffset; i <= startOffset + spanDays; i++){
+    const dd = new Date(now); dd.setDate(now.getDate() + i);
+    const kk = localYMD(dd), why = closedReason(kk);
+    if(why) noticeHtml += `<div style="padding:6px 14px 4px;font-size:11px;color:#B45309;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;margin:0 14px 4px;line-height:1.5">
+      🏵️ <b>${dd.getDate()} ${MONTHS[dd.getMonth()]} ร้านหยุด</b> — ${why} · วันนั้นเลือกไม่ได้ วันอื่นส่งปกติ</div>`;
+  }
   if(notice) notice.innerHTML = noticeHtml;
 
   let html = '';
@@ -2476,10 +2488,12 @@ function renderDatePick() {
     const key  = localYMD(d);
     const disabled = (isMeal && !isMWF(d.getDay())) || isClosedYMD(key);   // ไม่ส่งวันเสาร์ + วันหยุดเฉพาะกิจ
     const isOn = selDate===key && !disabled ? 'on' : '';
-    html += `<div class="dchip ${isOn}${disabled?' disabled':''}" ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
+    const why = closedReason(key);
+    html += `<div class="dchip ${isOn}${disabled?' disabled':''}"${why?` title="${why}"`:''} ${disabled?'style="opacity:.35;cursor:not-allowed;"':`onclick="pickDate('${key}')"`}>
       <div class="dd">${DAYS[d.getDay()]}</div>
       <div class="dn">${d.getDate()}</div>
       <div class="dm">${MONTHS[d.getMonth()]}</div>
+      ${why?`<div style="font-size:8.5px;color:#B45309;line-height:1.1;margin-top:1px">หยุด</div>`:''}
     </div>`;
   }
   el.innerHTML = html;
