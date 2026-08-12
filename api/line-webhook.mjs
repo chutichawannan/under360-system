@@ -80,6 +80,16 @@ function routeRoom(text) {
   return room ? { room, body: m[2] } : { room: 'pm', body: text };
 }
 
+// เก็บโหมดกะปันไว้ในบอร์ด (room=kapan) — ตัวเฝ้าฝั่งเลขาอ่านค่านี้ไปปรับความถี่
+async function setMode(mode) {
+  try {
+    await fetch(SB + '/session_messages', {
+      method: 'POST', headers: { ...SBH, Prefer: 'return=minimal' },
+      body: JSON.stringify({ room: 'kapan', sender: 'mode', role: 'system', text: mode }),
+    });
+  } catch (e) { console.error('setMode failed:', e); }
+}
+
 async function toPmBoard(text) {
   const { room, body } = routeRoom(text);
   const rows = [{ room, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: body }];
@@ -236,6 +246,14 @@ export default async function handler(req, res) {
       if (!isOwner) {
         await lineReply(ev.replyToken, 'รับเรื่องแล้วค่ะ เดี๋ยวแจ้งคุณนัทให้นะคะ', token);
         await linePush(OWNER, 'มีคนทักกะปันส่วนตัวค่ะ\nuserId: ' + userId + '\n\n"' + t + '"', token);
+        continue;
+      }
+      // สลับโหมด: พิมพ์ โหมดเร่ง / โหมดปกติ / โหมดเงียบ
+      const mm = t.match(/^โหมดs*(เร่ง|ปกติ|เงียบ)/);
+      if (mm) {
+        const map = { 'เร่ง': 'fast', 'ปกติ': 'normal', 'เงียบ': 'quiet' };
+        await setMode(map[mm[1]]);
+        await lineReply(ev.replyToken, 'โหมด' + mm[1] + ' ✓', token);
         continue;
       }
       if (wantsData) { await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
