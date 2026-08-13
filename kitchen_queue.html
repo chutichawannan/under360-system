@@ -933,7 +933,13 @@ function renderCard(o){
   var items=getOrderItems(o.id);
   var badge=detectBadge(items);
   var isPkg=!!(o.package_type);
-  var isMp=items.some(function(i){return (i.code||"").match(/^HP|^LC/i);});
+  /* 🥗 ป้าย Meal Plan — เดิมเช็คแค่รหัสขึ้นต้น HP/LC
+     มิ้ม (U-0814-001) รหัสเป็น "MP-LC-R3" เลยไม่ติดป้าย ครัวมองไม่ออกว่าเป็น Meal Plan (ฟ้าจับได้ 13 ส.ค. 2569)
+     ⚠️ ห้ามพึ่งตาราง mp_deliveries อย่างเดียวด้วย — แถวรอบส่งหายไปได้จริง (ของมิ้มไปกองผิดวัน)
+        แต่ order_items.notes มี "meal_plan:lc:..." ติดมาตั้งแต่ตอนลูกค้าสั่ง = หลักฐานที่ไม่หาย */
+  var isMp=items.some(function(i){
+    return /^(HP|LC|MP)/i.test(i.code||"") || /meal_plan:/i.test(String(i.notes||""));
+  }) || !!o._isMp;
   var cardCls=isPkg?"oc pkg":isMp?"oc mealplan":"oc";
   var badgeHtml=isPkg?"<span class='oc-badge pkg'>📦 แพ็ค</span>"
     :isMp?"<span class='oc-badge mp'>🥗 Meal</span>"

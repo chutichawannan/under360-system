@@ -3595,13 +3595,31 @@ function msgSyncViewBtn(){
     p[0].style.fontWeight=on?"800":"500";
   });
 }
-/* เช้า/บ่าย — ตัดที่เที่ยงจากชั่วโมงเริ่มของช่วงเวลา (เช่น "8:00 - 13:00" = เช้า) */
+/* เช้า/บ่าย — 🔴 ต้องดู `time_slot` ก่อน ห้ามดูข้อความ label
+   ฟ้าจับได้ 13 ส.ค. 2569: MP-0814-026 (เฟิน) time_slot='afternoon' แต่ label เขียน '8:00 - 9:00'
+   (ข้อมูลยกมาจาก Hato label เพี้ยนติดมา) → ถ้าอ่าน label หน้าแมสจะโยน Meal Plan ไปกองรอบเช้า
+   ซึ่งเป็นไปไม่ได้ในความจริง — Meal Plan ทำสด ส่งบ่ายเท่านั้น (ผักมาถึงครัวเกือบ 9 โมง)
+   ลำดับการตัดสิน: time_slot → ถ้าไม่มีค่อยเดาจากเลขชั่วโมงใน label */
 function msgHalf(o){
-  var s=String(o.time_slot_label||o.time_slot||"");
+  var slot=String(o.time_slot||"").toLowerCase().trim();
+  if(/after|บ่าย|even|เย็น/.test(slot)) return {key:"pm",label:"🌤️ รอบบ่าย",ord:2};
+  if(/morn|เช้า/.test(slot))            return {key:"am",label:"🌅 รอบเช้า",ord:1};
+  var s=String(o.time_slot_label||slot||"");
   var m=s.match(/(\d{1,2})\s*[:.]/);
   var hh=m?parseInt(m[1],10):NaN;
   if(isNaN(hh)) return {key:"z",label:"⏰ ไม่ระบุเวลา",ord:3};
   return hh<12 ? {key:"am",label:"🌅 รอบเช้า",ord:1} : {key:"pm",label:"🌤️ รอบบ่าย",ord:2};
+}
+/* เวลาที่โชว์ในตาราง — label ที่ขัดกับ time_slot คือข้อมูลเพี้ยน อย่าเอาไปหลอกแมส */
+function msgTimeText(o){
+  var slot=String(o.time_slot||"").toLowerCase().trim();
+  var lab=String(o.time_slot_label||"").trim();
+  var m=lab.match(/(\d{1,2})\s*[:.]/);
+  var hh=m?parseInt(m[1],10):NaN;
+  var conflict = (/after|บ่าย/.test(slot) && !isNaN(hh) && hh<12) ||
+                 (/morn|เช้า/.test(slot)  && !isNaN(hh) && hh>=12);
+  if(conflict) return (/after|บ่าย/.test(slot)?"บ่าย":"เช้า")+" ⚠️";
+  return lab || (/after|บ่าย/.test(slot)?"บ่าย":(/morn|เช้า/.test(slot)?"เช้า":"—"));
 }
 /* ประเภทที่แมสต้องรู้แค่คร่าวๆ — ไม่ต้องลงรายเมนู */
 function msgKind(o){
@@ -3644,7 +3662,7 @@ function msgTableHtml(data){
         +"<td class='num'>"+(box||"—")+"</td>"
         +"<td class='num'>"+(o.total?fmtB(o.total):"<span style='color:#9CA3AF'>—</span>")
           +(msgIsPaid(o)?"":"<div style='font-size:10.5px;color:#B91C1C;font-weight:800'>ยังไม่จ่าย</div>")+"</td>"
-        +"<td style='white-space:nowrap;font-size:12px'>"+esc2(o.time_slot_label||o.time_slot||"—")+"</td>"
+        +"<td style='white-space:nowrap;font-size:12px'>"+esc2(msgTimeText(o))+"</td>"
         +"<td><select class='driver-select"+(cur?" assigned":"")+"' data-oid='"+o.id+"' data-prev='"+cur+"' onchange='saveCourier(this)'>"
           +dopt("","เลือก...")+dopt("store","🛵 ร้าน")+dopt("lalamove","🟠 Lala")+dopt("grab","🟢 Grab")+"</select></td>"
         +"</tr>";
