@@ -117,7 +117,12 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
   transition:width .2s ease;
   overflow:hidden;z-index:10;
 }
-.sidebar.mini{width:var(--sidebar-mini)}
+/* 🔴 ปุ่มพับแถบเมนูไม่เคยทำงานเลย — ตั้ง width:0 แล้วแต่แถบยังกว้าง 220px เท่าเดิม
+   เพราะ flex item มี min-width:auto เป็นค่าเริ่มต้น = ห้ามเล็กกว่าเนื้อหาข้างใน
+   (ชื่อเมนูในแถบยาว 220px มันเลยยันไว้) ต้องสั่ง min-width:0 ถึงจะยอมหด
+   ของแบบนี้ไม่มี error อะไรฟ้อง — กดปุ่มแล้วหน้าไม่ขยับ คนก็นึกว่าปุ่มเสีย
+   เจอตอนไล่หาว่าทำไมหน้าแมสบน iPhone ถึงบีบจนอ่านไม่ออก (13 ส.ค. 2569) */
+.sidebar.mini{width:var(--sidebar-mini);min-width:0;padding:0;border:none;}
 .sb-header{
   padding:16px 14px;display:flex;align-items:center;gap:10px;
   border-bottom:1px solid rgba(255,255,255,.1);min-height:60px;
