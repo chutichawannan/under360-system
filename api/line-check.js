@@ -47,6 +47,33 @@ module.exports = async (req, res) => {
     out.webhook = w.ok ? { ปลายทาง: wj.endpoint || '(ยังไม่ตั้ง)', เปิดใช้: wj.active } : '(ยังไม่ตั้ง)';
   } catch (e) { /* เช่นกัน */ }
 
+
+  // ── ตั้ง webhook ให้ชี้มาที่บอทของเราเอง — เปิดด้วย /api/line-check?setup=webhook ──
+  //    ปลอดภัยเพราะ "ปลายทางถูกฮาร์ดโค้ดเป็นโดเมนเราเท่านั้น" — สั่งให้ชี้ที่อื่นไม่ได้
+  //    รันซ้ำได้ไม่มีผลข้างเคียง · ไม่แตะอะไรถ้าตั้งถูกอยู่แล้ว
+  if (req.query && req.query.setup === "webhook") {
+    const ENDPOINT = "https://under360-system.vercel.app/api/line-webhook";
+    try {
+      const cur = out.webhook && out.webhook.ปลายทาง;
+      if (cur === ENDPOINT) { out.ตั้งwebhook = "ตั้งไว้ถูกอยู่แล้ว ไม่ต้องทำอะไร"; }
+      else {
+        const p1 = await fetch("https://api.line.me/v2/bot/channel/webhook/endpoint", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+          body: JSON.stringify({ endpoint: ENDPOINT }),
+        });
+        const pj = await p1.json().catch(() => ({}));
+        out.ตั้งwebhook = p1.ok ? ("ตั้งเป็น " + ENDPOINT + " แล้ว") : ("ไม่สำเร็จ HTTP " + p1.status + " " + (pj.message || ""));
+      }
+      const t = await fetch("https://api.line.me/v2/bot/channel/webhook/test", {
+        method: "POST", headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
+        body: JSON.stringify({ endpoint: ENDPOINT }),
+      });
+      const tj = await t.json().catch(() => ({}));
+      out.ทดสอบwebhook = t.ok ? ("LINE ยิงทดสอบแล้วได้ HTTP " + tj.statusCode + " · " + (tj.detail || "")) : ("ทดสอบไม่ผ่าน HTTP " + t.status + " " + (tj.message || ""));
+    } catch (e) { out.ตั้งwebhook = "พัง: " + e.message; }
+  }
+
   out.ok = true;
   out.สรุป = '✅ คุยกับ LINE ได้จริง — ส่งข้อความหาลูกค้า/กลุ่มครัวได้แล้ว';
   return res.status(200).json(out);
