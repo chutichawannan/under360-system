@@ -164,6 +164,14 @@ body.tablet .item-chip .ic-note{font-size:15px;padding:3px 8px;}
 .set-box .items-grid{margin-top:3px;}
 .item-chip .ic-qty{font-family:var(--mono);font-size:11px;font-weight:700;color:var(--ink);}
 .oc-note{font-size:13px;color:var(--r);background:var(--rs);border-radius:6px;padding:4px 8px;margin-top:6px;}
+/* 🩺 ข้อจำกัดอาหาร — ต้องเด่นกว่าโน้ตธรรมดา เพราะพลาดแล้วกระทบสุขภาพลูกค้า ไม่ใช่แค่ความพอใจ */
+.oc-diet{border-radius:7px;padding:6px 10px;margin-top:6px;line-height:1.4;}
+.oc-diet-al{background:#FEE2E2;color:#7F1D1D;border:2px solid #DC2626;font-size:14.5px;font-weight:900;}
+.oc-diet-dl{background:#FFF7ED;color:#9A3412;border:1px solid #FDBA74;font-size:13px;font-weight:700;}
+body.tablet .oc-diet-al{font-size:17px;padding:8px 12px;}
+body.tablet .oc-diet-dl{font-size:15px;padding:7px 11px;}
+@media print{.oc-diet-al{border:2px solid #000;background:#fff!important;color:#000!important;}
+             .oc-diet-dl{border:1px solid #000;background:#fff!important;color:#000!important;}}
 .oc-utensil{font-size:13.5px;font-weight:700;color:#065F46;background:#D1FAE5;border-radius:6px;padding:4px 8px;margin-top:6px;display:inline-block;}
 .oc-utensil.oc-utensil-no{color:var(--soft);background:var(--bg);font-weight:600;}
 .oc-utensil.oc-utensil-lg{font-size:18px;padding:8px 14px;border-radius:8px;border:2px solid #065F46;}
@@ -379,6 +387,7 @@ async function logKqActivity(summary){
 
 // ── STATE ────────────────────────────────────────────────
 var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
+var custPrefs={};   // customer_id -> {allergies, dislikes} — ข้อจำกัดอาหารที่ต้องเด้งบนการ์ด
 var dateMode="today", slotMode="all", tabMode=1;
 var codeMode="code"; // code | name | subcode
 var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
@@ -490,6 +499,18 @@ async function loadAll(){
     ]);
     allItems=await fetchItemsFor(sb_,ids);
     allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
+    /* 🩺 ข้อจำกัดอาหารรายลูกค้า (โรคประจำตัว/ของแพ้/ข้าวนิ่ม)
+       เดิมข้อมูลนี้อยู่แต่ในแชทไลน์ ไม่เคยถึงหน้าครัว — ฟ้าเจอซ้ำ 4 วันติด (13 ส.ค. 2569)
+       หนักสุดคือเคสลูกค้าโรคไต ถ้าไม่มีใครบังเอิญเห็นในแชท ครัวก็ทำข้าวปกติให้
+       อ่านอย่างเดียว · พังก็ปล่อยผ่าน หน้าครัวต้องขึ้นออเดอร์ได้เสมอ */
+    try{
+      var _cids=[]; allOrders.forEach(function(o){ if(o.customer_id && _cids.indexOf(o.customer_id)<0) _cids.push(o.customer_id); });
+      custPrefs={};
+      if(_cids.length){
+        var pf=await sb_.from("customer_preferences").select("customer_id,allergies,dislikes").in("customer_id",_cids).limit(500);
+        (pf.data||[]).forEach(function(p){ custPrefs[p.customer_id]=p; });
+      }
+    }catch(e){ custPrefs={}; }
     var _kd=rest[2].data||[];
     var _gs=(_kd.find(function(x){return x.key==="globalSettings";})||{}).data||{};
     var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
@@ -983,6 +1004,7 @@ function renderCard(o){
         +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
         +(o.customer_phone?"<div class='oc-meta'>📞 "+escH(o.customer_phone)+"</div>":"")
         +"<div class='oc-meta oc-meta-sm'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
+        +dietBox(o)
         +(o.notes?"<div class='oc-note'>📌 "+escH(o.notes)+"</div>":"")
       +"</div>"
       +"<div class='oc-right'>"+itemsHtml+utensilHtml+actions+"</div>"
@@ -1040,6 +1062,18 @@ function doPrint(type){
 // ── UTIL ─────────────────────────────────────────────────
 function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");}
 // โชว์ชื่อ LINE ต่อท้าย เฉพาะตอนไม่ตรงกับชื่อผู้รับ — กันสั่งซ้ำ 2 รอบให้คนละคน
+/* กล่องข้อจำกัดอาหารบนการ์ดออเดอร์
+   แพ้ = อันตรายถึงชีวิต (แดงเข้ม กรอบหนา) · ไม่ทาน = ความชอบ (ส้มอ่อน)
+   ไม่มีข้อจำกัด = ไม่ขึ้นอะไรเลย — ถ้าขึ้นทุกใบ ครัวจะชินแล้วเลิกอ่าน */
+function dietBox(o){
+  var p=(o&&o.customer_id)?custPrefs[o.customer_id]:null; if(!p) return "";
+  var al=String(p.allergies||"").trim(), dl=String(p.dislikes||"").trim();
+  if(!al&&!dl) return "";
+  var h="";
+  if(al) h+="<div class='oc-diet oc-diet-al'>⚠️ แพ้ "+escH(al)+"</div>";
+  if(dl) h+="<div class='oc-diet oc-diet-dl'>ไม่ทาน "+escH(dl)+"</div>";
+  return h;
+}
 function lineTag(o){
   if(!o||!o.line_display_name||o.line_display_name===o.customer_name) return "";
   return " <span style='font-size:10px;color:#9CA3AF;font-weight:400'>(LINE: "+escH(o.line_display_name)+")</span>";

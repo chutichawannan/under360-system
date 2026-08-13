@@ -102,6 +102,11 @@
   .flag{ font-weight:800; font-size:11px; text-align:center; padding:1mm 0;
          border-top:1px solid #000; border-bottom:1px solid #000; margin:1.5mm 0; }
 
+  /* 🩺 ข้อจำกัดอาหาร — ต้องอ่านออกแม้พิมพ์ด้วยเครื่องความร้อนขาวดำ
+     ใช้กรอบหนา 2 เส้น + ตัวหนา แทนการใช้สี (สีไม่ติดกระดาษความร้อน) */
+  .diet{ border:2px solid #000; border-radius:1mm; padding:1.2mm 2mm; margin:1.5mm 0; }
+  .diet-al{ font-weight:900; font-size:12px; line-height:1.35; }
+  .diet-dl{ font-weight:700; font-size:11px; line-height:1.35; margin-top:.6mm; }
   .thead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:.5mm; }
   .thead .q{ flex:0 0 7mm; }
   .thead .n{ flex:1 1 auto; }
@@ -254,6 +259,7 @@ document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
 let MENU = {};   // code -> { sub: ชื่อเล่นเมนู }
+let PREF = {};   // customer_id -> { allergies, dislikes } — ข้อจำกัดอาหารที่ต้องเด้งบนใบ
 
 async function load(){
   const sheet = document.getElementById('sheet');
@@ -267,7 +273,7 @@ async function load(){
     MENU = {}; for (const m of j) MENU[m.code] = { sub: (m.subcode||'').trim() };
   }catch(e){ MENU = {}; }
 
-  const cols = 'order_number,created_at,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
+  const cols = 'order_number,created_at,customer_id,customer_name,customer_phone,delivery_address,delivery_date,time_slot,time_slot_label,total,subtotal,delivery_fee,discount_amount,status,payment_status,payment_account,want_utensils,notes,order_items(menu_name,menu_code,quantity,unit_price,notes)';
   const filter = $o.value.trim()
     ? `order_number=eq.${encodeURIComponent($o.value.trim())}`
     : `delivery_date=eq.${$d.value}&status=neq.cancelled`;
@@ -298,11 +304,38 @@ async function load(){
     }catch(e){}
   }
 
+  /* 🩺 ข้อจำกัดอาหารของลูกค้า — โรคประจำตัว/ของแพ้/ข้าวนิ่ม ฯลฯ
+     ทำไมต้องมี: ข้อมูลพวกนี้เคยอยู่แต่ในแชทไลน์ ไม่เคยถึงใบที่ครัวใช้แพ็คจริง
+     ฟ้ารายงาน 13 ส.ค. 2569 ว่าเจอซ้ำ 4 วันติด — วันที่หนักสุดคือเคสลูกค้าโรคไต
+     ถ้าไม่มีใครบังเอิญเห็นในแชท ลูกค้าจะได้ข้าวปกติ = เรื่องสุขภาพ ไม่ใช่ความสะดวก
+     ⚠️ อ่านอย่างเดียว ล้มก็ปล่อยผ่าน ใบต้องพิมพ์ออกเสมอ */
+  PREF = {};
+  try{
+    const cids = [...new Set(rows.map(o => o.customer_id).filter(Boolean))];
+    if (cids.length){
+      const r = await fetch(`${SB}customer_preferences?select=customer_id,allergies,dislikes&customer_id=in.(${cids.join(',')})&limit=300`, {headers:HDR});
+      for (const p of await r.json()) PREF[p.customer_id] = p;
+    }
+  }catch(e){ PREF = {}; }
+
   sheet.innerHTML = rows.map(o => slip(o, PKG)).join('');
   applyFilter();
 
 }
 
+/* กล่องข้อจำกัดอาหาร — วางไว้ "บนสุด ก่อนทุกอย่าง" ตั้งใจให้เห็นก่อนอ่านอย่างอื่น
+   แพ้ = อันตรายถึงชีวิต · ไม่ทาน = ความชอบ → แยกน้ำหนักให้ชัด ไม่ยัดรวมเป็นโน้ตเดียว
+   ไม่มีข้อจำกัด = ไม่ขึ้นอะไรเลย (ใบจะได้ไม่รก จนคนเลิกอ่านกล่องเตือน) */
+function dietHtml(o){
+  const p = PREF[o.customer_id] || {};
+  const al = String(p.allergies||'').trim();
+  const dl = String(p.dislikes||'').trim();
+  if(!al && !dl) return '';
+  let h = '<div class="diet">';
+  if(al) h += '<div class="diet-al">⚠️ แพ้: '+esc(al)+'</div>';
+  if(dl) h += '<div class="diet-dl">ไม่ทาน: '+esc(dl)+'</div>';
+  return h + '</div>';
+}
 function slip(o, PKG){
   // จัดกลุ่ม: เซ็ต/แพคเกจ · Meal Plan · เมนูเดี่ยว
   const groups = new Map(), singles = new Map();
@@ -383,7 +416,7 @@ function slip(o, PKG){
   <div class="slip" data-t="${type}"><div class="in">
     <div class="shop">Under 360</div>
     <div class="ordno">#${esc(o.order_number)}</div>
-
+    ${dietHtml(o)}
     <div class="dash"></div>
     <div class="sec">ข้อมูลการจัดส่ง</div>
     <div class="kv"><div class="k">ชื่อ</div><div class="v">${esc(o.customer_name)||'-'}</div></div>
