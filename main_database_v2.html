@@ -814,7 +814,7 @@ function autoClassifyIngredient(name){
    สาเหตุ: ทั้งแถวผูก onclick ไว้ → นิ้วแตะแถวแล้วลากเพื่อเลื่อน พอปล่อยเบราว์เซอร์ยังนับเป็นคลิก
    วิธี: จำระยะที่นิ้วขยับ ถ้าเกิน 8px = ตั้งใจเลื่อน ไม่ใช่ตั้งใจกด → ไม่ต้องกางสูตร
    (ปุ่ม ▼ กางสูตรยังกดได้ปกติ เพราะกดแล้วนิ้วแทบไม่ขยับ) */
-let _tapX=0, _tapY=0, _tapMoved=false;
+let _tapX=0, _tapY=0, _tapMoved=false, _lastScrollAt=0;
 document.addEventListener('touchstart', function(e){
   var t=e.touches&&e.touches[0]; if(!t) return;
   _tapX=t.clientX; _tapY=t.clientY; _tapMoved=false;
@@ -823,7 +823,13 @@ document.addEventListener('touchmove', function(e){
   var t=e.touches&&e.touches[0]; if(!t) return;
   if(Math.abs(t.clientX-_tapX)>8 || Math.abs(t.clientY-_tapY)>8) _tapMoved=true;
 }, {passive:true});
-function tapWasScroll(){ return _tapMoved; }
+/* เมาส์/ทัชแพดไม่มี touch event — ต้องล้างธงทุกครั้งที่กดเมาส์
+   ไม่งั้นถ้าเคยไถด้วยนิ้วมาก่อน ธงจะค้าง แล้วคลิกเมาส์จะกดไม่ติดไปเลย */
+document.addEventListener('mousedown', function(){ _tapMoved=false; }, {passive:true});
+/* iOS ปล่อยนิ้วแล้วยิง click ตามมาทีหลังได้อีกราว 300 มิลลิวินาที
+   ถ้าเพิ่งมีการเลื่อนจอจริงๆ ภายในช่วงนั้น = ไม่ใช่การตั้งใจกด */
+document.addEventListener('scroll', function(){ _lastScrollAt=Date.now(); }, {passive:true, capture:true});
+function tapWasScroll(){ return _tapMoved || (Date.now()-_lastScrollAt) < 250; }
 
 let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, availEditId:null, pinModeEnabled:false, sortMode:'category', activeCatTab:'__all__', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
@@ -4965,6 +4971,7 @@ function attachHandlers(){
     // ▼ expand button — จุดกดชัดบนมือถือ
     document.querySelectorAll('.expand-btn').forEach(btn=>{
       btn.onclick = (e)=>{
+        if(tapWasScroll()) return;   /* ลากอยู่ ไม่ใช่กด */
         e.stopPropagation();
         const row = btn.closest('.recipe-row');
         if(!row) return;
@@ -4983,6 +4990,10 @@ function attachHandlers(){
     // Mobile fix: กดที่ชื่อเมนูโดยตรง (พื้นที่ไม่มี stopPropagation ชัดเจน)
     document.querySelectorAll('.recipe-row .name-line').forEach(nl=>{
       const doExpand = (e)=>{
+        /* 🔴 ต้นเหตุจริงของ "ไถแล้วสูตรกางเอง" — บรรทัดชื่อเมนูผูก ontouchend ไว้ตรงๆ
+           นิ้วแตะโดนชื่อเมนูแล้วลากเพื่อเลื่อน พอปล่อย touchend ก็ยิงทันที ไม่สนว่าลากมาไกลแค่ไหน
+           (รอบก่อนผมใส่ตัวกันไว้แค่ที่ตัวแถว ไม่ได้ใส่ตรงนี้ นัทเลยยังเจอเหมือนเดิม 13 ส.ค. 2569) */
+        if(tapWasScroll()) return;
         e.preventDefault();
         e.stopPropagation();
         const row = nl.closest('.recipe-row');
