@@ -365,6 +365,18 @@ export default async function handler(req, res) {
       await linePush(OWNER, head + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\ngroupId: ' + groupId + '\n\n"' + t + '"', token);
     }
 
+    // 🔴 นัทสั่งกะปันจากในกลุ่ม (แก้ 13 ส.ค. — เดิมตกหายเงียบทั้งหมด)
+    //    เหตุ: push ทำเฉพาะ !isOwner + ข้างล่างต้องเป็นคำถามยอดเท่านั้น → คำสั่งนัทในกลุ่มไม่เคยถึงบอร์ดเลย
+    //    เคสจริง: ห้องแอดมิน 20:20 "กะปัน ส่งเรื่องหา cc ให้หน่อย ออเดอร์ลูกค้าไม่ขึ้นหน้าแพลนเมนู" → หายทั้งข้อความ
+    if (isOwner && calledKapan && !wantsData) {
+      const body = t.replace(/(กะปัน|กระปัน|กะปั้น|กะบัน|kapan)/i, "").replace(/^[\s,:：]+/, "").trim();
+      if (body) {
+        await toBoard(body);
+        await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
+      }
+      continue;
+    }
+
     if (!wantsData) continue;
     if (!isOwner) continue;   // ของนัทคนเดียว
 
