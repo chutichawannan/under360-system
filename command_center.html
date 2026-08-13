@@ -369,20 +369,29 @@ function fmtTime(iso){const d=new Date(iso);const now=new Date();const same=d.to
   return same?t:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'})+' '+t;}
 
 async function loadCore(){
-  // เบา: ข้อความ + สถานะ (poll ทุก 15 วิ)
+  // เบา: ข้อความ + สถานะ (poll ทุก 15 วิ) — 2 ตารางไม่เกี่ยวกัน ยิงพร้อมกันได้
   try{
-    const {data,error}=await sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(400);
-    if(error){tablesOk=false;} else { tablesOk=true; const all=(data||[]).slice().reverse(); allMsgs=all.filter(m=>m.room!=='cc'); ccPosts=all.filter(m=>m.room==='cc'); }
-    const {data:st}=await sb.from('track_status').select('*');
-    statusMap=Object.fromEntries((st||[]).map(s=>[s.room,s]));
+    const [msg, stat] = await Promise.all([
+      sb.from('session_messages').select('*').order('created_at',{ascending:false}).limit(400),
+      sb.from('track_status').select('*')
+    ]);
+    if(msg.error){tablesOk=false;} else { tablesOk=true; const all=(msg.data||[]).slice().reverse(); allMsgs=all.filter(m=>m.room!=='cc'); ccPosts=all.filter(m=>m.room==='cc'); }
+    statusMap=Object.fromEntries((stat.data||[]).map(s=>[s.room,s]));
   }catch(e){tablesOk=false;}
 }
 function refreshUI(){ renderBanner(); renderHome(); renderDash(); renderRoomList(); if(activeRoom) renderChat(); }
+/* ⚡ เดิม await เรียงกันทีละตัว = 12 คำขอต่อคิว ต้องรอครบก่อนถึงจะวาดหน้า
+   บนคอมเน็ตแรงยัง 3.2 วิ · บนมือถือครัวช้ากว่านั้นหลายเท่า (ทุกคำขอรอ round-trip ของตัวเอง)
+   นัทบอกเอง 13 ส.ค.: "หน้านี้โหลดช้าจังเลย"
+   → ① วาดหน้าก่อนเลย (เมนูลิงก์เป็นของนิ่ง ไม่ต้องรอข้อมูลสักตัว)
+     ② โหลดทุกก้อนพร้อมกัน ไม่ต่อคิว — แต่ละก้อนเขียนตัวแปรคนละตัว ไม่ชนกัน
+     ③ ก้อนไหนพัง ก้อนอื่นยังขึ้น (allSettled ไม่ใช่ all) */
 async function loadAll(manual){
-  await loadCore();
+  try{ refreshUI(); }catch(e){}
+  const jobs=[ loadCore(), loadNiw(), loadCutover(), loadOOS() ];
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
-  if(manual || !bizLoaded){ await loadBiz(); bizLoaded=true; }
-  await loadNiw(); await loadCutover(); await loadOOS();
+  if(manual || !bizLoaded){ jobs.push(loadBiz().then(function(){ bizLoaded=true; })); }
+  await Promise.allSettled(jobs);
   refreshUI();
   if(manual) toast('รีเฟรชแล้ว');
 }
@@ -889,11 +898,14 @@ async function niwWeeklySpecialWatch(sb, opt) {
 var oosData=null;
 async function loadOOS(){
   try{
-    var r=await sb.from('menu_items').select('code,name,category,stock_total')
-      .eq('is_available',true).eq('stock_total',0).limit(200);
-    var all=await sb.from('menu_items').select('code,category').eq('is_available',true).limit(1000);
+    /* 3 คำขอไม่เกี่ยวกัน — ยิงพร้อมกัน ไม่ต้องต่อคิว */
+    var _q=await Promise.all([
+      sb.from('menu_items').select('code,name,category,stock_total').eq('is_available',true).eq('stock_total',0).limit(200),
+      sb.from('menu_items').select('code,category').eq('is_available',true).limit(1000),
+      sb.from('kitchen_data').select('data').eq('key','appConfig').limit(1)
+    ]);
+    var r=_q[0], all=_q[1], cfg=_q[2];
     var labels={};
-    var cfg=await sb.from('kitchen_data').select('data').eq('key','appConfig').limit(1);
     var cats=(cfg.data&&cfg.data[0]&&cfg.data[0].data&&cfg.data[0].data.categories)||[];
     cats.forEach(function(c){ labels[c.key]=c.label; });
     var totBy={}; (all.data||[]).forEach(function(m){ totBy[m.category]=(totBy[m.category]||0)+1; });
@@ -931,8 +943,11 @@ var CUTOVER_DATE='2026-08-07';
 var cutHatoUrls=null;
 async function loadCutover(){
   try{
-    var a=await sb.from('home_layout').select('*').limit(200);
-    var b=await sb.from('menu_items').select('code,image_urls').eq('is_available',true).limit(1000);
+    var _ab=await Promise.all([
+      sb.from('home_layout').select('*').limit(200),
+      sb.from('menu_items').select('code,image_urls').eq('is_available',true).limit(1000)
+    ]);
+    var a=_ab[0], b=_ab[1];
     var blob=JSON.stringify(a.data||[])+JSON.stringify(b.data||[]);
     var m=blob.match(/https?:\/\/[^"]*hato[^"]*/gi);
     cutHatoUrls=m?m.length:0;
