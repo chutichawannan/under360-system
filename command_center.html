@@ -407,8 +407,12 @@ async function loadBiz(){
   const OURS='order_number.like.U-%,order_number.like.MP-%';
   const isTest=n=>/test|เทส|ทดลอบ/i.test(n||'');
   try{
-    const q=await sb.from('orders').select('total,created_at,customer_name')
-      .or(OURS).gt('total',0).neq('status','cancelled').gte('created_at',d60).limit(3000);
+    /* ยอด 60 วัน กับ ออเดอร์พรุ่งนี้ ไม่เกี่ยวกัน — ยิงพร้อมกัน */
+    const [q, tq] = await Promise.all([
+      sb.from('orders').select('total,created_at,customer_name')
+        .or(OURS).gt('total',0).neq('status','cancelled').gte('created_at',d60).limit(3000),
+      sb.from('orders').select('total').eq('delivery_date',tmrw).or(OURS).neq('status','cancelled').limit(500)
+    ]);
     let cur=0,prev=0,latest='';
     const daily={};
     for(const o of (q.data||[])){
@@ -421,7 +425,6 @@ async function loadBiz(){
     const bars=[];
     for(let i=13;i>=0;i--){ const d=addDays(today,-i);
       bars.push([d.slice(8,10)+'/'+d.slice(5,7), daily[d]||0]); }
-    const tq=await sb.from('orders').select('total').eq('delivery_date',tmrw).or(OURS).neq('status','cancelled').limit(500);
     biz={cur,prev,latest:latest?latest.slice(0,10):'',today,bars,tmrwCount:(tq.data||[]).length,tmrwDate:tmrw};
   }catch(e){biz={err:1};}
 }
@@ -797,11 +800,16 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
   const list = menus || [];
   const codes = list.map(m => m.code);
-  const soldThisWeek = niwTally(await niwSalesRows(sb, codes, wk.start, wk.end));
 
+  /* ยอดขายสัปดาห์นี้ กับ ย้อนหลัง ไม่เกี่ยวกัน — ยิงพร้อมกัน (เดิมต่อคิว = ช้าเป็น 2 เท่า) */
   const histStart = niwYmd(niwAddDays(wk.monday, -7 * NIW_HISTORY_WEEKS));
   const histEnd = niwYmd(niwAddDays(wk.monday, -1));
-  const histByWeek = niwTallyByWeek(await niwSalesRows(sb, codes, histStart, histEnd));
+  const [rowsWk, rowsHist] = await Promise.all([
+    niwSalesRows(sb, codes, wk.start, wk.end),
+    niwSalesRows(sb, codes, histStart, histEnd)
+  ]);
+  const soldThisWeek = niwTally(rowsWk);
+  const histByWeek = niwTallyByWeek(rowsHist);
 
   const cards = [], blockers = [];
 
