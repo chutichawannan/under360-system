@@ -1790,6 +1790,21 @@ async function odUploadSlip(orderId, ev){
 //   → ค้นได้ ย้อนดูได้ว่าใครเลื่อน เมื่อไหร่ จากวันไหนไปวันไหน · ไม่ต้องรัน SQL เพิ่ม
 var OD_MOVE_TAG="[เลื่อนวันส่ง";
 
+/* 🔴 คอร์ส Meal Plan หลายรอบ = ทุกรอบผูกกับ order_id ของ "ใบแรก" ใบเดียว
+   (LIFF เปิดใบแยกให้รอบ 2..N แล้ว แต่แถวใน mp_deliveries ยังชี้ใบแม่)
+   → เดิมสั่ง .eq("order_id",id) ตอนเลื่อนวัน = **ลากทุกรอบมากองวันเดียวกันหมด**
+   เคสจริง: มิ้ม U-0810-004 กิ๊ฟเลื่อน 10 ส.ค. → 11 ส.ค. แล้วรอบ 2 (12 ส.ค.)
+   กับรอบ 3 (14 ส.ค.) โดนลากมา 11 ส.ค. ด้วย = หายจากปฏิทินครัวทั้งคู่ เงียบๆ ไม่มี error
+   → ย้ายเฉพาะรอบที่ "อยู่วันเดิมของใบนี้จริงๆ" เท่านั้น รอบวันอื่นห้ามแตะ
+   (ถ้าไม่มีรอบไหนตรงวันเดิมเลย = ข้อมูลเก่าก่อนมีกฎนี้ → ถอยไปย้ายทุกรอบเหมือนเดิม
+    ปลอดภัยกว่าไม่ย้ายอะไรเลย เพราะใบรอบเดียวจะได้ไม่ค้างวันเก่า) */
+function mpMovableRounds(rows,fromDate){
+  var live=(rows||[]).filter(function(m){return m.status!=="cancelled";});
+  if(live.length<2) return live;
+  var onOldDate=live.filter(function(m){return m.delivery_date===fromDate;});
+  return onOldDate.length?onOldDate:live;
+}
+
 /* ── ❄️ เก็บไว้ส่งวันหลัง (ห้องฟ้าส่งสเปค · นัทสั่ง bypass 11 ส.ค.) ────────────
    ปัญหาจริง: ครัวจัดของล่วงหน้าแล้วแช่เย็น พอถึงวันส่งจริง **ของหาย**
    เพราะไม่มีอะไรในระบบบอกว่า "ทำไว้แล้ว อยู่ในตู้"
@@ -1824,9 +1839,12 @@ async function odFridge(id){
     var up=await sb_.from("orders").update({delivery_date:ship,notes:notes,updated_at:new Date().toISOString()}).eq("id",id).select("id,delivery_date");
     if(up.error) throw up.error;
     if(!up.data||!up.data.length||up.data[0].delivery_date!==ship) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
-    /* รอบผลิต Meal Plan ต้องตามไปวันส่งด้วย (เหมือนตอนเลื่อนวัน) */
-    await sb_.from("mp_deliveries").update({delivery_date:ship,updated_at:new Date().toISOString()})
-             .eq("order_id",id).neq("status","cancelled");
+    /* รอบผลิต Meal Plan ต้องตามไปวันส่งด้วย (เหมือนตอนเลื่อนวัน)
+       — ย้ายเฉพาะรอบที่อยู่วันเดิม ห้ามลากรอบถัดไปของคอร์สมาด้วย (ดู mpMovableRounds) */
+    var frRows=await sb_.from("mp_deliveries").select("id,status,round_no,delivery_date").eq("order_id",id);
+    var frMove=mpMovableRounds(frRows.data,prep);
+    if(frMove.length) await sb_.from("mp_deliveries").update({delivery_date:ship,updated_at:new Date().toISOString()})
+             .in("id",frMove.map(function(m){return m.id;}));
     try{
       await sb_.from("activity_log").insert({
         session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
@@ -1850,7 +1868,9 @@ async function odUnfridge(id){
     var notes=String(o.notes||"").replace(OD_FRIDGE_RE,"").trim();
     var up=await sb_.from("orders").update({delivery_date:fr.prep,notes:notes,updated_at:new Date().toISOString()}).eq("id",id).select("id");
     if(up.error) throw up.error;
-    await sb_.from("mp_deliveries").update({delivery_date:fr.prep,updated_at:new Date().toISOString()}).eq("order_id",id).neq("status","cancelled");
+    var unRows=await sb_.from("mp_deliveries").select("id,status,round_no,delivery_date").eq("order_id",id);
+    var unMove=mpMovableRounds(unRows.data,fr.ship);   /* ตอนนี้รอบอยู่ที่วันส่ง → ดึงกลับไปวันจัด */
+    if(unMove.length) await sb_.from("mp_deliveries").update({delivery_date:fr.prep,updated_at:new Date().toISOString()}).in("id",unMove.map(function(m){return m.id;}));
     closeOrderDetail(); loadAll(true);
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
@@ -1905,17 +1925,23 @@ async function odMoveDate(id){
        ยังเห็นลูกค้าค้างอยู่วันเก่า ทั้งที่ใบย้ายไปแล้ว
        (นัทเน้นเอง 11 ส.ค.: "ต้องไปโชว์วันใหม่ที่เขารับซะที" — เมื่อวานลูกค้าตกหล่นเพราะข้อนี้) */
     var mpMsg="";
-    var mpRows=await sb_.from("mp_deliveries").select("id,status").eq("order_id",id);
-    var movable=(mpRows.data||[]).filter(function(m){return m.status!=="cancelled";});
+    var mpRows=await sb_.from("mp_deliveries").select("id,status,round_no,delivery_date").eq("order_id",id);
+    var movable=mpMovableRounds(mpRows.data,from);
     if(movable.length){
       var mpUp=await sb_.from("mp_deliveries")
         .update({delivery_date:to,updated_at:new Date().toISOString()})
-        .eq("order_id",id).neq("status","cancelled").select("id,delivery_date");
+        .in("id",movable.map(function(m){return m.id;})).select("id,delivery_date");
       var okAll=!mpUp.error&&mpUp.data&&mpUp.data.length===movable.length
                 &&mpUp.data.every(function(m){return m.delivery_date===to;});
       mpMsg=okAll
         ? "\nรอบผลิต Meal Plan ย้ายตามแล้ว "+movable.length+" รอบ (ครัว/แพลนเมนูจะเห็นวันใหม่)"
         : "\n⚠️ ย้ายรอบผลิตไม่สำเร็จ — ครัวจะยังเห็นวันเก่า แจ้งห้องระบบด่วน";
+      /* รอบอื่นของคอร์สอยู่คนละวัน = ไม่ถูกย้าย ต้องบอกให้แอดมินรู้
+         ไม่งั้นจะนึกว่าเลื่อนทั้งคอร์สแล้ว แล้วไปเจอทีหลังว่ารอบหน้ายังอยู่วันเดิม */
+      var stayed=(mpRows.data||[]).filter(function(m){
+        return m.status!=="cancelled"&&movable.indexOf(m)<0;});
+      if(stayed.length) mpMsg+="\n(รอบอื่นของคอร์สนี้อยู่คนละวัน ไม่ถูกย้าย: "
+        +stayed.map(function(m){return "รอบ "+m.round_no+" วัน "+m.delivery_date;}).join(" · ")+")";
     }
     await logMoveActivity(o,from,to,who);
     alert("เลื่อนแล้ว "+from+" → "+to+mpMsg);

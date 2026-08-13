@@ -504,10 +504,16 @@ async function loadAll(){
        หนักสุดคือเคสลูกค้าโรคไต ถ้าไม่มีใครบังเอิญเห็นในแชท ครัวก็ทำข้าวปกติให้
        อ่านอย่างเดียว · พังก็ปล่อยผ่าน หน้าครัวต้องขึ้นออเดอร์ได้เสมอ */
     try{
-      var _cids=[]; allOrders.forEach(function(o){ if(o.customer_id && _cids.indexOf(o.customer_id)<0) _cids.push(o.customer_id); });
+      /* ⚠️ คีย์ในตารางนี้ปนกัน 2 แบบมาแต่เดิม: บางแถวเก็บ customers.id บางแถวเก็บ line_uid
+         (liff_profile.html เขียนแบบ fallback ไป lineUid ตอนหา customer id ไม่เจอ)
+         → ต้องถามทั้ง 2 แบบ ไม่งั้นคำเตือนของลูกค้าบางคนหายเงียบ = อันตรายแบบที่มองไม่เห็น */
+      var _cids=[]; allOrders.forEach(function(o){
+        if(o.customer_id && _cids.indexOf(o.customer_id)<0) _cids.push(o.customer_id);
+        if(o.line_uid   && _cids.indexOf(o.line_uid)<0)     _cids.push(o.line_uid);
+      });
       custPrefs={};
-      if(_cids.length){
-        var pf=await sb_.from("customer_preferences").select("customer_id,allergies,dislikes").in("customer_id",_cids).limit(500);
+      for(var _pi=0;_pi<_cids.length;_pi+=60){   /* ซอยเป็นก้อน กัน URL ยาวเกินตอนออเดอร์เยอะ */
+        var pf=await sb_.from("customer_preferences").select("customer_id,allergies,dislikes").in("customer_id",_cids.slice(_pi,_pi+60)).limit(200);
         (pf.data||[]).forEach(function(p){ custPrefs[p.customer_id]=p; });
       }
     }catch(e){ custPrefs={}; }
@@ -1066,7 +1072,7 @@ function escH(s){return String(s||"").replace(/&/g,"&amp;").replace(/</g,"&lt;")
    แพ้ = อันตรายถึงชีวิต (แดงเข้ม กรอบหนา) · ไม่ทาน = ความชอบ (ส้มอ่อน)
    ไม่มีข้อจำกัด = ไม่ขึ้นอะไรเลย — ถ้าขึ้นทุกใบ ครัวจะชินแล้วเลิกอ่าน */
 function dietBox(o){
-  var p=(o&&o.customer_id)?custPrefs[o.customer_id]:null; if(!p) return "";
+  var p=o?(custPrefs[o.customer_id]||custPrefs[o.line_uid]):null; if(!p) return "";
   var al=String(p.allergies||"").trim(), dl=String(p.dislikes||"").trim();
   if(!al&&!dl) return "";
   var h="";
