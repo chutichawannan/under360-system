@@ -1,0 +1,16 @@
+{
+  "name": "Under360 — Command Center",
+  "short_name": "Under360",
+  "description": "หน้ารวมของร้าน — ครัว · แอดมิน · แชททีม",
+  "start_url": "/cc",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F4F6F3",
+  "theme_color": "#1F4D3A",
+  "icons": [
+    { "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

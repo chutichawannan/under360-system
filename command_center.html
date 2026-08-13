@@ -5,7 +5,21 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Under360 — Command Center</title>
 <link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
-<link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
+<!-- 📱 ติดหน้าโฮมเป็นแอป (นัทขอ 13 ส.ค. 2569)
+     iPhone: Safari → แชร์ → "เพิ่มไปยังหน้าจอโฮม" → เปิดแล้วเต็มจอ ไม่มีแถบเบราว์เซอร์
+     ⚠️ apple-touch-icon ต้องเป็น PNG — ของเดิมชี้ favicon.jpg ซึ่ง iOS ไม่รับ
+        แล้วมันจะไปจับภาพหน้าจอมาทำไอคอนแทน (ได้ไอคอนเบลอๆ อ่านไม่ออก)
+     ⚠️ ไม่ผูก service worker ที่นี่ — ตัวที่มีอยู่คุมแค่ /pwa/ โดยตั้งใจ (กันไปคุมหน้าลูกค้า)
+        iOS ไม่ต้องมี SW ก็ติดหน้าโฮมได้ -->
+<link rel="manifest" href="/pwa/manifest-cc.webmanifest">
+<meta name="theme-color" content="#1F4D3A">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Under360">
+<link rel="apple-touch-icon" href="/pwa/icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="/pwa/icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="/pwa/icon-512.png">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
