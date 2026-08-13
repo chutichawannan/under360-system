@@ -22,6 +22,16 @@
   .tools{display:flex;gap:6px;margin-bottom:10px}
   .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
   .ice{background:var(--icebg);border:1.5px solid #7DD3FC;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:800;color:var(--ice)}
+  .bigred{background:var(--redbg);border:3px solid var(--red);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bigred .t{font-weight:900;color:var(--red);font-size:19px;margin-bottom:8px;text-align:center}
+  .bigred p{margin:6px 0;font-size:13.5px;font-weight:800;color:#7F1D1D;line-height:1.4}
+  .bigred .tot{margin-top:8px;font-size:13px;font-weight:900;color:var(--red);text-align:center;border-top:2px dashed #FCA5A5;padding-top:8px}
+  .reqbox{background:#FFFBEB;border:1.5px solid #FCD34D;border-radius:10px;padding:10px 12px;margin-bottom:14px}
+  .reqbox .t{font-weight:900;color:var(--yel);font-size:15px;margin-bottom:6px}
+  .reqbox p{margin:4px 0;font-size:12.5px;font-weight:700;color:#78350F;line-height:1.4}
+  .reqbox .item{background:#fff;border:1px solid #FDE68A;border-radius:8px;padding:6px 10px;margin-top:6px}
+  .reqbox .item b{font-size:13.5px}
+  .reqbox .item small{display:block;color:#92400E;font-size:11.5px;margin-top:2px}
   .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
   .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.hx{color:var(--hx)}
   .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
@@ -64,6 +74,20 @@
 </div>
 
 <div class="ice" data-i="icetxt">❄️ นวภัท (007) HT-681637796 · 6 กล่อง Hyrox — ของอยู่ในตู้แล้ว (จัดเมื่อ 11 ส.ค.) ไปหยิบจากตู้เย็นได้เลย ไม่ต้องทำใหม่ ไม่นับรวมในยอด 62 กล่อง</div>
+
+<div class="bigred">
+  <div class="t" data-i="naowarat_t">🔴 ลูกค้าโรคไต — เนาวรัตน์</div>
+  <p data-i="naowarat_1">ข้าวต้องนิ่มเป็นพิเศษ (ข้อจำกัดทางการแพทย์) · เมนู: ปลากระพงนึ่งมะนาว (จากที่กิฟแท็ก @All ในไลน์ — ภาพอาจมีเมนูต่อ ยังไม่เห็นครบ)</p>
+  <p data-i="naowarat_2">⚠️ ยังไม่มีในระบบเลย (ค้นทั้ง orders + mp_deliveries วันที่ 14 ไม่เจอ) — ห้ามเดาจำนวนกล่อง</p>
+  <div class="tot" data-i="naowarat_tot">ยืนยันจำนวนกล่องกับกิฟก่อนแพ็ค — ยังไม่นับรวมในยอด 62 กล่อง</div>
+</div>
+
+<div class="reqbox">
+  <div class="t" data-i="req_t">🟡 เมนูรีเควส — กิฟบอกในไลน์ว่ามี แต่ยังไม่รู้ว่าใครขอกี่กล่อง</div>
+  <p data-i="req_p">ถามกิฟก่อนเริ่ม — สูตรเตรียมไว้ให้แล้ว เผื่อยืนยันมาตอนเช้าจะได้ทำทัน</p>
+  <div class="item"><b data-i="m76b">LC76 แซลมอนซอสทาท่า + มันบด</b><small data-i="m76d">แซลมอน 120/170g · มันบด · น้ำมันรำข้าว ~4g</small></div>
+  <div class="item"><b data-i="m84b">LC84 Sushi Bake แซลมอน ปูอัด</b><small data-i="m84d">แซลมอน+ปูอัด 120/170g · ข้าวญี่ปุ่น · สาหร่าย</small></div>
+</div>
 
 <div id="app"></div>
 
@@ -132,6 +156,16 @@ const UI = {
   btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
   btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
   icetxt:{th:'❄️ นวภัท (007) HT-681637796 · 6 กล่อง Hyrox — ของอยู่ในตู้แล้ว (จัดเมื่อ 11 ส.ค.) ไปหยิบจากตู้เย็นได้เลย ไม่ต้องทำใหม่ ไม่นับรวมในยอด 62 กล่อง', shn:'Nawaphat 6 ႁိပ်ႇ — မီးၼႂ်းတူႉၸၢၵ်ႈယဝ်ႉ ဢဝ်ၵူၺ်း', my:'Nawaphat ၆ ဘူး — ရေခဲသေတ္တာထဲရှိပြီးသား ယူရုံ'},
+  naowarat_t:{th:'🔴 ลูกค้าโรคไต — เนาวรัตน์', shn:'🔴 ၵႃႈပဵၼ်တႂ်ႈလူင်း — Naowarat', my:'🔴 ကျောက်ကပ်ရောဂါသည် — Naowarat'},
+  naowarat_1:{th:'ข้าวต้องนิ่มเป็นพิเศษ (ข้อจำกัดทางการแพทย์) · เมนู: ปลากระพงนึ่งมะนาว (จากที่กิฟแท็ก @All ในไลน์ — ภาพอาจมีเมนูต่อ ยังไม่เห็นครบ)', shn:'ၶဝ်ႈလူဝ်ႇဢွၼ်ႇပိူၼ်ႈ · မဵၼ်ႇ ပႃႇၵြပွင်းၼိုင်ႈ', my:'ထမင်းပျော့ရမည် · မီနူး ကကတစ်ပေါင်း'},
+  naowarat_2:{th:'⚠️ ยังไม่มีในระบบเลย (ค้นทั้ง orders + mp_deliveries วันที่ 14 ไม่เจอ) — ห้ามเดาจำนวนกล่อง', shn:'⚠️ ပႆႇမီးၼႂ်းၶိူင်ႈ — ႁၢမ်ႈၶၢတ်ႈၼပ်ႉ', my:'⚠️ စနစ်ထဲမပါသေး — ဘူးအရေအတွက်မခန့်မှန်းရ'},
+  naowarat_tot:{th:'ยืนยันจำนวนกล่องกับกิฟก่อนแพ็ค — ยังไม่นับรวมในยอด 62 กล่อง', shn:'ႁပ်ႉယိုၼ်ႈ Gif ၵွၼ်ႇ — ပႆႇၼပ်ႉၶဝ်ႈ 62', my:'Gif ကိုအတည်ပြုပြီးမှ ထုပ်ပါ — ၆၂ ထဲမပါသေး'},
+  req_t:{th:'🟡 เมนูรีเควส — กิฟบอกในไลน์ว่ามี แต่ยังไม่รู้ว่าใครขอกี่กล่อง', shn:'🟡 မဵၼ်ႇတၢင်းႁၢင်ႈ — Gif ဝႃႈမီး ၵူၺ်းပႆႇႁူႉၽႂ်', my:'🟡 တောင်းဆိုမီနူး — Gif ပြောပြီး ဘယ်သူလဲမသိသေး'},
+  req_p:{th:'ถามกิฟก่อนเริ่ม — สูตรเตรียมไว้ให้แล้ว เผื่อยืนยันมาตอนเช้าจะได้ทำทัน', shn:'ထၢမ် Gif ၵွၼ်ႇ — ၸိတ်ႈၸႂ်ႉတမ်ႇဝႆႉယဝ်ႉ', my:'Gif ကိုအရင်မေးပါ — ချက်ဖြစ်အောင်ပြင်ဆင်ထား'},
+  m76b:{th:'LC76 แซลมอนซอสทาท่า + มันบด', shn:'LC76 Salmon Tartar + မၢၼ်းၶွၵ်ႉ', my:'LC76 ဆယ်လ်မွန် တာတာ + အာလူးနယ်'},
+  m76d:{th:'แซลมอน 120/170g · มันบด · น้ำมันรำข้าว ~4g', shn:'Salmon 120/170g · မၢၼ်းၶွၵ်ႉ', my:'ဆယ်လ်မွန် ၁၂၀/၁၇၀g · အာလူးနယ်'},
+  m84b:{th:'LC84 Sushi Bake แซลมอน ปูอัด', shn:'LC84 Sushi Bake Salmon ပူဢတ်ႇ', my:'LC84 Sushi Bake ဆယ်လ်မွန် ဂကန်တု'},
+  m84d:{th:'แซลมอน+ปูอัด 120/170g · ข้าวญี่ปุ่น · สาหร่าย', shn:'Salmon+ပူဢတ်ႇ · ၶဝ်ႈၵျပၢၼ်ႇ', my:'ဆယ်လ်မွန်+ဂကန်တု · ဂျပန်ဆန်'},
   f1:{th:'รวมทำแน่ 62 กล่อง — LC 5 คน · HP 3 คน · Hyrox 1 คน', shn:'ႁူမ်ႈ 62 ႁိပ်ႇ — LC 5 · HP 3 · Hyrox 1', my:'စုစုပေါင်း ၆၂ ဘူး — LC ၅ · HP ၃ · Hyrox ၁'},
   f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง · HYROX = เนื้อ 160-185g/กล่อง', shn:'LC = 120g · HP = 170g · HYROX = 160-185g', my:'LC = ၁၂၀g · HP = ၁၇၀g · HYROX = ၁၆၀-၁၈၅g'},
   f3:{th:'🔴 มิ้ม — แพ้เต้าหู้/เครื่องใน/เลือด เช็คก่อนแพ็คทุกกล่อง (ไม่มีเมนู 30)', shn:'🔴 Mim — ဢမ်ႇၵိၼ်တဝ်ႉႁူး ၵူတ်ႇတူၺ်းၵွၼ်ႇ', my:'🔴 Mim — တို့ဟူးမစား စစ်ပါ'}
