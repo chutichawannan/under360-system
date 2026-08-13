@@ -4599,6 +4599,13 @@ async function saveMpMenuPicker(id){
   }catch(e){alert("บันทึกเมนูไม่ได้");}
 }
 
+/* 📱 จอแคบ = พับแถบเมนูซ้ายตั้งแต่เปิดหน้า
+   แถบซ้ายกว้างตายตัว 220px — บนจอ iPhone 375px เนื้อหาจึงเหลือแค่ 155px
+   ทุกแท็บโดนบีบหมด ไม่ใช่แค่หน้าแมส (การ์ดแมสเหลือกว้าง 107px · ที่อยู่เหลือ 79px
+   พับลงเป็นแถบยาว 442px = อ่านไม่ออก · นัทเจอเองบนเครื่องจริง 13 ส.ค. 2569)
+   ใช้ปุ่มพับที่มีอยู่แล้ว ไม่ได้เขียนกลไกใหม่ — กดปุ่ม ▶ เรียกแถบกลับมาได้ตลอด */
+try{ if(window.innerWidth<=720 && typeof _autoCollapseBar==="function") _autoCollapseBar(); }catch(e){}
+
 // โหลดค่าตั้งค่าก่อน (จำนวนออเดอร์ต่อรอบ) แล้วค่อยโหลดรายการ — ไม่งั้นค่าที่ตั้งไว้ไม่มีผลตอนเปิดหน้า
 buildDateDropdown();
 Promise.resolve(typeof loadGlobalSettings==="function"?loadGlobalSettings():null)
