@@ -208,18 +208,35 @@ async function orderSummary(dateIso) {
     const r = await (await fetch(`${SB}/order_items?select=order_id,menu_code,menu_name,quantity&order_id=in.(${part})&limit=3000`, { headers: SBH })).json();
     if (Array.isArray(r)) items = items.concat(r);
   }
-  const boxes = items.reduce((s, it) => s + (it.quantity || 0), 0);
-
-  // รวมยอดต่อเมนู เรียงจากมากไปน้อย
+  // 'ของที่ต้องส่งวันนั้น' ไม่ใช่ยอดขาย — นัทบอกอ่านแล้วไม่รู้ว่ายอดอะไร (12 ส.ค.)
+  const HEADC = /^(MP-|HX30|PKG)/i, SPLITN = /แยกวันส่ง/;
+  const real2 = items.filter(it => !HEADC.test(it.menu_code || '') && !SPLITN.test(it.menu_name || ''));
+  const boxes = real2.reduce((s, it) => s + (it.quantity || 0), 0);
+  let fresh = 0;
+  real2.forEach(it => { if (/^(LC|HP|HX)\d/i.test(it.menu_code || '')) fresh += (it.quantity || 0); });
+  const stock = boxes - fresh;
   const byMenu = {};
-  items.forEach(it => {
+  real2.forEach(it => {
     const k = (it.menu_code || '') + ' ' + (it.menu_name || '');
     byMenu[k] = (byMenu[k] || 0) + (it.quantity || 0);
   });
-  const lines = Object.entries(byMenu).sort((a, b) => b[1] - a[1])
-    .map(([k, v]) => `• ${k.trim()} × ${v}`);
-
-  return `📅 ${dateIso}\n📦 ${real.length} ออเดอร์ · ${boxes} กล่อง\n\n${lines.join('\n')}`;
+  const all = Object.entries(byMenu).sort((a, b) => b[1] - a[1]);
+  const TOP = 10;
+  const lines = all.slice(0, TOP).map(([k, v]) => v + ' x ' + k.trim());
+  const DW = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const dd = new Date(dateIso + 'T00:00:00+07:00');
+  const when = DW[dd.getDay()] + ' ' + dd.getDate() + '/' + (dd.getMonth() + 1);
+  const out = [
+    'ของที่ต้องส่ง ' + when,
+    real.length + ' ใบ · ' + boxes + ' กล่อง',
+    '(ทำสด ' + fresh + ' · สต็อค ' + stock + ')',
+    '',
+    'เมนูที่ต้องทำมากสุด',
+    ...lines,
+  ];
+  if (all.length > TOP) out.push('+ อีก ' + (all.length - TOP) + ' เมนู — ดูครบที่หน้าครัว');
+  out.push('', 'นับจากออเดอร์ในระบบ ตัดใบยกเลิก/ใบเทสแล้ว');
+  return out.join('\n');
 }
 
 export default async function handler(req, res) {
