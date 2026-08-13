@@ -304,6 +304,17 @@ body.fs-scaled{zoom:var(--u-fs)}
   border:1px solid var(--ink-xsoft);padding:16px;
   display:grid;grid-template-columns:auto 1fr auto;gap:16px;align-items:center;
 }
+/* 📋 ตารางรอบส่ง — อ่านเป็นแถว สแกนตาเร็วกว่าอ่านการ์ดทีละใบ */
+.msg-tbl{width:100%;border-collapse:collapse;font-size:13px;background:#fff;border-radius:10px;overflow:hidden}
+.msg-tbl th{background:#F3F6F4;color:#1F4D3A;font-size:11.5px;font-weight:800;text-align:left;padding:8px 10px;white-space:nowrap;border-bottom:1.5px solid #E3E8E4}
+.msg-tbl td{padding:9px 10px;border-bottom:1px solid #F0F2F0;vertical-align:middle}
+.msg-tbl tr:last-child td{border-bottom:none}
+.msg-tbl .num{text-align:right;font-family:var(--mono)}
+.msg-tbl th.num{text-align:right}
+.msg-tbl tr.unpaid{background:#FFFBFB}
+.msg-tbl tr:hover{background:#F7FAF8}
+.msg-tbl .driver-select{font-size:11.5px;padding:5px 7px}
+@media (max-width:640px){ .msg-tbl{font-size:12.5px} .msg-tbl td,.msg-tbl th{padding:7px 7px} }
 .msg-order{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
 .msg-customer{font-size:14px;font-weight:500}
 .msg-addr{font-size:12px;color:var(--ink-soft)}
@@ -771,6 +782,12 @@ body.fs-scaled{zoom:var(--u-fs)}
         <!-- N-69 · ใบที่ยังไม่โอนเงิน — ติดป้ายเสมอ + กดซ่อนเองได้ (ไม่ซ่อนอัตโนมัติ ของจะได้ไม่หายเงียบ) -->
         <button class="btn" id="msgUnpaidBtn" onclick="msgToggleHideUnpaid()" title="ซ่อนใบที่ยังไม่จ่ายเงินออกจากรอบส่ง">💸 ซ่อนใบที่ยังไม่จ่าย</button>
         <button class="btn" id="msg-plan-btn" onclick="msgPlanRoutes()" title="ถามราคาจริงจาก Lalamove แล้วเทียบว่าจัดรอบแบบไหนถูกสุด (ขอราคาอย่างเดียว ไม่จองรถ)">💰 คำนวณค่าส่งถูกสุด</button>
+        <!-- 📋 มุมมองตาราง (นัทขอ 13 ส.ค. 2569: "ดูแบบนี้ง่ายกว่าเยอะเลย")
+             ตารางไม่โชว์รายเมนู แบ่งแค่ เช้า/บ่าย · แบบการ์ดเก็บไว้ ยังกดสลับกลับได้ -->
+        <span style="margin-left:auto;display:inline-flex;border:1.5px solid var(--ink-xsoft);border-radius:9px;overflow:hidden">
+          <button class="btn" id="msgViewTable" onclick="setMsgView('table')" style="border:none;border-radius:0;padding:6px 12px;font-size:12.5px">📋 ตาราง</button>
+          <button class="btn" id="msgViewCard"  onclick="setMsgView('card')"  style="border:none;border-radius:0;padding:6px 12px;font-size:12.5px;border-left:1.5px solid var(--ink-xsoft)">📇 การ์ด</button>
+        </span>
       </div>
       <div id="msg-summary" style="margin-bottom:10px"></div>
       <div id="msg-plan" style="margin-bottom:10px"></div>
@@ -3534,7 +3551,83 @@ async function saveCourier(sel){
    N-71 ติ๊ก "เรียกแล้ว" — เก็บเป็นป้ายในโน้ต ไม่ต้องเพิ่มคอลัมน์ใหม่ */
 var MSG_CALLED_RE=/[เรียกแมสแล้ว[^]]*]/;
 var msgHideUnpaid=false;
+/* 📋 มุมมองหน้าแมส — "ตาราง" (ค่าเริ่มต้น) หรือ "การ์ด" (ของเดิม)
+   นัทขอเอง 13 ส.ค. 2569: ตารางอ่านง่ายกว่ามาก · ไม่ต้องโชว์ว่าใบไหนเป็นเมนูอะไร
+   แบ่งแค่ เช้า/บ่าย พอ — ไม่ต้องแบ่งเป็นเขตเหมือนแบบการ์ด
+   ยังไม่ลบแบบการ์ดทิ้ง เผื่อมีข้อมูลที่ตารางไม่มี (ที่อยู่/แผนที่/รายการของ) */
+var msgView=(function(){ try{ return localStorage.getItem("msgView")||"table"; }catch(e){ return "table"; } })();
+function setMsgView(v){
+  msgView=v; try{ localStorage.setItem("msgView",v); }catch(e){}
+  msgSyncViewBtn(); loadMessenger();
+}
+function msgSyncViewBtn(){
+  var t=document.getElementById("msgViewTable"), c=document.getElementById("msgViewCard");
+  [[t,"table"],[c,"card"]].forEach(function(p){
+    if(!p[0])return; var on=(msgView===p[1]);
+    p[0].style.background=on?"var(--forest)":"#fff";
+    p[0].style.color=on?"#fff":"var(--ink-soft)";
+    p[0].style.fontWeight=on?"800":"500";
+  });
+}
+/* เช้า/บ่าย — ตัดที่เที่ยงจากชั่วโมงเริ่มของช่วงเวลา (เช่น "8:00 - 13:00" = เช้า) */
+function msgHalf(o){
+  var s=String(o.time_slot_label||o.time_slot||"");
+  var m=s.match(/(\d{1,2})\s*[:.]/);
+  var hh=m?parseInt(m[1],10):NaN;
+  if(isNaN(hh)) return {key:"z",label:"⏰ ไม่ระบุเวลา",ord:3};
+  return hh<12 ? {key:"am",label:"🌅 รอบเช้า",ord:1} : {key:"pm",label:"🌤️ รอบบ่าย",ord:2};
+}
+/* ประเภทที่แมสต้องรู้แค่คร่าวๆ — ไม่ต้องลงรายเมนู */
+function msgKind(o){
+  if(o._mpType){ var t=String(o._mpType).toUpperCase();
+    return {t:"MP-"+t, bg:/HYROX/.test(t)?"#F3E8FF":(t==="HP"?"#DBEAFE":"#D1FAE5"),
+            fg:/HYROX/.test(t)?"#6B21A8":(t==="HP"?"#1E40AF":"#065F46")}; }
+  return {t:"ปกติ", bg:"#F3F4F6", fg:"#374151"};
+}
 function msgIsPaid(o){ return o.payment_status==="paid"; }
+/* ── ตารางรอบส่ง (แบ่ง เช้า/บ่าย) ────────────────────────────────────────────
+   ตั้งใจไม่ใส่รายเมนูและที่อยู่เต็ม — แมสดูตารางนี้เพื่อ "รู้ว่าวันนี้มีใครบ้าง"
+   รายละเอียดของแต่ละใบยังดูได้ที่แบบการ์ด (ปุ่มสลับมุมมองด้านบน) */
+function msgTableHtml(data){
+  data.forEach(function(o){ o._h=msgHalf(o); o._z=msgZone(o); });
+  var g={}; data.forEach(function(o){ (g[o._h.key]=g[o._h.key]||{label:o._h.label,ord:o._h.ord,items:[]}).items.push(o); });
+  var out="", n=0;
+  Object.keys(g).sort(function(a,b){return g[a].ord-g[b].ord;}).forEach(function(k){
+    var sec=g[k];
+    sec.items.sort(function(a,b){ return String(a.time_slot_label||a.time_slot||"").localeCompare(String(b.time_slot_label||b.time_slot||"")); });
+    var boxN=sec.items.reduce(function(s,o){ return s+(o._food||[]).reduce(function(a,i){return a+(i.quantity||1);},0); },0);
+    out+="<div style='margin:16px 0 6px;font-size:14px;font-weight:800;color:#1F4D3A'>"+sec.label
+       +" <span style='font-weight:600;color:#6B7280;font-size:12.5px'>· "+sec.items.length+" ราย · "+boxN+" กล่อง</span></div>";
+    out+="<div style='overflow-x:auto'><table class='msg-tbl'><thead><tr>"
+       +"<th>#</th><th>ลูกค้า</th><th>เบอร์</th><th>ประเภท</th><th class='num'>กล่อง</th><th class='num'>เงิน</th><th>เวลา</th><th>ผู้ส่ง</th></tr></thead><tbody>";
+    sec.items.forEach(function(o){
+      n++;
+      var kind=msgKind(o);
+      var box=(o._food||[]).reduce(function(a,i){return a+(i.quantity||1);},0);
+      var cur=o.courier||"";
+      var dopt=function(v,txt){ return "<option value='"+v+"'"+(cur===v?" selected":"")+">"+txt+"</option>"; };
+      var far=(o._z&&o._z.key==="far");
+      out+="<tr"+(msgIsPaid(o)?"":" class='unpaid'")+">"
+        +"<td class='num'>"+n+"</td>"
+        +"<td><div style='font-weight:700'>"+esc2(o.customer_name||"ลูกค้า")+"</div>"
+          +"<div style='font-family:var(--mono);font-size:10.5px;color:#6B7280'>"+esc2(o.order_number||"—")
+          +(far?" <span style='color:#9A3412;font-weight:700'>· เกินเขต</span>":"")+"</div></td>"
+        +"<td>"+(o.customer_phone?"<a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a>":"—")+"</td>"
+        +"<td><span style='font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px;background:"+kind.bg+";color:"+kind.fg+"'>"+esc2(kind.t)+"</span>"
+          +(o._round?"<div style='font-size:10.5px;color:#6B7280;margin-top:2px'>รอบ "+esc2(o._round)+"</div>":"")+"</td>"
+        +"<td class='num'>"+(box||"—")+"</td>"
+        +"<td class='num'>"+(o.total?fmtB(o.total):"<span style='color:#9CA3AF'>—</span>")
+          +(msgIsPaid(o)?"":"<div style='font-size:10.5px;color:#B91C1C;font-weight:800'>ยังไม่จ่าย</div>")+"</td>"
+        +"<td style='white-space:nowrap;font-size:12px'>"+esc2(o.time_slot_label||o.time_slot||"—")+"</td>"
+        +"<td><select class='driver-select"+(cur?" assigned":"")+"' data-oid='"+o.id+"' data-prev='"+cur+"' onchange='saveCourier(this)'>"
+          +dopt("","เลือก...")+dopt("store","🛵 ร้าน")+dopt("lalamove","🟠 Lala")+dopt("grab","🟢 Grab")+"</select></td>"
+        +"</tr>";
+    });
+    out+="</tbody></table></div>";
+  });
+  return out;
+}
+function msgBindRowActions(){ /* select ผูก onchange ใน HTML แล้ว — เผื่ออนาคตมีปุ่มอื่น */ }
 function msgPayBadge(o){
   if(msgIsPaid(o)) return "";
   var t=(o.payment_status==="pending_review")?"🧾 มีสลิป รอตรวจ":"⏳ ยังไม่จ่ายเงิน";
@@ -3650,6 +3743,8 @@ async function loadMessenger(){
         +"</div>";
     }
     if(!data.length){el.innerHTML="<div style='padding:40px;text-align:center;color:#6B7280'>ไม่มีงานส่งวันนี้</div>";return;}
+    msgSyncViewBtn();
+    if(msgView==="table"){ el.innerHTML=msgTableHtml(data); msgBindRowActions(); return; }
     // จัดกลุ่มตามเขต (ทิศ) → เรียงใกล้→ไกลในเขต (แมสไล่รอบง่าย)
     data.forEach(function(o){o._z=msgZone(o);});
     var zones={}; data.forEach(function(o){(zones[o._z.key]=zones[o._z.key]||{label:o._z.label,ord:o._z.ord,items:[]}).items.push(o);});
