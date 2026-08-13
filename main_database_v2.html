@@ -809,6 +809,22 @@ function autoClassifyIngredient(name){
 
 
 
+/* 👆 กัน "สไลด์แล้วกลายเป็นแตะ" บนมือถือ (นัทเจอเองบน iPhone 13 ส.ค. 2569)
+   อาการ: เลื่อนดูรายการเมนู ยังไม่ทันทำอะไร สูตรกางออกมาเต็มจอ
+   สาเหตุ: ทั้งแถวผูก onclick ไว้ → นิ้วแตะแถวแล้วลากเพื่อเลื่อน พอปล่อยเบราว์เซอร์ยังนับเป็นคลิก
+   วิธี: จำระยะที่นิ้วขยับ ถ้าเกิน 8px = ตั้งใจเลื่อน ไม่ใช่ตั้งใจกด → ไม่ต้องกางสูตร
+   (ปุ่ม ▼ กางสูตรยังกดได้ปกติ เพราะกดแล้วนิ้วแทบไม่ขยับ) */
+let _tapX=0, _tapY=0, _tapMoved=false;
+document.addEventListener('touchstart', function(e){
+  var t=e.touches&&e.touches[0]; if(!t) return;
+  _tapX=t.clientX; _tapY=t.clientY; _tapMoved=false;
+}, {passive:true});
+document.addEventListener('touchmove', function(e){
+  var t=e.touches&&e.touches[0]; if(!t) return;
+  if(Math.abs(t.clientX-_tapX)>8 || Math.abs(t.clientY-_tapY)>8) _tapMoved=true;
+}, {passive:true});
+function tapWasScroll(){ return _tapMoved; }
+
 let state = { ingredients: [], recipes: [], categories: [], suppliers: [], supplierPickerOpenFor: null, showCategoryManager:false, showSupplierManager:false, planItems: [], photoCache: {}, tab:'recipes', search:'', categoryFilter:[], filterPickerOpen:false, recipePickerOpen:false, ratingFilter:0, showRetired:false, openId:null, storageOk:true, currentUser:null, nameInputDraft:'', showNameGate:false, availEditId:null, pinModeEnabled:false, sortMode:'category', activeCatTab:'__all__', hideNutritionCols:true, planQuery:'', pttPickerOpen:false, planHideStocked:false, planSupplierFilter:'', selectedIds:new Set(), bulkMode:false, ingCategoryFilter:'', ingUnitFilter:'all', pttDragId:null,
   mpData:{}, mpSlots:['เช้า','กลางวัน','เย็น'], mpViewDays:7,
   mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpProdDate:null,
@@ -3997,7 +4013,7 @@ function renderPttCard(r){
     <span class="ptt-code">${escapeHtml(r.code||'-')}</span>
     <input type="text" class="ptt-sub subcode-input" data-id="${r.id}" value="${escapeHtml(subcode)}"
       placeholder="subcode" maxlength="12" style="width:64px">
-    <span class="ptt-name" onclick="state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
+    <span class="ptt-name" onclick="if(tapWasScroll())return; state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
       ${escapeHtml(r.name||'(ยังไม่มีชื่อ)')}
     </span>
     <div class="ptt-stock-ctrl">
@@ -4006,7 +4022,7 @@ function renderPttCard(r){
         value="${r.stock||0}" oninput="saveStockInline('${r.id}',this.value)">
       <button class="ptt-qb plus" onclick="chgStockFast('${r.id}',1)">+</button>
     </div>
-    <button class="ptt-open-btn" onclick="state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
+    <button class="ptt-open-btn" onclick="if(tapWasScroll())return; state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
       ${isOpen?'▲':'แก้ไข'}
     </button>
   </div>
@@ -4932,6 +4948,7 @@ function attachHandlers(){
 
     document.querySelectorAll('.recipe-row').forEach(row=>{
       row.onclick = ()=>{
+        if(tapWasScroll()) return;   /* นิ้วลากอยู่ = ตั้งใจเลื่อน ไม่ใช่ตั้งใจกางสูตร */
         const wasOpen = state.openId===row.dataset.id;
         state.openId = wasOpen ? null : row.dataset.id;
         state.recipePickerOpen=false;
