@@ -300,6 +300,23 @@ body.fs-scaled{zoom:var(--u-fs)}
 .msg-order{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
 .msg-customer{font-size:14px;font-weight:500}
 .msg-addr{font-size:12px;color:var(--ink-soft)}
+/* 📱 หน้าแมสบน iPhone — การ์ดวาง 3 คอลัมน์เรียงข้างกัน พอจอ 375px
+   ช่องกลางเหลือ 81px ที่อยู่เลยพับลงเป็นแถบยาว 442px อ่านไม่ออกเลย
+   (นัทเจอเองบนเครื่องจริง 13 ส.ค. 2569 — "ดูยากมาก")
+   → จอแคบวางเป็นแถวเดียวซ้อนลงมา: เลขออเดอร์/เวลา → ลูกค้า+ที่อยู่ → ปุ่มเลือกผู้ส่ง
+     แมสต้องอ่านที่อยู่กับกดโทรตอนขับอยู่ ตัวหนังสือเลยต้องใหญ่ขึ้นด้วย ไม่ใช่แค่จัดใหม่ */
+@media (max-width:640px){
+  .msg-card{grid-template-columns:1fr;gap:10px;padding:13px;align-items:stretch;}
+  .msg-card > *{min-width:0;}
+  .msg-addr{font-size:13.5px;line-height:1.5;}
+  .msg-customer{font-size:15.5px;font-weight:700;}
+  .msg-order{font-size:12px;}
+  /* แถวเลขออเดอร์ + เวลา ให้อยู่บรรทัดเดียวกัน ไม่ต้องกินสูง 3 บรรทัด */
+  .msg-card > *:first-child{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 10px;}
+  /* ปุ่มเลือกผู้ส่ง/ยืนยัน — กดง่ายขึ้นตอนถือมือถือข้างเดียว */
+  .msg-card > *:last-child{display:flex;flex-wrap:wrap;gap:8px;align-items:center;}
+  .driver-select{font-size:14px;padding:9px 12px;flex:1 1 auto;min-height:40px;}
+}
 .driver-select{
   font-size:12px;border:1px solid var(--ink-xsoft);border-radius:8px;
   padding:5px 10px;background:var(--white);cursor:pointer;
