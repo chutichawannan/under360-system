@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบงานครัว 14 ส.ค. — 7 เมนู · 62 กล่อง (ทำแน่)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7;--ice:#0369A1;--icebg:#E0F2FE}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:14px;line-height:1.35}
+  .wrap{max-width:820px;margin:0 auto;padding:0 12px 40px}
+  .langbar{position:sticky;top:0;z-index:10;background:#fff;display:flex;gap:5px;padding:8px 0 6px;border-bottom:1px solid var(--line)}
+  .lb{flex:1;font-size:13px;font-weight:800;border:1.5px solid var(--line);background:#fff;color:var(--soft);border-radius:8px;padding:6px 4px;cursor:pointer}
+  .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
+  h1{font-size:18px;font-weight:900;margin:10px 0 1px}
+  .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
+  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:12px 0}
+  .key{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  .k{font-size:12px;font-weight:800;border-radius:8px;padding:5px 10px}
+  .k.lc{background:var(--lcbg);color:var(--lc)}.k.hp{background:var(--hpbg);color:var(--hp)}.k.hx{background:var(--hxbg);color:var(--hx)}
+  .ice{background:var(--icebg);border:1.5px solid #7DD3FC;border-radius:10px;padding:9px 12px;margin-bottom:12px;font-size:13px;font-weight:800;color:var(--ice)}
+  .warn{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .warn .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
+  .warn ul{margin:0;padding-left:18px}.warn li{font-size:12.5px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.35}
+  .alert{background:var(--redbg);border:1px solid #FECACA;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .alert .t{font-weight:900;color:var(--red);font-size:14px;margin-bottom:6px}
+  .alert ul{margin:0;padding-left:18px}.alert li{font-size:12.5px;font-weight:700;color:#7F1D1D;margin:3px 0;line-height:1.3}
+  .m{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
+  .mh{background:#F3F4F6;padding:6px 10px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+  .mh .nm{flex:1;min-width:0}.mh .nm .t1{font-weight:800;font-size:15px}
+  .mh .tot{flex:none;font-size:13px;font-weight:900;color:#fff;background:var(--head);border-radius:999px;padding:4px 12px;white-space:nowrap}
+  .ln{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center}
+  .ln .tag{flex:none;font-size:11px;font-weight:900;border-radius:7px;padding:4px 6px;min-width:32px;text-align:center;line-height:1.2}
+  .ln.lc .tag{background:var(--lcbg);color:var(--lc)}.ln.hp .tag{background:var(--hpbg);color:var(--hp)}.ln.hx .tag{background:var(--hxbg);color:var(--hx)}
+  .ln .d{flex:1;font-size:13px;line-height:1.25}.ln .d b{font-size:14.5px}
+  .ln .d small{color:var(--soft);font-size:11.5px;display:block}
+  .ln .q{flex:none;font-weight:900;font-size:16px;white-space:nowrap;min-width:26px;text-align:right}
+  .sp{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px 5px 12px;line-height:1.3}
+  .sec{font-size:13px;font-weight:900;color:var(--head);margin:16px 0 6px}
+  table{width:100%;border-collapse:collapse;font-size:13px;margin-bottom:6px}
+  th{background:#F3F4F6;text-align:left;padding:6px 8px;font-weight:800;border-bottom:1px solid var(--line);font-size:12.5px}
+  td{padding:5px 8px;border-bottom:1px solid #F1F3F5;vertical-align:top;line-height:1.3}
+  td.who{font-weight:800;white-space:nowrap}
+  td.mn{color:#374151}
+  tr.g-lc td.who{color:var(--lc)}tr.g-hp td.who{color:var(--hp)}tr.g-hx td.who{color:var(--hx)}
+  .tw{overflow-x:auto}
+  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:13px} .langbar{display:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="langbar">
+  <button class="lb on" id="b_th" onclick="setLang('th')">ไทย</button>
+  <button class="lb" id="b_shn" onclick="setLang('shn')">ไทใหญ่ · တႆး</button>
+  <button class="lb" id="b_my" onclick="setLang('my')">พม่า · မြန်မာ</button>
+</div>
+<div class="vbanner" id="vbanner"></div>
+
+<h1>👨‍🍳 <span data-i="title">ใบงานครัว — ศุกร์ 14 ส.ค.</span></h1>
+<div class="sub" data-i="sub">ครัวทำแน่ 7 เมนู · 62 กล่อง — LC 5 คน (35) · HP 3 คน (21) · Hyrox 1 คน (6) — เมนูฟ้าเลือกเอง (นัทยังไม่กำหนด)</div>
+
+<div class="key">
+  <span class="k lc">LC = <span data-i="meat">เนื้อ</span> 120g</span>
+  <span class="k hp">HP = <span data-i="meat">เนื้อ</span> 170g</span>
+  <span class="k hx">HYROX = <span data-i="hxkey">เนื้อ 160–185g + คาร์บสูง</span></span>
+</div>
+
+<div class="ice">
+  ❄️ <span data-i="icetxt">นวภัท (007) HT-681637796 · 6 กล่อง Hyrox — ของอยู่ในตู้แล้ว (จัดเมื่อ 11 ส.ค.) ไปหยิบ ไม่ต้องทำใหม่ — ไม่นับรวมในยอดผลิต 62 กล่อง</span>
+</div>
+
+<div class="warn">
+  <div class="t" data-i="w_t">📌 ฟ้าเลือกเมนูเอง (นัทยังไม่ได้กำหนดวันศุกร์) — เหตุผล</div>
+  <ul>
+    <li data-i="w1">ยึดชุดที่กิฟติ๊กไว้ในชีทให้ Milk/กนกวรรณ/เฟิน/Bright ตรงกันทั้ง 4 คนอยู่แล้ว (LC20·24·26·29·30·33·37) = เชื่อถือได้กว่าคิดเอง</li>
+    <li data-i="w2">ไม่ซ้ำเมนู 10-12 ส.ค. เลยสักตัว (วันนั้นใช้ LC01-16/76/70 และ LC04-23 คนละชุด)</li>
+    <li data-i="w3">บาลานซ์โปรตีนครบ: แซลมอน(20) · ปลาทู(24) · ไก่(26) · หมู(29) · ไก่+เต้าหู้(30) · เนื้อ(33) · กุ้ง+ปลา(37)</li>
+    <li data-i="w4">อุษณี+พีช ในชีทติ๊กชุดคนละแบบ (LC35/55/70/79/80/81/83) — ชุดนี้ซ้ำกับที่เคยเจอเป็นแถวค้าง/หลงวันที่มาแล้ว 2 รอบก่อนหน้า ไม่น่าใช่การเลือกจริงของวันนี้ → ฟ้าตัดสินใจจ่ายชุดแกนเดียวกับคนอื่นแทน (ตามกฎ default)</li>
+    <li data-i="w5">Panpilai (พรรณพิไล) ไม่มีในชีท แต่มีออเดอร์จริงในระบบ (ปกติ — ชีท=MP เท่านั้น) → ได้ชุดแกน HP เหมือนกัน</li>
+    <li data-i="w6">Chai (Hyrox 6 กล่อง) ไม่มีในชีท (ปกติ — Hyrox แยกแท็บ) → ใช้ชุดแกนเดียวกัน 6/7 เมนู (ไม่มีเมนู 30)</li>
+  </ul>
+</div>
+
+<div class="alert">
+  <div class="t" data-i="al_t">🔴 ข้อห้ามรายคน</div>
+  <ul>
+    <li data-i="al1">มิ้ม — ❌ไม่ทานเต้าหู้/เครื่องใน/เลือดไก่-หมู → เมนู 30 มีเต้าหู้ ไม่ได้เมนูนี้ ได้เมนู 26 (ไก่ย่าง) เพิ่มอีก 1 กล่องแทน (รวม 26 = 2 กล่องสำหรับมิ้ม)</li>
+  </ul>
+</div>
+
+<div class="sec" data-i="secA">■ 7 เมนูหลัก — LC/HP/HYROX กินสูตรเดียวกัน (ต่างแค่กรัมเนื้อ)</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">20. <span data-i="m20">Pasta with pesto salmon</span></div></div><span class="tot">9</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 120g</b> · <span data-i="pasta">พาสต้าเพสโต้</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="pasta">พาสต้าเพสโต้</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 160g</b> · <span data-i="pasta">พาสต้าเพสโต้</span> ~220g<small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">24. <span data-i="m24">ปลาทูต้มมะนาว</span></div></div><span class="tot">9</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 120g</b> · <span data-i="lemonbroth">ต้มมะนาว</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 170g</b> · <span data-i="lemonbroth">ต้มมะนาว</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="mackerel">ปลาทู</span> 160g</b> · <span data-i="lemonbroth">ต้มมะนาว</span> ~220g<small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">26. <span data-i="m26">สเต๊กอกไก่ย่าง สลัดผักสด น้ำสลัดงาญี่ปุ่น</span></div></div><span class="tot">10</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chicken">อกไก่</span> 120g</b> · <span data-i="sesamesalad">สลัดผัก น้ำสลัดงา</span></div><span class="q">6</span></div>
+  <div class="sp" data-i="n_mim">มิ้ม — ได้เมนูนี้ 2 กล่อง (แทนเมนู 30 ที่มีเต้าหู้ ไม่ได้เพราะข้อห้าม)</div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="sesamesalad">สลัดผัก น้ำสลัดงา</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="chicken">อกไก่</span> 170g</b> · <span data-i="sesamesalad">สลัดผัก น้ำสลัดงา</span><small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">29. <span data-i="m29">ซุปกิมจิหมูไข่ทานกับเส้นบุก</span></div></div><span class="tot">9</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="ptender">หมู</span> 120g</b> · <span data-i="konjac">เส้นบุก</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="ptender">หมู</span> 170g</b> · <span data-i="konjac">เส้นบุก</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="ptender">หมู</span> 180g</b> · <span data-i="konjac">เส้นบุก</span> ~250g<small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">30. <span data-i="m30">ผักกาดขาวห่อเต้าหู้อกไก่</span></div><div class="veg" style="color:#B91C1C;font-size:12px" data-i="v30w">มีเต้าหู้ — ห้ามให้มิ้ม</div></div><span class="tot">7</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chicken">อกไก่+เต้าหู้</span> 120g</b> · <span data-i="cabbage">ผักกาดขาวห่อ</span><small data-i="n_no_mim">ไม่รวมมิ้ม</small></div><span class="q">4</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chicken">อกไก่+เต้าหู้</span> 170g</b> · <span data-i="cabbage">ผักกาดขาวห่อ</span></div><span class="q">3</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">33. <span data-i="m33">กะเพราเนื้อพริกแห้ง + สลัดเห็ดออรินจิน้ำจิ้มซีฟู๊ด</span></div></div><span class="tot">9</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 120g</b> · <span data-i="mushroomsalad">สลัดเห็ดออรินจิ</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 170g</b> · <span data-i="mushroomsalad">สลัดเห็ดออรินจิ</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="beef">เนื้อวัว</span> 180g</b> · <span data-i="mushroomsalad">สลัดเห็ดออรินจิ</span><small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="m">
+  <div class="mh"><div class="nm"><div class="t1">37. <span data-i="m37">ยำซีฟู๊ดกุ้งปลา</span></div></div><span class="tot">9</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="seafood">กุ้ง+ปลา</span> 120g</b> · <span data-i="spicysalad">ยำรวม</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="seafood">กุ้ง+ปลา</span> 170g</b> · <span data-i="spicysalad">ยำรวม</span></div><span class="q">3</span></div>
+  <div class="ln hx"><span class="tag">HYROX</span><div class="d"><b><span data-i="seafood">กุ้ง+ปลา</span> 160g</b> · <span data-i="spicysalad">ยำรวม</span> ~220g<small data-i="chaionly">Chai</small></div><span class="q">1</span></div>
+</div>
+
+<div class="sec" data-i="secD">■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะยอดทำแน่ 62 กล่อง)</div>
+<div class="tw">
+<table>
+  <tr><th data-i="th1">ลูกค้า</th><th data-i="th2">แผน</th><th data-i="th3">เมนูที่ได้</th><th data-i="th4">กล่อง</th></tr>
+  <tr class="g-lc"><td class="who">Milk</td><td>LC</td><td class="mn">20,24,26,29,30,33,37</td><td>7</td></tr>
+  <tr class="g-lc"><td class="who">กนกวรรณ (kanokwan)</td><td>LC</td><td class="mn">20,24,26,29,30,33,37</td><td>7</td></tr>
+  <tr class="g-lc"><td class="who">มิ้ม (Mimchan)</td><td>LC</td><td class="mn">20,24,26×2,29,33,37 <small style="color:#B91C1C">(ไม่มี 30 — แพ้เต้าหู้)</small></td><td>7</td></tr>
+  <tr class="g-lc"><td class="who">พีช (Peachyz Sumota)</td><td>LC</td><td class="mn">20,24,26,29,30,33,37 <small>(ฟ้าจ่าย default — ทิกในชีทเป็นแถวหลงวันที่)</small></td><td>7</td></tr>
+  <tr class="g-lc"><td class="who">อุษณี (Mayy)</td><td>LC</td><td class="mn">20,24,26,29,30,33,37 <small>(ฟ้าจ่าย default — ทิกในชีทเป็นแถวหลงวันที่)</small></td><td>7</td></tr>
+  <tr class="g-hp"><td class="who">เฟิน</td><td>HP</td><td class="mn">20,24,26,29,30,33,37</td><td>7</td></tr>
+  <tr class="g-hp"><td class="who">Bright panisara</td><td>HP</td><td class="mn">20,24,26,29,30,33,37</td><td>7</td></tr>
+  <tr class="g-hp"><td class="who">Panpilai (พรรณพิไล)</td><td>HP</td><td class="mn">20,24,26,29,30,33,37 <small>(ไม่มีในชีท — ปกติ)</small></td><td>7</td></tr>
+  <tr class="g-hx"><td class="who">Chai</td><td>Hyrox</td><td class="mn">20,24,26,29,33,37 <small>(ไม่มี 30)</small></td><td>6</td></tr>
+</table>
+</div>
+
+<div class="foot">
+  <b data-i="f1">รวมทำแน่ 62 กล่อง</b><span data-i="f1b"> — LC 5 คน ×7 = 35 · HP 3 คน ×7 = 21 · Hyrox 1 คน = 6</span><br>
+  <span data-i="f2">❄️ นวภัท 6 กล่อง = ของอยู่ในตู้แล้ว ไม่นับรวม · สิริพร = ยกเลิกแล้ว ไม่รวมในใบ</span><br>
+  <span data-i="f3">เมนูนี้ฟ้าเลือกเอง (นัทยังไม่ได้กำหนดวันศุกร์) — ถ้านัทจะเปลี่ยนภายหลังแก้ได้ทุกจุด · รายละเอียด/สาเหตุครบดูรายงานที่ส่งคู่กัน</span>
+</div>
+</div>
+
+<script>
+const T = {
+  title:{th:'ใบงานครัว — ศุกร์ 14 ส.ค.', shn:'ၽိုၼ်ႁဵတ်းၵၢၼ်ႁွင်ႈၶဝ်ႈ — ဝၼ်းသုၵ်း 14 ဢေႃးၵၢတ်ႉ', my:'မီးဖိုချောင်အလုပ်စာရွက် — သောကြာ ၁၄ သြဂုတ်'},
+  sub:{th:'ครัวทำแน่ 7 เมนู · 62 กล่อง — LC 5 คน (35) · HP 3 คน (21) · Hyrox 1 คน (6) — เมนูฟ้าเลือกเอง (นัทยังไม่กำหนด)', shn:'ႁဵတ်း 7 မဵၼ်ႇ · 62 ႁိပ်ႇ — LC 5 · HP 3 · Hyrox 1', my:'၇ မီနူး · ၆၂ ဘူး — LC ၅ · HP ၃ · Hyrox ၁'},
+  meat:{th:'เนื้อ', shn:'ၼိူဝ်ႉ', my:'အသား'},
+  hxkey:{th:'เนื้อ 160–185g + คาร์บสูง', shn:'ၼိူဝ်ႉ 160–185g + ၶၢပ်ႈၼမ်', my:'အသား ၁၆၀–၁၈၅g + ကာဗိုများ'},
+  icetxt:{th:'นวภัท (007) HT-681637796 · 6 กล่อง Hyrox — ของอยู่ในตู้แล้ว (จัดเมื่อ 11 ส.ค.) ไปหยิบ ไม่ต้องทำใหม่ — ไม่นับรวมในยอดผลิต 62 กล่อง', shn:'Nawaphat 6 ႁိပ်ႇ — မီးၼႂ်းတူႉၸၢၵ်ႈယဝ်ႉ ဢဝ်ၵူၺ်း', my:'Nawaphat ၆ ဘူး — ရေခဲသေတ္တာထဲရှိပြီးသား ယူရုံ'},
+  w_t:{th:'📌 ฟ้าเลือกเมนูเอง (นัทยังไม่ได้กำหนดวันศุกร์) — เหตุผล', shn:'📌 Fah ပေႃးလိူၵ်ႈမဵၼ်ႇ — ၵၢင်ၸႂ်', my:'📌 Fah ကိုယ်တိုင်ရွေးချယ်ထား — အကြောင်းရင်း'},
+  w1:{th:'ยึดชุดที่กิฟติ๊กไว้ในชีทให้ Milk/กนกวรรณ/เฟิน/Bright ตรงกันทั้ง 4 คนอยู่แล้ว (LC20·24·26·29·30·33·37) = เชื่อถือได้กว่าคิดเอง', shn:'ၸႂ်ႉတမ်ႇ Gif တႅမ်ႈပၼ်ယဝ်ႉ 4 ၵေႃႉတဵမ်ႇလဵဝ်ၵၼ်', my:'Gif ၏ ၄ ဦးအတွက် တူညီသောစာရင်းသုံး'},
+  w2:{th:'ไม่ซ้ำเมนู 10-12 ส.ค. เลยสักตัว (วันนั้นใช้ LC01-16/76/70 และ LC04-23 คนละชุด)', shn:'ဢမ်ႇသမ်ႇမဵၼ်ႇ 10-12', my:'၁၀-၁၂ ရက်မီနူးနှင့် မထပ်'},
+  w3:{th:'บาลานซ์โปรตีนครบ: แซลมอน(20) · ปลาทู(24) · ไก่(26) · หมู(29) · ไก่+เต้าหู้(30) · เนื้อ(33) · กุ้ง+ปลา(37)', shn:'ၽရူတိၼ်ႇထၢၼ်ႈပဵင်း', my:'ပရိုတိန်း မျှတသည်'},
+  w4:{th:'อุษณี+พีช ในชีทติ๊กชุดคนละแบบ (LC35/55/70/79/80/81/83) — ชุดนี้ซ้ำกับที่เคยเจอเป็นแถวค้าง/หลงวันที่มาแล้ว 2 รอบก่อนหน้า ไม่น่าใช่การเลือกจริงของวันนี้ → ฟ้าตัดสินใจจ่ายชุดแกนเดียวกับคนอื่นแทน (ตามกฎ default)', shn:'Ussanee+Peach ၸႂ်ႉမဵၼ်ႇငဝ်ႈပိူင်ႈၵၼ် — ၸႂ်ႉငဝ်ႈလဵဝ်ၵၼ်တႅၼ်း', my:'Ussanee+Peach — အခြေခံစာရင်းသုံးမည်'},
+  w5:{th:'Panpilai (พรรณพิไล) ไม่มีในชีท แต่มีออเดอร์จริงในระบบ (ปกติ — ชีท=MP เท่านั้น) → ได้ชุดแกน HP เหมือนกัน', shn:'Panpilai ဢမ်ႇမီးၼႂ်းတဵမ်ႇ — ပီႇၵၢမ်ႇ', my:'Panpilai စာရင်းမှာမပါ — ပုံမှန်'},
+  w6:{th:'Chai (Hyrox 6 กล่อง) ไม่มีในชีท (ปกติ — Hyrox แยกแท็บ) → ใช้ชุดแกนเดียวกัน 6/7 เมนู (ไม่มีเมนู 30)', shn:'Chai (Hyrox) — ၸႂ်ႉငဝ်ႈလဵဝ်ၵၼ် 6/7', my:'Chai (Hyrox) — အခြေခံ ၆/၇ သုံး'},
+  al_t:{th:'🔴 ข้อห้ามรายคน', shn:'🔴 ၶွင်ႁၢမ်ႈ ၽႂ်မၼ်း', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက်'},
+  al1:{th:'มิ้ม — ❌ไม่ทานเต้าหู้/เครื่องใน/เลือดไก่-หมู → เมนู 30 มีเต้าหู้ ไม่ได้เมนูนี้ ได้เมนู 26 (ไก่ย่าง) เพิ่มอีก 1 กล่องแทน (รวม 26 = 2 กล่องสำหรับมิ้ม)', shn:'Mim — ဢမ်ႇၵိၼ်ၼိူဝ်ႉၶႅဝ်ႇ → ဢမ်ႇလႆႈ 30 လႆႈ 26 ထႅမ်', my:'Mim — တို့ဟူးမစား → ၃၀ မရ ၂၆ ထပ်ရ'},
+  secA:{th:'■ 7 เมนูหลัก — LC/HP/HYROX กินสูตรเดียวกัน (ต่างแค่กรัมเนื้อ)', shn:'■ မဵၼ်ႇငဝ်ႈ 7 — LC/HP/HYROX ၸႂ်ႉတမ်းလဵဝ်', my:'■ ပင်မမီနူး ၇ — LC/HP/HYROX အနည်းအကျဉ်းသာ ကွာသည်'},
+  secD:{th:'■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะยอดทำแน่ 62 กล่อง)', shn:'■ ႁုပ်ႈ — ၽႂ်လႆႈသင် (62)', my:'■ အကျဉ်း — ဘယ်သူဘာရ (၆၂)'},
+  th1:{th:'ลูกค้า', shn:'လုၵ်ႈၵႃႈ', my:'ဖောက်သည်'},
+  th2:{th:'แผน', shn:'ၽႅၼ်', my:'အစီအစဉ်'},
+  th3:{th:'เมนูที่ได้', shn:'မဵၼ်ႇလႆႈ', my:'ရမည့်မီနူး'},
+  th4:{th:'กล่อง', shn:'ႁိပ်ႇ', my:'ဘူး'},
+  m20:{th:'Pasta with pesto salmon', shn:'Pasta Pesto Salmon', my:'ပါစတာ ပက်စတို ဆယ်လ်မွန်'},
+  m24:{th:'ปลาทูต้มมะนาว', shn:'ပႃႇတူ ၼမ်ႉမၢၵ်ႇၼၢဝ်', my:'ငါးကွမ်းရှပ် သံပုရာချက်'},
+  m26:{th:'สเต๊กอกไก่ย่าง สลัดผักสด น้ำสลัดงาญี่ปุ่น', shn:'ၼိူဝ်ႉၵႆႇသတဵၵ်ႉ ၽၵ်းသုမ်ႈ', my:'ကြက်ရင်သားကင် ဟင်းသီးသုပ်'},
+  m29:{th:'ซุปกิมจิหมูไข่ทานกับเส้นบุก', shn:'ၶဝ်ႈသဵၼ်ႈမူႇ Kimchi', my:'ဝက်သားချစ်ချိစွပ်'},
+  m30:{th:'ผักกาดขาวห่อเต้าหู้อกไก่', shn:'ၽၵ်းၵၢတ်ႇၶၢဝ်ႁွမ်ႇတဝ်ႉႁူး', my:'ဂေါ်ဖီထုပ် တို့ဟူး+ကြက်'},
+  m33:{th:'กะเพราเนื้อพริกแห้ง + สลัดเห็ดออรินจิน้ำจิ้มซีฟู๊ด', shn:'ၼိူဝ်ႉမူဝ်ၽတ်ႉၵၽႃႇ', my:'အမဲကြက်သွန်ကြော် + မှိုသုပ်'},
+  m37:{th:'ยำซีฟู๊ดกุ้งปลา', shn:'ယำ Seafood ၵုင်ႈပႃႇ', my:'ပုစွန်+ငါး သုပ်'},
+  v30w:{th:'มีเต้าหู้ — ห้ามให้มิ้ม', shn:'မီးတဝ်ႉႁူး — ႁၢမ်ႈပၼ် Mim', my:'တို့ဟူးပါ — Mim ကိုမပေးရ'},
+  n_mim:{th:'มิ้ม — ได้เมนูนี้ 2 กล่อง (แทนเมนู 30 ที่มีเต้าหู้ ไม่ได้เพราะข้อห้าม)', shn:'Mim — လႆႈ 2 ႁိပ်ႇ (တႅၼ်း 30)', my:'Mim — ၂ ဘူးရ (၃၀ အစား)'},
+  n_no_mim:{th:'ไม่รวมมิ้ม', shn:'ဢမ်ႇပႃး Mim', my:'Mim မပါ'},
+  chaionly:{th:'Chai', shn:'Chai', my:'Chai'},
+  chicken:{th:'อกไก่', shn:'ၼိူဝ်ႉဢူၵ်ႉၵႆႇ', my:'ကြက်ရင်သား'},
+  ptender:{th:'หมู', shn:'ၼိူဝ်ႉမူႇ', my:'ဝက်သား'},
+  beef:{th:'เนื้อวัว', shn:'ၼိူဝ်ႉမူဝ်', my:'အမဲသား'},
+  salmon:{th:'แซลมอน', shn:'ပႃႇ Salmon', my:'ဆယ်လ်မွန်ငါး'},
+  mackerel:{th:'ปลาทู', shn:'ပႃႇတူ', my:'ငါးကွမ်းရှပ်'},
+  seafood:{th:'กุ้ง+ปลา', shn:'ၵုင်ႈ+ပႃႇ', my:'ပုစွန်+ငါး'},
+  pasta:{th:'พาสต้าเพสโต้', shn:'Pasta Pesto', my:'ပါစတာ ပက်စတို'},
+  lemonbroth:{th:'ต้มมะนาว', shn:'ၼမ်ႉမၢၵ်ႇၼၢဝ်', my:'သံပုရာချက်'},
+  sesamesalad:{th:'สลัดผัก น้ำสลัดงา', shn:'ၽၵ်းသုမ်ႈ', my:'ဟင်းသီးသုပ်'},
+  konjac:{th:'เส้นบุก', shn:'ၶဝ်ႈသဵၼ်ႈ Konjac', my:'ကွန်ညက် ခေါက်ဆွဲ'},
+  cabbage:{th:'ผักกาดขาวห่อ', shn:'ၽၵ်းၵၢတ်ႇၶၢဝ်ႁွမ်ႇ', my:'ဂေါ်ဖီထုပ်'},
+  mushroomsalad:{th:'สลัดเห็ดออรินจิ', shn:'သုမ်ႈႁဵတ်ႇ', my:'မှိုသုပ်'},
+  spicysalad:{th:'ยำรวม', shn:'ယำႁွမ်း', my:'သုပ်'},
+  f1:{th:'รวมทำแน่ 62 กล่อง', shn:'ႁူမ်ႈ 62 ႁိပ်ႇ', my:'စုစုပေါင်း ၆၂ ဘူး'},
+  f1b:{th:' — LC 5 คน ×7 = 35 · HP 3 คน ×7 = 21 · Hyrox 1 คน = 6', shn:' — LC 5×7=35 · HP 3×7=21 · Hyrox 1=6', my:' — LC ၅×၇=၃၅ · HP ၃×၇=၂၁ · Hyrox ၁=၆'},
+  f2:{th:'❄️ นวภัท 6 กล่อง = ของอยู่ในตู้แล้ว ไม่นับรวม · สิริพร = ยกเลิกแล้ว ไม่รวมในใบ', shn:'❄️ Nawaphat 6 ဢမ်ႇၼပ်ႉ · Siriporn ပယ်ဖျက်', my:'❄️ Nawaphat ၆ မထည့် · Siriporn ပယ်ဖျက်'},
+  f3:{th:'เมนูนี้ฟ้าเลือกเอง (นัทยังไม่ได้กำหนดวันศุกร์) — ถ้านัทจะเปลี่ยนภายหลังแก้ได้ทุกจุด · รายละเอียด/สาเหตุครบดูรายงานที่ส่งคู่กัน', shn:'Fah လိူၵ်ႈမဵၼ်ႇၵေႃႉၵဝ်ႇ', my:'Fah ကိုယ်တိုင်ရွေးထား'}
+};
+const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
+function setLang(l){
+  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(T[k]&&T[k][l]!=null) e.textContent=T[k][l];});
+  ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
+  var b=document.getElementById('vbanner'); b.textContent=V[l]||''; b.style.display=l==='th'?'none':'block';
+  document.documentElement.lang = l==='my'?'my':(l==='shn'?'shn':'th');
+}
+</script>
+</body>
+</html>
