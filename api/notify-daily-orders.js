@@ -1,3 +1,4 @@
+const getLineToken = require("./_line_token.js");
 /* Under360 — สรุปออเดอร์พรุ่งนี้ ส่งเข้า LINE (Messaging API ของ OA ร้าน)
 
    ⏸️ ปิดไว้ตามที่นัทสั่ง 28 ก.ค. 2026: "ไม่ต้องการให้เด้ง — ที่ต้องการคือเข้าถึงข้อมูลสะดวก"
@@ -125,7 +126,7 @@ module.exports = async (req, res) => {
     const dateIso = (req && req.query && req.query.date) || bkkDate(1); // default = พรุ่งนี้ (เวลาไทย)
     // ตรวจรูปแบบวันที่ — ค่าที่มี & จะกลายเป็น query param ของ PostgREST (แก้ filter/select ได้) · เพิ่ม 3 ส.ค. 2026
     if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dateIso))) return res.status(400).json({ ok:false, error:"bad date" });
-    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const token = await getLineToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
     const to = (process.env.ORDERS_NOTIFY_TO || "").split(",").map((s) => s.trim()).filter(Boolean);
 
     const message = await buildMessage(dateIso);

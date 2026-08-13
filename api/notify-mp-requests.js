@@ -1,3 +1,4 @@
+const getLineToken = require("./_line_token.js");
 const SUPABASE_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 const LIFF_URL = "https://liff.line.me/2010442513-NI3JGTkb?screen=mp-manage";
@@ -130,7 +131,7 @@ function requireAuth(req, res) {
 module.exports = async (req, res) => {
   if (!requireAuth(req, res)) return;
   try {
-    const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+    const token = await getLineToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
     const hasToken = !!token;
     const today = new Date().toISOString().slice(0, 10);
     const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);

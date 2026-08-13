@@ -1,3 +1,4 @@
+import getLineToken from "./_line_token.js";
 // ============================================================
 //  Under360 — API หลังบ้านของ "หน้าคุยงานครัว" (k-track · 5 ส.ค. 2026)
 //  endpoint: /api/kitchen-console
@@ -61,7 +62,7 @@ async function latestGroupId() {
 }
 
 async function linePush(groupId, text) {
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const token = await getLineToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
   if (!token || !groupId) throw new Error('ยังไม่ได้ตั้ง LINE_CHANNEL_ACCESS_TOKEN หรือหากลุ่มครัวไม่เจอ');
   const r = await fetch('https://api.line.me/v2/bot/message/push', {
     method: 'POST',
