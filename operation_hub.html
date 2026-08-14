@@ -5749,7 +5749,32 @@ async function obSubmit(){
           +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
       } else planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
     }
-    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg)+obEsc(stockMsg);
+    /* 📍 เติมหมุดตั้งแต่ตอนเปิดใบ — อุดต้นทางของ "ใบไม่มีพิกัด"
+       ข้อมูลจริง 10-14 ส.ค. 2569: ใบที่ไม่มีพิกัด 10 ใบ = **สั่งแทนลูกค้าทั้งหมด** (กิ๊ฟ 7 · เพอรี่ 3)
+       ฝั่ง LIFF บังคับปักหมุดตั้งแต่ 6 ส.ค. แล้ว = ลูกค้าสั่งเองไม่มีใบไหนขาดพิกัดเลยสักใบ
+       → ประตูที่ยังรั่วคือหน้านี้ ไม่ใช่ LIFF · พี่เก่งมีปุ่มตามเก็บที่หน้าแมสอยู่แล้ว แต่นั่นคือ "ที่ตักน้ำ"
+       best-effort: เสิร์ชไม่เจอห้ามทำให้ออเดอร์ล่ม แต่ต้องบอกแอดมินให้รู้ ไม่ปล่อยเงียบ */
+    var pinMsg='';
+    if(addr){
+      try{
+        if(await msgLoadMaps()){
+          var _gc=new google.maps.Geocoder();
+          var _g=await new Promise(function(ok){ _gc.geocode({address:addr.replace(/\s+/g,' '),region:'th'},function(r,st){ ok((st==='OK'&&r&&r[0])?r[0]:null); }); });
+          if(_g){
+            var _loc=_g.geometry.location.toJSON();
+            var _d=+msgKm(MSG_KITCHEN,_loc).toFixed(1);
+            // เขียนเฉพาะตอนยังว่าง — หมุดที่ลูกค้าปักเองแม่นกว่าเสมอ ห้ามทับ
+            var _w=await sb_.from('orders').update({delivery_lat:_loc.lat,delivery_lng:_loc.lng,delivery_distance_km:_d})
+                             .eq('id',ord.data.id).is('delivery_lat',null);
+            // ROOFTOP = แม่นถึงบ้านเลขที่ · ที่เหลือได้แค่ระดับซอย/ถนน → แมสต้องโทรถามก่อนออกรถ
+            pinMsg=_w.error ? ' · ⚠️ บันทึกหมุดไม่สำเร็จ'
+              : (_g.geometry.location_type==='ROOFTOP' ? ' · 📍 เติมหมุดให้แล้ว (~'+_d+' กม.)'
+                                                       : ' · 📍 เติมหมุดแล้วแต่ได้แค่ระดับซอย (~'+_d+' กม.) — แมสควรโทรถามก่อนออกรถ');
+          } else pinMsg=' · ⚠️ เสิร์ชที่อยู่นี้ไม่เจอ ยังไม่มีหมุด (แมสจะจัดรอบให้ไม่ได้)';
+        } else pinMsg=' · ⚠️ เปิดแผนที่ไม่ได้ ยังไม่มีหมุด';
+      }catch(e){ console.error('เติมหมุด (สั่งแทน) ไม่สำเร็จ:',e); pinMsg=' · ⚠️ เติมหมุดไม่สำเร็จ'; }
+    } else pinMsg=' · ⚠️ ไม่ได้กรอกที่อยู่ = ไม่มีหมุด';
+    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg)+obEsc(stockMsg)+obEsc(pinMsg);
     obCart=[]; obRenderCart(); obClearCust();
     document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-disc').value='0'; document.getElementById('ob-promo').value=''; document.getElementById('ob-paid').checked=false;
   }catch(e){ err('พลาด: '+(e.message||e)); }
