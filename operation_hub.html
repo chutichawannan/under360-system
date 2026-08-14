@@ -4101,9 +4101,75 @@ function msgPickGroups(pts){
   return out2.reverse();
 }
 
+// ── 📍 เสิร์ชที่อยู่เติมหมุดให้อัตโนมัติ (นัทเคาะ 14 ส.ค. 2569) ──────────────────
+// ปัญหาเดิม: ลูกค้าไม่ปักหมุด → ใบนั้นถูกข้ามทั้งใบ (14 ส.ค. โดนไป 8/14 ใบ)
+//   แอดมินต้องไล่ทักลูกค้าทีละคน ทั้งที่ "ที่อยู่" กรอกมาครบอยู่แล้ว แค่ไม่มีพิกัด
+// ตอนนี้: กดปุ่มคำนวณครั้งเดียว ระบบเสิร์ชเติมให้เองก่อน แล้วค่อยจัดรอบ
+//
+// ⚠️ ต้องใช้ Geocoder ของ Maps JS — คีย์ Google ของเราล็อก referer ไว้
+//    Geocoding REST API ปฏิเสธคีย์แบบนั้นตรงๆ ("API keys with referer restrictions cannot be used")
+// ⚠️ โหลด Maps JS แบบ lazy (เฉพาะตอนมีใบขาดหมุดจริง) — หน้า OH ไม่เคยโหลด ไม่อยากถ่วงตอนเปิดหน้า
+var MSG_MAPS_KEY="AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U";
+function msgLoadMaps(){
+  if(typeof google!=="undefined"&&google.maps&&google.maps.Geocoder) return Promise.resolve(true);
+  if(window.__msgMapsP) return window.__msgMapsP;
+  window.__msgMapsP=new Promise(function(ok){
+    var s=document.createElement("script");
+    s.src="https://maps.googleapis.com/maps/api/js?key="+MSG_MAPS_KEY+"&language=th&region=TH";
+    s.onload=function(){ok(true);}; s.onerror=function(){ok(false);};
+    document.head.appendChild(s);
+  });
+  return window.__msgMapsP;
+}
+async function msgAutoPin(box){
+  var need=(_msgOrders||[]).filter(function(o){
+    return o.status!=="delivered" && (o.delivery_lat==null||o.delivery_lng==null)
+        && String(o.delivery_address_text||o.delivery_address||"").trim();
+  });
+  var res={filled:[],rough:[],failed:[]};
+  if(!need.length) return res;
+  if(box) box.innerHTML="<div style='padding:16px;text-align:center;color:#6B7280;font-size:13px'>📍 กำลังเสิร์ชที่อยู่ให้ "+need.length+" ใบที่ลูกค้าไม่ได้ปักหมุด...</div>";
+  if(!(await msgLoadMaps())){ res.failed=need.map(function(o){return {no:o.order_number,name:o.customer_name,why:"เปิดแผนที่ไม่ได้"};}); return res; }
+
+  var gc=new google.maps.Geocoder();
+  var geo=function(a){ return new Promise(function(ok){ gc.geocode({address:a,region:"th"},function(r,st){ok({st:st,r:r});}); }); };
+  var sb_=getSB();
+  for(var i=0;i<need.length;i++){
+    var o=need[i];
+    var addr=String(o.delivery_address_text||o.delivery_address||"").replace(/\s+/g," ").trim();
+    var g=null;
+    try{ var t=await geo(addr); g=(t.st==="OK"&&t.r&&t.r[0])?t.r[0]:null; }catch(e){}
+    if(!g){ res.failed.push({no:o.order_number,name:o.customer_name,why:"เสิร์ชที่อยู่นี้ไม่เจอ"}); continue; }
+    var loc=g.geometry.location.toJSON();
+    var dist=+msgKm(MSG_KITCHEN,loc).toFixed(1);
+    if(sb_){
+      // 🔒 เขียนเฉพาะแถวที่ยังว่างจริง (ใส่เงื่อนไขใน query ไม่ใช่เช็คในโค้ด)
+      //    หมุดที่ลูกค้าปักเองแม่นกว่าเสมอ — ห้ามทับเด็ดขาด
+      // 🔒 ต้องใส่ delivery_distance_km ด้วย ไม่งั้นใบต่างจังหวัดจะไหลเข้าแผนแมส (msgZone ใช้ค่านี้คัดนอกเขต)
+      //    ⚠️ ค่านี้เป็นระยะเส้นตรง ใช้จัดกลุ่ม/คัดนอกเขตเท่านั้น ห้ามเอาไปคิดเงินลูกค้า
+      try{
+        var w=await sb_.from("orders").update({delivery_lat:loc.lat,delivery_lng:loc.lng,delivery_distance_km:dist})
+                        .eq("id",o.id).is("delivery_lat",null);
+        if(w.error) throw w.error;
+      }catch(e){ res.failed.push({no:o.order_number,name:o.customer_name,why:"บันทึกหมุดไม่สำเร็จ"}); continue; }
+    }
+    o.delivery_lat=loc.lat; o.delivery_lng=loc.lng; o.delivery_distance_km=dist; o._z=msgZone(o);
+    var acc=g.geometry.location_type;
+    var row={no:o.order_number,name:o.customer_name||"ลูกค้า",acc:acc,found:g.formatted_address};
+    // ROOFTOP = แม่นระดับบ้านเลขที่ · ที่เหลือได้แค่ระดับซอย/ถนน → แมสต้องโทรถามก่อนออก
+    if(acc==="ROOFTOP") res.filled.push(row); else res.rough.push(row);
+    await new Promise(function(r){setTimeout(r,180);});   // เว้นจังหวะ กันโดน Google จำกัดอัตรา
+  }
+  return res;
+}
+
 async function msgPlanRoutes(){
   var box=document.getElementById("msg-plan"), btn=document.getElementById("msg-plan-btn");
   if(!box)return;
+  if(btn){btn.disabled=true;btn.textContent="⏳ กำลังคำนวณ...";}
+  // 📍 เติมหมุดให้ใบที่ลูกค้าไม่ได้ปักก่อน — ไม่งั้นใบพวกนั้นถูกข้ามทั้งที่มีที่อยู่ครบ
+  var pinned={filled:[],rough:[],failed:[]};
+  try{ pinned=await msgAutoPin(box); }catch(e){ console.warn("เติมหมุดอัตโนมัติไม่สำเร็จ:",e); }
   // เอาเฉพาะงานที่ Lalamove/แมสรับได้จริง: มีพิกัด + ไม่ใช่นอกเขต + ยังไม่ส่ง
   // 🔴 ใบที่คิดไม่ได้ ต้องบอกว่า "ใบไหน เพราะอะไร" — เดิมบอกแค่ตัวเลข "ข้าม 5 ใบ" แล้วจบ
   //    = แอดมินไม่รู้ว่าต้องไปตามที่อยู่ใคร (นัทเจอเอง 6 ส.ค.) ใบที่ลูกค้าไม่ปักหมุดเลยหล่นทั้งวัน
@@ -4113,7 +4179,8 @@ async function msgPlanRoutes(){
     var why=null;
     if(o.status==="delivered")                              why={t:"ส่งแล้ว",     fix:"ไม่ต้องทำอะไร"};
     else if(o._z && o._z.key==="far")                       why={t:"นอกเขตแมส",   fix:"ส่งขนส่ง/ฟรีซแพ็ค — Lalamove ปฏิเสธงานนี้"};
-    else if(o.delivery_lat==null||o.delivery_lng==null)     why={t:"ไม่มีพิกัด",   fix:"ทักลูกค้าขอปักหมุด แล้วกดคำนวณใหม่ (ค่าส่งใบนี้ยังเก็บไม่ได้)"};
+    // มาถึงตรงนี้ทั้งที่ยังไม่มีพิกัด = ระบบเสิร์ชที่อยู่ให้แล้วแต่ยังหาไม่เจอ → ของจริงต้องให้คนช่วย
+    else if(o.delivery_lat==null||o.delivery_lng==null)     why={t:"ไม่มีพิกัด",   fix:"ระบบเสิร์ชที่อยู่ให้แล้วแต่หาไม่เจอ — ต้องทักลูกค้าขอปักหมุด แล้วกดคำนวณใหม่"};
     if(why){ skippedList.push({no:o.order_number||"—", name:o.customer_name||"ลูกค้า", why:why.t, fix:why.fix,
                                addr:(o.delivery_address_text||o.delivery_address||"").slice(0,60)}); return; }
     jobs.push({lat:Number(o.delivery_lat),lng:Number(o.delivery_lng),
@@ -4126,9 +4193,9 @@ async function msgPlanRoutes(){
   if(!jobs.length){
     box.innerHTML="<div style='background:#FFF7ED;border:1px solid #FDBA74;border-radius:10px;padding:11px 13px;font-size:13px;color:#9A3412'>"
       +"ไม่มีงานที่คำนวณได้"+(skipped?" (ข้าม "+skipped+" ใบ: ไม่มีพิกัด / นอกเขตแมส / ส่งแล้ว)":"")+"</div>";
+    if(btn){btn.disabled=false;btn.textContent="💰 คำนวณค่าส่งถูกสุด";}   // ปุ่มถูกปิดไว้ตั้งแต่ต้นฟังก์ชัน ต้องคืนก่อนออก ไม่งั้นกดซ้ำไม่ได้
     return;
   }
-  if(btn){btn.disabled=true;btn.textContent="⏳ กำลังถามราคา...";}
   box.innerHTML="<div style='padding:16px;text-align:center;color:#6B7280;font-size:13px'>กำลังจัดรอบแล้วขอเรทจริงจาก Lalamove... (ขอราคาอย่างเดียว ไม่จองรถ)</div>";
   try{
     // ① แบ่งตามช่วงเวลาก่อน แล้วค่อยจับจุดใกล้กันในช่วงเดียวกัน (นัทสั่ง 6 ส.ค. 2569)
@@ -4177,7 +4244,7 @@ async function msgPlanRoutes(){
       t.missing = (t.cost==null);      // ขอราคาไม่ได้จริงๆ หลังลองซ้ำ 3 ครั้ง
     }
     var missing=trips.filter(function(t){return t.missing;}).length;
-    msgRenderPlan(box,{trips:trips,jobs:jobs,skipped:skipped,skippedList:skippedList,missing:missing});
+    msgRenderPlan(box,{trips:trips,jobs:jobs,skipped:skipped,skippedList:skippedList,missing:missing,pinned:pinned});
     // 🔴 ขอราคาไม่ครบ = ห้ามบันทึกสถิติ — ยอดจะต่ำกว่าจริง แล้วไปทำให้ค่าเฉลี่ย "จ้างแมสเท่าไหร่คุ้ม" เพี้ยนถาวร
     if(missing) console.warn("ขอราคาไม่ครบ "+missing+" รอบ — ไม่บันทึกสถิติวันนี้");
     else msgLogCost(trips,jobs,skipped);     // สะสมสถิติไว้ตอบ "จ้างแมสเท่าไหร่ถึงคุ้ม" (ไม่บล็อกการแสดงผล)
@@ -4261,6 +4328,26 @@ async function msgShowCostHistory(){
   }catch(e){}
 }
 
+// 📍 สรุปผลการเสิร์ชที่อยู่ — ต้องบอกให้ชัดว่าหมุดไหน "ระบบเดาให้" ไม่ใช่ "ลูกค้าปักเอง"
+//    หมุดที่เสิร์ชได้แค่ระดับซอย/ถนน ดูบนจอเหมือนหมุดปกติทุกอย่าง = อันตรายถ้าไม่บอก
+function msgPinBox(p){
+  if(!p) return "";
+  var n=(p.filled||[]).length, rg=(p.rough||[]).length, f=(p.failed||[]).length;
+  if(!n&&!rg&&!f) return "";
+  var h="<div style='background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:8px 10px;font-size:12px;margin-bottom:9px'>"
+    +"<div style='font-weight:800;color:#1D4ED8'>📍 เสิร์ชที่อยู่เติมหมุดให้ "+(n+rg)+" ใบ ที่ลูกค้าไม่ได้ปักหมุดมา</div>";
+  if(n)  h+="<div style='color:#15803D;margin-top:3px'>✅ "+n+" ใบ ตรงถึงบ้านเลขที่ — ใช้ได้เลย</div>";
+  if(rg){
+    h+="<div style='color:#B45309;margin-top:3px;font-weight:700'>⚠️ "+rg+" ใบ ได้แค่ระดับซอย/ถนน — <u>ให้แมสโทรถามก่อนออกรถ</u></div>";
+    h+=(p.rough||[]).map(function(x){return "<div style='color:#374151;margin-left:14px'>· "+esc2(x.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(x.no)+"</span> → "+esc2(String(x.found||"").slice(0,50))+"</div>";}).join("");
+  }
+  if(f){
+    h+="<div style='color:#B91C1C;margin-top:3px;font-weight:700'>❌ "+f+" ใบ เสิร์ชไม่เจอ ต้องทักลูกค้าเอง</div>";
+    h+=(p.failed||[]).map(function(x){return "<div style='color:#374151;margin-left:14px'>· "+esc2(x.name||"")+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(x.no||"")+"</span></div>";}).join("");
+  }
+  return h+"</div>";
+}
+
 function msgRenderPlan(box,r){
   // แตกรอบที่รวมแล้วไม่คุ้ม ออกเป็นงานเดี่ยว เพื่อให้สิ่งที่โชว์ = สิ่งที่ควรทำจริง
   var rows=[];
@@ -4281,6 +4368,7 @@ function msgRenderPlan(box,r){
     +"<div style='font-size:11px;color:#6B7280;margin-bottom:9px'>ขอราคาอย่างเดียว ยังไม่ได้จองรถ · เพดาน "+MSG_MAX_STOPS+" งาน/รอบ · เรียงตามเวลาจริง เช้าก่อนบ่ายเสมอ</div>"
     +(r.missing?"<div style='background:#FEF2F2;border:1px solid #FCA5A5;border-radius:9px;padding:8px 10px;font-size:12px;color:#B91C1C;font-weight:700;margin-bottom:9px'>"
       +"⚠️ ขอราคาไม่สำเร็จ "+r.missing+" รอบ (ลองซ้ำแล้ว 3 ครั้ง) — ยอดรวมข้างล่างจึง<u>ต่ำกว่าจริง</u> และวันนี้จะไม่ถูกบันทึกลงสถิติ กดคำนวณใหม่อีกครั้ง</div>":"")
+    +msgPinBox(r.pinned)
 
     +"<div style='display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px'>"
     +"<div style='flex:1;min-width:120px;background:#F7F8F6;border-radius:9px;padding:8px 10px'>"
