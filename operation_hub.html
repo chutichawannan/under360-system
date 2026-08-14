@@ -24,7 +24,14 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 /* N-57: บนมือถือ 100vh สูงกว่าพื้นที่ที่มองเห็นจริง (แถบล่าง Chrome ทับอยู่)
    → ก้นของ .content ซึ่งเป็นตัวเลื่อนข้างใน ถูกตัด = เลื่อนไม่ถึงใบสุดท้าย หายเงียบไม่มีอะไรเตือน
    dvh = ความสูงที่มองเห็นจริง (เบราว์เซอร์เก่าตกกลับไปใช้ 100vh เหมือนเดิม) */
-.app{display:flex;height:100vh;height:100dvh}
+/* 🔴 เลื่อนสุดแล้วแถวสุดท้ายยังโดนตัด (นัทเจอเองกับมือ 14 ส.ค. 2569 — แถว Milk หายครึ่งตัว)
+   สาเหตุ: html/body ตั้ง overflow:hidden = หน้าต่างเลื่อนไม่ได้เลย
+   แล้ว .app ผูกความสูงกับ 100dvh ซึ่ง "ไม่เท่ากับพื้นที่ที่มองเห็นจริงเสมอไป"
+   (บางเครื่อง/บางสเกลจอ dvh สูงกว่าของจริง) → ก้นของ .app ตกไปอยู่ใต้ขอบจอ
+   และเพราะหน้าต่างเลื่อนไม่ได้ ก็ไม่มีทางดึงส่วนที่ตกไปกลับขึ้นมาดูได้เลย
+   → ผูกกับ 100% ของ body (ซึ่งคือกล่องจริงที่มองเห็น) เป็นหลัก แล้วใช้ dvh เป็นตัวช่วย
+     + max-height กันไม่ให้เกินกล่องจริงไม่ว่ากรณีไหน */
+.app{display:flex;height:100%;height:100dvh;max-height:100%}
 
 /* ── FLOAT EXPAND BUTTON (shows when sidebar is mini) ── */
 .sb-float-expand{
@@ -197,7 +204,8 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 .tab.active{color:var(--forest);border-bottom-color:var(--forest)}
 
 /* ── CONTENT ── */
-.content{flex:1;overflow-y:auto;padding:24px 24px 120px;-webkit-overflow-scrolling:touch}
+/* padding ล่างเผื่อไว้เยอะหน่อย — ถึงความสูงจอจะเพี้ยนไปบ้าง แถวสุดท้ายก็ยังไม่ติดขอบ */
+.content{flex:1;min-height:0;overflow-y:auto;padding:24px 24px 180px;-webkit-overflow-scrolling:touch}
 .content.he-mode{padding:0;overflow:hidden}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
