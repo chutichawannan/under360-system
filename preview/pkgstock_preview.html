@@ -966,6 +966,8 @@ let packages = [], pkgItems = {}, currentPkg = null, pkgSelection = {}, pkgSearc
 let pkgIsGrouped = false, pkgGroupSel = {};   // เซ็ต/คอร์ส/บันเดิล (groups)
 // ── v0.3.3 Meal Plan state ──
 let mpType = '', mpSetId = '', mpRequest = '', mpReqSel = [];
+// 🩺 ข้อจำกัดอาหาร (N-41) — โหลดของเดิมมาโชว์ ลูกค้าเก่าจะได้ไม่ต้องกรอกซ้ำ · เก็บลง customer_preferences ตอน submit
+let mpAllergy = '', mpDislike = '', prefsLoaded = false;
 let mpRequestMenus = [];  // โหลดจาก kitchen_data 'mp_request_menus' (แอดมิน assign ในหน้าแพลนเมนู)
 // ── Meal Plan config — default fallback ถ้ายังไม่รัน scripts/sql_mp_offer_sets.sql ──
 // ปกติจะโหลดทับจาก Supabase ตาราง mp_offer_sets ตอน init() (ทำให้แอดมินแก้ราคา/เพิ่มชุดโปรโมชั่นเองได้ที่หน้า DB)
@@ -1490,6 +1492,39 @@ function removePkgFromCart(id) {
 // 🥗 MEAL PLAN FLOW — v0.3.3
 // ══════════════════════════════════════
 
+// ── 🩺 ข้อจำกัดอาหารของฉัน (customer_preferences) ─────────────────────────
+// คีย์ในตารางนี้ปนกัน 2 แบบมาแต่เดิม (บางแถว customers.id บางแถว line_uid) → อ่านทั้ง 2 ทาง
+// เขียนกลับด้วย customers.id เสมอ (ถ้ามี) เพื่อให้ฝั่งครัว/แอดมินหาเจอแน่ๆ
+async function loadMyPrefs(){
+  if (prefsLoaded) return;
+  prefsLoaded = true;
+  try{
+    const cid = customer?.id, uid = lineProfile?.userId;
+    const keys = [cid, uid].filter(Boolean);
+    if (!keys.length) return;
+    const r = await sb.from('customer_preferences').select('customer_id,dislikes,allergies').in('customer_id', keys).limit(5);
+    if (r.error || !r.data?.length) return;
+    const p = r.data.find(x => x.customer_id === cid) || r.data[0];
+    if (!mpAllergy) mpAllergy = p.allergies || '';
+    if (!mpDislike) mpDislike = p.dislikes || '';
+    if (mpAllergy || mpDislike) renderMealPlanPicker();
+  }catch(e){ console.warn('loadMyPrefs:', e); }
+}
+// เก็บสิ่งที่ลูกค้ากรอกตอนสั่ง — ห้ามล้างของเดิมทิ้งด้วยค่าว่าง (ลูกค้าอาจไม่ได้เปิดช่องนี้เลย)
+async function saveMyPrefs(){
+  try{
+    const al = String(mpAllergy||'').trim(), di = String(mpDislike||'').trim();
+    if (!al && !di) return;
+    const key = customer?.id || lineProfile?.userId;
+    if (!key) return;
+    const r = await sb.from('customer_preferences').upsert({
+      customer_id: key, allergies: al, dislikes: di,
+      updated_by: 'customer', updated_at: new Date().toISOString()
+    }, { onConflict: 'customer_id' });
+    if (r.error) console.error('saveMyPrefs failed:', r.error);
+  }catch(e){ console.error('saveMyPrefs:', e); }
+}
+
 function openMealPlanPicker(offerSetKey) {
   mpType = ''; mpRequest = ''; mpReqSel = [];
   if (offerSetKey) {
@@ -1501,6 +1536,7 @@ function openMealPlanPicker(offerSetKey) {
     mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
     mpSetId = '';
   }
+  loadMyPrefs();   // ดึงของแพ้/ข้อจำกัดเดิมมาเติมช่อง (ไม่ await — เติมแล้ว re-render เอง)
   renderMealPlanPicker();
   document.getElementById('s-menu').classList.add('on');       // เมนูอยู่ข้างหลัง
   document.getElementById('mp-backdrop').classList.add('on');
@@ -1578,6 +1614,21 @@ function renderMealPlanPicker() {
           </div>
         </div>`;
       }).join('')}</div>` : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
+    </div>
+    ${/* N-41 · ห้องฟ้าแจ้ง 13 ส.ค. 2569 — เคสจริง: ลูกค้าโรคไตขอ "ข้าวนิ่ม" แต่บอกไว้ในแชทไลน์เท่านั้น
+          ระบบไม่มีช่องให้กรอก → ครัวไม่เห็น → เกือบได้ข้าวปกติ
+          เก็บลง customer_preferences (ติดตัวลูกค้าถาวร) → เด้งบนใบครัวทุกใบของคนนี้ตลอดไป */''}
+    <div style="margin-top:18px;">
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">4. แพ้อาหาร / ข้อจำกัด</div>
+      <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
+        กรอกครั้งเดียว ครัวเห็นทุกกล่องตลอดคอร์ส — ไม่มีก็เว้นว่างไว้ได้
+      </div>
+      <input id="mp-allergy" type="text" value="${h(mpAllergy)}" oninput="mpAllergy=this.value"
+        placeholder="แพ้อาหาร เช่น กุ้ง ถั่วลิสง (ครัวตัดออกเด็ดขาด)"
+        style="width:100%;box-sizing:border-box;border:2px solid #F0C9C9;background:#FFF7F7;border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:8px;">
+      <input id="mp-dislike" type="text" value="${h(mpDislike)}" oninput="mpDislike=this.value"
+        placeholder="ไม่ทาน / ขอพิเศษ เช่น ไม่ทานหมู ขอข้าวนิ่ม ไม่เผ็ด"
+        style="width:100%;box-sizing:border-box;border:2px solid #E5E5E1;border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;">
     </div>` : ''}`;
   updateMPConfirmBtn();
 }
@@ -1662,7 +1713,12 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
       d.setDate(d.getDate()+1);
       while (!isMWF(d)) d.setDate(d.getDate()+1);
     }
-    await sb.from('mp_deliveries').insert(rows);
+    /* ⚠️ supabase-js ไม่ throw ตอน insert พัง — คืน {error} เฉยๆ
+       ถ้าไม่เช็ค = ครัวไม่เห็นรอบผลิตเลย แต่ทุกอย่างดู "สำเร็จ" (ของหายเงียบ) */
+    const ins = await sb.from('mp_deliveries').insert(rows).select('id,round_no,delivery_date');
+    if (ins.error) throw ins.error;
+    if (!ins.data || ins.data.length !== rows.length) throw new Error('เขียนรอบผลิตได้ไม่ครบ');
+    ins.data.forEach(d => { const r = rows.find(x => x.round_no === d.round_no && x.delivery_date === d.delivery_date); if (r) r._id = d.id; });
     return rows;   // ← submitOrder เอาวันของรอบ 2..N ไปเปิด "ใบออเดอร์" ต่อ (N-27)
   } catch (e) {
     console.error('generateMpDeliveries failed (non-blocking):', e);
@@ -2670,15 +2726,30 @@ function toggleSetDeliverOnce(v){ setDeliverOnce=!!v; renderRoundSplit(); }
 // ══════════════════════════════════════
 // ตรวจว่าตะกร้ามีสินค้าที่ไม่ส่งช่วงเช้าไหม
 // HP/LC = no_morning อัตโนมัติ ไม่ต้อง tick ใน DB
+/* ของทำสด = ส่งบ่ายเท่านั้น (ผักมาถึงครัวเกือบ 9 โมง เช้าผลิตไม่ทันจริง)
+   🔴 เดิมเช็คไม่ครบ — เซ็ต/แพค (type='package') หลุดหมด
+      เคสจริง 14 ส.ค. 2569: Chai U-0814-006 สั่ง Hyrox 6 กล่อง แล้ว "เลือกช่วงเช้าได้" เอง
+      เพราะ Hyrox ขายเป็นแพค ไม่ได้ผ่านทาง meal_plan ปกติ ตัวกันเลยมองไม่เห็น
+   → เช็ค 3 ทาง: ชนิดในตะกร้า · ชนิดของแพค (pkg_plan_type) · รหัสเมนูที่อยู่ในแพค */
 function hasMealPlan(){
   return cart.some(c=>{
     if(c.type==='meal_plan') return true;   // ← Meal Plan subscription (id 'mp_...' ไม่อยู่ใน menuItems)
+    if(c.type==='package'){
+      if(c.package_id && pkgPlanTypes[c.package_id]) return true;   // แพคที่ครัวจัดเมนูให้ = ทำสด
+      return (c.items||[]).some(it=>{
+        const sku=String(it.sku||'');
+        if(/^(HP|LC|HX)/i.test(sku)) return true;
+        const mi=menuItems.find(m=>m.code===sku);
+        return !!mi && (mi.no_morning===true||mi.category==='meal_hp'||mi.category==='meal_lc'||mi.category==='hyrox');
+      });
+    }
     const item=menuItems.find(m=>m.id===c.id);
     if(!item) return false;
     return item.no_morning === true
       || item.category==='meal_hp'
       || item.category==='meal_lc'
-      || /^HP|^LC/i.test(item.code||'');
+      || item.category==='hyrox'
+      || /^HP|^LC|^HX/i.test(item.code||'');
   });
 }
 
@@ -2838,6 +2909,14 @@ async function _submitOrderDisabled() {
   if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
   if (!selDate)      { toast('กรุณาเลือกวันจัดส่ง'); return; }
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
+  /* 🔒 ด่านสุดท้ายก่อนสร้างออเดอร์ — ล็อกแค่ตอนโชว์ปุ่มไม่พอ
+     ค่าที่ค้างใน selSlot จากตอนก่อนใส่ของทำสดลงตะกร้า จะรอดมาถึงตรงนี้ได้
+     (บทเรียนเดียวกับเคสล็อกวัน: กันที่ UI อย่างเดียว = หลุดเสมอ) */
+  if (hasMealPlan() && (SLOTS.find(s=>s.key===selSlot)||{}).mealPlanDisabled) {
+    selSlot = null; renderTimePick();
+    toast('ของทำสด (Meal Plan / Hyrox) ส่งช่วงบ่ายเท่านั้น — กรุณาเลือกช่วงเวลาใหม่');
+    return;
+  }
   // เซ็ตแบ่งส่งหลายรอบ: ต้องมีวันรับครบทุกรอบ (เว้นแต่เลือก "รับรวดเดียว")
   const roundCount = checkoutSetRounds();
   const doSplit    = roundCount > 1 && !setDeliverOnce;
@@ -2934,7 +3013,11 @@ async function _submitOrderDisabled() {
       delivery_type:    selSlot==='express' ? 'lalamove' : (isOutOfProvince ? 'cold_chain' : 'messenger'),
       slip_image:       slipBase64 ? true : false,
       delivery_week:    cartWeekType()==='next' ? 'next' : 'current',
+      /* 🩺 ของแพ้/ข้อจำกัด ติดไว้ในโน้ตใบนี้ด้วย — กันกรณี customer_preferences เขียนไม่ผ่าน
+         แล้วครัวไม่เห็นอะไรเลย (เรื่องความปลอดภัย ต้องมีทางสำรองเสมอ) */
       notes:            ((document.getElementById('notes-input').value || '').trim()
+                          + (String(mpAllergy||'').trim() ? ' [🩺 แพ้: ' + String(mpAllergy).trim() + ']' : '')
+                          + (String(mpDislike||'').trim() ? ' [🩺 ไม่ทาน/ขอพิเศษ: ' + String(mpDislike).trim() + ']' : '')
                           + (pinSkipped ? ' [⚠️ ไม่ได้ปักหมุด — ค่าส่งยังไม่ได้คิด แอดมินตามเก็บ]' : '')).trim()
     };
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
@@ -3173,10 +3256,21 @@ async function _submitOrderDisabled() {
             quantity: r.box_count || 7, unit_price: 0, subtotal: 0,
             notes: 'meal_plan:' + r.mp_type + ':' + r.mp_set + ':round:' + r.round_no + '/' + r.total_rounds
           })));
+          /* 🔴 ผูกแถวรอบนี้เข้ากับ "ใบของรอบตัวเอง" — เดิมทุกรอบชี้ order_id ของใบแรกใบเดียว
+             ทำให้ตอนแอดมินเลื่อนวันส่งใบแรก ระบบลากรอบ 2..N มากองวันเดียวกันหมด
+             (เคสจริง: มิ้ม U-0810-004 → รอบ 2/3 หายจากปฏิทินครัวทั้งคู่)
+             non-blocking: ถ้าอัปเดตไม่ผ่าน ใบยังอยู่ครบ แค่กลับไปผูกใบแม่แบบเดิม */
+          try {
+            const rIds = rounds.map(r => r._id).filter(Boolean);
+            if (rIds.length) await sb.from('mp_deliveries').update({ order_id: mpOrd.id }).in('id', rIds);
+          } catch(e) { console.error('re-point mp_deliveries.order_id failed:', e); }
           mpNextRounds.push({ num: mpOrd.order_number, date: rDate, round: rounds[0].round_no, total: rounds[0].total_rounds });
         } catch(e) { console.error('MP round order create failed (non-blocking):', e); }
       }
     }
+
+    // 2e. 🩺 ข้อจำกัดอาหาร/ของแพ้ (N-41) — เก็บติดตัวลูกค้า ให้เด้งบนใบครัวทุกใบต่อจากนี้
+    if (cart.some(c => c.type === 'meal_plan')) await saveMyPrefs();
 
     // 3. Save default address + phone + ชื่อไลน์ (best-effort — ห่อ try กันพังทับ success ถ้าคอลัมน์ line_display_name ยังไม่มี/สิทธิ์)
     // display_name (ชื่อจริง) ไม่เซฟทับ — เก็บ line_display_name แยกไว้ (นัทขอเก็บทั้งชื่อไลน์+ชื่อจริง)
