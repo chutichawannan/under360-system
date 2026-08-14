@@ -3455,6 +3455,92 @@ async function planCancelRound(rowId, ev){
     alert("ยกเลิกรอบแล้ว"+stockBack);
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
+/* ══ กล่องไม่ครบ = ต้องเห็นก่อนของออกจากครัว ══════════════════════════════════
+   เคสจริง 13-14 ส.ค. 2569 (ฟ้า+PM จับได้): Milk MP-0814-027 แผนบอก 7 กล่อง แต่ assign จริง 6
+   · นวภัท HT-681637796 แผนบอก 6 assign จริง 1 → ครัวทำตามที่เห็น = ลูกค้าได้ของขาด
+   เดิมตัวเลข "6/7" เป็นสีเทาจาง #D1D5DB มุมล่างช่อง = มีก็เหมือนไม่มี ไม่มีใครทันเห็น
+
+   🔑 จุดที่ระบบ "แยกไม่ออก" และเป็นต้นเหตุจริง (นัทชี้เอง 13 ส.ค.):
+      "แอดมินลืม assign 1 กล่อง"  กับ  "ลูกค้าขอรับ 6 กล่องรอบนี้"  หน้าตาใน DB เหมือนกันเป๊ะ
+   → เลยต้องมีปุ่มให้แอดมิน "ประกาศเจตนา" ว่ารอบนี้รับไม่เท่าปกติจริงๆ
+      ติ๊กแล้ว box_count ของ "รอบนั้นรอบเดียว" เปลี่ยนตาม (ไม่กระทบรอบอื่น/คอร์สทั้งก้อน)
+      ไม่ติ๊ก แล้วยังขาด = ขึ้นแดงค้างไว้ให้เห็นทุกวิว
+
+   เก็บเจตนาไว้ที่ admin_notes ในรูป [รับไม่ปกติ:N] + เหตุผล — คอลัมน์ที่มีอยู่แล้ว ไม่ต้องรอ SQL ใหม่
+   ส่วน "ใครกด/เมื่อไหร่" ลง activity_log ตามแบบเดียวกับเลื่อนวัน/ยกเลิกรอบ */
+var MP_ABN_RE=/\[รับไม่ปกติ:(\d+)\]\s*/;
+function mpAbnormal(r){
+  var m=String((r&&r.admin_notes)||"").match(MP_ABN_RE);
+  if(!m) return null;
+  // " || " = เส้นแบ่งระหว่างเหตุผลของเรา กับโน้ตเดิมของฟ้า/แอดมินที่ต้องเก็บไว้
+  return { n:parseInt(m[1],10), reason:String(r.admin_notes).replace(MP_ABN_RE,"").split("||")[0].trim() };
+}
+/* แถบสรุปท้ายช่อง — ใช้ร่วมกันทั้ง 3 วิว (Full/Code/Compact)
+   ตั้งใจให้สลับวิวแล้วคำเตือนไม่หาย เพราะแอดมินชอบอยู่วิว Compact เวลาจัดเมนูเร็วๆ */
+function planBoxBar(rowId){
+  var r=getMpRow(rowId); if(!r) return "";
+  var total=mpRowTotalQty(rowId), box=mpRowBoxCount(rowId), abn=mpAbnormal(r);
+  var btn="<span onclick='event.stopPropagation();planSetBoxCount(\""+rowId+"\",event)' "
+    +"title='รอบนี้ลูกค้ารับไม่เท่าปกติ (มาก/น้อยกว่าเดิมก็ได้) — กดเพื่อระบุจำนวนจริง' "
+    +"style='cursor:pointer;font-size:9.5px;padding:1px 5px;border-radius:5px;background:#EFF6FF;color:#1E40AF;font-weight:700'>📦 รับไม่ปกติ</span>";
+  var tag=abn?"<div style='font-size:9.5px;color:#1E40AF;margin-top:2px' title='"+esc2(abn.reason||"")+"'>📦 รอบนี้รับไม่ปกติ "+abn.n+" กล่อง"+(abn.reason?" · "+esc2(abn.reason):"")+"</div>":"";
+  /* ยังไม่จ่ายเมนู = สภาพปกติของรอบสัปดาห์หน้า ไม่ต้องแดงให้ตาลาย
+     แต่ "ส่งวันนี้/พรุ่งนี้แล้วยังไม่จ่ายสักกล่อง" ไม่ปกติ — ครัวมีเวลาเหลือไม่กี่ชั่วโมง
+     (เคสจริง 14 ส.ค.: นวภัท box=6 assign=0 ส่งวันเดียวกัน หลุดมาถึงเช้าวันส่ง) */
+  if(!total){
+    var soon=r.delivery_date && r.delivery_date<=tomorrow2();
+    if(soon) return "<div style='margin-top:3px;font-size:10.5px;font-weight:800;color:#991B1B;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:6px;padding:3px 6px;line-height:1.5'>"
+      +"⚠ ส่ง"+(r.delivery_date===today2()?"วันนี้":"พรุ่งนี้")+"แล้วยังไม่จ่ายเมนูสักกล่อง (0/"+box+")<br>"+btn+"</div>"+tag;
+    return "<div style='font-size:10px;color:#9CA3AF;padding:2px 4px'>ยังไม่จ่ายเมนู 0/"+box+" &nbsp;"+btn+"</div>"+tag;
+  }
+  if(total<box)
+    return "<div style='margin-top:3px;font-size:10.5px;font-weight:800;color:#991B1B;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:6px;padding:3px 6px;line-height:1.5'>"
+      +"⚠ ขาด "+(box-total)+" กล่อง — assign "+total+"/"+box+"<br>"+btn+"</div>"+tag;
+  if(total>box)
+    return "<div style='margin-top:3px;font-size:10.5px;font-weight:800;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:6px;padding:3px 6px;line-height:1.5'>"
+      +"⚠ เกิน "+(total-box)+" กล่อง — assign "+total+"/"+box+"<br>"+btn+"</div>"+tag;
+  return "<div style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/"+box+" &nbsp;"+btn+"</div>"+tag;
+}
+/* ตั้งจำนวนกล่องจริงของ "รอบนี้รอบเดียว"
+   ⚠️ .eq("id",rowId) เท่านั้น — ห้าม .eq("order_id") เด็ดขาด (บทเรียนเดิม: ยิงทับทุกรอบของคอร์ส) */
+async function planSetBoxCount(rowId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var r=getMpRow(rowId); if(!r) return alert("ไม่พบรอบนี้");
+  var who=odWho(); if(!who) return;
+  var cur=mpRowBoxCount(rowId), total=mpRowTotalQty(rowId);
+  var ans=window.prompt(
+    (r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" · ส่ง "+(r.delivery_date||"—")
+    +"\n\nรอบนี้ลูกค้ารับจริงกี่กล่อง?"
+    +"\n(ตอนนี้แผนตั้งไว้ "+cur+" · จ่ายเมนูแล้ว "+total+")"
+    +"\n\nเปลี่ยนเฉพาะรอบนี้ ไม่กระทบรอบอื่นของคอร์ส", String(cur));
+  if(ans===null) return;
+  var n=parseInt(String(ans).trim(),10);
+  if(!(n>0&&n<=99)) return alert("ใส่จำนวนกล่องเป็นตัวเลข 1-99");
+  var reason=(window.prompt("เหตุผลสั้นๆ (ไว้ตามหลังตอนลูกค้าทวง)\nเช่น ลูกค้าขอลดรอบนี้ / เพิ่มให้เพื่อน","")||"").trim();
+  /* ⚠️ ห้ามเขียนทับ admin_notes ทั้งช่อง — ฟ้า/แอดมินเขียนเรื่องความปลอดภัยอาหารไว้ตรงนี้
+     (ของจริงในระบบ: "ตัด LC30 ออก (แพ้เต้าหู้/เครื่องใน/เลือด)") ทับทิ้ง = ลบข้อมูลแพ้อาหารเงียบๆ
+     → แทนที่เฉพาะป้าย [รับไม่ปกติ:N] ของเดิม แล้วต่อโน้ตเดิมไว้ข้างหลังเสมอ */
+  var keep=String(r.admin_notes||"").replace(MP_ABN_RE,"").trim();
+  var notes="[รับไม่ปกติ:"+n+"] "+(reason||"—")+" · "+who+" "+today2()+(keep?(" || "+keep):"");
+  try{
+    var up=await sb_.from("mp_deliveries").update({box_count:n, admin_notes:notes, updated_at:new Date().toISOString()})
+             .eq("id",rowId).select("id,box_count,admin_notes");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].box_count!==n)
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    r.box_count=n; r.admin_notes=up.data[0].admin_notes;
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"kq_status",
+      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" ("+(r.delivery_date||"")+") — รับไม่ปกติ "+cur+" → "+n+" กล่อง"+(reason?(" ("+reason+")"):""),
+      detail:{mp_id:rowId, from:cur, to:n, reason:reason, by:"oh_plan_box"} }); }catch(e){}
+    renderPlanCell(rowId);
+    if(typeof renderMpDeliveriesQueue==="function") renderMpDeliveriesQueue();
+    alert("รอบนี้ตั้งเป็น "+n+" กล่องแล้ว"+(total!==n?("\n\n⚠️ ตอนนี้จ่ายเมนูไว้ "+total+" รายการ — ยังไม่ตรงกับ "+n+" กล่อง"):""));
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+
 function renderPlanCell(rowId){
   var td=document.querySelector(".assign-cell[data-rowid='"+rowId+"']"); if(!td)return;
   var r=getMpRow(rowId); if(!r)return;
@@ -3476,7 +3562,8 @@ function renderPlanCell(rowId){
   var roundLabel="<div style='font-size:10px;color:#9CA3AF;margin-bottom:3px'>รอบ "+(r.round_no||"?")+orderTag+planActs+"</div>";
 
   if(planView==="Compact"){
-    td.innerHTML=roundLabel+"<span style='font-size:13px;font-weight:700;color:#1F4D3A'>"+total+"</span><span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>";
+    td.innerHTML=roundLabel+"<span style='font-size:13px;font-weight:700;color:"+(total&&total!==box?"#991B1B":"#1F4D3A")+"'>"+total+"</span>"
+      +"<span style='font-size:11px;color:#6B7280'>/"+box+" กล่อง</span>"+planBoxBar(rowId);
     return;
   }
   if(planView==="Code"){
@@ -3485,7 +3572,7 @@ function renderPlanCell(rowId){
       var m=MENU_POOL.find(function(x){return x.code===e.code;})||{type:"lc"};
       h+="<span class='assign-chip "+m.type+"' onclick='event.stopPropagation();removeMenuEntry(\""+rowId+"\",\""+e.code+"\")' title='คลิกเพื่อลบ'>"+e.code+((e.qty||1)>1?" ×"+e.qty:"")+"</span>";
     });
-    h+="<span style='font-size:10px;color:#D1D5DB;padding:2px'>"+total+"/"+box+"</span>";
+    h+=planBoxBar(rowId);
     td.innerHTML=h;
     return;
   }
@@ -3516,8 +3603,7 @@ function renderPlanCell(rowId){
     h+="</div></div>";
   });
   h+="</div>";
-  if(total<box)h+="<span style='font-size:10px;color:#D1D5DB;padding:2px 4px'>"+total+"/"+box+"</span>";
-  else h+="<span style='font-size:10px;color:#22C55E;padding:2px 4px'>✓ "+total+"/"+box+"</span>";
+  h+=planBoxBar(rowId);
   td.innerHTML=h;
 }
 
@@ -4851,7 +4937,14 @@ function renderMpDeliveriesQueue(){
     h+="<b>"+esc2(r.customer_name||"-")+"</b>"+lineTag(r);
     h+="<span class='customer-tag "+tagCls+"'>"+(r.mp_type||"").toUpperCase()+"</span>";
     h+="<span style='color:var(--ink-soft)'>รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+"</span>";
-    h+="<span style='color:var(--ink-soft)'>"+(r.box_count||7)+" กล่อง</span>";
+    /* กล่องไม่ครบต้องเห็นที่นี่ด้วย — คิว Meal Plan คือหน้าที่แอดมินเปิดดูรอบส่ง
+       (จ่ายเมนูจริงอยู่หน้าแพลนเมนู แต่คนมักเช็คยอดกล่องจากหน้านี้ก่อน) */
+    var _qBox=r.box_count||7, _qTot=(r.menu_items||[]).reduce(function(s,e){return s+((e&&e.qty)||1);},0);
+    h+="<span style='color:var(--ink-soft)'>"+_qBox+" กล่อง</span>";
+    if(_qTot&&_qTot<_qBox)
+      h+="<span style='font-size:10.5px;font-weight:800;color:#991B1B;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:5px;padding:1px 5px' title='จ่ายเมนูไม่ครบจำนวนกล่อง — ครัวจะทำตามที่เห็น'>⚠ ขาด "+(_qBox-_qTot)+" กล่อง ("+_qTot+"/"+_qBox+")</span>";
+    else if(_qTot>_qBox)
+      h+="<span style='font-size:10.5px;font-weight:800;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:5px;padding:1px 5px'>⚠ เกิน "+(_qTot-_qBox)+" กล่อง ("+_qTot+"/"+_qBox+")</span>";
     h+="<select onchange=\"updateMpDeliveryStatus('"+r.id+"',this.value)\" style='padding:4px 6px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:12px;font-family:inherit'>";
     Object.keys(MPQ_STATUS_MAP).forEach(function(k){
       h+="<option value='"+k+"'"+(r.status===k?" selected":"")+">"+MPQ_STATUS_MAP[k]+"</option>";
