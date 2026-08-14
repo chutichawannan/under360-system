@@ -9,6 +9,7 @@
  * ⚠️ ไม่คืนค่าความลับหรือ token ออกมาเด็ดขาด — คืนแค่ชื่อบอท / โควตา / สถานะ
  */
 const getLineToken = require('./_line_token.js');
+const getKapanToken = require('./_kapan_token.js');
 
 module.exports = async (req, res) => {
   const out = { ok: false, ขั้นตอน: [] };
@@ -73,6 +74,17 @@ module.exports = async (req, res) => {
       out.ทดสอบwebhook = t.ok ? ("LINE ยิงทดสอบแล้วได้ HTTP " + tj.statusCode + " · " + (tj.detail || "")) : ("ทดสอบไม่ผ่าน HTTP " + t.status + " " + (tj.message || ""));
     } catch (e) { out.ตั้งwebhook = "พัง: " + e.message; }
   }
+
+  // ── ตรวจกะปันด้วย (คนละบัญชี คนละกุญแจ) ──
+  try {
+    const kt = await getKapanToken();
+    if (!kt) { out.กะปัน = "🔴 ยังใช้ไม่ได้ — ยังไม่ได้ตั้ง KAPAN_CHANNEL_SECRET ที่ Vercel"; }
+    else {
+      const kr = await fetch("https://api.line.me/v2/bot/info", { headers: { Authorization: "Bearer " + kt } });
+      const kj = await kr.json().catch(() => ({}));
+      out.กะปัน = kr.ok ? ("✅ " + (kj.displayName || "-") + " (" + (kj.basicId || "-") + ")") : ("🔴 กุญแจผิด HTTP " + kr.status);
+    }
+  } catch (e) { out.กะปัน = "🔴 " + e.message; }
 
   out.ok = true;
   out.สรุป = '✅ คุยกับ LINE ได้จริง — ส่งข้อความหาลูกค้า/กลุ่มครัวได้แล้ว';

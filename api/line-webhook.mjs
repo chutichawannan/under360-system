@@ -1,4 +1,4 @@
-import getLineToken from "./_line_token.js";
+import getKapanToken from "./_kapan_token.js";
 // ============================================================
 //  Under360 — น้องกะปัน (Kapan) · ผู้ช่วยในกลุ่ม LINE   · สร้าง 5 ส.ค. 2026 · ตั้งชื่อ+บุคลิก 12 ส.ค.
 //  endpoint: /api/line-webhook   → ตั้งเป็น Webhook URL ในคอนโซล LINE
@@ -11,7 +11,7 @@ import getLineToken from "./_line_token.js";
 //     (แชทพนักงานต้องไม่หลุดผ่าน anon key ที่ฝังในหน้าเว็บ)
 //     ⚠️ ต้องแจ้งทีมครัวก่อนเชิญบอทเข้ากลุ่ม
 //
-//  env ที่ต้องมี: LINE_CHANNEL_SECRET · LINE_CHANNEL_ACCESS_TOKEN
+//  env ที่ต้องมี: KAPAN_CHANNEL_SECRET  (แชนแนล 2010975837 — คนละอันกับ OA ร้าน)
 // ============================================================
 
 import crypto from 'crypto';
@@ -244,8 +244,8 @@ export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('ok');   // LINE verify ใช้ GET/HEAD ได้
 
   const raw = await readRaw(req);
-  const secret = process.env.LINE_CHANNEL_SECRET;
-  const token  = await getLineToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
+  const secret = process.env.KAPAN_CHANNEL_SECRET;   // 14 ส.ค.: แยกจาก OA ร้าน — เคยใช้ชื่อเดียวกันแล้วทับกันจนกะปันตาย
+  const token  = await getKapanToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
 
   if (!verifyLine(raw, req.headers['x-line-signature'], secret)) {
     console.error('🔒 ลายเซ็น LINE ไม่ผ่าน (หรือยังไม่ได้ตั้ง LINE_CHANNEL_SECRET)');

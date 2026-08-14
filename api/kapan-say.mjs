@@ -1,3 +1,4 @@
+import getKapanToken from "./_kapan_token.js";
 // ============================================================
 //  กะปันพูด — ให้ห้อง PM/เลขา ส่งข้อความกลับเข้าไลน์นัทได้
 //  POST /api/kapan-say  { "key": "...", "text": "..." }
@@ -22,7 +23,7 @@ export default async function handler(req, res) {
   if (text.length > MAX) text = text.slice(0, MAX).trimEnd() + '…\n\n(ยาวเกินค่ะ ที่เหลือไปดูต่อในแชทนะคะ)';
   if (!text) return res.status(400).json({ ok: false, why: 'ไม่มีข้อความ' });
 
-  const token = process.env.LINE_CHANNEL_ACCESS_TOKEN;
+  const token = await getKapanToken();   // 14 ส.ค.: ใช้กุญแจของกะปันเอง ไม่ปนกับ OA ร้าน
   if (!token) return res.status(500).json({ ok: false, why: 'ยังไม่ได้ตั้ง token' });
 
   try {
