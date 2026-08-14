@@ -2721,15 +2721,30 @@ function toggleSetDeliverOnce(v){ setDeliverOnce=!!v; renderRoundSplit(); }
 // ══════════════════════════════════════
 // ตรวจว่าตะกร้ามีสินค้าที่ไม่ส่งช่วงเช้าไหม
 // HP/LC = no_morning อัตโนมัติ ไม่ต้อง tick ใน DB
+/* ของทำสด = ส่งบ่ายเท่านั้น (ผักมาถึงครัวเกือบ 9 โมง เช้าผลิตไม่ทันจริง)
+   🔴 เดิมเช็คไม่ครบ — เซ็ต/แพค (type='package') หลุดหมด
+      เคสจริง 14 ส.ค. 2569: Chai U-0814-006 สั่ง Hyrox 6 กล่อง แล้ว "เลือกช่วงเช้าได้" เอง
+      เพราะ Hyrox ขายเป็นแพค ไม่ได้ผ่านทาง meal_plan ปกติ ตัวกันเลยมองไม่เห็น
+   → เช็ค 3 ทาง: ชนิดในตะกร้า · ชนิดของแพค (pkg_plan_type) · รหัสเมนูที่อยู่ในแพค */
 function hasMealPlan(){
   return cart.some(c=>{
     if(c.type==='meal_plan') return true;   // ← Meal Plan subscription (id 'mp_...' ไม่อยู่ใน menuItems)
+    if(c.type==='package'){
+      if(c.package_id && pkgPlanTypes[c.package_id]) return true;   // แพคที่ครัวจัดเมนูให้ = ทำสด
+      return (c.items||[]).some(it=>{
+        const sku=String(it.sku||'');
+        if(/^(HP|LC|HX)/i.test(sku)) return true;
+        const mi=menuItems.find(m=>m.code===sku);
+        return !!mi && (mi.no_morning===true||mi.category==='meal_hp'||mi.category==='meal_lc'||mi.category==='hyrox');
+      });
+    }
     const item=menuItems.find(m=>m.id===c.id);
     if(!item) return false;
     return item.no_morning === true
       || item.category==='meal_hp'
       || item.category==='meal_lc'
-      || /^HP|^LC/i.test(item.code||'');
+      || item.category==='hyrox'
+      || /^HP|^LC|^HX/i.test(item.code||'');
   });
 }
 
@@ -2888,6 +2903,14 @@ async function submitOrder() {
   if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
   if (!selDate)      { toast('กรุณาเลือกวันจัดส่ง'); return; }
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
+  /* 🔒 ด่านสุดท้ายก่อนสร้างออเดอร์ — ล็อกแค่ตอนโชว์ปุ่มไม่พอ
+     ค่าที่ค้างใน selSlot จากตอนก่อนใส่ของทำสดลงตะกร้า จะรอดมาถึงตรงนี้ได้
+     (บทเรียนเดียวกับเคสล็อกวัน: กันที่ UI อย่างเดียว = หลุดเสมอ) */
+  if (hasMealPlan() && (SLOTS.find(s=>s.key===selSlot)||{}).mealPlanDisabled) {
+    selSlot = null; renderTimePick();
+    toast('ของทำสด (Meal Plan / Hyrox) ส่งช่วงบ่ายเท่านั้น — กรุณาเลือกช่วงเวลาใหม่');
+    return;
+  }
   // เซ็ตแบ่งส่งหลายรอบ: ต้องมีวันรับครบทุกรอบ (เว้นแต่เลือก "รับรวดเดียว")
   const roundCount = checkoutSetRounds();
   const doSplit    = roundCount > 1 && !setDeliverOnce;
