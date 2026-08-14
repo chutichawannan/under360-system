@@ -132,6 +132,20 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 /* ต้องมี flex-basis:0 ด้วย — ตั้งแค่ width:0 ไม่พอ ทดลองในเบราว์เซอร์แล้วยังกว้าง 220px เท่าเดิม
    (แถบนี้เป็น flex item ที่ flex-shrink:0 · เบราว์เซอร์เลยยึดขนาดจาก basis ไม่ใช่ width) */
 .sidebar.mini{width:var(--sidebar-mini);min-width:0;flex-basis:0;padding:0;border:none;overflow:hidden;}
+/* 📱 บนมือถือ แถบเมนูต้อง "ลอยทับ" ไม่ใช่ "เบียด" เนื้อหา
+   เดิมมันเป็น flex item ข้างๆ → เปิดเมนูบน iPhone (จอ 375) แถบกิน 220 เหลือเนื้อหา 155px
+   ผลจริงที่วัดได้: ช่องกรอกรหัสโค้ดเหลือ **33px** · ปุ่มบันทึกตกไปอยู่ y=1212 ของจอสูง 812 = กดไม่ได้เลย
+   → นี่คือเหตุผลที่แอดมิน "สร้างโค้ดส่วนลดไม่ได้" ทั้งที่ฟอร์มกับ DB ปกติดี
+   (เทสจริงบนจอ 375 แล้ว ไม่ใช่เดา — ฟอร์มเดียวกันนี้บนคอมสร้างโค้ดสำเร็จ)
+   ทำเป็น overlay + ฉากหลังกดปิด + เลือกเมนูแล้วหุบเอง = เนื้อหาได้ความกว้างเต็มจอเสมอ */
+@media(max-width:720px){
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);z-index:2500;box-shadow:2px 0 18px rgba(0,0,0,.28);}
+  .sidebar.mini{width:0;box-shadow:none;}
+  .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:2400;display:none;}
+  .sb-backdrop.show{display:block;}
+  /* ปุ่มเรียกเมนูคืนต้องกดโดนด้วยนิ้วจริง — ของเดิมกว้าง 18px (มาตรฐานแตะคือ ~44px) */
+  #sbFloatExpand{min-width:44px;min-height:44px;}
+}
 .sb-header{
   padding:16px 14px;display:flex;align-items:center;gap:10px;
   border-bottom:1px solid rgba(255,255,255,.1);min-height:60px;
@@ -1073,12 +1087,25 @@ function tomorrow2(){var d=new Date();d.setDate(d.getDate()+1);return toISO(d);}
 function dayAfter2(){var d=new Date();d.setDate(d.getDate()+2);return toISO(d);}
 function fmtD(d){return d.toLocaleDateString("th-TH",{weekday:"short",day:"numeric",month:"short"});}
 
+// จอเล็ก = แถบเมนูลอยทับเนื้อหา ต้องมีฉากหลังให้กดปิด (คนถนัดแตะข้างนอกมากกว่าหาปุ่ม)
+function isNarrowScreen(){ return window.innerWidth<=720; }
+function sbBackdrop(show){
+  var b=document.getElementById("sbBackdrop");
+  if(!b){
+    b=document.createElement("div");
+    b.id="sbBackdrop"; b.className="sb-backdrop";
+    b.onclick=function(){ if(!sidebarMini) toggleSidebar(); };
+    document.body.appendChild(b);
+  }
+  b.classList.toggle("show", !!show && isNarrowScreen());
+}
 function toggleSidebar(){
   sidebarMini=!sidebarMini;
   document.getElementById("sidebar").classList.toggle("mini",sidebarMini);
   document.getElementById("toggleIcon").textContent=sidebarMini?"▶":"◀";
   var fb=document.getElementById("sbFloatExpand");
   if(fb) fb.classList.toggle("show",sidebarMini);
+  sbBackdrop(!sidebarMini);
 }
 
 var TAB_TITLES={orders:"📋 ออเดอร์",slips:"🧾 ตรวจสลิป",onbehalf:"➕ สั่งแทนลูกค้า",menu:"🛒 เมนูออนไลน์",plan:"📅 แพลนเมนู",messenger:"🛵 แมสเซนเจอร์",promo:"🎁 โปรโมชั่น",customer:"👥 ข้อมูลลูกค้า",he:"🏠 หน้าร้าน (HE)",settings:"⚙️ ตั้งค่า",app:"🔗"};
@@ -1088,6 +1115,7 @@ function _autoCollapseBar(){
   document.getElementById("sidebar").classList.add("mini");
   document.getElementById("toggleIcon").textContent="▶";
   document.getElementById("sbFloatExpand").classList.add("show");
+  sbBackdrop(false);
 }
 function openApp(url, label, el){
   document.querySelectorAll(".tab-panel").forEach(function(p){p.classList.remove("active");});
@@ -1124,6 +1152,8 @@ function openTab(name,el){
   } else {
     content.classList.remove("he-mode");
   }
+  // 📱 จอเล็ก: เลือกเมนูแล้วหุบแถบเอง — ไม่งั้นแถบลอยทับของที่เพิ่งเลือกไว้
+  if(isNarrowScreen() && !sidebarMini) _autoCollapseBar();
 }
 function setDate(m){
   dateMode=m; pickedDate=null;
