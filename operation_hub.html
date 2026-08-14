@@ -2037,11 +2037,15 @@ async function openOrderDetail(id){
       var ph=String(o.customer_phone).replace(/\D/g,""); if(ph.indexOf("66")===0)ph="0"+ph.slice(2); if(ph.length===9)ph="0"+ph;
       var r3=await sb_.from("customers").select("*").eq("phone",ph).limit(1); c=(r3.data||[])[0]||null; if(c)matchedBy="เบอร์";
     }
-    // ประวัติซื้อของลูกค้าคนนี้ (ผูกได้ทั้ง customer_id และ line_uid)
+    /* ประวัติซื้อของลูกค้าคนนี้ (ผูกได้ทั้ง customer_id และ line_uid)
+       ⚠️ นับเฉพาะใบที่มียอดเงินจริง — PM เจอว่าโชว์ "ซื้อมาแล้ว 2 ครั้ง" ทั้งที่ลูกค้าซื้อครั้งเดียว
+          เพราะคอร์สแบ่งส่งหลายรอบ = 1 รอบ 1 ใบ (รอบ 2..N ยอด ฿0) → นับใบ = นับรอบส่ง ไม่ใช่นับการซื้อ
+          กติกาเดียวกับฝั่งการเงิน (scripts/finance/orders.mjs กรอง total>0 ตั้งแต่แรก)
+       ⚠️ ต้องมี .limit() เสมอ — ไม่ใส่ = Supabase คืนแค่ 1000 แถวเงียบๆ */
     var hist=[];
     if(c){
-      var hq=await sb_.from("orders").select("total").or("customer_id.eq."+c.id+(o.line_uid?",line_uid.eq."+o.line_uid:"")).neq("status","cancelled");
-      hist=hq.data||[];
+      var hq=await sb_.from("orders").select("total").or("customer_id.eq."+c.id+(o.line_uid?",line_uid.eq."+o.line_uid:"")).neq("status","cancelled").limit(2000);
+      hist=(hq.data||[]).filter(function(x){return (x.total||0)>0;});
     }
     var st=ST[o.status]||{t:o.status,cls:"p-done"};
     var paid=o.payment_status==="paid";

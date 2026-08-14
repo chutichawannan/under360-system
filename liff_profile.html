@@ -84,6 +84,8 @@ body{font-family:var(--sans);background:var(--bg);padding-bottom:24px;}
 .o-desc{flex:1;color:var(--ink-soft);}
 .o-total{font-family:var(--mono);font-weight:700;color:var(--forest);}
 .o-rebuy{background:none;border:1px solid var(--forest);color:var(--forest);border-radius:6px;padding:3px 8px;font-size:11px;font-weight:600;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
+.o-slip{background:var(--forest);border:1px solid var(--forest);color:#fff;border-radius:6px;padding:3px 8px;font-size:11px;font-weight:700;cursor:pointer;font-family:var(--sans);flex-shrink:0;}
+.o-badge{font-size:10px;font-weight:700;padding:1px 7px;border-radius:20px;white-space:nowrap;}
 /* Reorder popup */
 .popup-bg{position:fixed;inset:0;background:rgba(0,0,0,.5);display:flex;align-items:flex-end;z-index:999;}
 .popup-box{background:#fff;border-radius:20px 20px 0 0;padding:22px;width:100%;max-width:480px;margin:0 auto;}
@@ -243,7 +245,7 @@ async function loadProfile(){
   if(sb_){
     try{
       // maybeSingle: ลูกค้าที่ยังไม่มีแถวใน DB จะได้ null เฉยๆ ไม่ error (เดิม .single() error → ตกไป mock)
-      const r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total,status)").eq("line_uid",lineUid).maybeSingle();
+      const r=await sb_.from("customers").select("*, orders(id,order_number,delivery_date,total,status,payment_status,slip_url)").eq("line_uid",lineUid).maybeSingle();
       if(!r.error)p=r.data;
     }catch(e){ console.error("loadProfile:",e); }
   }
@@ -264,16 +266,101 @@ async function loadProfile(){
   if(p.picture_url){document.getElementById("hAv").src=p.picture_url;document.getElementById("hEmoji").style.display="none";}
   renderTier(p.loyalty_points||0);
   // history
-  const orders=p.orders||[];
-  if(!orders.length){document.getElementById("histBody").innerHTML='<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:16px">ยังไม่มีประวัติออเดอร์</div>';return;}
-  document.getElementById("histBody").innerHTML=orders.slice(0,5).map(o=>
-    `<div class="order-row">
-      <span class="o-num">${o.order_number||"—"}</span>
-      <span class="o-desc">${o.delivery_date||""}</span>
-      <span class="o-total">${fmtB(o.total)}</span>
-      <button class="o-rebuy" onclick="showReorder('${o.id}','${o.order_number}')">สั่งซ้ำ</button>
-    </div>`
-  ).join("")+`<div style="text-align:center;margin-top:10px"><a href="#" style="color:var(--forest);font-size:12px;font-weight:700">ดูทั้งหมด →</a></div>`;
+  renderHistory(p.orders||[]);
+}
+
+/* ── ประวัติออเดอร์ที่ลูกค้าเห็น (N-75 · นัทเจอเอง 14 ส.ค. 2569) ────────────
+   อาการ: นัทเปิดโปรไฟล์ตัวเองแล้วเห็น 5 ใบเรียงมั่ว **ซึ่งยกเลิกไปแล้วทั้ง 5 ใบ**
+   และมีปุ่ม "สั่งซ้ำ" ให้กดบนใบที่ไม่เคยเกิดขึ้นจริง
+   3 เรื่องที่แก้:
+     ① ใบยกเลิกต้องไม่ปนเป็น "ประวัติการสั่ง" — ถ้าจะโชว์ ต้องบอกตรงๆ ว่ายกเลิกแล้ว + สั่งซ้ำไม่ได้
+     ② เรียงใหม่สุดขึ้นก่อน ด้วย "วันส่ง" ไม่ใช่วันกดสั่ง (ลูกค้าจำวันที่ได้ของ ไม่ใช่วันกดสั่ง)
+     ③ บอกสถานะจริง — เดิมไม่บอกอะไรเลย ลูกค้าโอนแล้วก็ไม่รู้ว่าร้านเห็นสลิปหรือยัง */
+function ordStatus(o){
+  var st=String(o.status||"").toLowerCase();
+  if(st==="cancelled") return {t:"ยกเลิกแล้ว",c:"#b0342c",bg:"#fdecea",dead:true};
+  var pay=String(o.payment_status||"").toLowerCase();
+  // ฝั่งเงินก่อนเสมอ — ลูกค้าอยากรู้ว่า "เงินถึงร้านหรือยัง" มากกว่าครัวทำถึงไหน
+  if(pay==="unpaid")         return {t:"รอชำระเงิน",c:"#8a5a00",bg:"#fff5e0",pay:"unpaid"};
+  if(pay==="pending"||pay==="pending_review")
+                             return {t:"ส่งสลิปแล้ว · รอร้านตรวจ",c:"#8a5a00",bg:"#fff5e0"};
+  if(st==="delivered")       return {t:"ส่งแล้ว",c:"#1d6b3f",bg:"#e8f5ec"};
+  if(st==="ready")           return {t:"พร้อมส่ง",c:"#1d6b3f",bg:"#e8f5ec"};
+  if(st==="preparing")       return {t:"ครัวกำลังทำ",c:"#1d6b3f",bg:"#e8f5ec"};
+  return {t:"ยืนยันแล้ว",c:"#1d6b3f",bg:"#e8f5ec"};
+}
+function renderHistory(all){
+  var box=document.getElementById("histBody");
+  // เรียงด้วยวันส่ง ใหม่สุดก่อน (เดิมไม่มี order by เลย = ได้ตามลำดับที่ DB คืนมา)
+  var orders=(all||[]).slice().sort(function(a,b){
+    return String(b.delivery_date||"").localeCompare(String(a.delivery_date||""));
+  });
+  var live=orders.filter(function(o){return String(o.status||"").toLowerCase()!=="cancelled";});
+  var dead=orders.filter(function(o){return String(o.status||"").toLowerCase()==="cancelled";});
+  if(!live.length&&!dead.length){
+    box.innerHTML='<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:16px">ยังไม่มีประวัติออเดอร์</div>';
+    return;
+  }
+  function row(o){
+    var s=ordStatus(o);
+    var num=String(o.order_number||"—").replace(/[^\w-]/g,"");
+    var slip=(s.pay==="unpaid")
+      ? '<button class="o-slip" onclick="pickSlip(\''+o.id+'\',\''+num+'\')">แนบสลิป</button>' : "";
+    var rebuy=s.dead ? "" :
+      '<button class="o-rebuy" onclick="showReorder(\''+o.id+'\',\''+num+'\')">สั่งซ้ำ</button>';
+    return '<div class="order-row"'+(s.dead?' style="opacity:.6"':'')+'>'
+      +'<div style="flex:1;min-width:0">'
+        +'<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+          +'<span class="o-num" style="width:auto">'+num+'</span>'
+          +'<span class="o-badge" style="color:'+s.c+';background:'+s.bg+'">'+s.t+'</span>'
+        +'</div>'
+        +'<div class="o-desc" style="font-size:11px;margin-top:2px">ส่ง '+(o.delivery_date||"—")+'</div>'
+      +'</div>'
+      +'<span class="o-total">'+fmtB(o.total)+'</span>'
+      +slip+rebuy
+    +'</div>';
+  }
+  var html=live.slice(0,5).map(row).join("");
+  if(!live.length) html='<div style="text-align:center;color:var(--ink-soft);font-size:13px;padding:12px 0">ยังไม่มีออเดอร์ที่สั่งสำเร็จ</div>';
+  if(dead.length){
+    html+='<div style="margin-top:12px;padding-top:8px;border-top:1px dashed var(--ink-xsoft)">'
+      +'<div style="font-size:11px;color:var(--ink-soft);margin-bottom:4px">ออเดอร์ที่ยกเลิกแล้ว</div>'
+      +dead.slice(0,3).map(row).join("")+'</div>';
+  }
+  box.innerHTML=html;
+}
+
+/* แนบสลิปย้อนหลังจากหน้าโปรไฟล์ — เดิมลูกค้าที่กดสั่งแล้วยังไม่โอน ไม่มีทางส่งสลิปเลย
+   ต้องทักแอดมินอย่างเดียว (= งานเข้าแอดมินทุกใบ และหลุดได้ถ้าแอดมินไม่เห็น) */
+function pickSlip(orderId,orderNum){
+  var inp=document.createElement("input");
+  inp.type="file"; inp.accept="image/*";
+  inp.onchange=function(){ if(inp.files&&inp.files[0]) uploadSlip(orderId,orderNum,inp.files[0]); };
+  inp.click();
+}
+async function uploadSlip(orderId,orderNum,file){
+  var sb_=getSB(); if(!sb_){alert("เชื่อมต่อไม่ได้ ลองใหม่อีกครั้ง");return;}
+  try{
+    var ext=(file.type.split("/")[1]||"jpg").replace("jpeg","jpg");
+    var path=orderNum+"_"+Math.random().toString(36).slice(2)+Date.now().toString(36)+"."+ext;
+    var up=await sb_.storage.from("payment-slips").upload(path,file,{contentType:file.type,upsert:false});
+    if(up.error) throw up.error;
+    var url=(sb_.storage.from("payment-slips").getPublicUrl(path).data||{}).publicUrl;
+    // pending_review = รอแอดมินเปิดดูรูปแล้วกดยืนยัน · ห้ามตั้ง paid เอง (เคยตีว่าจ่ายแล้วโดยไม่มีรูป)
+    var payload={payment_status:"pending_review"};
+    if(url) payload.slip_url=url;
+    var r=await sb_.from("orders").update(payload).eq("id",orderId);
+    if(r.error&&/slip_url/i.test(r.error.message||"")){
+      delete payload.slip_url;
+      r=await sb_.from("orders").update(payload).eq("id",orderId);
+    }
+    if(r.error) throw r.error;
+    alert("ส่งสลิปแล้ว รอร้านตรวจสอบสักครู่นะคะ 🙏");
+    loadProfile();
+  }catch(e){
+    console.error("uploadSlip:",e);
+    alert("ส่งสลิปไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักแอดมินได้เลยค่ะ");
+  }
 }
 
 async function showReorder(orderId,orderNum){
