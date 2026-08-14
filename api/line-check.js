@@ -53,7 +53,8 @@ module.exports = async (req, res) => {
   //    ปลอดภัยเพราะ "ปลายทางถูกฮาร์ดโค้ดเป็นโดเมนเราเท่านั้น" — สั่งให้ชี้ที่อื่นไม่ได้
   //    รันซ้ำได้ไม่มีผลข้างเคียง · ไม่แตะอะไรถ้าตั้งถูกอยู่แล้ว
   if (req.query && req.query.setup === "webhook") {
-    const ENDPOINT = "https://under360-system.vercel.app/api/line-webhook";
+    // 14 ส.ค.: ห้ามชี้มาที่ /api/line-webhook เด็ดขาด — นั่นคือของกะปัน (บัญชีส่วนตัวนัท)
+    const ENDPOINT = "https://under360-system.vercel.app/api/line-store-webhook";
     try {
       const cur = out.webhook && out.webhook.ปลายทาง;
       if (cur === ENDPOINT) { out.ตั้งwebhook = "ตั้งไว้ถูกอยู่แล้ว ไม่ต้องทำอะไร"; }
