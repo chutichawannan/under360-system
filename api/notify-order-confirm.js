@@ -213,6 +213,13 @@ async function getToken() {
 }
 
 export default async function handler(req, res) {
+  /* เปิดให้หน้าลูกค้า (LIFF) เรียกได้ทันทีที่กดสั่งเสร็จ — ลูกค้าได้ใบยืนยันใน 2-3 วินาที
+     ไม่ต้องรอรอบ cron · ตัว cron ยังทำงานเป็นตาข่ายกันตกเหมือนเดิม (ใบที่แอดมินสั่งแทน/ยิงพลาด)
+     ปลอดภัย: เอนด์พอยต์นี้ "ส่งใบยืนยันให้เจ้าของออเดอร์" เท่านั้น ไม่รับข้อความจากภายนอก
+     และมีรายชื่อกันส่งซ้ำอยู่แล้ว เรียกกี่รอบก็ส่งครั้งเดียว */
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,OPTIONS");
+  if (req.method === "OPTIONS") { res.status(204).end(); return; }
   const dry = String(req.query?.dry || "") === "1";
   const only = String(req.query?.order || "").trim();
   const token = dry ? null : await getToken();

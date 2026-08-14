@@ -1,6 +1,7 @@
 {
   "crons": [
-    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" }
+    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" },
+    { "path": "/api/notify-order-confirm", "schedule": "*/7 * * * *" }
   ],
   "rewrites": [
     { "source": "/k",       "destination": "/pwa/app-k.html" },

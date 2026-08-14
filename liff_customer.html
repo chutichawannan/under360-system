@@ -3300,6 +3300,11 @@ async function submitOrder() {
     appliedPromos = []; refreshCouponUI();
     if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     showScr('s-ok');
+    /* 📩 เด้งใบยืนยันเข้าแชท LINE ของลูกค้าทันที (นัทสั่ง 14 ส.ค. 2569)
+       ตัวส่งทำไว้ตั้งแต่ 8 ส.ค. แล้ว (api/notify-order-confirm) แต่ไม่เคยมีอะไรไปกดให้มันทำงาน
+       ยิงแล้วลืม — ไม่ await ไม่บล็อกหน้าจอ ล้มก็ไม่กระทบลูกค้าเลย
+       ฝั่งเซิร์ฟเวอร์กันส่งซ้ำอยู่แล้ว + มี cron คอยเก็บใบที่ตกหล่นอีกชั้น */
+    try{ fetch('/api/notify-order-confirm?order=' + encodeURIComponent(orderNum)).catch(function(){}); }catch(e){}
 
   } catch(e) {
     console.error(e);
