@@ -137,7 +137,7 @@ async function load(){
 
   /* ดึงรายการอาหารทีเดียวทุกใบ — กันยิงทีละใบตอนพิมพ์ทั้งวัน */
   const ids=orders.map(o=>o.id);
-  const it=await sb.from('order_items').select('order_id,menu_code,menu_name,quantity').in('order_id',ids).limit(3000);
+  const it=await sb.from('order_items').select('order_id,menu_code,menu_name,quantity,notes').in('order_id',ids).limit(3000);
   const byOrder={};
   (it.data||[]).forEach(i=>{ (byOrder[i.order_id]=byOrder[i.order_id]||[]).push(i); });
 
