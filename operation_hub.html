@@ -1564,10 +1564,18 @@ function renderOrders(orders){
        · ใบยอด ฿0 = รอบถัดไปของคอร์ส จ่ายรวมใบแรกไปแล้ว → ไม่ควรขึ้นคำว่า "โอนแล้ว" ให้สับสน */
     var isZero=!Number(o.total||0);
     var hasSlip=!!(o.slip_url||o.slip_image);
+    /* ⚠️ ป้าย "จ่ายรวมใบแรก" จะพูดได้ก็ต่อเมื่อ "รู้ว่าใบแรกคือใบไหน" จริงๆ
+       ตรวจ 14 ส.ค. 2569: ใบยอด ฿0 มี 16 ใบ แต่ 10 ใบไม่ได้บันทึกเลขใบแรกไว้ในโน้ตเลย
+       ถ้าติดป้ายเหมือนกันหมด = ไปรับประกันว่า "จ่ายแล้ว" ทั้งที่พิสูจน์ไม่ได้
+       → ของแบบนี้ต้องติดธงให้คนไปตรวจ ไม่ใช่ทำให้ดูเรียบร้อย (เงินหายเงียบเริ่มจากตรงนี้) */
+    var parentNum=(String(o.notes||"").match(/จ่ายรวมกับ(?:ออเดอร์)?\s*([A-Za-z]{1,3}-[0-9A-Za-z-]+)/)||[])[1]||"";
     var payStyle, payText, payTitle;
-    if(isZero && paid){
+    if(isZero && paid && parentNum){
       payStyle="background:#EEF2FF;color:#4338CA"; payText="🧾 จ่ายรวมใบแรก";
-      payTitle="ใบนี้ยอด ฿0 — เป็นรอบถัดไปของคอร์สที่จ่ายรวมไปกับใบแรกแล้ว";
+      payTitle="ยอด ฿0 — จ่ายรวมไปกับใบ "+parentNum+" แล้ว · คลิกเพื่อดูสลิปของใบนั้น";
+    } else if(isZero && paid){
+      payStyle="background:#FEF3C7;color:#92400E;border:1px solid #FCD34D"; payText="❓ ฿0 ไม่ระบุใบที่จ่าย";
+      payTitle="ใบนี้ยอด ฿0 และถูกตั้งเป็นจ่ายแล้ว แต่ไม่มีบันทึกว่าจ่ายรวมกับใบไหน — ต้องตรวจเอง";
     } else if(paid && hasSlip){
       payStyle="background:#D1FAE5;color:#065F46"; payText="💰 โอนแล้ว";
       payTitle="ลูกค้าแนบสลิปไว้ในระบบ — กดดูสลิปได้";
