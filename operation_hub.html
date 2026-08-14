@@ -1549,9 +1549,41 @@ function renderOrders(orders){
     var slipTag=(o.slip_url||o.slip_image)?" 📎":"";  // มีแนบสลิปในระบบ
     // ปุ่มเปิดดูรูปสลิปจริง (ต้องรัน scripts/sql_slip_url.sql — ออเดอร์เก่าไม่มีรูปเก็บไว้)
     var slipBtn=o.slip_url?"<a href='"+o.slip_url+"' target='_blank' rel='noopener' onclick='event.stopPropagation()' style='display:inline-block;margin-top:4px;margin-left:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;background:#E0E7FF;color:#3730A3;text-decoration:none'>🧾 ดูสลิป</a>":"";
-    var payStyle=paid?"background:#D1FAE5;color:#065F46":(review?"background:#E0E7FF;color:#3730A3":"background:#FEF3C7;color:#92400E");
-    var payText =paid?"💰 โอนแล้ว":(review?"🧾 รอตรวจสลิป":"⏳ รอโอน");
-    var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+(review?"ตรวจสลิปแล้วคลิกเพื่อยืนยันว่าโอนแล้ว":"คลิกเพื่อสลับสถานะการโอนเงิน")+"'>"+payText+slipTag+"</span>"+slipBtn;
+    /* 💰 ป้ายสถานะเงิน — แยกให้เห็นว่า "โอนแล้ว" อันไหนมีหลักฐาน อันไหนแอดมินกดเอง
+       นัทถามเอง 14 ส.ค. 2569: "โอนแล้วก็ต้องมีสลิปสิ มีโอนแล้วปลอมมั่งไหม"
+       ตรวจย้อน 177 ใบแล้ว: ใบที่ลูกค้าสั่งเองผ่านแอปมีสลิปครบ 24/24 — ไม่มีของปลอม
+       แต่บนจอเดิมป้ายเขียวเหมือนกันหมด แยกไม่ออกด้วยตา → ทำให้ต่างกันชัด
+       · ใบยอด ฿0 = รอบถัดไปของคอร์ส จ่ายรวมใบแรกไปแล้ว → ไม่ควรขึ้นคำว่า "โอนแล้ว" ให้สับสน */
+    var isZero=!Number(o.total||0);
+    var hasSlip=!!(o.slip_url||o.slip_image);
+    var payStyle, payText, payTitle;
+    if(isZero && paid){
+      payStyle="background:#EEF2FF;color:#4338CA"; payText="🧾 จ่ายรวมใบแรก";
+      payTitle="ใบนี้ยอด ฿0 — เป็นรอบถัดไปของคอร์สที่จ่ายรวมไปกับใบแรกแล้ว";
+    } else if(paid && hasSlip){
+      payStyle="background:#D1FAE5;color:#065F46"; payText="💰 โอนแล้ว";
+      payTitle="ลูกค้าแนบสลิปไว้ในระบบ — กดดูสลิปได้";
+    } else if(paid){
+      payStyle="background:#FEF9C3;color:#854D0E;border:1px solid #FDE047"; payText="✋ โอนแล้ว (ไม่มีสลิป)";
+      payTitle="แอดมินกดยืนยันเอง ไม่มีรูปสลิปในระบบ — ถ้ามีสลิป แนบไว้เป็นหลักฐานด้วยจะดีกว่า";
+    } else if(review){
+      payStyle="background:#E0E7FF;color:#3730A3"; payText="🧾 รอตรวจสลิป";
+      payTitle="ตรวจสลิปแล้วคลิกเพื่อยืนยันว่าโอนแล้ว";
+    } else {
+      payStyle="background:#FEF3C7;color:#92400E"; payText="⏳ รอโอน";
+      payTitle="คลิกเพื่อสลับสถานะการโอนเงิน";
+    }
+    var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+esc2(payTitle)+"'>"+payText+slipTag+"</span>"+slipBtn;
+    /* 📎 ปุ่มแนบสลิปติดข้างป้าย "รอโอน" เลย (นัทขอ 14 ส.ค.) — เดิมต้องเปิดใบก่อนถึงจะแนบได้
+       ลูกค้าส่งสลิปมาทางไลน์บ่อย แอดมินจะได้กดแนบจากหน้ารายการได้ทันที ไม่ต้องเข้าออกทีละใบ */
+    if(!paid && !isZero){
+      payBadge+="<input type='file' accept='image/*' id='rowSlip_"+o.id+"' style='display:none' onchange=\"odUploadSlip('"+o.id+"',event)\">"
+        +"<button onclick=\"event.stopPropagation();document.getElementById('rowSlip_"+o.id+"').click()\" "
+        +"title='แนบสลิปให้ใบนี้ (ลูกค้าส่งมาทางไลน์)' "
+        +"style='display:inline-block;margin-top:4px;margin-left:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;"
+        +"background:#1F4D3A;color:#fff;border:none;cursor:pointer'>📎 แนบสลิป</button>"
+        +"<div id='odSlipMsg_"+o.id+"' style='font-size:10.5px;margin-top:3px'></div>";
+    }
     if(ordCompact){
       /* โหมดย่อ: สถานะครัวเป็นตัวหลัก · สถานะเงินย่อเหลือจุดสีจุดเดียว (เรื่องเงินสำคัญเกินกว่าจะตัดทิ้ง) */
       var payDot=paid?"#10B981":(review?"#6366F1":"#F59E0B");
@@ -3308,9 +3340,26 @@ async function planCancelRound(rowId, ev){
       action_type:"kq_status",
       summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" ("+(r.delivery_date||"")+") — ยกเลิกรอบจากหน้าแพลนเมนู",
       detail:{mp_id:rowId, date:r.delivery_date, order_id:(om&&om.id)||null, by:"oh_plan"} }); }catch(e){}
+    /* ♻️ คืนสต็อกของรอบนี้ — ปิดช่องที่เหลือของเรื่อง "ยกเลิกแล้วสต็อกไม่คืน"
+       (หน้าออเดอร์คืนให้แล้วตั้งแต่ 13 ส.ค. แต่ยกเลิกจากหน้านี้ยังไม่คืน)
+       ⚠️ คืนเฉพาะตอนที่รอบนี้เป็น "รอบเดียวของใบ" — ถ้าใบเดียวครอบหลายรอบ
+          การคืนทั้งใบจะเกินจริง เพราะรอบอื่นยังต้องใช้ของอยู่ */
+    var stockBack="";
+    if(om&&om.id){
+      try{
+        var sib=await sb_.from("mp_deliveries").select("id,status").eq("order_id",om.id);
+        var liveLeft=(sib.data||[]).filter(function(m){return m.status!=="cancelled";}).length;
+        if(liveLeft===0){
+          var rs=await odRestock(om.id,+1,"คืนสต็อก");
+          if(rs) stockBack="\nคืนสต็อกให้แล้ว "+rs.boxes+" กล่อง ("+rs.ok+"/"+rs.menus+" เมนู)";
+        } else {
+          stockBack="\n(ใบ "+om.num+" ยังมีรอบอื่นเหลืออยู่ "+liveLeft+" รอบ — ยังไม่คืนสต็อก)";
+        }
+      }catch(e){ console.error("คืนสต็อก (ยกเลิกรอบ):",e); }
+    }
     selectedRowIds=selectedRowIds.filter(function(id){return id!==rowId;});
     await loadMpPlanData();
-    alert("ยกเลิกรอบแล้ว");
+    alert("ยกเลิกรอบแล้ว"+stockBack);
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 function renderPlanCell(rowId){
@@ -5389,6 +5438,24 @@ async function obSubmit(){
       return {order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:note};
     });
     var it=await sb_.from('order_items').insert(items); if(it.error)throw it.error;
+    /* ✂️ ตัดสต็อก — รูใหญ่ที่สุดของเรื่องสต็อก เพิ่งอุด 14 ส.ค. 2569
+       เดิม "สั่งแทนลูกค้า" ไม่ตัดสต็อกเลยสักกล่อง (ฝั่ง LIFF ตัดมาตั้งแต่ 3 ส.ค. แต่ฝั่งนี้ไม่มี)
+       → กิ๊ฟกดสั่งแทน 10 กล่อง ระบบยังคิดว่าของครบ = ลูกค้าคนถัดไปสั่งเกินของที่มีได้
+       ใช้ RPC ตัวเดียวกับ LIFF (ทำใน DB ครั้งเดียว กดพร้อมกันไม่เพี้ยน · เมนูไม่จำกัดข้ามให้เอง)
+       best-effort: ตัดพลาดห้ามทำให้ออเดอร์ล่ม แต่ต้องบอกให้แอดมินรู้ ไม่ปล่อยเงียบ */
+    var stockMsg='';
+    try{
+      var need={};
+      items.forEach(function(i){ if(i.menu_item_id) need[i.menu_item_id]=(need[i.menu_item_id]||0)+(i.quantity||0); });
+      var mids=Object.keys(need);
+      if(mids.length){
+        var rs=await Promise.allSettled(mids.map(function(mid){
+          return sb_.rpc('adjust_stock',{p_menu_id:mid, p_delta:-Math.abs(need[mid])});
+        }));
+        var bad=rs.filter(function(x){return x.status!=='fulfilled'||(x.value&&x.value.error);}).length;
+        if(bad) stockMsg=' · ⚠️ ตัดสต็อกไม่สำเร็จ '+bad+'/'+mids.length+' เมนู';
+      }
+    }catch(e){ console.error('ตัดสต็อก (สั่งแทน) ไม่สำเร็จ:',e); stockMsg=' · ⚠️ ตัดสต็อกไม่สำเร็จ'; }
     /* แถวแพลนเมนู — Meal Plan + เซ็ตที่ตั้ง pkg_plan_type ไว้ (Hyrox) ต้องโผล่หน้า "แพลนเมนู" เหมือนที่ลูกค้าสั่งผ่าน LIFF */
     var planRows=obCart.filter(function(c){return c.planType;}).map(function(c){
       return { order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
@@ -5408,7 +5475,7 @@ async function obSubmit(){
           +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
       } else planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
     }
-    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg);
+    msg.style.color='#1F4D3A'; msg.innerHTML='✅ บันทึกแล้ว <b>'+obEsc(orderNum)+'</b> · ลูกค้า '+obEsc(rname||(obCust&&obCust.display_name)||'-')+' · กดโดย '+obEsc(admin)+obEsc(planMsg)+obEsc(stockMsg);
     obCart=[]; obRenderCart(); obClearCust();
     document.getElementById('ob-addr').value=''; document.getElementById('ob-rname').value=''; document.getElementById('ob-rphone').value=''; document.getElementById('ob-fee').value='0'; document.getElementById('ob-disc').value='0'; document.getElementById('ob-promo').value=''; document.getElementById('ob-paid').checked=false;
   }catch(e){ err('พลาด: '+(e.message||e)); }
