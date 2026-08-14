@@ -137,10 +137,22 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
    ผลจริงที่วัดได้: ช่องกรอกรหัสโค้ดเหลือ **33px** · ปุ่มบันทึกตกไปอยู่ y=1212 ของจอสูง 812 = กดไม่ได้เลย
    → นี่คือเหตุผลที่แอดมิน "สร้างโค้ดส่วนลดไม่ได้" ทั้งที่ฟอร์มกับ DB ปกติดี
    (เทสจริงบนจอ 375 แล้ว ไม่ใช่เดา — ฟอร์มเดียวกันนี้บนคอมสร้างโค้ดสำเร็จ)
-   ทำเป็น overlay + ฉากหลังกดปิด + เลือกเมนูแล้วหุบเอง = เนื้อหาได้ความกว้างเต็มจอเสมอ */
+   ทำเป็น overlay + ฉากหลังกดปิด + เลือกเมนูแล้วหุบเอง = เนื้อหาได้ความกว้างเต็มจอเสมอ
+
+   🪤 กับดักที่เสียเวลาไปกับมันจริงๆ: **ห้ามซ่อนแถบนี้ด้วยการย่อ `width` บนมือถือ**
+      แถบมี `transition:width .2s` อยู่ — เจอในเบราว์เซอร์จริงว่า transition ของ width ค้างสถานะ running
+      แล้ว "ชนะทุกอย่าง" แม้แต่ `width:0 !important` ที่ยัดแบบ inline (วัดแล้วยังได้ 220px)
+      = ตั้ง CSS ถูกทุกบรรทัดแต่หน้าจอไม่ขยับ และไม่มี error อะไรฟ้องเลย
+      → บนมือถือให้แถบกว้างคงที่แล้ว **เลื่อนออกนอกจอด้วย transform** แทน (ไม่แตะ width เลย) */
 @media(max-width:720px){
-  .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);z-index:2500;box-shadow:2px 0 18px rgba(0,0,0,.28);}
-  .sidebar.mini{width:0;box-shadow:none;}
+  /* ⛔ ห้ามใส่ transition ตรงนี้ — วัดในเบราว์เซอร์จริงแล้วเจอว่า transition ของแถบนี้
+     ถูกสร้างขึ้นแต่ค้างที่เฟรมแรกตลอด (playState=running · currentTime=0)
+     ผลคือค่าที่เห็นคือ "ค่าเริ่มต้น" ตลอดไป = สั่งซ่อนยังไงก็ไม่ซ่อน แม้ยัด !important แบบ inline
+     พอสั่ง cancel อนิเมชันทิ้ง ค่าถึงเด้งไปถูกทันที (x: 0 → -220)
+     → สถานะเปิด/ปิดของเมนู "ห้ามพึ่งให้อนิเมชันวิ่งจบ" · ไม่มีอนิเมชัน = ไม่มีทางค้าง */
+  .sidebar{position:fixed;left:0;top:0;bottom:0;width:var(--sidebar-w);z-index:2500;
+           transition:none;box-shadow:2px 0 18px rgba(0,0,0,.28);}
+  .sidebar.mini{width:var(--sidebar-w);transform:translateX(-100%);box-shadow:none;visibility:hidden;}
   .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.42);z-index:2400;display:none;}
   .sb-backdrop.show{display:block;}
   /* ปุ่มเรียกเมนูคืนต้องกดโดนด้วยนิ้วจริง — ของเดิมกว้าง 18px (มาตรฐานแตะคือ ~44px) */
