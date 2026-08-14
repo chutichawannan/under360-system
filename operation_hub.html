@@ -1581,7 +1581,11 @@ function renderOrders(orders){
       payStyle="background:#FEF3C7;color:#92400E"; payText="⏳ รอโอน";
       payTitle="คลิกเพื่อสลับสถานะการโอนเงิน";
     }
-    var payBadge="<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+esc2(payTitle)+"'>"+payText+slipTag+"</span>"+slipBtn;
+    /* ใบ "จ่ายรวมใบแรก" ห้ามกดสลับเป็นรอโอน — เงินอยู่ที่ใบแรก ไม่ใช่ใบนี้ (นัทท้วง 14 ส.ค. 2569)
+       กดแล้วต้องพาไปดูสลิปของใบแรกแทน = ตอบคำถาม "แล้วเงินอยู่ไหน" ได้ในคลิกเดียว */
+    var payClick = (isZero&&paid) ? ("openParentSlip('"+o.id+"',event)")
+                                  : ("togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)");
+    var payBadge="<span onclick=\""+payClick+"\" style='display:inline-block;margin-top:4px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px;cursor:pointer;"+payStyle+"' title='"+esc2(payTitle)+"'>"+payText+slipTag+"</span>"+slipBtn;
     /* 📎 ปุ่มแนบสลิปติดข้างป้าย "รอโอน" เลย (นัทขอ 14 ส.ค.) — เดิมต้องเปิดใบก่อนถึงจะแนบได้
        ลูกค้าส่งสลิปมาทางไลน์บ่อย แอดมินจะได้กดแนบจากหน้ารายการได้ทันที ไม่ต้องเข้าออกทีละใบ */
     if(!paid && !isZero){
@@ -1594,10 +1598,12 @@ function renderOrders(orders){
     }
     if(ordCompact){
       /* โหมดย่อ: สถานะครัวเป็นตัวหลัก · สถานะเงินย่อเหลือจุดสีจุดเดียว (เรื่องเงินสำคัญเกินกว่าจะตัดทิ้ง) */
-      var payDot=paid?"#10B981":(review?"#6366F1":"#F59E0B");
-      var payTip=paid?"โอนแล้ว":(review?"มีสลิป รอตรวจ":"ยังไม่โอน");
+      /* โหมดย่อ: ใบ "จ่ายรวมใบแรก" ใช้จุดสีม่วง + กดแล้วไปดูสลิปใบแรก (ไม่ใช่สลับสถานะ) */
+      var payDot=(isZero&&paid)?"#6366F1":(paid?"#10B981":(review?"#6366F1":"#F59E0B"));
+      var payTip=(isZero&&paid)?"จ่ายรวมกับใบแรก — คลิกเพื่อดูสลิปใบแรก"
+                 :(paid?"โอนแล้ว":(review?"มีสลิป รอตรวจ":"ยังไม่โอน"))+" — คลิกเพื่อสลับ";
       h+="<div style='display:flex;align-items:center;justify-content:flex-end;gap:6px'>"
-        +"<span onclick=\"togglePayment('"+o.id+"','"+(o.payment_status||"unpaid")+"',event)\" title='"+payTip+" — คลิกเพื่อสลับ' "
+        +"<span onclick=\""+payClick+"\" title='"+esc2(payTip)+"' "
         +"style='width:11px;height:11px;border-radius:50%;background:"+payDot+";flex-shrink:0;cursor:pointer'></span>"
         +odStatusPicker(o,st)+"</div></div>";
     }else{
@@ -2300,6 +2306,31 @@ async function slipDecide(id, ok){
     if(!up.data||!up.data.length) throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน");
     loadSlips();
   }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+/* 🧾 ใบ "จ่ายรวมใบแรก" (ยอด ฿0 · รอบถัดไปของคอร์ส) — กดแล้วพาไปดูสลิปของใบที่จ่ายจริง
+   นัทท้วงเอง 14 ส.ค. 2569: "ขึ้นว่าจ่ายรวมใบแรก กดไปก็ไม่ควรเด้งกลับว่ารอโอนสิ
+   ควรจะเด้งสลิปของใบแรกที่กดโอนนะ"
+   เลขใบแม่ฝังอยู่ในโน้ตตอนสร้างออเดอร์ 2 รูปแบบ: "จ่ายรวมกับออเดอร์ U-xxxx" · "จ่ายรวมกับ HT-xxxx" */
+async function openParentSlip(id, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var o=(ordRows||[]).find(function(x){return x.id===id;});
+  if(!o){ var r0=await sb_.from("orders").select("id,order_number,notes").eq("id",id).maybeSingle(); o=r0.data; }
+  if(!o) return;
+  var m=String(o.notes||"").match(/จ่ายรวมกับ(?:ออเดอร์)?\s*([A-Za-z]{1,3}-[0-9A-Za-z-]+)/);
+  if(!m){ alert("ใบนี้ยอด ฿0 (จ่ายรวมกับใบแรกแล้ว)\n\nแต่ในโน้ตไม่ได้ระบุว่าใบแรกคือใบไหน — เปิดใบดูรายละเอียดเพื่อตรวจเอง"); return; }
+  var parentNum=m[1];
+  try{
+    var p=await sb_.from("orders").select("id,order_number,slip_url,payment_status,total,customer_name")
+            .eq("order_number",parentNum).maybeSingle();
+    if(!p.data){ alert("หาใบแรก "+parentNum+" ไม่เจอในระบบ"); return; }
+    if(p.data.slip_url){ window.open(p.data.slip_url,"_blank","noopener"); return; }
+    /* ใบแรกไม่มีรูปสลิป — บอกตรงๆ ว่าจ่ายจริงหรือยัง แล้วเปิดใบแรกให้แนบ/ตรวจต่อได้เลย */
+    var st=p.data.payment_status==="paid" ? "โอนแล้ว (แต่ไม่มีรูปสลิปในระบบ)"
+          : (p.data.payment_status==="pending_review" ? "มีสลิป รอตรวจ" : "ยังไม่โอน");
+    if(window.confirm("ใบแรกคือ "+parentNum+" · ยอด "+fmtB(p.data.total)+"\nสถานะ: "+st
+        +"\n\nไม่มีรูปสลิปเก็บไว้ — เปิดใบแรกเลยไหม?")) openOrderDetail(p.data.id);
+  }catch(e){ alert("เปิดใบแรกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 async function togglePayment(id,current,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
