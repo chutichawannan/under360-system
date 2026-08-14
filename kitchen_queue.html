@@ -547,6 +547,14 @@ function filteredOrders(){
 }
 // บรรทัดควบคุม ไม่ใช่ของที่ครัวต้องทำ (ตรงกับที่หน้าแมสใน OH กรองไว้)
 var KQ_CTRL={"1":"🔁 แยกวันส่ง","0":"➕ เพิ่มเติม","000":"🍴 ช้อนส้อม"};
+/* 🔴 บรรทัดหัวข้อของ Meal Plan (เช่น MP-LC "LC · ทดลอง") ไม่ใช่กล่องอาหาร
+   เป็นบรรทัดบอกว่าใบนี้คือแพลนอะไร กล่องจริงคือบรรทัด meal_plan:box:... ที่ตามมา
+   ถ้านับด้วยจะได้ 8 กล่องทั้งที่จริง 7 (นัทจับได้เองจากหน้าแมส 14 ส.ค. 2569)
+   → ตัดออกจากการนับกล่องทุกที่ แต่ยังใช้ดูได้ว่าเป็น Meal Plan */
+function isMpHeaderLine(i){
+  var n=String((i&&(i.notes!=null?i.notes:i.note))||"");
+  return /^meal_plan:/i.test(n) && !/^meal_plan:box/i.test(n);
+}
 
 // จับคู่ออเดอร์ ↔ รอบส่ง Meal Plan — แยกออกมาเป็นฟังก์ชันเดียว ใช้ทั้งตอนดึงเมนูและตอนนับกล่อง
 // ⚠️ ผูกด้วย order_id → line_uid → customer_id เท่านั้น · ห้ามจับคู่ด้วย "ชื่อ+วันที่" (ชื่อซ้ำกันได้)
@@ -563,6 +571,7 @@ function getOrderItems(orderId){
   var raw=allItems.filter(function(i){return i.order_id===orderId;});
   var food=raw.filter(function(i){
     if(KQ_CTRL[i.menu_code]) return false;                       // บรรทัดควบคุม
+    if(isMpHeaderLine(i)) return false;                          // หัวข้อแพลน ไม่ใช่กล่องอาหาร
     return !!String(i.menu_name||"").trim();                     // บรรทัดไม่มีชื่อ = ครัวใช้ไม่ได้
   });
   // 🔁 ไม่มีของให้ทำเลย → ดึงเมนูจากแพลนเมนู (mp_deliveries) แบบเดียวกับหน้าแมสใน OH

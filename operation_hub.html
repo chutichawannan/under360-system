@@ -3749,6 +3749,10 @@ async function loadMessenger(){
       // ⚠️ เดิมเช็คแค่ "มี items ไหม" → บรรทัด menu_code="1" ชื่อ "แยกวันส่ง" ผ่านฉลุย = แมสนึกว่ามีของ
       o._food=all.filter(function(i){
         if(CTRL[i.menu_code]) return false;
+        /* 🔴 บรรทัดหัวข้อ Meal Plan (MP-LC "LC · ทดลอง") ไม่ใช่กล่องอาหาร
+           นับด้วยแล้วได้ 8 ทั้งที่จริง 7 — นัทจับได้เองจากหน้าแมส 14 ส.ค. 2569
+           กล่องจริงคือบรรทัดที่ notes เป็น meal_plan:box:... */
+        if(/^meal_plan:/i.test(String(i.notes||"")) && !/^meal_plan:box/i.test(String(i.notes||""))) return false;
         if(!i.menu_name||!String(i.menu_name).trim()) return false;
         return true;
       });

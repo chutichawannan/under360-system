@@ -341,6 +341,10 @@ function slip(o, PKG){
   const groups = new Map(), singles = new Map();
   for (const it of (o.order_items||[])){
     const n = String(it.notes||'');
+    /* 🔴 บรรทัดหัวข้อแพลน (MP-LC "LC · ทดลอง") ไม่ใช่ของที่ต้องหยิบ
+       ถ้าปล่อยไว้ ครัวจะเห็นเป็นรายการหนึ่งแล้วนับกล่องเกินไป 1 (นัทจับได้ 14 ส.ค. 2569)
+       ของจริงคือบรรทัด meal_plan:box:... ที่ตามมา */
+    if (/^meal_plan:/i.test(n) && !/^meal_plan:box/i.test(n)) continue;
     const pkg = (n.match(/^pkg:([0-9a-f-]{8,})/i)||[])[1];
     const mp  = /^meal_plan:/i.test(n) ? n : null;
     const key = pkg ? 'pkg:'+pkg : mp ? 'mp' : null;

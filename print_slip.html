@@ -91,7 +91,9 @@ const esc = s => String(s==null?'':s).replace(/[<>&]/g,c=>({'<':'&lt;','>':'&gt;
 const q = new URLSearchParams(location.search);
 
 function slipHtml(o, items){
-  const food = items.filter(i=>!CTRL[String(i.menu_code)] && !PLACEHOLDER[String(i.menu_code).toUpperCase()]);
+  /* บรรทัดหัวข้อแพลน (MP-LC) ไม่ใช่กล่องอาหาร — นับด้วยจะได้เกินไป 1 (14 ส.ค. 2569) */
+  const isMpHead=i=>/^meal_plan:/i.test(String(i.notes||'')) && !/^meal_plan:box/i.test(String(i.notes||''));
+  const food = items.filter(i=>!CTRL[String(i.menu_code)] && !PLACEHOLDER[String(i.menu_code).toUpperCase()] && !isMpHead(i));
   const boxes = food.reduce((s,i)=>s+(i.quantity||1),0);
   const when = (o.delivery_date||'') + (o.time_slot_label? '  '+String(o.time_slot_label).replace(/\s*–\s*/,'-') : '');
   return `<div class="slip">
