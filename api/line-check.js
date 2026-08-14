@@ -87,6 +87,18 @@ module.exports = async (req, res) => {
     }
   } catch (e) { out.กะปัน = "🔴 " + e.message; }
 
+  // ── ตรวจว่า uid ของลูกค้าที่เก็บจาก LIFF ใช้กับแชนแนลนี้ได้ไหม (?probe=UID) ──
+  //    LINE ผูก userId ไว้กับ "provider" — LIFF เราอยู่คนละ provider กับแชนแนลข้อความ
+  //    → ถ้า 404 = uid นี้ไม่มีตัวตนในสายตาแชนแนลนี้ = push หาลูกค้าไม่ได้เลย
+  const probe = req.query && req.query.probe;
+  if (probe) {
+    try {
+      const pr = await fetch("https://api.line.me/v2/bot/profile/" + encodeURIComponent(probe), { headers: { Authorization: "Bearer " + token } });
+      const pj = await pr.json().catch(() => ({}));
+      out.ตรวจuid = pr.ok ? ("✅ รู้จัก: " + (pj.displayName || "-")) : ("❌ HTTP " + pr.status + " — " + (pj.message || "ไม่รู้จัก uid นี้"));
+    } catch (e) { out.ตรวจuid = "พัง: " + e.message; }
+  }
+
   out.ok = true;
   out.สรุป = '✅ คุยกับ LINE ได้จริง — ส่งข้อความหาลูกค้า/กลุ่มครัวได้แล้ว';
   return res.status(200).json(out);
