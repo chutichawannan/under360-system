@@ -3739,7 +3739,9 @@ async function loadMessenger(){
     if(data.length){
       var ids=data.map(function(o){return o.id;});
       for(var i=0;i<ids.length;i+=60){
-        var ir=await sb_.from("order_items").select("order_id,menu_code,menu_name,quantity").in("order_id",ids.slice(i,i+60));
+        /* ต้องดึง notes มาด้วย — ใช้แยกว่าบรรทัดไหนเป็น "หัวข้อแพลน" ที่ไม่ใช่กล่องอาหาร
+           (ตกคอลัมน์นี้ = ตัวกรองไม่มีข้อมูลให้ดู แล้วนับกล่องเกินเงียบๆ) */
+        var ir=await sb_.from("order_items").select("order_id,menu_code,menu_name,quantity,notes").in("order_id",ids.slice(i,i+60));
         (ir.data||[]).forEach(function(it){ (itemsByOrder[it.order_id]=itemsByOrder[it.order_id]||[]).push(it); });
       }
     }
