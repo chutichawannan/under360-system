@@ -450,8 +450,55 @@ function renderBanner(){
 /* ---------- HOME ---------- */
 /* หน้าแรก = ลิงก์อย่างเดียว (นัทสั่ง 11 ส.ค. — แอดมินกับครัวทุกคนใช้หน้านี้)
    ของที่เป็นตัวเลข/ตัวเงิน/AI ย้ายไปหน้า "แดชบอร์ด" ทั้งหมด */
+
+/* ☀️ สรุปเช้า — จากพี่ปืน (ห้อง pm) ที่รันอัตโนมัติตี 4 ทุกวัน
+   ไม่ยิงคำขอเพิ่มสักตัว: ใช้ allMsgs ที่หน้านี้โหลดมาอยู่แล้ว (session_messages 400 แถวล่าสุด)
+   กฎที่พี่ปืนขอมา 15 ส.ค. — และเป็นกฎที่บ้านนี้เจ็บมาแล้วหลายรอบ:
+     "เก่าเกิน 30 ชม. ต้องขึ้นป้ายเตือน ห้ามโชว์ของเก่าเงียบๆ เหมือนเป็นของวันนี้"
+     (= แพทเทิร์นประจำบ้าน "เครื่องมือคืนผลลวงโดยไม่มีอะไรแดง") */
+var briefOpen = false;
+function toggleBrief(){ briefOpen = !briefOpen; renderHome(); }
+
+function cardBrief(){
+  var rows = (typeof allMsgs !== 'undefined' && allMsgs) ? allMsgs : [];
+  var b = null;
+  for (var i = rows.length - 1; i >= 0; i--) {
+    var m = rows[i];
+    if (m.room === 'pm' && /^\s*\u2600\ufe0f?\s*DAILY BRIEF/.test(String(m.text || ''))) { b = m; break; }
+  }
+  if (!b) {
+    return '<div class="card"><h3>\u2600\ufe0f สรุปเช้า</h3>'
+      + '<div class="muted">ยังไม่มีสรุปเข้ามา — พี่ปืนกวาดงานให้ตี 4 ทุกวัน<br>'
+      + 'ถ้าเลยเวลานั้นมานานแล้วยังไม่มี = ตัวรันอัตโนมัติไม่ได้ทำงาน</div></div>';
+  }
+
+  var t = new Date(b.created_at);
+  var hrs = (Date.now() - t.getTime()) / 3600000;
+  var stale = hrs > 30;
+  var when = new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(t);
+  var ago = hrs < 1 ? 'เมื่อครู่' : (hrs < 24 ? (Math.round(hrs) + ' ชม.ที่แล้ว') : (Math.round(hrs / 24) + ' วันที่แล้ว'));
+
+  var body = String(b.text || '').replace(/^[^\n]*DAILY BRIEF[^\n]*\n?/, '').trim();
+  var lines = body.split('\n');
+  var shown = briefOpen ? body : lines.slice(0, 14).join('\n');
+  var more = lines.length > 14;
+
+  var warn = stale
+    ? '<div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;margin-bottom:8px">'
+      + '\u26a0\ufe0f ยังไม่อัปเดต — สรุปนี้เก่า ' + esc(ago) + ' อย่าอ่านเป็นสถานะของวันนี้ (ตัวรันอัตโนมัติอาจไม่ทำงาน)</div>'
+    : '';
+
+  return '<div class="card"><h3>\u2600\ufe0f สรุปเช้า '
+    + '<span style="font-weight:500;color:var(--ink-soft);font-size:12px">' + esc(when) + ' · ' + esc(ago) + '</span></h3>'
+    + warn
+    + '<div style="white-space:pre-wrap;font-size:13px;line-height:1.65">' + esc(shown) + '</div>'
+    + (more ? '<button class="lnk" style="margin-top:8px;width:100%;justify-content:center;font-weight:700" onclick="toggleBrief()">'
+        + (briefOpen ? 'ย่อกลับ \u25b2' : 'อ่านต่อ \u25bc') + '</button>' : '')
+    + '</div>';
+}
+
 function renderHome(){
-  document.getElementById('homeCards').innerHTML = cardLinks();
+  document.getElementById('homeCards').innerHTML = cardBrief() + cardLinks();
   const unread=ROOMS.reduce((a,r)=>a+unreadOf(r.id),0);
   const b=document.getElementById('cbBadge'); if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';
 }
