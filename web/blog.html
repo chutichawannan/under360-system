@@ -289,15 +289,19 @@ function insertInlineCta(){
 }
 
 /* ═══ เมนูที่เกี่ยวข้องกับบทความ — จับคู่จากวัตถุดิบที่บทความพูดถึงจริง ═══ */
-const FOOD_KEYS = ['แซลมอน','กระพง','ทูน่า','ปลา','กุ้ง','ไก่','หมู','เนื้อ','ไข่','เต้าหู้',
-  'ไรซ์เบอร์รี่','ข้าวกล้อง','ควินัว','ธัญพืช','บ๊ะจ่าง','กระดูก','โบนบรอธ','น้ำซุป',
-  'มะพร้าว','อะโวคาโด','ผัก','สลัด','เห็ด','ฟักทอง','มันหวาน','วุ้นเส้น','เส้น','สาหร่าย'];
+/* ให้น้ำหนักตามความเฉพาะเจาะจง — "ไรซ์เบอร์รี่" ต้องชนะ "ไก่" (ไม่งั้นเมนูที่ตรงจริงถูกดันลงล่าง) */
+const FOOD_KEYS = {
+  'ไรซ์เบอร์รี่':5,'บ๊ะจ่าง':5,'โบนบรอธ':5,'อะโวคาโด':5,'ควินัว':5,'สาหร่าย':4,
+  'แซลมอน':4,'กระพง':4,'ทูน่า':4,'มะพร้าว':3,'ข้าวกล้อง':3,'กระดูก':3,'ธัญพืช':3,
+  'ฟักทอง':3,'มันหวาน':3,'วุ้นเส้น':3,'เต้าหู้':3,'เห็ด':2,'กุ้ง':2,'ปลา':2,'น้ำซุป':2,'สลัด':2,
+  'ไก่':1,'หมู':1,'เนื้อ':1,'ไข่':1,'ผัก':1,'เส้น':1
+};
 
 async function loadRelated(post){
   const box = document.getElementById('relBox'), grid = document.getElementById('relGrid'), sub = document.getElementById('relSub');
   if(!box) return;
   const text = ((post.title||'') + ' ' + (post.content_md||'')).slice(0, 6000);
-  const hits = FOOD_KEYS.filter(k => text.includes(k));
+  const hits = Object.keys(FOOD_KEYS).filter(k => text.includes(k));
   let items = [];
   try{
     const { data, error } = await sb.from('menu_items')
@@ -312,7 +316,7 @@ async function loadRelated(post){
 
   /* ให้คะแนน: เมนูที่ชื่อมีวัตถุดิบตรงกับที่บทความพูดถึง */
   const scored = items.map(m => ({
-    m, s: hits.reduce((a,k) => a + ((m.name||'').includes(k) ? 1 : 0), 0)
+    m, s: hits.reduce((a,k) => a + ((m.name||'').includes(k) ? FOOD_KEYS[k] : 0), 0)
   }));
   /* ตรงที่สุดก่อน · ถ้าตรงเท่ากันให้ราคาเข้าถึงง่ายขึ้นก่อน (คนอ่านบทความส่วนใหญ่ยังไม่เคยซื้อ) */
   let picked = scored.filter(x => x.s > 0)
