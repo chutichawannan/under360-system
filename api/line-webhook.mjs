@@ -20,6 +20,7 @@ export const config = { api: { bodyParser: false } };   // ต้องอ่า
 
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const SBSTORE = 'https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1';
 const SBH = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
 // ⏰ เวลาไทยเสมอ — ครัวอยู่ไทย เจ้าของอาจเปิดจากที่อื่น
@@ -184,6 +185,37 @@ async function getDisplayName(groupId, userId, token) {
 //  ⚠️ ถ้าจะเอากลับ ให้ดู commit b378dfc — อย่าเปิดใหม่โดยไม่บอกนัทเรื่องค่าใช้จ่าย
 
 
+// 📎 โหลดไฟล์/รูปที่คนส่งในแชท แล้วเก็บลง Storage ของเราทันที
+//    LINE ไม่รับประกันว่าเก็บไฟล์ให้นานแค่ไหน -> ต้องดึงตอนได้ webhook เลย ไม่ใช่ค่อยไปตามเก็บ
+//    ใช้ api-data.line.me (คนละโฮสต์กับ api.line.me) · ได้ทั้ง image/video/audio/file (รวม PDF)
+async function grabMedia(m, token, groupId) {
+  const name = m.fileName || (m.type + " " + (m.id || ""));
+  const base = "[" + m.type + "] " + name;
+  const SRV = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!token) return base + " (ไม่มี token ของกะปัน จึงโหลดไม่ได้)";
+  if (!SRV)   return base + " (ยังไม่ได้ตั้ง SUPABASE_SERVICE_ROLE_KEY จึงเก็บไม่ได้)";
+  try {
+    const r = await fetch("https://api-data.line.me/v2/bot/message/" + m.id + "/content",
+      { headers: { Authorization: "Bearer " + token } });
+    if (!r.ok) return base + " (โหลดจาก LINE ไม่สำเร็จ " + r.status + ")";
+    const ct  = r.headers.get("content-type") || "application/octet-stream";
+    const buf = Buffer.from(await r.arrayBuffer());
+    let ext = "";
+    if (name.includes(".")) ext = name.slice(name.lastIndexOf("."));
+    else if (ct.includes("pdf")) ext = ".pdf";
+    else if (ct.includes("png")) ext = ".png";
+    else if (ct.includes("jpeg") || ct.includes("jpg")) ext = ".jpg";
+    const path = (groupId || "direct") + "/" + bkkDate(new Date()) + "/" + m.id + ext;
+    const up = await fetch(SBSTORE + "/object/line-files/" + path, {
+      method: "POST",
+      headers: { Authorization: "Bearer " + SRV, apikey: SRV, "Content-Type": ct, "x-upsert": "true" },
+      body: buf,
+    });
+    if (!up.ok) return base + " (เก็บลง Storage ไม่สำเร็จ " + up.status + " " + (await up.text()).slice(0, 120) + ")";
+    return base + " -> line-files/" + path + " (" + buf.length + " ไบต์)";
+  } catch (e) { return base + " (พังระหว่างโหลด: " + String(e).slice(0, 120) + ")"; }
+}
+
 async function logMessage(row) {
   try {
     await fetch(SB + '/line_group_messages', {
@@ -263,11 +295,9 @@ export default async function handler(req, res) {
 
     // บอทเพิ่งถูกเชิญเข้ากลุ่ม → ทักทาย + บอก groupId (นัทเอาไปใช้อ้างอิงได้)
     if (ev.type === 'join' && groupId) {
-      await lineReply(ev.replyToken,
-        persona.hello + '\n\n' +
-        'พิมพ์ "ยอด" หรือ "ยอดพรุ่งนี้" เดี๋ยวดึงยอดสั่งจากระบบมาให้\n' +
-        '(ตอบเฉพาะตอนถูกเรียก ไม่พูดแทรก)\n\n' +
-        'groupId: ' + groupId, token);
+      // 🤫 เงียบไว้ก่อน (นัทสั่ง 15 ส.ค.: "อย่าเพิ่งกระโตกกระตาก")
+      //    ไม่ทักในกลุ่ม แต่กระซิบบอกนัทตัวคนเดียวว่าเข้ากลุ่มไหนแล้ว
+      await linePush(OWNER, 'เข้ากลุ่มแล้วค่ะ เงียบไว้ตามที่สั่ง' + String.fromCharCode(10) + 'groupId: ' + groupId, token);
       continue;
     }
     if (ev.type !== 'message') continue;
@@ -276,6 +306,19 @@ export default async function handler(req, res) {
     const text = m.type === 'text' ? (m.text || '') : '';
     const t = text.trim();
     const isOwner = OWNER && userId === OWNER;
+
+    // 📎 ไฟล์/รูป -> โหลดเก็บทันที แล้วจบ (ไม่พูดอะไรในกลุ่ม)
+    if (m.type === "file" || m.type === "image") {
+      const note = await grabMedia(m, token, groupId);
+      await logMessage({
+        message_id: m.id || null, group_id: groupId, user_id: userId,
+        display_name: await getDisplayName(groupId, userId, token),
+        msg_type: m.type, text: note,
+        line_ts: ev.timestamp ? new Date(ev.timestamp).toISOString() : null,
+      });
+      if (isOwner && !groupId) await lineReply(ev.replyToken, "เก็บไฟล์ให้แล้วค่ะ", token);
+      continue;
+    }
     // 🔒 ถือว่าเป็น "คำถามยอด" ต่อเมื่อพิมพ์สั้นๆ ตรงเป๊ะเท่านั้น
     //    เดิมจับคำว่า 'ยอด' กลางประโยค -> คำสั่งงานยาวๆ ของนัทถูกตีเป็นคำถาม แล้วหายไปไม่ถึงใคร (เกิด 3 ครั้ง 12 ส.ค.)
     const tq = t.replace(/[?？!。.\s]+$/, '').replace(/^กะปัน[\s,:：]*/i, '').trim();
