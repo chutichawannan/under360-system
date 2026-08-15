@@ -21,7 +21,10 @@ export const config = { api: { bodyParser: false } };   // ต้องอ่า
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const SBSTORE = 'https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1';
-const SBH = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
+// 🔑 ใช้ service role ถ้ามี — ตาราง line_group_messages ปิด RLS ไม่ให้ anon เขียนแล้ว
+//    (15 ส.ค. เจอว่าข้อความในกลุ่มถูกทิ้งทั้งหมดแบบเงียบๆ เพราะ insert โดนปฏิเสธ 401 แล้วโค้ดกลืน error)
+const WKEY = process.env.SUPABASE_SERVICE_ROLE_KEY || KEY;
+const SBH = { apikey: WKEY, Authorization: 'Bearer ' + WKEY, 'Content-Type': 'application/json' };
 
 // ⏰ เวลาไทยเสมอ — ครัวอยู่ไทย เจ้าของอาจเปิดจากที่อื่น
 const bkkDate = (d) => new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Bangkok' }).format(d || new Date());
@@ -397,15 +400,14 @@ export default async function handler(req, res) {
     const aboutMoney  = /โอน|จ่าย|ค้าง|เงิน|ค่าแรง|บิล|ใบเสร็จ|มัดจำ|ค่าของ/.test(t);
     const tagNut      = /@\s?nut|@\s?นัท/i.test(t);
 
-    // โหมดเงียบ = เตือนเฉพาะเรื่องด่วนจริง (เงิน + แท็กนัทตรงๆ) · เรียกกะปันลอยๆ ไม่ต้องเด้ง
-    //  ⚠️ ทุกข้อความยังถูกเก็บลง DB ครบเหมือนเดิม — เงียบแค่ "ไม่เด้งเตือน" ไม่ใช่ "ไม่รับรู้"
-    const urgent = aboutMoney || mentionedOwner || tagNut;
-    const shouldPush = persona.pushLevel === 'all'
-      ? (mentionedOwner || calledKapan || aboutMoney || tagNut)
-      : urgent;
+    // 🔕 นัทสั่ง 15 ส.ค.: "เรื่องมันสัพเพเหระ ไม่ต้องทีละบรรทัด อ่านรวมๆ ทีเดียวแล้วสรุปก็ได้ · อย่างเนี้ยถี่เกินไป"
+    //    -> เด้งเฉพาะตอนมีคนเรียกหานัทตรงๆ (แท็ก @nut) เท่านั้น
+    //       คำว่าเงิน/ใบเสร็จ/เรียกชื่อกะปันลอยๆ = เก็บเงียบลง DB แล้วให้ห้องเลขาอ่านรวมทีเดียวแล้วสรุปส่งเป็นรอบ
+    //  ⚠️ ทุกข้อความยังถูกเก็บครบเหมือนเดิม — เงียบแค่ "ไม่เด้งเตือน" ไม่ใช่ "ไม่รับรู้"
+    const shouldPush = mentionedOwner || tagNut;
 
     if (OWNER && !isOwner && shouldPush) {
-      const head = aboutMoney ? 'เรื่องเงิน — มีคนฝากถึงคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
+      const head = aboutMoney ? 'เรื่องเงิน — มีคนเรียกหาคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
       await linePush(OWNER, head + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\ngroupId: ' + groupId + '\n\n"' + t + '"', token);
     }
 
