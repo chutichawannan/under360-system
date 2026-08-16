@@ -2316,9 +2316,11 @@ function subcodeNo(m){
   const s = subcodeInfo(m);
   return s ? s.no : 9999;
 }
+// ลำดับกลุ่ม: สัปดาห์นี้ → สัปดาห์หน้า (พรีออเดอร์) → รอบก่อน (ใหม่→เก่า) → เมนูประจำ
+// ⚠️ เดิมใช้ Math.max(0,ago) → สัปดาห์หน้ากับสัปดาห์นี้ได้อันดับเท่ากัน = เรียงปนกัน
 function weeklyRank(m){
   const a = weeksAgo(m);
-  if (a !== null) return Math.max(0, a);
+  if (a !== null) return a === 0 ? 0 : (a < 0 ? 0.5 : a);
   return (subcodeInfo(m) || (m && m.is_weekly_special)) ? 0 : 99;   // ยังไม่ติดแท็ก
 }
 function sortWeeklyFirst(list){
@@ -2329,13 +2331,23 @@ function sortWeeklyFirst(list){
     return (a.sort_order ?? 9999) - (b.sort_order ?? 9999);
   });
 }
+// สี/คำของป้ายสัปดาห์ — 3 ระดับ แยกกันด้วยตาเปล่า (นัทสั่งเอง 16 ส.ค.: "แท็กอาทิตย์มันต้องคนละสีหน่อย ไม่งั้นคนจะงง")
+//   🔵 สัปดาห์หน้า (พรีออเดอร์) · ⭐ สัปดาห์นี้ (เหลือง) · ⬜ รอบก่อน (เทา)
+// ⚠️ เดิมเช็ค weeksAgo <= 0 → "สัปดาห์หน้า" กับ "สัปดาห์นี้" ได้สีเหลืองเหมือนกันเป๊ะ
+//    ช่วง 16 ส.ค. ลูกค้าเห็น 2 รอบพร้อมกันจริง (10-16 = 13 เมนู · 17-23 = 13 เมนู) = แยกไม่ออก
+function weekTone(m){
+  const w = menuWeek(m);
+  if (!w) return { kind:'plain', chip:'', fg:'#6B7280', bg:'#F3F4F6' };
+  const a = weeksAgo(m);
+  if (a < 0)   return { kind:'next', chip:`สัปดาห์หน้า ${weekLabel(w)}`, fg:'#1D4ED8', bg:'#EFF6FF' };
+  if (a === 0) return { kind:'now',  chip:`เมนูพิเศษ ${weekLabel(w)}`,   fg:'#B45309', bg:'#FEF3C7' };
+  return             { kind:'past', chip:`เมนูพิเศษ ${weekLabel(w)}`,   fg:'#6B7280', bg:'#F3F4F6' };
+}
 // ป้ายที่ลูกค้าเห็น — ข้อความตามที่นัทสั่งเป๊ะ: "เมนูพิเศษ 3-9 Aug" (ไม่มีดาว ไม่มี S1 ในป้าย)
 function weeklyBadgeHtml(m){
-  const w = menuWeek(m);
-  if (!w) return '';
-  const cur = weeksAgo(m) <= 0;
-  const bg = cur ? '#FEF3C7' : '#F3F4F6', fg = cur ? '#B45309' : '#6B7280';
-  return `<span style="font-size:10px;font-weight:700;color:${fg};background:${bg};padding:2px 7px;border-radius:8px;white-space:nowrap">เมนูพิเศษ ${weekLabel(w)}</span>`;
+  if (!menuWeek(m)) return '';
+  const t = weekTone(m);
+  return `<span style="font-size:10px;font-weight:700;color:${t.fg};background:${t.bg};padding:2px 7px;border-radius:8px;white-space:nowrap">${h(t.chip)}</span>`;
 }
 // หัวแถว: ชื่อเล่นตัวเข้ม + รหัสจริงตัวจาง (นัทสั่ง 6 ส.ค. — "S1 เข้ม ข้างๆ S103 จาง")
 function codeLineHtml(m){
