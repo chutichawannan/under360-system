@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>เรียกรถส่งของ — Under360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛵</text></svg>">
+<style>
+  :root{
+    --bg:#F2F4F3; --card:#fff; --ink:#15201E; --ink2:#3B4A47; --muted:#63726F;
+    --line:#D7DEDC; --line2:#EBEFEE; --brand:#1F4D3A; --brand2:#2C6E4B;
+    --warn:#9A6206; --warnbg:#FBF1DE; --bad:#A5382C; --badbg:#FAEAE7;
+    --ok:#2C6E4B; --okbg:#E6F1EA; --blue:#1D4ED8; --bluebg:#EFF6FF;
+    --sans:"Noto Sans Thai","IBM Plex Sans Thai","Leelawadee UI",Tahoma,system-ui,sans-serif;
+    --mono:ui-monospace,"Cascadia Mono",Consolas,monospace;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{--bg:#101617;--card:#192123;--ink:#E9EEEC;--ink2:#C2CDCA;--muted:#93A29E;
+      --line:#2B3639;--line2:#222C2E;--brand:#79C79B;--brand2:#89BE6A;
+      --warn:#E0B15C;--warnbg:#2A2416;--bad:#E38A7D;--badbg:#2C1C19;
+      --ok:#79C79B;--okbg:#152620;--blue:#7FB0F5;--bluebg:#16202E;}
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6}
+  .wrap{max-width:760px;margin:0 auto;padding:16px 14px 90px}
+  header{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;
+    padding-bottom:10px;border-bottom:2px solid var(--ink);margin-bottom:14px}
+  h1{margin:0;font-size:21px;font-weight:800}
+  .sub{color:var(--muted);font-size:12.5px;margin-top:2px}
+  .pill{font-family:var(--mono);font-size:11px;padding:3px 9px;border-radius:999px;background:var(--warnbg);color:var(--warn);font-weight:700}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+  input[type=date],button{font-family:var(--sans);font-size:14px}
+  input[type=date]{padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--card);color:var(--ink)}
+  button{border:0;border-radius:9px;padding:9px 14px;font-weight:700;cursor:pointer;background:var(--brand);color:#fff}
+  button.ghost{background:var(--card);color:var(--ink);border:1px solid var(--line)}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  button:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 13px;margin-bottom:9px}
+  .row{display:grid;grid-template-columns:26px 1fr auto;gap:10px;align-items:start}
+  .nm{font-weight:700;overflow-wrap:anywhere}
+  .ad{font-size:12.5px;color:var(--muted);overflow-wrap:anywhere}
+  .meta{font-family:var(--mono);font-size:11.5px;color:var(--muted);margin-top:2px}
+  .tag{display:inline-block;font-family:var(--mono);font-size:11px;padding:1px 7px;border-radius:5px;font-weight:700}
+  .t-ok{background:var(--okbg);color:var(--ok)} .t-warn{background:var(--warnbg);color:var(--warn)}
+  .t-bad{background:var(--badbg);color:var(--bad)} .t-info{background:var(--bluebg);color:var(--blue)}
+  input[type=checkbox]{width:19px;height:19px;accent-color:var(--brand);margin-top:3px}
+  .note{border-radius:10px;padding:10px 12px;font-size:13px;margin-bottom:10px}
+  .n-warn{background:var(--warnbg);color:var(--warn)} .n-bad{background:var(--badbg);color:var(--bad)}
+  .n-ok{background:var(--okbg);color:var(--ok)} .n-info{background:var(--bluebg);color:var(--blue)}
+  .dock{position:fixed;left:0;right:0;bottom:0;background:var(--card);border-top:1px solid var(--line);
+    padding:10px 14px calc(10px + env(safe-area-inset-bottom));display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .dock .sum{flex:1;min-width:150px;font-size:13px}
+  .price{font-family:var(--mono);font-size:20px;font-weight:800}
+  h2{font-size:12px;font-family:var(--mono);letter-spacing:.07em;text-transform:uppercase;color:var(--muted);
+    margin:18px 0 8px;font-weight:700}
+  pre{white-space:pre-wrap;word-break:break-word;font-family:var(--mono);font-size:11.5px;
+    background:var(--bg);padding:8px;border-radius:8px;max-height:190px;overflow:auto}
+  a{color:var(--blue)}
+</style>
+</head>
+<body>
+<div class="wrap">
+<header>
+  <div>
+    <h1>🛵 เรียกรถส่งของ</h1>
+    <div class="sub">เลือกจุดส่ง → ขอราคา → ยืนยันจอง · เพดาน 3 จุด/คัน</div>
+  </div>
+  <span class="pill" id="mode">กำลังเช็คโหมด...</span>
+</header>
+
+<div class="bar">
+  <input type="date" id="d">
+  <button class="ghost" id="reload">โหลดงาน</button>
+  <button class="ghost" id="mine">งานที่จองแล้ว</button>
+</div>
+
+<div id="notes"></div>
+<div id="list"></div>
+
+<h2>งานที่จองไว้แล้ว</h2>
+<div id="booked"><div class="card" style="color:var(--muted);font-size:13px">— ยังไม่มี —</div></div>
+</div>
+
+<div class="dock">
+  <div class="sum" id="sum">เลือกจุดส่งที่จะไปรอบเดียวกัน (ไม่เกิน 3)</div>
+  <button class="ghost" id="quote" disabled>💰 ขอราคา</button>
+  <button id="book" disabled>🛵 ยืนยันจองรถ</button>
+</div>
+
+<script>
+const SB="https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1";
+const AK="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+const H={apikey:AK,Authorization:"Bearer "+AK};
+const MAX_STOPS=3;                      // 🔴 เพดานจากร่างกายคนขับ ไม่ใช่ราคา — ห้ามขึ้นเอง
+const MAX_BIKE_KM=60;
+// อายุใบเสนอราคา 5 นาที — เกินนี้จองไม่ผ่าน ต้องขอใหม่
+const QUOTE_TTL_MS=4*60*1000;
+
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[<>&"]/g,c=>({"<":"&lt;",">":"&gt;","&":"&amp;",'"':"&quot;"}[c]));
+const baht=n=>"฿"+Number(n||0).toLocaleString("th-TH");
+const todayTH=()=>new Intl.DateTimeFormat("en-CA",{timeZone:"Asia/Bangkok"}).format(new Date());
+
+let rows=[], picked=new Set(), quote=null, quoteAt=0;
+
+// ── หมุดนี้เชื่อได้แค่ไหน ────────────────────────────────────────────
+// ⚠️ ต้องโชว์เสมอ — ระบบเดาหมุดให้ลูกค้าที่ไม่ปักหมุด และหมุดที่เดากับหมุดจริง
+//    หน้าตาเหมือนกันในฐานข้อมูล · จองรถไปที่ผิด = เสียเงินจริง + ของไปผิดที่
+function trust(o){
+  if(o.delivery_lat==null) return {k:"none",cls:"t-bad",  txt:"ไม่มีหมุด",     ok:false, why:"ยังไม่มีพิกัด — กดปุ่มคำนวณค่าส่งในหน้าแมสก่อน ระบบจะเสิร์ชให้"};
+  if(o.pin_source==="customer") return {k:"customer",cls:"t-ok",txt:"ลูกค้าปักเอง",ok:true};
+  if(o.pin_source==null)  return {k:"unknown",cls:"t-warn",txt:"ไม่รู้ที่มา",  ok:true,  why:"ข้อมูลเก่าก่อนระบบเก็บที่มาของหมุด"};
+  if(o.pin_accuracy==="ROOFTOP") return {k:"ROOFTOP",cls:"t-ok",txt:"เสิร์ชตรงบ้านเลขที่",ok:true};
+  if(o.pin_accuracy) return {k:o.pin_accuracy,cls:"t-bad",txt:"หมุดหยาบ ("+o.pin_accuracy+")",ok:false,
+                             why:"ระบบเดาให้ได้แค่ระดับซอย/ถนน — โทรถามลูกค้าก่อนเรียกรถ"};
+  return {k:"geocode",cls:"t-warn",txt:"ระบบเสิร์ชให้",ok:true,why:"ยังไม่รู้ว่าแม่นระดับไหน"};
+}
+
+async function loadDay(){
+  const d=$("d").value||todayTH();
+  $("list").innerHTML="<div class='card' style='color:var(--muted)'>กำลังโหลด...</div>";
+  picked.clear(); quote=null; sync();
+  let data=[];
+  try{
+    const r=await fetch(SB+"/orders?select=*&delivery_date=eq."+d+"&limit=200",{headers:H});
+    data=await r.json();
+    if(!Array.isArray(data)) throw new Error(data.message||"โหลดไม่ได้");
+  }catch(e){ $("list").innerHTML="<div class='note n-bad'>โหลดออเดอร์ไม่สำเร็จ: "+esc(e.message)+"</div>"; return; }
+
+  rows=data.filter(o=>o.status!=="cancelled"&&o.status!=="delivered"&&o.source!=="parallel_test");
+  const far=rows.filter(o=>o.delivery_distance_km!=null&&Number(o.delivery_distance_km)>MAX_BIKE_KM);
+  rows=rows.filter(o=>far.indexOf(o)<0);
+
+  let n="";
+  if(!rows.length) n+="<div class='note n-info'>วันนี้ไม่มีงานส่งที่เรียกรถได้</div>";
+  if(far.length)   n+="<div class='note n-warn'>🚚 "+far.length+" ใบเกิน "+MAX_BIKE_KM+" กม. — ไม่ใช่งานแมส ต้องส่งขนส่ง<br>"
+                      +far.map(o=>esc(o.customer_name||"")+" <span class='meta'>"+esc(o.order_number)+" · "+Math.round(o.delivery_distance_km)+" กม.</span>").join("<br>")+"</div>";
+  const noPhone=rows.filter(o=>!String(o.customer_phone||"").trim());
+  if(noPhone.length) n+="<div class='note n-bad'>📞 "+noPhone.length+" ใบไม่มีเบอร์ผู้รับ — จองรถไม่ได้ คนขับโทรหาไม่ได้</div>";
+  $("notes").innerHTML=n;
+
+  $("list").innerHTML=rows.map((o,i)=>{
+    const t=trust(o), booked=!!o.lalamove_order_id, phone=String(o.customer_phone||"").trim();
+    const blocked=booked||!t.ok||!phone||o.delivery_lat==null;
+    return "<div class='card'><div class='row'>"
+      +"<input type='checkbox' data-i='"+i+"'"+(blocked?" disabled":"")+">"
+      +"<div><div class='nm'>"+esc(o.customer_name||"ลูกค้า")+"</div>"
+      +"<div class='ad'>"+esc(String(o.delivery_address_text||o.delivery_address||"—").replace(/\s+/g," ").slice(0,90))+"</div>"
+      +"<div class='meta'>"+esc(o.order_number||"")+" · "+esc(o.time_slot_label||o.time_slot||"ไม่ระบุเวลา")
+        +(o.delivery_distance_km!=null?" · "+o.delivery_distance_km+" กม.":"")+"</div>"
+      +"<div style='margin-top:4px'><span class='tag "+t.cls+"'>"+esc(t.txt)+"</span>"
+        +(phone?"":" <span class='tag t-bad'>ไม่มีเบอร์</span>")
+        +(booked?" <span class='tag t-info'>จองแล้ว</span>":"")+"</div>"
+      +(t.why?"<div class='meta' style='color:var(--warn)'>→ "+esc(t.why)+"</div>":"")
+      +"</div><div></div></div></div>";
+  }).join("")||"<div class='card' style='color:var(--muted)'>— ไม่มีงาน —</div>";
+
+  document.querySelectorAll("#list input[type=checkbox]").forEach(cb=>cb.addEventListener("change",()=>{
+    const i=+cb.dataset.i;
+    if(cb.checked){
+      if(picked.size>=MAX_STOPS){ cb.checked=false; alert("เพดาน "+MAX_STOPS+" จุดต่อคัน — มาจากที่แมสแบกไหว ไม่ใช่เรื่องราคา"); return; }
+      picked.add(i);
+    } else picked.delete(i);
+    quote=null; sync();
+  }));
+  renderBooked();
+}
+
+function sync(){
+  const n=picked.size;
+  $("quote").disabled=(n<1);
+  const fresh=quote&&(Date.now()-quoteAt<QUOTE_TTL_MS);
+  $("book").disabled=!fresh;
+  $("sum").innerHTML = !n ? "เลือกจุดส่งที่จะไปรอบเดียวกัน (ไม่เกิน "+MAX_STOPS+")"
+    : (fresh ? "<span class='price'>"+baht(quote.price)+"</span> · "+n+" จุด <span class='meta'>ราคานี้ใช้ได้อีก ~"+Math.max(0,Math.round((QUOTE_TTL_MS-(Date.now()-quoteAt))/1000))+" วิ</span>"
+             : "เลือกไว้ "+n+" จุด — กดขอราคาก่อน");
+}
+setInterval(()=>{ if(quote) sync(); },5000);
+
+$("quote").addEventListener("click",async()=>{
+  const sel=[...picked].map(i=>rows[i]);
+  $("quote").disabled=true; $("sum").textContent="กำลังขอราคา...";
+  try{
+    const r=await fetch("/api/lalamove-quote",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({service:"MOTORCYCLE",drops:sel.map(o=>({lat:Number(o.delivery_lat),lng:Number(o.delivery_lng),
+        addr:String(o.delivery_address_text||o.delivery_address||"ปลายทาง").slice(0,120)}))})});
+    const j=await r.json();
+    if(!j||!j.ok) throw new Error((j&&j.error)||"ขอราคาไม่สำเร็จ");
+    quote={price:j.price,quotationId:j.quotationId,stops:(j.raw&&j.raw.data&&j.raw.data.stops)||[],sel:sel};
+    quoteAt=Date.now();
+  }catch(e){ alert("ขอราคาไม่สำเร็จ: "+e.message); quote=null; }
+  sync();
+});
+
+$("book").addEventListener("click",async()=>{
+  if(!quote) return;
+  const names=quote.sel.map(o=>o.customer_name||"ลูกค้า").join(" · ");
+  if(!confirm("ยืนยันเรียกรถ "+baht(quote.price)+"\n\n"+names+"\n\nกดตกลง = จองจริง (ถ้าเปิดสวิตช์แล้ว)")) return;
+  $("book").disabled=true; $("book").textContent="กำลังจอง...";
+  try{
+    // stops[0] = ครัว (ผู้ส่ง) · ที่เหลือเรียงตามลำดับที่ส่งไปขอราคา
+    const stops=quote.stops.map((s,i)=>{
+      if(i===0) return {stopId:s.stopId};
+      const o=quote.sel[i-1]||{};
+      return {stopId:s.stopId,name:o.customer_name||"ลูกค้า",phone:o.customer_phone||"",
+              orderNo:o.order_number,pinSource:o.pin_accuracy||o.pin_source||null,
+              remarks:(o.delivery_note||"")};
+    });
+    const r=await fetch("/api/lalamove-book",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({quotationId:quote.quotationId,stops:stops,confirm:"BOOK"})});
+    const j=await r.json();
+    if(!j.ok){ alert("จองไม่สำเร็จ\n"+(j.error||"")+"\n"+((j.blockers||[]).join("\n"))+"\n"+(j.hint||"")); }
+    else if(j.dryRun){
+      alert("✅ ตรวจผ่านหมด แต่ยังไม่ได้จองจริง\n\n"+j.reason+"\n\nไม่มีการใช้เงิน");
+    }else{
+      await saveBooking(j,quote.sel);
+      alert("จองสำเร็จ\nเลขงาน "+j.orderId+(j.shareLink?"\nติดตาม: "+j.shareLink:""));
+      loadDay();
+    }
+  }catch(e){ alert("จองไม่สำเร็จ: "+e.message); }
+  $("book").textContent="🛵 ยืนยันจองรถ"; sync();
+});
+
+// เก็บเลขงานผูกกับออเดอร์ — ไม่เก็บ = จองแล้วตามงานไม่ได้
+// ⚠️ ต้องรัน scripts/sql_delivery_trust.sql ก่อน ไม่งั้นคอลัมน์ยังไม่มี (ไม่พัง แค่เตือน)
+async function saveBooking(j,sel){
+  for(const o of sel){
+    try{
+      const r=await fetch(SB+"/orders?id=eq."+o.id,{method:"PATCH",
+        headers:{...H,"Content-Type":"application/json",Prefer:"return=minimal"},
+        body:JSON.stringify({lalamove_order_id:j.orderId,lalamove_share_url:j.shareLink||null,
+          lalamove_status:j.status||"ASSIGNING",lalamove_price:j.price||null,
+          lalamove_booked_at:new Date().toISOString(),courier:"lalamove"})});
+      if(!r.ok) console.warn("เก็บเลขงานไม่ได้ (ยังไม่ได้รัน sql_delivery_trust.sql?)",await r.text());
+    }catch(e){ console.warn(e); }
+  }
+}
+
+function renderBooked(){
+  const b=rows.filter(o=>o.lalamove_order_id);
+  $("booked").innerHTML = b.length ? b.map(o=>
+    "<div class='card'><div class='nm'>"+esc(o.customer_name||"")+" <span class='tag t-info'>"+esc(o.lalamove_status||"")+"</span></div>"
+    +"<div class='meta'>"+esc(o.order_number)+" · งาน "+esc(o.lalamove_order_id)+(o.lalamove_price?" · "+baht(o.lalamove_price):"")+"</div>"
+    +(o.lalamove_share_url?"<div style='margin-top:3px'><a href='"+esc(o.lalamove_share_url)+"' target='_blank'>ติดตามคนขับ</a></div>":"")
+    +"<div style='margin-top:6px;display:flex;gap:7px'>"
+    +"<button class='ghost' onclick=\"track('"+esc(o.lalamove_order_id)+"')\">เช็คสถานะ</button>"
+    +"<button class='ghost' onclick=\"kill('"+esc(o.lalamove_order_id)+"')\">ยกเลิกงาน</button></div></div>"
+  ).join("") : "<div class='card' style='color:var(--muted);font-size:13px'>— ยังไม่มี —</div>";
+}
+async function track(id){
+  const r=await fetch("/api/lalamove-book?action=status&orderId="+encodeURIComponent(id));
+  const j=await r.json(); alert(j.ok?("สถานะ: "+(j.data&&j.data.status)):"เช็คไม่ได้: "+(j.error||""));
+}
+async function kill(id){
+  if(!confirm("ยกเลิกงาน "+id+" ?")) return;
+  const r=await fetch("/api/lalamove-book?action=cancel&orderId="+encodeURIComponent(id),{method:"POST"});
+  const j=await r.json();
+  alert(j.ok?"ยกเลิกแล้ว":"ยกเลิกไม่ได้: "+(j.error||"")); if(j.ok) loadDay();
+}
+
+// เช็คว่าตอนนี้เป็นโหมดซ้อมหรือจองจริง — ยิง dry-run เปล่าๆ ดูคำตอบ
+(async()=>{
+  try{
+    const r=await fetch("/api/lalamove-book",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
+    const j=await r.json();
+    const on=!/LALAMOVE_BOOKING_ENABLED/.test(JSON.stringify(j));
+    $("mode").textContent = on ? "⚠️ โหมดจองจริง — ใช้เงินจริง" : "🧪 โหมดซ้อม — ยังไม่จองจริง";
+    $("mode").style.background = on ? "var(--badbg)" : "var(--warnbg)";
+    $("mode").style.color = on ? "var(--bad)" : "var(--warn)";
+  }catch(e){ $("mode").textContent="เช็คโหมดไม่ได้"; }
+})();
+
+$("d").value=todayTH();
+$("reload").addEventListener("click",loadDay);
+$("mine").addEventListener("click",renderBooked);
+loadDay();
+</script>
+</body>
+</html>
