@@ -7,6 +7,21 @@ import getKapanToken from "./_kapan_token.js";
 // ============================================================
 const OWNER = process.env.OWNER_LINE_USER_ID || 'Ucc982b971a6676e02ecac6d668723003';
 const KEY   = process.env.KAPAN_SAY_KEY || 'kapan-pm-2026';
+const SB    = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
+const SRV   = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+
+// 🛡️ ส่งเข้ากลุ่มได้เฉพาะกลุ่มที่กะปัน 'อยู่จริง' เท่านั้น
+//    เช็คจากตาราง line_group_messages (ถ้าไม่เคยมีข้อความจากกลุ่มนี้ = กะปันไม่ได้อยู่ = ไม่ส่ง)
+//    กันเคสพิมพ์ groupId ผิดแล้วข้อความไปโผล่ผิดกลุ่ม
+async function knownGroup(gid) {
+  if (!SRV || !gid) return false;
+  try {
+    const r = await fetch(SB + '/line_group_messages?select=group_id&group_id=eq.' + encodeURIComponent(gid) + '&limit=1',
+      { headers: { apikey: SRV, Authorization: 'Bearer ' + SRV } });
+    const j = await r.json();
+    return Array.isArray(j) && j.length > 0;
+  } catch { return false; }
+}
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('ok');
