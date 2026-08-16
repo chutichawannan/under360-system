@@ -2997,6 +2997,31 @@ async function submitOrder() {
     return;   // ต้องปักหมุดก่อนเสมอ — กดสั่งใหม่อีกครั้งหลังปักเสร็จ
   }
 
+  /* 🔁 กันสั่งซ้ำใบเดิมภายใน 24 ชม. — ถามก่อน ไม่ห้าม
+     เคสจริงที่เกิดง่าย: กดยืนยันแล้วหน้าค้าง/เน็ตกระตุก ลูกค้ากดซ้ำ
+     ผลคือครัวทำ 2 เท่า · แมสวิ่ง 2 รอบ · ลูกค้าโดนเก็บเงิน 2 ใบ แล้วต้องมาไล่ยกเลิกทีหลัง
+     ⚠️ ห้ามบล็อกอัตโนมัติ — สั่งเพิ่มจริง/สั่งให้คนอื่นก็มี ให้คนตัดสิน ไม่ใช่ระบบตัดสินแทน */
+  try {
+    const _tot   = cartTotal();
+    const _since = new Date(Date.now() - 24*3600e3).toISOString();
+    const _dupRes = await sb.from('orders')
+      .select('order_number,total,delivery_date,created_at,status')
+      .eq('line_uid', lineProfile.userId)
+      .eq('delivery_date', selDate)
+      .neq('status', 'cancelled')
+      .gte('created_at', _since)
+      .limit(5);
+    const _dup = (_dupRes.data || []).find(o => Math.abs((o.total || 0) - _tot) < 1);
+    if (_dup) {
+      const ok = confirm('คุณเพิ่งสั่งออเดอร์ที่เหมือนกันไปแล้ว\n\n'
+        + 'เลขที่ ' + _dup.order_number + ' · ยอด ฿' + Number(_dup.total || 0).toLocaleString()
+        + ' · วันส่ง ' + _dup.delivery_date + '\n\n'
+        + 'ต้องการสั่งเพิ่มอีกใบจริงๆ ใช่ไหม?\n'
+        + '(ถ้ากดพลาดหรือหน้าค้าง ให้กดยกเลิก แล้วดูใบเดิมได้ที่ประวัติออเดอร์)');
+      if (!ok) return;
+    }
+  } catch(e) { console.warn('dup check:', e); }   // เช็คไม่ได้ = ปล่อยผ่าน ห้ามขวางการสั่งของลูกค้า
+
   const btn = document.getElementById('sub-btn');
   if (btn) { btn.disabled = true; btn.textContent = 'กำลังส่งออเดอร์...'; }
 
