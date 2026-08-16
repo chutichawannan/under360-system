@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ใบงานครัว 17 ส.ค. — 10 เมนู · 70 กล่อง (Meal Plan)</title>
+<title>ใบงานครัว 17 ส.ค. — 10 เมนู · 77 กล่อง (Meal Plan)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -31,6 +31,16 @@
   .warn{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
   .warn .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
   .warn ul{margin:0;padding-left:18px}.warn li{font-size:12.5px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.35}
+  .blocker{background:#FDECEC;border:2px solid var(--red);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .blocker .t{font-weight:900;color:var(--red);font-size:14.5px;margin-bottom:6px}
+  .blocker ul{margin:0;padding-left:18px}.blocker li{font-size:12.5px;font-weight:800;color:#7F1D1D;margin:3px 0;line-height:1.35}
+  .adminfold{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .adminfold summary{font-weight:900;color:var(--yel);font-size:13px;cursor:pointer;list-style:none}
+  .adminfold summary::-webkit-details-marker{display:none}
+  .adminfold summary .more{font-weight:600;font-size:11px;color:#92400E;margin-left:6px;text-decoration:underline}
+  .adminfold ul{margin:8px 0 0;padding-left:18px}
+  .adminfold li{font-size:12.5px;font-weight:700;color:#78350F;margin:4px 0;line-height:1.35}
+  .adminfold .subt{font-weight:900;color:var(--yel);font-size:12.5px;margin:6px 0 2px}
   .m{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
   .mh{background:#F3F4F6;padding:6px 10px;display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
   .mh .nm{flex:1;min-width:0}.mh .nm .t1{font-weight:800;font-size:15px}
@@ -64,7 +74,7 @@
 <div class="vbanner" id="vbanner"></div>
 
 <h1>👨‍🍳 <span data-i="title">ใบงานครัว — จันทร์ 17 ส.ค.</span></h1>
-<div class="sub" data-i="sub">ครัวทำสด 10 เมนู · 70 กล่อง (Meal Plan เท่านั้น) — LC 5 คน (35) · HP 5 คน (35) · Hyrox 0 คนวันนี้ · เมนูสต็อคดูแยกในระบบ/ใบจัดของเก่า</div>
+<div class="sub" data-i="sub">ครัวทำสด 10 เมนู · 77 กล่อง (Meal Plan เท่านั้น) — LC 5 คน (35) · HP 6 คน (42) · Hyrox 0 คนวันนี้ · เมนูสต็อคดูแยกในระบบ/ใบจัดของเก่า</div>
 
 <div class="key">
   <span class="k lc">LC = <span data-i="meat">เนื้อ</span> 120g</span>
@@ -81,48 +91,54 @@
   <div class="tot" data-i="r_tot">ของแพ้/ไม่กิน สำคัญกว่าทุกอย่าง — ชั่งเกิน 20g ยังพอรับได้ แต่ใส่ของที่เขาไม่กิน = เสียลูกค้า</div>
 </div>
 
-<div class="warn">
-  <div class="t" data-i="w_t">📌 ธงที่ฟ้าตัดสินเอง / ข้อมูลไม่ตรงกัน — อ่านก่อนเริ่มทำ</div>
+<div class="blocker">
+  <div class="t" data-i="blk_t">⛔ ยังทำไม่ได้ — ต้องรอคำตอบ</div>
   <ul>
-    <li data-i="w0">✅ <b>นัทเคาะเอง 16 ส.ค. — สลับเมนู 6 ช่อง:</b> ดอย (LC01→LC42 · LC11→LC17 · LC32→LC43) · Milk (LC29→LC42) · โอ๋-LC (LC10→LC42) · โอ๋-HP (HP11→HP42) — เขียนแล้วทั้ง mp_deliveries + order_items ตรงกัน ตรวจซ้ำผ่าน ✅ ผลลัพธ์: เมนู 01/11/32 หายไปทั้งเมนู (ตัดกล่องเดี่ยว 2 ตัว) · เมนู 42 รวมเป็น 4 กล่อง</li>
-    <li data-i="w1">Milk (MP-0817-033) — ชีทแอดมิน (รอบ 15) ยังบอก 6 กล่อง (ติดธง "⚠️ ซ้ำ: รอบ, LC29" — ตอนนี้ LC29 ถูกสลับออกไปแล้วคืนนี้ เหตุผลซ้ำเดิมไม่มีผลแล้ว) แต่ระบบ (order_items) มี 7 เมนู → <b>ฟ้าใช้ 7 กล่อง</b> (ทำเกิน 1 ปลอดภัยกว่าทำขาด) — ยังต้องให้กิฟยืนยัน box_count จริงในระบบให้ตรงกับชีทอีกที (ไม่ใช่เรื่องด่วนคืนนี้)</li>
-    <li data-i="w2">คุณแชมป์ (U-0817-012) — mp_deliveries.box_count ในระบบขึ้น 21 (ผิด) แต่ order_items จริงมีแค่ 7 เมนู (09,10,15,17,23,25,29) → <b>ฟ้าใช้ 7 กล่อง</b> เลข 21 = คอร์ส HP 1 สัปดาห์ทั้งคอร์ส (3 รอบ×7) ระบบใส่ไว้รอบเดียว — ฟ้าไม่แก้เอง เดาไม่ได้ว่าอันไหนถูก</li>
-    <li data-i="w3">โมจิ — ชีทเคยบอก 9 กล่อง แต่ order_items + mp_deliveries มีแค่ 7 เมนู (09,10,15,17,23,25,29) ตรงกัน 2 ทาง → <b>ฟ้าใช้ 7 กล่อง</b></li>
-    <li data-i="w4">คุณแชมป์ + ชมพู่ — ซื้อแพ็คเกจ "Diet Set A — ข้าวกล่องลองทาน 4 วัน 12 กล่อง" คนละ 12 กล่อง (รวม 24 กล่อง) แต่ยังไม่มีใครเลือกเมนู 12 อย่างจากหมวดข้าวกล่องเลย — เป็นเมนูสต็อค ไม่ใช่ Meal Plan LC/HP จึงไม่อยู่ใน 70 กล่องข้างบน — ต้องให้กิฟ/ลูกค้าเลือกเมนูก่อนถึงจะแพ็คได้</li>
-    <li data-i="w5">Bow Chaya 🎀 (LC 7) + BRIGHT💫 (HP 7) — ระบบมีออเดอร์ + เมนูครบ ✅ ครัวทำได้เลย แต่ไม่มีแถวในชีทแอดมินของวันนี้ (ของไม่หาย แค่ชีทไม่ตรงระบบ)</li>
+    <li data-i="blk1">คุณแชมป์ + ชมพู่ — ซื้อแพ็คเกจ "Diet Set A — ข้าวกล่องลองทาน 4 วัน 12 กล่อง" คนละ 12 กล่อง (รวม 24 กล่อง) แต่ <b>ยังไม่มีใครเลือกเมนู 12 อย่าง</b> จากหมวดข้าวกล่องเลย → <b>แพ็คไม่ได้</b> จนกว่ากิฟ/ลูกค้าจะเลือกเมนู (เป็นเมนูสต็อค ไม่ใช่ Meal Plan LC/HP จึงไม่อยู่ใน 77 กล่องข้างบน)</li>
+  </ul>
+</div>
+
+<details class="adminfold">
+  <summary data-i="fold_sum">▸ เรื่องค้างฝั่งแอดมิน 10 ข้อ (ไม่กระทบครัว) — แตะเพื่อดู <span class="more" data-i="fold_more">ดูเต็มที่ 360foodbox.com/fah</span></summary>
+  <ul>
+    <li data-i="w0">✅ นัทเคาะเอง 16 ส.ค. — สลับเมนู 6 ช่อง: ดอย (LC01→LC42 · LC11→LC17 · LC32→LC43) · Milk (LC29→LC42) · โอ๋-LC (LC10→LC42) · โอ๋-HP (HP11→HP42) — เขียนแล้วทั้ง mp_deliveries + order_items ตรงกัน ตรวจซ้ำผ่าน ✅ ผลลัพธ์: เมนู 01/11/32 หายไปทั้งเมนู (ตัดกล่องเดี่ยว 2 ตัว) · เมนู 42 รวมเป็น 4 กล่อง</li>
+    <li data-i="w1">Milk (MP-0817-033) — ชีทแอดมิน (รอบ 15) ยังบอก 6 กล่อง (เหตุผลซ้ำเดิม LC29 ไม่มีผลแล้วเพราะสลับออกคืนนี้) แต่ระบบ (order_items) มี 7 เมนู → ฟ้าใช้ 7 กล่อง — ยังต้องให้กิฟยืนยัน box_count จริงให้ตรงกับชีทอีกที</li>
+    <li data-i="w2">คุณแชมป์ (U-0817-012) — mp_deliveries.box_count ในระบบขึ้น 21 (ผิด) แต่ order_items จริงมีแค่ 7 เมนู → ฟ้าใช้ 7 กล่อง เลข 21 = คอร์ส HP 1 สัปดาห์ทั้งคอร์ส (3 รอบ×7) ระบบใส่ไว้รอบเดียว — ฟ้าไม่แก้เอง เดาไม่ได้ว่าอันไหนถูก</li>
+    <li data-i="w3">โมจิ — ชีทเคยบอก 9 กล่อง แต่ order_items + mp_deliveries มีแค่ 7 เมนู ตรงกัน 2 ทาง → ฟ้าใช้ 7 กล่อง</li>
+    <li data-i="w5">Bow Chaya 🎀 (LC 7) + BRIGHT💫 (HP 7) — ระบบมีออเดอร์ + เมนูครบ ครัวทำได้เลย แต่ไม่มีแถวในชีทแอดมินของวันนี้ (ของไม่หาย แค่ชีทไม่ตรงระบบ)</li>
     <li data-i="w6">New|YD.K🏸 — ยกเลิกแล้วโดยเพอรี่ ตัดออกจากใบทั้งหมด</li>
     <li data-i="w7">ต้อย — admin_notes ระบบ: "[รับไม่ปกติ:7] แบ่งส่ง · เพอรี่ 2026-08-16" ความหมายไม่ชัดเจน — เมนู/กล่องยังครบ 7 ปกติ ถามกิฟถ้าจำเป็นต้องแยกส่ง</li>
     <li data-i="w8">Hyrox — ไม่พบลูกค้า Hyrox วันนี้ ทั้งใน mp_deliveries/orders (DB) — ถือว่าวันนี้ไม่มี Hyrox</li>
-    <li data-i="w9">🔴 ฝน (LINE: Numfon 🌈) — ชีทแอดมินมีแถว 17 ส.ค. รอบ 21 · HP 7 กล่อง แต่ <b>ยังไม่มีออเดอร์ในระบบเลย</b> (เช็คซ้ำคืนนี้ยังเหมือนเดิม) → ยังไม่นับใน 70 กล่อง — กิฟต้องกด "สั่งแทนลูกค้า" ก่อน ถ้ายืนยันว่าส่งจริง ครัวต้องทำเพิ่มอีก 7 กล่อง</li>
-    <li data-i="w10">🔁 ผลตรวจเมนูซ้ำ 5 รอบล่าสุด (หลังสลับคืนนี้) — ดอย: 12 ส.ค. เคยได้ LC13,04,05,07,11,22,23 → เมนูใหม่ 09,10,21,29,42,17,43 ไม่ซ้ำ ✅ · Milk: 14/12/10 ส.ค. ไม่เคยได้ LC42 มาก่อน ✅ · โอ๋: 10 ส.ค. ไม่เคยได้ LC42/HP42 มาก่อน ✅ — ทั้ง 3 คนผ่านกฎห้ามซ้ำ 5 รอบหลังสลับเมนูแล้ว</li>
+    <li data-i="w10">🔁 ผลตรวจเมนูซ้ำ 5 รอบล่าสุด (หลังสลับคืนนี้) — ดอย/Milk/โอ๋ ทั้ง 3 คนผ่านกฎห้ามซ้ำ 5 รอบหลังสลับเมนูแล้ว ✅</li>
+    <li data-i="w11">🆕 น้ำฝน (LINE: Numfon 🌈) — นัทเคาะเอง 16 ส.ค. คืนนี้: เพิ่มเข้าใบผลิต HP 7 กล่อง เมนูชุดแกน 09,10,15,17,23,25,29 เหมือนคนอื่น (เช็คแล้ว: ไม่มีข้อห้าม/แพ้ในระบบ · ไม่ซ้ำเมนู 5 รอบล่าสุดของเธอ) รวมอยู่ใน 77 กล่องแล้ว — 🔴 ยังไม่มีใบออเดอร์ในระบบ รอกิฟกด · 🔴🔴 <b>ตรวจ DB พบเพิ่ม:</b> ออเดอร์รอบ 21 เดิมของเธอ (เคยอยู่ 17 ส.ค.) ถูก "เพอรี่" เลื่อนไปเป็น 19 ส.ค. ในระบบแล้วเมื่อคืนนี้ (16 ส.ค. 12:18) — ต้องเช็คกับกิฟ/เพอรี่ก่อนว่าจะส่งวันไหนกันแน่ ห้ามส่งซ้ำ 2 วัน (17 และ 19)</li>
   </ul>
-</div>
+</details>
 
 <div class="sec" data-i="secA">■ 10 เมนูวันนี้ — LC/HP กินสูตรเดียวกัน (ต่างแค่กรัมเนื้อ) — ไม่มี Hyrox วันนี้</div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">09. <span data-i="m09">หมูสันในหวานไร้มัน + ไข่ฝอย</span></div></div><span class="tot">10</span></div>
+  <div class="mh"><div class="nm"><div class="t1">09. <span data-i="m09">หมูสันในหวานไร้มัน + ไข่ฝอย</span></div></div><span class="tot">11</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="porkl">หมูสันใน</span> 120g</b> · <span data-i="eggshred">ไข่ฝอย</span></div><span class="q">5</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="porkl">หมูสันใน</span> 170g</b> · <span data-i="eggshred">ไข่ฝอย</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="porkl">หมูสันใน</span> 170g</b> · <span data-i="eggshred">ไข่ฝอย</span></div><span class="q">6</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">10. <span data-i="m10">ยำไข่มะตูม</span></div><div style="color:#374151;font-size:12px" data-i="v10note">⚠️ไม่ใช่เมนูเนื้อสัตว์ — ไข่นกกระทา ไม่ใช้สเปกกรัม LC/HP ปกติ ดูหมายเหตุวัตถุดิบท้ายใบ</div></div><span class="tot">8</span></div>
+  <div class="mh"><div class="nm"><div class="t1">10. <span data-i="m10">ยำไข่มะตูม</span></div><div style="color:#374151;font-size:12px" data-i="v10note">⚠️ไม่ใช่เมนูเนื้อสัตว์ — ไข่นกกระทา ไม่ใช้สเปกกรัม LC/HP ปกติ ดูหมายเหตุวัตถุดิบท้ายใบ</div></div><span class="tot">9</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span></div><span class="q">4</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span></div><span class="q">5</span></div>
   <div class="sp" data-i="sp10">โอ๋ (LC+HP) ไม่ได้เมนูนี้ — สลับเป็น 42 คืนนี้ (ไม่นับโอ๋)</div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">15. <span data-i="m15">กุ้งผัดซอสกระเทียมพริกไทยดำ ควินัว สลัดผัก</span></div></div><span class="tot">9</span></div>
+  <div class="mh"><div class="nm"><div class="t1">15. <span data-i="m15">กุ้งผัดซอสกระเทียมพริกไทยดำ ควินัว สลัดผัก</span></div></div><span class="tot">10</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 120g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="saladveg">สลัดผัก</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 170g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="saladveg">สลัดผัก</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="shrimp">กุ้ง</span> 170g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="saladveg">สลัดผัก</span></div><span class="q">6</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">17. <span data-i="m17">หมูผัดพริกหวานควินัว เห็ดย่าง</span></div></div><span class="tot">10</span></div>
+  <div class="mh"><div class="nm"><div class="t1">17. <span data-i="m17">หมูผัดพริกหวานควินัว เห็ดย่าง</span></div></div><span class="tot">11</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="pork">หมู</span> 120g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="mushroom">เห็ดย่าง</span></div><span class="q">5</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="pork">หมู</span> 170g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="mushroom">เห็ดย่าง</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="pork">หมู</span> 170g</b> · <span data-i="quinoa">ควินัว</span> · <span data-i="mushroom">เห็ดย่าง</span></div><span class="q">6</span></div>
   <div class="sp" data-i="sp17">🔴 ดอย 1 กล่อง (LC) — ตัดเห็ดออก ห้ามใส่เห็ดในกล่องของดอย (ไม่ทานเห็ด) รวมอยู่ใน LC 5 กล่องแล้ว</div>
 </div>
 
@@ -133,21 +149,21 @@
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">23. <span data-i="m23">ปลาซาบะย่างซีอิ๊ว สลัดแตงกวาญี่ปุ่น</span></div></div><span class="tot">9</span></div>
+  <div class="mh"><div class="nm"><div class="t1">23. <span data-i="m23">ปลาซาบะย่างซีอิ๊ว สลัดแตงกวาญี่ปุ่น</span></div></div><span class="tot">10</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="saba">ปลาซาบะ</span> 120g</b> · <span data-i="cucumber">สลัดแตงกวาญี่ปุ่น</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="saba">ปลาซาบะ</span> 170g</b> · <span data-i="cucumber">สลัดแตงกวาญี่ปุ่น</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="saba">ปลาซาบะ</span> 170g</b> · <span data-i="cucumber">สลัดแตงกวาญี่ปุ่น</span></div><span class="q">6</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">25. <span data-i="m25">สเต็กปลากระพงเพสโต้ ผักย่าง บร้อคโครี่</span></div></div><span class="tot">9</span></div>
+  <div class="mh"><div class="nm"><div class="t1">25. <span data-i="m25">สเต็กปลากระพงเพสโต้ ผักย่าง บร้อคโครี่</span></div></div><span class="tot">10</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="grouper">ปลากระพง</span> 120g</b> · <span data-i="pesto">เพสโต้</span> · <span data-i="grillveg">ผักย่าง+บร็อกโคลี</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="grouper">ปลากระพง</span> 170g</b> · <span data-i="pesto">เพสโต้</span> · <span data-i="grillveg">ผักย่าง+บร็อกโคลี</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="grouper">ปลากระพง</span> 170g</b> · <span data-i="pesto">เพสโต้</span> · <span data-i="grillveg">ผักย่าง+บร็อกโคลี</span></div><span class="q">6</span></div>
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">29. <span data-i="m29">ซุปกิมจิหมูไข่ทานกับเส้นบุก</span></div></div><span class="tot">9</span></div>
+  <div class="mh"><div class="nm"><div class="t1">29. <span data-i="m29">ซุปกิมจิหมูไข่ทานกับเส้นบุก</span></div></div><span class="tot">10</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="porkegg">หมู+ไข่</span> 120g</b> · <span data-i="konjac">เส้นบุก</span> · <span data-i="kimchi">กิมจิ</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="porkegg">หมู+ไข่</span> 170g</b> · <span data-i="konjac">เส้นบุก</span> · <span data-i="kimchi">กิมจิ</span></div><span class="q">5</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="porkegg">หมู+ไข่</span> 170g</b> · <span data-i="konjac">เส้นบุก</span> · <span data-i="kimchi">กิมจิ</span></div><span class="q">6</span></div>
   <div class="sp" data-i="sp29">Milk ไม่ได้เมนูนี้ (สลับเป็น 42 คืนนี้ — ไม่นับ Milk)</div>
 </div>
 
@@ -164,7 +180,7 @@
   <div class="sp" data-i="sp43">ดอย 1 กล่อง — กล่องเดี่ยว (นัทสั่งคืนนี้ ไม่มี conflict กับข้อห้ามของดอย)</div>
 </div>
 
-<div class="sec" data-i="secD">■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะ Meal Plan ทำสด 70 กล่อง)</div>
+<div class="sec" data-i="secD">■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะ Meal Plan ทำสด 77 กล่อง)</div>
 <div class="tw">
 <table>
   <tr><th data-i="th1">ลูกค้า</th><th data-i="th2">แผน</th><th data-i="th3">เมนูที่ได้</th><th data-i="th4">กล่อง</th></tr>
@@ -176,41 +192,42 @@
   <tr class="g-hp"><td class="who">BRIGHT💫</td><td>HP</td><td class="mn">09,10,15,17,23,25,29</td><td>7</td></tr>
   <tr class="g-hp"><td class="who">คุณแชมป์</td><td>HP</td><td class="mn">09,10,15,17,23,25,29 <small style="color:#B91C1C">(box_count ระบบขึ้น 21 ผิด — ใช้ 7)</small></td><td>7</td></tr>
   <tr class="g-hp"><td class="who">ต้อย</td><td>HP</td><td class="mn">09,10,15,17,23,25,29 <small>("แบ่งส่ง" — ถามกิฟ)</small></td><td>7</td></tr>
+  <tr class="g-hp"><td class="who">🆕 น้ำฝน (LINE: Numfon 🌈)<br><small style="color:#B91C1C;font-weight:700">รอกิฟกดใบออเดอร์ — นัทอนุมัติให้ทำแล้ว</small></td><td>HP</td><td class="mn">09,10,15,17,23,25,29</td><td>7</td></tr>
   <tr class="g-hp"><td class="who">โมจิ (Moji Phavinee)</td><td>HP</td><td class="mn">09,10,15,17,23,25,29</td><td>7</td></tr>
   <tr class="g-hp"><td class="who">โอ๋ (Oh thanaporn)</td><td>HP</td><td class="mn">09,<b>42</b>,15,17,23,25,29 <small>(สลับจาก 11 คืนนี้)</small></td><td>7</td></tr>
 </table>
 </div>
 
 <div class="foot">
-  <b data-i="f1">รวมทำสด 70 กล่อง</b><span data-i="f1b"> — LC 35 (5 คน) · HP 35 (5 คน) · Hyrox 0 คนวันนี้</span><br>
+  <b data-i="f1">รวมทำสด 77 กล่อง</b><span data-i="f1b"> — LC 35 (5 คน) · HP 42 (6 คน) · Hyrox 0 คนวันนี้</span><br>
   <span data-i="f3">เมนู/ปริมาณเนื้อได้จากข้อมูลที่แอดมิน (กิฟ) กรอกไว้ในระบบ + ชีทแอดมิน — Meal Plan LC/HP ใช้เมนูชุดเดียวกัน ต่างแค่กรัมเนื้อ · เมนูสต็อคของวันนี้ดูแยกในระบบ (ไม่รวมในใบนี้ตามที่นัทสั่ง)</span>
 </div>
 
-<div class="sec" data-i="secE">🥬 ยอดวัตถุดิบสั่งของ (Meal Plan 70 กล่อง — ไม่รวมสต็อค)</div>
+<div class="sec" data-i="secE">🥬 ยอดวัตถุดิบสั่งของ (Meal Plan 77 กล่อง — ไม่รวมสต็อค)</div>
 <div class="tw">
 <table>
   <tr><th>โปรตีนดิบ</th><th>เมนูที่ใช้</th><th>สูตรคำนวณ</th><th>รวม</th></tr>
   <tr><td>อกไก่ (ทั้งชิ้น+สับ)</td><td>21,42,43</td><td>LC(1×120+3×120+1×120) + HP(1×170)</td><td><b>0.77 กก.</b></td></tr>
-  <tr><td>หมูสันใน</td><td>09</td><td>LC5×120g + HP5×170g</td><td><b>1.45 กก.</b></td></tr>
-  <tr><td>หมู (ผัด, คัตไม่ระบุ⚠️)</td><td>17</td><td>LC5×120g + HP5×170g</td><td><b>1.45 กก.</b></td></tr>
-  <tr><td>หมูสับ (ซุป)</td><td>29</td><td>LC4×120g + HP5×170g</td><td><b>1.33 กก.</b></td></tr>
-  <tr><td>กุ้ง</td><td>15</td><td>LC4×120g + HP5×170g</td><td><b>1.33 กก.</b></td></tr>
-  <tr><td>ปลาซาบะ</td><td>23</td><td>LC4×120g + HP5×170g</td><td><b>1.33 กก.</b></td></tr>
-  <tr><td>ปลากระพง</td><td>25</td><td>LC4×120g + HP5×170g</td><td><b>1.33 กก.</b></td></tr>
-  <tr><td>ไข่มะตูม (ไข่นกกระทา)</td><td>10</td><td>8 กล่อง</td><td style="color:#B91C1C">⚠️ไม่ทราบฟอง/กล่อง — ห้ามเดา ถาม R&D</td></tr>
+  <tr><td>หมูสันใน</td><td>09</td><td>LC5×120g + HP6×170g</td><td><b>1.62 กก.</b></td></tr>
+  <tr><td>หมู (ผัด, คัตไม่ระบุ⚠️)</td><td>17</td><td>LC5×120g + HP6×170g</td><td><b>1.62 กก.</b></td></tr>
+  <tr><td>หมูสับ (ซุป)</td><td>29</td><td>LC4×120g + HP6×170g</td><td><b>1.50 กก.</b></td></tr>
+  <tr><td>กุ้ง</td><td>15</td><td>LC4×120g + HP6×170g</td><td><b>1.50 กก.</b></td></tr>
+  <tr><td>ปลาซาบะ</td><td>23</td><td>LC4×120g + HP6×170g</td><td><b>1.50 กก.</b></td></tr>
+  <tr><td>ปลากระพง</td><td>25</td><td>LC4×120g + HP6×170g</td><td><b>1.50 กก.</b></td></tr>
+  <tr><td>ไข่มะตูม (ไข่นกกระทา)</td><td>10</td><td>9 กล่อง</td><td style="color:#B91C1C">⚠️ไม่ทราบฟอง/กล่อง — ห้ามเดา ถาม R&D</td></tr>
   <tr><td>ชีส (ผักโขม+ชีส)</td><td>42</td><td>4 กล่อง — 🔴 <b>ดอย 1 กล่องใน 3 นี้ ห้ามใส่ชีส</b> (สั่งเผื่อวัตถุดิบเป็น 3 กล่องเท่านั้น)</td><td style="color:#B91C1C">⚠️ไม่ทราบปริมาณ/กล่อง</td></tr>
 </table>
-<b>รวมโปรตีนเนื้อ/ปลา/กุ้ง (ไม่รวมไข่มะตูม) ≈ 9.00 กก.</b>
+<b>รวมโปรตีนเนื้อ/ปลา/กุ้ง (ไม่รวมไข่มะตูม) ≈ 10.01 กก. <small style="color:#6B7280;font-weight:600">(+1.01 กก. จากน้ำฝนที่เพิ่มคืนนี้)</small></b>
 </div>
 
 <div class="tw">
 <table>
   <tr><th>คาร์บ</th><th>เมนูที่ใช้</th><th>กล่อง</th><th>ปริมาณ/กล่อง</th></tr>
-  <tr><td>ควินัว</td><td>15,17</td><td>19</td><td style="color:#B91C1C">⚠️ไม่ทราบ — เช็คสูตรจริงในครัว</td></tr>
-  <tr><td>เส้นบุก</td><td>29</td><td>9</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
+  <tr><td>ควินัว</td><td>15,17</td><td>21</td><td style="color:#B91C1C">⚠️ไม่ทราบ — เช็คสูตรจริงในครัว</td></tr>
+  <tr><td>เส้นบุก</td><td>29</td><td>10</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
   <tr><td>เส้นแก้ว</td><td>21</td><td>1</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
   <tr><td>ข้าวสไตล์ญี่ปุ่น (แฮมเบิร์ก)</td><td>43</td><td>1</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>(ไม่ระบุคาร์บในชื่อเมนู — น่าจะข้าวมาตรฐานร้าน)</td><td>09,10,23,25,42</td><td>32</td><td style="color:#B91C1C">⚠️ไม่ทราบชนิด/ปริมาณ ต้องเช็คสูตร</td></tr>
+  <tr><td>(ไม่ระบุคาร์บในชื่อเมนู — น่าจะข้าวมาตรฐานร้าน)</td><td>09,10,23,25,42</td><td>44</td><td style="color:#B91C1C">⚠️ไม่ทราบชนิด/ปริมาณ ต้องเช็คสูตร</td></tr>
 </table>
 </div>
 
@@ -218,11 +235,11 @@
 <table>
   <tr><th>ผัก/เครื่องเคียง</th><th>เมนูที่ใช้</th><th>กล่อง</th><th>ปริมาณ/กล่อง</th></tr>
   <tr><td>ผักโขม</td><td>42</td><td>4 <small style="color:#B91C1C">(ดอย 1 กล่องยังใส่ผักโขมได้ปกติ ตัดแค่ชีส)</small></td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>สลัดผักรวม</td><td>15</td><td>9</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>เห็ด (ย่าง)</td><td>17</td><td>9 <small style="color:#B91C1C">(สั่งเผื่อวัตถุดิบเป็น 9 — กล่องดอยไม่ใส่แต่ของยังต้องมีสำรอง)</small></td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>แตงกวา (สลัดญี่ปุ่น)</td><td>23</td><td>9</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>ผักย่างรวม</td><td>25</td><td>9</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>กิมจิ</td><td>29</td><td>9</td><td style="color:#B91C1C">⚠️ไม่ทราบ (นับเป็นเครื่องปรุงด้วยได้)</td></tr>
+  <tr><td>สลัดผักรวม</td><td>15</td><td>10</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
+  <tr><td>เห็ด (ย่าง)</td><td>17</td><td>11 <small style="color:#B91C1C">(สั่งเผื่อวัตถุดิบเป็น 11 — กล่องดอยไม่ใส่แต่ของยังต้องมีสำรอง)</small></td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
+  <tr><td>แตงกวา (สลัดญี่ปุ่น)</td><td>23</td><td>10</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
+  <tr><td>ผักย่างรวม</td><td>25</td><td>10</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
+  <tr><td>กิมจิ</td><td>29</td><td>10</td><td style="color:#B91C1C">⚠️ไม่ทราบ (นับเป็นเครื่องปรุงด้วยได้)</td></tr>
 </table>
 </div>
 
@@ -245,26 +262,28 @@
 <script>
 const T = {
   title:{th:'ใบงานครัว — จันทร์ 17 ส.ค.', shn:'ၽိုၼ်ႁဵတ်းၵၢၼ်ႁွင်ႈၶဝ်ႈ — ဝၼ်းၸၼ် 17', my:'မီးဖိုချောင်အလုပ်စာရွက် — တနင်္လာ ၁၇'},
-  sub:{th:'ครัวทำสด 10 เมนู · 70 กล่อง (Meal Plan เท่านั้น) — LC 5 คน (35) · HP 5 คน (35) · Hyrox 0 คนวันนี้ · เมนูสต็อคดูแยกในระบบ/ใบจัดของเก่า', shn:'ႁဵတ်း 10 မဵၼ်ႇ · 70 ႁိပ်ႇ — LC 35 · HP 35 · Hyrox 0', my:'၁၀ မီနူး · ၇၀ ဘူး — LC ၃၅ · HP ၃၅ · Hyrox ၀'},
+  sub:{th:'ครัวทำสด 10 เมนู · 77 กล่อง (Meal Plan เท่านั้น) — LC 5 คน (35) · HP 6 คน (42) · Hyrox 0 คนวันนี้ · เมนูสต็อคดูแยกในระบบ/ใบจัดของเก่า', shn:'ႁဵတ်း 10 မဵၼ်ႇ · 77 ႁိပ်ႇ — LC 35 · HP 42 · Hyrox 0', my:'၁၀ မီနူး · ၇၇ ဘူး — LC ၃၅ · HP ၄၂ · Hyrox ၀'},
   r_t:{th:'🔴 ข้อห้ามรายคน — ห้ามพลาด', shn:'🔴 ၶေႃႈႁၢမ်ႈ ၽႂ်မၼ်း — ယႃႇပေလိုမ်း', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မမေ့ပါနှင့်'},
   r_tot:{th:'ของแพ้/ไม่กิน สำคัญกว่าทุกอย่าง — ชั่งเกิน 20g ยังพอรับได้ แต่ใส่ของที่เขาไม่กิน = เสียลูกค้า', shn:'ၶွင်ႁၢမ်ႈ/ဢမ်ႇတဵၵ်း လမ်ႇလွင်ႈသေပိူၼ်ႈ — ၼၵ်းလိူဝ် 20g ပႆႇပဵၼ်သင် ၵူၺ်းသႂ်ႇၶွင်ႁၢမ်ႈ = သုမ်းလုၵ်ႈၵႃႈ', my:'ဓာတ်မတည့်/မစားသည့်အရာ အရေးအကြီးဆုံး — ၂၀ဂရမ်ပိုသွားလည်း ရသေးသည် ဒါပေမယ့် မစားတာထည့်မိရင် = ဖောက်သည်ဆုံးမည်'},
   r1:{th:'ดอย (LC 7 กล่อง) — ❌ ไม่ทานนม เนย ขนมปัง / ไม่ทานเห็ด / ไม่ทานอาหารทะเล / ไม่ทานเครื่องแกงกะปิ-กุ้งแห้ง — ✅ คืนนี้นัทสั่งเปลี่ยนเมนูออกจากเมนู 32 (มีน้ำจิ้มซีฟู้ด) แล้ว ไม่ชนอาหารทะเลอีกต่อไป — แต่เมนูใหม่ที่ได้มี 2 จุดต้องระวังเฉพาะกล่องของดอย: เมนู 42 (อกไก่อบผักโขมชีส) มีชีส = นม → ทำกล่องดอยแบบไม่ใส่ชีส · เมนู 17 (หมูผัดพริกหวานควินัว เห็ดย่าง) → ทำกล่องดอยแบบไม่ใส่เห็ด', shn:'Doi — ❌ ဢမ်ႇတဵၵ်းၶွင်ပၢင်ႇလၢႆ · ✅ ဢမ်ႇမီးလွင်ႈၶဵင်ႇပၢင်ႇလၢႆထႅင်ႈ · ⚠️ 42=ၸီႇသ် 17=ႁဵတ်ႇ ဢမ်ႇသႂ်ႇပၼ် Doi', my:'Doi — ❌ ပင်လယ်စာမစားရ · ✅ ယခုပြဿနာမရှိတော့ · ⚠️ ၄၂=ဒိန်ခဲ ၁၇=မှို Doi ဘူးထဲမထည့်ရ'},
   r2:{th:'โอ๋ (LC 7 + HP 7 กล่อง) — ❌ ไม่ทาน ทูน่า เนื้อ ของดิบทุกชนิด (LC) / ไม่ทาน ทูน่า เนื้อ ไข่ต้ม ของดิบทุกชนิด, ก๋วยเตี๋ยวหลอดไก่กุ้ง, ปลาทูต้มมะนาว (HP) — เช็คแล้ว เมนูที่ได้วันนี้ (09,42,15,17,23,25,29 ทั้ง LC และ HP) ไม่มีทูน่า/เนื้อวัว/ของดิบ ปลอดภัย', shn:'Oh — ❌ ဢမ်ႇတဵၵ်းပႃႇထူႇၼႃႇ/ၼိူဝ်ႉငူဝ်ႉ/ၶွင်တိုဝ်ႉ — မဵၼ်ႇမိူဝ်ႈၼႆႉဢမ်ႇမီးလွင်ႈၶဵင်ႇ', my:'Oh — ❌ ငါးသလောက်/အမဲသား/ကုန်ကြမ်းမစားရ — ယနေ့မီနူးများ ပြဿနာမရှိပါ'},
-  w_t:{th:'📌 ธงที่ฟ้าตัดสินเอง / ข้อมูลไม่ตรงกัน — อ่านก่อนเริ่มทำ', shn:'📌 Fah ၽိုၼ်ႉမၢႆ ၽၢႆႇလဵဝ်', my:'📌 Fah ကိုယ်တိုင်ဆုံးဖြတ်ချက်'},
+  blk_t:{th:'⛔ ยังทำไม่ได้ — ต้องรอคำตอบ', shn:'⛔ ပႆႇႁဵတ်းလႆႈ — ႁၢမ်းၶေႃႈတွပ်ႇ', my:'⛔ မလုပ်ရသေးပါ — အဖြေစောင့်ဆိုင်း'},
+  blk1:{th:'คุณแชมป์ + ชมพู่ — ซื้อแพ็คเกจ "Diet Set A — ข้าวกล่องลองทาน 4 วัน 12 กล่อง" คนละ 12 กล่อง (รวม 24 กล่อง) แต่ยังไม่มีใครเลือกเมนู 12 อย่างจากหมวดข้าวกล่องเลย → แพ็คไม่ได้ จนกว่ากิฟ/ลูกค้าจะเลือกเมนู (เป็นเมนูสต็อค ไม่ใช่ Meal Plan LC/HP จึงไม่อยู่ใน 77 กล่องข้างบน)', shn:'Champ + Chompoo — Diet Set A 24 ႁိပ်ႇ ပႆႇလိူၵ်ႈမဵၼ်ႇ → ပႆႇသိုပ်ႇလႆႈ', my:'Champ + Chompoo — Diet Set A ၂၄ ဘူး မီနူးမရွေးရသေး → ထုပ်ပိုး၍မရသေးပါ'},
+  fold_sum:{th:'▸ เรื่องค้างฝั่งแอดมิน 10 ข้อ (ไม่กระทบครัว) — แตะเพื่อดู', shn:'▸ လွင်ႈၽၢႆႇတူင်ႇပွင် 10 — ဢမ်ႇတိူဝ်ႉၽွင်းႁွင်ႈၶဝ်ႈ', my:'▸ Admin ကိစ္စ ၁၀ ခု — မီးဖိုချောင်ကိုမထိခိုက် — ကြည့်ရန်ထိပါ'},
+  fold_more:{th:'ดูเต็มที่ 360foodbox.com/fah', shn:'ၸူးတူၺ်းတင်းသဵင်ႈ 360foodbox.com/fah', my:'အပြည့်အစုံကြည့်ရန် 360foodbox.com/fah'},
   w0:{th:'✅ นัทเคาะเอง 16 ส.ค. — สลับเมนู 6 ช่อง: ดอย (LC01→LC42 · LC11→LC17 · LC32→LC43) · Milk (LC29→LC42) · โอ๋-LC (LC10→LC42) · โอ๋-HP (HP11→HP42) — เขียนแล้วทั้ง mp_deliveries + order_items ตรงกัน ตรวจซ้ำผ่าน ✅ ผลลัพธ์: เมนู 01/11/32 หายไปทั้งเมนู เมนู 42 รวมเป็น 4 กล่อง', shn:'✅ Nut ဆုံးဖြတ် — ၶိူင်ႈပိၼ်ႇပႅတ်ႇမဵၼ်ႇယဝ်ႉ', my:'✅ Nut ဆုံးဖြတ်ချက် — မီနူး ၆ ခု လဲပြီးပါပြီ'},
   w1:{th:'Milk (MP-0817-033) — ชีทแอดมิน (รอบ 15) ยังบอก 6 กล่อง (ติดธง "⚠️ ซ้ำ: รอบ, LC29" — ตอนนี้ LC29 ถูกสลับออกไปแล้วคืนนี้ เหตุผลซ้ำเดิมไม่มีผลแล้ว) แต่ระบบ (order_items) มี 7 เมนู → ฟ้าใช้ 7 กล่อง (ทำเกิน 1 ปลอดภัยกว่าทำขาด) — ยังต้องให้กิฟยืนยัน box_count จริงในระบบให้ตรงกับชีทอีกที', shn:'Milk — ၸႂ်ႉ 7 ႁိပ်ႇ (ၽိုၼ် 6)', my:'Milk — ၇ ဘူးသုံးမည် (စာရွက် ၆)'},
   w2:{th:'คุณแชมป์ (U-0817-012) — mp_deliveries.box_count ในระบบขึ้น 21 (ผิด) แต่ order_items จริงมีแค่ 7 เมนู (09,10,15,17,23,25,29) → ฟ้าใช้ 7 กล่อง เลข 21 = คอร์ส HP 1 สัปดาห์ทั้งคอร์ส (3 รอบ×7) ระบบใส่ไว้รอบเดียว — ฟ้าไม่แก้เอง เดาไม่ได้ว่าอันไหนถูก', shn:'Champ — ၸႂ်ႉ 7 ႁိပ်ႇ (ၶိူင်ႈလိၵ်ႈ 21 ၽိတ်ႈ)', my:'Champ — ၇ ဘူးသုံးမည် (စနစ်က ၂၁ မှားနေသည်)'},
   w3:{th:'โมจิ — ชีทเคยบอก 9 กล่อง แต่ order_items + mp_deliveries มีแค่ 7 เมนู (09,10,15,17,23,25,29) ตรงกัน 2 ทาง → ฟ้าใช้ 7 กล่อง', shn:'Moji — ၸႂ်ႉ 7 (ၽိုၼ်ဝႃႈ 9 ဢၢႆသင်ႇသေႉ)', my:'Moji — ၇ သုံးမည် (စာရွက်က ၉ ဟုဆို)'},
-  w4:{th:'คุณแชมป์ + ชมพู่ — ทั้งคู่ซื้อแพ็คเกจ "Diet Set A — ข้าวกล่องลองทาน 4 วัน 12 กล่อง" (คนละ 12 กล่อง = รวม 24 กล่อง) แต่ยังไม่มีใครเลือกเมนู 12 อย่างจากหมวดข้าวกล่องเลยสักคน — เป็นเมนูสต็อค ไม่ใช่ Meal Plan LC/HP จึงไม่อยู่ใน 70 กล่องข้างบน — ต้องให้กิฟ/ลูกค้าเลือกเมนูก่อนถึงจะแพ็คได้', shn:'Champ + Chompoo — ပႆႇလိူၵ်ႈမဵၼ်ႇ Diet Set A 12+12=24 ႁိပ်ႇ', my:'Champ + Chompoo — Diet Set A ၁၂+၁၂=၂၄ ဘူး မီနူးမရွေးရသေး'},
   w5:{th:'Bow Chaya 🎀 (LC 7) + BRIGHT💫 (HP 7) — ระบบมีออเดอร์ + เมนูครบ ✅ ครัวทำได้เลย แต่ไม่มีแถวในชีทแอดมินของวันนี้ (ของไม่หาย แค่ชีทไม่ตรงระบบ)', shn:'Bow Chaya + BRIGHT — ဢမ်ႇမီးၼႂ်းၽိုၼ် ၵူၺ်းမီးၼႂ်းၶိူင်ႈ ပိုင်ႇမၢၵ်ႈ', my:'Bow Chaya + BRIGHT — စာရွက်တွင်မပါ စနစ်တွင်ပါပြီးသား ပုံမှန်'},
   w6:{th:'New|YD.K🏸 — ยกเลิกแล้วโดยเพอรี่ ตัดออกจากใบทั้งหมด', shn:'New|YD.K — ပယ်ဖျက်ယဝ်ႉ', my:'New|YD.K — ပယ်ဖျက်ပြီး'},
   w7:{th:'ต้อย — admin_notes ระบบ: "[รับไม่ปกติ:7] แบ่งส่ง · เพอรี่ 2026-08-16" ความหมายไม่ชัดเจน — เมนู/กล่องยังครบ 7 ปกติ ถามกิฟถ้าจำเป็นต้องแยกส่ง', shn:'Toi — မၢႆတွင်း "แบ่งส่ง" ဢမ်ႇၸ่ႉၸ่ႉ ထၢမ် Gif', my:'Toi — မှတ်ချက် "แบ่งส่ง" မရှင်းလင်း Gif ကိုမေးပါ'},
   w8:{th:'Hyrox — ไม่พบลูกค้า Hyrox วันนี้ ทั้งใน mp_deliveries/orders (DB) — ถือว่าวันนี้ไม่มี Hyrox', shn:'Hyrox — ဢမ်ႇမီးလုၵ်ႈၵႃႈ Hyrox မိူဝ်ႈၼႆႉ', my:'Hyrox — ယနေ့ Hyrox ဖောက်သည်မရှိပါ'},
-  w9:{th:'🔴 ฝน (LINE: Numfon 🌈) — ชีทแอดมินมีแถว 17 ส.ค. รอบ 21 · HP 7 กล่อง แต่ยังไม่มีออเดอร์ในระบบเลย (เช็คซ้ำคืนนี้ยังเหมือนเดิม) → ยังไม่นับใน 70 กล่อง — กิฟต้องกด "สั่งแทนลูกค้า" ก่อน ถ้ายืนยันว่าส่งจริง ครัวต้องทำเพิ่มอีก 7 กล่อง', shn:'🔴 Fon (Numfon) — မီးၼႂ်းၽိုၼ် ဢမ်ႇမီးၼႂ်းၶိူင်ႈ · HP 7 ႁိပ်ႇ · ထၢမ် Gif ဢွၼ်တၢင်း', my:'🔴 Fon (Numfon) — စာရွက်တွင်ပါ စနစ်တွင်မပါ · HP ၇ ဘူး · Gif ကို အရင်မေးပါ'},
   w10:{th:'🔁 ผลตรวจเมนูซ้ำ 5 รอบล่าสุด (หลังสลับคืนนี้) — ดอย: 12 ส.ค. เคยได้ LC13,04,05,07,11,22,23 → เมนูใหม่ 09,10,21,29,42,17,43 ไม่ซ้ำ ✅ · Milk: 14/12/10 ส.ค. ไม่เคยได้ LC42 มาก่อน ✅ · โอ๋: 10 ส.ค. ไม่เคยได้ LC42/HP42 มาก่อน ✅ — ทั้ง 3 คนผ่านกฎห้ามซ้ำ 5 รอบหลังสลับเมนูแล้ว', shn:'🔁 ၵူတ်ႇတူၺ်းမဵၼ်ႇသမ်ႉ 5 ပွၵ်ႈ — ၽိူဝ်ႇလႅၵ်ႈယဝ်ႉ ဢမ်ႇသမ်ႉ', my:'🔁 ၅ ကြိမ်နောက်ပြန် ထပ်စစ်ဆေးမှု — မီနူးလဲပြီးနောက် မထပ်တော့ပါ'},
+  w11:{th:'🆕 น้ำฝน (LINE: Numfon 🌈) — นัทเคาะเอง 16 ส.ค. คืนนี้: เพิ่มเข้าใบผลิต HP 7 กล่อง เมนูชุดแกน 09,10,15,17,23,25,29 เหมือนคนอื่น (เช็คแล้ว: ไม่มีข้อห้าม/แพ้ในระบบ · ไม่ซ้ำเมนู 5 รอบล่าสุดของเธอ) รวมอยู่ใน 77 กล่องแล้ว — ยังไม่มีใบออเดอร์ในระบบ รอกิฟกด · 🔴 ตรวจ DB พบเพิ่ม: ออเดอร์รอบ 21 เดิมของเธอ (เคยอยู่ 17 ส.ค.) ถูก "เพอรี่" เลื่อนไปเป็น 19 ส.ค. ในระบบแล้วเมื่อคืนนี้ — ต้องเช็คกับกิฟ/เพอรี่ก่อนว่าจะส่งวันไหนกันแน่ ห้ามส่งซ้ำ 2 วัน (17 และ 19)', shn:'🆕 Fon (Numfon) — Nut ဢၼုမတ်ႇပၼ် HP 7 ႁိပ်ႇ ၶိုၼ်ႈမိူဝ်ႈၼႆႉ — 🔴 ၶႅပ်းၶိူင်ႈ ပွၵ်ႈ 21 ပိၼ်ႇၵႂႃႇ 19 ယဝ်ႉ ထၢမ် Gif/Perry ဢွၼ်တၢင်း', my:'🆕 Fon (Numfon) — Nut က HP ၇ ဘူး ယနေ့ညက အတည်ပြုသည် — 🔴 စနစ်တွင် အလှည့် ၂၁ ကို ၁၉ ရက်သို့ ရွှေ့ထားပြီးပြီ — Gif/Perry ကို အရင်မေးပါ'},
   secA:{th:'■ 10 เมนูวันนี้ — LC/HP กินสูตรเดียวกัน (ต่างแค่กรัมเนื้อ) — ไม่มี Hyrox วันนี้', shn:'■ မဵၼ်ႇငဝ်ႈ 10 — LC/HP ၸႂ်ႉတမ်းလဵဝ် — ဢမ်ႇမီး Hyrox', my:'■ ပင်မမီနူး ၁၀ — LC/HP တူညီသုံး — Hyrox မရှိ'},
-  secD:{th:'■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะ Meal Plan ทำสด 70 กล่อง)', shn:'■ ႁုပ်ႈ — ၽႂ်လႆႈသင် (70)', my:'■ အကျဉ်း — ဘယ်သူဘာရ (၇၀)'},
-  secE:{th:'🥬 ยอดวัตถุดิบสั่งของ (Meal Plan 70 กล่อง — ไม่รวมสต็อค)', shn:'🥬 ၶွင်လိုအပ် (70 ႁိပ်ႇ)', my:'🥬 ကုန်ကြမ်းလိုအပ်ချက် (ဘူး ၇၀)'},
+  secD:{th:'■ สรุป — ใครได้เมนูอะไรบ้าง (เฉพาะ Meal Plan ทำสด 77 กล่อง)', shn:'■ ႁုပ်ႈ — ၽႂ်လႆႈသင် (77)', my:'■ အကျဉ်း — ဘယ်သူဘာရ (၇၇)'},
+  secE:{th:'🥬 ยอดวัตถุดิบสั่งของ (Meal Plan 77 กล่อง — ไม่รวมสต็อค)', shn:'🥬 ၶွင်လိုအပ် (77 ႁိပ်ႇ)', my:'🥬 ကုန်ကြမ်းလိုအပ်ချက် (ဘူး ၇၇)'},
   th1:{th:'ลูกค้า', shn:'လုၵ်ႈၵႃႈ', my:'ဖောက်သည်'},
   th2:{th:'แผน', shn:'ၽႅၼ်', my:'အစီအစဉ်'},
   th3:{th:'เมนูที่ได้', shn:'မဵၼ်ႇလႆႈ', my:'ရမည့်မီနူး'},
@@ -288,8 +307,8 @@ const T = {
   sp42:{th:'🔴 ดอย 1 (LC) ใน 3 กล่อง LC — ตัดชีสออก ห้ามใส่ชีสในกล่องของดอย (ไม่ทานนม/เนย) · Milk 1 (LC) + โอ๋ 1 (LC) + โอ๋ 1 (HP) = ปกติ ใส่ชีสได้', shn:'🔴 Doi 1 — ဢမ်ႇသႂ်ႇၸီႇသ်', my:'🔴 Doi ၁ — ဒိန်ခဲမထည့်ရ'},
   m43:{th:'ข้าวหน้าแฮมเบิกไก่สุดนุ่ม สไตล์ญี่ปุ่น', shn:'ၶဝ်ႈ ၵႆႇ Hamburger ၵျပၢၼ်ႇ', my:'ဂျပန်ကြက်ဟမ်ဘာဂါထမင်း'},
   sp43:{th:'ดอย 1 กล่อง — กล่องเดี่ยว (นัทสั่งคืนนี้ ไม่มี conflict กับข้อห้ามของดอย)', shn:'Doi 1 ႁိပ်ႇ — ဢမ်ႇၶဵင်ႇ', my:'Doi ၁ ဘူး — ပြဿနာမရှိ'},
-  f1:{th:'รวมทำสด 70 กล่อง', shn:'ႁူမ်ႈ 70 ႁိပ်ႇ', my:'စုစုပေါင်း ၇၀ ဘူး'},
-  f1b:{th:' — LC 35 (5 คน) · HP 35 (5 คน) · Hyrox 0 คนวันนี้', shn:' — LC 35 · HP 35 · Hyrox 0', my:' — LC ၃၅ · HP ၃၅ · Hyrox ၀'},
+  f1:{th:'รวมทำสด 77 กล่อง', shn:'ႁူမ်ႈ 77 ႁိပ်ႇ', my:'စုစုပေါင်း ၇၇ ဘူး'},
+  f1b:{th:' — LC 35 (5 คน) · HP 42 (6 คน) · Hyrox 0 คนวันนี้', shn:' — LC 35 · HP 42 · Hyrox 0', my:' — LC ၃၅ · HP ၄၂ · Hyrox ၀'},
   f3:{th:'เมนู/ปริมาณเนื้อได้จากข้อมูลที่แอดมิน (กิฟ) กรอกไว้ในระบบ + ชีทแอดมิน — Meal Plan LC/HP ใช้เมนูชุดเดียวกัน ต่างแค่กรัมเนื้อ · เมนูสต็อคของวันนี้ดูแยกในระบบ (ไม่รวมในใบนี้ตามที่นัทสั่ง)', shn:'Meal Plan LC/HP ၸႂ်ႉမဵၼ်ႇလဵဝ်ၵၼ်', my:'Meal Plan LC/HP မီနူးတူညီသုံး'},
   porkl:{th:'หมูสันใน', shn:'ၼိူဝ်ႉမူႇသၼ်ႇၼႂ်း', my:'ဝက်အမြီးတိုင်'},
   eggshred:{th:'ไข่ฝอย', shn:'ၶႆႇသဵၼ်ႈ', my:'ကြက်ဥချည်'},
