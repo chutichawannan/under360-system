@@ -2057,6 +2057,16 @@ async function loadPackages(){
       const probe = await sb.from('packages').select('groups,delivery_rounds,flexible_delivery').limit(1);
       state.hasSetBuilderCols = !probe.error;
     } catch(e){ state.hasSetBuilderCols = false; }
+    /* N-35: "เปิดขายในตาราง" ≠ "ลูกค้าเจอ" — ลูกค้าเข้าถึงแพคได้ทางเดียวคือการ์ดบนหน้าแรก
+       (`home_layout.item_filter.category` = `__pkg:{id}__`) · ไม่มีการ์ด = แพคเปิดขายอยู่แต่ไม่มีใครหาเจอ
+       เคยเกิดจริงหลายรอบและ **ไม่มีอะไรเตือนเลย** → โหลดมาเช็คตรงนี้ทีเดียว แล้วขึ้นเตือนในการ์ดแพค
+       ⚠️ พังไม่ได้: ถ้าอ่านไม่ได้ (สิทธิ์/เน็ต) ให้ homeCards = null = ไม่เตือนอะไรเลย ไม่ใช่เตือนผิด */
+    try {
+      const hl = await sb.from('home_layout').select('item_filter,is_active').limit(200);
+      state.homeCards = hl.error ? null
+        : new Set((hl.data||[]).filter(r => r.is_active !== false)
+                   .map(r => String(r.item_filter?.category || '')).filter(Boolean));
+    } catch(e){ state.homeCards = null; }
     // capability แยก: คอลัมน์ free_shipping (ติ๊กแพค = ส่งฟรี) — กันกระทบ set builder เดิมถ้ายังไม่รัน SQL ตัวนี้
     try {
       const fsProbe = await sb.from('packages').select('free_shipping').limit(1);
@@ -2500,6 +2510,12 @@ function renderPackageEditor(pkg){
     ${(pkg.is_active && state.hasSetBuilderCols && !(state.editingGroups||[]).length) ? `
     <div style="background:#FDECEB;border:1px solid #A02A1F;border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12.5px;color:#A02A1F;font-weight:600;">
       ⚠️ เปิดขายอยู่ แต่ยังไม่มีกลุ่มการเลือก — ลูกค้าเห็นการ์ดแล้วกดเข้าไปสั่งไม่ได้
+    </div>` : ''}
+    ${/* N-35 ต่อ (16 ส.ค. 2569): เปิดขายแล้วแต่ไม่มีการ์ดบนหน้าแรก = ลูกค้าหาไม่เจอเลย ไม่มีทางเข้าอื่น */''}
+    ${(pkg.is_active && state.homeCards && !state.homeCards.has('__pkg:'+pkg.id+'__')) ? `
+    <div style="background:#FFF7E6;border:1px solid #B4791F;border-radius:8px;padding:9px 11px;margin-bottom:14px;font-size:12.5px;color:#8A5A0F;font-weight:600;">
+      🙈 เปิดขายอยู่ แต่ <u>ยังไม่มีการ์ดบนหน้าแรก</u> — ลูกค้าหาแพคนี้ไม่เจอ<br>
+      <span style="font-weight:500;">ไปเพิ่มการ์ดที่หน้า "จัดหน้าแรก" แล้วเลือก 📦 แพคเกจ → ${escapeHtml(pkg.name||'')}</span>
     </div>` : ''}
     ${state.hasFreeShipCol ? `<label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:14px;cursor:pointer;color:var(--forest);font-weight:600;">
       <input type="checkbox" class="pkg-f-freeship" ${pkg.free_shipping?'checked':''}> 🚚 ซื้อแพคนี้ = ส่งฟรี (ยกเว้นค่าส่งทั้งออเดอร์)
