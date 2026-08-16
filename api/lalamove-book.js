@@ -92,6 +92,20 @@ module.exports = async (req, res) => {
     return res.status(200).json({ ok: true, action, orderId: id, data: r.json && r.json.data ? r.json.data : r.json });
   }
 
+  // ── ถามว่าตอนนี้เป็นโหมดซ้อมหรือจองจริง ───────────────────────────────
+  // 🔴 ต้องมี endpoint ตรงๆ ห้ามให้หน้าจอเดาเอง — เทส 16 ส.ค. เจอของจริง:
+  //    หน้า dispatch เดาโหมดด้วยการยิง body เปล่าแล้วดูข้อความที่ตอบกลับ
+  //    แต่ API ตอบ "ต้องมี quotationId" ตั้งแต่ด่านแรก ยังไม่ทันถึงชั้นสวิตช์
+  //    → หน้าจอขึ้นป้าย "⚠️ โหมดจองจริง — ใช้เงินจริง" ทั้งที่สวิตช์ปิดสนิท
+  //    ป้ายบอกโหมดผิด = อันตรายกว่าไม่มีป้าย (คนอ่านแล้วตัดสินใจผิดทั้งสองทาง)
+  if (action === 'mode') {
+    return res.status(200).json({
+      ok: true,
+      bookingEnabled: process.env.LALAMOVE_BOOKING_ENABLED === '1',
+      env: process.env.LALAMOVE_ENV === 'sandbox' ? 'sandbox' : 'production'
+    });
+  }
+
   // ── จองรถ ────────────────────────────────────────────────────────────
   const quotationId = b.quotationId;
   const stops = Array.isArray(b.stops) ? b.stops : [];   // [{stopId, name, phone, pinSource, remarks, orderNo}]
