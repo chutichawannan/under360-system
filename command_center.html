@@ -402,7 +402,8 @@ function refreshUI(){ renderBanner(); renderHome(); renderDash(); renderRoomList
      ③ ก้อนไหนพัง ก้อนอื่นยังขึ้น (allSettled ไม่ใช่ all) */
 async function loadAll(manual){
   try{ refreshUI(); }catch(e){}
-  const jobs=[ loadCore(), loadNiw(), loadCutover(), loadOOS() ];
+  // ตัวนับสดของการ์ดสรุปเช้าต้องรอ loadCore ก่อน (ต้องรู้เวลาสรุปล่าสุดถึงจะนับ "หลังจากนั้น" ได้)
+  const jobs=[ loadCore().then(loadBriefCounts), loadNiw(), loadCutover(), loadOOS() ];
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
   if(manual || !bizLoaded){ jobs.push(loadBiz().then(function(){ bizLoaded=true; })); }
   await Promise.allSettled(jobs);
@@ -452,48 +453,158 @@ function renderBanner(){
    ของที่เป็นตัวเลข/ตัวเงิน/AI ย้ายไปหน้า "แดชบอร์ด" ทั้งหมด */
 
 /* ☀️ สรุปเช้า — จากพี่ปืน (ห้อง pm) ที่รันอัตโนมัติตี 4 ทุกวัน
-   ไม่ยิงคำขอเพิ่มสักตัว: ใช้ allMsgs ที่หน้านี้โหลดมาอยู่แล้ว (session_messages 400 แถวล่าสุด)
+   ตัวสรุปเองไม่ยิงคำขอเพิ่ม: ใช้ allMsgs/ccPosts ที่หน้านี้โหลดมาอยู่แล้ว (session_messages 400 แถวล่าสุด)
    กฎที่พี่ปืนขอมา 15 ส.ค. — และเป็นกฎที่บ้านนี้เจ็บมาแล้วหลายรอบ:
-     "เก่าเกิน 30 ชม. ต้องขึ้นป้ายเตือน ห้ามโชว์ของเก่าเงียบๆ เหมือนเป็นของวันนี้"
-     (= แพทเทิร์นประจำบ้าน "เครื่องมือคืนผลลวงโดยไม่มีอะไรแดง") */
+     "ของเก่าต้องขึ้นป้ายเตือน ห้ามโชว์เงียบๆ เหมือนเป็นของวันนี้"
+     (= แพทเทิร์นประจำบ้าน "เครื่องมือคืนผลลวงโดยไม่มีอะไรแดง")
+
+   รอบ 2 (สเปคพี่ปืน 15 ส.ค. 14:53 · นัทเคาะเอง) — การ์ดเป็น 3 ชั้น:
+     ชั้น 1  DAILY BRIEF     04:11 น. (pi-puen-daily-sweep)
+     ชั้น 2  EVENING UPDATE  18:23 น. (pi-puen-evening-sweep)  <- ไม่มีก็ข้ามไปเลย ห้ามพัง
+     ชั้น 3  ตัวนับสด        คำนวณตอนเปิดหน้า ไม่ต้องรอ agent
+   ทำไมต้องมีชั้น 3: ต่อให้สรุปเก่า 20 ชม. นัทก็ต้องรู้ทันทีว่าตกข่าวไปเท่าไหร่
+   นัทสั่งไว้ล่วงหน้า: วันไหนต้องประหยัด token = ปิดรอบเย็นก่อน -> ชั้น 2 ต้องหายได้โดยการ์ดไม่พัง */
 var briefOpen = false;
 function toggleBrief(){ briefOpen = !briefOpen; renderHome(); }
 
-function cardBrief(){
-  var rows = (typeof allMsgs !== 'undefined' && allMsgs) ? allMsgs : [];
-  var b = null;
-  for (var i = rows.length - 1; i >= 0; i--) {
+var BRIEF_STALE_HRS = 14;      /* เดิม 30 — นัทบอกเอง "30 ชม. เก่าไปมั้ง ฉันคุย Claude ทุกวัน" */
+var briefCounts = null;        /* {since,nMsgs,nOrders,ordersOk} — เติมโดย loadBriefCounts() */
+var briefCountsFor = null;     /* กันยิงซ้ำเมื่อสรุปยังเป็นใบเดิม */
+
+function briefRowsAll(){
+  var a = (typeof allMsgs !== 'undefined' && allMsgs) ? allMsgs : [];
+  var c = (typeof ccPosts !== 'undefined' && ccPosts) ? ccPosts : [];
+  return a.concat(c);
+}
+/* พี่ปืนโพสต์ marker นี้ตายตัวทุกคืน ใช้จับได้เลย */
+function findMarker(re){
+  var rows = briefRowsAll(), best = null;
+  for (var i = 0; i < rows.length; i++) {
     var m = rows[i];
-    if (m.room === 'pm' && /^\s*\u2600\ufe0f?\s*DAILY BRIEF/.test(String(m.text || ''))) { b = m; break; }
+    if (m.room === 'pm' && re.test(String(m.text || ''))) {
+      if (!best || m.created_at > best.created_at) best = m;
+    }
   }
-  if (!b) {
-    return '<div class="card"><h3>\u2600\ufe0f สรุปเช้า</h3>'
+  return best;
+}
+var RE_BRIEF   = /^\s*☀️?\s*DAILY BRIEF/;
+var RE_EVENING = /^\s*🌆\s*EVENING UPDATE/;
+
+function briefAgo(hrs){
+  return hrs < 1 ? 'เมื่อครู่' : (hrs < 24 ? (Math.round(hrs) + ' ชม.ที่แล้ว') : (Math.round(hrs / 24) + ' วันที่แล้ว'));
+}
+function briefWhen(t){
+  return new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(t);
+}
+/* ใบเทส/ใบซ้อมของทีม ไม่ใช่ "ออเดอร์ใหม่" (กติกาเดียวกับ scripts/finance/orders.mjs) */
+function isTestOrderRow(o){
+  if (String(o.source || '') === 'parallel_test') return true;
+  var s = ((o.customer_name || '') + ' ' + (o.notes || '') + ' ' + (o.created_by || '')).toLowerCase();
+  return /test|เทส|ทดสอบ|ทดลอบ|ทดลอง|\[parallel\]|dummy/.test(s);
+}
+
+/* ชั้น 3 — นับของที่เกิด "หลัง" สรุปล่าสุด · ยิงครั้งเดียวต่อสรุป 1 ใบ ไม่ยิงทุกครั้งที่วาดหน้า */
+async function loadBriefCounts(){
+  var b = findMarker(RE_BRIEF);
+  var e = findMarker(RE_EVENING);
+  var newest = (e && (!b || e.created_at > b.created_at)) ? e : b;
+  if (!newest) { briefCounts = null; briefCountsFor = null; return; }
+  if (briefCountsFor === newest.created_at) return;
+  briefCountsFor = newest.created_at;
+
+  var since = newest.created_at;
+  /* ตัดแถวของพี่ปืนเองออก ไม่งั้นสรุปนับตัวเอง */
+  var nMsgs = briefRowsAll().filter(function(m){
+    return m.created_at > since && !/พี่ปืน/.test(String(m.sender || ''));
+  }).length;
+
+  var nOrders = 0, ordersOk = false;
+  try{
+    var r = await sb.from('orders')
+      .select('order_number,customer_name,source,created_by,notes')
+      .gt('created_at', since).limit(300);
+    /* error ต้องโชว์ว่า "นับไม่ได้" ไม่ใช่โชว์ 0 — 0 ที่แปลว่าพัง คือของหายเงียบ */
+    if (!r.error && r.data) { ordersOk = true; nOrders = r.data.filter(function(o){ return !isTestOrderRow(o); }).length; }
+  }catch(err){ ordersOk = false; }
+
+  briefCounts = { since: since, nMsgs: nMsgs, nOrders: nOrders, ordersOk: ordersOk };
+  renderHome();
+}
+
+function cardBrief(){
+  var b = findMarker(RE_BRIEF);
+  var e = findMarker(RE_EVENING);
+  /* รอบเย็นที่เก่ากว่าสรุปเช้า = ของเมื่อวาน ไม่ต้องโชว์ */
+  if (e && b && e.created_at < b.created_at) e = null;
+
+  if (!b && !e) {
+    return '<div class="card"><h3>☀️ สรุปเช้า</h3>'
       + '<div class="muted">ยังไม่มีสรุปเข้ามา — พี่ปืนกวาดงานให้ตี 4 ทุกวัน<br>'
       + 'ถ้าเลยเวลานั้นมานานแล้วยังไม่มี = ตัวรันอัตโนมัติไม่ได้ทำงาน</div></div>';
   }
 
-  var t = new Date(b.created_at);
-  var hrs = (Date.now() - t.getTime()) / 3600000;
-  var stale = hrs > 30;
-  var when = new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }).format(t);
-  var ago = hrs < 1 ? 'เมื่อครู่' : (hrs < 24 ? (Math.round(hrs) + ' ชม.ที่แล้ว') : (Math.round(hrs / 24) + ' วันที่แล้ว'));
+  var newest = (e && (!b || e.created_at > b.created_at)) ? e : b;
+  var newestHrs = (Date.now() - new Date(newest.created_at).getTime()) / 3600000;
+  var stale = newestHrs > BRIEF_STALE_HRS;
 
-  var body = String(b.text || '').replace(/^[^\n]*DAILY BRIEF[^\n]*\n?/, '').trim();
-  var lines = body.split('\n');
-  var shown = briefOpen ? body : lines.slice(0, 14).join('\n');
-  var more = lines.length > 14;
+  var head = '', warn = '', body = '', foot = '', cnt = '';
 
-  var warn = stale
-    ? '<div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;margin-bottom:8px">'
-      + '\u26a0\ufe0f ยังไม่อัปเดต — สรุปนี้เก่า ' + esc(ago) + ' อย่าอ่านเป็นสถานะของวันนี้ (ตัวรันอัตโนมัติอาจไม่ทำงาน)</div>'
-    : '';
+  if (b) {
+    var tb = new Date(b.created_at);
+    var hb = (Date.now() - tb.getTime()) / 3600000;
+    head = esc(briefWhen(tb)) + ' · ' + esc(briefAgo(hb));
+    var txt = String(b.text || '').replace(/^[^\n]*DAILY BRIEF[^\n]*\n?/, '').trim();
+    var lines = txt.split('\n');
+    var shown = briefOpen ? txt : lines.slice(0, 14).join('\n');
+    body = '<div style="white-space:pre-wrap;font-size:13px;line-height:1.65">' + esc(shown) + '</div>'
+      + (lines.length > 14
+          ? '<button class="lnk" style="margin-top:8px;width:100%;justify-content:center;font-weight:700" onclick="toggleBrief()">'
+            + (briefOpen ? 'ย่อกลับ ▲' : 'อ่านต่อ ▼') + '</button>'
+          : '');
+  } else {
+    head = 'ยังไม่มีรอบเช้า';
+    body = '<div class="muted" style="font-size:13px">⚠️ <b>ไม่มีสรุปรอบเช้าของวันนี้</b> — มีแต่รอบเย็นด้านล่าง · ตัวรันตี 4 อาจไม่ทำงาน</div>';
+  }
 
-  return '<div class="card"><h3>\u2600\ufe0f สรุปเช้า '
-    + '<span style="font-weight:500;color:var(--ink-soft);font-size:12px">' + esc(when) + ' · ' + esc(ago) + '</span></h3>'
-    + warn
-    + '<div style="white-space:pre-wrap;font-size:13px;line-height:1.65">' + esc(shown) + '</div>'
-    + (more ? '<button class="lnk" style="margin-top:8px;width:100%;justify-content:center;font-weight:700" onclick="toggleBrief()">'
-        + (briefOpen ? 'ย่อกลับ \u25b2' : 'อ่านต่อ \u25bc') + '</button>' : '')
+  if (stale) {
+    warn = '<div style="background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:8px;padding:8px 10px;font-size:12px;font-weight:700;margin-bottom:8px">'
+      + '⚠️ สรุปยังไม่อัปเดตวันนี้ — ใบล่าสุดเก่า ' + esc(briefAgo(newestHrs))
+      + ' อย่าอ่านเป็นสถานะของวันนี้ (ตัวรันอัตโนมัติอาจไม่ทำงาน)</div>';
+  }
+
+  /* ---- ชั้น 2 · รอบเย็น (ไม่มี = ข้ามไปเลย ไม่เหลือที่ว่างค้าง) ---- */
+  if (e) {
+    var te = new Date(e.created_at);
+    var he = (Date.now() - te.getTime()) / 3600000;
+    var etxt = String(e.text || '').replace(/^[^\n]*EVENING UPDATE[^\n]*\n?/, '').trim();
+    var el = etxt.split('\n');
+    var eshown = briefOpen ? etxt : el.slice(0, 8).join('\n');
+    foot = '<div style="border-top:1px dashed var(--line,#E5E7EB);margin-top:10px;padding-top:8px">'
+      + '<div style="font-weight:700;font-size:12.5px">🌆 อัปเดตเย็น '
+      + '<span style="font-weight:500;color:var(--ink-soft);font-size:11.5px">' + esc(briefWhen(te)) + ' · ' + esc(briefAgo(he)) + '</span></div>'
+      + '<div style="white-space:pre-wrap;font-size:12.5px;line-height:1.6;margin-top:4px">' + esc(eshown) + '</div>'
+      + (el.length > 8 && !briefOpen ? '<div class="muted" style="font-size:11.5px;margin-top:2px">… กด "อ่านต่อ" ด้านบนเพื่อดูเต็ม</div>' : '')
+      + '</div>';
+  }
+
+  /* ---- ชั้น 3 · ตัวนับสด ---- */
+  if (briefCounts && briefCounts.since === newest.created_at) {
+    var parts = [];
+    if (briefCounts.nMsgs) parts.push('ห้องพูด ' + briefCounts.nMsgs);
+    if (briefCounts.ordersOk) { if (briefCounts.nOrders) parts.push('ออเดอร์ใหม่ ' + briefCounts.nOrders); }
+    else parts.push('ออเดอร์ — นับไม่ได้');
+    var total = briefCounts.nMsgs + (briefCounts.ordersOk ? briefCounts.nOrders : 0);
+    cnt = '<div style="border-top:1px dashed var(--line,#E5E7EB);margin-top:10px;padding-top:8px;font-size:12.5px">'
+      + (parts.length
+          ? '🔄 <b>หลังอัปเดตล่าสุด มีความเคลื่อนไหว ' + total + ' รายการ</b>'
+            + '<div class="muted" style="font-size:11.5px;margin-top:2px">' + esc(parts.join(' · ')) + '</div>'
+          : '<span class="muted">🔄 หลังอัปเดตล่าสุด ยังไม่มีความเคลื่อนไหว</span>')
+      + '</div>';
+  }
+
+  return '<div class="card"><h3>☀️ สรุปเช้า '
+    + '<span style="font-weight:500;color:var(--ink-soft);font-size:12px">' + head + '</span></h3>'
+    + warn + body + foot + cnt
     + '</div>';
 }
 
@@ -749,7 +860,7 @@ function toast(msg){let t=document.getElementById('_toast');if(!t){t=document.cr
   t.textContent=msg;t.style.opacity='1';clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',1600);}
 
 loadAll();
-setInterval(()=>{ if(document.visibilityState==='visible'){ loadCore().then(refreshUI); } },15000);
+setInterval(()=>{ if(document.visibilityState==='visible'){ loadCore().then(()=>{ refreshUI(); loadBriefCounts(); }); } },15000);
 
 /* ===== logic niw (copy of scripts/niw/niw_card_logic.js - source of truth = weekly_special_watch.mjs - edit both) ===== */
 /* ============================================================================
