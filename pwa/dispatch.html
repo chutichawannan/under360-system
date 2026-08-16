@@ -258,16 +258,22 @@ async function kill(id){
   alert(j.ok?"ยกเลิกแล้ว":"ยกเลิกไม่ได้: "+(j.error||"")); if(j.ok) loadDay();
 }
 
-// เช็คว่าตอนนี้เป็นโหมดซ้อมหรือจองจริง — ยิง dry-run เปล่าๆ ดูคำตอบ
+// เช็คว่าตอนนี้เป็นโหมดซ้อมหรือจองจริง — ถาม API ตรงๆ ห้ามเดาจากข้อความที่ตอบกลับ
+// (เวอร์ชันแรกเดาเอาจากการยิง body เปล่า แล้วขึ้นป้าย "โหมดจองจริง" ทั้งที่สวิตช์ปิดสนิท
+//  เพราะ API ตอบ "ต้องมี quotationId" ตั้งแต่ด่านแรก ยังไม่ทันถึงชั้นสวิตช์ — เจอตอนเทส 16 ส.ค.)
 (async()=>{
   try{
-    const r=await fetch("/api/lalamove-book",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({})});
-    const j=await r.json();
-    const on=!/LALAMOVE_BOOKING_ENABLED/.test(JSON.stringify(j));
+    const j=await (await fetch("/api/lalamove-book?action=mode",{method:"POST"})).json();
+    if(!j||j.ok!==true) throw new Error("ตอบไม่ตรงรูปแบบ");
+    const on=j.bookingEnabled===true;
     $("mode").textContent = on ? "⚠️ โหมดจองจริง — ใช้เงินจริง" : "🧪 โหมดซ้อม — ยังไม่จองจริง";
     $("mode").style.background = on ? "var(--badbg)" : "var(--warnbg)";
     $("mode").style.color = on ? "var(--bad)" : "var(--warn)";
-  }catch(e){ $("mode").textContent="เช็คโหมดไม่ได้"; }
+  }catch(e){
+    // เช็คไม่ได้ = ต้องถือว่า "ไม่รู้" ห้ามเดาว่าปลอดภัย
+    $("mode").textContent="❓ เช็คโหมดไม่ได้ — อย่าเพิ่งกดจอง";
+    $("mode").style.background="var(--badbg)"; $("mode").style.color="var(--bad)";
+  }
 })();
 
 $("d").value=todayTH();
