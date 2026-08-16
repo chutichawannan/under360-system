@@ -32,22 +32,43 @@ export default async function handler(req, res) {
   let j; try { j = JSON.parse(body || '{}'); } catch { return res.status(400).json({ ok: false }); }
   if (j.key !== KEY) return res.status(401).json({ ok: false });
 
-  // เพดานความยาว: ไลน์ไว้คุยสั้นๆ ยาวกว่านี้ไปคุยต่อในแชท Claude (นัทสั่ง 12 ส.ค.)
-  const MAX = 700;   // ~150 คำไทย
-  let text = String(j.text || '').trim();
-  if (text.length > MAX) text = text.slice(0, MAX).trimEnd() + '…\n\n(ยาวเกินค่ะ ที่เหลือไปดูต่อในแชทนะคะ)';
-  if (!text) return res.status(400).json({ ok: false, why: 'ไม่มีข้อความ' });
+  // ยาวเกิน = ตัดเป็นชุดๆ ส่งต่อกัน ไม่ใช่ตัดทิ้ง (นัทสั่ง 16 ส.ค.: "ถ้ามันยาวเกิน ต่อ 2 ชุดสิ")
+  //    เดิมตัดที่ 700 ตัวอักษร -> ข้อความในกลุ่มแอดมินขาดกลางคัน เหลือ 3 ข้อจาก 4
+  const toGroup = String(j.group || "").trim();
+  const CHUNK = toGroup ? 1800 : 900;
+  const MAXPARTS = 5;
+  const full = String(j.text || "").trim();
+  if (!full) return res.status(400).json({ ok: false, why: "ไม่มีข้อความ" });
 
-  const token = await getKapanToken();   // 14 ส.ค.: ใช้กุญแจของกะปันเอง ไม่ปนกับ OA ร้าน
-  if (!token) return res.status(500).json({ ok: false, why: 'ยังไม่ได้ตั้ง token' });
+  const parts = [];
+  let cur = "";
+  for (const line of full.split("\n")) {
+    if ((cur + "\n" + line).length > CHUNK && cur) { parts.push(cur); cur = line; }
+    else cur = cur ? cur + "\n" + line : line;
+  }
+  if (cur) parts.push(cur);
+  const use = parts.slice(0, MAXPARTS);
+  if (parts.length > MAXPARTS) use[MAXPARTS - 1] += "\n\n(ยังมีต่ออีก " + (parts.length - MAXPARTS) + " ชุด)";
+  const msgs = use.map((t, n) => ({ type: "text",
+    text: use.length > 1 ? t + "\n\n— (" + (n + 1) + "/" + use.length + ")" : t }));
+
+  let target = OWNER;
+  if (toGroup) {
+    if (!(await knownGroup(toGroup)))
+      return res.status(400).json({ ok: false, why: "กะปันไม่ได้อยู่ในกลุ่มนี้ — ต้องเชิญเข้ากลุ่มก่อน" });
+    target = toGroup;
+  }
+
+  const token = await getKapanToken();
+  if (!token) return res.status(500).json({ ok: false, why: "ยังไม่ได้ตั้ง token" });
 
   try {
     const r = await fetch('https://api.line.me/v2/bot/message/push', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-      body: JSON.stringify({ to: OWNER, messages: [{ type: 'text', text }] }),
+      body: JSON.stringify({ to: target, messages: msgs }),
     });
-    return res.status(200).json({ ok: r.ok, status: r.status });
+    return res.status(200).json({ ok: r.ok, status: r.status, ชุด: msgs.length, ปลายทาง: toGroup ? 'กลุ่ม' : 'นัท' });
   } catch (e) {
     return res.status(500).json({ ok: false, why: String(e) });
   }
