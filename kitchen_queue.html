@@ -678,12 +678,15 @@ function renderProd(){
     return;
   }
   var html="<div class='prod-wrap'>"
-    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>สต็อค</span><span>เหลือ</span></div>";
+    +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>ทำไว้</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
     var unlimited=(m.stock_total==null);
-    var stk=unlimited?null:m.stock_total;
-    var rem=unlimited?null:(stk-r.qty);
+    /* ⚠️ ตั้งแต่ 16 ส.ค. `stock_total` = "ขายได้อีก" (หักของที่สั่งไปแล้วเรียบร้อย)
+       ไม่ใช่ "ของที่ทำไว้" อีกต่อไป → ช่อง "ทำไว้" ต้องบวกที่สั่งแล้วกลับเข้าไป
+       ถ้าไม่แก้ตรงนี้ ช่อง "เหลือ" จะหักยอดสั่งซ้ำสองรอบ = ครัวเห็นของขาดทั้งที่ของพอ */
+    var rem=unlimited?null:m.stock_total;
+    var stk=unlimited?null:(m.stock_total + r.qty);
     var rowCls=(rem!=null&&rem<0)?"danger":(rem!=null&&rem<3)?"warn":"";
     // ชื่อเมนูตัดบรรทัดได้ ไม่ตัดข้อความทิ้ง (เดิม ellipsis+nowrap = ชื่อยาวอ่านไม่จบว่าต้องผลิตอะไร)
     html+="<div class='pt-row "+rowCls+"'>"
@@ -761,6 +764,10 @@ async function markMpUndelivered(id){
   renderMpQueue();
 }
 
+/* ⚰️ โค้ดตายแล้ว — ไม่มีใครเรียก `schedSave` อีกแล้ว (grep ทั้งไฟล์เจอแค่บรรทัดนี้)
+   ช่อง "ผลิตได้จริง" ที่เคยใช้ตัวนี้ถูกถอดออกไปแล้ว ครัวกรอกที่แท็บ "ตั้งสต็อค" แทน
+   ⚠️ เอกสารเก่าหลายฉบับยังอ้างพฤติกรรมของฟังก์ชันนี้อยู่ — อย่าเชื่อ ให้ดู `stkWrite`
+   ยังไม่ลบทิ้ง เพราะกันไว้เผื่อมีหน้าอื่นเรียกข้ามไฟล์ที่ grep ไม่เห็น */
 // debounce save 600ms หลังพิมเสร็จ
 function schedSave(inp){
   var menuId=inp.dataset.menuId;
@@ -820,8 +827,10 @@ function renderStock(){
   var menus=(allMenus||[]).filter(function(m){ return m.category!=="meal_hp"&&m.category!=="meal_lc"; })
     .sort(function(a,b){ return (a.category||"").localeCompare(b.category||"")||(a.code||"").localeCompare(b.code||""); });
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
-  var om={}; filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
-  var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>ตั้งจำนวนที่ทำวันนี้ต่อเมนู — <b>ลูกค้าสั่งได้ไม่เกินนี้</b> (LIFF อ่านตัวนี้) · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
+  var om=stkOrderedMap();
+  var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>"
+    +"กรอก <b>จำนวนที่ทำไว้ทั้งหมด</b> ของเมนูนั้น — ระบบ<b>หักของที่ลูกค้าสั่งไปแล้ว</b>ให้เอง แล้วเหลือเท่าไหร่ถึงเปิดให้สั่งต่อ<br>"
+    +"<span style='color:var(--g);font-weight:700'>ทำไว้ − สั่งแล้ว = ขายได้อีก</span> · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
 
   // แถบหมวด + ช่องค้นหา (นัทสั่ง 12 ส.ค.) — ครัวกรอกสต็อกทีละหมวด (บ๊ะจ่าง/ข้าวกล่อง/แพคกับข้าว)
   // เดิมเป็นรายการยาวรวดเดียว 115 เมนู ครัวต้องเลื่อนหาเอง = กรอกผิดแถวง่าย
@@ -847,11 +856,16 @@ function renderStock(){
   shown.forEach(function(m){
     if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
     var unlimited=(m.stock_total==null);
-    var val=unlimited?0:m.stock_total;
     var ordered=om[m.id]||0;
+    var left=unlimited?0:m.stock_total;
+    var val=unlimited?0:(left+ordered);          // ช่องกรอก = "ทำไว้ทั้งหมด" ไม่ใช่ "เหลือขาย"
     html+="<div class='stk-row'>"
       +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+escH(m.name||"")
-      +(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":"")+"</div>"
+      +(ordered&&!unlimited
+        ?"<div style='font-size:11px;color:var(--soft);margin-top:2px'>ทำไว้ "+val
+          +" − <span style='color:var(--gold);font-weight:700'>สั่งแล้ว "+ordered+"</span>"
+          +" = <span style='color:"+(left>0?"var(--g)":"var(--r)")+";font-weight:700'>ขายได้อีก "+left+"</span></div>"
+        :(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":""))+"</div>"
       +"<div class='stk-ctrl'>"
       +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',-1)\" "+(unlimited?"disabled":"")+">−</button>"
       +"<input class='stk-num' type='number' min='0' value='"+val+"' data-id='"+m.id+"' oninput='stkType(this)'"+(unlimited?" disabled style='opacity:.35'":"")+">"
@@ -861,12 +875,33 @@ function renderStock(){
   });
   el.innerHTML=html;
 }
-function stkWrite(menuId,val){ // val = ตัวเลข หรือ null (ไม่จำกัด)
-  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=val;
-  clearTimeout(saveTimers["stk_"+menuId]);
-  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_){ var _w4=await sb_.from("menu_items").update({stock_total:val}).eq("id",menuId); if(_w4.error) kqWriteFail(_w4.error,"ตั้งสต็อค (ลูกค้าเห็นเลขนี้)"); } },500);
+/* ── 🍳 ครัวกรอก "ทำไว้กี่กล่อง" ไม่ใช่ "ขายได้อีกกี่กล่อง" (นัทสั่งแก้ที่ต้นเหตุ) ─────
+   ปัญหาเดิม: ช่องนี้เขียนลง `stock_total` ตรงๆ ซึ่งแปลว่า "ลูกค้าซื้อได้อีกเท่านี้"
+     แต่ครัวคิดว่ากรอก "วันนี้ทำไปกี่กล่อง" → ของที่ขายไปแล้วถูกเปิดขายซ้ำ
+     ของจริง 16 ส.ค.: No12 ทำ 7 · ขายไป 2 · แต่ยังเปิดให้ซื้อได้อีก 13 = ขายได้รวม 15 จากของ 7 กล่อง
+   แก้: ช่องกรอก = **ของที่ทำไว้ทั้งหมด** · ระบบหักที่สั่งไปแล้วเอง แล้วเก็บส่วนที่เหลือลง stock_total
+   ✅ คุณสมบัติที่ทำให้ตัวเลขนิ่ง: ลูกค้าสั่งเพิ่ม 1 → stock_total ลด 1 · สั่งแล้ว +1
+      → "ทำไว้" ที่ครัวเห็น = เท่าเดิมเสมอ ไม่ขยับเองระหว่างวัน */
+function stkOrderedMap(){
+  var om={};
+  filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
+  return om;
 }
-function stkAdj(menuId,d){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; var cur=(m.stock_total==null)?0:m.stock_total; stkWrite(menuId,Math.max(0,cur+d)); renderStock(); }
+function stkOrderedOf(menuId){ return stkOrderedMap()[menuId]||0; }
+
+// val = "ทำไว้ทั้งหมด" (ตัวเลข) หรือ null (ไม่จำกัด)
+function stkWrite(menuId,val){
+  var left = (val==null) ? null : Math.max(0, val - stkOrderedOf(menuId));
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=left;
+  clearTimeout(saveTimers["stk_"+menuId]);
+  saveTimers["stk_"+menuId]=setTimeout(async function(){ var sb_=getSB(); if(sb_){ var _w4=await sb_.from("menu_items").update({stock_total:left}).eq("id",menuId); if(_w4.error) kqWriteFail(_w4.error,"ตั้งสต็อค (ลูกค้าเห็นเลขนี้)"); } },500);
+}
+// +/- ขยับที่ "ของที่ทำไว้" (ไม่ใช่ที่เลขเหลือขาย) — ครัวกดเพิ่ม 1 = ทำเพิ่มอีก 1 กล่อง
+function stkAdj(menuId,d){
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return;
+  var made=(m.stock_total==null)?0:(m.stock_total + stkOrderedOf(menuId));
+  stkWrite(menuId,Math.max(0,made+d)); renderStock();
+}
 function stkType(inp){ stkWrite(inp.dataset.id,Math.max(0,parseInt(inp.value)||0)); } // ไม่ re-render ระหว่างพิม กัน cursor เด้ง
 function stkInf(menuId){ var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m)return; stkWrite(menuId, (m.stock_total!=null)?null:0); renderStock(); }
 
