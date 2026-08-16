@@ -49,6 +49,16 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
   .stk-row{flex-wrap:wrap;}
   .stk-name{flex:1 0 100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35;margin-bottom:6px;}
   .stk-ctrl{margin-left:auto;}
+
+  /* 📱 คืนพื้นที่จอให้ "ออเดอร์" — วัดบนจอ 375 แล้วส่วนหัวกิน 302px จาก 812 = 37%
+     ครัวต้องเลื่อนก่อนถึงจะเห็นใบแรก ทั้งที่หน้านี้มีหน้าที่เดียวคือโชว์ว่าต้องทำอะไร
+     แก้แบบไม่ตัดของทิ้งสักปุ่ม: ให้เลื่อนแนวนอนแทนการตกบรรทัด
+     ⚠️ กฎของแถบตัวกรองอยู่ท้ายไฟล์ ไม่ได้อยู่ตรงนี้ — เพราะ `.ctrl-bar` ตัวจริงถูกประกาศ
+        **หลัง** บล็อกนี้ ถ้าเขียนตรงนี้จะโดนของเดิมทับ (specificity เท่ากัน ตัวหลังชนะ) */
+  .hdr{flex-wrap:nowrap;overflow-x:auto;padding:7px 10px;gap:6px;}
+  .hdr::-webkit-scrollbar{display:none;}
+  .hdr-title{font-size:13px;flex:0 0 auto;white-space:nowrap;}
+  .hdr-btn{padding:4px 9px;font-size:11.5px;}
 }
 
 /* DATE + SLOT BAR */
@@ -57,6 +67,16 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .chip.on{background:var(--g);color:#fff;border-color:var(--g);}
 .sep{width:1px;height:20px;background:var(--xsoft);flex-shrink:0;}
 .date-sel{padding:0 10px;min-height:40px;border-radius:20px;border:1px solid var(--xsoft);font-size:12px;cursor:pointer;background:var(--w);font-family:var(--sans);color:var(--soft);}
+
+/* 📱 แถบตัวกรองบนมือถือ: เลื่อนแนวนอนแทนตกบรรทัด (เดิมชิป 9 ตัวตกเป็น 3 แถว = 149px)
+   ต้องอยู่ "หลัง" กฎ .ctrl-bar/.chip/.date-sel ข้างบน ไม่งั้นโดนทับ (specificity เท่ากัน) */
+@media (max-width:520px){
+  .ctrl-bar{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding:6px 10px;gap:5px;}
+  .ctrl-bar::-webkit-scrollbar{display:none;}
+  .ctrl-bar .chip{min-height:34px;padding:0 12px;}
+  .ctrl-bar .date-sel{min-height:34px;max-width:130px;}
+  .ctrl-bar .sep{display:none;}
+}
 
 /* MAIN */
 .main{padding:12px;max-width:940px;margin:0 auto;}
