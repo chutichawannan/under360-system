@@ -113,6 +113,22 @@ async function main() {
     }
   }
 
+  // ── ②b ก่อนทวง: กันทวงคนที่จ่ายแล้ว ────────────────────────────────
+  // ⚠️ ลูกค้าบางคน "สแกนจ่ายแล้วแต่ไม่มีที่แนบสลิป" (นัทแจ้ง 15 ส.ค.) → ขึ้นค้างจ่ายทั้งที่จ่ายแล้ว
+  //    ใบพวกนี้แยกจากใบที่ไม่จ่ายจริง **ไม่ได้จากในระบบ** ต้องเช็คเงินเข้าจริงก่อนทัก
+  const unpaidWithSlip = unpaid.filter((o) => o.slip_url);
+  if (unpaidWithSlip.length) {
+    console.log(`\n   🛑 ห้ามทวง ${unpaidWithSlip.length} ใบนี้ — มีสลิปแนบแล้วแต่สถานะยังไม่อัปเดต:`);
+    for (const o of unpaidWithSlip)
+      console.log(`      ${o.order_number}  ${o.customer_name || '-'}  ${baht(o.total)}`);
+  } else if (unpaid.length) {
+    console.log(
+      '\n   ✅ ไม่มีใบไหนแนบสลิปมาแล้วแต่ยังขึ้นค้างจ่าย (ตรวจแล้ว = ปลอดภัยที่จะทัก)\n' +
+        '   ⚠️ แต่ยังต้องเช็คเงินเข้าจริงก่อนทักอยู่ดี — ระบบยังไม่มีที่ให้ลูกค้าแนบสลิป\n' +
+        '      "ไม่มีสลิป" จึงไม่ได้แปลว่า "ไม่ได้จ่าย"'
+    );
+  }
+
   console.log(`\n③ 🧾 สลิปรอตรวจ (มีรูปจริง) — ${slips.length} ใบ`);
   for (const o of slips)
     console.log(`      ${o.order_number}  ${o.customer_name || '-'}  ${baht(o.total)}`);
