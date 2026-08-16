@@ -972,13 +972,38 @@ let MP_SETS = [
   { id:'monthly', label:'1 เดือน',     boxes:84, price_hp:15900, price_lc:12000 },
 ];
 let mpActiveSets = MP_SETS; // ชุดที่ picker ตัวปัจจุบันใช้ — ปกติ = ชุดที่ show_in_default_picker, ถ้าเปิดจากลิ้ง __mpoffer:{id}__ จะเหลือแค่ 1 ชุด
+
+/* ── 🏋️ Hyrox = ประเภทที่ 3 ของ Meal Plan (นัทสั่ง 16 ส.ค. 2569) ────────────
+   ทำไมย้ายมารวมได้: **วันส่งและรายการเมนูเป็นวันเดียวกับ HP/LC อยู่แล้ว** (นัทยืนยันเอง)
+   ต่างกันแค่สัดส่วนมาโครตอนผลิต
+
+   🔑 สวิตช์เปิด/ปิดอยู่ที่ **DB (`mp_offer_sets.is_active`) ไม่ใช่ในโค้ด**
+      ไม่มีเซ็ต hyrox ที่ active เลย = ตัวเลือก Hyrox ไม่โผล่ (หน้าตากลับไปเหมือนเดิมเป๊ะ)
+      → ถ้าพัง/ขายไม่ออก ปิดได้ใน 10 วินาทีโดยไม่ต้อง revert โค้ดและไม่ต้อง deploy ใหม่
+
+   🛡️ กติกาที่ยึดตลอดงานนี้: **เพิ่มอย่างเดียว ห้ามรื้อทาง HP/LC**
+      ของที่นัทกลัวคือ HP/LC พัง ไม่ใช่ Hyrox ไม่ขึ้น */
+function MP_IS_HX(key){ return /^hyrox/i.test(String(key||'')); }
+/* เซ็ตของแต่ละประเภท: hyrox เห็นเฉพาะเซ็ต hyrox · hp/lc เห็นเฉพาะเซ็ตเดิม (ไม่ปนกันทั้ง 2 ทาง)
+   ⚠️ ใช้คำว่า 'hyrox' ไม่ใช่ 'hx' — เพราะข้อมูลเดิมใน DB ใช้คำนี้อยู่แล้ว (mp_deliveries 14 แถว)
+      และหน้า OH/ครัว เขียนรองรับคำนี้ไว้แล้ว (`mpFamilyOf` เช็ค "HYROX") · ตั้งคำใหม่ = ของเก่าหลุด */
+function mpSetsForType(t){
+  return t==='hyrox'
+    ? MP_SETS.filter(s => s.isHx)
+    : MP_SETS.filter(s => !s.isHx && s.showInDefault!==false);
+}
+function mpHasHyrox(){ return MP_SETS.some(s => s.isHx); }
+// Hyrox ใช้ราคาเดียว (แถวใน DB ใส่ price_hp/price_lc เท่ากัน) — อ่านจาก price_hp
+function mpPriceOf(s, t){ if(!s) return 0; return t==='lc' ? s.price_lc : s.price_hp; }
+function mpTypeLabel(t){ return t==='hp' ? 'High Protein' : t==='lc' ? 'Low Carb' : 'Hyrox'; }
+
 async function loadMpOfferSets(){
   try{
     const { data, error } = await sb.from('mp_offer_sets').select('*').eq('is_active', true).order('display_order');
     if (error || !data || !data.length) return; // ยังไม่รัน SQL หรือยังไม่มีข้อมูล — ใช้ fallback เดิมต่อไป
     // rowId เก็บ uuid จริงของแถวไว้ด้วย เพราะการ์ด HE ลิ้ง __mpoffer:{uuid}__ ด้วย uuid ไม่ใช่ set_key
-    MP_SETS = data.map(r => ({ id:r.set_key, rowId:r.id, label:r.label, boxes:r.boxes, price_hp:r.price_hp, price_lc:r.price_lc, showInDefault: r.show_in_default_picker!==false }));
-    mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
+    MP_SETS = data.map(r => ({ id:r.set_key, rowId:r.id, label:r.label, boxes:r.boxes, price_hp:r.price_hp, price_lc:r.price_lc, showInDefault: r.show_in_default_picker!==false, isHx: MP_IS_HX(r.set_key) }));
+    mpActiveSets = mpSetsForType('');
   }catch(e){ console.warn('loadMpOfferSets failed', e); }
 }
 let cart = JSON.parse(localStorage.getItem('u360_cart') || '[]');
@@ -1525,10 +1550,12 @@ function openMealPlanPicker(offerSetKey) {
   if (offerSetKey) {
     // การ์ด HE ลิ้งด้วย uuid จริง (rowId) — เช็คทั้ง id (set_key) และ rowId (uuid) กันไม่เจอ
     const one = MP_SETS.find(s => s.id === offerSetKey || s.rowId === offerSetKey);
-    mpActiveSets = one ? [one] : MP_SETS.filter(s => s.showInDefault!==false);
+    mpActiveSets = one ? [one] : mpSetsForType('');
     mpSetId = one ? one.id : ''; // ชุดเดียว → เลือกให้อัตโนมัติ ข้ามขั้นตอนเลือกไซส์
+    // การ์ดที่ลิ้งตรงมาที่เซ็ต Hyrox = ตั้งประเภทให้เลย ลูกค้าจะได้ไม่ต้องเดาว่าต้องกดอะไรก่อน
+    if (one && one.isHx) mpType = 'hyrox';
   } else {
-    mpActiveSets = MP_SETS.filter(s => s.showInDefault!==false);
+    mpActiveSets = mpSetsForType('');
     mpSetId = '';
   }
   loadMyPrefs();   // ดึงของแพ้/ข้อจำกัดเดิมมาเติมช่อง (ไม่ await — เติมแล้ว re-render เอง)
@@ -1552,13 +1579,18 @@ function toggleMPReq(i){
 function renderMealPlanPicker() {
   const el = document.getElementById('mp-picker-body');
   if (!el) return;
-  const typeHtml = ['hp','lc'].map(t => {
-    const cfg = t==='hp'
-      ? {label:'High Protein',emoji:'💪',desc:'โปรตีนสูง อิ่มนาน · เหมาะออกกำลัง/เพิ่มกล้าม',color:'#1F4D3A'}
-      : {label:'Low Carb',    emoji:'🥗',desc:'คาร์บต่ำ คุมแคลฯ · เหมาะลดน้ำหนัก/คุมหุ่น',color:'#2D6B53'};
+  // Hyrox โผล่ก็ต่อเมื่อมีเซ็ต hyrox ที่ is_active ใน DB — ปิดที่ DB = หน้าตากลับเป็น 2 ตัวเลือกเหมือนเดิม
+  const MP_TYPE_CFG = {
+    hp:{label:'High Protein',emoji:'💪',desc:'โปรตีนสูง อิ่มนาน · เหมาะออกกำลัง/เพิ่มกล้าม',color:'#1F4D3A'},
+    lc:{label:'Low Carb',    emoji:'🥗',desc:'คาร์บต่ำ คุมแคลฯ · เหมาะลดน้ำหนัก/คุมหุ่น',color:'#2D6B53'},
+    hyrox:{label:'Hyrox',    emoji:'🏋️',desc:'สัดส่วนเหมาะกับคนซ้อมเพื่อลงแข่ง',color:'#8A4B1F'}
+  };
+  const mpTypes = mpHasHyrox() ? ['hp','lc','hyrox'] : ['hp','lc'];
+  const typeHtml = mpTypes.map(t => {
+    const cfg = MP_TYPE_CFG[t];
     const on = mpType===t;
     return `<div onclick="selectMPType('${t}')" style="
-        flex:1;border-radius:14px;padding:16px;text-align:center;cursor:pointer;
+        flex:1;min-width:0;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;
         border:2px solid ${on?cfg.color:'#E5E5E1'};
         background:${on?cfg.color:'#fff'};color:${on?'#fff':'#1A1A1A'};">
       <div style="font-size:28px;margin-bottom:6px;">${cfg.emoji}</div>
@@ -1567,7 +1599,7 @@ function renderMealPlanPicker() {
     </div>`;
   }).join('');
   const setsHtml = mpActiveSets.map(s => {
-    const price = mpType==='lc' ? s.price_lc : s.price_hp;
+    const price = mpPriceOf(s, mpType);
     const on = mpSetId===s.id;
     return `<div onclick="selectMPSet('${s.id}')" style="
         display:flex;align-items:center;justify-content:space-between;
@@ -1628,7 +1660,14 @@ function renderMealPlanPicker() {
   updateMPConfirmBtn();
 }
 
-function selectMPType(t) { mpType=t; mpSetId=(mpActiveSets.length===1?mpActiveSets[0].id:''); renderMealPlanPicker(); }
+function selectMPType(t) {
+  mpType=t;
+  // สลับประเภท = สลับชุดเซ็ตที่เลือกได้ด้วย (Hyrox มีเซ็ตของตัวเอง ไม่ปนกับ HP/LC)
+  // ⚠️ ถ้าเปิดมาจากการ์ดที่ล็อกเซ็ตไว้ชุดเดียว ห้ามเปลี่ยนลิสต์ — ลูกค้าตั้งใจมาซื้อชุดนั้น
+  if (mpActiveSets.length !== 1) mpActiveSets = mpSetsForType(t);
+  mpSetId = (mpActiveSets.length===1 ? mpActiveSets[0].id : '');
+  renderMealPlanPicker();
+}
 function selectMPSet(id)  { mpSetId=id; renderMealPlanPicker(); }
 
 function updateMPConfirmBtn() {
@@ -1639,8 +1678,8 @@ function updateMPConfirmBtn() {
   btn.style.opacity = ready ? '1' : '0.5';
   if (ready) {
     const s = MP_SETS.find(x=>x.id===mpSetId);
-    const price = mpType==='lc' ? s.price_lc : s.price_hp;
-    btn.textContent = '✅ '+(mpType==='hp'?'High Protein':'Low Carb')+' · '+s.label+' — ฿'+price.toLocaleString();
+    const price = mpPriceOf(s, mpType);
+    btn.textContent = '✅ '+mpTypeLabel(mpType)+' · '+s.label+' — ฿'+price.toLocaleString();
   } else {
     btn.textContent = 'เลือกประเภทและขนาดก่อน';
   }
@@ -1649,12 +1688,13 @@ function updateMPConfirmBtn() {
 function addMealPlanToCart() {
   if (!mpType||!mpSetId) return;
   const s = MP_SETS.find(x=>x.id===mpSetId);
-  const price = mpType==='lc' ? s.price_lc : s.price_hp;
+  const price = mpPriceOf(s, mpType);
   const cartId = 'mp_'+mpType+'_'+mpSetId;
   cart = cart.filter(c=>c.id!==cartId);
   cart.push({
     id:cartId, type:'meal_plan', mp_type:mpType, mp_set:mpSetId,
-    name:'Meal Plan '+(mpType==='hp'?'HP':'LC')+' · '+s.label+' ('+s.boxes+' กล่อง)',
+    // ชื่อที่ครัว/แอดมิน/ลูกค้าเห็นตรงกันทุกหน้า — HX = Hyrox
+    name:'Meal Plan '+(mpType==='hp'?'HP':mpType==='lc'?'LC':'Hyrox')+' · '+s.label+' ('+s.boxes+' กล่อง)',
     code:'MP-'+mpType.toUpperCase()+'-'+mpSetId.slice(0,1).toUpperCase(),
     price, qty:1, request:mpRequest.trim(),
     requestList: mpReqSel.map(j => mpRequestMenus[j]).filter(Boolean).map(r => ({code: r.code, name: r.name}))
@@ -1677,6 +1717,11 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
     const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
     if (!setObj) return;
     const totalRounds = Math.max(1, Math.round(setObj.boxes / 7));
+    /* จำนวนกล่องต่อรอบต้องมาจากเซ็ตจริง ไม่ใช่ค่าคงที่ 7
+       เดิมฝัง 7 ไว้ตรงๆ — ถูกพอดีกับทุกเซ็ตเดิม (7→1รอบ · 21→3รอบ · 84→12รอบ = 7 ทั้งหมด)
+       แต่เซ็ต Hyrox ส่งครั้งเดียว 6 กล่อง จะกลายเป็น 7 = ครัวทำเกิน 1 กล่องทุกใบ
+       ✅ ค่าของ HP/LC ทุกเซ็ตยังได้ 7 เท่าเดิมเป๊ะ (คำนวณแล้วตรงกันทุกตัว) */
+    const boxesPerRound = Math.max(1, Math.round(setObj.boxes / totalRounds));
     const isMWF = dt => [1,3,5].includes(dt.getDay());
     let d = new Date(selDate + 'T00:00:00');
     while (!isMWF(d)) d.setDate(d.getDate()+1);
@@ -1699,7 +1744,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
         time_slot: slot?.key || selSlot,
         time_slot_label: slot?.time || '',
         delivery_address: addrFinal,
-        box_count: 7,
+        box_count: boxesPerRound,
         status: 'scheduled',
         customer_request: i === 1 ? (cartItem.requestList || []) : [],
         request_opens_at: localYMD(opensAt),
@@ -2455,7 +2500,7 @@ function renderCart() {
   el.insertAdjacentHTML('afterbegin', weekBanner);
   const rows = cart.map(c => {
     if (c.type === 'meal_plan') {
-      const typeLabel = c.mp_type === 'hp' ? 'High Protein 💪' : 'Low Carb 🥗';
+      const typeLabel = c.mp_type === 'hp' ? 'High Protein 💪' : c.mp_type === 'lc' ? 'Low Carb 🥗' : 'Hyrox 🏋️';
       const setObj = MP_SETS.find(x => x.id === c.mp_set) || {};
       return `<div class="citem" style="border-left:4px solid #1F4D3A;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div style="flex:1;min-width:0;">
@@ -2834,7 +2879,7 @@ function renderConfirm(addr) {
   document.getElementById('conf-items').innerHTML =
     cart.map(c => {
       let tag = '';
-      if (c.type === 'meal_plan') tag = c.mp_type === 'hp' ? '🥗 High Protein' : '🥗 Low Carb';
+      if (c.type === 'meal_plan') tag = c.mp_type === 'hp' ? '🥗 High Protein' : c.mp_type === 'lc' ? '🥗 Low Carb' : '🏋️ Hyrox';
       else if (c.type === 'package') tag = '📦 แพคเกจ';
       else { const _mi = menuItems.find(m => m.id === c.id); if (_mi && _mi.category) tag = getCatLabel(_mi.category); }
       const tagHtml = tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(tag)}</span>` : '';
@@ -3219,7 +3264,7 @@ async function submitOrder() {
         const rounds = byDate.get(rDate);
         try {
           const { mmdd: rMmdd, n: rStart } = await nextOrderNumForDate(rDate);
-          const rLabel = rounds.map(r => 'Meal Plan ' + (r.mp_type === 'hp' ? 'HP' : 'LC')
+          const rLabel = rounds.map(r => 'Meal Plan ' + (r.mp_type === 'hp' ? 'HP' : r.mp_type === 'lc' ? 'LC' : 'Hyrox')
                                     + ' รอบ ' + r.round_no + '/' + r.total_rounds).join(', ');
           const mpPayload = {
             customer_id: customer?.id || null, line_uid: lineProfile.userId,
@@ -3244,7 +3289,7 @@ async function submitOrder() {
           const mpOrd = await insertOrderWithRetry(mpPayload, rMmdd, rStart);
           await sb.from('order_items').insert(rounds.map(r => ({
             order_id: mpOrd.id, menu_item_id: null,
-            menu_name: 'Meal Plan ' + (r.mp_type === 'hp' ? 'High Protein' : 'Low Carb')
+            menu_name: 'Meal Plan ' + (r.mp_type === 'hp' ? 'High Protein' : r.mp_type === 'lc' ? 'Low Carb' : 'Hyrox')
                        + ' · รอบ ' + r.round_no + '/' + r.total_rounds + ' (' + (r.box_count || 7) + ' กล่อง)',
             menu_code: 'MP-' + String(r.mp_type).toUpperCase() + '-R' + r.round_no,
             quantity: r.box_count || 7, unit_price: 0, subtotal: 0,
@@ -4251,7 +4296,7 @@ function renderOrders(orders) {
           const _notes = i.notes || '';
           let _tag = '';
           if (_notes.startsWith('pkg:')) _tag = '📦 แพคเกจ';
-          else if (_notes.startsWith('meal_plan:')) _tag = _notes.includes(':hp:') ? '🥗 High Protein' : '🥗 Low Carb';
+          else if (_notes.startsWith('meal_plan:')) _tag = _notes.includes(':hp:') ? '🥗 High Protein' : _notes.includes(':lc:') ? '🥗 Low Carb' : '🏋️ Hyrox';
           else { const _mi = menuItems.find(m => m.code === i.menu_code); if (_mi && _mi.category) _tag = getCatLabel(_mi.category); }
           const _tagHtml = _tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(_tag)}</span>` : '';
           return `<div class="oline">${h(i.menu_name)} × ${i.quantity}${_tagHtml}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`;
