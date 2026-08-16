@@ -81,6 +81,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .mp-tag{font-size:10px;font-weight:700;padding:2px 7px;border-radius:6px;}
 .mp-tag.hp{background:#FEF3C7;color:#92400E;}
 .mp-tag.lc{background:#D1FAE5;color:#065F46;}
+/* HYROX = คนละสีกับ HP/LC — ตั้งแต่ 16 ส.ค. 2569 ลูกค้าสั่ง Hyrox ผ่านหน้า Meal Plan ได้แล้ว
+   รอบส่งเลยมาโผล่ปนกับ HP/LC บนใบเดียวกัน · ถ้าใช้สีเดียวกับ LC ครัวจะแยกด้วยตาไม่ออก */
+.mp-tag.hx{background:#EDE9FE;color:#5B21B6;}
 .mp-round{font-size:11px;color:var(--soft);font-weight:600;}
 .mp-meta{font-size:11px;color:var(--soft);margin-top:3px;}
 .mp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
@@ -715,7 +718,8 @@ function renderMpQueue(){
   var html="<div class='mp-wrap'>"
     +"<div class='mp-head'>📦 Meal Plan ระยะยาว — คิวส่ง"+(tgt?"วันที่ "+fmtDate(tgt):"วันนี้")+"</div>";
   rows.forEach(function(r){
-    var tagCls=(r.mp_type||"").toLowerCase()==="hp"?"hp":"lc";
+    var _mt=(r.mp_type||"").toLowerCase();
+    var tagCls=_mt==="hp"?"hp":(/^hyrox|^hx/.test(_mt)?"hx":"lc");
     var tagLabel=(r.mp_type||"").toUpperCase();
     var menuItems=r.menu_items||[];
     var chipsHtml=menuItems.length
