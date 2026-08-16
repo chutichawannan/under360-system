@@ -1,0 +1,241 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบจัดของ 17 ส.ค. — รายชื่อลูกค้า</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--stk:#047857;--stkbg:#ECFDF5;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7;--ice:#0369A1;--icebg:#E0F2FE}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:14px;line-height:1.35}
+  .wrap{max-width:820px;margin:0 auto;padding:0 12px 40px}
+  .langbar{position:sticky;top:0;z-index:10;background:#fff;display:flex;gap:5px;padding:8px 0 6px;border-bottom:1px solid var(--line)}
+  .lb{flex:1;font-size:13px;font-weight:800;border:1.5px solid var(--line);background:#fff;color:var(--soft);border-radius:8px;padding:6px 4px;cursor:pointer}
+  .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
+  h1{font-size:18px;font-weight:900;margin:10px 0 1px}
+  .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
+  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:10px 0}
+  .tools{display:flex;gap:6px;margin-bottom:10px}
+  .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
+  .bigred{background:var(--redbg);border:3px solid var(--red);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bigred .t{font-weight:900;color:var(--red);font-size:18px;margin-bottom:8px;text-align:center}
+  .bigred ul{margin:0;padding-left:20px}.bigred li{font-size:13px;font-weight:800;color:#7F1D1D;margin:6px 0;line-height:1.4}
+  .bigred p{margin:6px 0;font-size:13px;font-weight:800;color:#7F1D1D;line-height:1.4}
+  .warn{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .warn .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
+  .warn ul{margin:0;padding-left:18px}.warn li{font-size:12.5px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.35}
+  .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
+  .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.hx{color:var(--hx)}.sec.stk{color:var(--stk)}
+  .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
+  .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}.c.hx{border-color:#FDE68A}.c.stk{border-color:#A7F3D0}
+  .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}.c.hx .ch{background:var(--hxbg)}.c.stk .ch{background:var(--stkbg)}
+  .ch .nm{font-weight:900;font-size:14.5px;line-height:1.2}
+  .ch .pl{font-size:11.5px;font-weight:800;margin-top:1px}
+  .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}.c.stk .ch .pl{color:var(--stk)}
+  .ch .bx{flex:none;font-size:13px;font-weight:900;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
+  .note{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .pay{background:var(--yelbg);color:var(--yel);font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .it{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center;cursor:pointer;user-select:none}
+  .it:hover{background:#FAFAFA}
+  .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
+  .it.done .bo{background:var(--head);border-color:var(--head)}
+  .it.done .tx{text-decoration:line-through;color:var(--soft)}
+  .it .no{flex:none;font-weight:900;color:var(--soft);width:26px;font-size:12px;text-align:right}
+  .it .tx{flex:1;font-size:13.5px;font-weight:700;line-height:1.25}
+  .it .tx small{color:var(--soft);font-size:11.5px;font-weight:600}
+  .it .tx small::before{content:' · '}
+  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:12.5px} .langbar,.tools{display:none} .c{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="langbar">
+  <button class="lb on" id="b_th" onclick="setLang('th')">ไทย</button>
+  <button class="lb" id="b_shn" onclick="setLang('shn')">ไทใหญ่ · တႆး</button>
+  <button class="lb" id="b_my" onclick="setLang('my')">พม่า · မြန်မာ</button>
+</div>
+<div class="vbanner" id="vbanner"></div>
+
+<h1>📦 <span data-i="title">ใบจัดของ — จันทร์ 17 ส.ค.</span></h1>
+<div class="sub" data-i="sub">19 ใบ · 171 กล่อง — Meal Plan ทำสด 10 คน 69 กล่อง + เมนูสต็อค 9 ใบ 102 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ</div>
+<div class="tools">
+  <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
+  <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
+</div>
+
+<div class="bigred">
+  <div class="t" data-i="r_t">🔴 ข้อห้ามรายคน — ห้ามพลาด</div>
+  <ul>
+    <li data-i="r1">ดอย (LC 7 กล่อง) — ❌ ไม่ทานนม เนย ขนมปัง / ไม่ทานเห็ด / <b>ไม่ทานอาหารทะเล</b> / ไม่ทานเครื่องแกงกะปิ-กุ้งแห้ง — 🔴 กล่องที่มีเมนู 32 (หมี่ไก่ฉีก) มีน้ำจิ้มซีฟู้ด ชนข้อห้าม! ตรวจกับกิฟก่อนแพ็คกล่องนี้</li>
+    <li data-i="r2">โอ๋ (LC 7 + HP 7 กล่อง) — ❌ ไม่ทาน ทูน่า เนื้อ ของดิบทุกชนิด (ตรวจแล้ว เมนูวันนี้ปลอดภัย ไม่มีของแสลง)</li>
+  </ul>
+</div>
+
+<div class="warn">
+  <div class="t" data-i="w_t">📌 ธง / ข้อมูลไม่ตรงกัน</div>
+  <ul>
+    <li data-i="w1">Milk — ยึดชีท 6 กล่อง (ตัด LC29 ที่ชีทติดธงซ้ำ) — ระบบยังไม่ได้แก้ ต้องแจ้งกิฟ/CC แก้ mp_deliveries+order_items ด้วยมือ</li>
+    <li data-i="w2">คุณแชมป์ — 7 กล่อง Meal Plan HP (ไม่ใช่ 21 ตามที่ระบบขึ้นผิด) + แยกต่างหาก ซื้อ Diet Set A 12 กล่อง <b>ยังไม่เลือกเมนู</b> (ไม่รวมในยอดวันนี้ ต้องรอกิฟ)</li>
+    <li data-i="w3">ชมพู่ — ซื้อ Diet Set A 12 กล่อง <b>ยังไม่เลือกเมนู</b> (ไม่รวมในยอดวันนี้ ต้องรอกิฟ)</li>
+    <li data-i="w4">โมจิ — ใช้ 7 กล่อง (ชีทเขียน 9 ผิด — สงสัยพิมพ์ผิด ถามกิฟ)</li>
+    <li data-i="w5">ต้อย — มีโน้ตระบบ "แบ่งส่ง" ไม่ชัดเจน ถามกิฟถ้าจำเป็น</li>
+    <li data-i="w6">New|YD.K🏸 — ยกเลิกแล้ว ไม่รวมในใบนี้</li>
+    <li data-i="w7">⚠️ Yarinda — ยังไม่โอนเงิน ฿1,014 — ทวงก่อน 20:00 น.</li>
+  </ul>
+</div>
+
+<div id="app"></div>
+
+<div class="foot">
+  <b data-i="f1">รวม 171 กล่อง — Meal Plan ทำสด 69 (LC 34 · HP 35) + สต็อค 102</b><br>
+  <span data-i="f2">LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง</span><br>
+  <span data-i="f3">✅ ทุกใบ Meal Plan โอนเงินแล้ว (paid) · 🔴 สต็อค Yarinda ยังไม่โอน ฿1,014</span><br>
+  <span data-i="f4">⚠️ คุณแชมป์ + ชมพู่ ซื้อ Diet Set A คนละ 12 กล่อง ยังไม่เลือกเมนู — ไม่รวมในใบนี้ รอกิฟ</span>
+</div>
+</div>
+
+<script>
+// ── เมนู Meal Plan (โค้ด → ชื่อ + โปรตีนหลัก) ──
+var M = {
+ '01':{n:'อกไก่ย่างสมุนไพร + มันหวานนึ่ง + บร็อกโคลีลวก', p:'อกไก่'},
+ '09':{n:'หมูสันในหวานไร้มัน + ไข่ฝอย', p:'หมูสันใน'},
+ '10':{n:'ยำไข่มะตูม', p:'ไข่มะตูม'},
+ '11':{n:'ทอดมันอกไก่', p:'อกไก่'},
+ '15':{n:'กุ้งผัดซอสกระเทียมพริกไทยดำ ควินัว สลัดผัก', p:'กุ้ง'},
+ '17':{n:'หมูผัดพริกหวานควินัว เห็ดย่าง', p:'หมู'},
+ '21':{n:'ยำอกไก่สมุนไพร(no sugar) เส้นแก้ว', p:'อกไก่'},
+ '23':{n:'ปลาซาบะย่างซีอิ๊ว สลัดแตงกวาญี่ปุ่น', p:'ปลาซาบะ'},
+ '25':{n:'สเต็กปลากระพงเพสโต้ ผักย่าง บร้อคโครี่', p:'ปลากระพง'},
+ '29':{n:'ซุปกิมจิหมูไข่ทานกับเส้นบุก', p:'หมู+ไข่'},
+ '32':{n:'หมี่ไก่ฉีก ไข่มะตูม ยำสลัดน้ำจิ้มซีฟู้ด 🔴', p:'ไก่ฉีก'}
+};
+// ── ลูกค้า ──
+var C = [
+ {g:'lc', n:'Milk (LINE: MiLk.)', line:'MP-0817-033 · 0837035353', box:6, items:['09','10','15','17','23','25'],
+  note:'📌 ยึดชีท 6 กล่อง (ตัด LC29 — ชีทติดธงซ้ำ กับรอบก่อน)'},
+ {g:'lc', n:'โอ๋ (Oh thanaporn)', line:'HT-120865619 · 0994639369 · รอบ17', box:7, items:['09','10','15','17','23','25','29'],
+  note:'🔴 ❌ไม่ทาน ทูน่า เนื้อ ของดิบทุกชนิด — เมนูวันนี้ปลอดภัย'},
+ {g:'lc', n:'ดอย', line:'U-0817-011 · 0877892288', box:7, items:['09','10','21','32','29','01','11'],
+  note:'🔴 ❌ไม่ทานนม เนย ขนมปัง/เห็ด/อาหารทะเล/กะปิ-กุ้งแห้ง — 🔴🔴 เมนู 32 มีน้ำจิ้มซีฟู้ด! ตรวจกับกิฟก่อนแพ็คกล่องนี้'},
+ {g:'lc', n:'จุฑามณี เขตขุนทด', line:'U-0817-020 · 0896111956', box:7, items:['09','10','15','17','23','25','29']},
+ {g:'lc', n:'Bow Chaya 🎀', line:'U-0817-014 · 0924255461 · 235/276 ซอย10 สุดซอยขวามือ', box:7, items:['09','10','15','17','23','25','29'],
+  note:'📌 ไม่มีในชีทแอดมิน — ระบบมีออเดอร์+เมนูครบแล้ว ปกติ'},
+ {g:'hp', n:'โอ๋ (Oh thanaporn)', line:'HT-120865619 · 0994639369 · รอบ18', box:7, items:['09','11','15','17','23','25','29'],
+  note:'🔴 ❌ไม่ทาน ทูน่า เนื้อ ไข่ต้ม ของดิบทุกชนิด, ก๋วยเตี๋ยวหลอดไก่กุ้ง, ปลาทูต้มมะนาว — เมนูวันนี้ปลอดภัย'},
+ {g:'hp', n:'ต้อย', line:'U-0817-004 · 0817500978', box:7, items:['09','10','15','17','23','25','29'],
+  note:'📌 โน้ตระบบ "แบ่งส่ง" ไม่ชัด — สั่งแทนโดยเพอรี่'},
+ {g:'hp', n:'คุณแชมป์', line:'U-0817-012 · 0831936666', box:7, items:['09','10','15','17','23','25','29'],
+  note:'📌 Meal Plan HP 7 กล่องนี้เท่านั้น (แยกจาก Diet Set A 12 กล่องที่ยังไม่เลือกเมนู — ไม่รวมที่นี่) · สั่งแทนโดยเพอรี่'},
+ {g:'hp', n:'โมจิ (Moji Phavinee)', line:'HT-1865373705 · 0956453555 · รอบ5', box:7, items:['09','10','15','17','23','25','29'],
+  note:'📌 ชีทเขียน 9 กล่อง — ใช้ 7 ตาม order_items จริง (สงสัยชีทพิมพ์ผิด ถามกิฟ)'},
+ {g:'hp', n:'BRIGHT💫', line:'U-0817-016 · 0627355775', box:7, items:['09','10','15','17','23','25','29'],
+  note:'📌 ไม่มีในชีทแอดมิน — ระบบมีออเดอร์+เมนูครบแล้ว ปกติ'},
+
+ // ─ เมนูสต็อค ส่งวันนี้ (ลูกค้าเลือกเองผ่าน LIFF) · 9 ใบ 102 กล่อง ─
+ {g:'stk', n:'Sam Cooper', line:'U-0817-003 · 0826808686 · ส่ง 8:00-18:00', box:12,
+  stock:['S016 ข้าวไก่ผัดเม็ดมะม่วงหิมพานต์','S063 ข้าวไก่ย่างราดพริกสามรส','S025 สตูวหมูอบมันบดผักย่าง ×2','S090 ข้าวแกงเผ็ดอกไก่','No1 เส้นหมี่คลุกอกไก่ฉีก ×2','No8 ข้าวผัดสับปะรดแครนเบอร์รี่หมูลีน','No11 เส้นหมี่ก๋วยเตี๋ยวหลอดหมูสับทรงเครื่อง ×2','S006 ข้าวผัดน้ำพริกลงเรือ หมูหวาน ไข่เค็ม','No3 ข้าวสะโพกไก่ตุ๋นเกาลัด'],
+  pay:'✅ จ่ายแล้ว ฿1,300'},
+ {g:'stk', n:'Yarinda', line:'U-0817-005 · 0889692655 · ส่ง 8:00-13:00', box:13,
+  stock:['A2 สะโพกไก่ตุ๋นซีอิ๊วพริก ×3','A3 อกไก่ผัดแกงเขียวหวาน(ไร้กะทิ) ×2','A4 หมูผัดกระเทียม ×2','A13 แฮมเบิร์กหมูผสมไก่ซอสบาบีคิว ×2','A14 อกไก่คั่วพริกแห้งเสฉวน','D150 ปลากระพงนึ่งราดซอสไข่เค็ม','D201 ไก่ย่างราดพริกสามรส','D016 ไก่ผัดเม็ดมะม่วงหิมพานต์'],
+  pay:'🔴 ยังไม่โอน ฿1,014 — ทวงก่อน 20:00 น. (ลูกค้าเก่า สั่งมาแล้ว 20 ครั้ง ปกติจ่ายตรง)'},
+ {g:'stk', n:'Tina Pornsiriphat', line:'U-0817-009 · 0644163961 · ส่ง 8:00-18:00', box:12,
+  stock:['S090 ข้าวแกงเผ็ดอกไก่ ×2','No1 เส้นหมี่คลุกอกไก่ฉีก','D061 ผัดผักกาดขาวกุ้งแห้งราดไก่สับผัดกระเทียม','S022 ข้าวญี่ปุ่นอบสาหร่าย แซลมอน ×5','S105 ข้าวแซลมอนย่างเกลือ+น้ำจิ้มซีฟู๊ด','D200 แซลมอนอบซอสโชยุ สาหร่าย','A3 อกไก่ผัดแกงเขียวหวาน(ไร้กะทิ)'],
+  pay:'✅ จ่ายแล้ว ฿1,629'},
+ {g:'stk', n:'therm', line:'U-0817-013 · 0935925562 · ส่ง 8:00-13:00', box:9,
+  stock:['No3 ข้าวสะโพกไก่ตุ๋นเกาลัด','No14 ข้าวหมกไก่ลีน ×2','3C ข้าวญี่ปุ่นหุงถั่วแดงอะซูกิไก่ซุคุเนะ(Stage3) ×3','S063 ข้าวไก่ย่างราดพริกสามรส','S016 ข้าวไก่ผัดเม็ดมะม่วงหิมพานต์','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม'],
+  pay:'✅ จ่ายแล้ว ฿811'},
+ {g:'stk', n:'Bow', line:'U-0817-015 · 0896654246 · ส่ง 8:00-18:00', box:21,
+  stock:['S181 ข้าวปลากระพงนึ่งราดซอสไข่เค็ม ×2','S025 สตูวหมูอบมันบดผักย่าง ×3','No2 ข้าวปลาแซลมอนย่าง น้ำจิ้มซีฟู้ดและน้ำจิ้มพริกย่าง ×2','No3 ข้าวสะโพกไก่ตุ๋นเกาลัด ×2','No4 ข้าวไรซ์ + ปลากะพงราดซอสต้มยำ ×3','No5 เส้นหมี่น้ำยาทูน่า(ไร้)กะทิอกไก่','No9 ปลากระพงอบเนยกระเทียม ×3','No10 โอมุไรซ์ซอสเดมิกราส ×2','No12 ข้าวผัดกิมจิอกไก่ ×2','S090 ข้าวแกงเผ็ดอกไก่'],
+  pay:'✅ จ่ายแล้ว ฿3,114 (ไม่ใช่ Bow Chaya — คนละคน)'},
+ {g:'stk', n:'โอม หะริน', line:'U-0817-017 · 0634566968 · ขอรับเวลา 7:45', box:6,
+  stock:['S181 ข้าวปลากระพงนึ่งราดซอสไข่เค็ม','S063 ข้าวไก่ย่างราดพริกสามรส','S006 ข้าวผัดน้ำพริกลงเรือ หมูหวาน ไข่เค็ม','No6 ข้าวแฮมเบิร์กราดซอสแกงกะหรี่','No12 ข้าวผัดกิมจิอกไก่','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม'],
+  pay:'✅ จ่ายแล้ว ฿744 · ⏰ ขอรับ 7:45 น.'},
+ {g:'stk', n:'TJ🃏', line:'U-0817-018 · 0866590451 · อาคาร B', box:7,
+  stock:['A9 เครื่องราดหน้าไก่กุนเชียง','A10 สันในหมูหมักซอสเกาหลี','A15 แกงหมูสับบ๊วยดอง','A14 อกไก่คั่วพริกแห้งเสฉวน','A4 หมูผัดกระเทียม','D201 ไก่ย่างราดพริกสามรส','No8 ข้าวผัดสับปะรดแครนเบอร์รี่หมูลีน'],
+  pay:'✅ จ่ายแล้ว ฿510'},
+ {g:'stk', n:'Jinny', line:'U-0817-019 · 0925860099 · ส่ง 8:00-13:00', box:18,
+  stock:['S006 ข้าวผัดน้ำพริกลงเรือ หมูหวาน ไข่เค็ม','S025 สตูวหมูอบมันบดผักย่าง','S054 ข้าวยำมะม่วงอกไก่ฉีก','No1 เส้นหมี่คลุกอกไก่ฉีก','No2 ข้าวปลาแซลมอนย่าง น้ำจิ้มซีฟู้ดและน้ำจิ้มพริกย่าง','No7 ข้าวอบหน้าไก่กุนเชียง ×2','No10 โอมุไรซ์ซอสเดมิกราส','No12 ข้าวผัดกิมจิอกไก่ ×2','No11 เส้นหมี่ก๋วยเตี๋ยวหลอดหมูสับทรงเครื่อง','No14 ข้าวหมกไก่ลีน','No15 ข้าวหมูแดงฉ่ำซอสไข่มะตูม','No6 ข้าวแฮมเบิร์กราดซอสแกงกะหรี่','S016 ข้าวไก่ผัดเม็ดมะม่วงหิมพานต์','S090 ข้าวแกงเผ็ดอกไก่','No13 ข้าวอกไก่ผัดพริกเหลืองโหระพา','S063 ข้าวไก่ย่างราดพริกสามรส'],
+  pay:'✅ จ่ายแล้ว ฿1,989'},
+ {g:'stk', n:'Leklucky', line:'U-0817-021 · 0651569289 · ส่ง 8:00-13:00', box:4,
+  stock:['S172 ข้าวแซลมอนย่างราดซอสแกงเขียวหวาน','S030 ข้าวอบโอยาโกะด้ง','S032 แฮมเบิร์กเบิ้มซอสบาบีคิว เห็ดผัดเนย ผักย่าง','No3 ข้าวสะโพกไก่ตุ๋นเกาลัด'],
+  pay:'✅ จ่ายแล้ว ฿499'}
+];
+var SEC = [
+  ['lc','■ LC — เนื้อ 120g · 5 คน · 34 กล่อง'],
+  ['hp','■ HP — เนื้อ 170g · 5 คน · 35 กล่อง'],
+  ['stk','📦 เมนูสต็อค ส่งวันนี้ (ลูกค้าเลือกเอง) — 9 ใบ · 102 กล่อง']
+];
+var KEY = 'pack20260817b';
+var done = (function(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } })();
+function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function render(){
+  var h='';
+  SEC.forEach(function(sc){
+    var g=sc[0], list=[];
+    C.forEach(function(c,ci){ if(c.g===g) list.push([c,ci]); });
+    if(!list.length) return;
+    h += '<div class="sec '+g+'">'+esc(sc[1])+'</div>';
+    list.forEach(function(pair){
+      var c=pair[0], ci=pair[1];
+      h += '<div class="c '+c.g+'"><div class="ch"><div><div class="nm">'+esc(c.n)+'</div>'
+         + (c.line?'<div class="pl">'+esc(c.line)+'</div>':'')
+         + '</div><span class="bx">'+c.box+' กล่อง</span></div>';
+      if(c.note) h += '<div class="note">'+esc(c.note)+'</div>';
+      if(c.pay)  h += '<div class="pay">'+esc(c.pay)+'</div>';
+      if(c.items) c.items.forEach(function(code,ix){
+        var m=M[code], k=ci+'-'+ix+'-'+code, on=done[k]?' done':'';
+        h += '<div class="it'+on+'" onclick="tog(\''+k+'\',this)"><span class="bo">✓</span><span class="no">'+code+'</span>'
+           + '<span class="tx">'+esc(m.n)+'<small>'+esc(m.p)+'</small></span></div>';
+      });
+      if(c.stock) c.stock.forEach(function(txt,ix){
+        var k=ci+'-s'+ix, on=done[k]?' done':'';
+        h += '<div class="it'+on+'" onclick="tog(\''+k+'\',this)"><span class="bo">✓</span><span class="no">'+(ix+1)+'</span>'
+           + '<span class="tx">'+esc(txt)+'</span></div>';
+      });
+      h += '</div>';
+    });
+  });
+  document.getElementById('app').innerHTML=h;
+}
+function tog(k,el){ done[k]=!done[k]; if(!done[k]) delete done[k]; try{localStorage.setItem(KEY,JSON.stringify(done));}catch(e){} el.classList.toggle('done'); }
+function clearAll(){ done={}; try{localStorage.removeItem(KEY);}catch(e){} render(); }
+
+const UI = {
+  title:{th:'ใบจัดของ — จันทร์ 17 ส.ค.', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းၸၼ် 17', my:'ထုပ်ပိုးစာရွက် — တနင်္လာ ၁၇'},
+  sub:{th:'19 ใบ · 171 กล่อง — Meal Plan ทำสด 10 คน 69 กล่อง + เมนูสต็อค 9 ใบ 102 กล่อง — แตะเพื่อติ๊กเมื่อจัดเสร็จ', shn:'19 ၽိုၼ် · 171 ႁိပ်ႇ — Meal Plan 69 + သတွၵ်ႉ 102', my:'၁၉ စောင် · ၁၇၁ ဘူး — Meal Plan ၆၉ + စတော့ ၁၀၂'},
+  btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
+  btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
+  r_t:{th:'🔴 ข้อห้ามรายคน — ห้ามพลาด', shn:'🔴 ၶေႃႈႁၢမ်ႈ ၽႂ်မၼ်း — ယႃႇပေလိုမ်း', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မမေ့ပါနှင့်'},
+  r1:{th:'ดอย (LC 7 กล่อง) — ❌ ไม่ทานนม เนย ขนมปัง / ไม่ทานเห็ด / ไม่ทานอาหารทะเล / ไม่ทานเครื่องแกงกะปิ-กุ้งแห้ง — 🔴 กล่องที่มีเมนู 32 (หมี่ไก่ฉีก) มีน้ำจิ้มซีฟู้ด ชนข้อห้าม! ตรวจกับกิฟก่อนแพ็คกล่องนี้', shn:'Doi — ❌ ဢမ်ႇတဵၵ်းၶွင်ပၢင်ႇလၢႆ · 🔴 မဵၼ်ႇ 32 မီးၼမ်ႉၸဵပ်ႈသီႇၾုတ်ႉ', my:'Doi — ❌ ပင်လယ်စာမစားရ · 🔴 မီနူး ၃၂ တွင် ပင်လယ်စာဆော့စ်ပါ'},
+  r2:{th:'โอ๋ (LC 7 + HP 7 กล่อง) — ❌ ไม่ทาน ทูน่า เนื้อ ของดิบทุกชนิด (ตรวจแล้ว เมนูวันนี้ปลอดภัย ไม่มีของแสลง)', shn:'Oh — ❌ ဢမ်ႇတဵၵ်းပႃႇထူႇၼႃႇ/ၼိူဝ်ႉငူဝ်ႉ/ၶွင်တိုဝ်ႉ', my:'Oh — ❌ ငါးသလောက်/အမဲသား/ကုန်ကြမ်း'},
+  w_t:{th:'📌 ธง / ข้อมูลไม่ตรงกัน', shn:'📌 Fah မၢႆတွင်း', my:'📌 Fah မှတ်ချက်'},
+  w1:{th:'Milk — ยึดชีท 6 กล่อง (ตัด LC29 ที่ชีทติดธงซ้ำ) — ระบบยังไม่ได้แก้ ต้องแจ้งกิฟ/CC แก้ mp_deliveries+order_items ด้วยมือ', shn:'Milk — ၸႂ်ႉ 6 ႁိပ်ႇ', my:'Milk — ၆ ဘူးသုံးမည်'},
+  w2:{th:'คุณแชมป์ — 7 กล่อง Meal Plan HP (ไม่ใช่ 21 ตามที่ระบบขึ้นผิด) + แยกต่างหาก ซื้อ Diet Set A 12 กล่อง ยังไม่เลือกเมนู (ไม่รวมในยอดวันนี้ ต้องรอกิฟ)', shn:'Champ — 7 ႁိပ်ႇ + Diet Set A 12 ပႆႇလိူၵ်ႈ', my:'Champ — ၇ ဘူး + Diet Set A ၁၂ ရွေးမရသေး'},
+  w3:{th:'ชมพู่ — ซื้อ Diet Set A 12 กล่อง ยังไม่เลือกเมนู (ไม่รวมในยอดวันนี้ ต้องรอกิฟ)', shn:'Chompoo — Diet Set A 12 ပႆႇလိူၵ်ႈ', my:'Chompoo — Diet Set A ၁၂ ရွေးမရသေး'},
+  w4:{th:'โมจิ — ใช้ 7 กล่อง (ชีทเขียน 9 ผิด — สงสัยพิมพ์ผิด ถามกิฟ)', shn:'Moji — ၸႂ်ႉ 7 (ၽိုၼ် 9 ၽိတ်ႈ)', my:'Moji — ၇ သုံးမည် (၉ မှား)'},
+  w5:{th:'ต้อย — มีโน้ตระบบ "แบ่งส่ง" ไม่ชัดเจน ถามกิฟถ้าจำเป็น', shn:'Toi — မၢႆတွင်း "แบ่งส่ง"', my:'Toi — "แบ่งส่ง" မှတ်ချက်'},
+  w6:{th:'New|YD.K🏸 — ยกเลิกแล้ว ไม่รวมในใบนี้', shn:'New|YD.K — ပယ်ဖျက်ယဝ်ႉ', my:'New|YD.K — ပယ်ဖျက်ပြီး'},
+  w7:{th:'⚠️ Yarinda — ยังไม่โอนเงิน ฿1,014 — ทวงก่อน 20:00 น.', shn:'⚠️ Yarinda — ပႆႇသူင်ႇငိုၼ်း ฿1,014', my:'⚠️ Yarinda — ငွေမလွှဲရသေး ฿1,014'},
+  f1:{th:'รวม 171 กล่อง — Meal Plan ทำสด 69 (LC 34 · HP 35) + สต็อค 102', shn:'ႁူမ်ႈ 171 ႁိပ်ႇ', my:'စုစုပေါင်း ၁၇၁ ဘူး'},
+  f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง', shn:'LC = 120g · HP = 170g', my:'LC = ၁၂၀g · HP = ၁၇၀g'},
+  f3:{th:'✅ ทุกใบ Meal Plan โอนเงินแล้ว (paid) · 🔴 สต็อค Yarinda ยังไม่โอน ฿1,014', shn:'✅ Meal Plan ငိုၼ်းသူင်ႇယဝ်ႉ · 🔴 Yarinda ပႆႇသူင်ႇ', my:'✅ Meal Plan ငွေရပြီး · 🔴 Yarinda မရသေး'},
+  f4:{th:'⚠️ คุณแชมป์ + ชมพู่ ซื้อ Diet Set A คนละ 12 กล่อง ยังไม่เลือกเมนู — ไม่รวมในใบนี้ รอกิฟ', shn:'⚠️ Diet Set A 24 ႁိပ်ႇ ပႆႇလိူၵ်ႈ', my:'⚠️ Diet Set A ၂၄ ဘူး ရွေးမရသေး'}
+};
+const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
+function setLang(l){
+  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(UI[k]&&UI[k][l]!=null) e.textContent=UI[k][l];});
+  ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
+  var b=document.getElementById('vbanner'); b.textContent=V[l]||''; b.style.display=l==='th'?'none':'block';
+  document.documentElement.lang = l==='my'?'my':(l==='shn'?'shn':'th');
+  render();
+}
+render();
+</script>
+</body>
+</html>
