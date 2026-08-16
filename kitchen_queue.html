@@ -86,6 +86,9 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .mp-tag.hx{background:#EDE9FE;color:#5B21B6;}
 .mp-round{font-size:11px;color:var(--soft);font-weight:600;}
 .mp-meta{font-size:11px;color:var(--soft);margin-top:3px;}
+/* เมนูที่ลูกค้าขอมาเอง = ของที่พลาดไม่ได้ ต้องสะดุดตากว่าบรรทัดอื่นในการ์ด */
+.mp-req{margin-top:5px;background:#FFF7ED;border:1px solid #FDBA74;border-radius:8px;padding:5px 9px;font-size:12px;font-weight:800;color:#9A3412;line-height:1.45;}
+body.tablet .mp-req{font-size:16px;padding:8px 12px;}
 .mp-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;}
 .mp-chip{font-family:var(--mono);font-size:10px;font-weight:700;color:#5B21B6;background:#EDE9FE;padding:2px 6px;border-radius:4px;}
 .mp-chip.empty{font-family:inherit;font-style:italic;font-weight:400;color:var(--xsoft);background:none;padding:0;}
@@ -736,6 +739,14 @@ function renderMpQueue(){
       +"<span class='mp-round'>📦 "+(r.box_count||7)+" กล่อง</span>"
       +"</div>"
       +"<div class='mp-chips'>"+chipsHtml+"</div>"
+      /* 🙋 เมนูที่ลูกค้าขอมาเอง — ต้องเด่นกว่าเมนูที่แอดมินจัด เพราะเป็นของที่ "พลาดไม่ได้"
+         เดิมหน้าครัวไม่เคยอ่าน `customer_request` เลยสักบรรทัด (grep = 0)
+         → ลูกค้าขอ LC76/LC84 ผ่านไลน์ ค้าง 2 วัน ครัวไม่ได้ทำ เพราะไม่มีใครเห็น */
+      +(((r.customer_request||[]).length)
+        ?"<div class='mp-req'>🙋 ลูกค้าขอเอง: "
+          +(r.customer_request||[]).map(function(m){return escH(m.code||m.name||"");}).filter(Boolean).join(" · ")
+          +"</div>"
+        :"")
       +"<div class='mp-meta'>📍 "+escH(r.delivery_address||"—")+"</div>"
       +"<div class='mp-meta'>⏰ "+escH(r.time_slot_label||r.time_slot||"—")+"</div>"
       +(r.status==="delivered"

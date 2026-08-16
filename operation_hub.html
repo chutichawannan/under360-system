@@ -4962,9 +4962,15 @@ function renderMpDeliveriesQueue(){
     }
     h+="</div>";
 
-    if(r.customer_request&&r.customer_request.length){
-      h+="<div style='margin-top:4px;font-size:11px;color:var(--ink-soft)'>ลูกค้าขอ: "+r.customer_request.map(function(m){return esc2(m.code||m.name||"");}).join(", ")+"</div>";
-    }
+    /* 🙋 เมนูที่ลูกค้าขอ — แก้ได้ตรงนี้ (ฟ้า/กิฟ ขอเอง 13 ส.ค.)
+       ปัญหาเดิม: ลูกค้าขอเมนูผ่านไลน์ → แอดมินมีที่พิมพ์แค่ในแชท **ไม่มีช่องในระบบ**
+         `customer_request` เลยว่างทุกแถว → ครัวไม่มีทางรู้ว่าใครขออะไร (LC76/LC84 ค้าง 2 วัน ไม่ได้ทำ)
+       เดิมบรรทัดนี้เป็นข้อความอ่านอย่างเดียว = โชว์ของที่ไม่เคยมีใครกรอกได้ */
+    h+="<div style='margin-top:6px'>"
+      +"<div style='font-size:10.5px;font-weight:700;color:var(--ink-soft);margin-bottom:3px'>🙋 เมนูที่ลูกค้าขอ (คั่นด้วยจุลภาค)</div>"
+      +"<input type='text' value=\""+esc2(mpReqText(r))+"\" placeholder='เช่น LC76, LC84 หรือพิมพ์ชื่อเมนู' "
+      +"oninput=\"queueMpReqSave('"+r.id+"',this.value)\" "
+      +"style='width:100%;padding:5px 8px;border:1px solid #F5C86B;background:#FFFBEB;border-radius:6px;font-size:11px;font-family:inherit'></div>";
 
     h+="<div style='margin-top:6px'><input type='text' value=\""+esc2(r.admin_notes||"")+"\" placeholder='โน้ตแอดมิน...' oninput=\"queueMpNoteSave('"+r.id+"',this.value)\" style='width:100%;padding:5px 8px;border:1px solid var(--ink-xsoft);border-radius:6px;font-size:11px;font-family:inherit'></div>";
 
@@ -5022,6 +5028,44 @@ async function updateMpDeliveryDate(id,newDate){
 function queueMpNoteSave(id,val){
   if(mpqNoteTimers[id])clearTimeout(mpqNoteTimers[id]);
   mpqNoteTimers[id]=setTimeout(function(){saveMpNote(id,val);},600);
+}
+
+/* ── 🙋 เมนูที่ลูกค้าขอ (mp_deliveries.customer_request) ────────────────────
+   เก็บเป็น array ของ {code,name} เหมือนที่ฝั่งลูกค้าเขียนมา — ฝั่งลูกค้าเลือกจากลิสต์
+   แต่แอดมินพิมพ์มือจากที่ลูกค้าบอกในไลน์ เลยรับได้ทั้ง "LC76" และ "ปลากระพงนึ่งมะนาว"
+   · ดูเหมือนโค้ดเมนู (ตัวอักษร+ตัวเลข) → เก็บเป็น code
+   · นอกนั้น → เก็บเป็น name (ครัวอ่านออกอยู่แล้ว ดีกว่าบังคับให้แอดมินไปหาโค้ด) */
+function mpReqText(r){
+  return ((r&&r.customer_request)||[]).map(function(m){return m.code||m.name||"";}).filter(Boolean).join(", ");
+}
+function mpReqParse(val){
+  return String(val||"").split(",").map(function(s){return s.trim();}).filter(Boolean)
+    .map(function(s){ return /^[A-Za-z]{1,3}\d{1,4}$/.test(s) ? {code:s.toUpperCase(),name:""} : {code:"",name:s}; });
+}
+var mpqReqTimers={};
+function queueMpReqSave(id,val){
+  if(mpqReqTimers[id])clearTimeout(mpqReqTimers[id]);
+  mpqReqTimers[id]=setTimeout(function(){saveMpReq(id,val);},600);
+}
+async function saveMpReq(id,val){
+  var sb_=getSB(); if(!sb_)return;
+  var list=mpReqParse(val);
+  /* เติมชื่อเมนูกลับให้โค้ดที่พิมพ์มา — ถ้าไม่เติม การพิมพ์แก้ทับจะลบชื่อทิ้ง
+     (เช่นของเดิม {LC76,"แซลมอนซอสทาท่า"} จะเหลือ {LC76,""} = ครัวเห็นแต่โค้ด อ่านไม่ออกว่าจานอะไร) */
+  var old=(allMpDeliveries.find(function(x){return x.id===id;})||{}).customer_request||[];
+  list.forEach(function(it){
+    if(!it.code||it.name) return;
+    var prev=old.find(function(o){return String(o.code||"").toUpperCase()===it.code;});
+    if(prev&&prev.name){ it.name=prev.name; return; }
+    var m=(MENU_POOL||[]).find(function(x){return String(x.code||"").toUpperCase()===it.code;});
+    if(m) it.name=m.name||"";
+  });
+  try{
+    var res=await sb_.from("mp_deliveries").update({customer_request:list,updated_at:new Date().toISOString()}).eq("id",id);
+    if(res.error)throw res.error;
+    var row=allMpDeliveries.find(function(x){return x.id===id;});
+    if(row)row.customer_request=list;
+  }catch(e){ console.error("saveMpReq:",e); alert("บันทึกเมนูที่ลูกค้าขอไม่สำเร็จ: "+(e.message||e)); }
 }
 async function saveMpNote(id,val){
   var sb_=getSB(); if(!sb_)return;
