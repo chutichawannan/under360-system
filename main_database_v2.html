@@ -2586,6 +2586,30 @@ function attachPackagesHandlers(){
     };
   });
 
+  /* ── N-35: "เปิดขายในตาราง" ไม่เท่ากับ "ลูกค้าเจอ" ────────────────────────
+     ลูกค้าเข้าถึงแพคได้ทางเดียวคือ **การ์ดบนหน้าแรก** (`home_layout` ที่ลิ้ง `__pkg:{id}__`)
+     ติ๊กเปิดขายอย่างเดียว = แพคมีอยู่จริงแต่ไม่มีทางกดเข้าไปได้ **และไม่มีอะไรเตือนเลย**
+     (ตรงกับ memory `admin-test-package-hands-off` — เคยเข้าใจผิดกันมาแล้วว่าเปิดขายแล้ว = ขายได้)
+     ตรวจหลังบันทึกเสร็จ ไม่บล็อกการบันทึก — แพคที่ตั้งใจไม่ให้อยู่หน้าแรก (ส่งลิงก์ตรง) ก็มี */
+  async function warnPkgNotOnHome(pkgId, name){
+    try{
+      const sb = getSB(); if(!sb) return;
+      // ⚠️ ตาราง home_layout **ไม่มีคอลัมน์ `id`** — ระบุชื่อคอลัมน์ผิดแม้ตัวเดียว PostgREST คืน error
+      //    แล้วฟังก์ชันนี้จะเงียบไปเฉยๆ (ตัวเตือนตายโดยไม่มีใครรู้) → ดึงทั้งแถวไปเลย ปลอดภัยกว่า
+      const res = await sb.from('home_layout').select('*').limit(500);
+      if(res.error || !res.data) return;             // เช็คไม่ได้ = เงียบไว้ ดีกว่าเตือนผิด
+      const linked = res.data.some(c => {
+        const f = c.item_filter;
+        const cat = (typeof f === 'string') ? f : (f && f.category) || '';
+        return String(cat).indexOf(pkgId) >= 0;
+      });
+      if(linked) return;
+      alert('⚠️ แพค "' + name + '" เปิดขายแล้ว แต่ยังไม่มีการ์ดบนหน้าแรก\n\n'
+        + '= ลูกค้าจะกดเข้าไปสั่งไม่ได้เลย (แพคมีอยู่ในระบบ แต่ไม่มีทางเข้า)\n\n'
+        + 'วิธีแก้: เปิดหน้า "🏠 หน้าร้าน (HE)" → เพิ่มการ์ด → ช่อง "ลิ้งไปที่" เลือก 📦 แพคนี้');
+    }catch(e){ console.warn('warnPkgNotOnHome:', e); }
+  }
+
   // New package
   const newPkgBtn = document.getElementById('newPkgBtn');
   if(newPkgBtn) newPkgBtn.onclick = async () => {
@@ -2848,6 +2872,7 @@ function attachPackagesHandlers(){
         logActivity('package', `แก้ไขแพค "${name}"`);
         render();
         showToast(`บันทึก "${name}" แล้ว ✓`);
+        if(active) warnPkgNotOnHome(pkgId, name);
       } catch(e){
         showToast('บันทึกไม่สำเร็จ: ' + (e.message || ''));
         btn.disabled = false;
