@@ -93,6 +93,11 @@ function buildFlex(o, items) {
     itemRows.push({ type: "text", text: `และอีก ${lines.length - 12} รายการ`, size: "xs", color: "#9AA894" });
   }
 
+  // 🔴 นัทสั่งเอง 16 ส.ค.: "ถ้าลูกค้ากดอัพสลิปแล้ว อย่าส่งไปเชียว มันเป็นการทำงานซ้ำซ้อน
+  //    ลูกค้าจะเห็นว่าฉันอัพสลิปไปแล้วจะมีปัญหา"
+  // → "แนบสลิปแล้ว" = paid (ตรวจผ่านแล้ว) หรือ pending_review (แนบแล้ว รอแอดมินตรวจ)
+  //   เดิมเช็คแค่ paid → ลูกค้าที่เพิ่งแนบสลิปจะโดนทวงซ้ำ = ระบบดูเหมือนไม่เห็นสิ่งที่เขาทำ
+  const slipSent = o.payment_status === "paid" || o.payment_status === "pending_review";
   const paid = o.payment_status === "paid";
   const addr = (o.delivery_address || "-").slice(0, 90);
   const slot = o.time_slot_label || o.time_slot || "-";
@@ -149,10 +154,10 @@ function buildFlex(o, items) {
         { type: "separator", margin: "lg" },
         { type: "box", layout: "vertical", spacing: "xs", margin: "lg", contents: [
           row("วิธีชำระเงิน", payLabel(o.payment_account)),
-          row("สถานะชำระเงิน", paid ? "ได้รับแล้ว" : "รอชำระเงิน", { strong: true }),
+          row("สถานะชำระเงิน", paid ? "ได้รับแล้ว" : (slipSent ? "ได้รับสลิปแล้ว · กำลังตรวจสอบ" : "รอชำระเงิน"), { strong: true }),
           row("ยอดชำระทั้งสิ้น", baht(o.total), { strong: true }),
         ] },
-        ...(paid ? [] : [{
+        ...(slipSent ? [] : [{
           type: "box", layout: "vertical", margin: "lg", paddingAll: "12px",
           backgroundColor: "#FDF3E3", cornerRadius: "8px",
           contents: [

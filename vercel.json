@@ -1,16 +1,50 @@
 {
   "crons": [
-    { "path": "/api/notify-mp-requests", "schedule": "0 1 * * *" },
-    { "path": "/api/notify-order-confirm", "schedule": "*/7 * * * *" },
-    { "path": "/api/mp-sync", "schedule": "*/10 * * * *" }
+    {
+      "path": "/api/notify-mp-requests",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/notify-order-confirm",
+      "schedule": "*/7 * * * *"
+    },
+    {
+      "path": "/api/mp-sync",
+      "schedule": "*/10 * * * *"
+    },
+    {
+      "path": "/api/notify-order-status",
+      "schedule": "*/10 * * * *"
+    }
   ],
   "rewrites": [
-    { "source": "/k",       "destination": "/pwa/app-k.html" },
-    { "source": "/oh",      "destination": "/pwa/app-oh.html" },
-    { "source": "/money",   "destination": "/pwa/cash_due.html" },
-    { "source": "/o",       "destination": "/pwa/orders_upcoming.html" },
-    { "source": "/cc",      "destination": "/command_center.html" },
-    { "source": "/kq",      "destination": "/kitchen_queue.html" },
-    { "source": "/db",      "destination": "/main_database_v2.html" }
+    {
+      "source": "/k",
+      "destination": "/pwa/app-k.html"
+    },
+    {
+      "source": "/oh",
+      "destination": "/pwa/app-oh.html"
+    },
+    {
+      "source": "/money",
+      "destination": "/pwa/cash_due.html"
+    },
+    {
+      "source": "/o",
+      "destination": "/pwa/orders_upcoming.html"
+    },
+    {
+      "source": "/cc",
+      "destination": "/command_center.html"
+    },
+    {
+      "source": "/kq",
+      "destination": "/kitchen_queue.html"
+    },
+    {
+      "source": "/db",
+      "destination": "/main_database_v2.html"
+    }
   ]
 }
