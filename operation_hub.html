@@ -2054,11 +2054,40 @@ async function odMoveDate(id){
       mpMsg=okAll
         ? "\nรอบผลิต Meal Plan ย้ายตามแล้ว "+movable.length+" รอบ (ครัว/แพลนเมนูจะเห็นวันใหม่)"
         : "\n⚠️ ย้ายรอบผลิตไม่สำเร็จ — ครัวจะยังเห็นวันเก่า แจ้งห้องระบบด่วน";
-      /* รอบอื่นของคอร์สอยู่คนละวัน = ไม่ถูกย้าย ต้องบอกให้แอดมินรู้
-         ไม่งั้นจะนึกว่าเลื่อนทั้งคอร์สแล้ว แล้วไปเจอทีหลังว่ารอบหน้ายังอยู่วันเดิม */
+      /* 📦 รอบถัดไปของคอร์สต้องขยับตามด้วย — กติกาที่นัทเคาะ 17 ส.ค.: "เลื่อน 1 รอบ = ขยับทั้งพวง"
+         เดิมหน้านี้แค่ *เตือน* ว่ารอบอื่นไม่ถูกย้าย ต่างจากหน้าแพลนเมนูที่ขยับให้จริง
+         → แอดมินเลื่อนจากหน้าออเดอร์แล้วรอบหน้าค้างวันเดิม ไปทับกันเงียบๆ (เคสโอ๋ 4 รอบซ้อนวันเดียว)
+         ตอนนี้ใช้กติกาเดียวกับหน้าแพลนเมนู: ขยับทีละเท่ากันเป็น "ช่องส่ง" จ/พ/ศ (นัทถาม 17 ส.ค. ข้อ 15) */
+      var later=(mpRows.data||[]).filter(function(m){
+        return m.status!=="cancelled" && movable.indexOf(m)<0 && String(m.delivery_date||"")>from;});
       var stayed=(mpRows.data||[]).filter(function(m){
-        return m.status!=="cancelled"&&movable.indexOf(m)<0;});
-      if(stayed.length) mpMsg+="\n(รอบอื่นของคอร์สนี้อยู่คนละวัน ไม่ถูกย้าย: "
+        return m.status!=="cancelled" && movable.indexOf(m)<0 && String(m.delivery_date||"")<=from;});
+      if(later.length){
+        var gapA=mpSlotGap(from,to), shifted=[];
+        if(gapA>0 && window.confirm("รอบถัดไปของคอร์สนี้อีก "+later.length+" รอบ\n"
+            +later.slice(0,4).map(function(m){return "  รอบ "+m.round_no+" "+m.delivery_date+" → "+mpNextMWF(m.delivery_date,gapA);}).join("\n")
+            +(later.length>4?("\n  …และอีก "+(later.length-4)+" รอบ"):"")
+            +"\n\nขยับตามให้เลยไหม? (กติกา: เลื่อน 1 รอบ = ขยับทั้งพวง)\nกดยกเลิก = ปล่อยรอบถัดไปไว้วันเดิม")){
+          for(var li=0;li<later.length;li++){
+            var lr=later[li], lto=mpNextMWF(lr.delivery_date,gapA);
+            var lu=await sb_.from("mp_deliveries").update({delivery_date:lto,updated_at:new Date().toISOString()}).eq("id",lr.id);
+            if(lu.error) continue;
+            // ใบของรอบนั้นต้องขยับตาม ไม่งั้นครัว/แมสยังเห็นวันเก่า
+            try{
+              var lo=await sb_.from("orders").select("id").eq("delivery_date",lr.delivery_date)
+                .eq(o.line_uid?"line_uid":"customer_id", o.line_uid||o.customer_id).neq("status","cancelled").limit(5);
+              for(var lj=0;lj<((lo.data||[]).length);lj++)
+                await sb_.from("orders").update({delivery_date:lto,updated_at:new Date().toISOString()}).eq("id",lo.data[lj].id);
+            }catch(e){}
+            shifted.push("รอบ "+lr.round_no+" "+lr.delivery_date+"→"+lto);
+          }
+          mpMsg+="\n📦 รอบถัดไปขยับตามแล้ว "+shifted.length+" รอบ";
+        }else{
+          mpMsg+="\n⚠️ รอบถัดไปอีก "+later.length+" รอบยังอยู่วันเดิม — ระวังไปทับกัน";
+        }
+      }
+      /* รอบที่อยู่ *ก่อน* วันเดิม = ของที่ผ่านมาแล้ว ไม่ต้องยุ่ง แต่บอกให้รู้ว่าไม่ได้ย้าย */
+      if(stayed.length) mpMsg+="\n(รอบก่อนหน้าไม่ถูกย้าย: "
         +stayed.map(function(m){return "รอบ "+m.round_no+" วัน "+m.delivery_date;}).join(" · ")+")";
     } else if((mpRows.data||[]).some(function(m){return m.status!=="cancelled";})){
       /* ลูกค้ารายนี้มีรอบ Meal Plan อยู่ แต่ไม่มีรอบไหนตรงวันเดิมของใบ
