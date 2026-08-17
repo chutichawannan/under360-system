@@ -501,11 +501,22 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 /* แถวเมนู: บังคับ "ชื่อเมนูอยู่บรรทัดเต็มของตัวเอง" ครอบถึง ~860px (มือถือ+tablet เล็ก)
    กันเคสจอกว้างกว่า 520px แล้ว media compact ไม่ทำงาน → ชื่อถูกบีบเป็นคอลัมน์แคบ ตัดทีละคำ (regression) */
 @media (max-width:860px){
-  .recipe-row{flex-wrap:wrap;}
+  .recipe-row{flex-wrap:wrap;row-gap:2px;}
   .row-toggles{order:1;flex-shrink:0;}
   .code-col{order:2;flex-shrink:0;}
   .stock-ctrl,.online-toggle-btn,.meta,.expand-btn{order:3;}
   .name-wrap{order:10;flex:1 1 100%;width:100%;min-width:100%;}
+  /* 🧹 1 เมนู = 2 บรรทัดพอ (นัทสั่ง 17 ส.ค. — "เปลืองบรรทัดมากไปหน่อย")
+     ของเดิมล้นเป็น 3 บรรทัดเพราะแถวแรกยัดของไว้เยอะ: ชื่อเล่น · ปฏิทิน · ติ๊ก 2 อัน · ที่จับลาก
+     · คำว่า "เปิดขาย" · โค้ด · ชื่อเล่นซ้ำ · สต็อก · ปุ่มออนไลน์ · ลูกศร
+     → ตัดเฉพาะตัวที่ "อ่านได้จากที่อื่นอยู่แล้ว" ไม่ได้ตัดปุ่มที่ต้องกด
+       · คำว่า "เปิดขาย" — ติ๊กถูกข้างหน้าบอกอยู่แล้ว
+       · ที่จับลาก ⠿ — บนมือถือลากเรียงลำดับไม่ได้อยู่แล้ว
+       · ป้ายชื่อเล่นที่ซ้ำกับช่องกรอกชื่อเล่นในแถวเดียวกัน */
+  .row-toggle-lbl{display:none;}
+  .ptt-drag-handle{display:none;}
+  .subcode-input{width:44px;}
+  .online-toggle-btn{font-size:11px;padding:2px 8px;}
   /* ชื่อ PTT ที่ยังไม่ expand: 1-2 บรรทัดเต็มความกว้าง อ่านง่าย ไม่ตัดทีละคำ */
   .ptt-group .card:not(.is-open) .name-line .name{white-space:normal;word-break:break-word;}
 }
@@ -3849,8 +3860,12 @@ function renderRecipesTab(){
     <div style="margin-left:auto;display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
       <button class="btn btn-sm" id="pasteStockBtn" title="ก๊อปข้อความที่ครัวพิมพ์ในกลุ่มไลน์มาวางทั้งก้อน กดปุ่มเดียว — ระบบจับคู่เมนูให้เอง" style="background:#EAF7EF;color:#166534;border:1px solid #86C79E;font-size:12px;padding:4px 10px;">📋 วางยอดจากครัว</button>
       <button class="btn btn-sm" id="weekRollBtn" title="เมนูที่ยังออนไลน์อยู่และมีชื่อเล่น จะถูกเติม x ข้างหน้าทั้งหมด (x 1 ตัว = ค้างมา 1 สัปดาห์) — แล้วค่อยตั้งชื่อเล่นใหม่ให้เมนูของสัปดาห์นี้" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:4px 10px;">🔄 ขึ้นสัปดาห์ใหม่</button>
-      <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:4px 10px;">☁ Sync → LIFF</button>
-      <span style="width:1px;height:20px;background:var(--ink-xsoft);margin:0 3px"></span>
+      <!-- ⛔ ถอดปุ่ม "Sync → LIFF" ออกแล้ว (นัทสั่ง 17 ส.ค. 2569: "ไม่มีใครใช้ เกะกะ")
+           และมันอันตรายแบบเดียวกับตัวคัดลอกอัตโนมัติที่เพิ่งถอดไปเมื่อเช้า —
+           กดทีเดียว upsert เมนูออนไลน์ทั้งชุดจากค่าที่ค้างในจอ ทับตาราง menu_items
+           = เปิดหน้าค้างไว้แล้วกด ก็ย้อนระบบกลับไปตอนที่เปิดหน้าได้เหมือนกัน
+           เปิด/ปิดขายทีละเมนูใช้ปุ่มออนไลน์ที่แถวเมนู (มีผลทันที) · ทั้งชุดใช้ปุ่มในมุมมองเมนูรายสัปดาห์
+           ฟังก์ชัน exportOnlineMenus ยังอยู่แต่ไม่มีใครเรียกแล้ว -->
       <!-- 🧹 ย้ายไอคอน 5 อันมาต่อท้ายแถวเดียวกัน (นัทสั่ง 17 ส.ค. — หัวจอกินที่ครึ่งจอ)
            เดิมอยู่ในแถวของตัวเอง = อีก 1 ชั้นก่อนถึงรายการเมนู · ปุ่มเหมือนเดิมทุกตัว แค่ย้ายที่ -->
       <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมด PTT (Pin to Top)':'เปิดโหมด PTT — ปักหมุดเมนูไว้บนสุด'}">📌</button>
