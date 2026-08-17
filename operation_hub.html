@@ -3389,6 +3389,44 @@ function mpSyncBadge(rowId,tgt){
    ทั้ง 2 ฟังก์ชันแตะ mp_deliveries เป็นหลัก และขยับใบออเดอร์ตามถ้ารอบนี้มีใบของตัวเอง
    ⚠️ ไม่ยกเลิกใบออเดอร์ให้อัตโนมัติ — 1 ใบอาจครอบหลายรอบ ยกเลิกใบเดียวกระทบรอบอื่นด้วย
       (ถ้าจะยกเลิกทั้งใบ ให้ไปทำที่หน้าออเดอร์ซึ่งเห็นภาพรวมทั้งใบ) */
+/* ── 🔁 เลื่อนวันส่ง Meal Plan — กติกาที่นัทเคาะเอง 17 ส.ค. 2569 ────────────────
+   **ข้อ 1: เลื่อน 1 รอบ = ขยับทั้งพวง** (นัทตอบเอง: "ขยับทั้งพวงไปเลย")
+     เดิมเลื่อนแค่แถวเดียว รอบที่เหลืออยู่ที่เดิม → ไปทับกันเงียบๆ
+     ของจริงที่เกิดแล้ว 11 เคส · หนักสุดโอ๋ 2 ส.ค. มี 4 รอบซ้อนวันเดียว รวม 28 กล่อง
+
+   **ข้อ 2: ได้เมนูเดิมไหม ขึ้นกับครัวทำไปหรือยัง** — เส้นแบ่ง 08:30 ของวันส่งเดิม
+     Meal Plan ปรุงสดเช้าวันส่ง ส่งบ่าย · 08:30 เป็นเส้นเดียวกับที่ใช้ตัดยอดสั่งอยู่แล้ว
+     · ก่อน 08:30 = ยังไม่ได้ทำ → ยกเมนูเดิมไปวันใหม่
+     · หลัง 08:30 = ทำไปแล้ว → อาหารกล่องนั้นมีอยู่จริง เก็บข้ามวันไม่ได้
+       → ล้างเมนูรอบนั้น ให้จ่ายเมนูของวันใหม่ + จดว่ากล่องที่ทำแล้วเอาไปไหน (ทางเลือก B3 ที่นัทเลือก)
+   ⚠️ 08:30 คือ "เดาจากเวลา" ไม่ใช่ความจริง — วันที่ครัวทำช้าจะเดาผิด
+      ถ้าผิดบ่อยค่อยเพิ่มปุ่ม "ครัวทำเสร็จแล้ว" (จดไว้ใน docs/ISSUE_MP_MOVE_AFTER_COOKED.md) */
+function mpCookCutoffPassed(ymd){
+  var now=new Date(Date.now()+7*3600e3);            // เวลาไทยเสมอ
+  var nowYmd=now.toISOString().slice(0,10);
+  if(nowYmd>ymd) return true;
+  if(nowYmd<ymd) return false;
+  var h=now.getUTCHours(), m=now.getUTCMinutes();   // บวก 7 ชม.ไว้แล้ว → อ่าน UTC = เวลาไทย
+  return (h>8 || (h===8 && m>=30));
+}
+function mpNextMWF(ymd, steps){
+  var d=new Date(ymd+"T00:00:00");
+  for(var i=0;i<steps;i++){ do{ d.setDate(d.getDate()+1); }while([1,3,5].indexOf(d.getDay())<0); }
+  return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+}
+// นับว่าเลื่อนไปกี่ช่องส่ง (จ/พ/ศ) เพื่อขยับรอบที่เหลือเท่ากัน
+function mpSlotGap(from,to){
+  if(to<=from) return 0;
+  var d=new Date(from+"T00:00:00"), n=0, guard=0;
+  while(guard++<400){
+    do{ d.setDate(d.getDate()+1); }while([1,3,5].indexOf(d.getDay())<0);
+    n++;
+    var y=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0");
+    if(y>=to) return n;
+  }
+  return 1;
+}
+
 async function planMoveRound(rowId, ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var sb_=getSB(); if(!sb_)return;
@@ -3396,25 +3434,65 @@ async function planMoveRound(rowId, ev){
   var who=odWho(); if(!who) return;
   var cur=r.delivery_date||today2();
   var nd=(window.prompt("เลื่อนวันส่งของ "+(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")
-    +"\n\nวันเดิม: "+cur+"\nใส่วันใหม่ (ปปปป-ดด-วว)", cur)||"").trim();
+    +"\n\nวันเดิม: "+cur+"\nใส่วันใหม่ (ปปปป-ดด-วว)"
+    +"\n\n📌 รอบถัดไปของคอร์สนี้จะเลื่อนตามให้อัตโนมัติ", cur)||"").trim();
   if(!nd || nd===cur) return;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(nd)) return alert("รูปแบบวันที่ไม่ถูก ต้องเป็น 2026-08-14");
+
+  // รอบที่เหลือของคอร์สเดียวกัน — คนเดียวกัน · อยู่หลังรอบนี้ · ยังไม่ถูกยกเลิก
+  var sameCourse=(allMpDeliveries||[]).filter(function(x){
+    if(x.id===rowId || String(x.status)==="cancelled") return false;
+    var sameCus=(r.line_uid&&x.line_uid===r.line_uid)||(r.customer_id&&x.customer_id===r.customer_id);
+    return sameCus && (x.delivery_date||"")>cur;
+  }).sort(function(a,b){return String(a.delivery_date).localeCompare(String(b.delivery_date));});
+
+  var gap=mpSlotGap(cur,nd);
+  var cooked=mpCookCutoffPassed(cur);
+  var msg="เลื่อน "+(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+"\n"+cur+" → "+nd+"\n";
+  if(sameCourse.length) msg+="\n📦 รอบถัดไปอีก "+sameCourse.length+" รอบจะเลื่อนตาม (ทีละ "+gap+" ช่องส่ง)\n"
+    +sameCourse.slice(0,4).map(function(x){return "   รอบ "+(x.round_no||"?")+" "+x.delivery_date+" → "+mpNextMWF(x.delivery_date,gap);}).join("\n")
+    +(sameCourse.length>4?("\n   …และอีก "+(sameCourse.length-4)+" รอบ"):"")+"\n";
+  msg+= cooked
+    ? "\n🍳 เลย 08:30 ของวันส่งเดิมแล้ว = ถือว่าครัวทำไปแล้ว\n   → เมนูรอบนี้จะถูกล้าง ต้องจ่ายเมนูใหม่ของวันที่ "+nd+"\n   → กล่องที่ทำไว้แล้วอย่าทิ้ง เอาไปขายเป็นเมนูสต็อค/ให้พนักงาน"
+    : "\n✅ ยังไม่ถึง 08:30 ของวันส่งเดิม = ยังไม่ได้ทำ → ยกเมนูเดิมไปวันใหม่";
+  if(!window.confirm(msg+"\n\nคนกด: "+who+"\n\nยืนยันไหม?")) return;
+
   try{
-    var up=await sb_.from("mp_deliveries").update({delivery_date:nd,updated_at:new Date().toISOString()})
-             .eq("id",rowId).select("id,delivery_date");
+    var patch={delivery_date:nd,updated_at:new Date().toISOString()};
+    if(cooked){
+      patch.menu_items=[];                          // ของทำสด เมนูเดิมไปวันใหม่ไม่ได้
+      patch.status="scheduled";                     // กลับเข้าคิวให้จ่ายเมนูใหม่
+      patch.admin_notes=String(r.admin_notes||"")+" [เลื่อน "+cur+"→"+nd+" หลังครัวทำแล้ว · กล่องเดิม "+(r.box_count||7)+" เอาไปขายต่อ/พนักงาน · โดย "+who+"]";
+    }
+    var up=await sb_.from("mp_deliveries").update(patch).eq("id",rowId).select("id,delivery_date");
     if(up.error) throw up.error;
     if(!up.data||!up.data.length||up.data[0].delivery_date!==nd)
       throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
     /* ใบออเดอร์ของรอบนี้ต้องขยับตาม ไม่งั้นครัว/แมสยังเห็นวันเดิม = ของไปผิดวัน */
     var om=mpOrderMap[rowId];
     if(om&&om.id) await sb_.from("orders").update({delivery_date:nd,updated_at:new Date().toISOString()}).eq("id",om.id);
+
+    // ขยับรอบที่เหลือตามไปด้วย (ทั้งแถวรอบ และใบออเดอร์ของรอบนั้น)
+    var moved=[];
+    for(var i=0;i<sameCourse.length;i++){
+      var x=sameCourse[i], to=mpNextMWF(x.delivery_date,gap);
+      var u2=await sb_.from("mp_deliveries").update({delivery_date:to,updated_at:new Date().toISOString()}).eq("id",x.id);
+      if(u2.error) continue;
+      var om2=mpOrderMap[x.id];
+      if(om2&&om2.id) await sb_.from("orders").update({delivery_date:to,updated_at:new Date().toISOString()}).eq("id",om2.id);
+      moved.push("รอบ "+(x.round_no||"?")+" "+x.delivery_date+"→"+to);
+    }
     try{ await sb_.from("activity_log").insert({
       session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
       action_type:"kq_status",
-      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เลื่อนวันส่ง "+cur+" → "+nd+(om?(" (ใบ "+om.num+")"):""),
-      detail:{mp_id:rowId, from:cur, to:nd, order_id:(om&&om.id)||null, by:"oh_plan"} }); }catch(e){}
+      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เลื่อนวันส่ง "+cur+" → "+nd
+        +(moved.length?(" · ขยับตามอีก "+moved.length+" รอบ"):"")+(cooked?" · ทำแล้ว ล้างเมนู":"")+(om?(" (ใบ "+om.num+")"):""),
+      detail:{mp_id:rowId, from:cur, to:nd, cooked:cooked, shifted:moved, order_id:(om&&om.id)||null, by:"oh_plan"} }); }catch(e){}
     await loadMpPlanData();
-    alert("เลื่อนเป็น "+nd+" แล้ว"+(om?"\nใบ "+om.num+" ขยับตามแล้ว":"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
+    alert("เลื่อนเป็น "+nd+" แล้ว"
+      +(moved.length?("\nรอบถัดไปขยับตาม "+moved.length+" รอบ"):"")
+      +(cooked?("\n\n🍳 ล้างเมนูรอบนี้แล้ว — ไปจ่ายเมนูใหม่ของวันที่ "+nd+"\nกล่องที่ทำไว้แล้วอย่าทิ้ง"):"")
+      +(om?("\nใบ "+om.num+" ขยับตามแล้ว"):"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
   }catch(e){ alert("เลื่อนวันไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 async function planCancelRound(rowId, ev){
