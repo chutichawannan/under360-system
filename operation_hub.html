@@ -924,6 +924,12 @@ body.fs-scaled{zoom:var(--u-fs)}
             <div style="margin-top:6px;font-size:13px"><a onclick="obCancelNew()" style="color:#6B7280;cursor:pointer;text-decoration:underline">ยกเลิก</a></div>
           </div>
         </div>
+        <!-- 🧩 ป้อบอัพเลือกเมนูในเซ็ต — บังคับเลือกให้ครบก่อนใส่ตะกร้า (เหมือนฝั่งลูกค้า) -->
+        <div id="obPickWrap" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:4000;align-items:center;justify-content:center;padding:16px">
+          <div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:86vh;overflow-y:auto;padding:16px">
+            <div id="obPickBody"></div>
+          </div>
+        </div>
         <div style="border:1px solid #E5E7EB;border-radius:12px;padding:14px;margin-bottom:14px">
           <div style="font-weight:800;font-size:15px;margin-bottom:2px">2.1 เซ็ต / คอร์ส / Meal Plan</div>
           <div style="font-size:12px;color:#6B7280;margin-bottom:10px">กดปุ่มเดียวจบ — ราคาเหมา ครัวจัดเมนูให้ · ตัวที่ต้องแพลนเมนู (Meal Plan / Hyrox) จะโผล่ในหน้า "แพลนเมนู" อัตโนมัติ</div>
@@ -5617,10 +5623,103 @@ function obRenderSets(){
          + obChip('obAddMp('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
   }).join('')||'<span style="color:#9CA3AF;font-size:13px">ไม่มีชุด Meal Plan</span>';
 }
+/* ── 🧩 เซ็ตที่ต้องเลือกเมนู — บังคับเลือกก่อนเข้าตะกร้า (นัทเจอเองกับมือ 17 ส.ค. 2569) ──
+   ปัญหา: หน้านี้ใส่เซ็ตลงตะกร้าได้เลยโดยไม่ต้องเลือกเมนู
+     ผลจริงวันนี้: `U-0817-022` ชมพู่ + `U-0817-012` คุณแชมป์ = **Diet Set A 24 กล่องที่ครัวแพ็คไม่ได้**
+     เพราะไม่มีใครรู้ว่าลูกค้าเอาเมนูอะไร · กว่าจะรู้คือเช้าวันส่ง สายเกินแก้
+   คนกดคือแอดมินพาร์ตไทม์ที่ไม่รู้ว่าเซ็ตต้องเลือกเมนู — **ระบบไม่ได้บอกเขา = ระบบผิด ไม่ใช่คนผิด**
+   ฝั่ง LIFF บังคับเลือกอยู่แล้ว → ยกกติกาเดียวกันมาใช้ที่นี่ */
+var obPickPkg=null, obPickSel={};   // obPickSel = { เลขกลุ่ม: { โค้ดเมนู: จำนวน } }
+
 function obAddPkg(i){
   var p=obPkgs[i]; if(!p)return;
-  obPush({kind:'pkg',key:'pkg:'+p.id,pkgId:p.id,code:obPkgSku(p),name:p.name,price:p.base_price||0,
-          boxes:p.qty||0,size:p.size||'',freeShip:!!p.free_shipping,planType:obPlanType[p.id]||null,fixedDate:obFixedDate[p.id]||null,rounds:p.delivery_rounds||1});
+  var groups=(p.groups||[]).filter(function(g){return g&&(g.count||0)>0;});
+  if(groups.length){ obOpenPicker(i); return; }   // เซ็ตที่ต้องเลือกเมนู → เปิดให้เลือกก่อน
+  obPushPkg(p,null);
+}
+function obPushPkg(p,chosen){
+  obPush({kind:'pkg',key:'pkg:'+p.id+(chosen?(':'+Date.now()):''),pkgId:p.id,code:obPkgSku(p),name:p.name,price:p.base_price||0,
+          boxes:p.qty||0,size:p.size||'',freeShip:!!p.free_shipping,planType:obPlanType[p.id]||null,
+          fixedDate:obFixedDate[p.id]||null,rounds:p.delivery_rounds||1,picked:chosen||null});
+}
+// เมนูที่เลือกได้ในกลุ่มนี้ — กติกาเดียวกับฝั่งลูกค้า (หมวดเดียว / หลายหมวดรวมนับ / เจาะจงรายเมนู)
+function obGroupPool(g){
+  if(!g) return [];
+  if(g.kind==='list') return obMenus.filter(function(m){return (g.skus||[]).indexOf(m.code)>=0;});
+  var cats=(g.kind==='multicat')?(g.categories||[]):[g.category];
+  return obMenus.filter(function(m){return cats.indexOf(m.category)>=0;});
+}
+function obPickCount(gi){
+  var s=obPickSel[gi]||{},n=0;
+  Object.keys(s).forEach(function(k){ n+=s[k]||0; });
+  return n;
+}
+function obOpenPicker(i){
+  obPickPkg=i; obPickSel={};
+  document.getElementById('obPickWrap').style.display='flex';
+  obRenderPicker();
+}
+function obClosePicker(){
+  var w=document.getElementById('obPickWrap'); if(w) w.style.display='none';
+  obPickPkg=null; obPickSel={};
+}
+function obPickAdj(gi,sku,d){
+  var p=obPkgs[obPickPkg]; if(!p)return;
+  var g=(p.groups||[]).filter(function(x){return x&&(x.count||0)>0;})[gi]; if(!g)return;
+  obPickSel[gi]=obPickSel[gi]||{};
+  if(d>0 && obPickCount(gi)>=(g.count||0)) return;          // ครบแล้ว กดเพิ่มไม่ได้
+  var cur=obPickSel[gi][sku]||0, next=Math.max(0,cur+d);
+  if(g.allow_repeat===false && next>1) next=1;              // เซ็ตที่ห้ามเลือกซ้ำ
+  if(next===0) delete obPickSel[gi][sku]; else obPickSel[gi][sku]=next;
+  obRenderPicker();
+}
+function obRenderPicker(){
+  var p=obPkgs[obPickPkg]; if(!p)return;
+  var groups=(p.groups||[]).filter(function(g){return g&&(g.count||0)>0;});
+  var h='<div style="font-size:15px;font-weight:800;margin-bottom:2px">'+obEsc(p.name)+'</div>'
+    +'<div style="font-size:12px;color:#6B7280;margin-bottom:10px">เลือกเมนูให้ครบก่อนถึงจะใส่ตะกร้าได้ — ครัวต้องรู้ว่าจะทำอะไร</div>';
+  var allOk=true;
+  groups.forEach(function(g,gi){
+    var got=obPickCount(gi), need=g.count||0, ok=(got===need);
+    if(!ok) allOk=false;
+    h+='<div style="border:1px solid '+(ok?'#86C79E':'#FCD34D')+';background:'+(ok?'#F0FBF4':'#FFFBEB')+';border-radius:10px;padding:9px 11px;margin-bottom:9px">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px">'
+      +'<b style="font-size:13px">'+obEsc(g.label||('กลุ่มที่ '+(gi+1)))+'</b>'
+      +'<span style="margin-left:auto;font-size:12px;font-weight:800;color:'+(ok?'#166534':'#92400E')+'">'+got+'/'+need+'</span></div>';
+    var pool=obGroupPool(g);
+    if(!pool.length) h+='<div style="font-size:12px;color:#B91C1C;font-weight:700">⚠️ กลุ่มนี้ไม่มีเมนูให้เลือก — ไปตั้งค่าเซ็ตที่หน้า DB ก่อน</div>';
+    pool.slice(0,60).forEach(function(m){
+      var q=(obPickSel[gi]||{})[m.code]||0;
+      h+='<div style="display:flex;align-items:center;gap:8px;padding:4px 0;border-bottom:1px solid #F3F4F6">'
+        +'<span style="flex:1;font-size:12.5px">'+(m.subcode?'<b>'+obEsc(m.subcode)+'</b> · ':'')+obEsc(m.code)+' · '+obEsc(m.name)+'</span>'
+        +'<button onclick="obPickAdj('+gi+',\''+m.code+'\',-1)" style="width:26px;height:26px;border:1px solid #D1D5DB;background:#fff;border-radius:7px;cursor:pointer;font-size:15px">−</button>'
+        +'<span style="min-width:18px;text-align:center;font-weight:800;font-size:13px">'+q+'</span>'
+        +'<button onclick="obPickAdj('+gi+',\''+m.code+'\',1)" style="width:26px;height:26px;border:1px solid #1F4D3A;background:#1F4D3A;color:#fff;border-radius:7px;cursor:pointer;font-size:15px">+</button>'
+        +'</div>';
+    });
+    h+='</div>';
+  });
+  h+='<div style="display:flex;gap:8px;margin-top:4px">'
+    +'<button onclick="obClosePicker()" style="flex:1;padding:10px;border:1px solid #D1D5DB;background:#fff;border-radius:9px;cursor:pointer;font-family:inherit;font-size:13px">ยกเลิก</button>'
+    +'<button onclick="obPickConfirm()" '+(allOk?'':'disabled')+' style="flex:2;padding:10px;border:none;border-radius:9px;cursor:'+(allOk?'pointer':'not-allowed')
+    +';font-family:inherit;font-size:13px;font-weight:800;background:'+(allOk?'#1F4D3A':'#D1D5DB')+';color:#fff">'
+    +(allOk?'✅ ใส่ตะกร้า':'เลือกให้ครบก่อน')+'</button></div>';
+  document.getElementById('obPickBody').innerHTML=h;
+}
+function obPickConfirm(){
+  var p=obPkgs[obPickPkg]; if(!p)return;
+  var groups=(p.groups||[]).filter(function(g){return g&&(g.count||0)>0;});
+  var chosen=[];
+  groups.forEach(function(g,gi){
+    var s=obPickSel[gi]||{};
+    Object.keys(s).forEach(function(sku){
+      var m=obMenus.find(function(x){return x.code===sku;})||{};
+      chosen.push({sku:sku,qty:s[sku],name:m.name||sku,id:m.id||null});
+    });
+  });
+  if(!chosen.length) return;
+  obPushPkg(p,chosen);
+  obClosePicker();
 }
 function obAddMp(i,type){
   var s=obMpSets[i]; if(!s)return;
@@ -5749,11 +5848,21 @@ async function obSubmit(){
     if(obHasCreatedBy) payload.created_by=admin;
     var ord=await sb_.from('orders').insert(payload).select().single(); if(ord.error)throw ord.error;
     /* order_items — เขียน notes ให้ตรงกับที่ LIFF ใช้ ไม่งั้น KQ/แพลนเมนู/รายงาน อ่านประเภทออเดอร์ไม่ออก */
-    var items=obCart.map(function(c){
+    var items=[];
+    obCart.forEach(function(c){
       var note='', code=c.code||null;
       if(c.kind==='pkg'){ note='pkg:'+c.pkgId; if(!code)code='PKG-'+String(c.pkgId).slice(0,8).toUpperCase(); }
       else if(c.kind==='mp'){ note='meal_plan:'+c.mpType+':'+c.setKey; code='MP-'+c.mpType.toUpperCase(); }
-      return {order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:note};
+      items.push({order_id:ord.data.id,menu_item_id:c.id||null,menu_name:c.name,menu_code:code,quantity:c.qty,unit_price:c.price,subtotal:c.price*c.qty,notes:note});
+      /* เมนูที่แอดมินเลือกในเซ็ต → เขียนเป็นบรรทัดกล่องราคา 0 ต่อท้าย
+         ต้องมีบรรทัดพวกนี้ ครัวถึงจะรู้ว่าต้องทำอะไร (บรรทัดเซ็ตข้างบนเป็นบรรทัดถือเงินอย่างเดียว)
+         ราคา 0 เพราะเงินอยู่ที่บรรทัดเซ็ตแล้ว — ถ้าใส่ราคาซ้ำ ยอดขายจะเบิ้ล */
+      if(c.kind==='pkg' && c.picked && c.picked.length){
+        c.picked.forEach(function(x){
+          items.push({order_id:ord.data.id,menu_item_id:x.id||null,menu_name:x.name,menu_code:x.sku,
+                      quantity:(x.qty||1)*(c.qty||1),unit_price:0,subtotal:0,notes:'pkg:'+c.pkgId+':pick'});
+        });
+      }
     });
     var it=await sb_.from('order_items').insert(items); if(it.error)throw it.error;
     /* ✂️ ตัดสต็อก — รูใหญ่ที่สุดของเรื่องสต็อก เพิ่งอุด 14 ส.ค. 2569
