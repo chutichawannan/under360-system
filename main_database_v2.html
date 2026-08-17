@@ -147,6 +147,17 @@ body.list-mode .card:not(.is-open) .chip-row{display:none !important;}
 body.list-mode .line-group h2{padding:6px 10px 2px;font-size:12.5px;}
 body.list-mode .row .name{font-size:12.5px;}
 body.list-mode .ptt-group .card{margin-bottom:0;}
+/* 📊 นัทบอกชัดขึ้นรอบ 2 (17 ส.ค.): "ที่อยากได้คือ ขอดูทั้งหมดแบบเวอร์ชันตาราง ไม่ใช่การ์ด"
+   → บีบให้ทุกแถวสูงเท่ากันและชิดกันแบบตาราง: ไม่มีกรอบการ์ด · ชื่อเมนูอยู่บรรทัดเดียวกับโค้ด
+   ⚠️ ยังเป็น element เดิมทุกตัว ไม่ได้เขียน <table> ใหม่ — ปุ่มทุกปุ่มทำงานเหมือนเดิม กดกางดูรายละเอียดได้ */
+body.list-mode .card:not(.is-open) .row{flex-wrap:nowrap !important;}
+body.list-mode .card:not(.is-open) .name-wrap{order:0 !important;flex:1 1 auto !important;width:auto !important;min-width:0 !important;}
+body.list-mode .card:not(.is-open) .name-line{flex-wrap:nowrap;}
+body.list-mode .card:not(.is-open) .row .name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+body.list-mode .card:not(.is-open) .row{min-height:34px;padding:2px 8px;}
+body.list-mode .line-group{margin-bottom:2px;}
+/* แถวสลับสีอ่อนๆ แบบตาราง — กวาดตาตามบรรทัดง่ายขึ้นเวลามีเป็นร้อยแถว */
+body.list-mode .line-group .card:nth-child(even){background:var(--surface-2,#FAFAF7);}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius);}
 .ing-table{width:100%;min-width:780px;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
 .ing-table th{text-align:left;font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;padding:9px 10px;background:var(--surface-2);}
@@ -3091,6 +3102,7 @@ async function init(){
     await setStored('ingredients', state.ingredients, true);
   }
   await loadActivityLog();
+  await loadWeekTags();   /* แท็กสัปดาห์ — ใช้คู่กับชื่อเล่นในการตัดสินว่าเมนูไหนเป็น "เมนูรายสัปดาห์" */
   render();
   syncMenuMetaFromDB();   /* ชื่อเล่น + วันพร้อมส่ง + สต็อก = ของจริงอยู่ที่ menu_items ไม่ใช่ในหน้านี้ */
   startStockAutoRefresh();
@@ -3232,6 +3244,33 @@ function renderOnlineMismatch(){
 
 /* วันเริ่มส่งของสัปดาห์ปัจจุบัน — ตั้งครั้งเดียวตอนกด "ขึ้นสัปดาห์ใหม่"
    แล้วเมนูที่ตั้งชื่อเล่นใหม่หลังจากนั้นจะได้วันนี้อัตโนมัติ (ไม่ต้องพึ่งความจำใคร) */
+/* 🏷️ "เมนูรายสัปดาห์" คืออะไรกันแน่ — นัทถามเอง 17 ส.ค.: "ควรมี 13 ไม่ใช่ 11"
+   ของจริงมี 2 ที่ที่บอกว่าเมนูไหนเป็นของสัปดาห์นี้ และมันไม่ตรงกัน:
+     · ชื่อเล่น (subcode)          = 11 เมนู  ← แอดมินพิมพ์เอง
+     · แท็กสัปดาห์ (menu_special_weeks) = 15 เมนู ← ปุ่ม "ขึ้นสัปดาห์ใหม่" / สคริปต์เป็นคนใส่
+   เอาแค่ทางเดียวก็ตกหล่นทั้งคู่ → **นับว่าเป็นเมนูสัปดาห์ถ้าเข้าเงื่อนไขทางใดทางหนึ่ง**
+   ❓ ตอบคำถามนัท "ถ้าคนกดจริงๆ ทำไงให้มันมาอยู่หมวดนี้": พิมพ์ชื่อเล่นให้เมนูนั้น (เช่น S9) แล้วมันจะโผล่ทันที
+   ❓ "มันไม่ทับกับเมนูทั้งหมดหรอ": ไม่ทับ — นี่คือ *ตัวกรองมุมมอง* ไม่ใช่หมวดใหม่
+      เมนูยังอยู่หมวดเดิมของมัน (ข้าวกล่อง/แพคกับข้าว) แค่ซ่อนตัวอื่นชั่วคราวตอนกดชิปนี้ */
+var weekTagMap = {};   // { CODE: 'YYYY-MM-DD' } โหลดจาก kitchen_data.menu_special_weeks
+async function loadWeekTags(){
+  try{ const v = await getStored('menu_special_weeks', true); weekTagMap = (v && typeof v==='object') ? v : {}; }
+  catch(e){ weekTagMap = {}; }
+}
+/* ⚠️ ตารางแท็กเก็บ "ทุกสัปดาห์ย้อนหลัง" (52 เมนู) ไม่ใช่แค่สัปดาห์นี้
+   ถ้านับหมดจะได้ 33 เมนู = เอาของสัปดาห์เก่าที่เลิกขายแล้วมาปนด้วย
+   → ยึดวันที่ล่าสุดในตาราง = สัปดาห์ปัจจุบัน แล้วนับเฉพาะเมนูของสัปดาห์นั้น */
+function currentWeekTag(){
+  var ds=Object.values(weekTagMap||{}).filter(Boolean).sort();
+  return ds.length ? ds[ds.length-1] : null;
+}
+function isWeeklyMenu(r){
+  if(!r) return false;
+  if(String(r.subcode||'').trim()) return true;         // มีชื่อเล่น = เมนูสัปดาห์แน่นอน
+  var cur=currentWeekTag();
+  return !!(cur && weekTagMap[r.code]===cur);           // หรือถูกแท็กเป็นของสัปดาห์ปัจจุบัน
+}
+
 async function getWeekStartDate(){
   try{ const v = await getStored('week_start_date', true); return (v && v.date) || null; }catch(e){ return null; }
 }
@@ -3552,7 +3591,7 @@ function downloadBlob(filename, content, mime){
    ไม่ได้เขียน `menu_items` ตรงๆ เพื่อให้ชื่อ/ราคา/แคลอรี่อัปเดตตามหน้านี้เหมือนกดทีละตัว */
 async function bulkWeekOnline(want){
   if(!requireUser()) return;
-  const wk = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active');
+  const wk = state.recipes.filter(r=>isWeeklyMenu(r) && r.status==='active');
   const todo = wk.filter(r=>!!r.available_online !== !!want);
   if(!todo.length){ showToast(want?'เปิดขายอยู่แล้วทุกเมนู':'ปิดอยู่แล้วทุกเมนู'); return; }
   const names = todo.map(r=>(r.subcode||r.code)).join(' · ');
@@ -3906,11 +3945,16 @@ function renderRecipesTab(){
            `pinned` เก็บรายเมนูใน recipes (ตอนนี้ 93 เมนู) · `pinModeEnabled` เก็บแยกใน appSettings
            ปุ่มนี้แตะแค่ค่าที่ 2 ตัวเดียว ไม่เคยไปยุ่งกับ `pinned` เลย (ไล่โค้ดครบทุกจุดที่เขียน .pinned แล้ว)
         ยังดูรายการที่ปักหมุดได้จากชิป "📌 PTT" ในแถบหมวดเหมือนเดิม */
+  /* 📌 เอาปุ่มโหมดปักหมุดกลับมา — รอบก่อนผมเข้าใจผิดว่านัทให้ถอดปุ่มทิ้ง
+     ที่นัทต้องการจริงคือ **กดปุ่มนี้แล้วให้ช่องติ๊กหมุดหายไปจากทุกแถว** (คอลัมน์ซ้ายที่วงไว้ในภาพ)
+     ซึ่งโค้ดเดิมทำแบบนั้นอยู่แล้ว (ช่องหมุด + ที่จับลาก โผล่เฉพาะตอน pinModeEnabled)
+     → เลยแค่คืนปุ่มให้กดสลับได้ · ✅ ยืนยันอีกครั้ง: ปิดโหมดนี้ **การปักหมุดไม่หาย** (93 เมนูยังอยู่ครบ) */
   html += `<div class="toolbar">
+    <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมดปักหมุด — ซ่อนช่องติ๊กหมุดออกจากทุกแถว':'เปิดโหมดปักหมุด — โชว์ช่องติ๊กหมุดในแต่ละแถว'}">📌</button>
     <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
     <button class="icon-btn" id="manageCatBtn" data-tip="จัดการหมวดอาหาร — เพิ่ม/ลบ/เปลี่ยนชื่อหมวด">🏷️</button>
     <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
-    <button class="icon-btn${state.listMode?' active':''}" id="toggleListModeBtn" data-tip="${state.listMode?'กลับเป็นแบบการ์ด':'โหมดอ่านง่าย — เรียงเป็นบรรทัด แบบหน้าแมสเซนเจอร์'}">📃</button>
+    <button class="icon-btn${state.listMode?' active':''}" id="toggleListModeBtn" data-tip="${state.listMode?'กลับเป็นแบบการ์ด':'โหมดตาราง — แถวชิดกัน ดูได้เยอะในจอเดียว'}">📊</button>
     <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
   </div>`;
   /* ตัวฟ้องว่าหน้านี้ไม่ตรงกับที่ลูกค้าเห็น
@@ -3929,7 +3973,7 @@ function renderRecipesTab(){
          = ติดธงให้ตัวเองไปในตัว ไม่ต้องเพิ่มช่องใหม่ ไม่ต้องพึ่งว่าใครกดปุ่มขึ้นสัปดาห์ทัน
        ✅ เช็คกับข้อมูลจริงแล้ว: เมนูมีชื่อเล่น 13 ตัว = เมนูสัปดาห์นี้ 13 ตัว ตรงกันเป๊ะ
        ⚠️ เป็นแค่ "ตัวกรองมุมมอง" — ไม่ย้ายหมวดใคร กดทั้งหมดแล้วกลับเหมือนเดิมทุกอย่าง */
-    const wkCnt = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active').length;
+    const wkCnt = state.recipes.filter(r=>isWeeklyMenu(r) && r.status==='active').length;
     if(wkCnt) html += `<button class="cat-tab-db${state.activeCatTab==='__week__'?' on':''}" onclick="setCatTab('__week__')">🏷️ เมนูรายสัปดาห์ <span class="cnt">${wkCnt}</span></button>`;
     /* 🔚 ดัน Low Carb / High Protein ไปท้ายแถบ (นัทสั่ง 17 ส.ค.)
        "เราแทบไม่ได้ดูแลยุ่งอะไรกับมันกันเลย เดี๋ยวค่อยมาปัดฝุ่นอีกที"
@@ -3952,7 +3996,7 @@ function renderRecipesTab(){
      ⚠️ ต่างจากปุ่มซิงค์เก่าที่ถอดทิ้งไป — อันนี้ **เห็นรายชื่อครบตรงหน้าก่อนกด**
         และแตะเฉพาะเมนูในมุมมองนี้ ไม่ได้กวาดทั้งฐาน 958 เมนูจากค่าที่ค้างในจอ */
   if(state.activeCatTab === '__week__'){
-    const wk = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active');
+    const wk = state.recipes.filter(r=>isWeeklyMenu(r) && r.status==='active');
     const onCnt = wk.filter(r=>r.available_online).length;
     html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin:0 0 8px">
       <span style="font-size:12px;font-weight:700;color:#92400E">เมนูรายสัปดาห์ ${wk.length} รายการ · เปิดขายอยู่ ${onCnt}</span>
@@ -3988,7 +4032,7 @@ function renderRecipesTab(){
     // panel ที่เปิดอยู่ไม่ต้องหายตอนแก้หมวดของตัวเอง (เฉพาะเช็คหมวดเท่านั้น — สลับแท็บจริงจะปิด panel ให้เองใน setCatTab)
     if(state.activeCatTab === '__ptt__'){ if(!r.pinned && r.id!==state.openId) return false; }
     // 🏷️ เมนูรายสัปดาห์ = มีชื่อเล่น · เมนูยังอยู่หมวดเดิมทุกตัว แค่ซ่อนตัวอื่นชั่วคราว
-    else if(state.activeCatTab === '__week__'){ if(!String(r.subcode||'').trim() && r.id!==state.openId) return false; }
+    else if(state.activeCatTab === '__week__'){ if(!isWeeklyMenu(r) && r.id!==state.openId) return false; }
     else if(state.activeCatTab !== '__all__'){ if(!(r.categories||[]).includes(state.activeCatTab) && r.id!==state.openId) return false; }
     if(!state.showRetired && r.status!=='active') return false;
     if(state.showOnlineOnly && !r.available_online) return false;  // กรองเฉพาะออนไลน์

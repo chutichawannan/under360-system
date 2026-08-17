@@ -232,7 +232,10 @@ html,body{height:100%;font-family:var(--sans);background:var(--bg);color:var(--i
 /* ── CONTENT ── */
 /* padding ล่างเผื่อไว้เยอะหน่อย — ถึงความสูงจอจะเพี้ยนไปบ้าง แถวสุดท้ายก็ยังไม่ติดขอบ */
 .content{flex:1;min-height:0;overflow-y:auto;padding:24px 24px 180px;-webkit-overflow-scrolling:touch}
-.content.he-mode{padding:0;overflow:hidden}
+.content.he-mode{padding:0;overflow:hidden;display:flex;flex-direction:column;min-height:0}
+/* ⚠️ ต้องเจาะจง .active เท่านั้น — ถ้าใส่ display:flex ให้ทุก panel จะไปลบล้าง display:none
+   ของ panel ที่ไม่ได้เปิดอยู่ แล้วทุกหน้าจะโผล่พร้อมกันแย่งความสูงกัน (เจอตอนเทส) */
+.content.he-mode>.tab-panel.active{flex:1;min-height:0;display:flex;flex-direction:column}
 .tab-panel{display:none}
 .tab-panel.active{display:block}
 .tab-panel#panel-he{height:100%}
@@ -1047,7 +1050,10 @@ body.fs-scaled{zoom:var(--u-fs)}
 
     <!-- TAB: APP (shared iframe for KQ / Report / Customer / DB) -->
     <div class="tab-panel" id="panel-app" style="padding:0;overflow:hidden;">
-      <iframe id="app-frame" src="" style="width:100%;height:calc(100vh - 56px);border:none;display:block;"
+      <!-- 🪤 เดิมล็อกความสูงเป็น calc(100vh - 56px) แต่กรอบนี้เริ่มที่ y=60 ไม่ใช่ 56
+           → ก้นกรอบล้นออกนอกจอ = เลื่อนไม่ถึงล่างสุด และปุ่มลอย (FAB) ในหน้าลูกไปอยู่นอกจอ หายไปเลย
+           นัทเจอทั้ง 2 อาการพร้อมกัน 17 ส.ค. · ใช้ 100% ของพื้นที่จริงแทนการเดาส่วนสูง -->
+      <iframe id="app-frame" src="" style="width:100%;height:100%;border:none;display:block;"
         title="App"></iframe>
     </div>
 
