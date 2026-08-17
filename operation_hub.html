@@ -701,11 +701,17 @@ body.fs-scaled{zoom:var(--u-fs)}
         </div>
 
         <!-- RIGHT: Customer Table — ต้องมีแถบเลื่อนให้เห็น ไม่งั้นไม่รู้ว่ามีวันถัดไปให้ดูต่อ (นัท 6 ส.ค. 2569) -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:6px;">
+        <!-- 🎫 สรุปใบออเดอร์ของทุกรอบ — ป้าย "⚠ ไม่มีใบ · กดเปิด" เดิมซ่อนอยู่ในช่องเล็กๆ ในตาราง
+             วันไหนใบครบก็ไม่มีป้ายโผล่เลย = เปิดหน้ามาแล้วหาไม่เจอว่ามันอยู่ตรงไหน (นัทถาม 17 ส.ค.)
+             แถบนี้รายงานผลรวมเสมอ ทั้งตอนครบและตอนขาด -->
+        <div id="planTicketBar" style="display:none;font-size:12px;font-weight:700;border-radius:8px;padding:6px 10px;"></div>
         <div class="plan-scroll" style="flex:1;min-width:0;overflow-x:auto;border-radius:var(--radius);border:1px solid var(--ink-xsoft);">
           <table class="plan-table" id="planTable" style="min-width:500px;width:100%;">
             <thead><tr id="planHead"></tr></thead>
             <tbody id="planBody"></tbody>
           </table>
+        </div>
         </div>
 
       </div>
@@ -2680,6 +2686,25 @@ async function loadMpOrderNumbers(){
     });
   }catch(e){ console.error("loadMpOrderNumbers:",e); }
   document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
+  renderTicketBar();
+}
+
+/* แถบสรุปใบออเดอร์ — นับเฉพาะรอบที่ยังโชว์ในตารางหลัก (วันนี้เป็นต้นไป)
+   ของเก่าที่เลยวันส่งไปแล้วเปิดใบตามหลังไม่มีประโยชน์ ไม่ต้องเอามาหลอนตา */
+function renderTicketBar(){
+  var bar=document.getElementById("planTicketBar"); if(!bar) return;
+  var todayStr=today2();
+  var rows=mpPlanRows.filter(function(r){ return r.delivery_date && r.delivery_date>=todayStr; });
+  if(!rows.length){ bar.style.display="none"; return; }
+  var miss=rows.filter(function(r){ return !mpOrderMap[r.id]; });
+  bar.style.display="block";
+  if(miss.length){
+    bar.style.background="#FEE2E2"; bar.style.color="#B91C1C"; bar.style.border="1px solid #FCA5A5";
+    bar.textContent="⚠ มี "+miss.length+" รอบยังไม่มีใบออเดอร์ (จาก "+rows.length+" รอบ) — ครัว/แมสมองไม่เห็นรอบพวกนี้ · หาป้ายแดง \"⚠ ไม่มีใบ · กดเปิด\" ในช่องของรอบนั้น แล้วกดเพื่อเปิดใบ";
+  }else{
+    bar.style.background="#ECFDF5"; bar.style.color="#047857"; bar.style.border="1px solid #A7F3D0";
+    bar.textContent="✅ ทุกรอบมีใบออเดอร์ครบ ("+rows.length+" รอบ) — ครัวกับแมสเห็นครบทุกคน";
+  }
 }
 
 // จัดกลุ่มเป็น subscription (order_id) → เรียง round_no ในแต่ละกลุ่ม

@@ -86,6 +86,7 @@ body.tablet .nick{font-size:15px;padding:2px 9px;}
   <div class="row">
     <button class="vb on" id="v_prod" onclick="setView('prod')">🍳 <span data-i="v_prod">ใบผลิต</span></button>
     <button class="vb"    id="v_pack" onclick="setView('pack')">📦 <span data-i="v_pack">ใบจัดของ</span></button>
+    <button class="vb on" id="w_btn"  onclick="setWho(!SHOWWHO)" style="margin-left:auto">👤 <span data-i="whoBtn">โชว์ผู้รับ</span></button>
   </div>
   <div class="dbar">
     <button onclick="shiftDay(-1)">◀</button>
@@ -146,10 +147,12 @@ const UI = {
   nomenu:{th:'ยังไม่ได้จ่ายเมนู', shn:'ပႆႇပၼ်မဵၼ်ႇ', my:'မီနူးမသတ်မှတ်ရသေး'},
   round:{th:'รอบ', shn:'ပွၵ်ႈ', my:'အကြိမ်'},
   whoGets:{th:'👤 ใครได้บ้าง:', shn:'👤 ၽႂ်လႆႈ:', my:'👤 ဘယ်သူရမလဲ:'},
+  whoBtn:{th:'โชว์ผู้รับ', shn:'ၼႄၽူႈလႆႈ', my:'လက်ခံသူပြ'},
   req:{th:'ลูกค้าขอเอง', shn:'ၽူႈသိုဝ်ႉတၢင်ႇ', my:'ဖောက်သည်တောင်းဆို'}
 };
 let LANG = localStorage.getItem('kq_sheet_lang') || 'th';
 let VIEW = localStorage.getItem('kq_sheet_view') || 'prod';
+let SHOWWHO = localStorage.getItem('kq_sheet_who') !== '0';   // โชว์รายชื่อผู้รับใต้เมนู (ค่าเริ่มต้น = โชว์)
 let TERMS = {};          // { 'อกไก่': {shn:'…', my:'…'} } — ฟ้าเติมได้ที่ kitchen_data.kitchen_terms
 let DATA = null;
 
@@ -176,6 +179,14 @@ function setView(v){
   VIEW=v; localStorage.setItem('kq_sheet_view',v);
   document.getElementById('v_prod').classList.toggle('on',v==='prod');
   document.getElementById('v_pack').classList.toggle('on',v==='pack');
+  render();
+}
+/* 👤 โชว์/ซ่อนรายชื่อผู้รับใต้แต่ละเมนู — บางทีอยากดูแค่ยอดผลิตล้วนๆ ไม่อยากให้ชื่อรก
+   (นัทขอ 17 ส.ค.) · จำค่าไว้ในเครื่อง เปิดครั้งหน้าได้ค่าเดิม · ค่าเริ่มต้น = โชว์ */
+function setWho(v){
+  SHOWWHO=!!v; localStorage.setItem('kq_sheet_who', SHOWWHO?'1':'0');
+  const b=document.getElementById('w_btn');
+  if(b){ b.classList.toggle('on',SHOWWHO); b.title=SHOWWHO?'กดเพื่อซ่อนรายชื่อผู้รับ':'กดเพื่อโชว์รายชื่อผู้รับ'; }
   render();
 }
 function pickDate(v){ if(!v)return; DATE=v; load(); }
@@ -371,7 +382,7 @@ function renderProd(rows){
     });
     // 👤 ใครได้เมนูนี้บ้าง — คนที่มีข้อจำกัดขึ้นป้ายเหลือง จะได้สะดุดตาตอนทำ
     const names=Object.keys(m.who);
-    if(names.length){
+    if(names.length && SHOWWHO){   // ปิดได้ด้วยปุ่ม 👤 ถ้าอยากดูยอดผลิตล้วนๆ
       h+='<div class="who">'+t('whoGets')+' ';
       names.forEach(nm=>{
         const w=m.who[nm], hasR=w.restr.length>0;
@@ -437,7 +448,7 @@ function restoreTicks(){
   set.forEach(id=>{ const el=document.getElementById('c_'+id); if(el) el.classList.add('done'); });
 }
 
-setLang(LANG); setView(VIEW); load();
+setLang(LANG); setView(VIEW); setWho(SHOWWHO); load();
 </script>
 </body>
 </html>
