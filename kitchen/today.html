@@ -46,6 +46,9 @@ h1{font-size:18px;font-weight:900;margin:10px 0 1px}
 .ln .tag{flex:none;font-size:11px;font-weight:900;border-radius:7px;padding:4px 6px;min-width:32px;text-align:center}
 .ln.lc .tag{background:var(--lcbg);color:var(--lc)}.ln.hp .tag{background:var(--hpbg);color:var(--hp)}.ln.hx .tag{background:var(--hxbg);color:var(--hx)}
 .ln .d{flex:1;font-size:13px}.ln .q{flex:none;font-weight:900;font-size:16px;min-width:26px;text-align:right}
+/* ชื่อเล่นเมนู — ครัวเรียกด้วยคำนี้ ต้องเด่นพอให้กวาดตาเจอ */
+.nick{display:inline-block;background:#FEF3C7;color:#92400E;border:1px solid #FCD34D;border-radius:6px;padding:1px 7px;font-size:12px;font-weight:900;margin-right:2px;}
+body.tablet .nick{font-size:15px;padding:2px 9px;}
 .sp{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;line-height:1.3}
 /* ใครได้เมนูนี้บ้าง — ครัวต้องรู้ว่ากล่องนี้ของใคร ไม่ใช่รู้แค่ว่าทำกี่กล่อง (นัทสั่ง 17 ส.ค.) */
 .who{padding:5px 10px 7px;font-size:11.5px;color:#4B5563;line-height:1.7;border-top:1px dashed #EEF0F3}
@@ -251,6 +254,18 @@ function nameOf(code, fallback){
   const r=(DATA.recipes||[]).find(x=>String(x.code||'').toUpperCase()===String(code||'').toUpperCase());
   return (r&&r.name) || fallback || code || '';
 }
+/* 🏷️ ชื่อเล่นเมนู (S1-S8 · D1-D5) — **ครัวเรียกเมนูด้วยชื่อเล่น ไม่ใช่โค้ดจริง**
+   เมนูพิเศษหมุนทุกสัปดาห์ · ค้างข้ามสัปดาห์เติม x (xs3 = ค้างมา 1 สัปดาห์)
+   ⚠️ ใบงานสดตัวนี้เดิม **ไม่โชว์ชื่อเล่นเลยสักที่** ทั้งที่เป็นคำที่ครัวใช้เรียกกันจริง
+      เจอตอนนัทสั่งให้ไล่ตรวจช่องชื่อเล่นทั้งระบบ 17 ส.ค. 2569 */
+function nickOf(code){
+  const r=(DATA.recipes||[]).find(x=>String(x.code||'').toUpperCase()===String(code||'').toUpperCase());
+  return (r&&r.subcode&&String(r.subcode).trim()) || '';
+}
+function nickTag(code){
+  const n=nickOf(code);
+  return n ? '<span class="nick">'+esc(n)+'</span> ' : '';
+}
 function prefOf(r){
   const p=(DATA.prefs||[]).find(x=>x.customer_id===r.customer_id);
   return p || null;
@@ -323,7 +338,7 @@ function renderProd(rows){
     boxes.forEach(i=>{
       const no=baseNo(i.menu_code)||i.menu_code;
       const fam=famOf(i.menu_code, r.mp_type);
-      if(!agg[no]) agg[no]={ no, name:nameOf(i.menu_code,i.menu_name), lc:0, hp:0, hx:0, notes:[], who:{} };
+      if(!agg[no]) agg[no]={ no, code:i.menu_code, name:nameOf(i.menu_code,i.menu_name), lc:0, hp:0, hx:0, notes:[], who:{} };
       const q=(i.quantity||1);
       agg[no][fam] += q;
       const nm=whoOf(r);
@@ -347,7 +362,7 @@ function renderProd(rows){
   let h='<div class="sec">'+t('secProd')+'</div>';
   list.forEach(m=>{
     const tot=m.lc+m.hp+m.hx;
-    h+='<div class="m"><div class="mh"><div><div class="t1">'+esc(m.no)+'. '+esc(tr(m.name))+'</div></div>'
+    h+='<div class="m"><div class="mh"><div><div class="t1">'+nickTag(m.code)+esc(m.no)+'. '+esc(tr(m.name))+'</div></div>'
       +'<span class="tot">'+tot+'</span></div>';
     [['lc',m.lc],['hp',m.hp],['hx',m.hx]].forEach(([fam,q])=>{
       if(!q) return;
@@ -401,7 +416,7 @@ function renderPack(rows){
     if(warn.length) h+='<div class="sp">⚠️ '+esc(warn.join(' · '))+'</div>';
     if(reqs.length) h+='<div class="sp" style="background:#FFF7ED;color:#9A3412">🙋 '+t('req')+': '+esc(reqs.join(' · '))+'</div>';
     h+='<div class="ci">';
-    if(boxes.length) boxes.forEach(i=>{ h+='<div class="mi">• '+esc(baseNo(i.menu_code))+' '+esc(tr(nameOf(i.menu_code,i.menu_name)))+'</div>'; });
+    if(boxes.length) boxes.forEach(i=>{ h+='<div class="mi">• '+nickTag(i.menu_code)+esc(baseNo(i.menu_code))+' '+esc(tr(nameOf(i.menu_code,i.menu_name)))+'</div>'; });
     else h+='<div class="mi" style="color:#B91C1C;font-weight:800">'+t('nomenu')+'</div>';
     h+='</div></div>';
   });

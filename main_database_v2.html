@@ -4141,8 +4141,7 @@ function renderPttCard(r){
     <span class="ptt-drag">⠿</span>
     <div class="ptt-online-dot ${isOnline?'on':'off'}" title="${isOnline?'ออนไลน์':'ออฟไลน์'}"></div>
     <span class="ptt-code">${escapeHtml(r.code||'-')}</span>
-    <input type="text" class="ptt-sub subcode-input" data-id="${r.id}" value="${escapeHtml(subcode)}"
-      placeholder="subcode" maxlength="12" style="width:64px">
+    ${''  /* ⛔ ปิดช่องนี้ด้วย — ตัวเดียวกับ pinSubCode ที่ไม่มีใครอ่านต่อ (ดูเหตุผลเต็มที่แถวเมนูปกติ) */}
     <span class="ptt-name" onclick="if(tapWasScroll())return; state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
       ${escapeHtml(r.name||'(ยังไม่มีชื่อ)')}
     </span>
@@ -4223,10 +4222,12 @@ function renderRecipeCard(r, tot, pinInfo){
       <div class="row-toggles">${toggles}</div>
       <div class="code-col">
         <span class="code-badge">${escapeHtml(r.code||'-')}</span>
-        ${isPinned
-          ? `<input type="text" class="subcode-input" data-id="${r.id}" value="${escapeHtml(r.pinSubCode||'')}" placeholder="sub code..." maxlength="12" title="Sub code">`
-          : ''  /* subcode เฉพาะรายการที่ pin เท่านั้น */
-        }
+        ${''  /* ⛔ ปิดช่อง "sub code" ของรายการปักหมุด (นัทสั่งตรวจ 17 ส.ค. 2569)
+           ตรวจทั้ง repo แล้ว: pinSubCode ไม่เคยออกไปนอกหน้านี้เลย ไม่ได้เขียนลง menu_items
+           ครัว · ลูกค้า · LIFF · ใบงาน · หน้าออเดอร์ ไม่มีใครอ่านค่านี้สักที่
+           ข้อมูลที่มีอยู่ 75 แถวเป็น "โค้ดซ้ำตัวเอง" (3E:3E · 2J:2J) = กรอกไปแล้วไม่มีความหมาย
+           ที่แย่กว่าคือหน้าตาเหมือนช่อง "ชื่อเล่น" ตัวจริง → คนกรอกผิดช่องได้ง่าย
+           🔒 ไม่ลบข้อมูลทิ้ง แค่ไม่โชว์ · ตัวจริงคือช่อง "ชื่อเล่น" ท้ายแถว (subcode) */}
       </div>
       <div class="name-wrap">
         <div class="name-line">
