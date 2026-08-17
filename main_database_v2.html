@@ -127,7 +127,26 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 .panel-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
 .empty{text-align:center;padding:40px 20px;color:var(--ink-soft);font-size:14px;}
 .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:var(--forest);color:#fff;padding:10px 18px;border-radius:30px;font-size:13.5px;z-index:50;box-shadow:0 4px 16px rgba(0,0,0,.2);}
-.fab{position:fixed;bottom:22px;right:22px;background:var(--turmeric);color:#fff;border:none;border-radius:30px;padding:14px 20px;font-size:14.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:25;}
+.fab{position:fixed;bottom:22px;right:22px;background:var(--turmeric);color:#fff;border:none;border-radius:30px;padding:14px 20px;font-size:14.5px;font-weight:600;cursor:pointer;box-shadow:0 6px 18px rgba(0,0,0,.18);z-index:25;max-width:calc(100vw - 44px);white-space:nowrap;}
+/* 📱 ปุ่มลอย "+ เมนูใหม่" หลุดขอบจอบนมือถือ (นัทเจอเอง 17 ส.ค.)
+   จอแคบ + padding 20px สองข้าง → ปุ่มดันออกนอกจอ · ย่อลงและขยับเข้ามาให้พอดี */
+@media (max-width:520px){
+  .fab{bottom:14px;right:12px;padding:11px 16px;font-size:13.5px;}
+}
+
+/* ═══ 📃 โหมดอ่านง่าย (นัทสั่ง 17 ส.ค. — "ให้เหมือนหน้าแมสเซนเจอร์ ไม่เป็นการ์ด เป็นบรรทัดไป")
+   ของเดิมมี Compact Mode (⚡) อยู่แล้ว **แต่มันมีผลแค่ในหน้าแก้สูตร ไม่ได้แตะรายการเลย**
+   → กดแล้วเหมือนไม่มีอะไรเกิดขึ้น นัทเลยคิดว่าปุ่มเสีย · เอามาปัดฝุ่นให้ทำงานกับรายการจริง
+   หลักการ: เลิกเป็นการ์ดลอยมีกรอบ → เป็นบรรทัดต่อกัน คั่นด้วยเส้นบางๆ แบบหน้าแมส
+   ⚠️ ซ่อนแค่ "ระยะห่าง/กรอบ" ไม่ได้ซ่อนปุ่มไหนเลย — กดได้ครบเหมือนเดิมทุกปุ่ม */
+body.list-mode .card{border:none;border-bottom:1px solid var(--line);border-radius:0;margin-bottom:0;background:transparent;}
+body.list-mode .card.is-open{background:var(--surface);border-bottom-color:var(--forest);}
+body.list-mode .row{padding:5px 10px;gap:7px;}
+body.list-mode .card:not(.is-open) .quick-row,
+body.list-mode .card:not(.is-open) .chip-row{display:none !important;}
+body.list-mode .line-group h2{padding:6px 10px 2px;font-size:12.5px;}
+body.list-mode .row .name{font-size:12.5px;}
+body.list-mode .ptt-group .card{margin-bottom:0;}
 .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch;border-radius:var(--radius);}
 .ing-table{width:100%;min-width:780px;border-collapse:collapse;background:#fff;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;}
 .ing-table th{text-align:left;font-size:11.5px;color:var(--ink-soft);text-transform:uppercase;letter-spacing:.4px;padding:9px 10px;background:var(--surface-2);}
@@ -855,6 +874,7 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   mpDates:[], mpPickerCell:null, mpShowHistory:false, mpShowSlotEditor:false, mpLookbackDays:null, showStatBar:false, planDropdownOpen:false, collapsedCats:{}, mpSubView:'plan', mpProdDate:null,
   showOnlineOnly: false,  // toggle: แสดงเฉพาะเมนูออนไลน์
   compactMode: false,     // Compact Mode: แก้สูตรรวดเร็ว
+  listMode: false,        // 📃 โหมดอ่านง่าย: รายการเป็นบรรทัด ไม่ใช่การ์ด (แบบหน้าแมสเซนเจอร์)
   // ── v0.3.2 packages tab ──
   packages: [], pkgItems: {}, pkgLoaded: false, pkgLoading: false,
   openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: '',
@@ -3018,6 +3038,10 @@ async function init(){
   state.suppliers = supsData; state.planItems = planData;
   if(lastName) { state.currentUser = lastName; state.nameInputDraft = lastName; }
   state.pinModeEnabled    = !!(appSettings && appSettings.pinModeEnabled);
+  /* 📃 โหมดอ่านง่าย — จำไว้ในเครื่องนี้ (ไม่ใช่ค่ากลาง) เพราะแต่ละคนถือคนละจอ
+     นัทดูจากมือถือ · แอดมินอาจดูจากคอม — ไม่ควรบังคับกัน */
+  try{ state.listMode = localStorage.getItem('db_list_mode')==='1'; }catch(e){ state.listMode=false; }
+  try{ document.body.classList.toggle('list-mode', state.listMode); }catch(e){}
   state.hideNutritionCols = (appSettings && appSettings.hideNutritionCols!=null) ? !!appSettings.hideNutritionCols : true;
   state.mpSlots    = (appSettings && appSettings.mpSlots && appSettings.mpSlots.length) ? appSettings.mpSlots : ['ชุดที่ 1'];
   state.mpViewDays = (appSettings && appSettings.mpViewDays) || 7;
@@ -3873,14 +3897,21 @@ function renderRecipesTab(){
            = เปิดหน้าค้างไว้แล้วกด ก็ย้อนระบบกลับไปตอนที่เปิดหน้าได้เหมือนกัน
            เปิด/ปิดขายทีละเมนูใช้ปุ่มออนไลน์ที่แถวเมนู (มีผลทันที) · ทั้งชุดใช้ปุ่มในมุมมองเมนูรายสัปดาห์
            ฟังก์ชัน exportOnlineMenus ยังอยู่แต่ไม่มีใครเรียกแล้ว -->
-      <!-- 🧹 ย้ายไอคอน 5 อันมาต่อท้ายแถวเดียวกัน (นัทสั่ง 17 ส.ค. — หัวจอกินที่ครึ่งจอ)
-           เดิมอยู่ในแถวของตัวเอง = อีก 1 ชั้นก่อนถึงรายการเมนู · ปุ่มเหมือนเดิมทุกตัว แค่ย้ายที่ -->
-      <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมด PTT (Pin to Top)':'เปิดโหมด PTT — ปักหมุดเมนูไว้บนสุด'}">📌</button>
-      <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
-      <button class="icon-btn" id="manageCatBtn" data-tip="จัดการหมวดอาหาร — เพิ่ม/ลบ/เปลี่ยนชื่อหมวด">🏷️</button>
-      <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
-      <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
     </div>
+  </div>`;
+  /* 🧹 ไอคอนกลับมาอยู่บรรทัดของตัวเอง (นัทสั่ง 17 ส.ค. — "ควรจะอยู่คนละบรรทัด")
+     รอบก่อนผมยัดรวมแถวเดียวเพื่อประหยัดที่ แต่พอมีปุ่มยาวๆ 2 ปุ่มอยู่แล้ว มันเบียดกันจนอ่านยาก
+     ⛔ ปุ่ม 📌 (โหมด PTT) ถอดออกแล้ว — นัทบอกไม่ค่อยได้ใช้และเกะกะ
+        ✅ ตรวจให้ก่อนถอดตามที่สั่ง: **การปักหมุดไม่หายแน่นอน**
+           `pinned` เก็บรายเมนูใน recipes (ตอนนี้ 93 เมนู) · `pinModeEnabled` เก็บแยกใน appSettings
+           ปุ่มนี้แตะแค่ค่าที่ 2 ตัวเดียว ไม่เคยไปยุ่งกับ `pinned` เลย (ไล่โค้ดครบทุกจุดที่เขียน .pinned แล้ว)
+        ยังดูรายการที่ปักหมุดได้จากชิป "📌 PTT" ในแถบหมวดเหมือนเดิม */
+  html += `<div class="toolbar">
+    <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
+    <button class="icon-btn" id="manageCatBtn" data-tip="จัดการหมวดอาหาร — เพิ่ม/ลบ/เปลี่ยนชื่อหมวด">🏷️</button>
+    <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
+    <button class="icon-btn${state.listMode?' active':''}" id="toggleListModeBtn" data-tip="${state.listMode?'กลับเป็นแบบการ์ด':'โหมดอ่านง่าย — เรียงเป็นบรรทัด แบบหน้าแมสเซนเจอร์'}">📃</button>
+    <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
   </div>`;
   /* ตัวฟ้องว่าหน้านี้ไม่ตรงกับที่ลูกค้าเห็น
      ⚠️ ตอน "ตรงกันแล้ว" ไม่ต้องขึ้นอะไรเลย — ของปกติไม่ใช่ข่าวที่ต้องรายงานทุกวัน กินที่เปล่าๆ */
@@ -3900,12 +3931,20 @@ function renderRecipesTab(){
        ⚠️ เป็นแค่ "ตัวกรองมุมมอง" — ไม่ย้ายหมวดใคร กดทั้งหมดแล้วกลับเหมือนเดิมทุกอย่าง */
     const wkCnt = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active').length;
     if(wkCnt) html += `<button class="cat-tab-db${state.activeCatTab==='__week__'?' on':''}" onclick="setCatTab('__week__')">🏷️ เมนูรายสัปดาห์ <span class="cnt">${wkCnt}</span></button>`;
-    allCats.forEach(cat=>{
+    /* 🔚 ดัน Low Carb / High Protein ไปท้ายแถบ (นัทสั่ง 17 ส.ค.)
+       "เราแทบไม่ได้ดูแลยุ่งอะไรกับมันกันเลย เดี๋ยวค่อยมาปัดฝุ่นอีกที"
+       → 2 หมวดนี้เป็นเมนู Meal Plan ที่แอดมินไม่ได้แตะรายวัน แต่ไปนั่งขวางหน้าสุดอยู่
+       ไม่ได้ซ่อน แค่ย้ายไปท้าย — กดใช้ได้เหมือนเดิม */
+    const MP_CATS_LAST = ['meal_lc','meal_hp'];
+    const isMpCat = c => MP_CATS_LAST.indexOf(c)>=0 || /^meal_(lc|hp)$/i.test(String(c));
+    const catChip = cat => {
       const label = getCategory(cat)?.label || cat;
       const cnt = state.recipes.filter(r=>(r.categories||[]).includes(cat)&&(r.status==='active'||state.showRetired)).length;
-      if(!cnt) return;
-      html += `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
-    });
+      if(!cnt) return '';
+      return `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
+    };
+    allCats.filter(c=>!isMpCat(c)).forEach(cat=>{ html += catChip(cat); });
+    allCats.filter(isMpCat).forEach(cat=>{ html += catChip(cat); });
     html += '</div>';
   }
   /* 🏷️ ปุ่มเปิด/ปิดทั้งชุด — โผล่เฉพาะตอนอยู่ในมุมมองเมนูรายสัปดาห์
@@ -4742,6 +4781,14 @@ function attachHandlers(){
     const toggleStatBarBtn = document.getElementById('toggleStatBarBtn');
     if(toggleStatBarBtn) toggleStatBarBtn.onclick = ()=>{ state.showStatBar = !state.showStatBar; render(); };
     const toggleCompactModeBtn = document.getElementById('toggleCompactModeBtn');
+    const toggleListModeBtn = document.getElementById('toggleListModeBtn');
+    if(toggleListModeBtn) toggleListModeBtn.onclick = ()=>{
+      state.listMode = !state.listMode;
+      try{ localStorage.setItem('db_list_mode', state.listMode?'1':'0'); }catch(e){}
+      document.body.classList.toggle('list-mode', state.listMode);
+      render(true);
+      showToast(state.listMode?'📃 โหมดอ่านง่าย — เรียงเป็นบรรทัด':'กลับเป็นแบบการ์ด');
+    };
     if(toggleCompactModeBtn) toggleCompactModeBtn.onclick = ()=>{ state.compactMode = !state.compactMode; render(true); showToast(state.compactMode?'⚡ Compact Mode เปิดแล้ว':'Compact Mode ปิดแล้ว'); };
     const sortModeSelect = document.getElementById('sortModeSelect');
     if(sortModeSelect) sortModeSelect.onchange = e=>{ state.sortMode = e.target.value; render(); };
