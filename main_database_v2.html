@@ -562,6 +562,13 @@ select.sort-sel:focus{outline:none;border-color:var(--forest);}
 /* ── PTT card compact: ซ่อน quick-row + chip-row เมื่อยังไม่ expand (2 บรรทัด) ── */
 .ptt-group .card:not(.is-open) .quick-row { display:none !important; }
 .ptt-group .card:not(.is-open) .chip-row  { display:none !important; }
+/* ── มุมมอง "เมนูรายสัปดาห์" ใช้หน้าตาเดียวกับการ์ดปักหมุด
+      นัทเจอเอง 17 ส.ค.: "หน้าตามันไม่เหมือนกับแทปอื่นๆ"
+      ต้นเหตุ: การ์ดที่ปักหมุดซ่อนแถวรองอยู่แล้ว แต่การ์ดปกติโชว์ (คะแนน · โน้ตสั้นๆ · เตือนวัตถุดิบ)
+      แท็บนี้มีไว้กดเปิด/ปิดขาย ไม่ได้มีไว้แก้สูตร → ซ่อนแถวรองให้เหมือนกัน
+      ⚠️ กดกางการ์ด (is-open) ยังเห็นครบเหมือนเดิม ไม่ได้ตัดความสามารถอะไรทิ้ง */
+body.wk-view .card:not(.is-open) .quick-row { display:none !important; }
+body.wk-view .card:not(.is-open) .chip-row  { display:none !important; }
 /* ชื่อเมนูใน PTT: cursor pointer ชัดเจน + ไม่ตัดข้อความ */
 .ptt-group .card:not(.is-open) .name-line .name { cursor:pointer; white-space:normal; }
 /* PTT card กดที่ชื่อเพื่อ expand */
@@ -4107,6 +4114,9 @@ function renderRecipesTab(){
 function setCatTab(cat) {
   if(cat !== state.activeCatTab) state.openId = null;  // สลับแท็บจริง → ปิด panel ที่เปิดค้างไว้ (กันตามไปทุกหน้า)
   state.activeCatTab = cat;
+  /* มุมมองเมนูรายสัปดาห์ = หน้าสำหรับ "เปิด/ปิดขาย" ไม่ใช่หน้าแก้สูตร
+     → ทำให้แถวหน้าตาเหมือนแถวที่ปักหมุด (2 บรรทัด) ไม่งั้นดูไม่เหมือนแท็บอื่น (นัทเจอเอง 17 ส.ค.) */
+  try{ document.body.classList.toggle('wk-view', cat==='__week__'); }catch(e){}
   render();
 }
 
@@ -4129,9 +4139,14 @@ function renderAvailCell(r){
   if(state.availEditId === r.id)
     return `<input type="date" class="avail-input" data-id="${r.id}" value="${r.availableFrom||''}" autofocus>`;
   const t = 'ส่งได้ตั้งแต่วันไหน — ว่าง = ส่งได้เลย · ถ้าใส่วันไว้ ลูกค้าเห็นเมนูล่วงหน้าได้ แต่เลือกวันส่งก่อนวันนั้นไม่ได้';
+  /* ⛔ ซ่อนชิปปฏิทินของแถวที่ยังไม่ได้ตั้งวัน (นัทถามเอง 17 ส.ค.: "ดูเหมือนจะไม่ค่อยได้ใช้")
+     ตรวจแล้ว: available_from = **0 แถว** ทั้งใน menu_items และในสูตรของหน้านี้ — ไม่เคยมีใครตั้งเลยสักเมนู
+     มันคือฟีเจอร์ pre-order เก่า ("เมนูอาทิตย์หน้า") ที่เลิกใช้ไปแล้ว แต่ยังกินที่ทุกแถว
+     🔒 ไม่ถอดทิ้ง: แถวไหนมีวันอยู่จริงยังโชว์และกดแก้ได้เหมือนเดิม
+        อยากได้กลับมาทุกแถว = เอาเงื่อนไขบรรทัดล่างออกบรรทัดเดียว */
   return r.availableFrom
     ? `<button class="avail-chip has-date" data-avail-id="${r.id}" title="${t}">📅 ${availShort(r.availableFrom)}</button>`
-    : `<button class="avail-chip" data-avail-id="${r.id}" title="${t}">📅</button>`;
+    : '';
 }
 function renderPttCard(r){
   const isOpen = state.openId === r.id;
