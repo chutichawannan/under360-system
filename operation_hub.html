@@ -3495,6 +3495,77 @@ async function planMoveRound(rowId, ev){
       +(om?("\nใบ "+om.num+" ขยับตามแล้ว"):"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
   }catch(e){ alert("เลื่อนวันไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
+/* ── 🎫 เปิดใบออเดอร์ให้รอบที่ยังไม่มีใบ (ฟ้าจัดเป็นงานอันดับ 1 · 17 ส.ค. 2569) ──
+   ปัญหา: ลูกค้าซื้อคอร์สจ่ายเงินครบแล้ว มีคิวรอบส่งในระบบ **แต่ไม่มีใบ `orders`**
+     → หน้าออเดอร์ / หน้าแมส / หน้าครัว มองไม่เห็นรอบนั้นเลย
+     หลุดมาแล้ว 6 คนใน 7 วัน (กวาง · Yupa · Palita · มิ้ม · ชลธิชา · น้ำฝน)
+   ทำไมไม่เปิดใบให้อัตโนมัติเงียบๆ: ใบออเดอร์เป็นของที่กระทบยอดขาย/แมส/ครัว
+     **ให้คนกดยืนยัน 1 ครั้งดีกว่าให้ระบบสร้างเองแล้วไม่มีใครรู้ว่ามาจากไหน**
+   ใบที่สร้าง = ยอด ฿0 เพราะเงินอยู่ที่ใบรอบแรกแล้ว (โมเดลเดียวกับที่ LIFF ทำให้รอบ 2..N) */
+async function planCreateTicket(rowId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_)return;
+  var r=getMpRow(rowId); if(!r) return alert("ไม่พบรอบนี้");
+  var who=odWho(); if(!who) return;
+  if(!window.confirm("เปิดใบออเดอร์ให้รอบนี้?\n\n"+(r.customer_name||"ลูกค้า")
+    +"\nรอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" · ส่ง "+(r.delivery_date||"—")+" · "+(r.box_count||7)+" กล่อง"
+    +"\n\nใบนี้จะเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบ ครัวกับแมสถึงจะเห็นรอบนี้"
+    +"\n\nคนกด: "+who)) return;
+  try{
+    // หาใบของรอบก่อนหน้าไว้ก๊อปที่อยู่/เบอร์/ช่วงเวลา — ไม่ต้องให้แอดมินพิมพ์ใหม่
+    var src=null;
+    try{
+      var q=await sb_.from("orders").select("*")
+        .or((r.line_uid?("line_uid.eq."+r.line_uid+","):"")+"customer_id.eq."+(r.customer_id||"00000000-0000-0000-0000-000000000000"))
+        .neq("status","cancelled").order("delivery_date",{ascending:false}).limit(5);
+      src=(q.data||[])[0]||null;
+    }catch(e){}
+    var mmdd=String(r.delivery_date).slice(5,7)+String(r.delivery_date).slice(8,10);
+    var next=1;
+    try{
+      var last=await sb_.from("orders").select("order_number").like("order_number","U-"+mmdd+"-%")
+        .order("order_number",{ascending:false}).limit(1);
+      var ln=last.data&&last.data[0]&&last.data[0].order_number;
+      if(ln) next=(parseInt(String(ln).slice(-3),10)||0)+1;
+    }catch(e){}
+    var num="U-"+mmdd+"-"+String(next).padStart(3,"0");
+    var payload={
+      order_number:num, customer_id:r.customer_id||null, line_uid:r.line_uid||null,
+      customer_name:r.customer_name||(src&&src.customer_name)||null,
+      line_display_name:r.line_display_name||(src&&src.line_display_name)||null,
+      customer_phone:(src&&src.customer_phone)||null,
+      delivery_address:r.delivery_address||(src&&src.delivery_address)||null,
+      delivery_address_text:(src&&src.delivery_address_text)||null,
+      delivery_lat:(src&&src.delivery_lat)||null, delivery_lng:(src&&src.delivery_lng)||null,
+      delivery_date:r.delivery_date, time_slot:r.time_slot||"afternoon",
+      time_slot_label:r.time_slot_label||"13:00 – 18:00",
+      subtotal:0, delivery_fee:0, discount_amount:0, total:0,
+      status:"confirmed", payment_status:"paid", payment_method:"transfer",
+      delivery_type:"messenger", delivery_week:"current", source:"admin_auto",
+      notes:"รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" ของคอร์ส · จ่ายรวมกับใบแรกแล้ว · เปิดใบโดย "+who
+    };
+    var ord=await sb_.from("orders").insert(payload).select().single();
+    if(ord.error) throw ord.error;
+    // บรรทัดหัวข้อแพลน — ให้หน้าครัว/รายงานจำแนกออกว่าเป็น Meal Plan รอบไหน
+    var code="MP-"+String(r.mp_type||"MP").toUpperCase()+"-R"+(r.round_no||1);
+    await sb_.from("order_items").insert([{
+      order_id:ord.data.id, menu_code:code,
+      menu_name:"Meal Plan "+String(r.mp_type||"").toUpperCase()+" · รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" ("+(r.box_count||7)+" กล่อง)",
+      quantity:1, unit_price:0, subtotal:0,
+      notes:"meal_plan:"+String(r.mp_type||"mp")+":"+String(r.mp_set||"")+":round:"+(r.round_no||1)+"/"+(r.total_rounds||1)
+    }]);
+    // ผูกรอบเข้ากับใบใหม่ ไม่งั้นรอบถัดไปจะยังขึ้นว่าไม่มีใบ
+    await sb_.from("mp_deliveries").update({order_id:ord.data.id,updated_at:new Date().toISOString()}).eq("id",rowId);
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"kq_status",
+      summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เปิดใบออเดอร์ให้ "+num+" ("+r.delivery_date+")",
+      detail:{mp_id:rowId, order_id:ord.data.id, num:num, by:"oh_plan"} }); }catch(e){}
+    await loadMpPlanData();
+    alert("เปิดใบ "+num+" แล้ว\nครัวกับแมสจะเห็นรอบนี้แล้ว\n\n⚠️ ใบนี้ยอด ฿0 — ถ้าลูกค้ายังไม่ได้จ่ายรอบนี้ ต้องไปแก้ยอดที่หน้าออเดอร์");
+  }catch(e){ alert("เปิดใบไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+
 async function planCancelRound(rowId, ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var sb_=getSB(); if(!sb_)return;
@@ -3635,7 +3706,7 @@ function renderPlanCell(rowId){
   var om=mpOrderMap[rowId];
   var orderTag = (om===undefined) ? ""
     : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"
-         : "<span style='font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — หน้าครัวและหน้าแมสจะมองไม่เห็น'>⚠ ไม่มีใบ</span>";
+         : "<span onclick='planCreateTicket(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — ครัว/แมสมองไม่เห็น · กดเพื่อเปิดใบให้เลย'>⚠ ไม่มีใบ · กดเปิด</span>";
   /* N-66 · เลื่อนวัน/ยกเลิกรอบ ทำได้จากหน้านี้เลย (กิ๊ฟขอ)
      เดิมมีแต่ที่หน้าออเดอร์ → แอดมินกำลังจัดเมนูอยู่ ต้องออกไปอีกหน้าแล้วหากลับมาใหม่ */
   var planActs="<span style='float:right'>"
