@@ -3162,8 +3162,9 @@ async function showOnlineMismatch(){
   }
   if(!todo.length){
     if(!held.length){
-      onlineSyncNote="<div style='background:#EAF7EF;border:1px solid #BBE5CB;border-radius:10px;padding:9px 13px;font-size:12.5px;color:#166534'>✅ ลูกค้าเห็นตรงกับหน้านี้ทุกเมนู</div>";
-      if(box) box.innerHTML=onlineSyncNote;
+      /* ตรงกันแล้ว = ไม่ต้องขึ้นอะไร (นัทสั่ง 17 ส.ค.) — บรรทัดนี้เคยกินที่ทุกวันเพื่อบอกว่า "ปกติ" */
+      onlineSyncNote="";
+      if(box) box.innerHTML="";
     }
     return;   /* มีแต่ตัวที่กันไว้ → โชว์คำเตือนไปแล้ว อย่าเขียนทับด้วยข้อความ "อัปเดต 0 เมนู" */
   }
@@ -3505,6 +3506,29 @@ function downloadBlob(filename, content, mime){
 // (u0.4.28) ลบ exportMenuFiles ออกตามที่นัทสั่ง — เมนู DB ยังไม่นิ่ง ค่อยขอ export ใหม่ทีหลัง
 
 // sync เมนูตัวเดียวเข้า menu_items ทันทีตอนกดเปิด/ปิดออนไลน์ (is_available ตามสถานะ)
+/* เปิด/ปิดขายเมนูรายสัปดาห์ทั้งชุด — ใช้ทางเดียวกับปุ่ม 🛒 รายเมนูเป๊ะ (`syncOnlineMenu`)
+   ไม่ได้เขียน `menu_items` ตรงๆ เพื่อให้ชื่อ/ราคา/แคลอรี่อัปเดตตามหน้านี้เหมือนกดทีละตัว */
+async function bulkWeekOnline(want){
+  if(!requireUser()) return;
+  const wk = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active');
+  const todo = wk.filter(r=>!!r.available_online !== !!want);
+  if(!todo.length){ showToast(want?'เปิดขายอยู่แล้วทุกเมนู':'ปิดอยู่แล้วทุกเมนู'); return; }
+  const names = todo.map(r=>(r.subcode||r.code)).join(' · ');
+  if(!window.confirm((want?'เปิดขาย ':'ปิด ')+todo.length+' เมนู\n\n'+names
+    +'\n\n'+(want?'ลูกค้าจะเห็นเมนูเหล่านี้ทันที':'ลูกค้าจะไม่เห็นเมนูเหล่านี้ทันที')+'\n\nยืนยันไหม?')) return;
+  let ok=0, fail=[];
+  for(const r of todo){
+    r.available_online = !!want;
+    r.updated_by = state.currentUser;
+    r.updated_at = new Date().toISOString();
+    try{ await syncOnlineMenu(r); ok++; }catch(e){ fail.push(r.code); }
+  }
+  persistRecipes();
+  logActivity('stock', (want?'เปิดขาย':'ปิด')+'เมนูรายสัปดาห์ทั้งชุด '+ok+' เมนู — '+names);
+  render();
+  showToast((want?'เปิดขาย ':'ปิด ')+ok+' เมนูแล้ว'+(fail.length?(' · พลาด '+fail.length):''));
+}
+
 async function syncOnlineMenu(r){
   if(!r) return;
   if(!r.code){ showToast('⚠ เมนูนี้ยังไม่มีรหัส (code) — sync ออนไลน์ไม่ได้ ใส่ code ก่อน'); return; }
@@ -3822,21 +3846,23 @@ function renderRecipesTab(){
       ${(state.liveMenuCount!=null&&state.liveMenuCount!==onlineCnt)?('<span style="font-size:11px;color:#9AA894;margin-left:2px" title="ลูกค้าเห็นจริงจากตาราง menu_items · เลขสูตรคือรายการในหน้านี้">· มีสูตรในหน้านี้ '+onlineCnt+'</span>'):''}
       ${state.showOnlineOnly?'<span style="font-size:11px;background:rgba(255,255,255,.25);border-radius:8px;padding:1px 6px;margin-left:2px;">เฉพาะออนไลน์ ✕</span>':''}
     </button>
-    <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-      <button class="btn btn-sm" id="pasteStockBtn" title="ก๊อปข้อความที่ครัวพิมพ์ในกลุ่มไลน์มาวางทั้งก้อน กดปุ่มเดียว — ระบบจับคู่เมนูให้เอง" style="background:#EAF7EF;color:#166534;border:1px solid #86C79E;font-size:12px;padding:5px 12px;">📋 วางยอดจากครัว</button>
-      <button class="btn btn-sm" id="weekRollBtn" title="เมนูที่ยังออนไลน์อยู่และมีชื่อเล่น จะถูกเติม x ข้างหน้าทั้งหมด (x 1 ตัว = ค้างมา 1 สัปดาห์) — แล้วค่อยตั้งชื่อเล่นใหม่ให้เมนูของสัปดาห์นี้" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:5px 12px;">🔄 ขึ้นสัปดาห์ใหม่</button>
-      <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:5px 12px;">☁ Sync → LIFF</button>
+    <div style="margin-left:auto;display:flex;gap:5px;align-items:center;flex-wrap:wrap;justify-content:flex-end;">
+      <button class="btn btn-sm" id="pasteStockBtn" title="ก๊อปข้อความที่ครัวพิมพ์ในกลุ่มไลน์มาวางทั้งก้อน กดปุ่มเดียว — ระบบจับคู่เมนูให้เอง" style="background:#EAF7EF;color:#166534;border:1px solid #86C79E;font-size:12px;padding:4px 10px;">📋 วางยอดจากครัว</button>
+      <button class="btn btn-sm" id="weekRollBtn" title="เมนูที่ยังออนไลน์อยู่และมีชื่อเล่น จะถูกเติม x ข้างหน้าทั้งหมด (x 1 ตัว = ค้างมา 1 สัปดาห์) — แล้วค่อยตั้งชื่อเล่นใหม่ให้เมนูของสัปดาห์นี้" style="background:#FEF3C7;color:#92400E;border:1px solid #F59E0B;font-size:12px;padding:4px 10px;">🔄 ขึ้นสัปดาห์ใหม่</button>
+      <button class="btn btn-export btn-sm" id="exportOnlineBtn" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:4px 10px;">☁ Sync → LIFF</button>
+      <span style="width:1px;height:20px;background:var(--ink-xsoft);margin:0 3px"></span>
+      <!-- 🧹 ย้ายไอคอน 5 อันมาต่อท้ายแถวเดียวกัน (นัทสั่ง 17 ส.ค. — หัวจอกินที่ครึ่งจอ)
+           เดิมอยู่ในแถวของตัวเอง = อีก 1 ชั้นก่อนถึงรายการเมนู · ปุ่มเหมือนเดิมทุกตัว แค่ย้ายที่ -->
+      <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมด PTT (Pin to Top)':'เปิดโหมด PTT — ปักหมุดเมนูไว้บนสุด'}">📌</button>
+      <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
+      <button class="icon-btn" id="manageCatBtn" data-tip="จัดการหมวดอาหาร — เพิ่ม/ลบ/เปลี่ยนชื่อหมวด">🏷️</button>
+      <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
+      <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
     </div>
   </div>`;
-  /* ตัวฟ้องว่าหน้านี้ไม่ตรงกับที่ลูกค้าเห็น — วางบนสุดของแท็บเมนู เห็นทันทีที่เปิดหน้า */
-  html += `<div id="onlineMismatch" style="margin:0 0 10px"></div>`;
-  html += `<div class="toolbar">
-    <button class="icon-btn${state.pinModeEnabled?' active':''}" id="togglePinModeBtn" data-tip="${state.pinModeEnabled?'ปิดโหมด PTT (Pin to Top)':'เปิดโหมด PTT — ปักหมุดเมนูไว้บนสุด'}">📌</button>
-    <button class="icon-btn${state.bulkMode?' active':''}" id="toggleBulkModeBtn" data-tip="${state.bulkMode?'ออกจากโหมดเลือกหลายรายการ':'เลือกหลายรายการ — เปิด/ปิดขาย, Pin, ฯลฯ'}">☑</button>
-    <button class="icon-btn" id="manageCatBtn" data-tip="จัดการหมวดอาหาร — เพิ่ม/ลบ/เปลี่ยนชื่อหมวด">🏷️</button>
-    <button class="icon-btn${state.showStatBar?' active':''}" id="toggleStatBarBtn" data-tip="${state.showStatBar?'ซ่อนสถิติ':'แสดงสถิติ — จำนวนเมนูและสถานะ'}">📊</button>
-    <button class="icon-btn${state.compactMode?' active':''}" id="toggleCompactModeBtn" data-tip="${state.compactMode?'ออกจาก Compact Mode':'Compact Mode — แก้สูตรรวดเร็ว ไม่มี warning'}">⚡</button>
-  </div>`;
+  /* ตัวฟ้องว่าหน้านี้ไม่ตรงกับที่ลูกค้าเห็น
+     ⚠️ ตอน "ตรงกันแล้ว" ไม่ต้องขึ้นอะไรเลย — ของปกติไม่ใช่ข่าวที่ต้องรายงานทุกวัน กินที่เปล่าๆ */
+  html += `<div id="onlineMismatch"></div>`;
   // ── Category Tabs ── (กดเพื่อแสดงแค่หมวดนั้น ลด render จาก 460 → ~80)
   // ใช้ r.categories (array — ตัวจริงที่ใช้ทั้งระบบ) ไม่ใช่ r.category (เดี่ยว — ของเก่าเหลือติดอยู่แค่ไม่กี่เมนู)
   // ย้ายมาไว้เหนือแถบค้นหา (เดิมอยู่ล่าง) ตามที่นัทขอ — หาหมวดสะดวกกว่า ไม่ต้องเลื่อนผ่านแถบค้นหาก่อน
@@ -3845,6 +3871,13 @@ function renderRecipesTab(){
     html += '<div class="cat-tab-strip">';
     html += `<button class="cat-tab-db${state.activeCatTab==='__all__'?' on':''}" onclick="setCatTab('__all__')">ทั้งหมด</button>`;
     html += `<button class="cat-tab-db${state.activeCatTab==='__ptt__'?' on':''}" onclick="setCatTab('__ptt__')">📌 PTT</button>`;
+    /* 🏷️ เมนูรายสัปดาห์ = เมนูที่ "มีชื่อเล่น" (นัทเคาะเอง 17 ส.ค.)
+       ทำไมใช้ชื่อเล่นเป็นตัวชี้: แอดมินตั้งชื่อเล่น (S1-S8 · D1-D5) ตอนขึ้นเมนูใหม่อยู่แล้ว
+         = ติดธงให้ตัวเองไปในตัว ไม่ต้องเพิ่มช่องใหม่ ไม่ต้องพึ่งว่าใครกดปุ่มขึ้นสัปดาห์ทัน
+       ✅ เช็คกับข้อมูลจริงแล้ว: เมนูมีชื่อเล่น 13 ตัว = เมนูสัปดาห์นี้ 13 ตัว ตรงกันเป๊ะ
+       ⚠️ เป็นแค่ "ตัวกรองมุมมอง" — ไม่ย้ายหมวดใคร กดทั้งหมดแล้วกลับเหมือนเดิมทุกอย่าง */
+    const wkCnt = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active').length;
+    if(wkCnt) html += `<button class="cat-tab-db${state.activeCatTab==='__week__'?' on':''}" onclick="setCatTab('__week__')">🏷️ เมนูรายสัปดาห์ <span class="cnt">${wkCnt}</span></button>`;
     allCats.forEach(cat=>{
       const label = getCategory(cat)?.label || cat;
       const cnt = state.recipes.filter(r=>(r.categories||[]).includes(cat)&&(r.status==='active'||state.showRetired)).length;
@@ -3852,6 +3885,21 @@ function renderRecipesTab(){
       html += `<button class="cat-tab-db${state.activeCatTab===cat?' on':''}" onclick="setCatTab('${escapeHtml(cat)}')">${escapeHtml(label)} <span class="cnt">${cnt}</span></button>`;
     });
     html += '</div>';
+  }
+  /* 🏷️ ปุ่มเปิด/ปิดทั้งชุด — โผล่เฉพาะตอนอยู่ในมุมมองเมนูรายสัปดาห์
+     แก้ pain จริง: ขึ้นสัปดาห์ใหม่ต้องไล่กด 🛒 ทีละเมนู 13 รอบ
+     ⚠️ ต่างจากปุ่มซิงค์เก่าที่ถอดทิ้งไป — อันนี้ **เห็นรายชื่อครบตรงหน้าก่อนกด**
+        และแตะเฉพาะเมนูในมุมมองนี้ ไม่ได้กวาดทั้งฐาน 958 เมนูจากค่าที่ค้างในจอ */
+  if(state.activeCatTab === '__week__'){
+    const wk = state.recipes.filter(r=>String(r.subcode||'').trim() && r.status==='active');
+    const onCnt = wk.filter(r=>r.available_online).length;
+    html += `<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#FFFBEB;border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin:0 0 8px">
+      <span style="font-size:12px;font-weight:700;color:#92400E">เมนูรายสัปดาห์ ${wk.length} รายการ · เปิดขายอยู่ ${onCnt}</span>
+      <div style="margin-left:auto;display:flex;gap:6px">
+        <button class="btn btn-sm" onclick="bulkWeekOnline(true)" style="background:var(--forest);color:#fff;border:none;font-size:12px;padding:4px 12px">🛒 เปิดขายทั้งหมด</button>
+        <button class="btn btn-sm" onclick="bulkWeekOnline(false)" style="background:#fff;color:#9A3412;border:1px solid #FDBA74;font-size:12px;padding:4px 12px">○ ปิดทั้งหมด</button>
+      </div>
+    </div>`;
   }
 
   html += `<div class="toolbar">
@@ -3878,6 +3926,8 @@ function renderRecipesTab(){
     // Category tab pre-filter (fastest) — ใช้ r.categories (array) ไม่ใช่ r.category (เดี่ยว)
     // panel ที่เปิดอยู่ไม่ต้องหายตอนแก้หมวดของตัวเอง (เฉพาะเช็คหมวดเท่านั้น — สลับแท็บจริงจะปิด panel ให้เองใน setCatTab)
     if(state.activeCatTab === '__ptt__'){ if(!r.pinned && r.id!==state.openId) return false; }
+    // 🏷️ เมนูรายสัปดาห์ = มีชื่อเล่น · เมนูยังอยู่หมวดเดิมทุกตัว แค่ซ่อนตัวอื่นชั่วคราว
+    else if(state.activeCatTab === '__week__'){ if(!String(r.subcode||'').trim() && r.id!==state.openId) return false; }
     else if(state.activeCatTab !== '__all__'){ if(!(r.categories||[]).includes(state.activeCatTab) && r.id!==state.openId) return false; }
     if(!state.showRetired && r.status!=='active') return false;
     if(state.showOnlineOnly && !r.available_online) return false;  // กรองเฉพาะออนไลน์
@@ -4003,7 +4053,9 @@ function renderRecipesTab(){
       return aOn - bOn;
     });
     const cat = key==='_none' ? {label:'ไม่ระบุหมวด', color:'#999'} : getCategory(key);
-    const _isColl = !q && state.collapsedCats[key] !== false;
+    /* ในมุมมองเมนูรายสัปดาห์ให้กางไว้เลย — ทั้งมุมมองมีแค่ ~13 เมนู
+       ถ้ายังพับอยู่ แอดมินต้องกดกาง 2 หมวดก่อนถึงจะเห็นของ = เสียจุดประสงค์ของตัวกรอง */
+    const _isColl = !q && state.activeCatTab !== '__week__' && state.collapsedCats[key] !== false;
     const safeKey = escapeHtml(key);
     const catContentId = 'cc-' + key.replace(/[^a-z0-9]/gi,'_');
     // ใส่ ID บน arrow + content div → toggle ด้วย CSS ไม่ต้อง re-render
