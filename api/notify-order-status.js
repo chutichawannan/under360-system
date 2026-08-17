@@ -38,7 +38,7 @@ const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZi
 const H   = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
 const NOTIFY_KEY = 'order_status_notified';
-const LIFF_URL   = 'https://liff.line.me/2010442513-NI3JGTkb';
+const LIFF_URL   = 'https://liff.line.me/2011148232-oul66cEs';
 const SHOP_TEL   = '0641736519';
 const LOOKBACK_H = 48;   // มองย้อนหลังกี่ชั่วโมง (กันใบตกหล่นตอนระบบล่ม)
 

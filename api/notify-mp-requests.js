@@ -1,7 +1,7 @@
 const getLineToken = require("./_line_token.js");
 const SUPABASE_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
-const LIFF_URL = "https://liff.line.me/2010442513-NI3JGTkb?screen=mp-manage";
+const LIFF_URL = "https://liff.line.me/2011148232-oul66cEs?screen=mp-manage";
 
 function fetchMpDeliveries(query) {
   return fetch(`${SUPABASE_URL}/rest/v1/mp_deliveries?${query}&select=*`, {
