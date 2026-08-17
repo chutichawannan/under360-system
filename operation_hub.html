@@ -5774,12 +5774,39 @@ async function obSubmit(){
         if(bad) stockMsg=' · ⚠️ ตัดสต็อกไม่สำเร็จ '+bad+'/'+mids.length+' เมนู';
       }
     }catch(e){ console.error('ตัดสต็อก (สั่งแทน) ไม่สำเร็จ:',e); stockMsg=' · ⚠️ ตัดสต็อกไม่สำเร็จ'; }
-    /* แถวแพลนเมนู — Meal Plan + เซ็ตที่ตั้ง pkg_plan_type ไว้ (Hyrox) ต้องโผล่หน้า "แพลนเมนู" เหมือนที่ลูกค้าสั่งผ่าน LIFF */
-    var planRows=obCart.filter(function(c){return c.planType;}).map(function(c){
-      return { order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
-        mp_type:c.planType, mp_set:c.setKey||c.size||('SET-'+String(c.pkgId||'').slice(0,6).toUpperCase()), round_no:1, total_rounds:1,
-        delivery_date:date, time_slot:slot, time_slot_label:slotLabels[slot]||'',
-        delivery_address:addr||null, box_count:(c.boxes||0)*c.qty, status:'scheduled' };
+    /* แถวแพลนเมนู — Meal Plan + เซ็ตที่ตั้ง pkg_plan_type ไว้ (Hyrox) ต้องโผล่หน้า "แพลนเมนู" เหมือนที่ลูกค้าสั่งผ่าน LIFF
+
+       🪤 บั๊กที่ห้องฟ้าจับได้ 17 ส.ค. (ใบ U-0817-012 คุณแชมป์):
+         เดิมสร้าง **แถวเดียว** แล้วยัดกล่องของทั้งคอร์สลงไป → weekly = `box_count 21 · รอบ 1/1`
+         ทั้งที่ weekly คือ 21 กล่องแบ่งส่ง 3 รอบ รอบละ 7 · monthly (84) จะยิ่งหนัก
+         นัทชี้เองว่า "คนปกติไม่มีใครกดเกิน 7 กล่องได้" = ตัวเลขนี้ไม่ได้มาจากคนกด แต่มาจากโค้ด
+         ฝั่งลูกค้าสั่งเอง (LIFF) แตกรอบถูกมาตลอด — ประตูที่รั่วคือ "สั่งแทนลูกค้า" หน้านี้ */
+    var planRows=[];
+    obCart.filter(function(c){return c.planType;}).forEach(function(c){
+      var totalBoxes=(c.boxes||0)*c.qty;
+      // จำนวนรอบ: ใช้ค่าที่แพคตั้งไว้ก่อน ถ้าไม่มีค่อยคิดจากกล่อง (7 กล่อง = 1 สัปดาห์ = 1 รอบ)
+      var rounds=Math.max(1, (c.rounds&&c.rounds>1) ? c.rounds : Math.round(totalBoxes/7));
+      var perRound=Math.max(1, Math.round(totalBoxes/rounds));
+      var mpSet=c.setKey||c.size||('SET-'+String(c.pkgId||'').slice(0,6).toUpperCase());
+      // วันของแต่ละรอบ: Meal Plan ส่งเฉพาะ จ/พ/ศ — ไล่หาวันถัดไปที่ตรง (Hyrox/เซ็ตรอบเดียวไม่กระทบ)
+      var d=new Date(date+'T00:00:00');
+      var isMWF=function(x){ return [1,3,5].indexOf(x.getDay())>=0; };
+      var ymd=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+      for(var i=1;i<=rounds;i++){
+        planRows.push({ order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
+          mp_type:c.planType, mp_set:mpSet, round_no:i, total_rounds:rounds,
+          delivery_date: (i===1 ? date : ymd(d)),
+          time_slot:slot, time_slot_label:slotLabels[slot]||'',
+          delivery_address:addr||null, box_count:perRound, status:'scheduled' });
+        // รอบถัดไป = วัน จ/พ/ศ ถัดไป (รอบแรกยึดวันที่แอดมินเลือกไว้ ไม่แตะ)
+        do { d.setDate(d.getDate()+1); } while(rounds>1 && !isMWF(d));
+      }
+      /* ตัวเลขที่ "เป็นไปไม่ได้" ต้องให้คนเห็นก่อน ไม่ใช่บันทึกเงียบ
+         ไม่บล็อกทิ้ง เพราะมีเซ็ตสั่งพิเศษจริงที่เกิน 7 กล่อง/รอบ (ข้อมูลเก่ามี 8-14) */
+      if(perRound>7){
+        if(!window.confirm('⚠️ รอบละ '+perRound+' กล่อง (รวม '+totalBoxes+' กล่อง / '+rounds+' รอบ)\n\n'
+          +'ปกติ Meal Plan ส่งรอบละ 7 กล่อง — ตัวเลขนี้อาจผิด\n\nยืนยันว่าถูกต้องใช่ไหม?')) return;
+      }
     });
     var planMsg='';
     if(planRows.length){
