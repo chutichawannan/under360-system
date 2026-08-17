@@ -119,9 +119,9 @@
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">10. <span data-i="m10">ยำไข่มะตูม</span></div><div style="color:#374151;font-size:12px" data-i="v10note">⚠️ ไข่นกกระทา — ไม่ใช่เนื้อสัตว์ปกติ</div></div><span class="tot">10</span></div>
-  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span></div><span class="q">4</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span></div><span class="q">6</span></div>
+  <div class="mh"><div class="nm"><div class="t1">10. <span data-i="m10">ยำไข่มะตูม + ข้าว</span></div><div style="color:#374151;font-size:12px" data-i="v10note">⚠️ ไข่นกกระทา — ไม่ใช่เนื้อสัตว์ปกติ</div></div><span class="tot">10</span></div>
+  <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span> · <b><span data-i="rice100">ข้าว 100g</span></b></div><span class="q">4</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="quailegg">ไข่มะตูม (ไข่นกกระทา)</span></b> · <span data-i="yumsalad">ยำสลัด</span> · <b><span data-i="rice100">ข้าว 100g</span></b></div><span class="q">6</span></div>
   <div class="sp" data-i="sp10">โอ๋ ไม่ได้เมนูนี้ (สลับเป็น 42)</div>
 </div>
 
@@ -225,7 +225,8 @@
   <tr><td>เส้นบุก</td><td>29</td><td>11</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
   <tr><td>เส้นแก้ว</td><td>21</td><td>1</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
   <tr><td>ข้าวสไตล์ญี่ปุ่น (แฮมเบิร์ก)</td><td>43</td><td>2</td><td style="color:#B91C1C">⚠️ไม่ทราบ</td></tr>
-  <tr><td>(ไม่ระบุคาร์บในชื่อเมนู — น่าจะข้าวมาตรฐานร้าน)</td><td>09,10,23,25,42</td><td>47</td><td style="color:#B91C1C">⚠️ไม่ทราบชนิด/ปริมาณ ต้องเช็คสูตร</td></tr>
+  <tr><td><b>ข้าว (เมนู 10 — นัทสั่งเพิ่ม 17 ส.ค.)</b></td><td>10</td><td>10</td><td><b>100g/กล่อง = ~1 กก.</b></td></tr>
+  <tr><td>(ไม่ระบุคาร์บในชื่อเมนู — น่าจะข้าวมาตรฐานร้าน)</td><td>09,23,25,42</td><td>37</td><td style="color:#B91C1C">⚠️ไม่ทราบชนิด/ปริมาณ ต้องเช็คสูตร</td></tr>
 </table>
 </div>
 
@@ -285,7 +286,8 @@ const T = {
   meat:{th:'เนื้อ', shn:'ၼိူဝ်ႉ', my:'အသား'},
   hxkey:{th:'ไม่มีลูกค้าวันนี้', shn:'ဢမ်ႇမီးမိူဝ်ႈၼႆႉ', my:'ယနေ့မရှိပါ'},
   m09:{th:'หมูสันในหวานไร้มัน + ไข่ฝอย', shn:'ၼိူဝ်ႉမူႇသၼ်ႇၼႂ်း + ၶႆႇသဵၼ်ႈ', my:'ဝက်အမြီးတိုင် + ကြက်ဥချည်'},
-  m10:{th:'ยำไข่มะตูม', shn:'ယำ ၶႆႇမတူမ်', my:'ငုံးဥသုပ်'},
+  rice100:{th:'ข้าว 100g', shn:'ၶဝ်ႈ 100g', my:'ထမင်း 100g'},
+  m10:{th:'ยำไข่มะตูม + ข้าว', shn:'ယำ ၶႆႇမတူမ် + ၶဝ်ႈ', my:'ငုံးဥသုပ် + ထမင်း'},
   v10note:{th:'⚠️ ไข่นกกระทา — ไม่ใช่เนื้อสัตว์ปกติ', shn:'⚠️ ဢမ်ႇၸႂ်ႉၼိူဝ်ႉ — ၶႆႇမတူမ်', my:'⚠️ အသားမပါ — ငုံးဥဖြစ်သည်'},
   sp10:{th:'โอ๋ ไม่ได้เมนูนี้ (สลับเป็น 42)', shn:'Oh ဢမ်ႇလႆႈ 10', my:'Oh မီနူး ၁၀ မရ'},
   m15:{th:'กุ้งผัดซอสกระเทียมพริกไทยดำ ควินัว สลัดผัก', shn:'ၵုင်ႈၽတ်ႉ ၸွႆႉၵၢတ်ႈ', my:'ပုစွန်ကြော် ကြက်သွန်နက်ဆော့စ်'},
