@@ -505,6 +505,8 @@ function isTestOrderRow(o){
 
 /* ชั้น 3 — นับของที่เกิด "หลัง" สรุปล่าสุด · ยิงครั้งเดียวต่อสรุป 1 ใบ ไม่ยิงทุกครั้งที่วาดหน้า */
 async function loadBriefCounts(){
+  /* ล็อกอยู่ = ไม่ต้องยิงหาข้อมูลสรุปเลย — ทั้งประหยัดคำขอ และไม่มีตัวเลขค้างในหน้าให้ใครส่อง */
+  if(typeof dashUnlocked==='function' && !dashUnlocked()){ briefCounts=null; briefCountsFor=null; return; }
   var b = findMarker(RE_BRIEF);
   var e = findMarker(RE_EVENING);
   var newest = (e && (!b || e.created_at > b.created_at)) ? e : b;
@@ -608,8 +610,49 @@ function cardBrief(){
     + '</div>';
 }
 
+/* ── 🔒 โซนผู้บริหาร บนหน้าแรก (นัทสั่งเอง 17 ส.ค. 2569) ──────────────────────
+   "สรุปประจำวันมันเป็นเรื่องส่วนตัวที่อยู่หลังบ้านชั้นลึกสุดที่เป็นฝั่งของผู้บริหาร
+    ไม่ควรมีใครมาเห็น"
+   หน้านี้ใช้ร่วมกันทั้งครัวและแอดมิน → แต่สรุปเช้ามียอดขาย ยอดค้างรับ ตัวเลขธุรกิจ
+   ใช้รหัสเดียวกับหน้าแดชบอร์ด (`cc_dash_ok`) — ปลดทีเดียวเห็นทั้ง 2 ที่ ไม่ต้องจำ 2 รหัส
+
+   🔑 **ตอนล็อกจะไม่วาดลง DOM เลย** (ไม่ใช่ซ่อนด้วย CSS) — ซ่อนด้วย CSS คนกดดูโค้ดหน้าเว็บก็ยังเห็นยอดเงิน
+   ⚠️ พูดตรงๆ: รหัสอยู่ฝั่งเบราว์เซอร์ = **กันเพื่อนร่วมงาน ไม่ใช่กันคนที่ตั้งใจงัด**
+      ถ้าต้องคุมจริงต้องเป็น Google login + allowlist อีเมล + RLS ฝั่ง Supabase (งานใหญ่กว่านี้)
+   ➕ อยากลากหมวดอื่นเข้ามาอีก: เติมชื่อฟังก์ชันการ์ดใน BOSS_CARDS พอ ไม่ต้องแก้ที่อื่น */
+var BOSS_CARDS = ['cardBrief'];      // การ์ดที่เห็นเฉพาะผู้บริหาร — เพิ่มชื่อฟังก์ชันได้เลย
+
+function bossHtml(){
+  if(!dashUnlocked()) return '';
+  var h='';
+  BOSS_CARDS.forEach(function(fn){
+    try{ if(typeof window[fn]==='function') h += window[fn](); }catch(e){ console.warn('boss card '+fn,e); }
+  });
+  return h;
+}
+/* ล็อกอยู่ = ปุ่มปลดล็อก · ปลดแล้ว = ปุ่มล็อกกลับ (กันลืมค้างไว้ตอนให้คนอื่นยืมเครื่องดู) */
+function bossBar(){
+  return dashUnlocked()
+    ? '<div style="display:flex;align-items:center;gap:8px;margin:0 0 10px;font-size:12px;color:var(--ink-soft)">'
+      +'<span>🔓 โหมดผู้บริหาร — คนอื่นที่เปิดหน้านี้จะไม่เห็นส่วนนี้</span>'
+      +'<button onclick="bossLock()" style="margin-left:auto;font-family:inherit;font-size:12px;padding:3px 10px;border:1px solid var(--line,#E5E7EB);background:#fff;border-radius:8px;cursor:pointer">ล็อกกลับ</button></div>'
+    : '<div style="text-align:right;margin:0 0 8px"><button onclick="bossUnlock()" title="สำหรับผู้บริหาร" '
+      +'style="font-family:inherit;font-size:12px;padding:4px 12px;border:1px solid var(--line,#E5E7EB);background:#fff;color:var(--ink-soft);border-radius:8px;cursor:pointer">🔒 เข้าโหมดผู้บริหาร</button></div>';
+}
+function bossUnlock(){
+  var v=prompt('โหมดผู้บริหาร — ใส่รหัส 5 หลัก');
+  if(v===null) return;
+  if(String(v).trim()!==DASH_PIN){ toast('รหัสไม่ถูกต้อง'); return; }
+  try{ localStorage.setItem('cc_dash_ok','1'); }catch(e){}
+  toast('เข้าโหมดผู้บริหารแล้ว'); renderHome();
+}
+function bossLock(){
+  try{ localStorage.removeItem('cc_dash_ok'); }catch(e){}
+  toast('ล็อกแล้ว'); renderHome();
+}
+
 function renderHome(){
-  document.getElementById('homeCards').innerHTML = cardBrief() + cardLinks();
+  document.getElementById('homeCards').innerHTML = bossBar() + bossHtml() + cardLinks();
   const unread=ROOMS.reduce((a,r)=>a+unreadOf(r.id),0);
   const b=document.getElementById('cbBadge'); if(unread){b.style.display='';b.textContent=unread;}else b.style.display='none';
 }
