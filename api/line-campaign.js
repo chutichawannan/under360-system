@@ -98,6 +98,17 @@ module.exports = async (req, res) => {
       return res.status(200).end(JSON.stringify({ ok: r.ok, ...r.json }));
     }
 
+    if (a === 'audience_delete') {
+      const r = await line(token, `/v2/bot/audienceGroup/${body.audienceGroupId}`, null, 'DELETE');
+      return res.status(200).end(JSON.stringify({ ok: r.ok, status: r.status }));
+    }
+
+    if (a === 'audience_rename') {
+      const r = await line(token, `/v2/bot/audienceGroup/${body.audienceGroupId}/updateDescription`,
+        { description: String(body.name || '').slice(0, 120) }, 'PUT');
+      return res.status(200).end(JSON.stringify({ ok: r.ok, status: r.status }));
+    }
+
     if (a === 'narrowcast') {
       if (!body.audienceGroupId) return res.status(400).end(JSON.stringify({ ok: false, error: 'ต้องมี audienceGroupId' }));
       if (!Array.isArray(body.messages) || !body.messages.length)
