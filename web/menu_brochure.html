@@ -1,5 +1,10 @@
 <meta charset="utf-8">
 <title>Under360 — โบรชัวร์เมนูประจำสัปดาห์</title>
+<!-- ฟอนต์จริงจาก Google (ไม่พึ่งฟอนต์ที่ติดตั้งในเครื่อง — เครื่องนัทไม่มี Sarabun/Noto Sans Thai)
+     ตอนเซฟ PNG จะฝังฟอนต์นี้ลงไฟล์ด้วย เพื่อให้ได้ผลเหมือนกันทุกเครื่อง -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700;800&display=swap">
 <style>
   *{box-sizing:border-box;margin:0;padding:0}
   body{background:#e9ecef;font-family:"Sarabun","Noto Sans Thai","Segoe UI",sans-serif;
@@ -15,7 +20,7 @@
   /* ⚠️ ต้องประกาศฟอนต์ที่ #page ด้วย ห้ามพึ่ง body อย่างเดียว —
      ตอนออกไฟล์ PNG เราตัดเฉพาะ #page ออกมา กฎของ body จะไม่ติดไป ตัวหนังสือจะกลายเป็นฟอนต์มีหัวเชิง */
   #page{width:1040px;background:#fff;padding:44px 48px 34px;position:relative;
-        font-family:"Sarabun","Noto Sans Thai","Leelawadee UI","Segoe UI",sans-serif;
+        font-family:"Noto Sans Thai","Sarabun","Leelawadee UI","Segoe UI",sans-serif;
         box-shadow:0 8px 30px rgba(0,0,0,.15)}
 
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
@@ -189,6 +194,26 @@ async function toDataUrl(u){
   const r=await fetch(u,{mode:"cors"});const b=await r.blob();
   return await new Promise(z=>{const f=new FileReader();f.onload=()=>z(f.result);f.readAsDataURL(b);});
 }
+// 🔤 ดึงฟอนต์จริงมาแปลงเป็นข้อมูลฝังในไฟล์
+//    ไฟล์ SVG ที่เอาไปวาดเป็นรูป "โหลดฟอนต์จากอินเทอร์เน็ตไม่ได้" — ต้องฝังตัวฟอนต์ไปด้วย
+//    ไม่ฝัง = ตัวหนังสือในไฟล์จะกลายเป็นฟอนต์อะไรก็ได้ที่เครื่องนั้นมี (ต้นเหตุที่ฟอนต์ไม่เหมือนกัน)
+let _fontCssCache = null;
+async function embeddedFontCss(){
+  if (_fontCssCache !== null) return _fontCssCache;
+  try{
+    const url="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;600;700;800&display=swap";
+    let css=await (await fetch(url)).text();
+    const urls=[...new Set((css.match(/https:\/\/fonts\.gstatic\.com\/[^)]+/g)||[]))];
+    for(const u of urls){
+      const b=await (await fetch(u)).blob();
+      const dataUrl=await new Promise(z=>{const f=new FileReader();f.onload=()=>z(f.result);f.readAsDataURL(b);});
+      css=css.split(u).join(dataUrl);
+    }
+    _fontCssCache=css;
+  }catch(e){ console.error("ฝังฟอนต์ไม่สำเร็จ:",e); _fontCssCache=""; }
+  return _fontCssCache;
+}
+
 async function png(){
   const page=document.getElementById("page");
   const imgs=[...page.querySelectorAll("img")], keep=imgs.map(i=>i.src);
@@ -196,6 +221,7 @@ async function png(){
     await Promise.all(imgs.map(async i=>{try{i.src=await toDataUrl(i.src)}catch(e){}}));
     await new Promise(r=>setTimeout(r,450));
     let css="";for(const s of document.styleSheets){try{for(const r of s.cssRules)css+=r.cssText}catch(e){}}
+    css = (await embeddedFontCss()) + css;      // ฝังฟอนต์จริงไปกับไฟล์
     const W=1040, H=Math.round(page.getBoundingClientRect().height);   // กว้าง 1040 เป๊ะ · สูงตามเนื้อหา
     const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'+
       '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" '+
