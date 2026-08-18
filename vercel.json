@@ -49,6 +49,10 @@
     {
       "source": "/db",
       "destination": "/main_database_v2.html"
+    },
+    {
+      "source": "/watchdog",
+      "destination": "/pwa/watchdog.html"
     }
   ]
 }
