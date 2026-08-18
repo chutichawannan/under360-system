@@ -57,10 +57,13 @@
 <div id="page">
   <div class="top">
     <div class="brand">
-      <svg class="mk" viewBox="0 0 64 64" fill="none">
-        <rect x="4" y="4" width="56" height="56" rx="14" fill="#2fae5f"/>
-        <path d="M18 25l14-8 14 8-14 8-14-8z" fill="#fff"/>
-        <path d="M18 34l14 8 14-8" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg class="mk" viewBox="0 0 100 100" fill="none">
+        <path d="M50 10 L92 34 L50 58 L8 34 Z" stroke="#37b34a" stroke-width="8"
+              stroke-linejoin="round" fill="none"/>
+        <path d="M8 45 L46 67 L46 79 L8 57 Z" fill="#37b34a"/>
+        <path d="M92 45 L54 67 L54 79 L92 57 Z" fill="#37b34a"/>
+        <path d="M8 63 L46 85 L46 97 L8 75 Z" fill="#37b34a"/>
+        <path d="M92 63 L54 85 L54 97 L92 75 Z" fill="#37b34a"/>
       </svg>
       <div class="nm">UNDER360</div>
     </div>
@@ -90,13 +93,15 @@ const KEY_="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI
 const H={apikey:KEY_,Authorization:"Bearer "+KEY_};
 const qs=new URLSearchParams(location.search);
 
-function nextWeekLabel(){
+// ช่วงวันที่เริ่มต้น = จันทร์–อาทิตย์ ของ "สัปดาห์นี้" (เวลาไทย)
+function weekLabel(offsetWeeks){
   const M=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY",
            "AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
   const now=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Bangkok"}));
-  const d=now.getDay(), toMon=(8-(d===0?7:d))%7||7;
-  const a=new Date(now); a.setDate(now.getDate()+toMon);
-  const b=new Date(a);   b.setDate(a.getDate()+6);
+  const d=now.getDay();                       // 0=อา
+  const a=new Date(now);
+  a.setDate(now.getDate()-(d===0?6:d-1)+(offsetWeeks||0)*7);   // จันทร์
+  const b=new Date(a); b.setDate(a.getDate()+6);               // อาทิตย์
   return a.getDate()+"-"+b.getDate()+" "+M[b.getMonth()]+" "+b.getFullYear();
 }
 function thumb(u,w){
@@ -105,9 +110,8 @@ function thumb(u,w){
 }
 function nutLine(x){
   const k=x.kcal||x.calories||0;
-  const p=[k?k+"KCAL":"", x.protein?"P"+x.protein:"", x.carb?"C"+x.carb:"", x.fat?"F"+x.fat:""]
-          .filter(Boolean).join(" | ");
-  return p;
+  return [k?k+"KCAL":"", x.protein?"P"+x.protein:"", x.carb?"C"+x.carb:"", x.fat?"F"+x.fat:""]
+         .filter(Boolean).join(" | ");
 }
 async function fetchRows(codes){
   let q="menu_items?select=code,subcode,name,price,kcal,calories,protein,carb,fat,image_urls&is_available=eq.true&";
@@ -120,7 +124,7 @@ const key=x=>String(x.subcode||x.code);
 const bySub=(a,b)=>key(a).localeCompare(key(b),"en",{numeric:true});
 
 async function load(){
-  const sub=document.getElementById("i-sub").value.trim()||nextWeekLabel();
+  const sub=document.getElementById("i-sub").value.trim()||weekLabel(0);
   document.getElementById("when2").textContent=sub;
 
   const cs=document.getElementById("i-s").value.trim().split(/[,\s]+/).filter(Boolean);
