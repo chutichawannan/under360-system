@@ -12,7 +12,10 @@
   .bar .warn{color:#b45309;font-size:14px;width:100%}
 
   /* ── กว้าง 1040 เป๊ะ · สูงเท่าไหร่ก็ตามเนื้อหา ── */
+  /* ⚠️ ต้องประกาศฟอนต์ที่ #page ด้วย ห้ามพึ่ง body อย่างเดียว —
+     ตอนออกไฟล์ PNG เราตัดเฉพาะ #page ออกมา กฎของ body จะไม่ติดไป ตัวหนังสือจะกลายเป็นฟอนต์มีหัวเชิง */
   #page{width:1040px;background:#fff;padding:44px 48px 34px;position:relative;
+        font-family:"Sarabun","Noto Sans Thai","Leelawadee UI","Segoe UI",sans-serif;
         box-shadow:0 8px 30px rgba(0,0,0,.15)}
 
   .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
@@ -195,7 +198,8 @@ async function png(){
     let css="";for(const s of document.styleSheets){try{for(const r of s.cssRules)css+=r.cssText}catch(e){}}
     const W=1040, H=Math.round(page.getBoundingClientRect().height);   // กว้าง 1040 เป๊ะ · สูงตามเนื้อหา
     const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'+
-      '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">'+
+      '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml" '+
+      'style="font-family:Sarabun,\'Noto Sans Thai\',\'Leelawadee UI\',\'Segoe UI\',sans-serif">'+
       '<style>'+css+'</style>'+new XMLSerializer().serializeToString(page)+'</div></foreignObject></svg>';
     const im=new Image();
     await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;
