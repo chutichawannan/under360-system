@@ -288,6 +288,7 @@ body.list-mode .line-group .card:nth-child(even){background:var(--surface-2,#FAF
 .stock-ctrl{display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto;}
 .stock-ctrl button{appearance:none;border:none;background:var(--surface-2);color:var(--ink);width:24px;height:24px;border-radius:6px;font-size:14px;cursor:pointer;line-height:1;}
 .stock-ctrl button:hover{background:#e9e0cd;}
+.norecipe-chip{font-size:10px;font-weight:800;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:5px;padding:1px 4px;margin-left:2px;white-space:nowrap;cursor:help}
 .inc-chip{font-size:10px;font-weight:800;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;padding:1px 4px;margin-left:2px;white-space:nowrap;cursor:help}
 .stock-ctrl input{width:48px;text-align:center;padding:4px 2px;border:1px solid var(--line);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
 .stock-lbl{font-size:9.5px;color:var(--ink-soft);text-align:center;}
@@ -3160,6 +3161,7 @@ async function syncMenuMetaFromDB(){
         stkIncByCode[m.code] = _incRaw[m.id] || 0;
       });
     }
+    changed += await addGhostRows();
     if(changed){ persistRecipesDebounced(); render(); }
     /* ⛔ เลิกคัดลอกทั้งชุดอัตโนมัติ (นัทเคาะเอง 17 ส.ค. 2569 หลังเมนูเปิดๆ ปิดๆ 5 รอบในคืนเดียว)
        🪤 จุดที่เข้าใจผิดกันทั้งบ้าน: ของเดิม**ไม่ใช่ปุ่ม** — มันยิงทุกครั้งที่ "เปิดหน้า DB"
@@ -3187,7 +3189,7 @@ let onlineSyncNote="";
 async function showOnlineMismatch(){
   const box=document.getElementById('onlineMismatch');
   const sb=getSB(); if(!sb){ if(box)box.innerHTML=''; return; }
-  const todo=[], held=[];
+  const todo=[], held=[]; let heldNote="";
   state.recipes.forEach(r=>{
     if(!r.code || !(r.code in liveOnline) || r.status!=='active') return;
     const here=!!r.available_online, there=!!liveOnline[r.code];
@@ -3212,11 +3214,15 @@ async function showOnlineMismatch(){
      ไม่ใช่เพราะไม่ดี แต่เพราะ**ไม่มีการเขียนอัตโนมัติให้ต้องถามอีกแล้ว** (ดูคอมเมนต์ที่จุดเรียก) */
   if(held.length){
     onlineSyncNote="<div style='background:#FEF3C7;border:1px solid #FCD34D;border-radius:12px;padding:11px 13px'>"
-      +"<div style='font-weight:800;font-size:13px;color:#92400E'>⚠️ ไม่ได้ปิดให้ "+held.length+" เมนู — หน้านี้ว่าปิด แต่ยังมีของเหลืออยู่</div>"
+      +"<div style='font-weight:800;font-size:13px;color:#92400E'>⚠️ "+held.length+" เมนูนี้ <u>ลูกค้ายังซื้อได้อยู่</u> แต่หน้านี้ว่าปิด — ระบบไม่ปิดให้เพราะยังมีของ</div>"
       +"<div style='font-size:11.5px;color:#78350F;margin-top:3px;line-height:1.6'>"
-      +held.map(r=>escapeHtml(r.code)+" ("+Number(liveStock[r.code]||0)+")").join(' · ')+"</div>"
+      +held.map(r=>escapeHtml(r.code)+(r.subcode?" "+escapeHtml(r.subcode):"")+" (เหลือ "+(liveStock[r.code]==null?"ไม่จำกัด":Number(liveStock[r.code]||0))+")").join(' · ')+"</div>"
       +"<div style='font-size:11.5px;color:#78350F;margin-top:5px'>ถ้าจะปิดจริง กดปุ่ม 🛒 ออนไลน์ ที่แถวเมนูนั้นเอง · ถ้าของยังมี ไม่ต้องทำอะไร</div></div>";
-    if(box) box.innerHTML=onlineSyncNote;
+    /* ⚠️ เดิมเขียนลงกล่องตรงนี้เลย แล้วท้ายฟังก์ชันเขียนทับด้วยกล่องอีกใบ = คำเตือนนี้หายเงียบ
+       ของจริงที่เจอ 18 ส.ค.: D131 (ชื่อเล่น D4) หน้านี้ว่าปิด แต่ลูกค้าซื้อได้อยู่ — ไม่มีอะไรบอกเลย
+       (นัทถามเอง "D3 กับ D4 หายไปไหน") → เก็บไว้ก่อน แล้วต่อกับกล่องอีกใบตอนท้าย */
+    heldNote=onlineSyncNote;
+    if(box) box.innerHTML=heldNote;
   }
   if(!todo.length){
     if(!held.length){
@@ -3239,6 +3245,7 @@ async function showOnlineMismatch(){
     +"<div style='font-size:11.5px;color:#1E3A8A;margin-top:7px;border-top:1px dashed #BFDBFE;padding-top:6px'>"
     +"👉 จะเปลี่ยนอันไหน กดปุ่ม <b>🛒 ออนไลน์</b> ที่แถวเมนูนั้น — มีผลกับลูกค้าทันทีเฉพาะเมนูนั้น<br>"
     +"<span style='color:#6B7280'>ระบบไม่แก้ให้อัตโนมัติแล้ว (เคยทำเมนูเปิดๆ ปิดๆ 5 รอบในคืนเดียว 17 ส.ค.)</span></div></div>";
+  onlineSyncNote = heldNote ? (heldNote+"<div style='height:8px'></div>"+onlineSyncNote) : onlineSyncNote;
   if(box) box.innerHTML=onlineSyncNote;
 }
 function renderOnlineMismatch(){
@@ -3322,7 +3329,43 @@ async function persistPlanItems(){ await persistAppConfig(); }
 
 let _persistTimer=null;
 function persistRecipesDebounced(){ clearTimeout(_persistTimer); _persistTimer=setTimeout(()=>persistRecipes(),1500); }
-async function persistRecipes(){ await setStored('recipes', state.recipes, true); }
+/* ── 👻 เมนูที่ "ขายจริงแต่ไม่มีสูตร" (นัทถามเอง 18 ส.ค.: "D3 กับ D4 หายไปไหน") ────
+   ต้นเหตุ: หน้านี้วาดจากตาราง **สูตร** (kitchen_data.recipes) ไม่ใช่ตาราง **สินค้า** (menu_items)
+     → เมนูที่เปิดขายอยู่แต่ยังไม่มีใครใส่สูตร = **มองไม่เห็นทั้งหน้า** ทั้งที่ลูกค้าสั่งได้จริง
+   ของจริงตอนเจอ 18 เมนู เช่น D030(D3) โอยาโกะด้ง · D029(D5) มีทบอลอกไก่ · HYROX ทั้งชุด
+   นี่อันตรายกว่า "โชว์ผิด" เพราะมันเงียบ — แอดมินไม่มีทางรู้ว่ามีของหายไปจากหน้า
+
+   แก้: ดึงรายชื่อสินค้าที่เปิดขายทั้งหมดมาเทียบ ตัวไหนไม่มีสูตร → ใส่ "แถวเงา" ให้เห็น
+   ⚠️ แถวเงาไม่ถูกเซฟลงคลังสูตร (กันสร้างสูตรเปล่าเต็มตาราง) — พอมีคนใส่สูตรจริงมันก็หายไปเอง */
+async function addGhostRows(){
+  try{
+    const sb = getSB(); if(!sb) return 0;
+    const { data } = await sb.from('menu_items')
+      .select('id,code,name,subcode,category,stock_total,is_available')
+      .eq('is_available', true).limit(2000);
+    if(!data) return 0;
+    const have = new Set(state.recipes.map(r=>r.code).filter(Boolean));
+    let n = 0;
+    data.forEach(m=>{
+      if(!m.code || have.has(m.code)) return;
+      state.recipes.push({
+        id:'ghost_'+m.code, code:m.code, name:m.name||m.code,
+        categories:[m.category||'other'], subcode:m.subcode||'',
+        stock:(m.stock_total==null)?0:Number(m.stock_total),
+        available_online:true, parts:[], status:'active', rating:0, pinned:false, _noRecipe:true
+      });
+      liveOnline[m.code] = true;
+      liveStock[m.code]  = (m.stock_total==null) ? null : Number(m.stock_total);
+      liveMenuId[m.code] = m.id;
+      stkIncByCode[m.code] = _incRaw[m.id] || 0;
+      n++;
+    });
+    if(n) console.log('เมนูขายจริงแต่ยังไม่มีสูตร '+n+' รายการ — ใส่แถวเงาให้เห็นแล้ว');
+    return n;
+  }catch(e){ console.warn('addGhostRows', e); return 0; }
+}
+// แถวเงาห้ามหลุดลงคลังสูตร — ไม่งั้นจะกลายเป็นสูตรเปล่าถาวร
+async function persistRecipes(){ await setStored('recipes', state.recipes.filter(r=>!r._noRecipe), true); }
 
 
 
@@ -4384,6 +4427,7 @@ function renderRecipeCard(r, tot, pinInfo){
         <div><input type="number" class="stock-val" data-id="${r.id}" value="${stockVal}" step="1"><div class="stock-lbl">สต็อก</div></div>
         <button type="button" class="stock-plus" data-id="${r.id}">+</button>
         <button type="button" class="stock-plus10" data-id="${r.id}" title="เติมทีละ 10">+10</button>
+        ${r._noRecipe ? `<span class="norecipe-chip" title="เมนูนี้เปิดขายอยู่จริง แต่ยังไม่มีสูตรในคลัง — กดเข้าไปใส่วัตถุดิบได้">⚠ ไม่มีสูตร</span>` : ''}
         ${stkIncByCode[r.code] ? `<span class="inc-chip" title="ครัวแจ้งว่ากำลังทำเพิ่มอีก ${stkIncByCode[r.code]} กล่อง — รวมอยู่ในเลขสต็อกนี้แล้ว แต่ของยังไม่อยู่ในมือ">⏳${stkIncByCode[r.code]}</span>` : ''}
       </div>
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
