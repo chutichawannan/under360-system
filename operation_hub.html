@@ -2824,13 +2824,19 @@ async function loadPlanAvoid(){
   planAvoidMap={};
   var sb_=getSB(); if(!sb_) return;
   try{
+    /* 🪤 ตารางนี้เก็บคีย์ปนกัน 2 แบบมาแต่ไหนแต่ไร: บางแถวเป็น customers.id บางแถวเป็น line_uid
+       (ฝั่ง LIFF เขียนแบบ fallback ไป line_uid ตอนหา customer id ไม่เจอ — หน้าครัวก็ถามทั้ง 2 แบบ)
+       เดิมหน้านี้ถามแค่ customer_id → ของแพ้ที่ลูกค้ากรอกเองบางคนหายเงียบ = อันตรายที่มองไม่เห็น */
     var ids=[];
-    mpPlanRows.forEach(function(r){ if(r.customer_id && ids.indexOf(r.customer_id)<0) ids.push(r.customer_id); });
+    mpPlanRows.forEach(function(r){
+      if(r.customer_id && ids.indexOf(r.customer_id)<0) ids.push(r.customer_id);
+      if(r.line_uid    && ids.indexOf(r.line_uid)<0)    ids.push(r.line_uid);
+    });
     if(ids.length){
       var cp=await sb_.from("customer_preferences").select("customer_id,dislikes,allergies").in("customer_id",ids).limit(500);
       (cp.data||[]).forEach(function(p){
         var t=[String(p.allergies||"").trim(),String(p.dislikes||"").trim()].filter(Boolean).join(" · ");
-        if(t) planAvoidMap["c:"+p.customer_id]=t;
+        if(t){ planAvoidMap["c:"+p.customer_id]=t; planAvoidMap["u:"+p.customer_id]=t; }
       });
     }
   }catch(e){ /* ตารางยังไม่มี/อ่านไม่ได้ = ไม่ใช่เรื่องคอขวด ปล่อยว่าง */ }
@@ -2841,9 +2847,48 @@ async function loadPlanAvoid(){
   });
 }
 function planAvoidHtml(first){
-  var t=(first.customer_id&&planAvoidMap["c:"+first.customer_id])||planAvoidMap["r:"+first.id]||"";
-  if(t) return "<div title='"+esc2(t)+"' style='margin-top:3px;font-size:10px;font-weight:700;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:2px 6px;white-space:normal;line-height:1.35'>🚫 ไม่รับ: "+esc2(t)+"</div>";
-  return "<div style='margin-top:3px;font-size:9.5px;color:#C7CBD1'>ยังไม่มีข้อมูลว่าไม่กินอะไร</div>";
+  var t=(first.customer_id&&planAvoidMap["c:"+first.customer_id])
+      ||(first.line_uid&&planAvoidMap["u:"+first.line_uid])
+      ||planAvoidMap["r:"+first.id]||"";
+  if(t) return "<div onclick=\"planEditAvoid('"+first.id+"',event)\" title='"+esc2(t)+" — กดเพื่อแก้'"
+    +" style='margin-top:3px;font-size:10px;font-weight:700;color:#B91C1C;background:#FEF2F2;border:1px solid #FECACA;border-radius:6px;padding:2px 6px;white-space:normal;line-height:1.35;cursor:pointer'>🚫 ไม่รับ: "+esc2(t)+"</div>";
+  /* 🩺 N-41: เดิมเป็นข้อความเทาๆ เฉยๆ — บอกว่า "ไม่รู้" แต่ไม่มีทางทำให้รู้ตรงนั้นได้
+     ผลคือ 7 จาก 8 ลูกค้า MP ที่ยังส่งอยู่ ไม่มีข้อมูลข้อจำกัดเลยสักคน (นับจริง 18 ส.ค.)
+     ลูกค้าใหม่กรอกเองตอนสั่งได้แล้ว แต่ลูกค้าเก่าไม่มีใครกรอกให้
+     → ทำให้กดกรอกได้ตรงจุดที่แอดมินทำงานอยู่แล้ว ไม่ต้องเปลี่ยนหน้า */
+  return "<div onclick=\"planEditAvoid('"+first.id+"',event)\" title='กดเพื่อกรอกของแพ้/ของไม่ทานของลูกค้ารายนี้'"
+    +" style='margin-top:3px;font-size:9.5px;color:#B45309;background:#FFFBEB;border:1px dashed #FCD34D;border-radius:6px;padding:2px 6px;cursor:pointer'>🩺 ยังไม่รู้ว่าไม่กินอะไร — กดกรอก</div>";
+}
+
+/* กรอกของแพ้/ของไม่ทานจากหน้าแพลนเมนูโดยตรง (N-41)
+   เขียนด้วยคีย์ customer_id ถ้ามี ไม่มีค่อยใช้ line_uid — ตรงกับที่ LIFF/หน้าครัวอ่าน */
+async function planEditAvoid(rowId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var sb_=getSB(); if(!sb_) return;
+  var r=getMpRow(rowId); if(!r) return alert("ไม่พบรอบนี้");
+  var key=r.customer_id||r.line_uid;
+  if(!key) return alert("รอบนี้ไม่มีรหัสลูกค้าผูกไว้ — กรอกที่หน้า \"ข้อมูลลูกค้า\" แทน");
+  var who=odWho(); if(!who) return;
+  var cur=(r.customer_id&&planAvoidMap["c:"+r.customer_id])||(r.line_uid&&planAvoidMap["u:"+r.line_uid])||"";
+  var al=window.prompt("🩺 "+(r.customer_name||"ลูกค้า")+" — แพ้อะไรบ้าง?\n\n(ของแพ้ = ห้ามเด็ดขาด ครัวจะเห็นเป็นแถวแดงบนใบงาน)\nว่างไว้ได้ถ้าไม่แพ้อะไร", "");
+  if(al===null) return;
+  var di=window.prompt("🍽️ "+(r.customer_name||"ลูกค้า")+" — ไม่ทานอะไรบ้าง?\n\n(ไม่ชอบ/ไม่ทาน เช่น ไม่ทานเนื้อหมู · ไม่เผ็ด)\nที่มีอยู่ตอนนี้: "+(cur||"ไม่มี"), "");
+  if(di===null) return;
+  try{
+    var up=await sb_.from("customer_preferences").upsert({
+      customer_id:key, allergies:String(al).trim(), dislikes:String(di).trim(),
+      updated_by:"admin", updated_at:new Date().toISOString()
+    },{onConflict:"customer_id"});
+    if(up.error) throw up.error;
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"kq_status",
+      summary:(r.customer_name||"ลูกค้า")+" — บันทึกข้อจำกัดอาหาร · แพ้: "+(String(al).trim()||"-")+" · ไม่ทาน: "+(String(di).trim()||"-"),
+      detail:{customer_key:key, allergies:String(al).trim(), dislikes:String(di).trim(), by:"oh_plan"} }); }catch(e){}
+    await loadPlanAvoid();
+    _buildPlanTable();
+    alert("บันทึกแล้ว — ครัวจะเห็นบนใบงานทุกใบของลูกค้ารายนี้ตั้งแต่นี้ไป");
+  }catch(e){ alert("บันทึกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 /* ── 🤖 จัดเมนูให้อัตโนมัติ (นัทขอ 11 ส.ค.) ─────────────────────────────────
    ⚠️ ข้อจำกัดที่ต้องพูดให้ชัด: ระบบ "ยังไม่รู้ว่าใครไม่กินอะไร"

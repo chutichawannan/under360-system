@@ -2795,6 +2795,19 @@ function renderRoundSplit(){
   }
   if(head) head.textContent='เลือกวันจัดส่ง — รอบ 1';
   const chunkPreview = ms.length===1 ? splitSetItems(ms[0].items||[],N).map(a=>a.length) : null;
+  /* ── N-37: บอกด้วยว่า "เมนูไหนไปรอบไหน" ไม่ใช่แค่จำนวนกล่อง ──────────────────
+     เดิมหน้านี้บอกแค่ "รอบ 1 · 21 กล่อง" → ลูกค้าวางแผนกินไม่ได้ และแอดมินตอบคำถามนี้ไม่ได้
+     ระบบแบ่งให้เท่าๆ กันตามลำดับที่เลือกอยู่แล้ว (splitSetItems) แค่ไม่เคยเอามาแสดง
+     ⚠️ นี่คือ "บอกให้รู้" เฉยๆ — เรื่องให้ลูกค้าเลือกเองว่าอะไรไปรอบไหน (N-38) นัทยังไม่เคาะ ยังไม่ทำ */
+  const chunkMenus = ms.length===1 ? splitSetItems(ms[0].items||[],N) : null;
+  const roundMenuHtml = (r)=>{
+    if(!chunkMenus || !chunkMenus[r-1] || !chunkMenus[r-1].length) return '';
+    const cnt={};
+    chunkMenus[r-1].forEach(it=>{ const n=(it&&(it.name||it.code))||'—'; cnt[n]=(cnt[n]||0)+1; });
+    const names=Object.keys(cnt).map(n=>h(n)+(cnt[n]>1?' <b>×'+cnt[n]+'</b>':''));
+    return '<div style="font-size:11.5px;color:#3B4A66;background:#F7F8FA;border-radius:8px;padding:6px 10px;margin:0 2px 4px;line-height:1.6;">'
+      + names.join(' · ') + '</div>';
+  };
   let html=`<div style="padding:10px 14px 0;">
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px 14px;">
         <div style="font-size:13.5px;font-weight:800;color:#1D4ED8;">📦 เซ็ตแบ่งส่ง ${N} รอบ</div>
@@ -2809,14 +2822,15 @@ function renderRoundSplit(){
   } else {
     // มีสินค้าอื่นในตะกร้านอกเซ็ตแบ่งรอบ → บอกลูกค้าว่ารวบไปกับรอบ 1
     const hasOther = cart.some(c => !(c.type==='package' && (c.delivery_rounds||1)>1));
-    html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 2px;">รอบ 1${chunkPreview?` · ${chunkPreview[0]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— ส่งวันที่เลือกด้านบน (${selDate?fmtDate(selDate):'ยังไม่เลือก'})</span></div>`;
+    html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 2px;">รอบ 1${chunkPreview?` · ${chunkPreview[0]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— ส่งวันที่เลือกด้านบน (${selDate?fmtDate(selDate):'ยังไม่เลือก'})</span></div>`+roundMenuHtml(1);
     if(hasOther){
       html+=`<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:6px 10px;margin:2px 2px 4px;line-height:1.4;">🛒 สินค้าอื่นในตะกร้า (นอกเซ็ต) จะจัดส่ง<b>รวมไปกับรอบที่ 1</b></div>`;
     }
     for(let r=2;r<=N;r++){
       const idx=r-2;
-      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ (ต้องหลังรอบ ${r-1})</span></div>
-        <div class="dscroll" id="rdpick-${idx}"></div>`;
+      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ (ต้องหลังรอบ ${r-1})</span></div>`
+        +roundMenuHtml(r)
+        +`<div class="dscroll" id="rdpick-${idx}"></div>`;
     }
   }
   html+=`</div>`;
