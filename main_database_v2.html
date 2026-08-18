@@ -4547,6 +4547,16 @@ function renderEditPanel(r){
         <input type="number" class="f-selling-price" value="${r.selling_price||0}" min="0" step="1">
       </div>
       <div class="field">
+        <!-- 📅 ส่งได้ตั้งแต่วันไหน — ย้ายมาไว้ในแผงนี้ (U · 18 ส.ค.)
+             ชิปปฏิทินที่แถวถูกซ่อนไปเมื่อ 17 ส.ค. เพราะไม่มีเมนูไหนตั้งไว้เลยสักตัว แล้วมันกินที่ทุกแถว
+             🪤 ผลข้างเคียงที่เพิ่งรู้: ชิปโผล่เฉพาะแถวที่ "มีวันอยู่แล้ว" → แถวที่ยังว่างเลยไม่มีทางตั้งวันได้เลย
+                = ห้อง CC ติดงาน N-50 (ตั้งวันส่งเมนูสัปดาห์) ค้างมาตั้งแต่ 8 ส.ค. เพราะไม่มีช่องให้กรอก
+             ย้ายมาที่นี่แทนการเอาชิปกลับ: แถวยังโล่งตามที่นัทขอ แต่ตั้งวันได้จริงเมื่อเปิดแผงแก้ -->
+        <label>ส่งได้ตั้งแต่วันที่ (ว่าง = ส่งได้เลย)</label>
+        <input type="date" class="f-available-from" value="${r.availableFrom||''}"
+          title="ถ้าใส่วันไว้ ลูกค้าเห็นเมนูล่วงหน้าได้ แต่เลือกวันส่งก่อนวันนั้นไม่ได้ — ใช้ตอนขึ้นเมนูสัปดาห์ใหม่ล่วงหน้า">
+      </div>
+      <div class="field">
         <label>ข้อจำกัดการจัดส่ง</label>
         <label style="display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:7px;cursor:pointer;font-size:14px;background:${r.no_morning?'var(--saffron-soft)':'var(--surface-2)'};border:1px solid ${r.no_morning?'rgba(232,179,57,.4)':'var(--line)'};">
           <input type="checkbox" class="f-no-morning" ${r.no_morning?'checked':''} style="width:16px;height:16px;accent-color:var(--saffron);">
@@ -5132,6 +5142,24 @@ function attachHandlers(){
     /* ── N-50: ช่อง "ส่งได้ตั้งแต่" ต่อแถวเมนู ── */
     document.querySelectorAll('[data-avail-id]').forEach(btn=>{
       btn.onclick = (e)=>{ e.stopPropagation(); state.availEditId = btn.dataset.availId; render(); };
+    });
+    /* 📅 ช่อง "ส่งได้ตั้งแต่วันที่" ในแผงแก้ไข — เขียนลง menu_items ทันทีที่เลือกวัน
+       ไม่รอปุ่มบันทึก เพราะปุ่มนั้นเซฟแค่สูตรในเครื่อง ไม่ได้แตะตารางที่ลูกค้าอ่าน
+       (ถ้าให้รอปุ่ม คนจะกดเลือกวันแล้วปิดแผง นึกว่าเซฟแล้ว แต่ลูกค้าไม่เห็นอะไรเปลี่ยน) */
+    document.querySelectorAll('.f-available-from').forEach(inp=>{
+      inp.onclick = e => e.stopPropagation();
+      inp.onchange = async (e)=>{
+        e.stopPropagation();
+        if(!requireUser()) return;
+        const panel = inp.closest('[data-edit]'); if(!panel) return;
+        const r = state.recipes.find(x=>x.id===panel.dataset.edit); if(!r) return;
+        const ymd = (inp.value||'').trim() || null;
+        try{
+          await setAvailableFrom(r, ymd);
+          logActivity('stock', ymd ? `ตั้งวันเริ่มส่ง ${ymd} ให้ ${r.code} ${r.name||''}` : `ล้างวันเริ่มส่งของ ${r.code}`);
+          showToast(ymd ? `${r.code} เริ่มส่งได้ ${ymd}` : `${r.code} ส่งได้เลย (ล้างวันแล้ว)`);
+        }catch(err){ console.error(err); showToast('บันทึกวันเริ่มส่งไม่สำเร็จ: '+(err.message||'')); }
+      };
     });
     document.querySelectorAll('.avail-input').forEach(inp=>{
       inp.onclick = e => e.stopPropagation();
