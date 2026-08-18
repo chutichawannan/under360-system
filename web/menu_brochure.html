@@ -57,10 +57,8 @@
 <div id="page">
   <div class="top">
     <div class="brand">
-      <!-- โลโก้เวกเตอร์ (คมทุกขนาด) — ถ้าจะใช้ไฟล์จริง วางที่ web/img/u360_logo.png -->
-      <img id="logoimg" alt="UNDER360" src="img/u360_logo.png" style="height:52px;display:none"
-           onload="this.style.display='block';document.getElementById('logosvg').remove();"
-           onerror="this.remove()">
+      <!-- โลโก้จริงของร้าน (ไฟล์ SVG) — ฝังเป็นเวกเตอร์ตอนโหลด · ถ้าโหลดไม่ได้ใช้ตัวสำรองข้างล่าง -->
+      <span id="logobox"></span>
       <svg id="logosvg" viewBox="0 0 496 133" style="height:50px;width:auto">
         <g fill="#2fae46">
           <path d="M62 8 L118 40 L62 72 L6 40 Z" fill="none" stroke="#2fae46"
@@ -100,6 +98,24 @@ const URL_="https://zdartbvhbvqlwzwyyiia.supabase.co";
 const KEY_="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
 const H={apikey:KEY_,Authorization:"Bearer "+KEY_};
 const qs=new URLSearchParams(location.search);
+
+// ฝังโลโก้ SVG ตัวจริงเข้ามาในหน้า (ต้อง inline ไม่งั้นตอนออกไฟล์ PNG จะไม่ติดไปด้วย)
+(async function logo(){
+  try{
+    const r=await fetch("img/u360_logo.svg");
+    if(!r.ok) return;
+    const box=document.getElementById("logobox");
+    box.innerHTML=await r.text();
+    const s=box.querySelector("svg");
+    if(!s) return;
+    s.removeAttribute("width"); s.removeAttribute("height");
+    const bb=s.getBBox();                       // ตัดขอบว่างรอบโลโก้ออก
+    const pad=4;
+    s.setAttribute("viewBox",(bb.x-pad)+" "+(bb.y-pad)+" "+(bb.width+pad*2)+" "+(bb.height+pad*2));
+    s.style.height="50px"; s.style.width="auto"; s.style.display="block";
+    const fb=document.getElementById("logosvg"); if(fb) fb.remove();
+  }catch(e){}
+})();
 
 // ช่วงวันที่เริ่มต้น = จันทร์–อาทิตย์ ของ "สัปดาห์นี้" (เวลาไทย)
 function weekLabel(offsetWeeks){
