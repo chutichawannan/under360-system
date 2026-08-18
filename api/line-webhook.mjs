@@ -310,8 +310,9 @@ export default async function handler(req, res) {
     const t = text.trim();
     const isOwner = OWNER && userId === OWNER;
 
-    // 📎 ไฟล์/รูป -> โหลดเก็บทันที แล้วจบ (ไม่พูดอะไรในกลุ่ม)
-    if (m.type === "file" || m.type === "image") {
+    // 📎 ไฟล์/รูป/เสียง/วิดีโอ -> โหลดเก็บทันที แล้วจบ (ไม่พูดอะไรในกลุ่ม)
+    //    18 ส.ค.: เพิ่มเสียง+วิดีโอ เพราะครัวส่งข้อความเสียงกันเป็นปกติ (นัทจะเอากะปันเข้ากลุ่มครัว)
+    if (m.type === "file" || m.type === "image" || m.type === "audio" || m.type === "video") {
       const note = await grabMedia(m, token, groupId);
       await logMessage({
         message_id: m.id || null, group_id: groupId, user_id: userId,

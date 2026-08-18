@@ -13,6 +13,22 @@ export default async function handler(req, res) {
   if (u.searchParams.get('key') !== KEY) return res.status(401).json({ ok: false });
   if (!SRV) return res.status(503).json({ ok: false, why: 'ยังไม่ได้ตั้ง SUPABASE_SERVICE_ROLE_KEY ใน Vercel' });
 
+  // 📎 ขอเปิดไฟล์ที่กะปันเก็บไว้: ?file=<path ใน bucket line-files>
+  //    คืนลิงก์ชั่วคราว (หมดอายุใน 1 ชม.) — bucket เป็นแบบปิด เปิดตรงไม่ได้
+  const wantFile = u.searchParams.get("file");
+  if (wantFile) {
+    try {
+      const r2 = await fetch("https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/sign/line-files/" + wantFile, {
+        method: "POST",
+        headers: { apikey: SRV, Authorization: "Bearer " + SRV, "Content-Type": "application/json" },
+        body: JSON.stringify({ expiresIn: 3600 }),
+      });
+      const j = await r2.json();
+      if (!j.signedURL && !j.signedUrl) return res.status(404).json({ ok: false, ผล: j });
+      return res.status(200).json({ ok: true, ลิงก์: "https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1" + (j.signedURL || j.signedUrl) });
+    } catch (e) { return res.status(500).json({ ok: false, why: String(e).slice(0, 200) }); }
+  }
+
   const limit = Math.min(parseInt(u.searchParams.get('limit') || '30', 10), 200);
   const group = u.searchParams.get('group');
   const since = u.searchParams.get('since');
