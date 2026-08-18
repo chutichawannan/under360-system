@@ -227,6 +227,12 @@ body.tablet .pt-row{padding:15px 16px;grid-template-columns:1fr 78px 78px 92px;}
 body.tablet .pt-row>div:first-child{font-size:18px;}
 body.tablet .pt-n{font-size:23px;}
 body.tablet .code-tag{font-size:14px;padding:4px 9px;}
+/* ป้ายชื่อเล่น (s3) + ป้ายสัปดาห์ (W34) — เล็กกว่าโค้ดจริง อ่านเป็นข้อมูลเสริม ไม่แย่งสายตาชื่อเมนู */
+.mtag{display:inline-block;font-family:var(--mono);font-size:10px;font-weight:800;padding:1px 5px;border-radius:4px;margin-right:5px;white-space:nowrap;vertical-align:1px}
+.mtag-sub{color:#7C2D12;background:#FEF3C7;border:1px solid #FCD34D}
+.mtag-wk{color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE}
+.mtag-wk.old{color:#B91C1C;background:#FEE2E2;border-color:#FCA5A5}
+body.tablet .mtag{font-size:13px;padding:3px 8px}
 /* การ์ดออเดอร์ */
 body.tablet .oc{padding:16px 18px;border-radius:14px;border-width:2px;margin-bottom:10px;}
 body.tablet .oc-name{font-size:19px;}
@@ -457,6 +463,54 @@ function cycleCodeMode(){
   document.getElementById("codeToggleBtn").textContent=CODE_LABELS[codeMode];
   render();
 }
+
+/* ── 🔢 เรียงโค้ดแบบที่คนอ่านเข้าใจ (นัทสั่ง 18 ส.ค.) ─────────────────────────
+   เดิมใช้ localeCompare ตรงๆ = เรียงแบบตัวอักษร ได้ No1 · No10 · No11 … No2 · No3
+   ครัวไล่หาเมนูตามเลขไม่ได้ ต้องกวาดตาทั้งหน้า
+   แก้: แยก "ตัวอักษรนำหน้า" กับ "ตัวเลข" แล้วเทียบเลขเป็นเลขจริง → No1..No15 แล้วค่อย S021.. */
+function cmpCode(a,b){
+  a=String(a||""); b=String(b||"");
+  var ma=a.match(/^([A-Za-z]*)(\d*)(.*)$/), mb=b.match(/^([A-Za-z]*)(\d*)(.*)$/);
+  var pa=(ma[1]||"").toUpperCase(), pb=(mb[1]||"").toUpperCase();
+  if(pa!==pb) return pa<pb?-1:1;
+  var na=ma[2]===""?null:parseInt(ma[2],10), nb=mb[2]===""?null:parseInt(mb[2],10);
+  if(na!==null&&nb!==null&&na!==nb) return na-nb;
+  return a.localeCompare(b);
+}
+/* ── 🏷️ ป้ายชื่อเล่น + สัปดาห์ (นัทสั่ง 18 ส.ค.) ────────────────────────────
+   ชื่อเล่น (subcode) = ชื่อที่ครัวกับลูกค้าเรียกกันจริง เช่น s3 · โค้ดจริง S032 ไม่มีใครเรียก
+   เลขสัปดาห์ = เมนูพิเศษหมุนทุกสัปดาห์ ถ้าไม่บอกว่าของสัปดาห์ไหน ครัวแยกของค้างไม่ออก
+   แท็กเก็บเป็นวันจันทร์ของสัปดาห์นั้น → แปลงเป็นเลขสัปดาห์ + บอกว่าค้างมากี่สัปดาห์ */
+var weekTagMap={};
+function weekNoOf(ymd){
+  var d=new Date(ymd+"T00:00:00"); if(isNaN(d)) return null;
+  var t=new Date(Date.UTC(d.getFullYear(),d.getMonth(),d.getDate()));
+  var dn=(t.getUTCDay()+6)%7; t.setUTCDate(t.getUTCDate()-dn+3);
+  var y0=new Date(Date.UTC(t.getUTCFullYear(),0,4));
+  return 1+Math.round(((t-y0)/86400000-3+((y0.getUTCDay()+6)%7))/7);
+}
+function curWeekTag(){ var ds=Object.values(weekTagMap||{}).filter(Boolean).sort(); return ds.length?ds[ds.length-1]:null; }
+function tagsHtml(m){
+  var h="";
+  var sc=String((m&&m.subcode)||"").trim();
+  if(sc) h+="<span class='mtag mtag-sub' title='ชื่อเล่นที่ครัวกับลูกค้าเรียกกัน'>"+escH(sc)+"</span>";
+  var wk=weekTagMap[m&&m.code];
+  if(wk){
+    var wn=weekNoOf(wk), cur=curWeekTag();
+    var back=(cur&&wk<cur)?Math.round((new Date(cur)-new Date(wk))/604800000):0;
+    h+="<span class='mtag mtag-wk"+(back?" old":"")+"' title='เมนูของสัปดาห์ที่เริ่มวันจันทร์ "+escH(wk)+"'>W"+wn
+      +(back?(" ·ค้าง "+back+"สัปดาห์"):"")+"</span>";
+  }
+  return h;
+}
+/* ── หมวด "ทำสด" = ทำตามออเดอร์วันนั้น ไม่มีของสต็อคให้นับ → ไม่ควรโผล่ในแท็บตั้งสต็อค
+   ⚠️ ต้นเหตุที่ hyrox หลุดเข้ามา (นัทจับได้ 18 ส.ค.): ตัวกรองเดิมเขียนแบบ "ตัดออกทีละหมวด"
+   (ไม่เอา meal_hp/meal_lc) ไม่ใช่ "เอาเฉพาะของสต็อค" → พอเปิดหมวดทำสดใหม่ มันหลุดเข้ามาเอง
+   ต่อไปเพิ่มหมวดทำสดใหม่ ให้มาเติมที่บรรทัดนี้จุดเดียว */
+var FRESH_CATS=["meal_hp","meal_lc","hyrox"];
+/* ลำดับแท็บหมวดในแท็บตั้งสต็อค — นัทเรียงเอง 18 ส.ค. · หมวดนอกลิสต์ไปต่อท้าย */
+var STK_CAT_ORDER=["no_special","pack_regular","pack_special","cat_mqz49my7l8r","cat_mqz6m6b7gkm","cat_mqwg0bh3vho"];
+function stkCatRank(c){ var i=STK_CAT_ORDER.indexOf(c||""); return i<0?999:i; }
 function getCodeDisplay(code,name){
   if(codeMode==="name")return name;
   if(codeMode==="subcode")return (code||"").replace(/^[A-Za-z]+/,"") || code;
@@ -519,9 +573,9 @@ async function loadAll(){
     (function(){var keep={},ch=false; ids.forEach(function(i){if(kqCollapsed[i])keep[i]=1;});
       for(var k in kqCollapsed){if(!keep[k]){ch=true;break;}} if(ch){kqCollapsed=keep;saveCollapsed();}})();
     var rest=await Promise.all([
-      sb_.from("menu_items").select("id,code,name,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
+      sb_.from("menu_items").select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
-      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig"])
+      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig","menu_special_weeks"])
     ]);
     allItems=await fetchItemsFor(sb_,ids);
     allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
@@ -546,6 +600,7 @@ async function loadAll(){
     var _kd=rest[2].data||[];
     var _gs=(_kd.find(function(x){return x.key==="globalSettings";})||{}).data||{};
     var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
+    weekTagMap=(_kd.find(function(x){return x.key==="menu_special_weeks";})||{}).data||{};
     kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
     catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
   }catch(e){ console.error(e); alert("⚠️ โหลดออเดอร์ไม่สำเร็จ — ที่เห็นบนจออาจไม่ครบ\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชอีกครั้ง"); }
@@ -694,7 +749,7 @@ function renderProd(){
       agg[i.menu_item_id].qty+=i.qty;
     });
   });
-  var rows=Object.values(agg).sort(function(a,b){return (a.code||"").localeCompare(b.code||"");});
+  var rows=Object.values(agg).sort(function(a,b){return cmpCode(a.code,b.code);});
   if(!rows.length){
     document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
     renderMpQueue();
@@ -855,8 +910,9 @@ function stkSearch(inp){ stkQ=inp.value||""; renderStock();
 var CATLBL_STK={no_regular:"🍚 ข้าวกล่อง",no_special:"⭐ เมนูพิเศษ",pack_regular:"📦 แพคกับข้าว",pack_special:"📦 แพคพิเศษ",trend:"🔥 เมนูกระแส"};
 function renderStock(){
   var el=document.getElementById("stockView"); if(!el)return;
-  var menus=(allMenus||[]).filter(function(m){ return m.category!=="meal_hp"&&m.category!=="meal_lc"; })
-    .sort(function(a,b){ return (a.category||"").localeCompare(b.category||"")||(a.code||"").localeCompare(b.code||""); });
+  var menus=(allMenus||[]).filter(function(m){ return FRESH_CATS.indexOf(m.category)<0; })
+    .sort(function(a,b){ return (stkCatRank(a.category)-stkCatRank(b.category))
+      || (a.category||"").localeCompare(b.category||"") || cmpCode(a.code,b.code); });
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
   var om=stkOrderedMap();
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>"
@@ -866,6 +922,7 @@ function renderStock(){
   // แถบหมวด + ช่องค้นหา (นัทสั่ง 12 ส.ค.) — ครัวกรอกสต็อกทีละหมวด (บ๊ะจ่าง/ข้าวกล่อง/แพคกับข้าว)
   // เดิมเป็นรายการยาวรวดเดียว 115 เมนู ครัวต้องเลื่อนหาเอง = กรอกผิดแถวง่าย
   var cats=[]; menus.forEach(function(m){ var c=m.category||"other"; if(cats.indexOf(c)<0)cats.push(c); });
+  cats.sort(function(a,b){ return (stkCatRank(a)-stkCatRank(b))||a.localeCompare(b); });
   var catName=function(c){ return catLabelMap[c]||CATLBL_STK[c]||c||"อื่นๆ"; };
   html+="<div class='stk-cats'><button class='stk-cat"+(stkCat==="all"?" on":"")+"' onclick=\"stkPick('all')\">ทั้งหมด <span>"+menus.length+"</span></button>";
   cats.forEach(function(c){
@@ -891,7 +948,7 @@ function renderStock(){
     var left=unlimited?0:m.stock_total;
     var val=unlimited?0:(left+ordered);          // ช่องกรอก = "ทำไว้ทั้งหมด" ไม่ใช่ "เหลือขาย"
     html+="<div class='stk-row'>"
-      +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+escH(m.name||"")
+      +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+tagsHtml(m)+escH(m.name||"")
       +(ordered&&!unlimited
         ?"<div style='font-size:11px;color:var(--soft);margin-top:2px'>ทำไว้ "+val
           +" − <span style='color:var(--gold);font-weight:700'>สั่งแล้ว "+ordered+"</span>"
