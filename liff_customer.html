@@ -3626,8 +3626,20 @@ function computeOrder(){
     else if(p.discount_type==='percent')  itemDisc += Math.round(sub * p.discount_value/100);
     else if(p.discount_type==='free_shipping') shipDisc = fee; // ส่งฟรีเป็นได้แค่ฟรีทั้งหมด ไม่ทบซ้อน
   });
-  // โปรอัตโนมัติตามสถานะสมาชิก (ลูกค้าไม่ต้องกรอกโค้ด) — คิดจากยอดสินค้า · แยกจากโค้ดกรอกเอง
-  const autoList = autoPromos(sub);
+  /* ── 🔒 โปรอัตโนมัติต้องเคารพ stackable เหมือนโค้ดกรอกเอง (นัทสั่ง 18 ส.ค.) ──────
+     นัทพูดเอง: "ห้ามให้ใครมาใช้โปรทับนะ ลดสูงสุด 120 บาท ไม่รวมค่าส่งด้วย"
+
+     🪤 ช่องโหว่ที่ 05 จับได้: `stackable=false` กันได้แค่ "โค้ดกรอกเองด้วยกัน" (ในฟังก์ชัน applyPromo)
+        แต่ WELCOME50 / WW5 ไม่เคยผ่านด่านนั้นเลย — มันถูกบวกทับตรงนี้เสมอ
+        ผลจริงที่วัดแล้ว: กลุ่ม broadcast วันเกิด 210 คน มี 91 คน (43%) จะได้ลด ฿165-170 แทน ฿120
+        คิดเป็นส่วนเกินสูงสุด ~฿4,510 — ยังไม่ยิง broadcast จึงยังไม่เสียเงินจริงสักบาท
+
+     กติกาใหม่: มีโค้ด stackable=false ใช้อยู่ = โค้ดนั้นกินคนเดียว โปรอัตโนมัติพักทั้งหมด
+     ⚠️ ต้องบอกลูกค้าด้วยว่าพักเพราะอะไร — ลูกค้าที่เคยเห็น "ส่วนลดสมาชิกใหม่ -50" แล้วหายเงียบ
+        จะทักแอดมินว่าโดนโกง (แพงกว่าเงินที่ประหยัดได้) → เก็บ autoBlockedBy ไว้โชว์ */
+  const exclusive = appliedPromos.find(p => !p.stackable);
+  const autoList = exclusive ? [] : autoPromos(sub);
+  const autoBlocked = exclusive ? autoPromos(sub) : [];   // ตัวที่ "ควรได้แต่ถูกพัก" — ไว้โชว์เหตุผล
   let autoDisc = 0;
   autoList.forEach(a => { a.amount = (a.type==='fixed') ? a.value : Math.round(sub * a.value/100); autoDisc += a.amount; });
   const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
@@ -3637,7 +3649,8 @@ function computeOrder(){
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDiscTotal + shipDisc;
   const total = Math.max(0, sub - itemDiscTotal + feeAfter);
-  return {sub, fee, feeKnown, feeAfter, itemDisc, autoDisc, autoList, shipDisc, discount, total};
+  return {sub, fee, feeKnown, feeAfter, itemDisc, autoDisc, autoList, autoBlocked,
+          autoBlockedBy:(exclusive?exclusive.code:null), shipDisc, discount, total};
 }
 
 function promoLabel(p){
@@ -4103,6 +4116,11 @@ function updateCartTotals(){
     if(o.autoList && o.autoList.length){
       autoWrap.style.display='block';
       autoWrap.innerHTML=o.autoList.map(a=>`<div class="ot-row"><span class="ot-l" style="color:var(--g)">${h(a.label)}</span><span class="ot-v" style="color:var(--g)">-฿${a.amount.toLocaleString()}</span></div>`).join('');
+    } else if(o.autoBlocked && o.autoBlocked.length && o.autoBlockedBy){
+      /* บอกตรงๆ ว่าโปรสมาชิกถูกพักเพราะโค้ดที่ใช้อยู่ ใช้ร่วมกันไม่ได้
+         ถ้าเงียบ ลูกค้าจะนึกว่าระบบกินส่วนลดของเขาไป แล้วไปทักแอดมิน */
+      autoWrap.style.display='block';
+      autoWrap.innerHTML=o.autoBlocked.map(a=>'<div class="ot-row"><span class="ot-l" style="color:#9CA3AF;text-decoration:line-through">'+h(a.label)+'</span><span class="ot-v" style="color:#9CA3AF;font-size:11px">ใช้ร่วมกับโค้ด '+h(o.autoBlockedBy)+' ไม่ได้</span></div>').join('');
     } else { autoWrap.style.display='none'; autoWrap.innerHTML=''; }
   }
   // แถวส่วนลดโค้ด (เฉพาะโค้ด/คูปองที่กรอกเอง — โปรอัตโนมัติแยกไปแถวบนแล้ว)
