@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ใบจัดของ 19 ส.ค. — 10 ใบ · 70 กล่อง (Meal Plan เท่านั้น)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--hx:#B45309;--hxbg:#FEF6E7;--stk:#047857;--stkbg:#ECFDF5;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7;--ice:#0369A1;--icebg:#E0F2FE}
+  *{box-sizing:border-box}
+  body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:14px;line-height:1.35}
+  .wrap{max-width:820px;margin:0 auto;padding:0 12px 40px}
+  .langbar{position:sticky;top:0;z-index:10;background:#fff;display:flex;gap:5px;padding:8px 0 6px;border-bottom:1px solid var(--line)}
+  .lb{flex:1;font-size:13px;font-weight:800;border:1.5px solid var(--line);background:#fff;color:var(--soft);border-radius:8px;padding:6px 4px;cursor:pointer}
+  .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
+  h1{font-size:18px;font-weight:900;margin:10px 0 1px}
+  .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
+  .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:10px 0}
+  .tools{display:flex;gap:6px;margin-bottom:10px}
+  .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
+  .bigred{background:var(--redbg);border:3px solid var(--red);border-radius:12px;padding:14px;margin-bottom:14px}
+  .bigred .t{font-weight:900;color:var(--red);font-size:18px;margin-bottom:8px;text-align:center}
+  .bigred ul{margin:0;padding-left:20px}.bigred li{font-size:13px;font-weight:800;color:#7F1D1D;margin:6px 0;line-height:1.4}
+  .bigred p{margin:6px 0;font-size:13px;font-weight:800;color:#7F1D1D;line-height:1.4}
+  .warn{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .warn .t{font-weight:900;color:var(--yel);font-size:14px;margin-bottom:6px}
+  .warn ul{margin:0;padding-left:18px}.warn li{font-size:12.5px;font-weight:700;color:#78350F;margin:3px 0;line-height:1.35}
+  .blocker{background:#FDECEC;border:2px solid var(--red);border-radius:10px;padding:9px 12px;margin-bottom:12px}
+  .blocker .t{font-weight:900;color:var(--red);font-size:14.5px;margin-bottom:6px}
+  .blocker ul{margin:0;padding-left:18px}.blocker li{font-size:12.5px;font-weight:800;color:#7F1D1D;margin:3px 0;line-height:1.35}
+  .adminfold{background:var(--yelbg);border:1px solid #FCD34D;border-radius:10px;padding:8px 11px;margin-bottom:12px}
+  .adminfold summary{font-weight:900;color:var(--yel);font-size:13px;cursor:pointer;list-style:none}
+  .adminfold summary::-webkit-details-marker{display:none}
+  .adminfold summary .more{font-weight:600;font-size:11px;color:#92400E;margin-left:6px;text-decoration:underline}
+  .adminfold ul{margin:8px 0 0;padding-left:18px}
+  .adminfold li{font-size:12.5px;font-weight:700;color:#78350F;margin:4px 0;line-height:1.35}
+  .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
+  .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.hx{color:var(--hx)}.sec.stk{color:var(--stk)}
+  .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
+  .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}.c.hx{border-color:#FDE68A}.c.stk{border-color:#A7F3D0}
+  .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
+  .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}.c.hx .ch{background:var(--hxbg)}.c.stk .ch{background:var(--stkbg)}
+  .ch .nm{font-weight:900;font-size:14.5px;line-height:1.2}
+  .ch .pl{font-size:11.5px;font-weight:800;margin-top:1px}
+  .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}.c.stk .ch .pl{color:var(--stk)}
+  .ch .bx{flex:none;font-size:13px;font-weight:900;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
+  .note{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .pay{background:var(--yelbg);color:var(--yel);font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .it{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center;cursor:pointer;user-select:none}
+  .it:hover{background:#FAFAFA}
+  .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
+  .it.done .bo{background:var(--head);border-color:var(--head)}
+  .it.done .tx{text-decoration:line-through;color:var(--soft)}
+  .it .no{flex:none;font-weight:900;color:var(--soft);width:26px;font-size:12px;text-align:right}
+  .it .tx{flex:1;font-size:13.5px;font-weight:700;line-height:1.25}
+  .it .tx small{color:var(--soft);font-size:11.5px;font-weight:600}
+  .it .tx small::before{content:' · '}
+  .foot{color:var(--soft);font-size:11.5px;margin-top:14px;line-height:1.6;border-top:1px solid var(--line);padding-top:10px}
+  @media print{.wrap{max-width:100%} body{font-size:12.5px} .langbar,.tools{display:none} .c{break-inside:avoid}}
+</style>
+</head>
+<body>
+<div class="wrap">
+<div class="langbar">
+  <button class="lb on" id="b_th" onclick="setLang('th')">ไทย</button>
+  <button class="lb" id="b_shn" onclick="setLang('shn')">ไทใหญ่ · တႆး</button>
+  <button class="lb" id="b_my" onclick="setLang('my')">พม่า · မြန်မာ</button>
+</div>
+<div class="vbanner" id="vbanner"></div>
+
+<h1>📦 <span data-i="title">ใบจัดของ — พุธ 19 ส.ค. (Meal Plan เท่านั้น)</span></h1>
+<div class="sub" data-i="sub">10 ใบ · 70 กล่อง — Meal Plan เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
+<div class="tools">
+  <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
+  <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
+</div>
+
+<div class="bigred">
+  <div class="t" data-i="r_t">🔴 ข้อห้ามรายคน — ห้ามพลาด</div>
+  <ul>
+    <li data-i="r1">โอ๋ (LC+HP) — ไม่ใส่ทูน่า/เนื้อวัว/ของดิบทุกชนิด/ไข่ต้ม — <b>กล่องของเธอไม่มีเมนู 58 เลย ได้ 38 แทน</b></li>
+  </ul>
+</div>
+
+<details class="adminfold">
+  <summary data-i="fold_sum">▸ เรื่องค้างของแอดมิน (ครัวไม่ต้องอ่าน) <span class="more" data-i="fold_more">ดูเต็มที่ 360foodbox.com/fah</span></summary>
+  <ul>
+    <li data-i="w1">🆕 ฝน (Numfon) — ออเดอร์เลข MP-0817-034 (เลขเก่า แต่เลื่อนมาส่งวันนี้แล้ว) — มี 3 แถวในระบบ ทำแค่ชุด 7 กล่องนี้ชุดเดียว</li>
+    <li data-i="w2">🆕 โมจิ — ออเดอร์เลข MP-0819-037 (round8) เท่านั้น — อีกใบ MP-0817-032 (round7) ไม่ต้องแพ็ค ซ้ำกัน</li>
+    <li data-i="w3">🆕 โอ๋ — ออเดอร์เลข MP-0814-030 (LC) / MP-0814-031 (HP) — เลขเก่า แต่เลื่อนมาส่งวันนี้แล้ว</li>
+    <li data-i="w4">🆕 ชิฌาริญ (Influ/VIP) — ออเดอร์แรก จัดเมนูมาตรฐานของวันปกติ</li>
+  </ul>
+</details>
+
+<div id="app"></div>
+
+<div class="foot">
+  <b data-i="f1">รวม 70 กล่อง — Meal Plan ทำสด เท่านั้น (LC 35 · HP 35)</b><br>
+  <span data-i="f2">LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง</span><br>
+  <span data-i="f3">🔴 โอ๋ — ไม่มีเมนู 58 ในกล่องเลย (ได้ 38 แทน)</span>
+</div>
+</div>
+
+<script>
+// ── เมนู Meal Plan (โค้ด → ชื่อ + โปรตีนหลัก) ──
+var M = {
+ '21':{n:'ยำอกไก่สมุนไพร(no sugar) เส้นแก้ว', p:'อกไก่'},
+ '38':{n:'ข้าวผัดกะเพราแซลมอน (เฉพาะโอ๋)', p:'แซลมอน'},
+ '39':{n:'บิบิมบับหมู', p:'หมู'},
+ '45':{n:'เครปมันม่วงโยเกิร์ตเลมอนไก่ผัดเนย', p:'ไก่ผัดเนย'},
+ '53':{n:'(Z4) Baked Salmon Butter lemon sauce', p:'แซลมอน'},
+ '58':{n:'Flaxseed wrap แซลมอนอโวคาโด', p:'แซลมอน'},
+ '72':{n:'ข้าวเต้าหู้ไข่ทรงเครื่อง', p:'เต้าหู้+ไข่'},
+ '77':{n:'แร๊บอกไก่แครนเบอร์รี่+แซลลอรี่', p:'อกไก่'}
+};
+var STD = ['21','39','45','53','58','72','77'];
+var OHSET = ['21','38','39','45','53','72','77'];
+// ── ลูกค้า (เฉพาะ Meal Plan) ──
+var C = [
+ {g:'lc', n:'Bow Chaya 🎀', line:'U-0819-001 · 0924255461', box:7, items:STD},
+ {g:'lc', n:'Milk (LINE: MiLk.)', line:'MP-0819-038 · 0837035353', box:7, items:STD},
+ {g:'lc', n:'🆕 Tip Ruangma', line:'U-0819-005 · 0875109873', box:7, items:STD,
+  note:'🆕 ลูกค้าใหม่ (ทดลอง 7 กล่อง) — ไม่มีข้อห้ามพิเศษ'},
+ {g:'lc', n:'พี่พลอย (เจ้าของร้าน)', line:'U-0819-003 · 0988871294 · สั่งแทนโดยพี่นัท', box:7, items:STD},
+ {g:'lc', n:'โอ๋ (Oh thanaporn)', line:'MP-0814-030 (เลขเก่า) · 0994639369', box:7, items:OHSET,
+  note:'🔴 ❌ทูน่า/เนื้อวัว/ของดิบ/ไข่ต้ม — ไม่มีเมนู 58 ในกล่อง ได้ 38 แทน'},
+ {g:'hp', n:'BRIGHT💫', line:'U-0819-002 · 0627355775', box:7, items:STD},
+ {g:'hp', n:'🆕 ชิฌาริญ นันทนาธามน — VIP/Influ', line:'U-0819-007 · 0858239453', box:7, items:STD,
+  note:'🆕 ออเดอร์แรก — VIP ห้ามซ้ำเมนูนี้ทุกรอบถัดไป'},
+ {g:'hp', n:'ฝน (Numfon)', line:'MP-0817-034 (เลขเก่า) · 0817078047', box:7, items:STD,
+  note:'📌 มี 3 แถวในระบบวันนี้ (7+2+1) — แพ็คแค่ชุดนี้ชุดเดียว'},
+ {g:'hp', n:'โมจิ (Moji Phavinee)', line:'MP-0819-037 (round8) · 0956453555', box:7, items:STD,
+  note:'📌 มี 2 แถว 7 กล่องซ้อนกัน — แพ็คแค่ MP-0819-037 เท่านั้น'},
+ {g:'hp', n:'โอ๋ (Oh thanaporn)', line:'MP-0814-031 (เลขเก่า) · 0994639369', box:7, items:OHSET,
+  note:'🔴 ❌ทูน่า/เนื้อวัว/ของดิบ/ไข่ต้ม — ไม่มีเมนู 58 ในกล่อง ได้ 38 แทน'}
+];
+var SEC = [
+  ['lc','■ LC — เนื้อ 120g · 5 คน · 35 กล่อง'],
+  ['hp','■ HP — เนื้อ 170g · 5 คน · 35 กล่อง']
+];
+var KEY = 'pack20260819d';
+var done = (function(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } })();
+function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function render(){
+  var h='';
+  SEC.forEach(function(sc){
+    var g=sc[0], list=[];
+    C.forEach(function(c,ci){ if(c.g===g) list.push([c,ci]); });
+    if(!list.length) return;
+    h += '<div class="sec '+g+'">'+esc(sc[1])+'</div>';
+    list.forEach(function(pair){
+      var c=pair[0], ci=pair[1];
+      h += '<div class="c '+c.g+'"><div class="ch"><div><div class="nm">'+esc(c.n)+'</div>'
+         + (c.line?'<div class="pl">'+esc(c.line)+'</div>':'')
+         + '</div><span class="bx">'+c.box+' กล่อง</span></div>';
+      if(c.note) h += '<div class="note">'+esc(c.note)+'</div>';
+      if(c.pay)  h += '<div class="pay">'+esc(c.pay)+'</div>';
+      if(c.items) c.items.forEach(function(code,ix){
+        var m=M[code], k=ci+'-'+ix+'-'+code, on=done[k]?' done':'';
+        h += '<div class="it'+on+'" onclick="tog(\''+k+'\',this)"><span class="bo">✓</span><span class="no">'+code+'</span>'
+           + '<span class="tx">'+esc(m.n)+'<small>'+esc(m.p)+'</small></span></div>';
+      });
+      h += '</div>';
+    });
+  });
+  document.getElementById('app').innerHTML=h;
+}
+function tog(k,el){ done[k]=!done[k]; if(!done[k]) delete done[k]; try{localStorage.setItem(KEY,JSON.stringify(done));}catch(e){} el.classList.toggle('done'); }
+function clearAll(){ done={}; try{localStorage.removeItem(KEY);}catch(e){} render(); }
+
+const UI = {
+  title:{th:'ใบจัดของ — พุธ 19 ส.ค. (Meal Plan เท่านั้น)', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းၽုတ်ႉ 19 (Meal Plan ၵူၺ်း)', my:'ထုပ်ပိုးစာရွက် — ဗုဒ္ဓဟူးနေ့ ၁၉ (Meal Plan သာ)'},
+  sub:{th:'10 ใบ · 70 กล่อง — Meal Plan ทำสด เท่านั้น — แตะเพื่อติ๊กเมื่อจัดเสร็จ', shn:'10 ၽိုၼ် · 70 ႁိပ်ႇ — Meal Plan ၵူၺ်း', my:'၁၀ စောင် · ၇၀ ဘူး — Meal Plan သာ'},
+  btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
+  btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
+  r_t:{th:'🔴 ข้อห้ามรายคน — ห้ามพลาด', shn:'🔴 ၶေႃႈႁၢမ်ႈ ၽႂ်မၼ်း — ယႃႇပေလိုမ်း', my:'🔴 တစ်ဦးချင်း တားမြစ်ချက် — မမေ့ပါနှင့်'},
+  r1:{th:'โอ๋ (LC+HP) — ไม่ใส่ทูน่า/เนื้อวัว/ของดิบทุกชนิด/ไข่ต้ม — กล่องของเธอไม่มีเมนู 58 เลย ได้ 38 แทน', shn:'Oh — ❌ ၶွင်တိုဝ်ႉ — ဢမ်ႇလႆႈ 58', my:'Oh — ❌ ကုန်ကြမ်း — မီနူး ၅၈ မရ'},
+  fold_sum:{th:'▸ เรื่องค้างของแอดมิน (ครัวไม่ต้องอ่าน)', shn:'▸ လွင်ႈၽၢႆႇတူင်ႇပွင် — ဢမ်ႇလူဝ်ႇဢၢၼ်ႇ', my:'▸ Admin ကိစ္စ — မီးဖိုချောင်မဖတ်ရ'},
+  fold_more:{th:'ดูเต็มที่ 360foodbox.com/fah', shn:'ၸူးတူၺ်းတင်းသဵင်ႈ 360foodbox.com/fah', my:'အပြည့်အစုံကြည့်ရန် 360foodbox.com/fah'},
+  w1:{th:'🆕 ฝน — ออเดอร์เลข MP-0817-034 (เลขเก่า แต่เลื่อนมาส่งวันนี้แล้ว) — มี 3 แถวในระบบ ทำแค่ชุด 7 กล่องนี้ชุดเดียว', shn:'🆕 Fon — MP-0817-034 (7 ႁိပ်ႇၵူၺ်း)', my:'🆕 Fon — MP-0817-034 (၇ ဘူးသာ)'},
+  w2:{th:'🆕 โมจิ — ออเดอร์เลข MP-0819-037 (round8) เท่านั้น — อีกใบ MP-0817-032 (round7) ไม่ต้องแพ็ค ซ้ำกัน', shn:'🆕 Moji — MP-0819-037 ၵူၺ်း', my:'🆕 Moji — MP-0819-037 သာ'},
+  w3:{th:'🆕 โอ๋ — ออเดอร์เลข MP-0814-030 (LC) / MP-0814-031 (HP) — เลขเก่า แต่เลื่อนมาส่งวันนี้แล้ว', shn:'🆕 Oh — MP-0814-030/031', my:'🆕 Oh — MP-0814-030/031'},
+  w4:{th:'🆕 ชิฌาริญ (Influ/VIP) — ออเดอร์แรก จัดเมนูมาตรฐานของวันปกติ', shn:'🆕 Chiharin (VIP) — ပွၵ်ႈဢွၼ်ႇတၢင်း', my:'🆕 Chiharin (VIP) — ပထမအကြိမ်'},
+  f1:{th:'รวม 70 กล่อง — Meal Plan ทำสด เท่านั้น (LC 35 · HP 35)', shn:'ႁူမ်ႈ 70 ႁိပ်ႇ', my:'စုစုပေါင်း ၇၀ ဘူး'},
+  f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง', shn:'LC = 120g · HP = 170g', my:'LC = ၁၂၀g · HP = ၁၇၀g'},
+  f3:{th:'🔴 โอ๋ — ไม่มีเมนู 58 ในกล่องเลย (ได้ 38 แทน)', shn:'🔴 Oh — 58 ဢမ်ႇလႆႈ (38 ပုၼ်ႈတႅၼ်း)', my:'🔴 Oh — ၅၈ မရ (၃၈ အစား)'}
+};
+const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
+function setLang(l){
+  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(UI[k]&&UI[k][l]!=null) e.textContent=UI[k][l];});
+  ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
+  var b=document.getElementById('vbanner'); b.textContent=V[l]||''; b.style.display=l==='th'?'none':'block';
+  document.documentElement.lang = l==='my'?'my':(l==='shn'?'shn':'th');
+  render();
+}
+render();
+</script>
+</body>
+</html>
