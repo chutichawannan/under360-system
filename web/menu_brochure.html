@@ -51,6 +51,22 @@
   .foot{margin-top:26px;display:flex;justify-content:space-between;
         font-size:17px;color:#555;border-top:2px solid #eee;padding-top:10px}
   .foot b{color:#1f7a4d}
+
+  /* ── แบบ 1 (นัทขอ 18 ส.ค.): ตัวหนังสือใหญ่ขึ้น ช่องไฟแน่นขึ้น ให้เนื้อหากินพื้นที่มากกว่าเดิม ── */
+  #page.v1{padding:40px 40px 30px}
+  #page.v1 .li{margin-bottom:13px;gap:10px}
+  #page.v1 .li .k{font-size:25px;min-width:41px}
+  #page.v1 .li .nm{font-size:24px;line-height:1.2}
+  #page.v1 .li .nu{font-size:15px;margin-top:3px}
+  #page.v1 .li .pr{font-size:17px}
+  #page.v1 .sec h2{font-size:29px}
+  #page.v1 .sec + .sec{margin-top:26px}
+  #page.v1 .rule{margin-bottom:15px}
+  #page.v1 .when .t1{font-size:23px}
+  #page.v1 .when .t2{font-size:28px}
+  #page.v1 .cols{gap:20px;grid-template-columns:46% 54%}
+  #page.v1 .pic .no{font-size:19px}
+  #page.v1 .foot{font-size:18px;margin-top:22px}
 </style>
 
 <div class="bar">
@@ -58,6 +74,7 @@
   <input id="i-s" class="wide" placeholder="รหัสข้าวกล่อง (ว่าง = ดึง S* อัตโนมัติ)">
   <input id="i-d" class="wide" placeholder="รหัสแพคกับข้าว (ว่าง = ดึง D* อัตโนมัติ)">
   <button onclick="load()">สร้างโบรชัวร์</button>
+  <button id="btn-v1" onclick="toggleV1()" style="background:#555">แบบ 1 (ตัวใหญ่ขึ้น)</button>
   <button onclick="png()" style="background:#b8860b">⬇ บันทึกรูป PNG</button>
   <div class="warn" id="warn"></div>
 </div>
@@ -194,6 +211,15 @@ async function toDataUrl(u){
   const r=await fetch(u,{mode:"cors"});const b=await r.blob();
   return await new Promise(z=>{const f=new FileReader();f.onload=()=>z(f.result);f.readAsDataURL(b);});
 }
+// สลับระหว่าง "แบบเดิม" กับ "แบบ 1" (จำค่าไว้ให้ด้วย เปิดใหม่ไม่ต้องกดซ้ำ)
+function applyV1(on){
+  document.getElementById("page").classList.toggle("v1", !!on);
+  document.getElementById("btn-v1").textContent = on ? "✓ แบบ 1" : "แบบ 1 (ตัวใหญ่ขึ้น)";
+  document.getElementById("btn-v1").style.background = on ? "#1f7a4d" : "#555";
+  try{ localStorage.setItem("u360_brochure_v1", on ? "1" : "0"); }catch(e){}
+}
+function toggleV1(){ applyV1(!document.getElementById("page").classList.contains("v1")); }
+
 // 🔤 ดึงฟอนต์จริงมาแปลงเป็นข้อมูลฝังในไฟล์
 //    ไฟล์ SVG ที่เอาไปวาดเป็นรูป "โหลดฟอนต์จากอินเทอร์เน็ตไม่ได้" — ต้องฝังตัวฟอนต์ไปด้วย
 //    ไม่ฝัง = ตัวหนังสือในไฟล์จะกลายเป็นฟอนต์อะไรก็ได้ที่เครื่องนั้นมี (ต้นเหตุที่ฟอนต์ไม่เหมือนกัน)
@@ -250,6 +276,8 @@ async function png(){
   } finally { imgs.forEach((i,n)=>i.src=keep[n]); }
 }
 
+applyV1(qs.get("v1") ? qs.get("v1") !== "0"
+        : (localStorage.getItem("u360_brochure_v1") === "1"));
 document.getElementById("i-sub").value=qs.get("sub")||"";
 document.getElementById("i-s").value=qs.get("s")||"";
 document.getElementById("i-d").value=qs.get("d")||"";
