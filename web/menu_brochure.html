@@ -57,7 +57,13 @@
 <div id="page">
   <div class="top">
     <div class="brand">
-      <svg class="mk" viewBox="0 0 100 100" fill="none">
+      <!-- ถ้ามีไฟล์โลโก้จริงที่ web/img/u360_logo.png จะใช้ไฟล์นั้นแทนอัตโนมัติ -->
+      <img id="logoimg" src="img/u360_logo.png" alt="UNDER360"
+           style="height:58px;display:none"
+           onload="this.style.display='block';document.getElementById('logosvg').remove();
+                   document.getElementById('logotext').remove();"
+           onerror="this.remove()">
+      <svg id="logosvg" class="mk" viewBox="0 0 100 100" fill="none">
         <path d="M50 10 L92 34 L50 58 L8 34 Z" stroke="#37b34a" stroke-width="8"
               stroke-linejoin="round" fill="none"/>
         <path d="M8 45 L46 67 L46 79 L8 57 Z" fill="#37b34a"/>
@@ -65,7 +71,7 @@
         <path d="M8 63 L46 85 L46 97 L8 75 Z" fill="#37b34a"/>
         <path d="M92 63 L54 85 L54 97 L92 75 Z" fill="#37b34a"/>
       </svg>
-      <div class="nm">UNDER360</div>
+      <div class="nm" id="logotext">UNDER360</div>
     </div>
     <div class="when">
       <div class="t1">เมนูพิเศษประจำสัปดาห์</div>
