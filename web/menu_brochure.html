@@ -204,8 +204,19 @@ async function png(){
     const im=new Image();
     await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;
       im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);});
+    // 🔍 วาดใหญ่ 3 เท่าก่อน แล้วค่อยย่อลงมาให้ได้ 1040 เป๊ะ
+    //    เหตุผล: จอนัทเป็นสเกล 150% หน้าเว็บเลยถูกวาดละเอียดกว่าไฟล์ที่ export ตรงๆ
+    //    ตัวหนังสือในไฟล์เลย "ดูไม่เหมือนบนจอ" ทั้งที่ฟอนต์เดียวกัน — วาดใหญ่แล้วย่อ = คมเท่าจอ
+    const S = 3;
+    const big = document.createElement("canvas"); big.width = W*S; big.height = H*S;
+    const bx = big.getContext("2d");
+    bx.fillStyle="#fff"; bx.fillRect(0,0,W*S,H*S);
+    bx.drawImage(im,0,0,W*S,H*S);
     const c=document.createElement("canvas");c.width=W;c.height=H;
-    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);x.drawImage(im,0,0);
+    const x=c.getContext("2d");
+    x.fillStyle="#fff";x.fillRect(0,0,W,H);
+    x.imageSmoothingEnabled=true; x.imageSmoothingQuality="high";
+    x.drawImage(big,0,0,W,H);
     const blob=await new Promise(r=>c.toBlob(r,"image/png"));
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);
     a.download="menu_"+document.getElementById("when2").textContent.replace(/[^0-9A-Za-z]+/g,"_")+".png";
