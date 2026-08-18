@@ -169,6 +169,64 @@ async function toBoard(text) {
   } catch (e) { console.error('toBoard failed:', e); }
 }
 
+// ── 🏷️ ชื่อกลุ่มจริงจาก LINE (กะปันอยู่ 3 กลุ่ม: คุณหมิว · ครัว · กิ๊ฟ) ──
+//  เดิมเวลาเด้งหานัทจะบอกแค่ groupId ยาวๆ อ่านไม่ออกว่ากลุ่มไหน
+const gNameCache = {};
+async function groupName(groupId, token) {
+  if (!groupId) return '';
+  if (gNameCache[groupId]) return gNameCache[groupId];
+  if (!token) return groupId.slice(0, 8);
+  try {
+    const r = await fetch('https://api.line.me/v2/bot/group/' + groupId + '/summary',
+      { headers: { Authorization: 'Bearer ' + token } });
+    if (!r.ok) return groupId.slice(0, 8);
+    const n = (await r.json()).groupName || groupId.slice(0, 8);
+    gNameCache[groupId] = n;
+    return n;
+  } catch { return groupId.slice(0, 8); }
+}
+
+// ── 📮 โหมด "รอคำตอบ" (นัทสั่ง 18 ส.ค.) ────────────────────────────────
+//  กติกา: กะปันไม่พูดเองถ้านัทไม่สั่ง — แต่ถ้านัทสั่งให้ไปถามอะไรในกลุ่ม
+//  แล้วมีคนตอบกลับมา ต้อง "เรียกนัท" ให้รู้ ไม่ใช่ปล่อยให้คำตอบจมอยู่ในกลุ่ม
+//  เก็บสถานะในบอร์ดห้อง kapan (แพทเทิร์นเดียวกับ setMode) — ไม่ต้องสร้างตารางใหม่
+const AWAIT_HOURS = 12;   // คุณหมิว/ครัว อาจตอบเช้าวันรุ่งขึ้น
+async function setAwait(groupId, question) {
+  try {
+    await fetch(SB + '/session_messages', {
+      method: 'POST', headers: { ...SBH, Prefer: 'return=minimal' },
+      body: JSON.stringify({ room: 'kapan', sender: 'await', role: 'system',
+        text: groupId + '|' + String(question || '').slice(0, 300) }),
+    });
+  } catch (e) { console.error('setAwait failed:', e); }
+}
+async function clearAwait(groupId) {
+  try {
+    await fetch(SB + '/session_messages', {
+      method: 'POST', headers: { ...SBH, Prefer: 'return=minimal' },
+      body: JSON.stringify({ room: 'kapan', sender: 'await_done', role: 'system', text: groupId }),
+    });
+  } catch (e) { console.error('clearAwait failed:', e); }
+}
+// กลุ่มนี้กำลังรอคำตอบให้นัทอยู่ไหม -> คืนคำถามที่นัทฝากไว้ (หรือ null)
+async function pendingAsk(groupId) {
+  try {
+    const since = new Date(Date.now() - AWAIT_HOURS * 3600e3).toISOString();
+    const q = SB + '/session_messages?room=eq.kapan&sender=in.(await,await_done)'
+      + '&created_at=gt.' + encodeURIComponent(since)
+      + '&select=sender,text,created_at&order=created_at.desc&limit=40';
+    const j = await (await fetch(q, { headers: SBH })).json();
+    if (!Array.isArray(j)) return null;
+    for (const row of j) {                       // ใหม่สุดก่อน — เจอ done ก่อน = ปิดไปแล้ว
+      const gid = String(row.text || '').split('|')[0];
+      if (gid !== groupId) continue;
+      if (row.sender === 'await_done') return null;
+      return String(row.text || '').split('|').slice(1).join('|') || '(ไม่ได้บันทึกคำถาม)';
+    }
+    return null;
+  } catch { return null; }
+}
+
 async function getDisplayName(groupId, userId, token) {
   if (!token || !groupId || !userId) return null;
   try {
@@ -407,9 +465,19 @@ export default async function handler(req, res) {
     //  ⚠️ ทุกข้อความยังถูกเก็บครบเหมือนเดิม — เงียบแค่ "ไม่เด้งเตือน" ไม่ใช่ "ไม่รับรู้"
     const shouldPush = mentionedOwner || tagNut;
 
-    if (OWNER && !isOwner && shouldPush) {
-      const head = aboutMoney ? 'เรื่องเงิน — มีคนเรียกหาคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
-      await linePush(OWNER, head + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\ngroupId: ' + groupId + '\n\n"' + t + '"', token);
+    // 📮 นัทฝากถามอะไรไว้ในกลุ่มนี้ แล้วมีคนตอบกลับ -> เรียกนัททันที (นัทสั่ง 18 ส.ค.)
+    //    ไม่ต้องรอให้เขาแท็ก @nut เพราะคนตอบมักตอบลอยๆ ในกลุ่ม
+    let answeredAsk = null;
+    if (OWNER && !isOwner) answeredAsk = await pendingAsk(groupId);
+
+    if (OWNER && !isOwner && (shouldPush || answeredAsk)) {
+      const gname = await groupName(groupId, token);
+      const head = answeredAsk ? 'มีคำตอบกลับมาแล้วค่ะ (เรื่องที่นัทฝากถาม)'
+                 : aboutMoney ? 'เรื่องเงิน — มีคนเรียกหาคุณนัทค่ะ' : 'มีคนเรียกหาคุณนัทค่ะ';
+      const ask = answeredAsk ? '\nนัทฝากถามไว้ว่า: "' + answeredAsk + '"' : '';
+      await linePush(OWNER, head + '\nกลุ่ม: ' + gname + ask
+        + '\nจาก: ' + (displayName || userId || 'ไม่ทราบชื่อ') + '\n\n"' + t + '"', token);
+      if (answeredAsk) await clearAwait(groupId);   // ปิดรอบ กันเด้งซ้ำทุกข้อความ
     }
 
     // 🔴 นัทสั่งกะปันจากในกลุ่ม (แก้ 13 ส.ค. — เดิมตกหายเงียบทั้งหมด)
@@ -418,6 +486,9 @@ export default async function handler(req, res) {
     if (isOwner && calledKapan && !wantsData) {
       const body = t.replace(/(กะปัน|กระปัน|กะปั้น|กะบัน|kapan)/i, "").replace(/^[\s,:：]+/, "").trim();
       if (body) {
+        // 📮 นัทสั่งให้ "ถาม" ในกลุ่ม = ตั้งโหมดรอคำตอบของกลุ่มนี้ไว้
+        //    (คำว่า ถาม/สอบถาม/ขอ/เช็ค/ทวง = สั่งให้ไปเอาคำตอบมา ไม่ใช่แค่ส่งงานเข้าห้อง)
+        if (/ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
         await toBoard(body);
         await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
       }
