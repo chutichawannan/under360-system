@@ -1,0 +1,187 @@
+<meta charset="utf-8">
+<title>Under360 — โบรชัวร์เมนูประจำสัปดาห์</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#e9ecef;font-family:"Sarabun","Noto Sans Thai","Segoe UI",sans-serif;
+       padding:20px;display:flex;flex-direction:column;align-items:center;gap:14px}
+  .bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;background:#fff;
+       padding:12px 16px;border-radius:12px;max-width:1240px;width:100%}
+  .bar input{font:inherit;padding:8px 10px;border:1px solid #ccc;border-radius:8px}
+  .bar input.wide{flex:1;min-width:200px}
+  .bar button{font:inherit;padding:8px 16px;border:0;border-radius:8px;background:#1f7a4d;color:#fff;cursor:pointer}
+  .bar .warn{color:#b45309;font-size:14px;width:100%}
+
+  /* ── กระดาษ A4 แนวตั้ง 1240x1754 (150dpi) ── */
+  #page{width:1240px;height:1754px;background:#fff;padding:54px 60px 46px;position:relative;
+        box-shadow:0 8px 30px rgba(0,0,0,.15);overflow:hidden}
+
+  .top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:34px}
+  .brand{display:flex;align-items:center;gap:14px}
+  .brand .mk{width:54px;height:54px;flex:0 0 54px}
+  .brand .nm{font-size:34px;font-weight:800;letter-spacing:1px;color:#1a1a1a}
+  .when{text-align:right;line-height:1.25}
+  .when .t1{font-size:25px;font-weight:700;color:#1a1a1a}
+  .when .t2{font-size:29px;font-weight:800;color:#1a1a1a;letter-spacing:.5px}
+
+  .sec + .sec{margin-top:40px}
+  .sec h2{font-size:31px;font-weight:800;color:#1f7a4d;margin-bottom:10px}
+  .rule{height:3px;background:#111;opacity:.85;margin-bottom:22px}
+  .cols{display:grid;grid-template-columns:44% 56%;gap:26px;align-items:start}
+
+  .li{margin-bottom:20px;display:flex;gap:11px}
+  .li .k{font-size:26px;font-weight:800;color:#111;min-width:44px;line-height:1.2}
+  .li .nm{font-size:25px;font-weight:700;color:#111;line-height:1.22}
+  .li .nu{font-size:16px;color:#444;margin-top:3px;letter-spacing:.2px}
+  .li .pr{font-size:17px;color:#111;font-weight:600;margin-top:1px}
+
+  .pics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .pic{position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#f1f1f1}
+  .pic img{width:100%;height:100%;object-fit:cover;display:block}
+  .pic .no{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.93);color:#111;
+           font-weight:800;font-size:20px;padding:2px 10px;border-radius:8px}
+
+  .foot{position:absolute;left:60px;right:60px;bottom:30px;display:flex;justify-content:space-between;
+        font-size:20px;color:#555;border-top:2px solid #eee;padding-top:12px}
+  .foot b{color:#1f7a4d}
+</style>
+
+<div class="bar">
+  <input id="i-sub" class="wide" placeholder="ช่วงวันที่ (เช่น 24-30 AUGUST 2026)">
+  <input id="i-s" class="wide" placeholder="รหัสข้าวกล่อง (ว่าง = ดึง S* อัตโนมัติ)">
+  <input id="i-d" class="wide" placeholder="รหัสแพคกับข้าว (ว่าง = ดึง D* อัตโนมัติ)">
+  <button onclick="load()">สร้างโบรชัวร์</button>
+  <button onclick="png()" style="background:#b8860b">⬇ บันทึกรูป PNG</button>
+  <div class="warn" id="warn"></div>
+</div>
+
+<div id="page">
+  <div class="top">
+    <div class="brand">
+      <svg class="mk" viewBox="0 0 64 64" fill="none">
+        <rect x="4" y="4" width="56" height="56" rx="14" fill="#2fae5f"/>
+        <path d="M18 25l14-8 14 8-14 8-14-8z" fill="#fff"/>
+        <path d="M18 34l14 8 14-8" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="nm">UNDER360</div>
+    </div>
+    <div class="when">
+      <div class="t1">เมนูพิเศษประจำสัปดาห์</div>
+      <div class="t2" id="when2"></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="rule"></div>
+    <div class="cols"><div id="listS"></div><div class="pics" id="picsS"></div></div>
+  </div>
+
+  <div class="sec">
+    <h2>เมนูแพคกับข้าว</h2>
+    <div class="rule"></div>
+    <div class="cols"><div id="listD"></div><div class="pics" id="picsD"></div></div>
+  </div>
+
+  <div class="foot"><span>สั่งผ่าน LINE <b>@under360</b></span><span>ราคาต่อกล่อง (บาท)</span></div>
+</div>
+
+<script>
+const URL_="https://zdartbvhbvqlwzwyyiia.supabase.co";
+const KEY_="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+const H={apikey:KEY_,Authorization:"Bearer "+KEY_};
+const qs=new URLSearchParams(location.search);
+
+function nextWeekLabel(){
+  const M=["JANUARY","FEBRUARY","MARCH","APRIL","MAY","JUNE","JULY",
+           "AUGUST","SEPTEMBER","OCTOBER","NOVEMBER","DECEMBER"];
+  const now=new Date(new Date().toLocaleString("en-US",{timeZone:"Asia/Bangkok"}));
+  const d=now.getDay(), toMon=(8-(d===0?7:d))%7||7;
+  const a=new Date(now); a.setDate(now.getDate()+toMon);
+  const b=new Date(a);   b.setDate(a.getDate()+6);
+  return a.getDate()+"-"+b.getDate()+" "+M[b.getMonth()]+" "+b.getFullYear();
+}
+function thumb(u,w){
+  return u&&u.includes("/object/public/")
+    ? u.replace("/object/public/","/render/image/public/")+"?width="+w+"&quality=82" : (u||"");
+}
+function nutLine(x){
+  const k=x.kcal||x.calories||0;
+  const p=[k?k+"KCAL":"", x.protein?"P"+x.protein:"", x.carb?"C"+x.carb:"", x.fat?"F"+x.fat:""]
+          .filter(Boolean).join(" | ");
+  return p;
+}
+async function fetchRows(codes){
+  let q="menu_items?select=code,subcode,name,price,kcal,calories,protein,carb,fat,image_urls&is_available=eq.true&";
+  q+= codes ? "code=in.("+codes.join(",")+")" : "subcode=not.is.null";
+  q+="&limit=60";
+  const r=await fetch(URL_+"/rest/v1/"+q,{headers:H});
+  return r.ok?await r.json():[];
+}
+const key=x=>String(x.subcode||x.code);
+const bySub=(a,b)=>key(a).localeCompare(key(b),"en",{numeric:true});
+
+async function load(){
+  const sub=document.getElementById("i-sub").value.trim()||nextWeekLabel();
+  document.getElementById("when2").textContent=sub;
+
+  const cs=document.getElementById("i-s").value.trim().split(/[,\s]+/).filter(Boolean);
+  const cd=document.getElementById("i-d").value.trim().split(/[,\s]+/).filter(Boolean);
+  const all=await fetchRows(cs.concat(cd).length?cs.concat(cd):null);
+
+  let S,D;
+  if(cs.length||cd.length){
+    S=all.filter(x=>cs.includes(x.code)); D=all.filter(x=>cd.includes(x.code));
+  }else{
+    S=all.filter(x=>key(x)[0]==="S"); D=all.filter(x=>key(x)[0]==="D");
+  }
+  S.sort(bySub); D.sort(bySub);
+
+  const li=x=>'<div class="li"><div class="k">'+key(x)+'</div><div><div class="nm">'+x.name+'</div>'+
+    (nutLine(x)?'<div class="nu">'+nutLine(x)+'</div>':'')+
+    (x.price?'<div class="pr">'+x.price+'</div>':'')+'</div></div>';
+  const pc=x=>'<div class="pic"><img src="'+thumb((x.image_urls||[])[0],480)+'">'+
+    '<span class="no">'+key(x)+'</span></div>';
+
+  document.getElementById("listS").innerHTML=S.map(li).join("");
+  document.getElementById("picsS").innerHTML=S.map(pc).join("");
+  document.getElementById("listD").innerHTML=D.map(li).join("");
+  document.getElementById("picsD").innerHTML=D.map(pc).join("");
+
+  const miss=[...S,...D].filter(x=>!nutLine(x)).map(key);
+  document.getElementById("warn").textContent = miss.length
+    ? "⚠️ ยังไม่มีข้อมูลโภชนาการใน DB: "+miss.join(", ")+" — เติมที่หน้า DB แล้วโบรชัวร์จะขึ้นเอง"
+    : "";
+  window.__fit = document.getElementById("page").scrollHeight;
+}
+
+// ── บันทึกเป็น PNG (ไม่ใช้ไลบรารีข้างนอก) ──
+async function toDataUrl(u){
+  const r=await fetch(u,{mode:"cors"});const b=await r.blob();
+  return await new Promise(z=>{const f=new FileReader();f.onload=()=>z(f.result);f.readAsDataURL(b);});
+}
+async function png(){
+  const page=document.getElementById("page");
+  const imgs=[...page.querySelectorAll("img")], keep=imgs.map(i=>i.src);
+  try{
+    await Promise.all(imgs.map(async i=>{try{i.src=await toDataUrl(i.src)}catch(e){}}));
+    await new Promise(r=>setTimeout(r,450));
+    let css="";for(const s of document.styleSheets){try{for(const r of s.cssRules)css+=r.cssText}catch(e){}}
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1754">'+
+      '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">'+
+      '<style>'+css+'</style>'+new XMLSerializer().serializeToString(page)+'</div></foreignObject></svg>';
+    const im=new Image();
+    await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;
+      im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);});
+    const c=document.createElement("canvas");c.width=1240;c.height=1754;
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,1240,1754);x.drawImage(im,0,0);
+    const blob=await new Promise(r=>c.toBlob(r,"image/png"));
+    const a=document.createElement("a");a.href=URL.createObjectURL(blob);
+    a.download="menu_"+document.getElementById("when2").textContent.replace(/[^0-9A-Za-z]+/g,"_")+".png";
+    a.click(); window.__pngSize=blob.size;
+  } finally { imgs.forEach((i,n)=>i.src=keep[n]); }
+}
+
+document.getElementById("i-sub").value=qs.get("sub")||"";
+document.getElementById("i-s").value=qs.get("s")||"";
+document.getElementById("i-d").value=qs.get("d")||"";
+load();
+</script>
