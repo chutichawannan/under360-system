@@ -3149,7 +3149,15 @@ async function submitOrder() {
       delivery_lng:    cusPin ? cusPin.getPosition().lng() : null,
       delivery_distance_km: (distKm!=null) ? Number(distKm.toFixed(3)) : null,
       subtotal:         o.sub,
-      discount_amount:  o.discount,
+      /* 💸 N-61 · ส่วนลดที่บันทึก ต้องเป็นเลขที่ "บวกลบกลับมาแล้วตรงกับที่เก็บเงินจริง"
+         เดิมเก็บ o.discount = ส่วนลดสินค้า + ค่าส่งที่ยกเว้น
+         แต่ delivery_fee ที่เก็บคือ feeAfter (หักส่งฟรีออกไปแล้ว = 0) → ค่าส่งที่ยกเว้นถูกนับ 2 รอบ
+         ผลจริงที่วัดแล้ว (ส.ค. 2026): 29 ใบจาก 256 ใบ subtotal+delivery_fee−discount_amount ≠ total
+           เช่น U-0820-001 sub 2,120 · fee 0 · disc 190 · total 2,120 = ลด 190 ทั้งที่เก็บเงินเต็ม
+         → f-track อ่าน discount_amount ไปคิดกำไร แล้วต่ำกว่าจริงแบบเงียบๆ ไม่มีอะไรฟ้อง
+         ยอดที่ลูกค้าจ่าย (total) ไม่เปลี่ยน — แก้เฉพาะเลขที่บันทึกลงรายงาน
+         (ค่าส่งที่ยกเว้นยังตามได้จาก promotion_code ที่มี FREESHIP + แพค/MP ที่ติ๊กส่งฟรี) */
+      discount_amount:  Math.max(0, Math.round((Number(o.sub)||0) + (Number(deliveryFee)||0) - (Number(grandTotal)||0))),
       promotion_code:   allPromoCodes.length ? allPromoCodes.join(',') : null, // โค้ดกรอกเอง + โปรอัตโนมัติ (คั่นด้วย , · เก็บรายงาน parity เท่านั้น ไม่ใช่ FK)
       total:            grandTotal,
       status:           'confirmed',
