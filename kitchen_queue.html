@@ -241,7 +241,22 @@ body.tablet .mtag{font-size:13px;padding:3px 8px}
 .stk-sub .inc-old{color:var(--r);font-weight:700}
 .stk-left{min-width:52px;text-align:center;font-size:20px;font-weight:800;font-family:var(--mono)}
 .stk-left.ok{color:var(--g)} .stk-left.zero{color:var(--r)} .stk-left.inf{color:var(--soft)}
+.stk-add{width:40px;height:40px;border:1px solid #A7F3D0;background:#ECFDF5;border-radius:10px;font-size:15px;cursor:pointer;margin-right:4px}
+.stk-add:active{background:#D1FAE5}
 .stk-pen{width:40px;height:40px;border:1px solid var(--xsoft);background:#fff;border-radius:10px;font-size:16px;cursor:pointer}
+.stk-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#ECFDF5;border-radius:0 0 10px 10px;padding:9px 12px;margin-bottom:6px}
+.sq-lb{font-size:12px;font-weight:800;color:#047857}
+.sq-chips{display:flex;gap:5px}
+.sq-c{padding:8px 12px;border:1px solid #A7F3D0;background:#fff;border-radius:9px;font-size:13px;font-weight:800;color:#047857;cursor:pointer;font-family:var(--mono)}
+.sq-c:active{background:#D1FAE5}
+.sq-n{width:74px;padding:8px;border:1px solid #A7F3D0;border-radius:9px;text-align:center;font-family:var(--mono);font-size:13px}
+.sq-ok{padding:8px 14px;border:none;background:#047857;color:#fff;border-radius:9px;font-size:12px;font-weight:800;cursor:pointer}
+.sq-x{padding:8px 10px;border:none;background:transparent;color:var(--soft);font-size:12px;cursor:pointer}
+.sq-now{flex-basis:100%;font-size:11px;color:#047857}
+body.tablet .stk-add{width:52px;height:52px;font-size:19px}
+body.tablet .sq-c{padding:12px 18px;font-size:16px}
+body.tablet .sq-n{width:96px;padding:12px;font-size:16px}
+body.tablet .sq-ok{padding:12px 18px;font-size:15px}
 .stk-pen:active{background:var(--gs)}
 .stk-edit{background:var(--gs);border-radius:0 0 10px 10px;padding:10px 12px 12px;margin-bottom:6px}
 .stk-edit-who{font-size:11px;color:var(--soft);margin-bottom:8px}
@@ -1070,14 +1085,14 @@ function stkRowHtml(m,ordered){
   var unlimited=(m.stock_total==null);
   var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
   var left=unlimited?null:Number(m.stock_total||0);   // เลขที่ LIFF ใช้จริง ไม่คำนวณใหม่ให้เพี้ยน
-  var open=(stkEditId===m.id);
+  var open=(stkEditId===m.id), quick=(stkQuickId===m.id);
   var incAge="";
   if(inc){
     var at=stockIncoming[m.id]&&stockIncoming[m.id].at;
     // ค้างข้ามวัน = ของที่บอกว่าจะทำแต่ยังไม่ทำ ต้องสะดุดตา ไม่งั้นขายล่วงหน้าไปเรื่อยๆ โดยไม่มีของ
     if(at && String(at).slice(0,10) < thaiToday2()) incAge=" ⚠️ ค้างจากวันก่อน";
   }
-  var h="<div class='stk-row"+(open?" open":"")+"'>"
+  var h="<div class='stk-row"+((open||quick)?" open":"")+"'>"
     +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+tagsHtml(m)+escH(m.name||"")
     +"<div class='stk-sub'>"
       +(unlimited
@@ -1088,9 +1103,11 @@ function stkRowHtml(m,ordered){
     +"</div></div>"
     +"<div class='stk-ctrl'>"
       +"<div class='stk-left "+(unlimited?"inf":(left>0?"ok":"zero"))+"'>"+(unlimited?"∞":left)+"</div>"
-      +"<button class='stk-pen' onclick=\"stkEdit('"+m.id+"')\" title='แก้จำนวน'>✏️</button>"
+      +(unlimited?"":"<button class='stk-add' onclick=\"stkQuick('"+m.id+"')\" title='เติมสต็อค — เพิ่มของที่กำลังทำ'>➕</button>")
+      +"<button class='stk-pen' onclick=\"stkEdit('"+m.id+"')\" title='แก้จำนวนแบบละเอียด'>✏️</button>"
     +"</div></div>";
-  if(open) h+=stkEditPanel(m,ordered);
+  if(quick) h+=stkQuickBar(m,inc);
+  if(open)  h+=stkEditPanel(m,ordered);
   return h;
 }
 
@@ -1114,10 +1131,45 @@ function stkEditPanel(m,ordered){
     +"</div></div>";
 }
 
+/* ── ➕ เติมสต็อคเร็ว (นัทขอ 18 ส.ค.: "ย้ายเติมสต็อคมาข้างๆ ดินสอ ให้สะดวกขึ้น") ──
+   งานที่ครัวทำบ่อยสุดคือ "ทำเพิ่มอีก N กล่อง" ไม่ใช่ "นับใหม่ทั้งแถว"
+   เลยแยกเป็นปุ่มเดียวจบ: กด ➕ → เคาะจำนวน → เข้า "กำลังเติม" ทันที
+   ปุ่มดินสอเก็บไว้สำหรับตอนต้องนับใหม่/แก้ของจริง (งานที่ทำน้อยกว่า) */
+var stkQuickId=null;
+function stkQuickBar(m,inc){
+  return "<div class='stk-quick'>"
+    +"<span class='sq-lb'>➕ ทำเพิ่มอีก</span>"
+    +"<div class='sq-chips'>"
+      +[5,10,20,30].map(function(n){ return "<button class='sq-c' onclick=\"stkQuickAdd('"+m.id+"',"+n+")\">+"+n+"</button>"; }).join("")
+    +"</div>"
+    +"<input class='sq-n' id='sq_n' type='number' min='1' placeholder='อื่นๆ' onkeydown=\"if(event.key==='Enter')stkQuickAdd('"+m.id+"',null)\">"
+    +"<button class='sq-ok' onclick=\"stkQuickAdd('"+m.id+"',null)\">เพิ่ม</button>"
+    +"<button class='sq-x' onclick='stkQuick(null)'>ปิด</button>"
+    +(inc?"<div class='sq-now'>ตอนนี้กำลังเติมอยู่ <b>"+inc+"</b> กล่อง</div>":"")
+    +"</div>";
+}
+function stkQuick(menuId){
+  if(menuId && !requireKqUser()) return;
+  stkQuickId=(stkQuickId===menuId)?null:menuId;
+  if(stkQuickId) stkEditId=null;
+  renderStock();
+  var n=document.getElementById("sq_n"); if(n) n.focus();
+}
+async function stkQuickAdd(menuId,n){
+  if(!requireKqUser()) return;
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m) return;
+  if(n==null){ n=parseInt((document.getElementById("sq_n")||{}).value)||0; }
+  n=Math.max(0,n); if(!n) return;
+  var ordered=stkOrderedMap()[m.id]||0;
+  await stkCommit(m, stkRealOf(m,ordered), stkIncOf(m.id)+n, "เติมสต็อค");
+  stkQuickId=null; renderStock(); loadStockHistory();
+}
+
 // เปิด/ปิดแผง — ต้องมีชื่อก่อน (นัทสั่ง: ใครจะมาแก้ต้องกรอกชื่อ)
 function stkEdit(menuId){
   if(menuId && !requireKqUser()) return;
   stkEditId=(stkEditId===menuId)?null:menuId;
+  if(stkEditId) stkQuickId=null;
   renderStock();
   if(stkEditId){
     var a=document.getElementById("se_real"), b=document.getElementById("se_inc"), p=document.getElementById("se_prev");
