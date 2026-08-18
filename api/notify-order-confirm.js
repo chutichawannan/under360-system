@@ -25,7 +25,7 @@ const SHOP_NAME  = "Under 360";
 const SHOP_BR    = "สาขา กรุงธนบุรี";
 const SHOP_TEL   = "0641736519";                 // เบอร์ปัจจุบัน (ของเก่า 092-756-8826 เลิกใช้แล้ว)
 const PROMPTPAY  = "0846556601";
-const LIFF_URL   = "https://liff.line.me/2011148232-oul66cEs";
+const LIFF_URL   = "https://liff.line.me/2010442513-NI3JGTkb";
 const NOTIFY_KEY = "order_notified";             // kitchen_data key เก็บเลขใบที่ส่งแล้ว
 const LOOKBACK_MIN = 180;                        // มองย้อนหลังกี่นาที (กันใบตกหล่นตอนระบบล่ม)
 
