@@ -911,6 +911,18 @@ body{background:#fff!important}
       <div class="ok-num" id="ok-num">U-MMDD-NNN</div>
       <div class="ok-detail" id="ok-detail"></div>
     </div>
+    <!-- 🎂 ขอวันเกิด — โผล่เฉพาะลูกค้าที่ยังไม่เคยให้ไว้
+         วางไว้ "หลังสั่งเสร็จ" ตั้งใจ: หน้าสั่งของห้ามมีอะไรมาถ่วงเพิ่มแม้แต่ช่องเดียว
+         ข้ามได้ ไม่มีปุ่มบังคับ — พังก็แค่ไม่ได้วันเกิด ออเดอร์ไม่กระทบเลย -->
+    <div id="ok-bday" style="display:none;width:100%;margin-top:14px;padding:12px 14px;background:#FFF7ED;border:1px solid #FDE68A;border-radius:12px;text-align:left">
+      <div style="font-weight:700;color:#92400E;font-size:14px">🎂 วันเกิดคุณคือวันไหน?</div>
+      <div style="font-size:12.5px;color:#B45309;line-height:1.6;margin-top:2px">เก็บไว้ส่งส่วนลดให้ในเดือนเกิด — ไม่กรอกก็สั่งได้ตามปกติ</div>
+      <div style="display:flex;gap:8px;margin-top:9px">
+        <input type="date" id="ok-bday-input" style="flex:1;min-width:0;padding:9px 10px;border:1px solid #E5E7EB;border-radius:9px;font-family:inherit;font-size:14px;background:#fff">
+        <button onclick="saveBirthday()" id="ok-bday-btn" style="padding:9px 16px;border:none;border-radius:9px;background:#B45309;color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer">บันทึก</button>
+      </div>
+      <div id="ok-bday-msg" style="font-size:12.5px;margin-top:7px;display:none"></div>
+    </div>
     <!-- N-25: Meal Plan — ปุ่มไปหน้าจัดการรอบส่ง (โผล่เฉพาะออเดอร์ที่มี Meal Plan) -->
     <button class="btn-p" id="ok-mp-btn" style="display:none;background:#1F4D3A;" onclick="showScr('s-mp-manage'); renderMpManage();">จัดการ / แก้ไขวันส่งรอบต่อไป</button>
     <button class="btn-p" onclick="backToMenu()">สั่งเพิ่มอีกครั้ง</button>
@@ -3460,6 +3472,7 @@ async function submitOrder() {
     if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     trk('cta_click', 'liff:สั่งสำเร็จ');   // ปลายทางที่อยากรู้ที่สุด — เทียบกับคนที่เข้าตะกร้าแล้วหายไป
     showScr('s-ok');
+    try{ maybeAskBirthday(); }catch(e){}   // 🎂 ถามวันเกิดหลังสั่งเสร็จ (ไม่ให้อะไรพลาดตรงนี้ไปกระทบใบที่สั่งไปแล้ว)
     /* 📩 เด้งใบยืนยันเข้าแชท LINE ของลูกค้าทันที (นัทสั่ง 14 ส.ค. 2569)
        ตัวส่งทำไว้ตั้งแต่ 8 ส.ค. แล้ว (api/notify-order-confirm) แต่ไม่เคยมีอะไรไปกดให้มันทำงาน
        ยิงแล้วลืม — ไม่ await ไม่บล็อกหน้าจอ ล้มก็ไม่กระทบลูกค้าเลย
@@ -3513,6 +3526,51 @@ function autoPromos(sub){
   if(customer && (customer.tier||'')==='Wellness Warriors')
     list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
   return list;
+}
+
+/* ── 🎂 เก็บวันเกิดตอนสั่งของ (ห้อง 05 ขอ · 17 ส.ค.) ─────────────────────────
+   หน้าสมัคร (`liff_register`) มีช่องวันเกิดอยู่แล้ว — แต่คนส่วนใหญ่ไม่ได้เข้าทางนั้น
+   เขาถูกสร้างเป็นลูกค้าตอน checkout เลย → วัดจริงเมื่อ 18 ส.ค.:
+     ลูกค้าที่เกิดใหม่ตั้งแต่ ก.ค. 4,957 คน **มีวันเกิดแค่ 42 คน** (ทั้งฐาน 2,204/8,218 = 27%)
+   = แคมเปญวันเกิดยิงถึงคนได้แค่เศษเดียวของฐาน ทั้งที่เป็นโปรที่มีเหตุผลให้ส่งที่สุด
+   ถามหลังกดสั่งเสร็จเท่านั้น — หน้าสั่งของห้ามมีอะไรมาถ่วงเพิ่ม (ของที่ทำเงินอยู่ ห้ามแตะ) */
+async function maybeAskBirthday(){
+  const box = document.getElementById('ok-bday');
+  if(!box || !customer || !customer.id) return;
+  // อ่านสดจาก DB ไม่เชื่อ object ในหน่วยความจำ — หลัง merge ลูกค้าเก่า (resolveCanonicalCustomer)
+  // object จะเหลือแค่บางคอลัมน์ ไม่มี date_of_birth ติดมา = จะไปถามคนที่ให้ไว้แล้ว
+  try{
+    const { data, error } = await sb.from('customers').select('date_of_birth').eq('id', customer.id).limit(1);
+    if(error || !data || !data.length || data[0].date_of_birth) return;   // มีแล้ว/อ่านไม่ได้ = ไม่ต้องถาม
+  }catch(e){ return; }
+  const inp = document.getElementById('ok-bday-input');
+  if(inp) inp.max = localYMD(new Date());       // กันกรอกวันในอนาคต
+  const msg = document.getElementById('ok-bday-msg');
+  if(msg) msg.style.display = 'none';
+  box.style.display = 'block';
+}
+async function saveBirthday(){
+  const inp = document.getElementById('ok-bday-input');
+  const msg = document.getElementById('ok-bday-msg');
+  const btn = document.getElementById('ok-bday-btn');
+  const show = (t,ok)=>{ if(!msg) return; msg.style.display='block'; msg.textContent=t; msg.style.color = ok?'#166534':'#B91C1C'; };
+  const v = (inp && inp.value || '').trim();
+  if(!v) return show('เลือกวันเกิดก่อนนะครับ', false);
+  const yr = parseInt(v.slice(0,4),10);
+  // ⚠️ กันบั๊กเดิมที่เคยทำปีเกิดเพี้ยน 543 ปี (แก้ไปแล้วในหน้าสมัคร 3 ส.ค.) — กันไว้ที่นี่ด้วย
+  if(!(yr>=1920 && yr<=new Date().getFullYear())) return show('ปีเกิดดูไม่ถูกต้อง ลองใหม่อีกครั้ง', false);
+  if(btn){ btn.disabled = true; btn.textContent = '...'; }
+  try{
+    const { error } = await sb.from('customers').update({ date_of_birth: v }).eq('id', customer.id);
+    if(error) throw error;
+    customer.date_of_birth = v;
+    const box = document.getElementById('ok-bday');
+    if(box) box.innerHTML = '<div style="font-weight:700;color:#166534;font-size:14px">🎂 บันทึกวันเกิดแล้ว ขอบคุณครับ</div>'
+                          + '<div style="font-size:12.5px;color:#166534;margin-top:2px">เดือนเกิดปีนี้เราจะส่งส่วนลดไปให้ในไลน์</div>';
+  }catch(e){
+    show('บันทึกไม่สำเร็จ ลองอีกครั้ง', false);
+    if(btn){ btn.disabled = false; btn.textContent = 'บันทึก'; }
+  }
 }
 
 // normalize เบอร์ให้เทียบกันได้ (DB เก็บเป็น 0xxxxxxxxx)
