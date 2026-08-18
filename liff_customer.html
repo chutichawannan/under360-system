@@ -4492,12 +4492,112 @@ function renderOrders(orders) {
         <span>⏰ ${o.time_slot_label || o.time_slot}</span>
         <span style="margin-left:auto;font-weight:700;color:var(--r)">฿${Number(o.total).toLocaleString()}</span>
       </div>
+      ${orderPayHtml(o)}
       ${orderCanMove(o) ? `<div style="padding:0 14px 12px">
         <span onclick="toggleMoveOrder('${o.id}')" style="font-size:12.5px;color:#1F4D3A;font-weight:700;text-decoration:underline;cursor:pointer">📅 ขอเลื่อนวันรับ</span>
         ${moveOrderPickerHtml(o)}
       </div>` : ''}
     </div>`;
   }).join('');
+}
+
+// ══════════════════════════════════════
+// 🧾 แนบสลิปย้อนหลังจากหน้า "ประวัติออเดอร์" (ห้อง f ขอ 17 ส.ค. 2569)
+//
+// ที่มา: ช่องแนบสลิป**มีแค่ตอนเช็คเอาท์** — ลูกค้าที่กดสั่งก่อนแล้วโอนทีหลัง
+//        ไม่มีที่ส่งหลักฐานเลย ต้องไปทักแอดมิน → จบลงที่ "จ่ายแล้วแต่โดนทวง"
+//        ห้อง f: "ยิ่งช้า ยิ่งมีคนจ่ายแล้วโดนทวง"
+// ขนาดปัญหาจริงตอนเขียน (query 18 ส.ค.): ส.ค. 2569 มีใบ unpaid ยอด>0 **24 ใบ · 22 ใบมี line_uid**
+//        = เกือบทุกใบเจ้าของเปิด LIFF เห็นใบตัวเองได้ แค่ไม่มีปุ่มให้กด
+//
+// กติกาที่ยึด (อย่าเผลอทำหลุด):
+//   · **ใบยอด ฿0 ไม่โชว์อะไรเลย** — รอบ 2..N ของคอร์สไม่ต้องจ่าย
+//     (เคยมีบั๊กป้าย "รอตรวจสลิป" ค้างบนใบ ฿0 ที่ไม่มีสลิป = ป้ายโกหก แล้วแอดมินเลิกเชื่อป้าย)
+//   · อัพแล้ว = `pending_review` **ไม่ใช่ `paid`** — คนตรวจคือแอดมิน ไม่ใช่ระบบ
+//   · ยังไม่รัน sql_slip_url.sql (ไม่มีคอลัมน์ slip_url) → ถอยคอลัมน์นั้นแล้วอัปเดตใหม่ ห้ามให้ปุ่มพัง
+// ══════════════════════════════════════
+function orderPayHtml(o){
+  if(!hasPaymentStatusColumn) return '';              // ยังไม่รัน SQL payment_status → ซ่อนทั้งบล็อก
+  if(Number(o.total||0) <= 0) return '';              // ใบแบ่งรอบยอด 0 = ไม่มีอะไรให้จ่าย
+  if(o.status === 'cancelled') return '';
+  const ps = o.payment_status || 'unpaid';
+  const box = 'padding:10px 14px;border-top:1px dashed #E5E7EB;font-size:12.5px';
+  if(ps === 'paid')
+    return `<div style="${box};color:#065F46;font-weight:700">✅ ได้รับเงินแล้ว</div>`;
+  if(ps === 'pending_review')
+    return `<div style="${box}">
+      <div style="color:#92400E;font-weight:700">🧾 ได้รับสลิปแล้ว — รอแอดมินตรวจ</div>
+      <span onclick="pickOrderSlip('${o.id}','${h(o.order_number)}')" style="display:inline-block;margin-top:6px;color:#1F4D3A;font-weight:700;text-decoration:underline;cursor:pointer">แนบสลิปใหม่</span>
+      <div id="slipmsg-${o.id}" style="margin-top:6px;display:none"></div>
+    </div>`;
+  return `<div style="${box}">
+    <div style="color:#B45309;font-weight:700">⏳ ยังไม่ได้รับแจ้งการโอน</div>
+    <div style="color:var(--soft);margin-top:4px;line-height:1.6">พร้อมเพย์ <b>0846556601</b> · ออมสิน <b>020272500180</b><br>โอนแล้วแนบสลิปที่นี่ได้เลย ไม่ต้องทักแอดมิน</div>
+    <div onclick="pickOrderSlip('${o.id}','${h(o.order_number)}')" style="margin-top:8px;border:2px dashed rgba(0,0,0,.15);border-radius:10px;padding:10px;text-align:center;cursor:pointer;background:#FAFAFA;font-weight:700;color:var(--ink2)">📎 แนบสลิปโอนเงิน</div>
+    <div id="slipmsg-${o.id}" style="margin-top:6px;display:none"></div>
+  </div>`;
+}
+
+let orderSlipBusy = false;
+function pickOrderSlip(id, num){
+  if(orderSlipBusy) return;
+  let inp = document.getElementById('order-slip-input');
+  if(!inp){                                            // สร้างครั้งเดียวแล้วใช้ซ้ำ (ไม่ต้องมี input ต่อการ์ด)
+    inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = 'image/*'; inp.id = 'order-slip-input';
+    inp.style.display = 'none';
+    inp.addEventListener('change', handleOrderSlip);
+    document.body.appendChild(inp);
+  }
+  inp.dataset.orderId = id;
+  inp.dataset.orderNum = num || '';
+  inp.value = '';                                      // เลือกไฟล์เดิมซ้ำได้
+  inp.click();
+}
+
+function orderSlipMsg(id, text, color){
+  const el = document.getElementById('slipmsg-' + id);
+  if(!el) return;
+  el.style.display = 'block';
+  el.style.color = color || 'var(--soft)';
+  el.style.fontWeight = '700';
+  el.textContent = text;
+}
+
+async function handleOrderSlip(ev){
+  const inp  = ev.target;
+  const file = inp.files && inp.files[0];
+  const id   = inp.dataset.orderId;
+  const num  = inp.dataset.orderNum || 'order';
+  if(!file || !id) return;
+  if(file.size > 10 * 1024 * 1024){ orderSlipMsg(id, 'ไฟล์ใหญ่เกิน 10MB — ถ่ายใหม่หรือย่อรูปก่อน', '#B91C1C'); return; }
+  orderSlipBusy = true;
+  orderSlipMsg(id, 'กำลังส่งสลิป…');
+  try{
+    const ext  = (file.type.split('/')[1] || 'jpg').replace('jpeg','jpg');
+    const path = num + '_late_' + Math.random().toString(36).slice(2) + Date.now().toString(36) + '.' + ext;
+    const up   = await sb.storage.from('payment-slips').upload(path, file, { contentType: file.type || 'image/jpeg', upsert:false });
+    if(up.error) throw up.error;
+    const url = sb.storage.from('payment-slips').getPublicUrl(path)?.data?.publicUrl || null;
+
+    const payload = { payment_status:'pending_review' };
+    if(url) payload.slip_url = url;
+    let { error } = await sb.from('orders').update(payload).eq('id', id);
+    // ยังไม่ได้รัน sql_slip_url.sql → คอลัมน์ไม่มี → ถอยแล้วอัปเดตแค่สถานะ (รูปยังอยู่ใน Storage)
+    if(error && 'slip_url' in payload && /slip_url/i.test(error.message||'')){
+      delete payload.slip_url;
+      ({ error } = await sb.from('orders').update(payload).eq('id', id));
+    }
+    if(error) throw error;
+
+    orderSlipMsg(id, '✅ ส่งสลิปแล้ว รอแอดมินตรวจสอบ', '#065F46');
+    await loadOrders();                                // ให้การ์ดเปลี่ยนเป็น "รอตรวจ" ทันที
+  }catch(e){
+    console.error('late slip upload failed:', e);
+    orderSlipMsg(id, 'ส่งไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักแอดมินได้เลย', '#B91C1C');
+  }finally{
+    orderSlipBusy = false;
+  }
 }
 
 // ══════════════════════════════════════
