@@ -491,60 +491,60 @@ body.fs-scaled{zoom:var(--u-fs)}
     </button>
   </div>
   <nav class="sb-nav">
-    <div class="sb-item active" onclick="openTab('orders',this)">
+    <div data-sbkey="orders" class="sb-item active" onclick="openTab('orders',this)">
       <span class="sb-icon">📋</span><span>ออเดอร์</span>
       <span class="sb-badge" id="nb-orders"></span>
     </div>
-    <div class="sb-item" onclick="openTab('onbehalf',this)">
+    <div data-sbkey="onbehalf" class="sb-item" onclick="openTab('onbehalf',this)">
       <span class="sb-icon">➕</span><span>สั่งแทนลูกค้า</span>
     </div>
-    <div class="sb-item" onclick="openTab('menu',this)">
+    <div data-sbkey="menu" class="sb-item" onclick="openTab('menu',this)">
       <span class="sb-icon">🛒</span><span>เมนูออนไลน์</span>
     </div>
-    <div class="sb-item" onclick="openTab('plan',this)">
+    <div data-sbkey="plan" class="sb-item" onclick="openTab('plan',this)">
       <span class="sb-icon">📅</span><span>แพลนเมนู</span>
     </div>
-    <div class="sb-item" onclick="openTab('messenger',this)">
+    <div data-sbkey="messenger" class="sb-item" onclick="openTab('messenger',this)">
       <span class="sb-icon">🛵</span><span>แมสเซนเจอร์</span>
       <span class="sb-badge" id="nb-msg"></span>
     </div>
-    <div class="sb-item" onclick="openTab('promo',this)">
+    <div data-sbkey="promo" class="sb-item" onclick="openTab('promo',this)">
       <span class="sb-icon">🎁</span><span>โปรโมชั่น</span>
     </div>
     <div class="sb-divider"></div>
-    <div class="sb-item" onclick="openApp('kitchen_queue.html','🍳 หน้าครัว (KQ)',this)">
+    <div data-sbkey="kq" class="sb-item" onclick="openApp('kitchen_queue.html','🍳 หน้าครัว (KQ)',this)">
       <span class="sb-icon">🍳</span><span>หน้าครัว (KQ)</span>
     </div>
     <!-- ใบงานผลิตรายวันที่ห้องฟ้าทำให้ครัว — เดิมเข้าได้ทางหน้า /k เท่านั้น (นัทขอ 11 ส.ค.) -->
-    <div class="sb-item" onclick="openApp('kitchen/index.html','📋 ใบงานผลิตครัว (รายวัน)',this)">
+    <div data-sbkey="kitchensheet" class="sb-item" onclick="openApp('kitchen/index.html','📋 ใบงานผลิตครัว (รายวัน)',this)">
       <span class="sb-icon">📋</span><span>ใบงานผลิตครัว</span>
     </div>
-    <div class="sb-item" onclick="openApp('pwa/orders_upcoming.html','📆 ออเดอร์ล่วงหน้า 7 วัน',this)">
+    <div data-sbkey="upcoming" class="sb-item" onclick="openApp('pwa/orders_upcoming.html','📆 ออเดอร์ล่วงหน้า 7 วัน',this)">
       <span class="sb-icon">📆</span><span>ออเดอร์ล่วงหน้า</span>
     </div>
     <!-- ตรวจสลิปในที่เดียว — เดิมต้องไล่หาเองในรายการออเดอร์ แล้วเปิดสลิปแท็บใหม่ (PM ขอ 9 ส.ค.) -->
-    <div class="sb-item" onclick="openTab('slips',this)">
+    <div data-sbkey="slips" class="sb-item" onclick="openTab('slips',this)">
       <span class="sb-icon">🧾</span><span>ตรวจสลิป</span><span class="sb-badge" id="nb-slips"></span>
     </div>
-    <div class="sb-item" onclick="openApp('pwa/cash_due.html','💰 ใบทวงเงิน',this)">
+    <div data-sbkey="cashdue" class="sb-item" onclick="openApp('pwa/cash_due.html','💰 ใบทวงเงิน',this)">
       <span class="sb-icon">💰</span><span>ใบทวงเงิน</span>
     </div>
     <!-- ตัวเฝ้าร้าน — เกิดจากเคส 18 ส.ค. 2569 ที่ลูกค้าสั่งไม่ได้ข้ามคืนแล้วแอดมินเป็นคนมาบอก -->
-    <div class="sb-item" onclick="openApp('pwa/watchdog.html','🩺 ตัวเฝ้าร้าน',this)">
+    <div data-sbkey="watchdog" class="sb-item" onclick="openApp('pwa/watchdog.html','🩺 ตัวเฝ้าร้าน',this)">
       <span class="sb-icon">🩺</span><span>ตัวเฝ้าร้าน</span>
     </div>
-    <div class="sb-item" onclick="openApp('report.html','📊 รายงาน',this)">
+    <div data-sbkey="report" class="sb-item" onclick="openApp('report.html','📊 รายงาน',this)">
       <span class="sb-icon">📊</span><span>รายงาน</span>
     </div>
-    <div class="sb-item" onclick="openApp('web/web_dashboard.html','🌐 Web Dashboard',this)">
+    <div data-sbkey="web" class="sb-item" onclick="openApp('web/web_dashboard.html','🌐 Web Dashboard',this)">
       <span class="sb-icon">🌐</span><span>Web Dashboard</span>
     </div>
-    <div class="sb-item" onclick="openTab('customer',this)">
+    <div data-sbkey="customer" class="sb-item" onclick="openTab('customer',this)">
       <span class="sb-icon">👥</span><span>ข้อมูลลูกค้า</span>
-    </div>    <div class="sb-item" onclick="openApp('main_database_v2.html','🗄️ หลังบ้าน (DB)',this)">
+    </div>    <div data-sbkey="db" class="sb-item" onclick="openApp('main_database_v2.html','🗄️ หลังบ้าน (DB)',this)">
       <span class="sb-icon">🗄️</span><span>หลังบ้าน (DB)</span>
     </div>
-    <div class="sb-item" onclick="openTab('he',this)">
+    <div data-sbkey="he" class="sb-item" onclick="openTab('he',this)">
       <span class="sb-icon">🏠</span><span>หน้าร้าน (HE)</span>
     </div>
     <div class="sb-item" onclick="openTab('settings',this)">
@@ -1048,6 +1048,15 @@ body.fs-scaled{zoom:var(--u-fs)}
           <option value="normal">ปกติ</option>
           <option value="large">ใหญ่พิเศษ</option>
         </select>
+      </div>
+      <!-- 👁️ ซ่อน/โชว์เมนูแถบซ้าย — นัทสั่ง 18 ส.ค.: "ซ่อนได้ผ่านการกดเท่านั้น"
+           ไม่ลบเมนูออกจากโค้ด เพราะของที่ซ่อนวันนี้พรุ่งนี้อาจต้องใช้
+           เก็บใน globalSettings = ทุกเครื่องเห็นเหมือนกัน (แอดมินคนละคนไม่ต้องมาตั้งใหม่)
+           ⚠️ "ตั้งค่า" ซ่อนไม่ได้ ไม่งั้นจะไม่มีทางกลับมาเปิดคืน -->
+      <div style="background:#fff;border-radius:12px;border:1px solid var(--ink-xsoft);padding:16px;margin-bottom:14px;max-width:520px">
+        <div style="font-size:14px;font-weight:700;margin-bottom:4px">👁️ เมนูแถบซ้าย — ซ่อน/โชว์</div>
+        <div style="font-size:12px;color:var(--ink-soft);margin-bottom:10px">ติ๊กออก = ซ่อนจากแถบซ้าย · ของยังอยู่ครบ กดกลับมาเปิดได้ทุกเมื่อ</div>
+        <div id="sbVisList" style="display:flex;flex-direction:column;gap:2px"></div>
       </div>
       <div id="settingsSaveMsg" style="font-size:12px;color:var(--forest);height:16px"></div>
     </div>
@@ -5008,7 +5017,39 @@ function setUiFontSize(v,save){
   if(save){ try{ localStorage.setItem('uiFontScale', String(n)); }catch(e){} }
 }
 try{ var _fs=localStorage.getItem('uiFontScale'); if(_fs) setTimeout(function(){ setUiFontSize(_fs,false); },0); }catch(e){}
-var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal",orderPageSize:20};
+var GLOBAL_SETTINGS_DEFAULT={dbMenuPageSize:30,kitchenUtensilSize:"normal",orderPageSize:20,hiddenNav:[]};
+
+/* ── 👁️ ซ่อน/โชว์เมนูแถบซ้าย (นัทสั่ง 18 ส.ค.) ───────────────────────────
+   เก็บเป็น "รายชื่อที่ซ่อน" ไม่ใช่ "รายชื่อที่โชว์" — เมนูใหม่ที่เพิ่มทีหลังจะโผล่เองโดยไม่ต้องไปตั้ง
+   (ถ้าเก็บกลับกัน ทุกครั้งที่เพิ่มเมนูใหม่มันจะหายเงียบ แล้วไม่มีใครรู้ว่าต้องไปเปิด) */
+var hiddenNav=[];
+function applyNavVisibility(){
+  document.querySelectorAll("[data-sbkey]").forEach(function(el){
+    el.style.display = (hiddenNav.indexOf(el.dataset.sbkey)>=0) ? "none" : "";
+  });
+}
+function renderNavSettings(){
+  var box=document.getElementById("sbVisList"); if(!box) return;
+  var h="";
+  document.querySelectorAll("[data-sbkey]").forEach(function(el){
+    var k=el.dataset.sbkey;
+    var label=(el.querySelectorAll("span")[1]||{}).textContent||k;
+    var icon=(el.querySelector(".sb-icon")||{}).textContent||"";
+    var on=hiddenNav.indexOf(k)<0;
+    h+="<label style='display:flex;align-items:center;gap:9px;padding:7px 4px;font-size:13.5px;cursor:pointer;border-radius:7px'"
+      +" onmouseover=\"this.style.background='#F6F5F1'\" onmouseout=\"this.style.background=''\">"
+      +"<input type='checkbox' "+(on?"checked":"")+" onchange=\"toggleNavItem('"+k+"',this.checked)\" style='width:17px;height:17px;cursor:pointer'>"
+      +"<span style='width:20px;text-align:center'>"+icon+"</span>"
+      +"<span style='"+(on?"":"color:var(--ink-soft);text-decoration:line-through")+"'>"+label+"</span></label>";
+  });
+  box.innerHTML=h||"<div style='font-size:12px;color:var(--ink-soft)'>ไม่พบเมนู</div>";
+}
+function toggleNavItem(key,show){
+  var i=hiddenNav.indexOf(key);
+  if(show){ if(i>=0) hiddenNav.splice(i,1); }
+  else if(i<0){ hiddenNav.push(key); }
+  applyNavVisibility(); renderNavSettings(); saveGlobalSettings();
+}
 async function loadGlobalSettings(){
   var sb_=getSB(); if(!sb_)return;
   try{
@@ -5020,6 +5061,8 @@ async function loadGlobalSettings(){
     if(utSel)utSel.value=s.kitchenUtensilSize;
     orderPageSize=parseInt(s.orderPageSize,10)||20;
     var ordSel=document.getElementById("set-order-page-size"); if(ordSel)ordSel.value=String(orderPageSize);
+    hiddenNav=Array.isArray(s.hiddenNav)?s.hiddenNav.slice():[];
+    applyNavVisibility(); renderNavSettings();
   }catch(e){console.error("loadGlobalSettings:",e);}
 }
 async function saveGlobalSettings(){
@@ -5030,7 +5073,8 @@ async function saveGlobalSettings(){
   var data={
     dbMenuPageSize: parseInt((pageSel&&pageSel.value)||30,10),
     kitchenUtensilSize: (utSel&&utSel.value)||"normal",
-    orderPageSize: parseInt((ordSel&&ordSel.value)||20,10)
+    orderPageSize: parseInt((ordSel&&ordSel.value)||20,10),
+    hiddenNav: hiddenNav.slice()
   };
   orderPageSize=data.orderPageSize;
   if(typeof loadAll==="function") loadAll();   // เปลี่ยนจำนวนแล้วโหลดรายการใหม่ทันที
