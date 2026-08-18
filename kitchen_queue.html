@@ -233,6 +233,51 @@ body.tablet .code-tag{font-size:14px;padding:4px 9px;}
 .mtag-wk{color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE}
 .mtag-wk.old{color:#B91C1C;background:#FEE2E2;border-color:#FCA5A5}
 body.tablet .mtag{font-size:13px;padding:3px 8px}
+/* ── แถวตั้งสต็อคแบบใหม่: เลขใหญ่ = ลูกค้าสั่งได้อีก · ดินสอเปิดแผงแก้ ── */
+.stk-row.open{background:var(--gs);border-radius:10px 10px 0 0}
+.stk-sub{font-size:11px;color:var(--soft);margin-top:3px}
+.stk-sub b{color:var(--ink)}
+.stk-sub b.inc{color:#1D4ED8}
+.stk-sub .inc-old{color:var(--r);font-weight:700}
+.stk-left{min-width:52px;text-align:center;font-size:20px;font-weight:800;font-family:var(--mono)}
+.stk-left.ok{color:var(--g)} .stk-left.zero{color:var(--r)} .stk-left.inf{color:var(--soft)}
+.stk-pen{width:40px;height:40px;border:1px solid var(--xsoft);background:#fff;border-radius:10px;font-size:16px;cursor:pointer}
+.stk-pen:active{background:var(--gs)}
+.stk-edit{background:var(--gs);border-radius:0 0 10px 10px;padding:10px 12px 12px;margin-bottom:6px}
+.stk-edit-who{font-size:11px;color:var(--soft);margin-bottom:8px}
+.stk-edit-grid{display:flex;gap:10px}
+.stk-edit-grid label{flex:1;display:flex;flex-direction:column;gap:4px;font-size:12px;font-weight:700;color:var(--g)}
+.stk-edit-grid input{width:100%;padding:10px;font-size:20px;font-weight:800;text-align:center;font-family:var(--mono);
+  border:2px solid var(--xsoft);border-radius:10px;background:#fff}
+.stk-edit-grid input:focus{border-color:var(--g);outline:none}
+.stk-edit-note{font-size:12px;color:var(--soft);margin:8px 0}
+.stk-edit-note b{font-size:16px;color:var(--g)}
+.stk-edit-btns{display:flex;flex-wrap:wrap;gap:6px}
+.se-b{padding:9px 12px;border-radius:9px;font-size:12px;font-weight:700;border:1px solid var(--xsoft);background:#fff;cursor:pointer}
+.se-save{background:var(--g);color:#fff;border-color:var(--g);margin-left:auto}
+.se-done{background:#ECFDF5;color:#047857;border-color:#A7F3D0;flex-basis:100%}
+.se-inf.on{background:var(--g);color:#fff;border-color:var(--g)}
+.se-cancel{color:var(--soft)}
+body.tablet .stk-left{font-size:26px;min-width:64px}
+body.tablet .stk-pen{width:52px;height:52px;font-size:20px}
+body.tablet .stk-edit-grid input{font-size:26px;padding:14px}
+body.tablet .se-b{font-size:15px;padding:12px 16px}
+/* ── ประวัติการเติมสต็อค ── */
+.stk-hist{margin-top:14px;border:1px solid var(--xsoft);border-radius:12px;overflow:hidden}
+.hist-head{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--gs);cursor:pointer;font-size:12.5px}
+.hist-head b{color:var(--g)}
+.hist-sum{margin-left:auto;color:var(--soft);font-size:11.5px}
+.hist-sum b{color:var(--ink);font-size:14px}
+.hist-arrow{color:var(--soft)}
+.hist-top{padding:8px 12px;font-size:11.5px;color:var(--soft);border-bottom:1px solid var(--xsoft)}
+.hist-top span{display:inline-block;margin-right:10px}
+.hist-top b{color:var(--g)}
+.hist-empty{padding:16px;text-align:center;color:var(--soft);font-size:12px}
+.hist-row{display:flex;gap:8px;align-items:baseline;padding:7px 12px;font-size:11.5px;border-top:1px solid var(--xsoft)}
+.hist-t{font-family:var(--mono);color:var(--soft);flex-shrink:0}
+.hist-who{font-weight:700;color:var(--g);flex-shrink:0;min-width:44px}
+.hist-x{flex:1;min-width:0;color:var(--ink)}
+.hist-add{font-weight:800;color:#1D4ED8;flex-shrink:0}
 /* การ์ดออเดอร์ */
 body.tablet .oc{padding:16px 18px;border-radius:14px;border-width:2px;margin-bottom:10px;}
 body.tablet .oc-name{font-size:19px;}
@@ -403,6 +448,24 @@ function requireKqUser(){
   return !!(kqCurrentUser&&kqCurrentUser.trim());
 }
 // เขียนทุกครั้งที่กด ไม่ debounce/รวมแถว (ต่างจาก DB) เพราะเป็นการกดที่มีผลจริงต่อออเดอร์ ไม่ใช่ปรับตัวเลขรัวๆ — ต้องมี record แยกทุกครั้งเพื่อสอบย้อนหลังได้
+/* ── 📜 ประวัติการเติมสต็อค (นัทสั่ง 18 ส.ค.) ────────────────────────────────
+   ทำไมต้องเก็บ: จะได้ตอบได้ว่า "สัปดาห์นี้ทำเติมไปกี่กล่อง เมนูไหนเติมบ่อยสุด"
+   เก็บใน activity_log (ตารางเดิม) action_type='stock' + detail มีตัวเลขจริง
+   → รวมยอดได้โดยไม่ต้องอ่านข้อความภาษาไทยมาตีความ */
+async function logStock(m, ev, before, after, extra){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    await sb_.from("activity_log").insert({
+      session_id:"kq_"+Date.now()+"_"+Math.random().toString(36).slice(2,8),
+      actor:kqCurrentUser||"ไม่ทราบชื่อ", source:"kq", action_type:"stock",
+      summary:(m.code||"")+" "+(m.name||"")+" — "+ev
+        +" · มีจริง "+before.real+"→"+after.real+" · กำลังเติม "+before.inc+"→"+after.inc,
+      detail:Object.assign({event:ev, code:m.code, menu_id:m.id, date:thaiToday2(),
+        real_from:before.real, real_to:after.real, inc_from:before.inc, inc_to:after.inc,
+        added:Math.max(0,(after.real+after.inc)-(before.real+before.inc))}, extra||{})
+    });
+  }catch(e){ console.warn("logStock failed:",e); }
+}
 async function logKqActivity(summary){
   var sb_=getSB(); if(!sb_)return;
   try{
@@ -575,7 +638,7 @@ async function loadAll(){
     var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
-      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig","menu_special_weeks"])
+      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig","menu_special_weeks","stock_incoming"])
     ]);
     allItems=await fetchItemsFor(sb_,ids);
     allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
@@ -601,6 +664,8 @@ async function loadAll(){
     var _gs=(_kd.find(function(x){return x.key==="globalSettings";})||{}).data||{};
     var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
     weekTagMap=(_kd.find(function(x){return x.key==="menu_special_weeks";})||{}).data||{};
+    stockIncoming=(_kd.find(function(x){return x.key==="stock_incoming";})||{}).data||{};
+    _needRollover=true;
     kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
     catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
   }catch(e){ console.error(e); alert("⚠️ โหลดออเดอร์ไม่สำเร็จ — ที่เห็นบนจออาจไม่ครบ\n"+((e&&e.message)||"")+"\n\nกดรีเฟรชอีกครั้ง"); }
@@ -916,8 +981,9 @@ function renderStock(){
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
   var om=stkOrderedMap();
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>"
-    +"กรอก <b>จำนวนที่ทำไว้ทั้งหมด</b> ของเมนูนั้น — ระบบ<b>หักของที่ลูกค้าสั่งไปแล้ว</b>ให้เอง แล้วเหลือเท่าไหร่ถึงเปิดให้สั่งต่อ<br>"
-    +"<span style='color:var(--g);font-weight:700'>ทำไว้ − สั่งแล้ว = ขายได้อีก</span> · แตะ <b>∞</b> = ขายไม่จำกัด</div>";
+    +"เลขใหญ่ = <b>ลูกค้ายังสั่งได้อีกกี่กล่อง</b> · แตะ <b>✏️</b> เพื่อแก้<br>"
+    +"<span style='color:var(--g);font-weight:700'>มีของจริง + กำลังเติม − สั่งแล้ว = ลูกค้าสั่งได้อีก</span><br>"
+    +"<span style='font-size:11px'>ของหมดสต็อคแต่จะทำเพิ่ม → ใส่ <b>กำลังเติม</b> ไว้ หน้าร้านจะยังเปิดขายให้</span></div>";
 
   // แถบหมวด + ช่องค้นหา (นัทสั่ง 12 ส.ค.) — ครัวกรอกสต็อกทีละหมวด (บ๊ะจ่าง/ข้าวกล่อง/แพคกับข้าว)
   // เดิมเป็นรายการยาวรวดเดียว 115 เมนู ครัวต้องเลื่อนหาเอง = กรอกผิดแถวง่าย
@@ -943,25 +1009,13 @@ function renderStock(){
   var lastCat=null;
   shown.forEach(function(m){
     if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
-    var unlimited=(m.stock_total==null);
-    var ordered=om[m.id]||0;
-    var left=unlimited?0:m.stock_total;
-    var val=unlimited?0:(left+ordered);          // ช่องกรอก = "ทำไว้ทั้งหมด" ไม่ใช่ "เหลือขาย"
-    html+="<div class='stk-row'>"
-      +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+tagsHtml(m)+escH(m.name||"")
-      +(ordered&&!unlimited
-        ?"<div style='font-size:11px;color:var(--soft);margin-top:2px'>ทำไว้ "+val
-          +" − <span style='color:var(--gold);font-weight:700'>สั่งแล้ว "+ordered+"</span>"
-          +" = <span style='color:"+(left>0?"var(--g)":"var(--r)")+";font-weight:700'>ขายได้อีก "+left+"</span></div>"
-        :(ordered?" <span style='color:var(--gold);font-size:11px'>· สั่งแล้ว "+ordered+"</span>":""))+"</div>"
-      +"<div class='stk-ctrl'>"
-      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',-1)\" "+(unlimited?"disabled":"")+">−</button>"
-      +"<input class='stk-num' type='number' min='0' value='"+val+"' data-id='"+m.id+"' oninput='stkType(this)'"+(unlimited?" disabled style='opacity:.35'":"")+">"
-      +"<button class='stk-btn' onclick=\"stkAdj('"+m.id+"',1)\" "+(unlimited?"disabled":"")+">+</button>"
-      +"<button class='stk-inf "+(unlimited?"on":"")+"' onclick=\"stkInf('"+m.id+"')\" title='ขายไม่จำกัด'>∞</button>"
-      +"</div></div>";
+    html+=stkRowHtml(m,om[m.id]||0);
   });
+  html+="<div id='stkHist' class='stk-hist'></div>";
   el.innerHTML=html;
+  renderStockHistory();
+  if(_needRollover){ stkRolloverDay(); }
+  if(!stockHist.length) loadStockHistory();
 }
 /* ── 🍳 ครัวกรอก "ทำไว้กี่กล่อง" ไม่ใช่ "ขายได้อีกกี่กล่อง" (นัทสั่งแก้ที่ต้นเหตุ) ─────
    ปัญหาเดิม: ช่องนี้เขียนลง `stock_total` ตรงๆ ซึ่งแปลว่า "ลูกค้าซื้อได้อีกเท่านี้"
@@ -977,7 +1031,235 @@ function stkOrderedMap(){
 }
 function stkOrderedOf(menuId){ return stkOrderedMap()[menuId]||0; }
 
-// val = "ทำไว้ทั้งหมด" (ตัวเลข) หรือ null (ไม่จำกัด)
+/* ══════════════════════════════════════════════════════════════════════════
+   📦 แผงเติมสต็อค — ออกแบบตามที่นัทอธิบายเอง 18 ส.ค. 2569
+
+   ปัญหาที่แก้: ช่องเดียว +/- แก้สดๆ ได้ทันที
+     · ครัวกดทับเลขที่ลูกค้าสั่งไปแล้ว → in/out ของออเดอร์เพี้ยน ตามย้อนไม่ได้ว่าใครแก้
+     · ของขายหมดจริง (เหลือ 0) หน้าร้านขึ้น "หมด" ทั้งที่ครัวกำลังจะทำเพิ่ม = เสียยอดฟรี
+
+   นัทอธิบายเอง: "ครัวกดกรอกอีกช่อง ก็จะขึ้น เช่น 0 กับอีกช่อง 10
+                  ลูกค้าก็จะเห็นว่ายังสั่งได้อยู่ แม้ว่าครัวจะยังไม่เริ่มทำ"
+
+   เลย 2 ช่องแยกกัน:
+     · มีของจริง (actual_stock)  = นับด้วยตาแล้วกรอก · ไม่ขยับเอง
+     · กำลังเติม (stockIncoming) = ที่จะทำเพิ่ม · ยังไม่มีของ แต่ขายล่วงหน้าได้
+   ลูกค้าเห็น (stock_total) = มีจริง + กำลังเติม − สั่งแล้ว   ← สูตรเดียว ที่อื่นไม่ต้องรู้
+
+   ⚠️ ทำไมไม่ยุบเป็นช่องเดียว: วันที่ของทำไม่ทัน จะแยกไม่ออกว่าที่หายไปคือ "ขายไป"
+      หรือ "ทำไม่ครบ" — แยก 2 ช่องแล้วมองออกทันทีว่าค้างที่ไหน
+   ⚠️ ไม่มีการยุบ "กำลังเติม" เข้า "มีของจริง" อัตโนมัติ — ระบบไม่รู้ว่าครัวทำเสร็จจริงไหม
+      เดาแล้วผิด = ตัวเลขโกหกแบบเงียบ · ให้ครัวกดปุ่ม "ทำเสร็จแล้ว" เองเมื่อของอยู่ในมือ
+   ═══════════════════════════════════════════════════════════════════════════ */
+var stockIncoming={};        // { menuId: {n:จำนวน, by:ใครกรอก, at:ISO} } เก็บใน kitchen_data.stock_incoming
+var stkEditId=null;          // แถวที่กางแผงแก้อยู่
+
+function stkIncOf(menuId){ var r=stockIncoming[menuId]; return (r&&r.n)?Number(r.n)||0:0; }
+/* ⚠️ "มีของจริง" คำนวณย้อนจาก stock_total ไม่ใช่อ่าน actual_stock ตรงๆ
+   เพราะ stock_total คือเลขที่ LIFF ใช้จริง (RPC adjust_stock ลดทุกครั้งที่ลูกค้าสั่ง)
+   ส่วน actual_stock เป็นเลขที่ครัวเคยนับไว้ ไม่ขยับตามการขาย → 2 เลขนี้หลุดกันได้
+   ถ้าโชว์ actual_stock ตรงๆ หน้าครัวจะบอกเลขนึง แต่หน้าร้านขายอีกเลขนึง = โกหกเงียบๆ
+   ยึด stock_total เป็นความจริงเสมอ: มีจริง = ลูกค้าสั่งได้อีก + สั่งไปแล้ว − กำลังเติม */
+function stkRealOf(m,ordered){
+  if(m.stock_total==null) return 0;
+  return Math.max(0, Number(m.stock_total||0) + (ordered||0) - stkIncOf(m.id));
+}
+
+// แถวเมนู 1 แถว — เลขใหญ่ = ลูกค้าสั่งได้อีก · ปุ่มดินสอเปิดแผงแก้
+function stkRowHtml(m,ordered){
+  var unlimited=(m.stock_total==null);
+  var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
+  var left=unlimited?null:Number(m.stock_total||0);   // เลขที่ LIFF ใช้จริง ไม่คำนวณใหม่ให้เพี้ยน
+  var open=(stkEditId===m.id);
+  var incAge="";
+  if(inc){
+    var at=stockIncoming[m.id]&&stockIncoming[m.id].at;
+    // ค้างข้ามวัน = ของที่บอกว่าจะทำแต่ยังไม่ทำ ต้องสะดุดตา ไม่งั้นขายล่วงหน้าไปเรื่อยๆ โดยไม่มีของ
+    if(at && String(at).slice(0,10) < thaiToday2()) incAge=" ⚠️ ค้างจากวันก่อน";
+  }
+  var h="<div class='stk-row"+(open?" open":"")+"'>"
+    +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+tagsHtml(m)+escH(m.name||"")
+    +"<div class='stk-sub'>"
+      +(unlimited
+        ? "ขายไม่จำกัด"+(ordered?(" · <b style='color:var(--gold)'>สั่งแล้ว "+ordered+"</b>"):"")
+        : "มีจริง <b>"+real+"</b> + กำลังเติม <b class='"+(inc?"inc":"")+"'>"+inc+"</b>"
+          +" − สั่งแล้ว <b style='color:var(--gold)'>"+ordered+"</b>"
+          +(incAge?("<span class='inc-old'>"+incAge+"</span>"):""))
+    +"</div></div>"
+    +"<div class='stk-ctrl'>"
+      +"<div class='stk-left "+(unlimited?"inf":(left>0?"ok":"zero"))+"'>"+(unlimited?"∞":left)+"</div>"
+      +"<button class='stk-pen' onclick=\"stkEdit('"+m.id+"')\" title='แก้จำนวน'>✏️</button>"
+    +"</div></div>";
+  if(open) h+=stkEditPanel(m,ordered);
+  return h;
+}
+
+// แผงแก้ — 2 ช่องตามที่นัทออกแบบ + ปุ่มลัดที่ครัวใช้จริง
+function stkEditPanel(m,ordered){
+  var unlimited=(m.stock_total==null);
+  var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
+  return "<div class='stk-edit'>"
+    +"<div class='stk-edit-who'>👤 คนแก้: <b>"+escH(kqCurrentUser||"—")+"</b></div>"
+    +"<div class='stk-edit-grid'>"
+      +"<label>มีของจริงตอนนี้<input type='number' min='0' id='se_real' value='"+real+"'"+(unlimited?" disabled":"")+"></label>"
+      +"<label>กำลังเติมอีก<input type='number' min='0' id='se_inc' value='"+inc+"'"+(unlimited?" disabled":"")+"></label>"
+    +"</div>"
+    +"<div class='stk-edit-note'>ลูกค้าจะสั่งได้อีก = "
+      +(unlimited?"ไม่จำกัด":"<b id='se_prev'>"+Math.max(0,real+inc-ordered)+"</b> กล่อง (หักที่สั่งไปแล้ว "+ordered+")")+"</div>"
+    +"<div class='stk-edit-btns'>"
+      +(inc&&!unlimited?"<button class='se-b se-done' onclick=\"stkDone('"+m.id+"')\">✅ ทำเสร็จแล้ว ("+inc+") → ย้ายเข้าของจริง</button>":"")
+      +"<button class='se-b se-inf"+(unlimited?" on":"")+"' onclick=\"stkToggleInf('"+m.id+"')\">"+(unlimited?"↩ กลับมานับจำนวน":"∞ ขายไม่จำกัด")+"</button>"
+      +"<button class='se-b se-cancel' onclick='stkEdit(null)'>ยกเลิก</button>"
+      +(unlimited?"":"<button class='se-b se-save' onclick=\"stkSave('"+m.id+"')\">บันทึก</button>")
+    +"</div></div>";
+}
+
+// เปิด/ปิดแผง — ต้องมีชื่อก่อน (นัทสั่ง: ใครจะมาแก้ต้องกรอกชื่อ)
+function stkEdit(menuId){
+  if(menuId && !requireKqUser()) return;
+  stkEditId=(stkEditId===menuId)?null:menuId;
+  renderStock();
+  if(stkEditId){
+    var a=document.getElementById("se_real"), b=document.getElementById("se_inc"), p=document.getElementById("se_prev");
+    var m=(allMenus||[]).find(function(x){return x.id===stkEditId;});
+    var ord=stkOrderedMap()[stkEditId]||0;
+    var upd=function(){ if(p) p.textContent=Math.max(0,(parseInt(a.value)||0)+(parseInt(b.value)||0)-ord); };
+    if(a){ a.addEventListener("input",upd); a.focus(); a.select(); }
+    if(b) b.addEventListener("input",upd);
+  }
+}
+
+async function stkSave(menuId){
+  if(!requireKqUser()) return;
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m) return;
+  var real=Math.max(0,parseInt((document.getElementById("se_real")||{}).value)||0);
+  var inc =Math.max(0,parseInt((document.getElementById("se_inc") ||{}).value)||0);
+  var before={real:stkRealOf(m,stkOrderedMap()[menuId]||0), inc:stkIncOf(m.id)};
+  await stkCommit(m, real, inc, "แก้จำนวน");
+  stkEditId=null; renderStock(); loadStockHistory();
+}
+
+// ✅ ครัวกดเองเมื่อของอยู่ในมือแล้ว — ย้าย "กำลังเติม" เข้า "มีของจริง" (ยอดที่ลูกค้าเห็นไม่ขยับ)
+async function stkDone(menuId){
+  if(!requireKqUser()) return;
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m) return;
+  var inc=stkIncOf(m.id); if(!inc) return;
+  if(!confirm("ยืนยันว่าทำเสร็จแล้ว "+inc+" กล่อง?\n\nจะย้ายจาก \"กำลังเติม\" ไปเป็น \"มีของจริง\"\nยอดที่ลูกค้าสั่งได้ไม่เปลี่ยน")) return;
+  await stkCommit(m, stkRealOf(m,stkOrderedMap()[menuId]||0)+inc, 0, "เติมเสร็จ");
+  stkEditId=null; renderStock(); loadStockHistory();
+}
+
+async function stkToggleInf(menuId){
+  if(!requireKqUser()) return;
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m) return;
+  if(m.stock_total==null){ await stkCommit(m,0,0,"เลิกไม่จำกัด"); }
+  else { await stkSetUnlimited(m); }
+  stkEditId=null; renderStock(); loadStockHistory();
+}
+
+/* เขียนจริง — สูตรเดียวที่ทุกหน้าอ่านต่อได้: stock_total = มีจริง + กำลังเติม − สั่งแล้ว
+   เขียน stock_total ทุกครั้งที่ครัวแก้ · เวลาลูกค้าสั่งเพิ่ม RPC adjust_stock ลด stock_total ให้เอง
+   → ตัวเลขสองทางนี้ไม่ตีกัน เพราะฝั่งลูกค้าลดทีละ 1 พร้อมกับ ordered เพิ่มทีละ 1 */
+async function stkCommit(m, real, inc, why){
+  var sb_=getSB(); if(!sb_) return;
+  var ordered=stkOrderedMap()[m.id]||0;
+  var before={real:stkRealOf(m,ordered), inc:stkIncOf(m.id)};
+  var total=Math.max(0, real+inc-ordered);
+  m.actual_stock=real; m.stock_total=total;
+  stockIncoming[m.id]= inc ? {n:inc, by:kqCurrentUser||"", at:new Date().toISOString()} : null;
+  if(!inc) delete stockIncoming[m.id];
+  var r=await sb_.from("menu_items").update({actual_stock:real, stock_total:total}).eq("id",m.id);
+  if(r.error) return kqWriteFail(r.error,"ตั้งสต็อค ("+why+")");
+  await saveIncoming();
+  await logStock(m, why, before, {real:real, inc:inc});
+}
+async function stkSetUnlimited(m){
+  var sb_=getSB(); if(!sb_) return;
+  m.stock_total=null; m.actual_stock=null;
+  delete stockIncoming[m.id];
+  var r=await sb_.from("menu_items").update({actual_stock:null, stock_total:null}).eq("id",m.id);
+  if(r.error) return kqWriteFail(r.error,"ตั้งสต็อค (ไม่จำกัด)");
+  await saveIncoming();
+}
+/* เก็บ "กำลังเติม" ใน kitchen_data — ไม่ต้องรอใครรัน SQL เพิ่มคอลัมน์
+   (คีย์เดียวทั้งร้าน เหมือน menu_special_weeks ที่ใช้อยู่แล้ว) */
+async function saveIncoming(){
+  var sb_=getSB(); if(!sb_) return;
+  try{ await sb_.from("kitchen_data").upsert({key:"stock_incoming", data:stockIncoming},{onConflict:"key"}); }
+  catch(e){ console.warn("saveIncoming:",e); }
+}
+function thaiToday2(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+
+/* ── 🌙 ปิดวันอัตโนมัติ (นัทเคาะ 18 ส.ค.: "เอาทั้ง 2 แบบเลย") ───────────────
+   ครัวกดปุ่ม "เติมเสร็จ" เองได้ · แต่ถ้าลืมกด พอข้ามวันระบบย้ายให้เอง
+   เหตุผล: ของที่บอกว่า "กำลังเติม" เมื่อวาน วันนี้มันอยู่ในมือแล้ว (หรือไม่ก็ไม่ได้ทำ)
+   ปล่อยค้างไว้ = ขายล่วงหน้าซ้ำทุกวันโดยไม่มีของ
+   ⚠️ ยอดที่ลูกค้าเห็น (stock_total) ไม่ขยับจากการย้ายนี้ — แค่ย้ายกระเป๋า
+      ถ้าครัวไม่ได้ทำจริง ต้องมาแก้ "มีของจริง" ลงเอง ระบบเดาแทนไม่ได้ */
+var _needRollover=false;
+async function stkRolloverDay(){
+  _needRollover=false;
+  var today=thaiToday2(), ids=[];
+  for(var k in stockIncoming){
+    var r=stockIncoming[k];
+    if(r && r.n && String(r.at||"").slice(0,10) < today) ids.push(k);
+  }
+  if(!ids.length) return;
+  for(var i=0;i<ids.length;i++){
+    var m=(allMenus||[]).find(function(x){return x.id===ids[i];});
+    if(!m){ delete stockIncoming[ids[i]]; continue; }
+    var ordered=stkOrderedMap()[m.id]||0;
+    var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
+    var keeper=kqCurrentUser; kqCurrentUser=kqCurrentUser||"ระบบ (ปิดวัน)";
+    await stkCommit(m, real+inc, 0, "ปิดวันอัตโนมัติ");
+    kqCurrentUser=keeper;
+  }
+  console.log("ปิดวัน: ย้ายกำลังเติมเข้าของจริง "+ids.length+" เมนู");
+}
+
+/* ── 📜 แผงประวัติการเติมสต็อค — 7 วันล่าสุด + ยอดรวมสัปดาห์ ── */
+var stockHist=[], stockHistOpen=false;
+async function loadStockHistory(){
+  var sb_=getSB(); if(!sb_) return;
+  try{
+    var since=new Date(Date.now()+7*3600e3 - 7*86400e3).toISOString().slice(0,10);
+    var r=await sb_.from("activity_log").select("actor,summary,detail,created_at")
+      .eq("action_type","stock").gte("created_at",since).order("created_at",{ascending:false}).limit(300);
+    stockHist=r.data||[];
+  }catch(e){ stockHist=[]; }
+  renderStockHistory();
+}
+function toggleStockHist(){ stockHistOpen=!stockHistOpen; renderStockHistory(); }
+function renderStockHistory(){
+  var el=document.getElementById("stkHist"); if(!el) return;
+  var added=0, byCode={};
+  stockHist.forEach(function(x){
+    var d=x.detail||{}, n=Number(d.added||0);
+    if(n>0){ added+=n; byCode[d.code||"?"]=(byCode[d.code||"?"]||0)+n; }
+  });
+  var top=Object.keys(byCode).sort(function(a,b){return byCode[b]-byCode[a];}).slice(0,5);
+  var h="<div class='hist-head' onclick='toggleStockHist()'>"
+    +"<b>📜 ประวัติการเติมสต็อค 7 วัน</b>"
+    +"<span class='hist-sum'>เติมรวม <b>"+added+"</b> กล่อง · "+stockHist.length+" ครั้ง</span>"
+    +"<span class='hist-arrow'>"+(stockHistOpen?"▲":"▼")+"</span></div>";
+  if(stockHistOpen){
+    if(top.length) h+="<div class='hist-top'>เติมเยอะสุด: "
+      +top.map(function(c){return "<span>"+escH(c)+" <b>"+byCode[c]+"</b></span>";}).join("")+"</div>";
+    if(!stockHist.length) h+="<div class='hist-empty'>ยังไม่มีการแก้สต็อคใน 7 วันนี้</div>";
+    stockHist.slice(0,80).forEach(function(x){
+      var d=x.detail||{}, t=new Date(x.created_at);
+      var when=String(t.getDate()).padStart(2,"0")+"/"+String(t.getMonth()+1).padStart(2,"0")
+        +" "+String(t.getHours()).padStart(2,"0")+":"+String(t.getMinutes()).padStart(2,"0");
+      h+="<div class='hist-row'><span class='hist-t'>"+when+"</span>"
+        +"<span class='hist-who'>"+escH(x.actor||"—")+"</span>"
+        +"<span class='hist-x'>"+escH(x.summary||"")+"</span>"
+        +(Number(d.added||0)>0?"<span class='hist-add'>+"+d.added+"</span>":"")+"</div>";
+    });
+  }
+  el.innerHTML=h;
+}
+
+// val = "ทำไว้ทั้งหมด" (ตัวเลข) หรือ null (ไม่จำกัด)  ── ของเดิม เก็บไว้ให้ที่อื่นเรียกได้
 function stkWrite(menuId,val){
   var left = (val==null) ? null : Math.max(0, val - stkOrderedOf(menuId));
   var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=left;

@@ -288,6 +288,7 @@ body.list-mode .line-group .card:nth-child(even){background:var(--surface-2,#FAF
 .stock-ctrl{display:flex;align-items:center;gap:3px;flex-shrink:0;margin-left:auto;}
 .stock-ctrl button{appearance:none;border:none;background:var(--surface-2);color:var(--ink);width:24px;height:24px;border-radius:6px;font-size:14px;cursor:pointer;line-height:1;}
 .stock-ctrl button:hover{background:#e9e0cd;}
+.inc-chip{font-size:10px;font-weight:800;color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:5px;padding:1px 4px;margin-left:2px;white-space:nowrap;cursor:help}
 .stock-ctrl input{width:48px;text-align:center;padding:4px 2px;border:1px solid var(--line);border-radius:6px;font-family:'IBM Plex Mono',monospace;font-size:12.5px;}
 .stock-lbl{font-size:9.5px;color:var(--ink-soft);text-align:center;}
 .stock-plus10{width:auto!important;padding:0 7px;font-size:11px!important;font-weight:700;background:var(--turmeric-soft)!important;color:var(--turmeric)!important;}
@@ -3136,9 +3137,10 @@ async function syncMenuMetaFromDB(){
     if(!codes.length) return;
     let changed = 0;
     liveOnline = {};   /* ค่าจริงที่ลูกค้าเห็น — เก็บไว้เทียบ ไม่เอาไปทับค่าในหน้านี้ */
+    _incRaw = await loadStockIncoming();
     for(let i=0;i<codes.length;i+=200){
       const { data, error } = await sb.from('menu_items')
-        .select('code,subcode,available_from,is_available,stock_total').in('code', codes.slice(i,i+200));
+        .select('id,code,subcode,available_from,is_available,stock_total').in('code', codes.slice(i,i+200));
       if(error || !data) continue;
       data.forEach(m=>{
         const r = state.recipes.find(x=>x.code===m.code); if(!r) return;
@@ -3154,6 +3156,8 @@ async function syncMenuMetaFromDB(){
         if(m.stock_total!=null && Number(r.stock||0)!==Number(m.stock_total)){ r.stock = Number(m.stock_total); changed++; }
         liveOnline[m.code] = !!m.is_available;
         liveStock[m.code]  = (m.stock_total==null) ? null : Number(m.stock_total);
+        liveMenuId[m.code] = m.id;
+        stkIncByCode[m.code] = _incRaw[m.id] || 0;
       });
     }
     if(changed){ persistRecipesDebounced(); render(); }
@@ -4256,6 +4260,41 @@ function renderPttCard(r){
   ${isOpen ? renderRecipeCard(r, computeTotals(r)) : ''}`;
 }
 
+/* ── 📦 "กำลังเติม" ที่ครัวกรอกไว้ในหน้าครัว (นัทสั่ง 18 ส.ค. — เลขต้องตรงกันทุกหน้า) ──
+   หน้าครัวแยกสต็อคเป็น 2 กระเป๋า: "มีของจริง" กับ "กำลังเติม"
+   ช่อง "สต็อก" ของหน้านี้ = ผลรวมที่ลูกค้าสั่งได้ (stock_total) ซึ่งเป็นเลขเดียวกันเป๊ะ
+   แต่ถ้าไม่บอกว่าในนั้นมี "ของที่ยังไม่ได้ทำ" ปนอยู่ แอดมินจะนึกว่ามีของครบในมือ
+   → โชว์เป็นป้ายเล็กๆ "⏳เติม N" ข้างช่องสต็อก
+   ⚠️ พอแอดมินแก้เลขที่หน้านี้ = ประกาศยอดขายได้ใหม่ทั้งก้อน → ล้าง "กำลังเติม" ทิ้ง
+      ไม่งั้นหน้าครัวจะยังโชว์ส่วนประกอบเก่าที่ไม่ตรงกับยอดจริงอีกต่อไป */
+let stkIncByCode = {}, liveMenuId = {}, _incRaw = {};
+async function loadStockIncoming(){
+  try{
+    const sb = getSB(); if(!sb) return {};
+    const { data } = await sb.from('kitchen_data').select('data').eq('key','stock_incoming').maybeSingle();
+    const raw = (data && data.data) || {};
+    const out = {};
+    for(const k in raw){ const v = raw[k]; if(v && v.n) out[k] = Number(v.n)||0; }
+    return out;
+  }catch(e){ return {}; }
+}
+// ล้าง "กำลังเติม" ของเมนูนั้นเมื่อแอดมินตั้งสต็อกใหม่จากหน้านี้
+async function clearIncomingFor(code){
+  if(!code || !stkIncByCode[code]) return;
+  try{
+    const sb = getSB(); if(!sb) return;
+    const { data } = await sb.from('kitchen_data').select('data').eq('key','stock_incoming').maybeSingle();
+    const raw = (data && data.data) || {};
+    const m = state.recipes.find(x=>x.code===code);
+    let touched = false;
+    for(const k in raw){ if(raw[k] && raw[k].code===code){ delete raw[k]; touched = true; } }
+    // เก็บด้วย menu_id เป็นคีย์ → ต้องหาจาก liveMenuId
+    if(liveMenuId[code] && raw[liveMenuId[code]]){ delete raw[liveMenuId[code]]; touched = true; }
+    if(touched) await sb.from('kitchen_data').upsert({key:'stock_incoming', data:raw},{onConflict:'key'});
+    delete stkIncByCode[code];
+  }catch(e){ console.warn('clearIncomingFor', e); }
+}
+
 function chgStockFast(id, delta){
   const r = state.recipes.find(r=>r.id===id);
   if(!r) return;
@@ -4265,6 +4304,7 @@ function chgStockFast(id, delta){
   if(inp) inp.value = r.stock;
   persistRecipesDebounced();
   syncStockDebounced(r);
+  clearIncomingFor(r.code);
 }
 
 function saveStockInline(id, val){
@@ -4273,6 +4313,7 @@ function saveStockInline(id, val){
   r.stock = Math.max(0, parseInt(val)||0);
   persistRecipesDebounced();
   syncStockDebounced(r);
+  clearIncomingFor(r.code);
 }
 
 // ดัน stock ขึ้น menu_items จริง (คนละที่กับ persistRecipes ที่เซฟแค่ local working copy)
@@ -4343,6 +4384,7 @@ function renderRecipeCard(r, tot, pinInfo){
         <div><input type="number" class="stock-val" data-id="${r.id}" value="${stockVal}" step="1"><div class="stock-lbl">สต็อก</div></div>
         <button type="button" class="stock-plus" data-id="${r.id}">+</button>
         <button type="button" class="stock-plus10" data-id="${r.id}" title="เติมทีละ 10">+10</button>
+        ${stkIncByCode[r.code] ? `<span class="inc-chip" title="ครัวแจ้งว่ากำลังทำเพิ่มอีก ${stkIncByCode[r.code]} กล่อง — รวมอยู่ในเลขสต็อกนี้แล้ว แต่ของยังไม่อยู่ในมือ">⏳${stkIncByCode[r.code]}</span>` : ''}
       </div>
       <button class="online-toggle-btn${r.available_online?' online-on':''}" data-id="${r.id}" title="${r.available_online?'คลิกเพื่อปิดสั่งออนไลน์':'คลิกเพื่อเปิดให้สั่งออนไลน์ผ่าน LIFF'}">
         ${r.available_online?'🛒 ออนไลน์':'○ ออฟไลน์'}</button>
