@@ -57,22 +57,23 @@
 <div id="page">
   <div class="top">
     <div class="brand">
-      <!-- ถ้ามีไฟล์โลโก้จริงที่ web/img/u360_logo.png จะใช้ไฟล์นั้นแทนอัตโนมัติ -->
-      <img id="logoimg" alt="UNDER360"
-           src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/brand/u360_logo.png"
-           crossorigin="anonymous" style="height:50px;display:none"
-           onload="this.style.display='block';document.getElementById('logosvg').remove();
-                   document.getElementById('logotext').remove();"
+      <!-- โลโก้เวกเตอร์ (คมทุกขนาด) — ถ้าจะใช้ไฟล์จริง วางที่ web/img/u360_logo.png -->
+      <img id="logoimg" alt="UNDER360" src="img/u360_logo.png" style="height:52px;display:none"
+           onload="this.style.display='block';document.getElementById('logosvg').remove();"
            onerror="this.remove()">
-      <svg id="logosvg" class="mk" viewBox="0 0 100 100" fill="none">
-        <path d="M50 10 L92 34 L50 58 L8 34 Z" stroke="#37b34a" stroke-width="8"
-              stroke-linejoin="round" fill="none"/>
-        <path d="M8 45 L46 67 L46 79 L8 57 Z" fill="#37b34a"/>
-        <path d="M92 45 L54 67 L54 79 L92 57 Z" fill="#37b34a"/>
-        <path d="M8 63 L46 85 L46 97 L8 75 Z" fill="#37b34a"/>
-        <path d="M92 63 L54 85 L54 97 L92 75 Z" fill="#37b34a"/>
+      <svg id="logosvg" viewBox="0 0 496 133" style="height:50px;width:auto">
+        <g fill="#2fae46">
+          <path d="M62 8 L118 40 L62 72 L6 40 Z" fill="none" stroke="#2fae46"
+                stroke-width="11" stroke-linejoin="round"/>
+          <path d="M6 56 L56 85 L56 101 L6 72 Z"/>
+          <path d="M118 56 L68 85 L68 101 L118 72 Z"/>
+          <path d="M6 80 L56 109 L56 125 L6 96 Z"/>
+          <path d="M118 80 L68 109 L68 125 L118 96 Z"/>
+        </g>
+        <text x="146" y="93" fill="#2fae46"
+              font-family="'Segoe UI','Arial Black',Arial,sans-serif"
+              font-size="62" font-weight="800" letter-spacing="1">UNDER360</text>
       </svg>
-      <div class="nm" id="logotext">UNDER360</div>
     </div>
     <div class="when">
       <div class="t1">เมนูพิเศษประจำสัปดาห์</div>
