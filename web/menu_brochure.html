@@ -11,37 +11,37 @@
   .bar button{font:inherit;padding:8px 16px;border:0;border-radius:8px;background:#1f7a4d;color:#fff;cursor:pointer}
   .bar .warn{color:#b45309;font-size:14px;width:100%}
 
-  /* ── กระดาษ A4 แนวตั้ง 1240x1754 (150dpi) ── */
-  #page{width:1240px;height:1754px;background:#fff;padding:54px 60px 46px;position:relative;
-        box-shadow:0 8px 30px rgba(0,0,0,.15);overflow:hidden}
+  /* ── กว้าง 1040 เป๊ะ · สูงเท่าไหร่ก็ตามเนื้อหา ── */
+  #page{width:1040px;background:#fff;padding:44px 48px 34px;position:relative;
+        box-shadow:0 8px 30px rgba(0,0,0,.15)}
 
-  .top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:34px}
-  .brand{display:flex;align-items:center;gap:14px}
-  .brand .mk{width:54px;height:54px;flex:0 0 54px}
-  .brand .nm{font-size:34px;font-weight:800;letter-spacing:1px;color:#1a1a1a}
+  .top{display:flex;align-items:center;justify-content:space-between;margin-bottom:26px}
+  .brand{display:flex;align-items:center;gap:12px}
+  .brand .mk{width:46px;height:46px;flex:0 0 46px}
+  .brand .nm{font-size:29px;font-weight:800;letter-spacing:1px;color:#1a1a1a}
   .when{text-align:right;line-height:1.25}
-  .when .t1{font-size:25px;font-weight:700;color:#1a1a1a}
-  .when .t2{font-size:29px;font-weight:800;color:#1a1a1a;letter-spacing:.5px}
+  .when .t1{font-size:21px;font-weight:700;color:#1a1a1a}
+  .when .t2{font-size:25px;font-weight:800;color:#1a1a1a;letter-spacing:.5px}
 
-  .sec + .sec{margin-top:40px}
-  .sec h2{font-size:31px;font-weight:800;color:#1f7a4d;margin-bottom:10px}
-  .rule{height:3px;background:#111;opacity:.85;margin-bottom:22px}
-  .cols{display:grid;grid-template-columns:44% 56%;gap:26px;align-items:start}
+  .sec + .sec{margin-top:32px}
+  .sec h2{font-size:26px;font-weight:800;color:#1f7a4d;margin-bottom:8px}
+  .rule{height:3px;background:#111;opacity:.85;margin-bottom:18px}
+  .cols{display:grid;grid-template-columns:44% 56%;gap:22px;align-items:start}
 
-  .li{margin-bottom:20px;display:flex;gap:11px}
-  .li .k{font-size:26px;font-weight:800;color:#111;min-width:44px;line-height:1.2}
-  .li .nm{font-size:25px;font-weight:700;color:#111;line-height:1.22}
-  .li .nu{font-size:16px;color:#444;margin-top:3px;letter-spacing:.2px}
-  .li .pr{font-size:17px;color:#111;font-weight:600;margin-top:1px}
+  .li{margin-bottom:16px;display:flex;gap:9px}
+  .li .k{font-size:22px;font-weight:800;color:#111;min-width:37px;line-height:1.2}
+  .li .nm{font-size:21px;font-weight:700;color:#111;line-height:1.22}
+  .li .nu{font-size:14px;color:#444;margin-top:2px;letter-spacing:.2px}
+  .li .pr{font-size:15px;color:#111;font-weight:600;margin-top:1px}
 
-  .pics{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-  .pic{position:relative;aspect-ratio:1/1;border-radius:14px;overflow:hidden;background:#f1f1f1}
+  .pics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .pic{position:relative;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:#f1f1f1}
   .pic img{width:100%;height:100%;object-fit:cover;display:block}
-  .pic .no{position:absolute;top:8px;left:8px;background:rgba(255,255,255,.93);color:#111;
-           font-weight:800;font-size:20px;padding:2px 10px;border-radius:8px}
+  .pic .no{position:absolute;top:7px;left:7px;background:rgba(255,255,255,.93);color:#111;
+           font-weight:800;font-size:17px;padding:2px 9px;border-radius:7px}
 
-  .foot{position:absolute;left:60px;right:60px;bottom:30px;display:flex;justify-content:space-between;
-        font-size:20px;color:#555;border-top:2px solid #eee;padding-top:12px}
+  .foot{margin-top:26px;display:flex;justify-content:space-between;
+        font-size:17px;color:#555;border-top:2px solid #eee;padding-top:10px}
   .foot b{color:#1f7a4d}
 </style>
 
@@ -58,8 +58,9 @@
   <div class="top">
     <div class="brand">
       <!-- ถ้ามีไฟล์โลโก้จริงที่ web/img/u360_logo.png จะใช้ไฟล์นั้นแทนอัตโนมัติ -->
-      <img id="logoimg" src="img/u360_logo.png" alt="UNDER360"
-           style="height:58px;display:none"
+      <img id="logoimg" alt="UNDER360"
+           src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/brand/u360_logo.png"
+           crossorigin="anonymous" style="height:50px;display:none"
            onload="this.style.display='block';document.getElementById('logosvg').remove();
                    document.getElementById('logotext').remove();"
            onerror="this.remove()">
@@ -175,14 +176,15 @@ async function png(){
     await Promise.all(imgs.map(async i=>{try{i.src=await toDataUrl(i.src)}catch(e){}}));
     await new Promise(r=>setTimeout(r,450));
     let css="";for(const s of document.styleSheets){try{for(const r of s.cssRules)css+=r.cssText}catch(e){}}
-    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="1240" height="1754">'+
+    const W=1040, H=Math.round(page.getBoundingClientRect().height);   // กว้าง 1040 เป๊ะ · สูงตามเนื้อหา
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'+
       '<foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml">'+
       '<style>'+css+'</style>'+new XMLSerializer().serializeToString(page)+'</div></foreignObject></svg>';
     const im=new Image();
     await new Promise((ok,no)=>{im.onload=ok;im.onerror=no;
       im.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);});
-    const c=document.createElement("canvas");c.width=1240;c.height=1754;
-    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,1240,1754);x.drawImage(im,0,0);
+    const c=document.createElement("canvas");c.width=W;c.height=H;
+    const x=c.getContext("2d");x.fillStyle="#fff";x.fillRect(0,0,W,H);x.drawImage(im,0,0);
     const blob=await new Promise(r=>c.toBlob(r,"image/png"));
     const a=document.createElement("a");a.href=URL.createObjectURL(blob);
     a.download="menu_"+document.getElementById("when2").textContent.replace(/[^0-9A-Za-z]+/g,"_")+".png";
