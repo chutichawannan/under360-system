@@ -251,6 +251,15 @@ body.tablet .pw-t{font-size:17px} body.tablet .pw-b{font-size:14px}
 .stk-left.ok{color:var(--g)} .stk-left.zero{color:var(--r)} .stk-left.inf{color:var(--soft)}
 .stk-add{width:40px;height:40px;border:1px solid #A7F3D0;background:#ECFDF5;border-radius:10px;font-size:15px;cursor:pointer;margin-right:4px}
 .stk-add:active{background:#D1FAE5}
+.stk-hide{width:40px;height:40px;border:1px solid var(--xsoft);background:#fff;border-radius:10px;font-size:15px;cursor:pointer;margin-right:4px}
+.stk-hide:active{background:var(--gs)}
+.stk-hide.on{background:#FEE2E2;border-color:#FCA5A5}
+.stk-row.hidden-sale{background:#FFF7F7}
+.stk-row.hidden-sale .stk-name{opacity:.7}
+.stk-row.hidden-sale .stk-left{color:#C7CBD1 !important;text-decoration:line-through}
+.hid-tag{color:#B91C1C;font-weight:800}
+.stk-cat.hid{border-color:#FCA5A5;color:#B91C1C}
+.stk-cat.hid.on{background:#B91C1C;border-color:#B91C1C;color:#fff}
 .stk-pen{width:40px;height:40px;border:1px solid var(--xsoft);background:#fff;border-radius:10px;font-size:16px;cursor:pointer}
 .stk-quick{display:flex;flex-wrap:wrap;align-items:center;gap:6px;background:#ECFDF5;border-radius:0 0 10px 10px;padding:9px 12px;margin-bottom:6px}
 .sq-lb{font-size:12px;font-weight:800;color:#047857}
@@ -262,6 +271,7 @@ body.tablet .pw-t{font-size:17px} body.tablet .pw-b{font-size:14px}
 .sq-x{padding:8px 10px;border:none;background:transparent;color:var(--soft);font-size:12px;cursor:pointer}
 .sq-now{flex-basis:100%;font-size:11px;color:#047857}
 body.tablet .stk-add{width:52px;height:52px;font-size:19px}
+body.tablet .stk-hide{width:52px;height:52px;font-size:19px}
 body.tablet .sq-c{padding:12px 18px;font-size:16px}
 body.tablet .sq-n{width:96px;padding:12px;font-size:16px}
 body.tablet .sq-ok{padding:12px 18px;font-size:15px}
@@ -661,7 +671,7 @@ async function loadAll(){
     var rest=await Promise.all([
       sb_.from("menu_items").select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category").eq("is_available",true),
       sb_.from("mp_deliveries").select("*").gte("delivery_date",startDate).order("delivery_date").limit(2000),
-      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig","menu_special_weeks","stock_incoming"])
+      sb_.from("kitchen_data").select("key,data").in("key",["globalSettings","appConfig","menu_special_weeks","stock_incoming","stock_hidden"])
     ]);
     allItems=await fetchItemsFor(sb_,ids);
     allMenus=rest[0].data||[]; allMpDeliveries=rest[1].data||[];
@@ -688,6 +698,21 @@ async function loadAll(){
     var _ac=(_kd.find(function(x){return x.key==="appConfig";})||{}).data||{};
     weekTagMap=(_kd.find(function(x){return x.key==="menu_special_weeks";})||{}).data||{};
     stockIncoming=(_kd.find(function(x){return x.key==="stock_incoming";})||{}).data||{};
+    /* 🙈 เมนูที่ "ครัว" ซ่อนเอง — เก็บแยกจาก is_available เฉยๆ เพราะในตารางมีเมนูที่ปิดอยู่ 505 ตัว
+       (ของเก่า/เลิกขาย/ยังไม่เปิด) ถ้าเอาทุกตัวที่ปิดมาโชว์ หน้าครัวจะท่วมจนใช้ไม่ได้
+       เก็บเฉพาะที่ครัวกดซ่อน = ตัวที่ต้องมีทางกดเปิดคืน */
+    stockHidden=(_kd.find(function(x){return x.key==="stock_hidden";})||{}).data||{};
+    var _hidIds=Object.keys(stockHidden||{}).filter(function(k){return stockHidden[k];});
+    if(_hidIds.length){
+      try{
+        var _hr=await sb_.from("menu_items")
+          .select("id,code,name,subcode,stock_total,actual_stock,is_available,no_morning,category")
+          .in("id",_hidIds).limit(200);
+        (_hr.data||[]).forEach(function(m){
+          if(!allMenus.some(function(x){return x.id===m.id;})) allMenus.push(m);
+        });
+      }catch(e){ /* ดึงไม่ได้ = แค่ไม่เห็นแถวที่ซ่อน ไม่บล็อกหน้าครัว */ }
+    }
     _needRollover=true;
     kitchenUtensilSize=_gs.kitchenUtensilSize||"normal";
     catLabelMap={}; (_ac.categories||[]).forEach(function(c){ if(c&&c.key) catLabelMap[c.key]=c.label||c.name||c.key; });
@@ -1053,10 +1078,14 @@ function renderStock(){
     var n=menus.filter(function(m){return (m.category||"other")===c;}).length;
     html+="<button class='stk-cat"+(stkCat===c?" on":"")+"' onclick=\"stkPick('"+escH(c)+"')\">"+escH(catName(c))+" <span>"+n+"</span></button>";
   });
+  /* ชิปพิเศษ — เมนูที่ครัวซ่อนไว้ ต้องมีที่ไล่ดูและเปิดคืน ไม่งั้นค้างซ่อนยาวโดยไม่มีใครรู้ */
+  var hidN=menus.filter(function(m){return m.is_available===false;}).length;
+  if(hidN) html+="<button class='stk-cat hid"+(stkCat==="__hidden__"?" on":"")+"' onclick=\"stkPick('__hidden__')\" title='เมนูที่ครัวซ่อนจากหน้าร้านอยู่'>🙈 ซ่อนอยู่ <span>"+hidN+"</span></button>";
   html+="</div><input class='stk-find' id='stkFind' placeholder='🔍 ค้นชื่อเมนูหรือโค้ด...' value='"+escH(stkQ)+"' oninput='stkSearch(this)'>";
 
   var shown=menus.filter(function(m){
-    if(stkCat!=="all" && (m.category||"other")!==stkCat) return false;
+    if(stkCat==="__hidden__"){ if(m.is_available!==false) return false; }
+    else if(stkCat!=="all" && (m.category||"other")!==stkCat) return false;
     if(stkQ){ var q=stkQ.toLowerCase();
       return String(m.name||"").toLowerCase().indexOf(q)>=0 || String(m.code||"").toLowerCase().indexOf(q)>=0
           || String(m.subcode||"").toLowerCase().indexOf(q)>=0; }
@@ -1135,9 +1164,11 @@ function stkRowHtml(m,ordered){
     // ค้างข้ามวัน = ของที่บอกว่าจะทำแต่ยังไม่ทำ ต้องสะดุดตา ไม่งั้นขายล่วงหน้าไปเรื่อยๆ โดยไม่มีของ
     if(at && String(at).slice(0,10) < thaiToday2()) incAge=" ⚠️ ค้างจากวันก่อน";
   }
-  var h="<div class='stk-row"+((open||quick)?" open":"")+"'>"
+  var hidden=(m.is_available===false);
+  var h="<div class='stk-row"+((open||quick)?" open":"")+(hidden?" hidden-sale":"")+"'>"
     +"<div class='stk-name'><span class='code-tag'>"+escH(getCodeDisplay(m.code,m.name))+"</span> "+tagsHtml(m)+escH(m.name||"")
     +"<div class='stk-sub'>"
+      +(hidden?"<b class='hid-tag'>🙈 ซ่อนจากหน้าร้านอยู่ — ลูกค้าสั่งไม่ได้</b> "+escH(stkHidBy(m.id))+"<br>":"")
       +(unlimited
         ? "ขายไม่จำกัด"+(ordered?(" · <b style='color:var(--gold)'>สั่งแล้ว "+ordered+"</b>"):"")
         : "มีจริง <b>"+real+"</b> + กำลังเติม <b class='"+(inc?"inc":"")+"'>"+inc+"</b>"
@@ -1146,7 +1177,10 @@ function stkRowHtml(m,ordered){
     +"</div></div>"
     +"<div class='stk-ctrl'>"
       +"<div class='stk-left "+(unlimited?"inf":(left>0?"ok":"zero"))+"'>"+(unlimited?"∞":left)+"</div>"
-      +(unlimited?"":"<button class='stk-add' onclick=\"stkQuick('"+m.id+"')\" title='เติมสต็อค — เพิ่มของที่กำลังทำ'>➕</button>")
+      +((unlimited||hidden)?"":"<button class='stk-add' onclick=\"stkQuick('"+m.id+"')\" title='เติมสต็อค — เพิ่มของที่กำลังทำ'>➕</button>")
+      +"<button class='stk-hide"+(hidden?" on":"")+"' onclick=\"stkToggleSale('"+m.id+"')\" title='"
+      +(hidden?"เปิดขายคืน — ลูกค้าจะเห็นเมนูนี้อีกครั้ง":"ซ่อนการขาย — ลูกค้าจะไม่เห็นเมนูนี้ทันที ใช้ตอนของหมดแต่ยังบอกแอดมินไม่ทัน")
+      +"'>"+(hidden?"👁":"🙈")+"</button>"
       +"<button class='stk-pen' onclick=\"stkEdit('"+m.id+"')\" title='แก้จำนวนแบบละเอียด'>✏️</button>"
     +"</div></div>";
   if(quick) h+=stkQuickBar(m,inc);
@@ -1172,6 +1206,53 @@ function stkEditPanel(m,ordered){
       +"<button class='se-b se-cancel' onclick='stkEdit(null)'>ยกเลิก</button>"
       +(unlimited?"":"<button class='se-b se-save' onclick=\"stkSave('"+m.id+"')\">บันทึก</button>")
     +"</div></div>";
+}
+
+/* ── 🙈 ซ่อนการขาย (นัทสั่ง 19 ส.ค.) ───────────────────────────────────────
+   นัทอธิบายเอง: "สำหรับพนักงานครัวที่รู้ว่าสินค้านั้นไม่มี แต่บอกแอดมินไม่ทัน รีบซ่อนให้ก่อน"
+
+   ทำไมต้องมี ทั้งที่มีช่อง "มีของจริง" อยู่แล้ว:
+     · ตั้งของจริง = 0 ยัง**ไม่**ปิดการขาย ถ้ามี "กำลังเติม" ค้าง หรือเมนูตั้งเป็น ไม่จำกัด ไว้
+     · ครัวที่รู้ว่าของเสีย/วัตถุดิบไม่มา ต้องปิดทันที ไม่ใช่มานั่งคิดเลข
+   ปุ่มนี้แตะคอลัมน์ is_available = ตัวเดียวกับที่หน้าลูกค้าใช้ตัดสินว่าจะโชว์เมนูไหม -> มีผลทันที
+
+   ⚠️ ของแบบนี้อันตรายถ้าเงียบ — เมนูหายจากหน้าร้านโดยไม่มีใครรู้ว่าใครทำ = ตามหาสาเหตุไม่เจอ
+      บังคับ 3 อย่าง: ต้องมีชื่อคนกด · ถามยืนยันก่อน · ลง activity_log ทุกครั้ง
+      + จำไว้ว่าใครซ่อนเมื่อไหร่ แล้วโชว์ในแถว (แอดมินเปิดมาเห็นทันทีว่าใครสั่งซ่อน) */
+var stockHidden={};   // { menuId: {by:'ชื่อ', at:ISO, code:'S032'} }
+function stkHidBy(id){
+  var r=stockHidden[id]; if(!r||!r.by) return "";
+  var t=String(r.at||"").slice(5,10).split("-").reverse().join("/");
+  return "(โดย "+r.by+(t?" "+t:"")+")";
+}
+async function saveHidden(){
+  var sb_=getSB(); if(!sb_) return;
+  try{ await sb_.from("kitchen_data").upsert({key:"stock_hidden", data:stockHidden},{onConflict:"key"}); }
+  catch(e){ console.warn("saveHidden:",e); }
+}
+async function stkToggleSale(menuId){
+  if(!requireKqUser()) return;
+  var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(!m) return;
+  var sb_=getSB(); if(!sb_) return;
+  var hidden=(m.is_available===false);
+  var name=(m.code||"")+" "+(m.name||"");
+  if(hidden){
+    if(!confirm("เปิดขายคืน?\n\n"+name+"\n\nลูกค้าจะเห็นเมนูนี้อีกครั้งทันที")) return;
+  }else{
+    if(!confirm("ซ่อนเมนูนี้จากหน้าร้าน?\n\n"+name
+      +"\n\nลูกค้าจะสั่งไม่ได้ทันที (ใบที่สั่งไปแล้วไม่กระทบ)\nกดปุ่มเดิมอีกครั้งเพื่อเปิดคืน\n\nคนกด: "+kqCurrentUser)) return;
+  }
+  var next=hidden;                      // ซ่อนอยู่ -> เปิดคืน(true) · ยังขายอยู่ -> ซ่อน(false)
+  var r=await sb_.from("menu_items").update({is_available:next}).eq("id",menuId);
+  if(r.error) return kqWriteFail(r.error, next?"เปิดขายคืน":"ซ่อนการขาย");
+  m.is_available=next;
+  if(next) delete stockHidden[menuId];
+  else stockHidden[menuId]={by:kqCurrentUser||"", at:new Date().toISOString(), code:m.code||""};
+  await saveHidden();
+  var ordered=stkOrderedMap()[m.id]||0;
+  var snap={real:stkRealOf(m,ordered), inc:stkIncOf(m.id)};
+  try{ await logStock(m, next?"เปิดขายคืน":"ซ่อนการขาย", snap, snap, {hidden_from_shop:!next}); }catch(e){}
+  renderStock(); loadStockHistory();
 }
 
 /* ── ➕ เติมสต็อคเร็ว (นัทขอ 18 ส.ค.: "ย้ายเติมสต็อคมาข้างๆ ดินสอ ให้สะดวกขึ้น") ──
