@@ -1333,8 +1333,58 @@ function runOrderSearch(){
   if(!v){ clearOrderSearch(); return; }
   ordSearchQ=v; ordPage=0; ordSearchTyping(); fetchOrdersPage();
 }
+/* ── 👤 กรองดูรายคน (นัทขอ 19 ส.ค.: "อยากกรองดูรายคน ทำยังไงดี") ──────────
+   ช่องค้นหามีอยู่แล้ว แต่ต้องพิมพ์ชื่อเอง — ชื่อลูกค้าส่วนใหญ่มีอิโมจิ/วงเล็บ LINE ปนอยู่
+   ("เฟิน(LINE: 🦄FERNFERN🍀)") พิมพ์ตามยากและพิมพ์ผิดง่าย
+   → กดที่ชื่อในรายการแล้วกรองให้เลย ตั้ง scope = ทุกวัน จะได้เห็นประวัติทั้งหมดของคนนั้น
+   ⚠️ กดชื่อ = กรอง · กดที่อื่นในแถว = เปิดใบเหมือนเดิม (stopPropagation) */
+/* ── 🎯 กรองด้วย "ตัวตนลูกค้า" ไม่ใช่ข้อความชื่อ ──────────────────────────
+   ค้นด้วยชื่อกวาดคนอื่นมาด้วย: "Milk" เจอ 144 ใบ ทั้งที่ลูกค้าคนนี้มีไม่กี่ใบ
+   (ilike ตรงกลางคำ → ชื่อไหนมีตัวอักษรชุดนี้ปนก็ติดมาหมด)
+   → ยึด line_uid / customer_id ที่ผูกกับใบนั้นแทน = ได้ของคนนั้นคนเดียวเป๊ะ
+   เผื่อใบเก่าไม่มีทั้ง 2 อย่าง ค่อยถอยไปค้นด้วยชื่อ (ดีกว่ากดแล้วไม่เกิดอะไร) */
+var ordCusFilter=null;   // {field:'line_uid'|'customer_id', value:..., name:'...'}
+function ordFilterByOrder(orderId, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  var o=(ordRows||[]).find(function(x){return x.id===orderId;});
+  if(!o) return;
+  var field=o.line_uid?"line_uid":(o.customer_id?"customer_id":null);
+  if(!field) return ordFilterCustomer(o.customer_name||"", null);
+  ordCusFilter={field:field, value:o[field], name:o.customer_name||"ลูกค้า"};
+  ordSearchQ=""; ordMovedOnly=false; ordCancelledOnly=false; ordPage=0;
+  var box=document.getElementById("ordSearchBox"); if(box) box.value="";
+  ordSearchTyping(); fetchOrdersPage();
+}
+function ordClearCusFilter(){
+  ordCusFilter=null; ordPage=0;
+  var h=document.getElementById("ordSearchHint"); if(h) h.textContent="";
+  fetchOrdersPage();
+}
+function ordFilterCustomer(name, ev){
+  if(ev&&ev.stopPropagation)ev.stopPropagation();
+  /* 🪤 ต้องตัดวงเล็บ LINE **ก่อน** ล้างอักขระ — ordSearchClean แปลง ( ) เป็นช่องว่างไปแล้ว
+     ถ้าตัดทีหลังจะไม่เจอวงเล็บให้ตัด ได้คำค้น "Milk LINE: MiLk." = ค้นไม่เจอสักใบ (เจอตอนเทส) */
+  var v=String(name||"").replace(/\(\s*LINE[^)]*\)?/gi," ");
+  /* อิโมจิท้ายชื่อก็ทำให้ค้นไม่เจอเหมือนกัน (ค้นแบบ like ต้องตรงตัวอักษร) → เอาออก */
+  v=v.replace(/[\u{1F000}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu," ");
+  v=ordSearchClean(v);
+  if(!v) v=ordSearchClean(name);   /* ชื่อที่มีแต่อิโมจิ — ใช้ของเดิมไปก่อน ดีกว่าไม่ทำอะไรเลย */
+  if(!v) return;
+  var box=document.getElementById("ordSearchBox"); if(box) box.value=v;
+  /* 🪤 ห้ามเรียก setSearchScope ที่นี่ — มันยิง fetchOrdersPage เองถ้ามีคำค้นค้างอยู่
+     คำค้นตอนนั้นยังเป็น "ของคนก่อน" → โหลดของเก่าไปก่อน แล้วตั้ง ordLoading=true
+     พอถึงบรรทัดล่าง fetchOrdersPage ของคนใหม่จะถูกตัวกัน ordLoading ตีตกทันที
+     ผลคือกดชื่อคนที่ 2 แล้วหน้ายังโชว์ผลของคนที่ 1 (เจอตอนเทส: กด Bow Chaya ได้ผลของ Milk)
+     → ตั้งค่า scope ตรงๆ แล้วค่อยยิงรอบเดียวตอนท้าย */
+  ordSearchScope="all";
+  var sa=document.getElementById("ss-all"), sd=document.getElementById("ss-day");
+  if(sa) sa.classList.add("active");
+  if(sd) sd.classList.remove("active");
+  ordCusFilter=null;
+  ordSearchQ=v; ordPage=0; ordSearchTyping(); fetchOrdersPage();
+}
 function clearOrderSearch(){
-  ordSearchQ=""; ordPage=0;
+  ordSearchQ=""; ordCusFilter=null; ordPage=0;
   var i=document.getElementById("ordSearchBox"); if(i) i.value="";
   var h=document.getElementById("ordSearchHint"); if(h) h.textContent="";
   ordSearchTyping(); fetchOrdersPage();
@@ -1369,6 +1419,11 @@ function ordApplyRange(q,from,to){
 function ordBaseQuery(sb_,todayStr,tomStr){
   var NOTEST="source.is.null,source.neq.parallel_test";
   var q=sb_.from("orders").select("*",{count:"exact"});
+  /* กรองรายคน — ข้ามตัวกรองวันเสมอ เพราะจุดประสงค์คือ "ดูประวัติทั้งหมดของคนนี้" */
+  if(ordCusFilter && ordCusFilter.value){
+    return q.eq(ordCusFilter.field, ordCusFilter.value).or(NOTEST)
+            .order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
+  }
   if(ordSearchQ){
     var t=ordSearchQ;
     q=q.or("order_number.ilike.*"+t+"*,customer_name.ilike.*"+t+"*,customer_phone.ilike.*"+t+"*,line_display_name.ilike.*"+t+"*")
@@ -1451,7 +1506,13 @@ async function fetchOrdersPage(){
     var maxPage=Math.max(0,Math.ceil(ordTotal/size)-1);
     if(ordPage>maxPage&&ordTotal>0){ ordPage=maxPage; ordLoading=false; return fetchOrdersPage(); }
     var title;
-    if(ordSearchQ){
+    if(ordCusFilter){
+      title="👤 "+ordCusFilter.name;
+      var hhc=document.getElementById("ordSearchHint");
+      if(hhc) hhc.innerHTML=(ordTotal?("เจอ "+ordTotal+" ใบของลูกค้ารายนี้ · ทุกวัน รวมใบที่ยกเลิก"):"ไม่เจอใบไหนเลย")
+        +" <a href='#' onclick='ordClearCusFilter();return false' style='color:var(--forest);font-weight:700'>✕ เลิกกรอง</a>";
+    }
+    else if(ordSearchQ){
       title="ผลค้นหา \""+ordSearchQ+"\"";
       var hh2=document.getElementById("ordSearchHint");
       var scopeTxt=(ordSearchScope==="day")
@@ -1636,12 +1697,12 @@ function renderOrders(orders){
          ที่อยู่กับชื่อ LINE ตัดออก (กดเข้าใบดูได้อยู่แล้ว) · ใบที่ถูกเลื่อนเหลือ 🔁 ตัวเดียว */
       h+="<div style='display:flex;align-items:baseline;gap:8px;min-width:0'>"
         +"<span style='font-family:var(--mono);font-size:11px;color:#9CA3AF;flex-shrink:0'>"+(o.order_number||"—")+"</span>"
-        +"<span style='font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis'>"+esc2(o.customer_name||"ลูกค้า")+"</span>"
+        +"<span onclick=\"ordFilterByOrder('"+o.id+"',event)\" title='กดเพื่อดูเฉพาะออเดอร์ของลูกค้ารายนี้ (ทุกวัน)' style='font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;cursor:pointer;border-bottom:1px dotted #C7CBD1'>"+esc2(o.customer_name||"ลูกค้า")+"</span>"
         +(odIsMoved(o)?"<span title='ใบนี้ถูกเลื่อนวันส่ง' style='flex-shrink:0'>🔁</span>":"")
         +"</div>";
     }else{
       h+="<div style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+(o.order_number||"—")+"</div>";
-      h+="<div style='font-size:13px;font-weight:500'>"+esc2(o.customer_name||"ลูกค้า")+lineTag(o)+odMoveBadge(o)+"</div>";
+      h+="<div style='font-size:13px;font-weight:500'><span onclick=\"ordFilterByOrder('"+o.id+"',event)\" title='กดเพื่อดูเฉพาะออเดอร์ของลูกค้ารายนี้ (ทุกวัน)' style='cursor:pointer;border-bottom:1px dotted #C7CBD1'>"+esc2(o.customer_name||"ลูกค้า")+"</span>"+lineTag(o)+odMoveBadge(o)+"</div>";
       h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div>";
     }
     h+="</div>";
@@ -1781,7 +1842,7 @@ function ordCancelledTodayHtml(){
    (โหลดจบ + รีเฟรชอัตโนมัติทุก 30 วิ) ถ้าติดคลาสรอบเดียวจะโดนล้างทิ้งทันที */
 var ordFlashId=null, ordFlashUntil=0, ordFlashScrolled=false;
 function ordJumpToDate(d,id){
-  ordCancelledOnly=false; ordMovedOnly=false; ordSearchQ="";
+  ordCancelledOnly=false; ordMovedOnly=false; ordSearchQ=""; ordCusFilter=null;
   ordFlashId=id||null; ordFlashUntil=id?(new Date().getTime()+12000):0; ordFlashScrolled=false;
   setPickDate(d);
 }
@@ -2064,18 +2125,28 @@ async function loadOrdKinds(sb_, rows){
     }
   }catch(e){ /* อ่านไม่ได้ = ช่องประเภทขึ้น "—" ไม่บล็อกรายการออเดอร์ */ }
 }
+/* บรรทัด "ขาย" (คอร์ส/เซ็ตที่ลูกค้าซื้อ) ไม่ใช่จานที่ครัวต้องทำ — กติกาเดียวกับหน้าครัว
+   เช่น MP-LC-R3 "Meal Plan Low Carb รอบ 3/3" จำนวน 7 = คอร์ส ไม่ใช่อาหาร */
+function ordIsSaleLine(i){
+  var n=String((i&&i.notes)||"");
+  if(/^set:/i.test(n)) return true;
+  return /^meal_plan:/i.test(n) && !/^meal_plan:box:/i.test(n);
+}
 function ordKindOf(o){
-  var items=(typeof ordItemsMap!=="undefined" && ordItemsMap) ? (ordItemsMap[o.id]||null) : null;
-  /* ใบที่ยังไม่มีรายการเลย = รอบ Meal Plan ที่แอดมินยังไม่จ่ายเมนู (เลขใบขึ้นต้น MP-)
-     รู้ประเภทได้จากเลขใบ ไม่ต้องเดา → ขึ้น "MP" พร้อมหมายเหตุว่ายังไม่มีเมนู
-     ถ้าปล่อยเป็น "—" เฉยๆ จะดูเหมือนข้อมูลพัง ทั้งที่มันคือ "ยังไม่ได้แพลน" ซึ่งเป็นคนละเรื่อง */
-  if(!items || !items.length)
-    return /^MP-/i.test(String(o.order_number||"")) ? "MP*" : null;
+  var items=(typeof ordItemsMap!=="undefined" && ordItemsMap) ? (ordItemsMap[o.id]||[]) : [];
+  /* 🪤 รอบ 1 ที่พลาดไปตอนแรก (นัทถามเอง 19 ส.ค. "แปลว่า MP คนอื่นเลือกเมนูไว้แล้วหรอ")
+     เดิมเช็คแค่ "ไม่มีรายการเลย" → จับได้ 3 ใบ แต่ของจริงมี 5 ใบที่ครัวไม่มีเมนูให้ทำ
+     อีก 2 ใบ (Bow Chaya · BRIGHT) **มีรายการอยู่ 1 บรรทัด แต่เป็นบรรทัดขาย ไม่ใช่จาน**
+     → ต้องนับ "จานจริง" ไม่ใช่ "จำนวนแถว" */
+  var dishes=items.filter(function(i){ return !ordIsSaleLine(i); });
+  if(!dishes.length)
+    return (/^MP-/i.test(String(o.order_number||"")) || items.some(function(i){return /^meal_plan:/i.test(String(i.notes||""));}))
+      ? "MP*" : (items.length?"เซ็ต*":null);
   var mp=false, set=false, plain=false;
-  items.forEach(function(i){
+  dishes.forEach(function(i){
     var n=String(i.notes||"");
     if(/^meal_plan:/i.test(n)) mp=true;
-    else if(/^pkg:|^set:/i.test(n)) set=true;
+    else if(/^pkg:/i.test(n)) set=true;
     else plain=true;
   });
   var parts=[];
@@ -2087,8 +2158,8 @@ function ordKindOf(o){
 function ordKindHtml(o){
   var k=ordKindOf(o);
   if(!k) return "<div style='font-size:11px;color:#C7CBD1'>—</div>";
-  var pending=(k==="MP*");
-  if(pending) k="MP";
+  var pending=(k==="MP*"||k==="เซ็ต*");
+  if(pending) k=k.replace("*","");
   var cls = pending ? "k-wait" : (k.indexOf("MP")>=0 ? "k-mp" : (k.indexOf("เซ็ต")>=0 ? "k-set" : "k-plain"));
   var tip = pending ? " title='ยังไม่ได้จ่ายเมนูให้รอบนี้ — ครัวยังไม่เห็นว่าต้องทำอะไร'" : "";
   return "<div><span class='okind "+cls+"'"+tip+">"+esc2(k)+(pending?" ⚠":"")+"</span></div>";
