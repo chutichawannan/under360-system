@@ -390,9 +390,23 @@ body.fs-scaled{zoom:var(--u-fs)}
 .count-card.today .count-num{color:var(--forest)}
 .count-card.tomorrow .count-num{color:var(--blue)}
 .count-card.advance .count-num{color:var(--purple)}
+/* แถบสรุปแบบพับ — สูงเท่า 1 บรรทัด */
+.count-bar{display:none;align-items:center;gap:14px;flex-wrap:wrap;background:var(--white);
+  border:1px solid var(--ink-xsoft);border-radius:var(--radius);padding:7px 13px;margin-bottom:12px;
+  cursor:pointer;font-size:12.5px;color:var(--ink-soft)}
+.count-bar:hover{background:var(--forest-soft)}
+.cb-i b{font-size:16px;font-weight:800;color:var(--forest);font-family:var(--mono)}
+.cb-money{margin-left:auto;font-family:var(--mono);font-weight:700;color:var(--forest)}
+.cb-x{color:var(--ink-soft);font-size:11px}
+body.counts-folded .count-bar{display:flex}
+body.counts-folded .count-grid{display:none}
+.count-grid{position:relative}
+.count-fold{position:absolute;top:6px;right:8px;z-index:2;border:1px solid var(--ink-xsoft);background:var(--white);
+  color:var(--ink-soft);border-radius:8px;font-size:11px;padding:3px 9px;cursor:pointer}
+.count-fold:hover{background:var(--forest-soft)}
 .orders-mini{background:var(--white);border-radius:var(--radius);border:1px solid var(--ink-xsoft);overflow:hidden}
 .orders-mini-row{
-  display:grid;grid-template-columns:1fr auto auto auto;
+  display:grid;grid-template-columns:1fr auto auto auto auto;
   padding:10px 16px;border-bottom:1px solid var(--ink-xsoft);align-items:center;gap:12px;
   font-size:13px;
 }
@@ -423,6 +437,12 @@ body.fs-scaled{zoom:var(--u-fs)}
 }
 .orders-mini-row:last-child{border-bottom:none}
 .orders-mini-head{background:var(--bg);font-size:11px;font-weight:600;color:var(--ink-soft)}
+/* ป้ายประเภทอาหาร — สีต่างกันให้กวาดตาแยกออกโดยไม่ต้องอ่าน */
+.okind{display:inline-block;font-size:10.5px;font-weight:800;border-radius:6px;padding:2px 7px;white-space:nowrap}
+.okind.k-mp{color:#5B21B6;background:#EDE9FE;border:1px solid #C4B5FD}
+.okind.k-set{color:#1D4ED8;background:#EFF6FF;border:1px solid #BFDBFE}
+.okind.k-plain{color:#4B5563;background:#F3F4F6;border:1px solid #E5E7EB}
+.okind.k-wait{color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5}
 .pill{padding:3px 9px;border-radius:20px;font-size:11px;font-weight:600}
 .p-wait{background:#FEF3C7;color:#92400E}
 .p-cook{background:#DBEAFE;color:#1E40AF}
@@ -570,7 +590,18 @@ body.fs-scaled{zoom:var(--u-fs)}
 
     <!-- TAB: ORDERS (default/home) -->
     <div class="tab-panel active" id="panel-orders">
-      <div class="count-grid">
+      <!-- 🔽 พับการ์ด 3 ใบเหลือแถบเดียว (นัทขอ 19 ส.ค.) — หน้านี้ใช้ดู "วันนี้ต้องส่งใคร"
+           การ์ดใหญ่กินพื้นที่ครึ่งจอทุกครั้งที่เปิด ทั้งที่ตัวเลขอ่านจบใน 1 บรรทัด
+           จำสถานะไว้ในเครื่อง (ไม่ยัดลง globalSettings — คนละคนใช้คนละจอ ไม่ควรบังคับกัน) -->
+      <div class="count-bar" id="countBar" onclick="toggleCounts()" title="กดเพื่อกางการ์ดกลับ">
+        <span class="cb-i"><b id="cb-today">—</b> <span id="cb-lbl-today">วันนี้</span></span>
+        <span class="cb-i"><b id="cb-tom">—</b> <span id="cb-lbl-tom">พรุ่งนี้</span></span>
+        <span class="cb-i"><b id="cb-adv">—</b> <span id="cb-lbl-adv">ล่วงหน้า</span></span>
+        <span class="cb-money" id="cb-money"></span>
+        <span class="cb-x">▾ กาง</span>
+      </div>
+      <div class="count-grid" id="countGrid">
+        <button class="count-fold" onclick="toggleCounts()" title="พับเหลือแถบเดียว">▴ พับ</button>
         <div class="count-card today">
           <div class="count-label" id="lbl-today">ออเดอร์วันนี้</div>
           <div class="count-num" id="cnt-today">—</div>
@@ -1385,6 +1416,7 @@ async function fetchOrdersPage(){
     if(res.error)throw res.error;
     ordRows=res.data||[];
     ordTotal=(typeof res.count==="number")?res.count:ordRows.length;
+    await loadOrdKinds(sb_, ordRows);
     /* ดูวันเดียว → หาใบที่ "เคยอยู่วันนี้" แล้วถูกย้ายออกไป มาต่อท้ายแบบจางๆ
        รับทั้ง 2 รูปแบบข้อความ: แอดมินเลื่อนใน OH ("วัน → วัน") กับลูกค้าเลื่อนใน LIFF ("วัน→วัน" ไม่มีเว้นวรรค) */
     ordMovedAway=[];
@@ -1587,7 +1619,7 @@ function renderOrders(orders){
   /* หัวข้อกลุ่ม + คอลัมน์วัน ต้องเปลี่ยนตามโหมด ไม่งั้นดู "ตามวันสั่ง" แต่หัวข้อยังคั่นด้วยวันส่ง = อ่านไม่รู้เรื่อง */
   var byCr=(typeof ordByMode!=="undefined"&&ordByMode==="created");
   var ordDayOf=function(o){ return byCr ? bkkYmdOf(o.created_at) : o.delivery_date; };
-  var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ยอด</span><span>"+(byCr?"วันสั่ง":"วันส่ง")+"</span><span>สถานะ</span></div>";
+  var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ประเภท</span><span>ยอด</span><span>"+(byCr?"วันสั่ง":"วันส่ง")+"</span><span>สถานะ</span></div>";
   var lastDate=null;   // คั่นหัวข้อเมื่อข้ามวัน (โหมดหลายวันจะได้ไม่มั่ว)
   orders.slice(0,400).forEach(function(o){
     if(ordDayOf(o)!==lastDate){
@@ -1613,6 +1645,7 @@ function renderOrders(orders){
       h+="<div style='font-size:11px;color:#6B7280'>📍 "+(o.delivery_address||"—")+"</div>";
     }
     h+="</div>";
+    h+=ordKindHtml(o);
     h+="<div style='font-family:var(--mono);font-weight:600;color:#1F4D3A'>"+fmtB(o.total)+"</div>";
     if(ordCompact){
       /* โหมดย่อ — วัน+เวลาอยู่บรรทัดเดียว ไม่ซ้อน 2 ชั้น */
@@ -2006,6 +2039,81 @@ async function odUnfridge(id){
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
 // รับได้ทั้งที่แอดมินเลื่อนใน OH และที่ลูกค้าเลื่อนเองใน LIFF (คนละข้อความ ความหมายเดียวกัน)
+/* ── 🍱 ประเภทอาหารของใบนี้ (นัทขอ 19 ส.ค.) ────────────────────────────────
+   ดูจาก order_items.notes ซึ่งเป็นตัวบอกที่มาของแต่ละบรรทัดอยู่แล้ว:
+     · meal_plan:*  → MP (คอร์สทำสด จ/พ/ศ)
+     · pkg:* / set: → เซ็ต (คอร์ส/แพคเกจจากของสต็อค)
+     · ว่าง         → ปกติ (เมนูเดี่ยว)
+   ใบเดียวมีได้หลายอย่าง → ต่อกันด้วย / เช่น "MP/เซ็ต" ตามที่นัทสั่ง
+   ⚠️ อ่านจากรายการที่โหลดมาแล้วเท่านั้น (ordItemsMap) ไม่ยิง query เพิ่มต่อใบ
+      ถ้ายังไม่มีข้อมูลของใบนั้นให้ขึ้น "—" ไปก่อน ดีกว่าเดาผิด */
+/* ดึงเฉพาะ order_id + notes ของใบในหน้านี้ — ก้อนเดียวจบ ไม่ยิงต่อใบ
+   ⚠️ ต้องมี .limit() เสมอ ไม่งั้น PostgREST คืนแค่ 1000 แถวแบบเงียบ (กฎประจำบ้าน) */
+var ordItemsMap={};
+async function loadOrdKinds(sb_, rows){
+  ordItemsMap={};
+  try{
+    var ids=(rows||[]).map(function(o){return o.id;}).filter(Boolean);
+    if(!ids.length) return;
+    for(var i=0;i<ids.length;i+=80){
+      var r=await sb_.from("order_items").select("order_id,notes").in("order_id",ids.slice(i,i+80)).limit(2000);
+      if(r.error) continue;
+      (r.data||[]).forEach(function(it){
+        (ordItemsMap[it.order_id]=ordItemsMap[it.order_id]||[]).push(it);
+      });
+    }
+  }catch(e){ /* อ่านไม่ได้ = ช่องประเภทขึ้น "—" ไม่บล็อกรายการออเดอร์ */ }
+}
+function ordKindOf(o){
+  var items=(typeof ordItemsMap!=="undefined" && ordItemsMap) ? (ordItemsMap[o.id]||null) : null;
+  /* ใบที่ยังไม่มีรายการเลย = รอบ Meal Plan ที่แอดมินยังไม่จ่ายเมนู (เลขใบขึ้นต้น MP-)
+     รู้ประเภทได้จากเลขใบ ไม่ต้องเดา → ขึ้น "MP" พร้อมหมายเหตุว่ายังไม่มีเมนู
+     ถ้าปล่อยเป็น "—" เฉยๆ จะดูเหมือนข้อมูลพัง ทั้งที่มันคือ "ยังไม่ได้แพลน" ซึ่งเป็นคนละเรื่อง */
+  if(!items || !items.length)
+    return /^MP-/i.test(String(o.order_number||"")) ? "MP*" : null;
+  var mp=false, set=false, plain=false;
+  items.forEach(function(i){
+    var n=String(i.notes||"");
+    if(/^meal_plan:/i.test(n)) mp=true;
+    else if(/^pkg:|^set:/i.test(n)) set=true;
+    else plain=true;
+  });
+  var parts=[];
+  if(mp) parts.push("MP");
+  if(set) parts.push("เซ็ต");
+  if(plain) parts.push("ปกติ");
+  return parts.length?parts.join("/"):null;
+}
+function ordKindHtml(o){
+  var k=ordKindOf(o);
+  if(!k) return "<div style='font-size:11px;color:#C7CBD1'>—</div>";
+  var pending=(k==="MP*");
+  if(pending) k="MP";
+  var cls = pending ? "k-wait" : (k.indexOf("MP")>=0 ? "k-mp" : (k.indexOf("เซ็ต")>=0 ? "k-set" : "k-plain"));
+  var tip = pending ? " title='ยังไม่ได้จ่ายเมนูให้รอบนี้ — ครัวยังไม่เห็นว่าต้องทำอะไร'" : "";
+  return "<div><span class='okind "+cls+"'"+tip+">"+esc2(k)+(pending?" ⚠":"")+"</span></div>";
+}
+
+/* พับ/กางการ์ดสรุป 3 ใบ */
+var countsFolded=false;
+try{ countsFolded = localStorage.getItem("ordCountsFolded")==="1"; }catch(e){}
+function applyCountsFold(){
+  document.body.classList.toggle("counts-folded", countsFolded);
+  /* แถบพับต้องโชว์ตัวเลขชุดเดียวกับการ์ด — ดึงจาก DOM ที่ตัวโหลดเขียนไว้แล้ว
+     ไม่ query ซ้ำ และไม่ต้องแก้ตัวโหลดให้เขียน 2 ที่ (ที่ไหนพลาดก็จะเพี้ยนคนละเลข) */
+  var g=function(id){ var e=document.getElementById(id); return e?e.textContent:"—"; };
+  var set=function(id,v){ var e=document.getElementById(id); if(e)e.textContent=v; };
+  set("cb-today",g("cnt-today")); set("cb-tom",g("cnt-tom")); set("cb-adv",g("cnt-adv"));
+  set("cb-lbl-today",g("lbl-today")); set("cb-lbl-tom",g("lbl-tom")); set("cb-lbl-adv",g("lbl-adv"));
+  set("cb-money", g("rev-today")+" วันนี้ · "+g("rev-tom")+" พรุ่งนี้");
+}
+function toggleCounts(){
+  countsFolded=!countsFolded;
+  try{ localStorage.setItem("ordCountsFolded", countsFolded?"1":"0"); }catch(e){}
+  applyCountsFold();
+}
+setTimeout(applyCountsFold,0);
+
 function odIsMoved(o){ return /\[เลื่อนวัน(ส่ง|โดยลูกค้า)/.test(String(o&&o.notes||"")); }
 function odMoveBadge(o){
   if(!odIsMoved(o)) return "";
