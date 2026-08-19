@@ -1343,14 +1343,26 @@ function runOrderSearch(){
    (ilike ตรงกลางคำ → ชื่อไหนมีตัวอักษรชุดนี้ปนก็ติดมาหมด)
    → ยึด line_uid / customer_id ที่ผูกกับใบนั้นแทน = ได้ของคนนั้นคนเดียวเป๊ะ
    เผื่อใบเก่าไม่มีทั้ง 2 อย่าง ค่อยถอยไปค้นด้วยชื่อ (ดีกว่ากดแล้วไม่เกิดอะไร) */
-var ordCusFilter=null;   // {field:'line_uid'|'customer_id', value:..., name:'...'}
+var ordCusFilter=null;   // {conds:[...], name:'...', note:'...'}
+/* 🪤 ลูกค้าคนเดียวมีได้หลายรหัสในระบบ — ยึดรหัสเดียวจะเห็นประวัติไม่ครบ
+   เคสจริงที่นัทจับได้ 19 ส.ค.: คุณทีน่า (พรศิริภัทธิ์) เบอร์ 064-416-3961
+     · แถวเก่า สร้าง 13 ก.ค. 2024 → 88 ใบ ฿153,569 · tier Wellness Warriors · 47 แต้ม
+     · แถวใหม่ สร้าง 9 ส.ค. 2026 → 2 ใบ ฿3,749 · tier bronze · 0 แต้ม
+   เธอเข้า LIFF ด้วยบัญชี LINE คนละอันกับของเดิม → ได้ line_uid ใหม่ → ระบบเปิดแถวใหม่ให้
+   (ตัวรวมลูกค้าอัตโนมัติผูกด้วยเบอร์ได้เฉพาะแถวที่ยังไม่มี line_uid — กันคนอื่นสวมรอย)
+   → ตัวกรองนี้จึงต้องหา "ทุกทาง" พร้อมกัน: รหัสลูกค้า · line_uid · **เบอร์โทร**
+     เบอร์คือเส้นที่ข้ามบัญชี LINE ได้ และเป็นตัวที่ทำให้เห็นประวัติจริงครบ */
 function ordFilterByOrder(orderId, ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var o=(ordRows||[]).find(function(x){return x.id===orderId;});
   if(!o) return;
-  var field=o.line_uid?"line_uid":(o.customer_id?"customer_id":null);
-  if(!field) return ordFilterCustomer(o.customer_name||"", null);
-  ordCusFilter={field:field, value:o[field], name:o.customer_name||"ลูกค้า"};
+  var conds=[];
+  if(o.customer_id) conds.push("customer_id.eq."+o.customer_id);
+  if(o.line_uid)    conds.push("line_uid.eq."+o.line_uid);
+  var ph=String(o.customer_phone||"").replace(/[^0-9]/g,"");
+  if(ph.length>=9)  conds.push("customer_phone.eq."+ph);
+  if(!conds.length) return ordFilterCustomer(o.customer_name||"", null);
+  ordCusFilter={conds:conds, name:o.customer_name||"ลูกค้า", byPhone:(ph.length>=9)};
   ordSearchQ=""; ordMovedOnly=false; ordCancelledOnly=false; ordPage=0;
   var box=document.getElementById("ordSearchBox"); if(box) box.value="";
   ordSearchTyping(); fetchOrdersPage();
@@ -1420,8 +1432,8 @@ function ordBaseQuery(sb_,todayStr,tomStr){
   var NOTEST="source.is.null,source.neq.parallel_test";
   var q=sb_.from("orders").select("*",{count:"exact"});
   /* กรองรายคน — ข้ามตัวกรองวันเสมอ เพราะจุดประสงค์คือ "ดูประวัติทั้งหมดของคนนี้" */
-  if(ordCusFilter && ordCusFilter.value){
-    return q.eq(ordCusFilter.field, ordCusFilter.value).or(NOTEST)
+  if(ordCusFilter && ordCusFilter.conds && ordCusFilter.conds.length){
+    return q.or(ordCusFilter.conds.join(",")).or(NOTEST)
             .order("delivery_date",{ascending:false}).order("created_at",{ascending:false});
   }
   if(ordSearchQ){
@@ -1509,7 +1521,8 @@ async function fetchOrdersPage(){
     if(ordCusFilter){
       title="👤 "+ordCusFilter.name;
       var hhc=document.getElementById("ordSearchHint");
-      if(hhc) hhc.innerHTML=(ordTotal?("เจอ "+ordTotal+" ใบของลูกค้ารายนี้ · ทุกวัน รวมใบที่ยกเลิก"):"ไม่เจอใบไหนเลย")
+      if(hhc) hhc.innerHTML=(ordTotal?("เจอ "+ordTotal+" ใบของลูกค้ารายนี้ · ทุกวัน รวมใบที่ยกเลิก"
+        +(ordCusFilter.byPhone?" · รวมใบที่ผูกเบอร์เดียวกันแต่คนละบัญชี LINE":"")):"ไม่เจอใบไหนเลย")
         +" <a href='#' onclick='ordClearCusFilter();return false' style='color:var(--forest);font-weight:700'>✕ เลิกกรอง</a>";
     }
     else if(ordSearchQ){
@@ -1617,7 +1630,20 @@ var OD_FLOW=[
   {v:"ready",     t:"จัดของแล้ว (พร้อมส่ง)"},
   {v:"delivered", t:"ส่งแมสแล้ว"}
 ];
+/* ── 📜 ใบยุคก่อนย้ายมาระบบเรา = ประวัติอย่างเดียว (นัทสั่ง 19 ส.ค.) ─────────
+   "status รอครัวอะไรพวกนี้ไม่ควรมีแล้ว" — ถูกต้อง เพราะใบพวกนี้ส่งจบไปนานแล้ว
+   สถานะที่ค้างอยู่เป็นค่าที่ยกมาจากตอน migrate ไม่ได้สะท้อนอะไรจริง
+   ปล่อยให้กดได้ = เสี่ยงเผลอกดแล้วใบเก่าโผล่เข้าคิวครัว/แมสของวันนี้
+   เส้นแบ่ง 8 ส.ค. 2026 = วันที่ลูกค้าเริ่มสั่งผ่านระบบเราจริง (beta live) */
+var SYS_START="2026-08-08";
+function odIsLegacy(o){
+  var d=String((o&&o.delivery_date)||"");
+  return !!d && d < SYS_START;
+}
 function odStatusPicker(o,st){
+  if(odIsLegacy(o))
+    return "<span class='pill p-done' title='ใบยุคก่อนย้ายมาระบบนี้ (ก่อน "+SYS_START+") — เก็บไว้ดูประวัติอย่างเดียว'"
+      +" style='background:#F3F4F6;color:#6B7280;border:1px solid #E5E7EB'>📜 ประวัติ</span>";
   if(o.status==="cancelled")
     return "<span class='pill "+st.cls+"'>"+st.t+"</span>";
   var cur=String(o.status||"confirmed");
@@ -1638,6 +1664,9 @@ async function odSetStatus(id,next,ev){
   if(ev&&ev.stopPropagation)ev.stopPropagation();
   var sb_=getSB(); if(!sb_)return;
   var o=(ordRows||[]).find(function(x){return x.id===id;});
+  /* กันไว้อีกชั้น — ใบยุคก่อนย้ายระบบห้ามเปลี่ยนสถานะ ถึงจะเรียกฟังก์ชันนี้ตรงๆ ก็ตาม
+     (ซ่อนปุ่มอย่างเดียวไม่พอ ถ้าวันหลังมีที่อื่นเรียกซ้ำ จะเผลอดันใบเก่าเข้าคิววันนี้) */
+  if(o && odIsLegacy(o)){ alert("ใบนี้เป็นประวัติยุคก่อนย้ายมาระบบนี้ (ก่อน "+SYS_START+") — เปลี่ยนสถานะไม่ได้"); return; }
   /* ใบที่ไม่ได้อยู่ในหน้าที่เปิดอยู่ ต้องดึงมาก่อน ไม่งั้นประวัติจะจดว่า "ออเดอร์" ลอยๆ ตามกลับไม่ได้ */
   if(!o){ try{ var _r=await sb_.from("orders").select("id,order_number,customer_name,status").eq("id",id).maybeSingle(); o=_r.data||null; }catch(e){} }
   var prev=o?o.status:"";
@@ -1682,7 +1711,22 @@ function renderOrders(orders){
   var ordDayOf=function(o){ return byCr ? bkkYmdOf(o.created_at) : o.delivery_date; };
   var h="<div class='orders-mini-row orders-mini-head'><span>ออเดอร์ / ลูกค้า</span><span>ประเภท</span><span>ยอด</span><span>"+(byCr?"วันสั่ง":"วันส่ง")+"</span><span>สถานะ</span></div>";
   var lastDate=null;   // คั่นหัวข้อเมื่อข้ามวัน (โหมดหลายวันจะได้ไม่มั่ว)
+  /* ── ⏳ แบ่งอนาคต / อดีต (นัทขอ 19 ส.ค.) ────────────────────────────────
+     ดูรายคนหรือดู "ทั้งหมด" แล้วรายการยาวปนกันหมด แยกไม่ออกว่าอันไหน "ต้องส่ง"
+     อันไหน "ส่งไปแล้ว" → คั่นหัวข้อใหญ่ 1 ครั้งตรงรอยต่อ
+     ⚠️ เทียบด้วยวันส่งเสมอ แม้ตอนดูตามวันสั่ง — คำถามคือ "ยังต้องส่งไหม" ไม่ใช่ "สั่งเมื่อไหร่" */
+  var _todayYmd=today2(), pastShown=false, futureShown=false;
+  var isPast=function(o){ return String(o.delivery_date||"") < _todayYmd; };
   orders.slice(0,400).forEach(function(o){
+    var _p=isPast(o);
+    if(!_p && !futureShown){
+      futureShown=true;
+      h+="<div style='grid-column:1/-1;padding:9px 12px;background:#EFF6FF;border-top:2px solid #BFDBFE;font-size:12.5px;font-weight:800;color:#1D4ED8'>⏳ วันนี้เป็นต้นไป — ยังต้องส่ง</div>";
+    }
+    if(_p && !pastShown){
+      pastShown=true;
+      h+="<div style='grid-column:1/-1;padding:9px 12px;background:#F6F5F1;border-top:2px solid var(--ink-xsoft);font-size:12.5px;font-weight:800;color:var(--ink-soft)'>📜 ที่ผ่านมาแล้ว — ส่งจบไปแล้ว</div>";
+    }
     if(ordDayOf(o)!==lastDate){
       lastDate=ordDayOf(o);
       var dayCnt=orders.filter(function(x){return ordDayOf(x)===lastDate;});
