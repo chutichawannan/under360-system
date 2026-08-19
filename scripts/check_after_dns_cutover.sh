@@ -51,7 +51,8 @@ hdr "⑤ redirect ทั้งหมดใน vercel.json (นับรวม)"
 TOT=0; RD=0; MISS=""
 while read -r p; do
   [ -z "$p" ] && continue
-  case "$p" in *":rest"*|*"*"*) continue;; esac   # ข้าม pattern catch-all
+  # ข้าม catch-all + ทางลัดเครื่องมือภายใน (/fah /k = proxy ไปหน้าอื่น ตอบ 200 ถูกแล้ว ไม่ใช่ 301)
+  case "$p" in *":rest"*|*"*"*|/fah|/k) continue;; esac
   TOT=$((TOT+1))
   C=$(curl -s -m 15 -o /dev/null -w "%{http_code}" "https://www.360foodbox.com$p")
   if [ "$C" = "301" ] || [ "$C" = "308" ]; then RD=$((RD+1)); else MISS="$MISS\n     - $p → $C"; fi
