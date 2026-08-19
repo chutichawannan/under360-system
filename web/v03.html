@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Under360 — อาหารตามเป้าหมาย โปรตีนเป็นแกน ส่งถึงบ้านทั่วกรุงเทพ</title>
+<link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
+<link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
+<meta name="description" content="อาหารสุขภาพเดลิเวอรี่ ประสบการณ์กว่า 10 ปี ปรุงสดทุกวัน — Meal Plan 3 สาย โปรตีนสูง (HP) · Low Carb (LC) · Hyrox/นักกีฬา (HX) จัดเมนูตามเป้าหมาย ตัดของแพ้อัตโนมัติ ส่งฟรีทั่วกรุงเทพ · ข้าวกล่องเริ่ม 125.- สั่งเองได้ 24 ชม.">
+<meta name="robots" content="noindex">
+<link rel="canonical" href="https://www.360foodbox.com/">
+<meta property="og:title" content="Under360 — อาหารตามเป้าหมาย โปรตีนเป็นแกน">
+<meta property="og:description" content="Meal Plan 3 สาย HP · LC · HX จัดเมนูตามเป้าหมายของคุณ ปรุงสดทุกวัน ส่งฟรีทั่วกรุงเทพ · สั่งเองได้ 24 ชม.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://www.360foodbox.com/">
+<meta property="og:image" content="img/img23.jpg">
+
+<!-- ═══ Google Ads tag ═══
+  TODO (Claude Code): หลังสร้าง Conversion Action ใน Google Ads แล้ว
+  1) แทน AW-XXXXXXXXXX ด้วย Conversion ID จริง แล้วปลดคอมเมนต์ block นี้
+  2) แทน CONVERSION_LABEL ใน trackOrder() ด้านล่าง
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-XXXXXXXXXX"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-XXXXXXXXXX');
+</script>
+═══════════════════ -->
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Restaurant",
+  "name": "Under360",
+  "alternateName": "360foodbox",
+  "url": "https://www.360foodbox.com",
+  "telephone": "+66641736519",
+  "servesCuisine": ["Healthy", "Thai"],
+  "priceRange": "฿฿",
+  "address": {
+    "@type": "PostalAddress",
+    "addressLocality": "เขตคลองสาน",
+    "addressRegion": "กรุงเทพมหานคร",
+    "addressCountry": "TH"
+  },
+  "geo": { "@type": "GeoCoordinates", "latitude": 13.7179969, "longitude": 100.5010971 },
+  "areaServed": "กรุงเทพมหานครและปริมณฑล",
+  "sameAs": [
+    "https://www.facebook.com/under360food",
+    "https://www.instagram.com/under360",
+    "https://www.tiktok.com/@under360cleanfood"
+  ]
+}
+</script>
+
+<style>
+:root{
+  --deep:#143823;
+  --green:#2E7D43;
+  --cream:#FAF6EC;
+  --ink:#1F2A1D;
+  --muted:#66705F;
+  --paper:#FFFFFF;
+  --line:#06C755;
+  --line-dark:#05A648;
+  --chili:#D64B2A;
+  --radius:16px;
+  --maxw:1080px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--cream);line-height:1.7;font-size:17px}
+h1,h2,h3,.display{font-family:'Prompt',sans-serif;line-height:1.35}
+img{max-width:100%;display:block}
+a{color:inherit}
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.eyebrow{font-family:'Prompt';font-weight:600;font-size:.82rem;letter-spacing:.14em;text-transform:uppercase;color:var(--green)}
+section{padding:64px 0}
+.btn-line{display:inline-flex;align-items:center;gap:10px;background:var(--line);color:#fff;text-decoration:none;font-family:'Prompt';font-weight:600;font-size:1.05rem;padding:14px 28px;border-radius:999px;box-shadow:0 6px 18px rgba(6,199,85,.35);transition:transform .15s,background .15s}
+.btn-line:hover{background:var(--line-dark);transform:translateY(-2px)}
+.btn-line svg{width:22px;height:22px;flex:none}
+.btn-ghost{display:inline-block;font-family:'Prompt';font-weight:600;padding:13px 26px;border-radius:999px;border:2px solid var(--deep);color:var(--deep);text-decoration:none;transition:background .15s,color .15s}
+.btn-ghost:hover{background:var(--deep);color:#fff}
+
+/* ── top bar ── */
+header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdrop-filter:blur(8px);border-bottom:1px solid rgba(20,56,35,.08)}
+.nav{display:flex;align-items:center;gap:22px;height:64px}
+.nav .logo{display:flex;align-items:center;gap:10px;font-family:'Prompt';font-weight:700;font-size:1.15rem;color:var(--deep);text-decoration:none}
+.nav .logo img{width:36px;height:36px;border-radius:50%}
+.nav nav{margin-left:auto;display:flex;gap:20px;align-items:center}
+.nav nav a{text-decoration:none;font-family:'Prompt';font-weight:500;font-size:.95rem;color:var(--ink)}
+.nav nav a:hover{color:var(--green)}
+.nav .btn-line{padding:9px 18px;font-size:.92rem;box-shadow:none}
+@media(max-width:760px){.nav nav a.hide-m{display:none}}
+
+/* ── hero ── */
+.hero{background:var(--deep);color:var(--cream);padding:72px 0 84px;position:relative;overflow:hidden}
+.hero .wrap{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+.hero h1{font-size:clamp(1.9rem,4.2vw,2.9rem);font-weight:700;color:#fff}
+.hero h1 em{font-style:normal;color:#9FE3AE}
+.hero p.lede{margin:18px 0 26px;font-size:1.08rem;color:rgba(250,246,236,.85);max-width:34em}
+.goal-chips{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px}
+.goal-chips button{font-family:'Prompt';font-weight:600;font-size:.95rem;padding:9px 20px;border-radius:999px;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:var(--cream);cursor:pointer;transition:all .15s}
+.goal-chips button.on{background:var(--cream);color:var(--deep);border-color:var(--cream)}
+.goal-answer{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);border-radius:var(--radius);padding:18px 22px;min-height:96px;margin-bottom:28px}
+.goal-answer strong{font-family:'Prompt';color:#9FE3AE}
+.hero-img{border-radius:24px;overflow:hidden;box-shadow:0 24px 60px rgba(0,0,0,.35);transform:rotate(1.5deg)}
+.hero-cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.hero .note{font-size:.88rem;color:rgba(250,246,236,.65);margin-top:12px}
+@media(max-width:860px){.hero .wrap{grid-template-columns:1fr}.hero-img{max-width:420px;margin:0 auto}}
+
+/* ── facts strip ── */
+.facts{background:var(--paper);border-bottom:1px solid rgba(20,56,35,.07);padding:28px 0}
+.facts .wrap{display:grid;grid-template-columns:repeat(5,1fr);gap:18px;text-align:center}
+.facts b{display:block;font-family:'Prompt';font-size:1.22rem;color:var(--deep)}
+@media(max-width:900px){.facts .wrap{grid-template-columns:repeat(2,1fr);gap:22px 14px}}
+.facts span{font-size:.88rem;color:var(--muted)}
+@media(max-width:760px){.facts .wrap{grid-template-columns:repeat(2,1fr)}}
+
+/* ── products ── */
+.cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:34px}
+.card{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 18px rgba(20,56,35,.07);display:flex;flex-direction:column}
+.card img{height:230px;object-fit:cover;width:100%}
+.card .body{padding:22px 22px 26px;display:flex;flex-direction:column;gap:10px;flex:1}
+.card h3{font-size:1.2rem;color:var(--deep)}
+.card p{font-size:.95rem;color:var(--muted);flex:1}
+.card .tag{align-self:flex-start;font-family:'Prompt';font-weight:600;font-size:.75rem;letter-spacing:.08em;background:rgba(46,125,67,.1);color:var(--green);padding:4px 12px;border-radius:999px}
+.card .tag.hot{background:rgba(214,75,42,.1);color:var(--chili)}
+.card a.more{font-family:'Prompt';font-weight:600;color:var(--green);text-decoration:none}
+.card a.more:hover{text-decoration:underline}
+@media(max-width:860px){.cards{grid-template-columns:1fr}}
+
+/* ── philosophy ── */
+.philo{background:var(--paper)}
+.philo .wrap{display:grid;grid-template-columns:.9fr 1.1fr;gap:48px;align-items:center}
+.philo blockquote{font-family:'Prompt';font-weight:600;font-size:clamp(1.25rem,2.6vw,1.7rem);color:var(--deep);border-left:5px solid var(--green);padding-left:22px}
+.philo ul{list-style:none;margin-top:8px;display:flex;flex-direction:column;gap:14px}
+.philo li{padding-left:30px;position:relative}
+.philo li::before{content:"✓";position:absolute;left:0;top:0;font-family:'Prompt';font-weight:700;color:var(--green)}
+.philo li b{font-family:'Prompt';color:var(--deep)}
+@media(max-width:860px){.philo .wrap{grid-template-columns:1fr}}
+
+/* ── delivery ── */
+.deliv .grid{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:30px}
+.deliv .box{background:var(--paper);border-radius:var(--radius);padding:26px;box-shadow:0 4px 18px rgba(20,56,35,.06)}
+.deliv .box h3{color:var(--deep);margin-bottom:8px;font-size:1.1rem}
+.deliv .box p{font-size:.95rem;color:var(--muted)}
+@media(max-width:760px){.deliv .grid{grid-template-columns:1fr}}
+
+/* ── faq ── */
+.faq details{background:var(--paper);border-radius:12px;padding:16px 20px;margin-bottom:12px;box-shadow:0 2px 10px rgba(20,56,35,.05)}
+.faq summary{font-family:'Prompt';font-weight:600;cursor:pointer;color:var(--deep);list-style:none;display:flex;justify-content:space-between;align-items:center}
+.faq summary::after{content:"+";font-size:1.3rem;color:var(--green)}
+.faq details[open] summary::after{content:"–"}
+.faq details p{margin-top:10px;color:var(--muted);font-size:.96rem}
+
+/* ── blog ── */
+.blog-list{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-top:30px}
+.bpost{background:var(--paper);border-radius:var(--radius);overflow:hidden;box-shadow:0 4px 18px rgba(20,56,35,.06);text-decoration:none;display:flex;flex-direction:column;transition:transform .15s}
+.bpost:hover{transform:translateY(-4px)}
+.bpost .bcover{aspect-ratio:16/9;background:#EDE7D8;overflow:hidden}
+.bpost .bcover img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.bpost:hover .bcover img{transform:scale(1.04)}
+.bpost .btext{padding:20px 22px 22px;display:flex;flex-direction:column;gap:7px;flex:1}
+.bpost h3{font-size:1.02rem;color:var(--deep)}
+.bpost .bex{font-size:.88rem;color:var(--muted);line-height:1.6;flex:1}
+.bpost span{font-size:.85rem;color:var(--green);font-family:'Prompt';font-weight:600}
+@media(max-width:860px){.blog-list{grid-template-columns:1fr}}
+
+/* ── instagram feed ── */
+.ig{background:var(--paper)}
+.ig-head{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px}
+.ig-head .handle{font-family:'Prompt';font-weight:600;color:var(--deep);text-decoration:none;font-size:1.05rem}
+.ig-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.ig-grid a{position:relative;display:block;aspect-ratio:1/1;border-radius:12px;overflow:hidden;background:rgba(20,56,35,.06)}
+.ig-grid img{width:100%;height:100%;object-fit:cover;transition:transform .25s}
+.ig-grid a:hover img{transform:scale(1.06)}
+.ig-grid a::after{content:"";position:absolute;inset:0;background:rgba(20,56,35,0);transition:background .2s}
+.ig-grid a:hover::after{background:rgba(20,56,35,.18)}
+@media(max-width:860px){.ig-grid{grid-template-columns:repeat(3,1fr)}}
+
+/* ── final cta ── */
+.final{background:var(--deep);color:var(--cream);text-align:center}
+.final h2{color:#fff;font-size:clamp(1.5rem,3.4vw,2.2rem)}
+.final p{margin:14px auto 28px;max-width:36em;color:rgba(250,246,236,.8)}
+
+footer{background:#0E2718;color:rgba(250,246,236,.7);padding:36px 0;font-size:.9rem}
+footer .wrap{display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:center}
+footer a{color:rgba(250,246,236,.85);text-decoration:none;margin-right:16px}
+footer a:hover{text-decoration:underline}
+
+h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
+
+/* ══ v0.3 ══ benefit list มีไอคอน (เรฟฝรั่ง — อ่าน 3 วิเข้าใจ) */
+.benefits{display:flex;flex-direction:column;gap:11px;margin:20px 0 22px}
+.benefit{display:flex;gap:12px;align-items:flex-start}
+.benefit .ic{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(159,227,174,.15);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
+.benefit b{font-family:'Prompt';font-weight:600;color:#fff;font-size:.98rem;display:block;line-height:1.4}
+.benefit span{font-size:.88rem;color:rgba(250,246,236,.7)}
+.pricetag{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:var(--chili);color:#fff;border-radius:50%;width:104px;height:104px;text-align:center;box-shadow:0 8px 24px rgba(214,75,42,.4);transform:rotate(-6deg);flex:none}
+.pricetag small{font-size:.72rem;opacity:.92;font-family:'Prompt'}
+.pricetag b{font-family:'Prompt';font-weight:700;font-size:1.5rem;line-height:1.1}
+.pricetag i{font-style:normal;font-size:.7rem;opacity:.92}
+.hero-price{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.proof{background:var(--deep);color:var(--cream);padding:34px 0}
+.proof .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+.proof b{display:block;font-family:'Prompt';font-weight:700;font-size:1.9rem;color:#9FE3AE;line-height:1.2}
+.proof span{font-size:.9rem;color:rgba(250,246,236,.75)}
+@media(max-width:760px){.proof .wrap{grid-template-columns:repeat(2,1fr);gap:24px 14px}.proof b{font-size:1.6rem}}
+.ship{width:100%;border-collapse:collapse;margin-top:22px;background:var(--paper);border-radius:var(--radius);overflow:hidden;font-size:.95rem}
+.ship th,.ship td{padding:13px 16px;text-align:left;border-bottom:1px solid rgba(20,56,35,.08)}
+.ship th{background:rgba(46,125,67,.09);font-family:'Prompt';color:var(--deep)}
+.ship td b{font-family:'Prompt';color:var(--deep)}
+.ship tr:last-child td{border-bottom:0}
+.ship .free{color:var(--green);font-family:'Prompt';font-weight:700}
+.sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--deep);padding:10px 14px;display:none;gap:10px;align-items:center;box-shadow:0 -6px 20px rgba(0,0,0,.28)}
+.sticky-cta p{flex:1;color:var(--cream);font-size:.84rem;line-height:1.35;margin:0}
+.sticky-cta p b{font-family:'Prompt';color:#9FE3AE}
+.sticky-cta a{white-space:nowrap;background:var(--line);color:#fff;text-decoration:none;font-family:'Prompt';font-weight:600;font-size:.92rem;padding:11px 18px;border-radius:999px}
+@media(max-width:760px){.sticky-cta{display:flex}body{padding-bottom:66px}}
+
+/* ── trust strip (hero) ── */
+.trust{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:16px}
+.trust span{font-size:.9rem;color:rgba(250,246,236,.75)}
+.trust b{font-family:'Prompt';font-weight:700;color:#9FE3AE;font-size:1.02rem}
+
+/* ── ราคาเริ่มต้นบนการ์ด ── */
+.price-from{font-family:'Prompt';font-weight:600;color:var(--deep);font-size:.98rem;margin:-2px 0 2px}
+.price-from small{font-weight:400;color:var(--muted);font-size:.86rem}
+
+/* ── how it works ── */
+.how{background:var(--paper)}
+.how-steps{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:28px}
+.how-step{background:var(--cream);border-radius:var(--radius);padding:22px}
+.how-step b{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;background:var(--green);color:#fff;font-family:'Prompt';margin-bottom:10px}
+.how-step h3{font-size:1.05rem;color:var(--deep);margin-bottom:6px}
+.how-step p{font-size:.93rem;color:var(--muted)}
+@media(max-width:760px){.how-steps{grid-template-columns:1fr}}
+
+/* ── ตารางเซ็ต/คอร์ส ── */
+.sets{width:100%;border-collapse:collapse;margin-top:24px;font-size:.95rem;background:var(--paper);border-radius:var(--radius);overflow:hidden}
+.sets th,.sets td{padding:12px 14px;text-align:left;border-bottom:1px solid rgba(20,56,35,.08)}
+.sets th{background:rgba(46,125,67,.08);font-family:'Prompt';color:var(--deep);font-weight:600}
+.sets td b{font-family:'Prompt';color:var(--deep)}
+.sets tr:last-child td{border-bottom:0}
+.sets-wrap{overflow-x:auto}
+.sets td.sthumb{width:62px;padding:8px 0 8px 12px}
+.sets td.sthumb img{width:50px;height:50px;object-fit:cover;border-radius:9px;display:block}
+@media(max-width:640px){.sets td.sthumb{display:none}.sets th:first-child{display:none}}
+
+/* ── เมนูจริงจากครัว ── */
+.menu-sec{background:var(--paper)}
+.mtabs{display:flex;flex-wrap:wrap;gap:8px;margin-top:22px}
+.mtabs button{font-family:'Prompt';font-weight:600;font-size:.9rem;padding:8px 16px;border-radius:999px;border:1.5px solid rgba(20,56,35,.15);background:transparent;color:var(--ink);cursor:pointer;transition:all .15s}
+.mtabs button:hover{border-color:var(--green)}
+.mtabs button.on{background:var(--green);color:#fff;border-color:var(--green)}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:16px;margin-top:24px}
+.mcard{background:var(--cream);border-radius:14px;overflow:hidden;display:flex;flex-direction:column}
+.mcard .ph{aspect-ratio:1/1;background:#EDE7D8;overflow:hidden}
+.mcard img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .3s}
+.mcard:hover img{transform:scale(1.04)}
+.mcard .mb{padding:12px 13px 14px;display:flex;flex-direction:column;gap:5px;flex:1}
+.mcard h4{font-family:'Sarabun';font-weight:500;font-size:.92rem;color:var(--ink);line-height:1.45;flex:1}
+.mcard .mp{font-family:'Prompt';font-weight:700;color:var(--deep);font-size:1rem}
+.mcard .mp small{font-weight:400;color:var(--muted);font-size:.78rem}
+.menu-note{color:var(--muted);font-size:.9rem;margin-top:18px}
+@media(max-width:520px){.mgrid{grid-template-columns:repeat(auto-fill,minmax(145px,1fr));gap:12px}.mcard h4{font-size:.86rem}}
+
+/* ── soul ── */
+.soul{position:relative;color:var(--cream);background:var(--deep) url('https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S021.jpg?width=1400&quality=60') center/cover no-repeat}
+.soul::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,56,35,.93),rgba(20,56,35,.97))}
+.soul .wrap{position:relative;z-index:1}
+.soul .wrap{max-width:720px;text-align:center}
+.soul h2{color:#fff;font-size:clamp(1.4rem,3vw,1.95rem)}
+.soul p{color:rgba(250,246,236,.85);margin-top:14px;font-size:1.02rem}
+.soul .sig{margin-top:18px;font-family:'Prompt';color:#9FE3AE;font-size:.95rem}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap nav">
+    <a class="logo" href="index.html">
+      <img src="img/img15.jpg" alt="Under360 logo">
+      Under360
+    </a>
+    <nav>
+      <a href="mealplan.html">Meal Plan</a>
+      <a class="hide-m" href="#products">สินค้าทั้งหมด</a>
+      <a class="hide-m" href="#delivery">การจัดส่ง</a>
+      <a href="blog.html">บทความ</a>
+      <a class="btn-line" href="#" onclick="return orderNow(this)">สั่งใน LINE</a>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap">
+    <div>
+      <p class="eyebrow" style="color:#9FE3AE">ประสบการณ์กว่า 10 ปี · ปรุงสดทุกวัน</p>
+      <h1>เราไม่ได้ขายอาหารคลีน<br>เราขายอาหารที่<em>เข้ากับเป้าหมายของคุณ</em></h1>
+      <p class="lede">โปรตีนเป็นแกน รสชาติกินได้ทุกวันจริง — บอกเป้าหมายมา แล้วให้ครัวเราจัดเมนูให้ ตัดของแพ้ให้อัตโนมัติ ส่งถึงหน้าบ้านทั่วกรุงเทพ</p>
+
+      <div class="goal-chips" role="tablist" aria-label="เลือกเป้าหมายของคุณ">
+        <button class="on" data-goal="fat" onclick="pickGoal(this)">ลดไขมัน</button>
+        <button data-goal="muscle" onclick="pickGoal(this)">เพิ่มกล้าม</button>
+        <button data-goal="daily" onclick="pickGoal(this)">กินดีทุกวัน</button>
+        <button data-goal="athlete" onclick="pickGoal(this)">ซ้อม/เตรียมแข่ง</button>
+      </div>
+      <div class="goal-answer" id="goalAnswer" aria-live="polite"></div>
+
+      <div class="hero-price">
+        <div class="pricetag"><small>เริ่มเพียง</small><b>฿125</b><i>ต่อกล่อง</i></div>
+        <div style="color:rgba(250,246,236,.8);font-size:.95rem;max-width:22em">สั่งทีละกล่องก็ได้ <b style="color:#fff">ไม่ต้องสมัครคอร์ส</b><br>อยากลองยาว → <b style="color:#9FE3AE">เซ็ตเริ่ม ฿1,350 ส่งฟรี</b></div>
+      </div>
+      <div class="hero-cta">
+        <a class="btn-line" href="#" onclick="return orderNow(this)">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
+          สั่งใน LINE เลย
+        </a>
+        <a class="btn-ghost" style="border-color:rgba(255,255,255,.5);color:var(--cream)" href="mealplan.html">ดู Meal Plan →</a>
+      </div>
+      <p class="note">🕐 <b>สั่งเองได้ตลอด 24 ชม.</b> — เลือกเมนู ดูราคา จ่ายจบในแอป ไม่ต้องรอแอดมินตอบ · แจ้งช่วงเวลาที่สะดวกรับได้</p>
+      <div class="benefits">
+        <div class="benefit"><div class="ic">🧠</div><div><b>ไม่ต้องคิดเมนูเอง ไม่ต้องทำเอง</b><span>ครัวจัดให้ตามเป้าหมาย เมนูหมุนเวียนไม่ซ้ำจำเจ</span></div></div>
+        <div class="benefit"><div class="ic">🥩</div><div><b>โปรตีนแน่นทุกกล่อง 120–170 g</b><span>อิ่มจริง ไม่ใช่ผักล้วนโรยไก่</span></div></div>
+        <div class="benefit"><div class="ic">🚫</div><div><b>ตัดของแพ้ให้อัตโนมัติ</b><span>แจ้งครั้งเดียว ระบบจำไว้ตลอด</span></div></div>
+        <div class="benefit"><div class="ic">📱</div><div><b>สั่งเองได้ 24 ชม. จบในแอป</b><span>เห็นเมนู ราคา ค่าส่ง ก่อนจ่าย — ไม่ต้องรอแอดมินตอบ</span></div></div>
+        <div class="benefit"><div class="ic">🚚</div><div><b>เซ็ตและ Meal Plan ส่งฟรี ไม่มีขั้นต่ำ</b><span>สั่งทีละกล่องก็ส่ง ร้านช่วยออกค่าส่งให้ส่วนหนึ่งเสมอ</span></div></div>
+      </div>
+    </div>
+    <div class="hero-img">
+      <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S022.jpg?width=900&quality=80"
+           alt="ข้าวญี่ปุ่นอบสาหร่ายแซลมอน — อาหารจริงจากครัว Under360" loading="eager"
+           onerror="this.src='img/img12.png'">
+    </div>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF (v0.3) -->
+<div class="proof">
+  <div class="wrap">
+    <div><b>10 ปี</b><span>ทำครัวเอง ส่งเอง</span></div>
+    <div><b>8,000+</b><span>ลูกค้าที่เคยสั่ง</span></div>
+    <div><b>13,000+</b><span>ครั้งที่ส่งถึงบ้าน</span></div>
+    <div><b>115</b><span>เมนูหมุนเวียน</span></div>
+  </div>
+</div>
+
+<!-- FACTS -->
+<div class="facts">
+  <div class="wrap">
+    <div><b>🥩 120–170 g</b><span>โปรตีนต่อกล่อง (LC / HP)</span></div>
+    <div><b>🫒 ≤ 5 g</b><span>น้ำมันรำข้าวต่อเมนู</span></div>
+    <div><b>🧂 90 %</b><span>ของเมนู โซเดียมต่ำกว่าอาหารทั่วไป</span></div>
+    <div><b>🍚 ข้าว กข 43</b><span>หอมนุ่ม ดัชนีน้ำตาลต่ำกว่า</span></div>
+    <div><b>👨‍🍳 10 ปี</b><span>ครัวของเราเอง ส่งเองทั่วกรุงเทพ</span></div>
+  </div>
+</div>
+
+<!-- PRODUCTS -->
+<section id="products">
+  <div class="wrap">
+    <p class="eyebrow">Product Lines</p>
+    <h2 class="sec">เลือกแบบที่เข้ากับชีวิตคุณ</h2>
+    <p style="color:var(--muted);font-size:1rem;margin-top:10px;max-width:640px">อาหารของเรามี <b>3 รูปแบบ</b> — <b>Meal Plan</b> คอร์สทำสดรายวัน · <b>ข้าวกล่อง/คอร์ส</b>เลือกเมนูเอง · <b>ฟรีซแพ็ค</b>ส่งทั่วไทย เลือกให้เข้ากับเป้าหมายและจังหวะชีวิตของคุณ</p>
+    <div class="cards">
+      <div class="card">
+        <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=600&quality=75"
+             alt="Meal Plan โปรตีนสูง โลว์คาร์บ และสายซ้อมหนัก Under360" loading="lazy"
+             onerror="this.src='img/img11.png'">
+        <div class="body">
+          <span class="tag hot">⭐ ยอดนิยม</span>
+          <h3>Meal Plan — 3 สาย: HP · LC · HX</h3>
+          <p class="price-from">เริ่ม ฿1,399 <small>· ชุดทดลอง 7 กล่อง · ส่งฟรี</small></p>
+          <p>คอร์สอาหารทำสดรายวัน จัดเมนูให้ตามเป้าหมาย ไม่ซ้ำจำเจ ตัดของแพ้อัตโนมัติ — <b>HP</b> โปรตีนสูง 170 g · <b>LC</b> โลว์คาร์บ 120 g · <b>HX</b> สายซ้อมหนัก/เตรียมแข่ง — ทำสดส่งบ่าย จันทร์ พุธ ศุกร์</p>
+          <a class="more" href="mealplan.html">ดูรายละเอียด + ราคา →</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="img/img04.jpg" alt="ข้าวกล่องอาหารสุขภาพพร้อมทาน" loading="lazy">
+        <div class="body">
+          <span class="tag">พร้อมทาน · เลือกเอง</span>
+          <h3>ข้าวกล่องสุขภาพ &amp; คอร์สเลือกเมนูเอง</h3>
+          <p class="price-from">เริ่ม ฿125/กล่อง <small>· สั่งทีละกล่องก็ได้</small></p>
+          <p>มื้อหลักครบสัดส่วน เนื้อสัตว์ 100–120 g + ข้าว/แป้ง + ผัก เมนูหมุนเวียนทุกสัปดาห์ — สั่งทีละกล่อง หรือจัดเป็น<b>คอร์ส/เซ็ต เลือกเมนูเอง แบ่งส่งหลายรอบ เลือกวันรับเองได้</b> เหมาะกับคนอยากคุมเมนู/ไซส์เอง</p>
+          <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
+        </div>
+      </div>
+      <div class="card">
+        <img src="img/img17.jpg" alt="แพ็คกับข้าวฟรีซแพ็คโปรตีนสูง ส่งทั่วไทย" loading="lazy">
+        <div class="body">
+          <span class="tag">ฟรีซแพ็ค · ส่งทั่วไทย</span>
+          <h3>แพ็คกับข้าวฟรีซแพ็ค</h3>
+          <p class="price-from">เริ่ม ฿70/แพ็ค <small>· ตุนไว้ทานได้นาน</small></p>
+          <p>กับข้าวล้วนโปรตีน 120 g ปรุงเสร็จแช่แข็งทันทีเพื่อคงคุณภาพ เหมาะกับการตุนไว้ทานหรืออยู่ต่างจังหวัด จัดส่งรถควบคุมอุณหภูมิทั่วประเทศ</p>
+          <a class="more" href="#" onclick="return orderNow(this)">สั่งใน LINE →</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- เมนูจริงจากครัว -->
+<section class="menu-sec" id="menu">
+  <div class="wrap">
+    <p class="eyebrow">เมนูของเรา</p>
+    <h2 class="sec">อาหารจริงจากครัวเรา — สั่งทีละกล่องก็ได้</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">ไม่ต้องสมัครคอร์สก็สั่งได้ · เมนูหมุนเวียนทุกสัปดาห์ ทำจากครัวของเราเอง <b>รูปทุกใบคืออาหารจริงที่เราส่งให้ลูกค้า</b> ไม่ใช่ภาพสต็อก</p>
+    <div class="mtabs" id="mtabs"></div>
+    <div class="mgrid" id="mgrid"><p style="color:var(--muted)">กำลังโหลดเมนู…</p></div>
+    <p class="menu-note" id="mnote"></p>
+    <p style="margin-top:18px"><a class="btn-line" href="#" onclick="return orderNow(this)">ดูเมนูทั้งหมด + สั่งในแอป →</a></p>
+  </div>
+</section>
+
+<!-- SETS / COURSES -->
+<section id="sets" style="background:var(--cream)">
+  <div class="wrap">
+    <p class="eyebrow">เซ็ต &amp; คอร์ส</p>
+    <h2 class="sec">สั่งเป็นเซ็ต — ถูกกว่าซื้อทีละกล่อง</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">เซ็ตทำจากเมนูที่เตรียมล่วงหน้า จึง<b>เลือกเมนูเองได้ และเลือกวันรับเองได้</b> · เซ็ตใหญ่แบ่งส่งหลายรอบ ไม่ต้องรับทีเดียวหมด · <b>ทุกเซ็ตส่งฟรี</b></p>
+    <div class="sets-wrap">
+      <table class="sets">
+        <thead><tr><th colspan="2">เซ็ต</th><th>จำนวน</th><th>ราคา</th><th>ตกกล่องละ</th><th>รับของ</th></tr></thead>
+        <tbody>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D016.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S105.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D150.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D054.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S063.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/BB01.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:12px">* ซื้อทีละกล่องเริ่ม ฿125 — เซ็ตจึงคุ้มกว่าตั้งแต่เซ็ตเล็กสุด · ราคาอาจมีปรับตามเมนูพรีเมียมที่เลือก</p>
+    <p style="margin-top:20px"><a class="btn-line" href="#" onclick="return orderNow(this)">เลือกเซ็ตในแอป →</a></p>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how">
+  <div class="wrap">
+    <p class="eyebrow">สั่งยังไง</p>
+    <h2 class="sec">3 ขั้น จบในแอป — ไม่ต้องรอใครตอบ</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:660px">เราทำระบบสั่งอาหารของร้านเอง เปิดจาก LINE ได้เลย <b>เลือกเมนู เห็นราคา เห็นค่าส่งก่อนจ่าย</b> — สั่งตอนตีสองก็ได้</p>
+    <div class="how-steps">
+      <div class="how-step"><b>1</b><h3>เปิดเมนูใน LINE</h3><p>เห็นเมนูทั้งหมดพร้อมรูปและราคา เลือกใส่ตะกร้าเหมือนช้อปออนไลน์ทั่วไป</p></div>
+      <div class="how-step"><b>2</b><h3>ปักหมุดที่อยู่</h3><p>ระบบคิดค่าส่งจากระยะทางจริงให้เห็นก่อนจ่าย ไม่มีบวกทีหลัง</p></div>
+      <div class="how-step"><b>3</b><h3>เลือกวันรับ แล้วจ่าย</h3><p>โอนแล้วแนบสลิปในแอป ครัวเห็นออเดอร์ทันที · Meal Plan ทำสดส่งบ่าย จ/พ/ศ</p></div>
+    </div>
+    <p style="color:var(--muted);font-size:.92rem;margin-top:18px">ยังอยากคุยกับคนอยู่? ทักแชทมาได้เหมือนเดิม — แอดมินช่วยจัดให้ทุกขั้นตอน</p>
+  </div>
+</section>
+
+<!-- PHILOSOPHY -->
+<section class="philo">
+  <div class="wrap">
+    <blockquote>ไม่ใช่คลีนจนทรมาน ไม่ใช่ตามใจปากจนพัง — แต่คือ "พอดี" ที่กินได้ทุกวันจริงๆ</blockquote>
+    <div>
+      <p class="eyebrow">Why Under360</p>
+      <h2 class="sec">10 ปีของการหาจุดพอดี</h2>
+      <ul>
+        <li><b>โปรตีนเป็นแกนทุกจาน</b> — เนื้อสัตว์ 120–170 g ต่อกล่อง อิ่มจริง ไม่ใช่ผักล้วนโรยไก่</li>
+        <li><b>คุมน้ำมันแบบมีหลัก</b> — ใช้น้ำมันรำข้าว ไม่เกิน 5 g ต่อเมนู เพราะร่างกายต้องการไขมันพอเหมาะ ไม่ใช่ตัดทิ้ง</li>
+        <li><b>โซเดียมต่ำกว่าอาหารทั่วไป</b>ในกว่า 90% ของเมนู — โดยรสชาติยังกลมกล่อม</li>
+        <li><b>ข้าว กข 43</b> — หอมนุ่มเหมือนหอมมะลิ แต่ดัชนีน้ำตาลต่ำกว่า (ใช้ในเมนูส่วนใหญ่)</li>
+        <li><b>ซื่อสัตย์กับคนกิน</b> — เราไม่เคลมว่าสมบูรณ์แบบ แต่เลี่ยงของ ultra-processed ให้มากที่สุด และบอกตรงๆ ว่าแต่ละเมนูคืออะไร</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- SOUL -->
+<section class="soul">
+  <div class="wrap">
+    <p class="eyebrow" style="color:#9FE3AE">สิ่งที่เราไม่ยอมเปลี่ยน</p>
+    <h2>ร้านนี้โตมาเพราะ "คนดูแลคน"</h2>
+    <p>Under360 เริ่มจากครัวเล็กๆ ที่เจ้าของตอบแชทลูกค้าเอง จำได้ว่าใครไม่กินอะไร ใครกำลังลดน้ำหนักอยู่ ใครสั่งให้พ่อแม่ที่ต่างจังหวัด — <b>ความสัมพันธ์แบบนั้นคือสิ่งที่เราหวงที่สุด</b></p>
+    <p>เราเอาเทคโนโลยีมาใช้เต็มที่ แต่ใช้กับ<b>หลังบ้าน</b> — ครัว ออเดอร์ การจัดส่ง — เพื่อ<b>คืนเวลาให้คนของเราไปดูแลลูกค้าได้มากขึ้น</b> ไม่ใช่เอาระบบมาแทนคน</p>
+    <p class="sig">— ทำครัวเอง ตอบเอง ส่งเอง มา 10 ปี</p>
+  </div>
+</section>
+
+<!-- DELIVERY (v0.3 — ตารางชัด ไม่ต้องทักถาม) -->
+<section id="delivery" class="deliv">
+  <div class="wrap">
+    <p class="eyebrow">Delivery</p>
+    <h2 class="sec">ค่าส่งเท่าไหร่? ดูได้เลย ไม่ต้องทักถาม</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:680px">เราคิดค่าส่งจาก<b>ระยะขับจริงจากครัว</b> ไม่ใช่เหมาเป็นโซน — ยิ่งใกล้ยิ่งถูก และ<b>ร้านช่วยออกส่วนที่เกินให้เสมอ</b></p>
+    <div class="sets-wrap">
+      <table class="ship">
+        <thead><tr><th>แบบที่สั่ง</th><th>ค่าส่ง</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td><b>Meal Plan ทุกแพ็ค</b></td><td class="free">ส่งฟรี</td><td>ไม่มีขั้นต่ำ · ฟรีทุกรอบส่ง</td></tr>
+          <tr><td><b>เซ็ต / คอร์ส ทุกตัว</b></td><td class="free">ส่งฟรี</td><td>Diet Set · Protein Pack · โบนบรอธ</td></tr>
+          <tr><td>สั่งทีละกล่อง — ไม่เกิน 5 กม. จากครัว</td><td><b>฿22–30</b></td><td>คลองสาน ธนบุรี สาทร ฯลฯ</td></tr>
+          <tr><td>สั่งทีละกล่อง — 5–10 กม.</td><td><b>฿30–55</b></td><td>สีลม พระราม 3 ปิ่นเกล้า</td></tr>
+          <tr><td>สั่งทีละกล่อง — 10–15 กม.</td><td><b>฿55–90</b></td><td>สุขุมวิทตอนต้น ลาดพร้าว</td></tr>
+          <tr><td>สั่งทีละกล่อง — ไกลกว่านั้น</td><td><b>สูงสุด ฿200</b></td><td>ไกลแค่ไหนก็ไม่เกินนี้ ส่วนเกินร้านออกให้</td></tr>
+          <tr><td>ต่างจังหวัด (ฟรีซแพ็ค)</td><td><b>~฿200</b></td><td>ส่งทั่วไทย รถควบคุมอุณหภูมิ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:12px">💡 เลือก <b>"รับได้ตลอดวัน"</b> ลดค่าส่งอีก ฿10 · ตัวเลขจริงคำนวณให้เห็นตอนปักหมุดที่อยู่ <b>ก่อนจ่ายเงิน</b> — ไม่มีบวกทีหลัง</p>
+    <div class="dcards" style="margin-top:26px">
+      <div><h3>🛵 กรุงเทพ + ปริมณฑล — ปรุงสดรายวัน</h3><p>ส่งด้วยแมสเซนเจอร์ของร้าน จันทร์–เสาร์ · สั่งล่วงหน้า 1 วัน · แจ้งช่วงเวลาที่สะดวกรับได้ · Meal Plan ทำสดส่งช่วงบ่าย จันทร์ พุธ ศุกร์</p></div>
+      <div><h3>🚚 ทั่วประเทศ — ฟรีซแพ็ค</h3><p>แพ็คกับข้าวปรุงเสร็จแช่แข็งทันที ส่งด้วยรถควบคุมอุณหภูมิถึงหน้าบ้าน · อยู่ไกลหรืออยากตุนไว้ทาน เลือกแบบนี้</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- FAQ -->
+<section class="faq">
+  <div class="wrap">
+    <p class="eyebrow">FAQ</p>
+    <h2 class="sec" style="margin-bottom:26px">คำถามที่พบบ่อย</h2>
+    <details>
+      <summary>สั่งยังไง?</summary>
+      <p>ทักมาใน LINE ของร้านได้เลย แอดมินช่วยแนะนำเมนูและเป้าหมายที่เหมาะกับคุณ สั่งจบในแชทเดียว ชำระผ่านโอน/พร้อมเพย์/บัตรได้</p>
+    </details>
+    <details>
+      <summary>แพ้อาหาร หรือมีของไม่ทาน สั่งได้ไหม?</summary>
+      <p>ได้แน่นอน แจ้งของแพ้และของไม่ทานไว้ครั้งเดียว ระบบครัวจะตัดออกจากเมนูของคุณอัตโนมัติทุกกล่อง</p>
+    </details>
+    <details>
+      <summary>เลือกวันและเวลารับของได้ไหม?</summary>
+      <p>เลือกวันจัดส่งได้ (จันทร์–เสาร์) และแจ้งช่วงเวลาที่สะดวกรับได้ ร้านจะจัดรอบรถให้ใกล้เคียงช่วงที่แจ้งมากที่สุด</p>
+    </details>
+    <details>
+      <summary>Meal Plan ต่างจากข้าวกล่องยังไง?</summary>
+      <p>Meal Plan เป็นคอร์สทำสดรายวัน ครัวจัดเมนูให้ตามเป้าหมาย (โปรตีนสูง หรือ Low Carb) ไม่ต้องเลือกเองทุกวันและไม่ซ้ำจำเจ ส่วนข้าวกล่องคือเมนูพร้อมทานที่เลือกสั่งเป็นกล่องๆ ได้อิสระ</p>
+    </details>
+  </div>
+</section>
+
+<!-- BLOG -->
+<section>
+  <div class="wrap">
+    <p class="eyebrow">Knowledge</p>
+    <h2 class="sec">บทความสุขภาพ</h2>
+    <div class="blog-list" id="blogList">
+      <!-- โหลดจาก Supabase; fallback ด้านล่างถ้าไม่มีข้อมูล -->
+    </div>
+    <p style="margin-top:22px"><a class="btn-ghost" href="blog.html">อ่านบทความทั้งหมด →</a></p>
+  </div>
+</section>
+
+<!-- INSTAGRAM FEED -->
+<section class="ig">
+  <div class="wrap">
+    <div class="ig-head">
+      <div>
+        <p class="eyebrow">Instagram</p>
+        <h2 class="sec">เมนูจริงจากครัว วันต่อวัน</h2>
+      </div>
+      <a class="handle" href="https://www.instagram.com/under360" target="_blank" rel="noopener">📷 @under360 — Follow</a>
+    </div>
+    <div class="ig-grid" id="igGrid"></div>
+  </div>
+</section>
+
+<!-- FINAL CTA -->
+<section class="final">
+  <div class="wrap">
+    <h2>บอกเป้าหมายของคุณมา<br>ที่เหลือให้ครัวเราจัดการ</h2>
+    <p>เริ่มจากข้าวกล่องมื้อเดียว ฿125 · เซ็ตลองทาน ฿1,350 · หรือ Meal Plan ทดลอง 7 กล่อง ฿1,399 — <b>สั่งเองในแอปได้เลย</b> หรือทักมาคุยกันก่อนก็ได้ ไม่มีข้อผูกมัด</p>
+    <div style="display:flex;flex-wrap:wrap;gap:10px 24px;justify-content:center;margin:0 auto 24px;max-width:36em;font-size:.92rem;color:rgba(250,246,236,.75)">
+      <span>⭐ <b style="color:#9FE3AE">4.1</b> บน Wongnai</span>
+      <span>👥 ชุมชนกว่า <b style="color:#9FE3AE">150,000</b> คนบน FB + IG</span>
+      <span>🍱 เมนูหมุนเวียนกว่า <b style="color:#9FE3AE">100</b> รายการ</span>
+    </div>
+    <a class="btn-line" href="#" onclick="return orderNow(this)">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
+      เริ่มสั่งใน LINE
+    </a>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <b style="font-family:'Prompt';color:#fff">Under360</b> · อาหารตามเป้าหมาย ส่งถึงบ้าน<br>
+      โทร 064-173-6519 · เขตคลองสาน กรุงเทพฯ
+    </div>
+    <div>
+      <a href="mealplan.html">Meal Plan</a>
+      <a href="blog.html">บทความ</a>
+      <a href="https://www.facebook.com/under360food">Facebook</a>
+      <a href="https://www.instagram.com/under360">Instagram</a>
+    </div>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ═══ CONFIG ═══ */
+const ORDER_URL = 'https://line.me/R/ti/p/@under360'; // LINE OA ร้าน — สลับเป็น LIFF ตัวจริงตอน beta ผ่าน
+const SB_URL  = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ═══ UTM capture — เก็บ source ไว้ใช้กับ attribution ═══ */
+(function(){
+  try{
+    const p = new URLSearchParams(location.search);
+    if(p.get('utm_source')){
+      const utm = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'), ts:Date.now() };
+      localStorage.setItem('u360_utm', JSON.stringify(utm));
+    }
+  }catch(e){}
+})();
+
+/* ═══ web_events tracking (fire-and-forget — ห้าม await, ห้ามบล็อก UX, catch เงียบ) ═══ */
+function track(event, page){
+  try{
+    const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
+    sb.from('web_events').insert({
+      event, page,
+      utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+      referrer: document.referrer||null, ua: (navigator.userAgent||'').slice(0,200)
+    }).then(()=>{},()=>{});
+  }catch(e){}
+}
+track('pageview','index');
+
+/* ═══ presence heartbeat — นับคนออนไลน์ real-time (fire-and-forget) ═══ */
+const _presSid = 'web_' + Math.random().toString(36).slice(2) + Date.now();
+function _pingPresence(){ try{ sb.from('live_presence').upsert({ sid:_presSid, area:'web', page:'index', last_seen:new Date().toISOString() }).then(()=>{},()=>{}); }catch(e){} }
+_pingPresence(); setInterval(_pingPresence, 15000);
+
+/* ═══ Order CTA + Google Ads conversion ═══ */
+function orderNow(el){
+  track('cta_click','index');
+  try{
+    if(typeof gtag === 'function'){
+      // TODO (Claude Code): แทน CONVERSION_LABEL หลังสร้าง conversion action
+      gtag('event','conversion',{ 'send_to':'AW-XXXXXXXXXX/CONVERSION_LABEL' });
+    }
+  }catch(e){}
+  window.location.href = ORDER_URL;
+  return false;
+}
+
+/* ═══ Goal switcher (signature) ═══ */
+const GOALS = {
+  fat:    '<strong>ลดไขมัน →</strong> แนะนำ Meal Plan <strong>LC (Low Carb)</strong> — คุมคาร์บ โปรตีน 120 g ต่อกล่อง อิ่มโดยไม่ต้องอด เมนูหมุนเวียนไม่จำเจ',
+  muscle: '<strong>เพิ่มกล้าม →</strong> แนะนำ Meal Plan <strong>HP (High Protein)</strong> — โปรตีนแน่น 170 g ต่อกล่อง รองรับสายเวท สายวิ่ง และคนเตรียมแข่ง',
+  daily:  '<strong>กินดีทุกวัน →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ · จัดเป็น<strong>คอร์ส/เซ็ต เลือกเมนู+วันรับเอง</strong> · หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์',
+  athlete:'<strong>ซ้อม/เตรียมแข่ง →</strong> แนะนำ Meal Plan <strong>HX (Hyrox / Athlete)</strong> — จัดสัดส่วนคาร์บ+โปรตีนให้เข้ากับรอบซ้อม เมนูเฉพาะสาย HX สำหรับคนลง Hyrox ไตรกีฬา วิ่งระยะไกล'
+};
+function pickGoal(btn){
+  document.querySelectorAll('.goal-chips button').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('goalAnswer').innerHTML = GOALS[btn.dataset.goal];
+}
+document.getElementById('goalAnswer').innerHTML = GOALS.fat;
+
+/* ═══ Instagram Feed ═══
+   โหมดอัตโนมัติ: สมัคร behold.so (ฟรี) → เชื่อม IG @under360 → เอา JSON feed URL มาใส่ BEHOLD_URL
+   ถ้ายังไม่ใส่ = โชว์ grid สำรอง (FALLBACK_IG) ลิงก์ไป IG จริง — งาน connect Behold = delegate พลอย/แอดมิน */
+const BEHOLD_URL = ''; // TODO: ใส่ https://feeds.behold.so/xxxxx เมื่อเชื่อมแล้ว
+const IG_PROFILE = 'https://www.instagram.com/under360';
+const FALLBACK_IG = [
+  'img/img10.png',
+  'img/img03.jpg',
+  'img/img16.jpg',
+  'img/img26.jpg',
+  'img/img25.jpg',
+  'img/img01.jpg'
+];
+(async function loadIG(){
+  const grid = document.getElementById('igGrid');
+  let tiles = [];
+  if(BEHOLD_URL){
+    try{
+      const res = await fetch(BEHOLD_URL);
+      const data = await res.json();
+      const posts = data.posts || data || [];
+      tiles = posts.slice(0,6).map(p=>({
+        img: p.mediaUrl || (p.sizes && (p.sizes.medium?.mediaUrl || p.sizes.small?.mediaUrl)) || p.thumbnailUrl,
+        link: p.permalink || IG_PROFILE
+      })).filter(t=>t.img);
+    }catch(e){}
+  }
+  if(!tiles.length) tiles = FALLBACK_IG.map(img=>({img, link:IG_PROFILE}));
+  grid.innerHTML = tiles.map(t=>
+    `<a href="${t.link}" target="_blank" rel="noopener" aria-label="ดูโพสต์บน Instagram">
+       <img src="${t.img}" alt="เมนูอาหารสุขภาพ Under360 บน Instagram" loading="lazy">
+     </a>`).join('');
+})();
+
+/* ═══ Blog latest 3 จาก Supabase (fallback เป็นลิงก์คงที่) ═══ */
+const FALLBACK_POSTS = [
+  {title:'Meal Plan โปรตีนสูงคืออะไร เหมาะกับใคร (2026)', url:'blog.html'},
+  {title:'อาหารคลีน Delivery กรุงเทพ เจ้าไหนดี? วิธีเลือกให้เหมาะกับเป้าหมาย', url:'blog.html'},
+  {title:'Under360 ส่งถึงไหนบ้าง? ครอบคลุมทั่วกรุงเทพ และส่งได้ทั่วไทย', url:'blog.html'}
+];
+(async function loadBlog(){
+  const box = document.getElementById('blogList');
+  let posts = [];
+  try{
+    const { data, error } = await sb.from('blog_posts')
+      .select('slug,title,created_at,cover_url,excerpt').eq('published',true)
+      .order('created_at',{ascending:false}).limit(3);
+    if(!error && data && data.length) posts = data.map(p=>({title:p.title, url:'blog.html?post='+encodeURIComponent(p.slug), date:p.created_at, cover:p.cover_url, excerpt:p.excerpt}));
+  }catch(e){}
+  if(!posts.length) posts = FALLBACK_POSTS;
+  box.innerHTML = posts.map(p=>`
+    <a class="bpost" href="${p.url}">
+      ${p.cover ? `<div class="bcover"><img src="${p.cover}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+      <div class="btext">
+        <h3>${p.title}</h3>
+        ${p.excerpt ? `<p class="bex">${String(p.excerpt).slice(0,90)}${String(p.excerpt).length>90?'…':''}</p>` : ''}
+        <span>อ่านต่อ →</span>
+      </div>
+    </a>`).join('');
+})();
+
+/* ═══ เมนูจริงจากครัว — ดึงสดจาก Supabase (เมนูเปลี่ยน เว็บอัปเดตเอง) ═══ */
+(async function loadMenu(){
+  const grid = document.getElementById('mgrid');
+  const tabs = document.getElementById('mtabs');
+  const note = document.getElementById('mnote');
+  if(!grid) return;
+
+  /* หมวดที่โชว์บนเว็บ + ลำดับ (เว็บสาธารณะไม่โชว์ HP/LC/HX เพราะเป็นเมนูที่ครัวจัดให้ ไม่ให้เลือกเอง) */
+  const SHOW = ['no_special','pack_regular','cat_mqz5oz7oey9','cat_mqwg0bh3vho','cat_mqz49my7l8r','cat_mqz6m6b7gkm'];
+  const thumb = code => `${SB_URL}/storage/v1/render/image/public/menu-images/${encodeURIComponent(code)}.jpg?width=400&quality=70`;
+
+  let items = [], labels = {};
+  try{
+    const [mRes, cRes] = await Promise.all([
+      sb.from('menu_items').select('code,name,price,category,image_urls').eq('is_available',true).limit(300),
+      sb.from('kitchen_data').select('data').eq('key','appConfig').limit(1)
+    ]);
+    if(mRes.error) throw mRes.error;
+    items = (mRes.data||[]).filter(x => Array.isArray(x.image_urls) && x.image_urls[0] && +x.price > 0);
+    ((cRes.data && cRes.data[0] && cRes.data[0].data && cRes.data[0].data.categories) || [])
+      .forEach(c => { labels[c.key] = c.label; });
+  }catch(e){
+    grid.innerHTML = '<p style="color:var(--muted)">ดูเมนูทั้งหมดได้ในแอป — กดปุ่มด้านล่างได้เลย</p>';
+    return;
+  }
+  if(!items.length){ grid.innerHTML = '<p style="color:var(--muted)">ดูเมนูทั้งหมดได้ในแอป</p>'; return; }
+
+  const cats = SHOW.filter(k => items.some(i => i.category === k));
+  if(!cats.length){ grid.innerHTML=''; return; }
+  let active = cats[0];
+
+  function render(){
+    const list = items.filter(i => i.category === active);
+    grid.innerHTML = list.slice(0,12).map(i => `
+      <div class="mcard">
+        <div class="ph"><img src="${thumb(i.code)}" alt="${(i.name||'').replace(/"/g,'')}" loading="lazy"
+             onerror="this.closest('.mcard').style.display='none'"></div>
+        <div class="mb">
+          <h4>${i.name||''}</h4>
+          <div class="mp">฿${Math.round(i.price)}</div>
+        </div>
+      </div>`).join('');
+    note.textContent = list.length > 12
+      ? `แสดง 12 จาก ${list.length} เมนูในหมวดนี้ — ดูครบทุกเมนูได้ในแอป`
+      : `${list.length} เมนูในหมวดนี้`;
+    [...tabs.children].forEach(b => b.classList.toggle('on', b.dataset.k === active));
+  }
+
+  tabs.innerHTML = cats.map(k =>
+    `<button data-k="${k}">${labels[k] || k} <span style="opacity:.6">(${items.filter(i=>i.category===k).length})</span></button>`
+  ).join('');
+  tabs.onclick = e => { const b = e.target.closest('button'); if(!b) return; active = b.dataset.k; render(); };
+  render();
+})();
+</script>
+<div class="sticky-cta">
+  <p><b>ข้าวกล่องเริ่ม ฿125</b> · สั่งเองได้ 24 ชม.</p>
+  <a href="#" onclick="return orderNow(this)">สั่งใน LINE</a>
+</div>
+</body>
+</html>
