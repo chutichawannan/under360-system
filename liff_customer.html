@@ -389,6 +389,16 @@ body{background:#fff!important}
 .mi-v2-qb.plus{background:var(--g);color:#fff;border-color:var(--g);}
 .mi-v2-qn{min-width:26px;text-align:center;font-size:15px;font-weight:700;}
 
+/* 🎁 แท็บโปรโมชั่น */
+.ctab.promo-tab{background:#FEF3C7;border-color:#F5D67A;color:#8A6D1F;font-weight:800}
+.ctab.promo-tab.on{background:#C9573F;border-color:#C9573F;color:#fff}
+.promo-wrap{padding:4px 16px 20px}
+.promo-lead{font-size:12.5px;color:#6B7280;margin:2px 0 12px}
+.promo-card{background:#fff;border:1.5px solid #E5E5E1;border-radius:14px;padding:14px 16px;margin-bottom:10px;cursor:pointer}
+.promo-card:active{background:#FAFAF7}
+.pc-t{font-size:16px;font-weight:800;color:#1A1A1A}
+.pc-s{font-size:12.5px;color:#6B7280;margin-top:3px;line-height:1.45}
+.pc-p{font-size:17px;font-weight:800;color:#C9573F;margin-top:7px}
 /* Item grid section (under marquee) */
 .ig-wrap{margin:0 12px 12px;}
 .ig-hdr{display:flex;justify-content:space-between;align-items:center;padding:4px 0 10px;}
@@ -1597,8 +1607,8 @@ function renderMealPlanPicker() {
   if (!el) return;
   // Hyrox โผล่ก็ต่อเมื่อมีเซ็ต hyrox ที่ is_active ใน DB — ปิดที่ DB = หน้าตากลับเป็น 2 ตัวเลือกเหมือนเดิม
   const MP_TYPE_CFG = {
-    hp:{label:'High Protein',emoji:'💪',desc:'โปรตีนสูง อิ่มนาน · เหมาะออกกำลัง/เพิ่มกล้าม',color:'#1F4D3A'},
-    lc:{label:'Low Carb',    emoji:'🥗',desc:'คาร์บต่ำ คุมแคลฯ · เหมาะลดน้ำหนัก/คุมหุ่น',color:'#2D6B53'},
+    hp:{label:'High Protein',emoji:'💪',desc:'เนื้อสัตว์ดิบ 170g',color:'#1F4D3A'},
+    lc:{label:'Low Carb',    emoji:'🥗',desc:'เนื้อสัตว์ดิบ 120g',color:'#2D6B53'},
     hyrox:{label:'Hyrox',    emoji:'🏋️',desc:'สัดส่วนเหมาะกับคนซ้อมเพื่อลงแข่ง',color:'#8A4B1F'}
   };
   const mpTypes = mpHasHyrox() ? ['hp','lc','hyrox'] : ['hp','lc'];
@@ -1637,40 +1647,28 @@ function renderMealPlanPicker() {
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
     <div style="background:#FEF9E7;border:1px solid #F5E4A8;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px;color:#8A6D1F;line-height:1.6;">
-      📅 <strong>จัดส่งเฉพาะวันจันทร์ / พุธ / ศุกร์</strong> เท่านั้น — ระบบจะทยอยส่งกล่องอาหารตามรอบนี้ไปเรื่อยๆ จนครบ ${MP_SETS.find(x=>x.id===mpSetId)?.boxes||''} กล่อง<br>
-      หากต้องการเลื่อน/ข้ามวันส่ง แจ้งแอดมินหรือแก้ไขได้ภายหลังในหน้าประวัติออเดอร์
+      📅 <strong>จัดส่งเฉพาะวันจันทร์ / พุธ / ศุกร์</strong> — วันละ 7 กล่อง
     </div>
-    <div style="margin-top:16px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">3. เมนู Request (ถ้าต้องการ)</div>
-      <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
-        ปกติแอดมินจะจัดเมนูให้ 7 รายการ/สัปดาห์ตามความเหมาะสม ถ้ามีเมนูที่อยากกินเป็นพิเศษ เลือกได้ตรงนี้ — ระบบจะขอสลับเมนูที่แอดมินจัดไว้ 1-2 รายการ ให้เป็นเมนูที่เลือก (ไม่ต้องเลือกครบทุกอัน เลือกแค่ที่อยากได้)
-      </div>
-      ${/* N-21: ทำเป็นลิสต์ตัวหนังสือไปก่อน — เดิมเป็นการ์ดรูป แต่เมนู MP ยังไม่มีรูปจริง
-              โชว์กล่อง placeholder 🍱 เต็มจอ = ลูกค้าจะทวงหารูป · กลับมาใส่รูปทีหลังได้ */''}
-      ${mpRequestMenus.length ? `<div style="display:flex;flex-direction:column;gap:6px;">${mpRequestMenus.map((r,i)=>{
-        const on = mpReqSel.includes(i);
-        return `<div onclick="toggleMPReq(${i})" style="display:flex;align-items:center;gap:10px;border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};border-radius:11px;padding:10px 12px;cursor:pointer;">
-          <div style="width:20px;height:20px;flex-shrink:0;border-radius:6px;border:2px solid ${on?'#1F4D3A':'#D5D5D0'};background:${on?'#1F4D3A':'#fff'};color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;">${on?'✓':''}</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:700;color:#1A1A1A;line-height:1.35;">${h(r.name)}</div>
-            <div style="font-size:10.5px;color:#9AA0AC;margin-top:1px;">${h(r.code)}</div>
-          </div>
-        </div>`;
-      }).join('')}</div>` : '<div style="padding:10px;text-align:center;color:#B8BCC8;font-size:13px;">ยังไม่มีเมนู request ตอนนี้</div>'}
-    </div>
+    ${/* ⛔ บล็อก "3. เมนู Request" ถูกซ่อนตามบรีฟพลอย 20 ส.ค. — ตัวหนังสือยาวแต่เลือกจริงไม่ได้
+          โค้ดเดิมอยู่ใน git history (ก่อน commit นี้) · ตัวแปร mpReqSel/mpRequestMenus ยังทำงานอยู่
+          จะเอากลับมาเมื่อทำให้ลูกค้าเลือกเมนูได้จริง */''}
     ${/* N-41 · ห้องฟ้าแจ้ง 13 ส.ค. 2569 — เคสจริง: ลูกค้าโรคไตขอ "ข้าวนิ่ม" แต่บอกไว้ในแชทไลน์เท่านั้น
           ระบบไม่มีช่องให้กรอก → ครัวไม่เห็น → เกือบได้ข้าวปกติ
           เก็บลง customer_preferences (ติดตัวลูกค้าถาวร) → เด้งบนใบครัวทุกใบของคนนี้ตลอดไป */''}
     <div style="margin-top:18px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">4. แพ้อาหาร / ข้อจำกัด</div>
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">3. แพ้อาหาร / ข้อจำกัด</div>
       <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
-        กรอกครั้งเดียว ครัวเห็นทุกกล่องตลอดคอร์ส — ไม่มีก็เว้นว่างไว้ได้
+        กรอกครั้งแรกครั้งเดียว
       </div>
+      ${/* 🩺 ยังแยก 2 ช่องเหมือนเดิม "โดยตั้งใจ" — ไม่ยุบเป็นช่องเดียว
+            ช่องบน = ของแพ้ ครัวเห็นเป็นแถวแดง "ตัดออกเด็ดขาด" บนใบงาน (เคสลูกค้าโรคไต 13 ส.ค.)
+            ถ้ายุบรวมกับ "ขอข้าวนิ่ม/ไม่เผ็ด" ครัวจะแยกไม่ออกว่าอันไหนห้ามเด็ดขาด = เรื่องความปลอดภัย
+            ตัดแค่ "ตัวหนังสือ" ให้สั้นตามที่พลอยขอ ไม่ตัดตัวแยกประเภท */''}
       <input id="mp-allergy" type="text" value="${h(mpAllergy)}" oninput="mpAllergy=this.value"
-        placeholder="แพ้อาหาร เช่น กุ้ง ถั่วลิสง (ครัวตัดออกเด็ดขาด)"
+        placeholder="แพ้อาหาร เช่น กุ้ง ถั่ว"
         style="width:100%;box-sizing:border-box;border:2px solid #F0C9C9;background:#FFF7F7;border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:8px;">
       <input id="mp-dislike" type="text" value="${h(mpDislike)}" oninput="mpDislike=this.value"
-        placeholder="ไม่ทาน / ขอพิเศษ เช่น ไม่ทานหมู ขอข้าวนิ่ม ไม่เผ็ด"
+        placeholder="ข้อความเพิ่มเติม...."
         style="width:100%;box-sizing:border-box;border:2px solid #E5E5E1;border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;">
     </div>` : ''}`;
   updateMPConfirmBtn();
@@ -2116,14 +2114,72 @@ function backToMenu() {
   showScr('s-menu');
 }
 
+/* 🎁 เนื้อแท็บโปรโมชั่น — การ์ดใบใหญ่กดแล้วเข้า flow เดิมทุกใบ
+   Meal Plan -> openMealPlanPicker() · แพคเกจ -> openPackage(id)
+   ไม่ได้สร้าง flow ซื้อใหม่เลย = ไม่มีอะไรให้พังเพิ่ม */
+function promoPriceText(p){
+  const n = Number(p && p.base_price) || 0;
+  return n ? '฿' + n.toLocaleString() : '';
+}
+function renderPromoTab(el){
+  let h2 = '<div class="promo-wrap">';
+  h2 += '<div class="promo-lead">สั่งเป็นชุด ราคาต่อกล่องถูกกว่าซื้อแยก</div>';
+
+  // Meal Plan มาก่อน — เป็นตัวชูโรงของร้าน
+  if (MP_SETS && MP_SETS.length){
+    const lc = MP_SETS.filter(x=>!x.isHx).map(x=>x.price_lc).filter(Boolean);
+    const from = lc.length ? Math.min.apply(null, lc) : 0;
+    h2 += '<div class="promo-card" onclick="openMealPlanPicker()">'
+       +    '<div class="pc-t">Meal Plan</div>'
+       +    '<div class="pc-s">Low Carb / High Protein · ทำสดใหม่ ส่ง จ/พ/ศ</div>'
+       +    (from ? '<div class="pc-p">เริ่ม ฿'+from.toLocaleString()+'</div>' : '')
+       +  '</div>';
+  }
+  /* 🪤 ห้ามเอา description ของแพคเกจมาโชว์ตรงๆ — มันเป็นโน้ตของแอดมิน ไม่ใช่คำขายลูกค้า
+     ของจริงที่เจอตอนเทส: "นำเข้าจาก Hato (Diet Set A) · ขายมาแล้ว 542 ครั้ง ·
+     ราคาอ้างอิงแคตตาล็อก Hato 26 ก.ค. 2026" — ลูกค้าไม่ควรเห็นสักคำ
+     และนี่คือ "ตัวหนังสือเยอะ ปวดหัว" แบบเดียวกับที่พลอยบ่นถึงพอดี
+     -> ตัดตั้งแต่คำว่า "นำเข้าจาก" ทิ้ง เหลือแต่ท่อนที่อธิบายตัวสินค้าจริง + จำกัดความยาว */
+  function promoDesc(p){
+    var t = String((p && p.description) || '').split('นำเข้าจาก')[0].trim();
+    // ตัดตัวคั่นที่ค้างท้ายประโยคหลังตัดคำ (เช่น "… 12 กล่อง ·") — ไม่ใช้ regex ให้ยุ่ง
+    var CUT = ' ·|-–—';
+    while (t.length && CUT.indexOf(t.charAt(t.length-1)) >= 0) t = t.slice(0, -1);
+    t = t.trim();
+    /* ⚠️ ไม่ถอยไปใช้ p.size — มันเก็บแค่ตัวอักษรเดียว (S/M/L) ซึ่งลูกค้าอ่านแล้วไม่ได้อะไร
+       และชื่อแพคบอกขนาดอยู่แล้ว ("Diet Set A — ข้าวกล่องลองทาน 4 วัน 12 กล่อง")
+       เจอตอนเทส: คำอธิบายกลายเป็น "· S" ลอยๆ ต่อท้ายทุกใบ = ตัวหนังสือเปล่าประโยชน์ */
+    if(t.length <= 2) t = '';
+    return t.length > 70 ? (t.slice(0,70) + '…') : t;
+  }
+  /* ของที่แอดมินใช้ทดลอง ไม่ควรโผล่หน้าลูกค้า — ซ่อนจากแท็บนี้เท่านั้น ไม่ได้ปิดแพคเกจใน DB */
+  function promoIsTest(p){ return /เทส|ทดสอบ|test/i.test(String((p && p.name) || '')); }
+  (packages||[]).filter(function(p){ return !promoIsTest(p); }).forEach(function(p){
+    var d = promoDesc(p);
+    h2 += '<div class="promo-card" onclick="openPackage(\''+p.id+'\')">'
+       +    '<div class="pc-t">'+h(p.name||'แพคเกจ')+'</div>'
+       +    (d ? '<div class="pc-s">'+h(d)+'</div>' : '')
+       +    (promoPriceText(p) ? '<div class="pc-p">'+promoPriceText(p)+'</div>' : '')
+       +  '</div>';
+  });
+  h2 += '</div>';
+  el.innerHTML = h2;
+}
+
 // ══════════════════════════════════════
 // 🏷️ CATEGORY TABS
 // ══════════════════════════════════════
+const PROMO_CAT = '__promo__';
+/* มีของให้โชว์ไหม — ไม่มีก็ไม่ต้องขึ้นชิปให้กดแล้วเจอหน้าว่าง */
+function promoHasItems(){ return (packages && packages.length) || (MP_SETS && MP_SETS.length); }
 function renderCatTabs() {
   const el = document.getElementById('ctabsInner') || document.getElementById('ctabs');
   const catCounts = {};
   cats.forEach(c => { catCounts[c] = menuItems.filter(m => m.category === c).length; });
-  el.innerHTML = cats.map(c => {
+  const tabs = promoHasItems() ? [PROMO_CAT].concat(cats) : cats.slice();
+  el.innerHTML = tabs.map(c => {
+    if (c === PROMO_CAT)
+      return '<button class="ctab promo-tab' + (c===activeCat?' on':'') + '" onclick="selectCat(\'' + PROMO_CAT + '\')">🎁 โปรโมชั่น · สั่งเยอะถูกลง</button>';
     const label = getCatLabel(c);
     const cnt = catCounts[c] || 0;
     return `<button class="ctab${c===activeCat?' on':''}" onclick="selectCat('${c}')">${label}</button>`;
@@ -2324,6 +2380,7 @@ function subcodeInfo(m){
 const isWeeklySpecial = m => !!(menuWeek(m) || subcodeInfo(m) || (m && m.is_weekly_special));
 
 function menuItemsForCat(cat){
+  if (cat === PROMO_CAT) return [];        // แท็บโปรโมชั่นวาดจาก packages/Meal Plan ไม่ใช่ menu_items
   return menuItems.filter(m => m.category === cat);
 }
 // ลำดับที่ลูกค้าเห็น: สัปดาห์นี้ (S1→S8) → สัปดาห์ก่อน (ใหม่กว่าขึ้นก่อน) → เมนูประจำ
@@ -2374,6 +2431,7 @@ function codeLineHtml(m){
 
 function renderMenu() {
   const el = document.getElementById('mlist');
+  if (activeCat === PROMO_CAT) { renderPromoTab(el); return; }
   const items = sortWeeklyFirst(menuItemsForCat(activeCat));
   if (!items.length) {
     el.innerHTML = '<div class="empty"><div class="empty-ico">🍽️</div><div class="empty-txt">ยังไม่มีเมนูในหมวดนี้</div></div>';
