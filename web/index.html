@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Under360 — อาหารตามเป้าหมาย โปรตีนเป็นแกน ส่งถึงบ้านทั่วกรุงเทพ</title>
-<link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
 <meta name="description" content="อาหารสุขภาพเดลิเวอรี่ ประสบการณ์กว่า 10 ปี ปรุงสดทุกวัน — Meal Plan 3 สาย โปรตีนสูง (HP) · Low Carb (LC) · Hyrox/นักกีฬา (HX) จัดเมนูตามเป้าหมาย ตัดของแพ้อัตโนมัติ ส่งฟรีทั่วกรุงเทพ · ข้าวกล่องเริ่ม 125.- สั่งเองได้ 24 ชม.">
 <link rel="canonical" href="https://www.360foodbox.com/">
@@ -195,6 +194,37 @@ footer a:hover{text-decoration:underline}
 
 h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 
+/* ══ u360-polish-v04 ══ */
+.benefits{display:flex;flex-direction:column;gap:11px;margin:20px 0 22px}
+.benefit{display:flex;gap:12px;align-items:flex-start}
+.benefit .ic{flex:none;width:34px;height:34px;border-radius:10px;background:rgba(159,227,174,.15);display:flex;align-items:center;justify-content:center;font-size:1.05rem}
+.benefit b{font-family:'Prompt';font-weight:600;color:#fff;font-size:.98rem;display:block;line-height:1.4}
+.benefit span{font-size:.88rem;color:rgba(250,246,236,.7)}
+.pricetag{display:inline-flex;flex-direction:column;align-items:center;justify-content:center;background:var(--chili);color:#fff;border-radius:50%;width:104px;height:104px;text-align:center;box-shadow:0 8px 24px rgba(214,75,42,.4);transform:rotate(-6deg);flex:none}
+.pricetag small{font-size:.72rem;opacity:.92;font-family:'Prompt'}
+.pricetag b{font-family:'Prompt';font-weight:700;font-size:1.5rem;line-height:1.1}
+.pricetag i{font-style:normal;font-size:.7rem;opacity:.92}
+.hero-price{display:flex;gap:16px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.proof{background:var(--deep);color:var(--cream);padding:34px 0}
+.proof .wrap{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;text-align:center}
+.proof b{display:block;font-family:'Prompt';font-weight:700;font-size:1.9rem;color:#9FE3AE;line-height:1.2}
+.proof span{font-size:.9rem;color:rgba(250,246,236,.75)}
+@media(max-width:760px){.proof .wrap{grid-template-columns:repeat(2,1fr);gap:24px 14px}.proof b{font-size:1.6rem}}
+.ship{width:100%;border-collapse:collapse;margin-top:22px;background:var(--paper);border-radius:var(--radius);overflow:hidden;font-size:.95rem}
+.ship th,.ship td{padding:13px 16px;text-align:left;border-bottom:1px solid rgba(20,56,35,.08)}
+.ship th{background:rgba(46,125,67,.09);font-family:'Prompt';color:var(--deep)}
+.ship td b{font-family:'Prompt';color:var(--deep)}
+.ship tr:last-child td{border-bottom:0}
+.ship .free{color:var(--green);font-family:'Prompt';font-weight:700}
+.sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:80;background:var(--deep);padding:10px 14px;display:none;gap:10px;align-items:center;box-shadow:0 -6px 20px rgba(0,0,0,.28)}
+.sticky-cta p{flex:1;color:var(--cream);font-size:.84rem;line-height:1.35;margin:0}
+.sticky-cta p b{font-family:'Prompt';color:#9FE3AE}
+.sticky-cta a{white-space:nowrap;background:var(--line);color:#fff;text-decoration:none;font-family:'Prompt';font-weight:600;font-size:.92rem;padding:12px 18px;border-radius:999px;min-height:44px;display:flex;align-items:center}
+@media(max-width:760px){.sticky-cta{display:flex}body{padding-bottom:70px}}
+@media(max-width:760px){a.more,.ig-head .handle{min-height:44px;display:inline-flex;align-items:center}nav a,footer a{padding:6px 0;display:inline-block}}
+/* นิ้วกดง่ายขึ้น — ปุ่ม/ลิงก์สำคัญสูงอย่างน้อย 44px ตามมาตรฐานมือถือ */
+@media(max-width:760px){.btn,.cta,a.btn-line,.hero-cta a{min-height:44px;display:inline-flex;align-items:center;justify-content:center}}
+
 /* ── trust strip (hero) ── */
 .trust{display:flex;flex-wrap:wrap;gap:10px 22px;margin-top:16px}
 .trust span{font-size:.9rem;color:rgba(250,246,236,.75)}
@@ -265,6 +295,8 @@ fbq('track','PageView');
 <noscript><img height="1" width="1" style="display:none"
 src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=""></noscript>
 <!-- End Meta Pixel -->
+<link rel="icon" href="/img/u360_logo.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="/img/u360_logo.svg">
 </head>
 <body>
 
@@ -300,6 +332,10 @@ src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=
       </div>
       <div class="goal-answer" id="goalAnswer" aria-live="polite"></div>
 
+      <div class="hero-price">
+        <div class="pricetag"><small>เริ่มเพียง</small><b>฿125</b><i>ต่อกล่อง</i></div>
+        <div style="color:rgba(250,246,236,.8);font-size:.95rem;max-width:22em">สั่งทีละกล่องก็ได้ <b style="color:#fff">ไม่ต้องสมัครคอร์ส</b><br>อยากลองยาว → <b style="color:#9FE3AE">เซ็ตเริ่ม ฿1,350 ส่งฟรี</b></div>
+      </div>
       <div class="hero-cta">
         <a class="btn-line" href="#" onclick="return orderNow(this)">
           <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 5.86 2 10.6c0 4.25 3.6 7.8 8.46 8.48.33.07.78.22.9.5.1.26.07.66.03.92l-.14.87c-.05.26-.21 1.02.9.56 1.1-.47 5.94-3.5 8.1-6C21.76 14.2 22 12.46 22 10.6 22 5.86 17.52 2 12 2z"/></svg>
@@ -308,10 +344,12 @@ src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=
         <a class="btn-ghost" style="border-color:rgba(255,255,255,.5);color:var(--cream)" href="mealplan.html">ดู Meal Plan →</a>
       </div>
       <p class="note">🕐 <b>สั่งเองได้ตลอด 24 ชม.</b> — เลือกเมนู ดูราคา จ่ายจบในแอป ไม่ต้องรอแอดมินตอบ · แจ้งช่วงเวลาที่สะดวกรับได้</p>
-      <div class="trust">
-        <span><b>10 ปี</b> ทำครัวเอง</span>
-        <span><b>8,000+</b> ลูกค้าที่เคยสั่ง</span>
-        <span><b>13,000+</b> ครั้งที่ส่งถึงบ้าน</span>
+      <div class="benefits">
+        <div class="benefit"><div class="ic">🍱</div><div><b>เลือกเมนูเองได้ทุกกล่อง</b><span>ไม่ใช่เมนูที่ร้านจัดมาให้ — วันนี้มีให้เลือกกว่า 100 เมนู</span></div></div>
+        <div class="benefit"><div class="ic">🥩</div><div><b>โปรตีนแน่นทุกกล่อง 120–170 g</b><span>อิ่มจริง ไม่ใช่ผักล้วนโรยไก่</span></div></div>
+        <div class="benefit"><div class="ic">🚫</div><div><b>ตัดของแพ้ให้อัตโนมัติ</b><span>แจ้งครั้งเดียว ระบบจำไว้ตลอด</span></div></div>
+        <div class="benefit"><div class="ic">📱</div><div><b>สั่งเองได้ 24 ชม. จบในแอป</b><span>เห็นเมนู ราคา ค่าส่ง ก่อนจ่าย — ไม่ต้องรอแอดมินตอบ</span></div></div>
+        <div class="benefit"><div class="ic">🚚</div><div><b>เซ็ตและ Meal Plan ส่งฟรี ไม่มีขั้นต่ำ</b><span>สั่งทีละกล่องก็ส่ง ร้านช่วยออกค่าส่งให้ส่วนหนึ่งเสมอ</span></div></div>
       </div>
     </div>
     <div class="hero-img">
@@ -319,6 +357,16 @@ src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=
            alt="ข้าวญี่ปุ่นอบสาหร่ายแซลมอน — อาหารจริงจากครัว Under360" loading="eager"
            onerror="this.src='img/img12.png'">
     </div>
+  </div>
+</div>
+
+<!-- SOCIAL PROOF (u360-polish-v04) -->
+<div class="proof">
+  <div class="wrap">
+    <div><b>80,000+</b><span>ลูกค้าสะสมตลอด 10 ปี</span></div>
+    <div><b>100+</b><span>เมนูให้เลือกวันนี้</span></div>
+    <div><b>600+</b><span>สูตรในคลังครัวเรา</span></div>
+    <div><b>24 ชม.</b><span>สั่งเองได้ ไม่ต้องรอใครตอบ</span></div>
   </div>
 </div>
 
@@ -399,13 +447,13 @@ src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=
       <table class="sets">
         <thead><tr><th colspan="2">เซ็ต</th><th>จำนวน</th><th>ราคา</th><th>ตกกล่องละ</th><th>รับของ</th></tr></thead>
         <tbody>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D016.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S105.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D150.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D054.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S063.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
-          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/BB01.jpg?width=110&quality=70" alt="" loading="lazy"></td><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S006.jpg?width=110&quality=70" alt="Diet Set A — Under360" loading="lazy"></td><td><b>Diet Set A</b> — ลองทาน 4 วัน</td><td>12 กล่อง</td><td>฿1,350</td><td>฿113</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D016.jpg?width=110&quality=70" alt="Diet Set B — Under360" loading="lazy"></td><td><b>Diet Set B</b> — ลองทาน 6 วัน</td><td>18 กล่อง</td><td>฿1,999</td><td>฿111</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S105.jpg?width=110&quality=70" alt="Diet Set C — Under360" loading="lazy"></td><td><b>Diet Set C</b> — ตั้งใจทาน 2 สัปดาห์</td><td>42 กล่อง</td><td>฿4,450</td><td>฿106</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D150.jpg?width=110&quality=70" alt="Protein Pack S — Under360" loading="lazy"></td><td><b>Protein Pack S</b> — กับข้าวล้วน 7 วัน</td><td>21 แพ็ค</td><td>฿1,400</td><td>฿67</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/D054.jpg?width=110&quality=70" alt="Protein Pack M — Under360" loading="lazy"></td><td><b>Protein Pack M</b> — 2 สัปดาห์</td><td>42 แพ็ค</td><td>฿2,650</td><td>฿63</td><td>รอบเดียว</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/S063.jpg?width=110&quality=70" alt="Protein Pack L — Under360" loading="lazy"></td><td><b>Protein Pack L</b> — ตุนยาว</td><td>84 แพ็ค</td><td>฿4,900</td><td>฿58</td><td>แบ่งส่ง 2 รอบ</td></tr>
+          <tr><td class="sthumb"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/BB01.jpg?width=110&quality=70" alt="โบนบรอธ — Under360" loading="lazy"></td><td><b>โบนบรอธ</b> — ซุปกระดูกสกัด 10 แถม 1</td><td>11 กระปุก</td><td>฿1,390</td><td>฿126</td><td>รอบเดียว</td></tr>
         </tbody>
       </table>
     </div>
@@ -458,20 +506,30 @@ src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=
   </div>
 </section>
 
-<!-- DELIVERY -->
+<!-- DELIVERY (u360-polish-v04) -->
 <section id="delivery" class="deliv">
   <div class="wrap">
     <p class="eyebrow">Delivery</p>
-    <h2 class="sec">ส่งถึงไหนบ้าง</h2>
-    <div class="grid">
-      <div class="box">
-        <h3>🛵 กรุงเทพ + ปริมณฑล — ปรุงสดรายวัน</h3>
-        <p>ส่งด้วยแมสเซนเจอร์ของร้าน จันทร์–เสาร์ สั่งล่วงหน้า 1 วัน แจ้งช่วงเวลาที่สะดวกรับได้ · ค่าส่งคิดตามระยะทาง ส่วนใหญ่ไม่เกิน ~200 บาทแม้อยู่ไกล เพราะร้านช่วยออกส่วนต่างให้ · <b>Meal Plan รายสัปดาห์/รายเดือน ส่งฟรี</b></p>
-      </div>
-      <div class="box">
-        <h3>🚚 ทั่วประเทศ — ฟรีซแพ็ค</h3>
-        <p>แพ็คกับข้าวปรุงเสร็จแช่แข็งทันที ส่งด้วยรถควบคุมอุณหภูมิถึงหน้าบ้านใน 1–3 วัน จันทร์–เสาร์ · สดกับฟรีซตอบโจทย์คนละแบบ — อยู่กรุงเทพทานสดรายวัน อยู่ไกลหรืออยากตุนเลือกฟรีซแพ็ค</p>
-      </div>
+    <h2 class="sec">ค่าส่งเท่าไหร่? ดูได้เลย ไม่ต้องทักถาม</h2>
+    <p style="color:var(--muted);margin-top:10px;max-width:680px">เราคิดค่าส่งจาก<b>ระยะขับจริงจากครัว</b> ไม่ใช่เหมาเป็นโซน — ยิ่งใกล้ยิ่งถูก และ<b>ร้านช่วยออกส่วนที่เกินให้เสมอ</b></p>
+    <div class="sets-wrap">
+      <table class="ship">
+        <thead><tr><th>แบบที่สั่ง</th><th>ค่าส่ง</th><th>หมายเหตุ</th></tr></thead>
+        <tbody>
+          <tr><td><b>Meal Plan ทุกแพ็ค</b></td><td class="free">ส่งฟรี</td><td>ไม่มีขั้นต่ำ · ฟรีทุกรอบส่ง</td></tr>
+          <tr><td><b>เซ็ต / คอร์ส ทุกตัว</b></td><td class="free">ส่งฟรี</td><td>Diet Set · Protein Pack · โบนบรอธ</td></tr>
+          <tr><td>สั่งทีละกล่อง — ไม่เกิน 5 กม. จากครัว</td><td><b>฿22–30</b></td><td>คลองสาน ธนบุรี สาทร ฯลฯ</td></tr>
+          <tr><td>สั่งทีละกล่อง — 5–10 กม.</td><td><b>฿30–55</b></td><td>สีลม พระราม 3 ปิ่นเกล้า</td></tr>
+          <tr><td>สั่งทีละกล่อง — 10–15 กม.</td><td><b>฿55–90</b></td><td>สุขุมวิทตอนต้น ลาดพร้าว</td></tr>
+          <tr><td>สั่งทีละกล่อง — ไกลกว่านั้น</td><td><b>สูงสุด ฿200</b></td><td>ไกลแค่ไหนก็ไม่เกินนี้ ส่วนเกินร้านออกให้</td></tr>
+          <tr><td>ต่างจังหวัด (ฟรีซแพ็ค)</td><td><b>~฿200</b></td><td>ส่งทั่วไทย รถควบคุมอุณหภูมิ</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p style="color:var(--muted);font-size:.9rem;margin-top:12px">💡 เลือก <b>"รับได้ตลอดวัน"</b> ลดค่าส่งอีก ฿10 · ตัวเลขจริงคำนวณให้เห็นตอนปักหมุดที่อยู่ <b>ก่อนจ่ายเงิน</b> — ไม่มีบวกทีหลัง</p>
+    <div class="dcards" style="margin-top:26px">
+      <div><h3>🛵 กรุงเทพ + ปริมณฑล — ปรุงสดรายวัน</h3><p>ส่งด้วยแมสเซนเจอร์ของร้าน จันทร์–เสาร์ · สั่งล่วงหน้า 1 วัน · แจ้งช่วงเวลาที่สะดวกรับได้ · Meal Plan ทำสดส่งช่วงบ่าย จันทร์ พุธ ศุกร์</p></div>
+      <div><h3>🚚 ทั่วประเทศ — ฟรีซแพ็ค</h3><p>แพ็คกับข้าวปรุงเสร็จแช่แข็งทันที ส่งด้วยรถควบคุมอุณหภูมิถึงหน้าบ้าน · อยู่ไกลหรืออยากตุนไว้ทาน เลือกแบบนี้</p></div>
     </div>
   </div>
 </section>
@@ -675,7 +733,7 @@ const FALLBACK_POSTS = [
   if(!posts.length) posts = FALLBACK_POSTS;
   box.innerHTML = posts.map(p=>`
     <a class="bpost" href="${p.url}">
-      ${p.cover ? `<div class="bcover"><img src="${p.cover}" alt="" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
+      ${p.cover ? `<div class="bcover"><img src="${p.cover}" alt="${String(p.title||'').replace(/"/g,'')}" loading="lazy" onerror="this.parentElement.style.display='none'"></div>` : ''}
       <div class="btext">
         <h3>${p.title}</h3>
         ${p.excerpt ? `<p class="bex">${String(p.excerpt).slice(0,90)}${String(p.excerpt).length>90?'…':''}</p>` : ''}
@@ -739,5 +797,9 @@ const FALLBACK_POSTS = [
   render();
 })();
 </script>
+<div class="sticky-cta">
+  <p><b>ข้าวกล่องเริ่ม ฿125</b> · สั่งเองได้ 24 ชม.</p>
+  <a href="#" onclick="return orderNow(this)">สั่งใน LINE</a>
+</div>
 </body>
 </html>
