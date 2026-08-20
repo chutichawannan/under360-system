@@ -174,6 +174,14 @@ body.tablet .oc-caret{font-size:19px;}
 .oc-badge.mp{background:var(--gs);color:var(--g);}
 .oc-name{font-size:16px;font-weight:800;}
 .oc-meta{font-size:13px;color:var(--soft);margin-top:2px;line-height:1.45;}
+/* ตอนจัดของ ครัวใช้แค่ ชื่อ + จำนวน + เมนู — ที่อยู่/เบอร์เป็นของแมสเซนเจอร์
+   ซ่อนไว้ก่อน (นัท 20 ส.ค.) แต่ยังกดดูได้ทีละใบ เพราะบางทีต้องโทรถามลูกค้าจริง */
+.oc.pk-lean .oc-meta{display:none;}
+.oc.pk-lean.pk-open .oc-meta{display:block;}
+.pk-info{font-size:11.5px;color:var(--soft);background:var(--bg);border:1px solid var(--xsoft);
+  border-radius:6px;padding:1px 7px;cursor:pointer;user-select:none;}
+.oc.pk-open .pk-info{background:var(--gs);border-color:#CFE0D7;color:var(--g);}
+body.tablet .pk-info{font-size:14px;padding:2px 9px;}
 .oc-order-num{font-family:var(--mono);font-size:12.5px;color:var(--soft);}
 .items-grid{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px;}
 /* ══ โหมดจัดของ ══════════════════════════════════════════════════════════════
@@ -181,30 +189,30 @@ body.tablet .oc-caret{font-size:19px;}
    แต่เดิมเมนูเรียงเป็นชิปพรืดกันไปทั้งย่อหน้า → ใบละ 15 กล่องต้องนับในหัว
    หลุดตาแล้วนับใหม่ตั้งแต่ต้น (= ต้นเหตุเดียวกับเคสส่งเกิน 2 กล่อง CASE_01)
    โหมดนี้เปลี่ยนเป็น "บรรทัดละรายการ + แตะติ๊ก" ไม่ได้ซ่อนอะไร แค่เรียงใหม่ */
-.pk-list{display:flex;flex-direction:column;gap:5px;margin-top:6px;}
-.pk-row{display:flex;align-items:center;gap:9px;padding:9px 10px;background:var(--bg);
-  border:1px solid var(--xsoft);border-radius:9px;cursor:pointer;user-select:none;}
-.pk-row:active{transform:scale(.995);}
-.pk-box{flex-shrink:0;width:22px;height:22px;border:2px solid var(--xsoft);border-radius:6px;background:#fff;
-  display:flex;align-items:center;justify-content:center;font-size:14px;line-height:1;color:#fff;}
-.pk-row.on{background:#F0FDF4;border-color:#86EFAC;}
+.pk-list{display:flex;flex-direction:column;margin-top:4px;border-top:1px solid var(--xsoft);}
+.pk-row{display:flex;align-items:center;gap:8px;padding:5px 4px;border-bottom:1px solid var(--xsoft);
+  cursor:pointer;user-select:none;line-height:1.3;}
+.pk-row:active{background:var(--bg);}
+.pk-box{flex-shrink:0;width:19px;height:19px;border:1.5px solid var(--xsoft);border-radius:5px;background:#fff;
+  display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;color:#fff;}
+.pk-row.on{background:#F0FDF4;}
 .pk-row.on .pk-box{background:#16A34A;border-color:#16A34A;}
 .pk-row.on .pk-box:after{content:"✓";}
 .pk-row.on .pk-main{opacity:.5;text-decoration:line-through;}
 .pk-main{flex:1;min-width:0;}
 .pk-code{font-family:var(--mono);font-size:12.5px;font-weight:800;color:var(--g);}
 .pk-name{font-size:13.5px;color:var(--ink);word-break:break-word;}
-.pk-qty{flex-shrink:0;font-family:var(--mono);font-size:18px;font-weight:800;color:var(--ink);
-  min-width:44px;text-align:right;font-variant-numeric:tabular-nums;}
+.pk-qty{flex-shrink:0;font-family:var(--mono);font-size:17px;font-weight:800;color:var(--ink);
+  min-width:38px;text-align:right;font-variant-numeric:tabular-nums;}
 .pk-note{display:block;font-size:12px;font-weight:700;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;margin-top:3px;}
 .oc-prog{font-family:var(--mono);font-size:12px;font-weight:800;color:var(--soft);
   background:var(--bg);border:1px solid var(--xsoft);border-radius:6px;padding:1px 7px;font-variant-numeric:tabular-nums;}
 .oc-prog.full{color:#166534;background:#DCFCE7;border-color:#86EFAC;}
-body.tablet .pk-row{padding:13px 12px;gap:12px;}
-body.tablet .pk-box{width:30px;height:30px;font-size:19px;}
+body.tablet .pk-row{padding:8px 5px;gap:11px;}
+body.tablet .pk-box{width:27px;height:27px;font-size:18px;}
 body.tablet .pk-code{font-size:16px;}
 body.tablet .pk-name{font-size:18px;}
-body.tablet .pk-qty{font-size:26px;min-width:62px;}
+body.tablet .pk-qty{font-size:24px;min-width:54px;}
 body.tablet .oc-prog{font-size:15px;padding:2px 9px;}
 @media print{.pk-box{display:none;} .pk-row{border:none;padding:2px 0;background:none;}}
 /* ชื่อเมนูต้องอ่านครบเสมอ — ให้ตัดบรรทัดได้ ห้ามตัดข้อความทิ้ง (ครัวใช้เช็คว่าลูกค้ารับอะไรบ้าง) */
@@ -1574,6 +1582,10 @@ function togglePackMode(){
 }
 /* แตะติ๊ก = แก้ DOM ตรงๆ ไม่ render ใหม่ทั้งหน้า
    ครัวจัดของแล้วหน้าเด้งกลับไปบนสุด = หาที่เดิมไม่เจอ แย่กว่าไม่มีปุ่ม */
+function pkInfo(el,ev){
+  if(ev) ev.stopPropagation();   /* กันไปโดนพับการ์ดทั้งใบ */
+  var c=el&&el.closest(".oc"); if(c) c.classList.toggle("pk-open");
+}
 function pkTick(el,ev){
   if(ev) ev.stopPropagation();
   if(!el) return;
@@ -1686,7 +1698,7 @@ function renderCard(o){
     boxTag+="<span class='oc-prog"+((_tot&&_done>=_tot)?" full":"")+"'>☑ "+_done+"/"+_tot+"</span>";
   }
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
-  return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+"' data-oid='"+escH(o.id)+"'>"
+  return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+(kqPackMode?" pk-lean":"")+"' data-oid='"+escH(o.id)+"'>"
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
         +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
@@ -1695,7 +1707,9 @@ function renderCard(o){
         +"<div class='oc-order-num'>"+escH(o.order_number||"—")+"</div>"
         +boxTag
         +"<span class='oc-pay "+(o.payment_status==="paid"?"is-paid":"is-unpaid")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
-        +stateTag+"</div>"
+        +stateTag
+        +(kqPackMode?"<span class='pk-info' onclick='pkInfo(this,event)'>📍 ที่อยู่/เบอร์</span>":"")
+        +"</div>"
         +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
         +(o.customer_phone?"<div class='oc-meta'>📞 "+escH(o.customer_phone)+"</div>":"")
         +"<div class='oc-meta oc-meta-sm'>🗓️ สั่ง "+fmtOrderPlaced(o.created_at)+" · ส่ง "+fmtDate(o.delivery_date)+"</div></div></div>"
