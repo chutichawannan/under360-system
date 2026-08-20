@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>ใบจัดของ 21 ส.ค. — 6 ใบ · 41 กล่อง (Meal Plan เท่านั้น)</title>
+<title>ใบจัดของ 21 ส.ค. — 6 ใบ · 44 กล่อง (Meal Plan เท่านั้น)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
@@ -65,7 +65,7 @@
 <div class="vbanner" id="vbanner"></div>
 
 <h1>📦 <span data-i="title">ใบจัดของ — ศุกร์ 21 ส.ค. (Meal Plan เท่านั้น)</span></h1>
-<div class="sub" data-i="sub">6 ใบ · 41 กล่อง (34 ยืนยัน + 7 คุณแชมป์รอยืนยัน) — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
+<div class="sub" data-i="sub">6 ใบ · 44 กล่อง (34 ยืนยัน + 7 คุณแชมป์รอยืนยัน) — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
 <div class="tools">
   <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
@@ -94,7 +94,7 @@
 <div id="app"></div>
 
 <div class="foot">
-  <b data-i="f1">รวม 41 กล่อง — Meal Plan ทำสด เท่านั้น (LC 6 · HP 35, 1 ยังไม่ยืนยัน)</b><br>
+  <b data-i="f1">รวม 44 กล่อง — Meal Plan ทำสด เท่านั้น (LC 6 · HP 35, 1 ยังไม่ยืนยัน)</b><br>
   <span data-i="f2">LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง</span><br>
   <span data-i="f3">ยอดที่ชัวร์จริง = 34 กล่อง (5 คนแรก) · คุณแชมป์ 7 กล่องรอยืนยัน</span>
 </div>
@@ -118,6 +118,7 @@ var C = [
  {g:'lc', n:'Milk (LINE: MiLk.)', line:'MP-0821-041 · 0837035353', box:6, items:['57','18','44','64','40','59'],
   note:'📌 6 กล่อง (ไม่ใช่ 7 ที่ระบบขึ้น) — ไม่รับเมนูหมี่ไก่ฉีก (ไม่อยู่ในชุดวันนี้อยู่แล้ว)'},
  {g:'hp', n:'เฟิน (LINE: 🦄FERNFERN🍀)', line:'MP-0821-040 · HT-986626413', box:7, items:['57','18','64','40','44','61','71']},
+ {g:'hp', n:'คุณ Yupa (แตงกวา)', line:'U-0821-012 · 0651565363 · ชดเชยรอบ 17 ส.ค. ส่งไม่ครบ — ไม่คิดเงิน', box:3, items:['18','64','61']},
  {g:'hp', n:'ต้อย (พจนา ศานติวงษ์การ LINE: TOY)', line:'U-0821-006', box:7, items:['57','18','40','71','61','20','59']},
  {g:'hp', n:'BRIGHT💫', line:'U-0821-003 · 0627355775', box:7, items:['57','18','64','40','44','61','71'],
   note:'✅ เดิมเข้าใจผิดว่าเป็นแถวขยะ — เป็นออเดอร์จริง จ่ายเงินแล้ว'},
@@ -162,7 +163,7 @@ function clearAll(){ done={}; try{localStorage.removeItem(KEY);}catch(e){} rende
 
 const UI = {
   title:{th:'ใบจัดของ — ศุกร์ 21 ส.ค. (Meal Plan เท่านั้น)', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းသုၵ်း 21 (Meal Plan ၵူၺ်း)', my:'ထုပ်ပိုးစာရွက် — သောကြာနေ့ ၂၁ (Meal Plan သာ)'},
-  sub:{th:'6 ใบ · 41 กล่อง — Meal Plan ทำสด เท่านั้น — แตะเพื่อติ๊กเมื่อจัดเสร็จ', shn:'6 ၽိုၼ် · 41 ႁိပ်ႇ — Meal Plan ၵူၺ်း', my:'၆ စောင် · ၄၁ ဘူး — Meal Plan သာ'},
+  sub:{th:'6 ใบ · 44 กล่อง — Meal Plan ทำสด เท่านั้น — แตะเพื่อติ๊กเมื่อจัดเสร็จ', shn:'6 ၽိုၼ် · 41 ႁိပ်ႇ — Meal Plan ၵူၺ်း', my:'၆ စောင် · ၄၁ ဘူး — Meal Plan သာ'},
   btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
   btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
   r_t:{th:'✅ วันนี้ไม่มีข้อห้ามพิเศษ (โอ๋ไม่อยู่คิววันนี้)', shn:'✅ ဝၼ်းၼႆႉ ဢမ်ႇမီးၶေႃႈႁၢမ်ႈ (Oh ဢမ်ႇမီး)', my:'✅ ယနေ့ အထူးတားမြစ်ချက်မရှိ (Oh မပါ)'},
@@ -176,7 +177,7 @@ const UI = {
   w2:{th:'✅ ฝน — แก้แล้ว เดิมระบบมี 2 แถวเศษ (1+1 กล่อง) จากเลื่อนวันทับกัน รวมเป็น 7 กล่องเรียบร้อยแล้วตามที่นัทเคาะไว้', shn:'✅ Fon — 7 ႁိပ်ႇ ယဝ်ႉ', my:'✅ Fon — ၇ ဘူး ပြီးပါပြီ'},
   w3b:{th:'✅ Milk / เฟิน / ต้อย(พจนา TOY) / BRIGHT / ฝน — เขียนลงระบบเรียบร้อยแล้วทั้งหมด (34 กล่อง = ยอดที่ชัวร์)', shn:'✅ 34 ႁိပ်ႇ ၸႅင်ႈလႅင်း', my:'✅ 34 ဘူး သေချာပါပြီ'},
   w4:{th:'Milk — จัดแค่ 6 กล่องตามชีท (ระบบขึ้น 7 กล่อง แต่ตัวเลขรอกิ๊ฟแก้)', shn:'Milk — 6 ႁိပ်ႇ', my:'Milk — ၆ ဘူးသာ'},
-  f1:{th:'รวม 41 กล่อง — Meal Plan ทำสด เท่านั้น (LC 6 · HP 35, 1 ยังไม่ยืนยัน)', shn:'ႁူမ်ႈ 41 ႁိပ်ႇ', my:'စုစုပေါင်း ၄၁ ဘူး'},
+  f1:{th:'รวม 44 กล่อง — Meal Plan ทำสด เท่านั้น (LC 6 · HP 35, 1 ยังไม่ยืนยัน)', shn:'ႁူမ်ႈ 41 ႁိပ်ႇ', my:'စုစုပေါင်း ၄၁ ဘူး'},
   f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง', shn:'LC = 120g · HP = 170g', my:'LC = ၁၂၀g · HP = ၁၇၀g'},
   f3:{th:'ยอดที่ชัวร์จริง = 34 กล่อง · คุณแชมป์ 7 กล่องรอยืนยัน', shn:'34 ႁိပ်ႇ ၸႅင်ႈလႅင်း · Champ 7 ပႆႇၸႅင်ႈ', my:'34 ဘူး သေချာ · Champ 7 မသေချာသေး'}
 };
