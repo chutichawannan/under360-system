@@ -5,15 +5,7 @@
       "schedule": "0 1 * * *"
     },
     {
-      "path": "/api/notify-order-confirm",
-      "schedule": "*/7 * * * *"
-    },
-    {
       "path": "/api/mp-sync",
-      "schedule": "*/10 * * * *"
-    },
-    {
-      "path": "/api/notify-order-status",
       "schedule": "*/10 * * * *"
     },
     {

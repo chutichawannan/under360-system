@@ -35,7 +35,12 @@ async function aliasMap() {
   return _aliasCache;
 }
 
+/* 🛑 ปิดถาวร 20 ส.ค. 2026 — สะพานนี้ส่งข้อความไปหา "ลูกค้าคนอื่น" จริง
+   เหตุ: จับคู่ด้วยเบอร์โทร แต่มีลูกค้าคนละคนใช้เบอร์เดียวกัน/ชื่อเดียวกัน
+   ผลจริง: ลูกค้าชื่อ "N" ได้รับใบยืนยันออเดอร์ของคนอื่น 3 ใบ = ข้อมูลคนอื่นรั่ว
+   → ห้ามเดาว่าไอดีไหนเป็นของใคร ส่งเฉพาะไอดีที่อยู่ในใบนั้นเท่านั้น */
 async function legacyUid(order) {
+  return null;   // ปิดไว้ — อย่าเปิดจนกว่าจะมีวิธียืนยันตัวตนที่เชื่อได้จริง
   const map = await aliasMap();
   if (order.line_uid && map[order.line_uid]) return map[order.line_uid];
   if (!order) return null;
