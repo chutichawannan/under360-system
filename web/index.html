@@ -776,6 +776,7 @@ summary{font-weight:600}
       <a href="blog.html">บทความ</a>
       <a href="https://www.facebook.com/under360food">Facebook</a>
       <a href="https://www.instagram.com/under360">Instagram</a>
+      <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
     </div>
   </div>
 </footer>
@@ -783,7 +784,9 @@ summary{font-weight:600}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 /* ═══ CONFIG ═══ */
-const ORDER_URL = 'https://line.me/R/ti/p/@under360'; // LINE OA ร้าน — สลับเป็น LIFF ตัวจริงตอน beta ผ่าน
+const ORDER_URL = 'https://liff.line.me/2010442513-NI3JGTkb'; // หน้าสั่งของ (LIFF) — ต้องเป็นลิงก์นี้เท่านั้น
+                                 // ลิงก์ OA (line.me/R/ti/p/) ส่ง utm/fbclid ต่อไม่ได้ = วัดผลแอดขาด
+const OA_FOLLOW_URL = 'https://line.me/R/ti/p/@under360'; // แอดเพื่อน OA — ใช้กับลิงก์รองในฟุตเตอร์
 const SB_URL  = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const sb = supabase.createClient(SB_URL, SB_KEY);

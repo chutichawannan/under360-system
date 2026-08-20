@@ -195,7 +195,7 @@ footer{background:var(--bg-soft)!important;color:var(--muted)!important;border-t
     </a>
     <nav>
       <a href="index.html">หน้าแรก</a>
-      <a href="mealplan.html">Meal Plan</a>
+      <a href="mealplan.html">Meal Plan</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
     </nav>
   </div>
 </header>
@@ -415,7 +415,9 @@ async function showArticle(slug){
 function esc(s){ const d=document.createElement('div'); d.textContent=s||''; return d.innerHTML; }
 
 /* ═══ ปลายทางสั่งอาหาร (เว็บทุกหน้าใช้ตัวเดียวกัน) ═══ */
-const ORDER_URL = 'https://line.me/R/ti/p/@under360';
+const ORDER_URL = 'https://liff.line.me/2010442513-NI3JGTkb'; // หน้าสั่งของ (LIFF) — ต้องเป็นลิงก์นี้เท่านั้น
+                                 // ลิงก์ OA (line.me/R/ti/p/) ส่ง utm/fbclid ต่อไม่ได้ = วัดผลแอดขาด
+const OA_FOLLOW_URL = 'https://line.me/R/ti/p/@under360'; // แอดเพื่อน OA — ใช้กับลิงก์รองในฟุตเตอร์
 function orderNow(el){
   try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'blog'}); }catch(e){}
   try{ track('cta_click', 'blog:' + (new URLSearchParams(location.search).get('post') || '-')); }catch(e){}
