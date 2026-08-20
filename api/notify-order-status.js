@@ -32,6 +32,7 @@
  *    (userId คนละ provider = LINE ไม่รู้จักลูกค้า — ดู docs/LINE_PROVIDER.md)
  */
 const getLineToken = require('./_line_token.js');
+const { pushWithFallback } = require('./_reach_uid.js');
 
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
@@ -148,13 +149,9 @@ module.exports = async (req, res) => {
 
         if (dry) { report.push({ order: o.order_number, kind, to: String(o.line_uid).slice(0, 10) + '…' }); sent.add(mark); continue; }
 
-        const r = await fetch('https://api.line.me/v2/bot/message/push', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify({ to: o.line_uid, messages: [bubble(o, kind)] }),
-        });
-        if (r.ok) { sent.add(mark); report.push({ order: o.order_number, kind, ok: true }); }
-        else { report.push({ order: o.order_number, kind, error: (await r.text()).slice(0, 160) }); }
+        const rr = await pushWithFallback(token, o, [bubble(o, kind)]);
+        if (rr.ok) { sent.add(mark); report.push({ order: o.order_number, kind, ok: true, "ส่งผ่าน": rr.via }); }
+        else { report.push({ order: o.order_number, kind, error: rr.error, "ลองแล้ว": rr.via }); }
       }
     }
 

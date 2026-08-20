@@ -1,3 +1,4 @@
+const { pushWithFallback } = require('./_reach_uid.js');
 /* Under360 — ส่งใบยืนยันออเดอร์เข้าแชท LINE ของลูกค้า (นัทสั่ง 8 ส.ค. 2026)
 
    ที่มา: นัทส่งภาพที่ Hato เคยทำให้ดู — ลูกค้าสั่งเสร็จแล้วเด้งใบเสร็จ + เลขออเดอร์ + สถานะ
@@ -257,13 +258,10 @@ export default async function handler(req, res) {
       if (dry) { report.push({ order: o.order_number, to: o.line_uid.slice(0, 10) + "…", total: o.total, altText: msg.altText }); continue; }
       if (!token) { report.push({ order: o.order_number, error: "ยังไม่ได้ตั้ง LINE_CHANNEL_SECRET หรือ LINE_CHANNEL_ACCESS_TOKEN ใน Vercel" }); continue; }
 
-      const r = await fetch("https://api.line.me/v2/bot/message/push", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: "Bearer " + token },
-        body: JSON.stringify({ to: o.line_uid, messages: [msg] }),
-      });
-      if (r.ok) { ok++; sentSet.add(o.order_number); report.push({ order: o.order_number, sent: true }); }
-      else report.push({ order: o.order_number, error: (await r.text()).slice(0, 160) });
+      // 20 ส.ค.: ส่งผ่าน "สะพานไลน์" — ไอดีในใบส่งไม่ได้ ให้ลองไอดีเก่าของลูกค้าคนเดียวกันต่อ
+      const rr = await pushWithFallback(token, o, [msg]);
+      if (rr.ok) { ok++; sentSet.add(o.order_number); report.push({ order: o.order_number, sent: true, "ส่งผ่าน": rr.via }); }
+      else report.push({ order: o.order_number, error: rr.error, "ลองแล้ว": rr.via });
     }
 
     // 3) จำว่าส่งใบไหนไปแล้ว (เก็บ 500 ใบล่าสุดพอ)
