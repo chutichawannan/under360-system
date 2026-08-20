@@ -45,7 +45,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
 .size.on{border-color:var(--g);background:var(--gs)}
 .size .l{font-size:15px;font-weight:700}
 .size .s{font-size:12px;color:var(--soft);margin-top:2px}
-.size .p{font-size:17px;font-weight:800;color:var(--gold)}
+.size .p{font-size:17px;font-weight:800;color:var(--gold);flex-shrink:0;margin-left:10px}
+.deal{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:5px}
+.was{font-size:12px;color:#9AA0AC;text-decoration:line-through}
+.off{font-size:11px;font-weight:800;color:#fff;background:var(--gold);border-radius:6px;padding:2px 7px}
+.save{font-size:11.5px;font-weight:700;color:var(--gold)}
+.sizenote{font-size:11px;color:var(--soft);line-height:1.5;margin-top:8px}
 .size.on .p{color:var(--g)}
 
 /* ── 2 ทางเลือก — ต้องดูเท่ากัน ── */
@@ -60,6 +65,12 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
 /* ── ปฏิทินวัน ── */
 .days{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
 .days::-webkit-scrollbar{display:none}
+.shiftbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.shiftbar:empty{display:none}
+.sh{border:1.5px solid var(--line);background:var(--white);border-radius:9px;padding:7px 11px;font-size:12px;font-weight:700;font-family:inherit;cursor:pointer;color:var(--g)}
+.sh:disabled{opacity:.35;cursor:not-allowed}
+.shtxt{font-size:12.5px;color:var(--soft)}
+.shtxt b{color:var(--ink)}
 .day{flex-shrink:0;min-width:74px;border:2px solid var(--line);background:var(--white);border-radius:12px;padding:9px 8px;text-align:center;cursor:pointer}
 .day.on{border-color:var(--g);background:var(--g);color:#fff}
 .day .dw{font-size:11px;opacity:.7}
@@ -126,6 +137,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
   <div class="sec">
     <div class="sec-h">2. เลือกขนาด</div>
     <div class="sizes" id="sizes"></div>
+    <div class="sizenote" id="sizeNote" style="display:none">ราคาที่ขีดไว้ = ถ้าซื้อเป็นชุดเล็กหลายรอบให้ได้จำนวนมื้อเท่ากัน · สั่งชุดใหญ่ทีเดียวถูกกว่า</div>
   </div>
 
   <div class="sec">
@@ -153,6 +165,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
     </div>
     <div class="sec">
       <div class="sec-h" id="calHead">เมนูแต่ละวัน</div>
+      <div class="shiftbar" id="shiftBar"></div>
       <div class="days" id="days"></div>
       <div id="menuList"></div>
     </div>
@@ -184,6 +197,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 let SETS=[], PLAN={}, MENUS={};
 let mpType='', mpSize='', mpPath='', selDay='', picks={};   // picks[dateKey][no] = qty
+let dayOffset=0;   // เลื่อนวันเริ่ม — นับเป็น "รอบส่ง" ไม่ใช่วันปฏิทิน
 
 const DAYS_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -196,9 +210,26 @@ function boxesOf(){ const s=SETS.find(x=>x.set_key===mpSize); return s? s.boxes 
 function daysNeeded(){ const b=boxesOf(); return b? Math.max(1, Math.round(b/7)) : 0; }
 function perDay(){ const b=boxesOf(), d=daysNeeded(); return d? Math.round(b/d) : 0; }
 /* วันส่งที่เอามาโชว์ = วันแรกๆ ในแพลนที่ยังไม่ถึง เท่ากับจำนวนวันของคอร์ส */
+function futureDays(){ const t=thaiToday(); return Object.keys(PLAN).filter(k=>k>=t).sort(); }
+function maxOffset(){ return Math.max(0, futureDays().length - daysNeeded()); }
 function activeDays(){
-  const today=thaiToday();
-  return Object.keys(PLAN).filter(k=>k>=today).sort().slice(0, daysNeeded());
+  const all=futureDays();
+  const off=Math.min(dayOffset, Math.max(0, all.length-daysNeeded()));
+  return all.slice(off, off+daysNeeded());
+}
+/* เลื่อนแล้วของที่เลือกไว้ในวันที่หลุดออกนอกช่วง ต้องไม่ค้างนับต่อ
+   ไม่งั้นตัวนับจะบอกว่าเลือกครบแล้วทั้งที่วันนั้นไม่อยู่ในคอร์สแล้ว */
+function shiftDays(d){
+  const next=Math.min(Math.max(0, dayOffset+d), maxOffset());
+  if(next===dayOffset) return;
+  const keep=new Set();
+  const all=futureDays();
+  all.slice(next, next+daysNeeded()).forEach(k=>keep.add(k));
+  const lost=Object.keys(picks).filter(k=>!keep.has(k) && countDay(k)>0);
+  if(lost.length && !confirm('เลื่อนวันแล้ว เมนูที่เลือกไว้ '+lost.length+' วันจะถูกล้าง\n\nเลื่อนเลยไหม?')) return;
+  lost.forEach(k=>delete picks[k]);
+  dayOffset=next; selDay='';
+  renderCal(); renderCta();
 }
 function priceOf(){ const s=SETS.find(x=>x.set_key===mpSize); if(!s) return 0; return mpType==='lc'? s.price_lc : s.price_hp; }
 
@@ -232,19 +263,42 @@ function renderTypes(){
        <div style="font-size:24px">${CFG[k].e}</div>
        <div class="t">${CFG[k].t}</div><div class="d">${CFG[k].d}</div></div>`).join('');
 }
+function priceOfSet(s,t){ return t==='lc' ? s.price_lc : s.price_hp; }
+/* เซ็ตที่มื้อน้อยสุด = ราคาต่อมื้อแพงสุด → ใช้เป็นฐานเทียบ */
+function baseUnit(t){
+  if(!SETS.length) return 0;
+  const small = SETS.slice().sort((a,b)=>a.boxes-b.boxes)[0];
+  return priceOfSet(small,t)/small.boxes;
+}
 function renderSizes(){
   const el=document.getElementById('sizes');
   if(!SETS.length){ el.innerHTML='<div class="empty">ยังไม่มีแพลนเปิดขาย</div>'; return; }
+  const base = mpType ? baseUnit(mpType) : 0;
   el.innerHTML = SETS.map(s=>{
     const d = Math.max(1, Math.round(s.boxes/7));
-    const p = mpType ? (mpType==='lc'? s.price_lc : s.price_hp) : 0;
+    const p = mpType ? priceOfSet(s,mpType) : 0;
+    const unit = mpType ? Math.round(p/s.boxes) : 0;
+    const full = mpType ? Math.round(base*s.boxes) : 0;     // ถ้าซื้อทีละน้อยในราคาเซ็ตเล็ก
+    const save = full - p;
+    const pct  = full>0 ? Math.round(save/full*100) : 0;
+    const deal = (mpType && pct>=3)
+      ? `<div class="deal"><span class="was">฿${full.toLocaleString()}</span>
+           <span class="off">ถูกลง ${pct}%</span>
+           <span class="save">ประหยัด ฿${save.toLocaleString()}</span></div>`
+      : '';
     return `<div class="size${mpSize===s.set_key?' on':''}" onclick="setSize('${s.set_key}')">
-      <div><div class="l">${h(s.label)}</div><div class="s">${s.boxes} มื้อ · ส่ง ${d} วัน</div></div>
+      <div style="min-width:0">
+        <div class="l">${h(s.label)}</div>
+        <div class="s">${s.boxes} มื้อ · ส่ง ${d} วัน${mpType? ' · <b>฿'+unit.toLocaleString()+'/มื้อ</b>' : ''}</div>
+        ${deal}
+      </div>
       <div class="p">${mpType? '฿'+p.toLocaleString() : '—'}</div></div>`;
   }).join('');
+  const nb=document.getElementById('sizeNote');
+  if(nb) nb.style.display = mpType ? 'block' : 'none';
 }
 function setType(t){ mpType=t; renderTypes(); renderSizes(); renderCal(); renderCta(); }
-function setSize(s){ mpSize=s; picks={}; selDay=''; renderSizes(); renderCal(); renderCta(); }
+function setSize(s){ mpSize=s; picks={}; selDay=''; dayOffset=0; renderSizes(); renderCal(); renderCta(); }
 function setPath(p){
   mpPath=p;
   document.getElementById('path-auto').classList.toggle('on', p==='auto');
@@ -273,6 +327,13 @@ function renderCal(){
     return;
   }
   if(!selDay || days.indexOf(selDay)<0) selDay=days[0];
+  const mo=maxOffset();
+  const f0=fmtDay(days[0]);
+  document.getElementById('shiftBar').innerHTML = mo>0
+    ? `<button class="sh" onclick="shiftDays(-1)" ${dayOffset<=0?'disabled':''}>◀ เร็วขึ้น</button>
+       <span class="shtxt">เริ่มส่ง <b>${f0.w} ${f0.d} ${f0.m}</b></span>
+       <button class="sh" onclick="shiftDays(1)" ${dayOffset>=mo?'disabled':''}>ช้าลง ▶</button>`
+    : '';
   document.getElementById('days').innerHTML = days.map(k=>{
     const f=fmtDay(k), n=countDay(k);
     return `<div class="day${selDay===k?' on':''}" onclick="pickDay('${k}')">
