@@ -3199,6 +3199,12 @@ async function submitOrder() {
                           + (String(mpDislike||'').trim() ? ' [🩺 ไม่ทาน/ขอพิเศษ: ' + String(mpDislike).trim() + ']' : '')
                           + (pinSkipped ? ' [⚠️ ไม่ได้ปักหมุด — ค่าส่งยังไม่ได้คิด แอดมินตามเก็บ]' : '')).trim()
     };
+    /* 📣 แปะที่มาของออเดอร์ — ใส่เฉพาะตอนมีค่าจริง ไม่มีก็ไม่แตะ payload เลย
+       (ห้ามส่ง null ไปทับของเดิม และห้ามทำให้ออเดอร์ที่ไม่มี UTM พัง) */
+    try{
+      const _utm = utmTag();
+      if(_utm) orderPayload.source_campaign = _utm;
+    }catch(e){ /* พลาดตรงนี้ = แค่ไม่รู้ที่มา ห้ามบล็อกการสั่ง */ }
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
       const utEl = document.getElementById('utensil-input');
@@ -3585,6 +3591,49 @@ async function saveBirthday(){
     show('บันทึกไม่สำเร็จ ลองอีกครั้ง', false);
     if(btn){ btn.disabled = false; btn.textContent = 'บันทึก'; }
   }
+}
+
+/* ══ 📣 UTM Attribution — รู้ว่าออเดอร์นี้มาจากแอดตัวไหน (PM สั่ง 20 ส.ค. 2569) ══
+   ปัญหาที่แก้: ยิงแอดแล้ววัดยอดขายกลับไม่ได้เลย — เคยเผา ฿41,840 แล้วไม่รู้ผล
+   เพราะเราปิดการขายใน LINE → Meta เห็นแค่ "คนทัก" ไม่เห็นว่าใครซื้อจริง
+
+   เส้นทางที่ต้องรอด:  แอด → landing/เว็บ → LINE OA → LIFF → กดสั่ง
+   เก็บที่ไหน: orders.source_campaign — คอลัมน์มีอยู่แล้ว ไม่ต้องรัน SQL
+              (ว่างทั้ง 1,000 แถวที่เช็ค · หน้า OH อ่านมาโชว์อยู่แล้ว)
+   ⛔ ห้ามแตะ orders.source — ตัวนั้นแยก line/hato และ finance/orders.mjs ใช้กรองยอดขาย
+
+   รับ 2 ทาง (เผื่อกันพลาด):
+     ① query บน URL ของ LIFF เอง (?utm_source=…) — ใช้ได้แม้เว็บอยู่คนละโดเมนหลัง DNS cutover
+     ② localStorage u360_utm ที่เว็บ (index/mealplan/blog) เขียนไว้แล้ว — ทางเดียวกับ track()
+   🔴 กฎเหล็กของงานนี้: ไม่มี UTM ต้องสั่งได้เหมือนเดิม — ทุกจุด try/catch และถ้าไม่มีค่า
+      จะไม่ยัดฟิลด์ลง payload เลย (ไม่ส่ง null ไปให้ DB ตีความ) */
+const UTM_MAX_AGE_DAYS = 30;   // เกินนี้ = ไม่นับว่ามาจากแอดตัวนั้นแล้ว (กันแอดเก่าเคลมยอดใหม่)
+function utmRead(){
+  try{
+    const p = new URLSearchParams(location.search);
+    // ① จาก URL ของ LIFF เอง — มาก่อนเสมอ เพราะเป็นของสดที่สุด
+    if(p.get('utm_source')){
+      const u = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'), ts:Date.now() };
+      try{ localStorage.setItem('u360_utm', JSON.stringify(u)); }catch(e){}
+      return u;
+    }
+    // ② จาก localStorage ที่เว็บฝั่งหน้าบ้านเขียนไว้
+    const u = JSON.parse(localStorage.getItem('u360_utm') || '{}');
+    if(!u || !u.source) return null;
+    if(u.ts && (Date.now() - Number(u.ts)) > UTM_MAX_AGE_DAYS*86400000) return null;
+    return u;
+  }catch(e){ return null; }
+}
+/* แปลงเป็นสตริงสั้นๆ ที่ query ด้วย like ได้ เช่น "fb/cpc/mealplan-aug"
+   เก็บเป็นข้อความไม่ใช่ jsonb เพราะรายงาน/ตัวกรองที่มีอยู่อ่านคอลัมน์นี้เป็นข้อความอยู่แล้ว */
+function utmTag(){
+  const u = utmRead(); if(!u || !u.source) return null;
+  const clean = v => String(v||'').trim().replace(/[^A-Za-z0-9._\-]/g,'').slice(0,40);
+  /* ช่องว่างกลางทางต้องหายไป ไม่ใช่เหลือ // คั่น
+     (เจอตอนเทส: มี source กับ campaign แต่ไม่มี medium -> "fb//camp" อ่านยากและตัดคำพลาด) */
+  const parts = [clean(u.source), clean(u.medium), clean(u.campaign)].filter(Boolean);
+  const tag = parts.join('/');
+  return tag ? tag.slice(0,120) : null;
 }
 
 // normalize เบอร์ให้เทียบกันได้ (DB เก็บเป็น 0xxxxxxxxx)

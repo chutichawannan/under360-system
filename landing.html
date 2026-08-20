@@ -109,15 +109,50 @@ body{font-family:var(--sans);background:#F7F8F6;min-height:100vh;}
 </div>
 
 <script>
-// UTM tracking - รู้ว่ามาจากช่องทางไหน
+/* ══ 📣 UTM Attribution (PM สั่ง 20 ส.ค. 2569) ═══════════════════════════════
+   หน้านี้คือด่านแรกของเส้นทาง: แอด → landing → LINE OA → LIFF → กดสั่ง
+   เดิมเก็บแค่ `traffic_source` เป็นข้อความเดี่ยว ตอนกดปุ่ม LINE เท่านั้น
+   และ **ไม่มีใครอ่านต่อเลย** (grep ทั้ง repo เจอที่เดียวคือบรรทัดที่เขียน)
+   → เปลี่ยนมาใช้กุญแจเดียวกับเว็บหน้าอื่น `u360_utm` ที่ LIFF อ่านได้จริง */
 const params=new URLSearchParams(window.location.search);
-const src=params.get("utm_source")||params.get("src")||"direct";
-// บันทึก source ก่อนส่งไป LINE
-document.getElementById("lineBtn").addEventListener("click",()=>{
-  localStorage.setItem("traffic_source",src);
-});
-// ถ้า dev mode เปิดตรงไปหน้าสั่ง
-if(params.get("go")==="order") window.location.href="liff_customer.html";
+const src=params.get("utm_source")||params.get("src")||"";
+
+try{
+  if(src){
+    localStorage.setItem("u360_utm", JSON.stringify({
+      source:  src,
+      medium:  params.get("utm_medium")||"",
+      campaign:params.get("utm_campaign")||"",
+      ts: Date.now()
+    }));
+  }
+}catch(e){ /* เบราว์เซอร์ปิด storage = แค่วัดผลไม่ได้ ห้ามทำให้หน้าพัง */ }
+
+/* ส่ง UTM ต่อไปกับลิงก์ที่ชี้เข้าหน้าสั่งของเราเอง
+   เผื่อกรณี localStorage ข้ามโดเมนไม่ได้ (หลังย้าย DNS เว็บจะอยู่ 360foodbox.com
+   แต่ LIFF อยู่ vercel = คนละ origin = localStorage คนละใบ) */
+function utmQS(){
+  if(!src) return "";
+  const q=new URLSearchParams();
+  q.set("utm_source",src);
+  if(params.get("utm_medium"))   q.set("utm_medium",params.get("utm_medium"));
+  if(params.get("utm_campaign")) q.set("utm_campaign",params.get("utm_campaign"));
+  return q.toString();
+}
+try{
+  const qs=utmQS();
+  if(qs){
+    document.querySelectorAll('a[href*="liff_customer.html"]').forEach(function(a){
+      a.href += (a.href.indexOf("?")>=0 ? "&" : "?") + qs;
+    });
+  }
+}catch(e){}
+
+// ถ้า dev mode เปิดตรงไปหน้าสั่ง — พา UTM ไปด้วย
+if(params.get("go")==="order"){
+  const qs=utmQS();
+  window.location.href="liff_customer.html"+(qs?("?"+qs):"");
+}
 </script>
 </body>
 </html>
