@@ -71,6 +71,16 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
 .sh:disabled{opacity:.35;cursor:not-allowed}
 .shtxt{font-size:12.5px;color:var(--soft)}
 .shtxt b{color:var(--ink)}
+.day{position:relative}
+.skip{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;
+  border:1.5px solid var(--line);background:var(--white);color:var(--soft);
+  font-size:11px;line-height:1;cursor:pointer;padding:0;font-family:inherit}
+.skip:hover{border-color:var(--gold);color:var(--gold)}
+.skipbar{font-size:11.5px;color:#8A6D1F;background:#FEF9E7;border:1px solid #F5E4A8;
+  border-radius:9px;padding:8px 11px;margin-top:2px;line-height:1.6}
+.skipbar:empty{display:none}
+.undo{border:none;background:none;color:var(--g);font-weight:800;font-size:11.5px;
+  font-family:inherit;cursor:pointer;text-decoration:underline;padding:0 0 0 4px}
 .day{flex-shrink:0;min-width:74px;border:2px solid var(--line);background:var(--white);border-radius:12px;padding:9px 8px;text-align:center;cursor:pointer}
 .day.on{border-color:var(--g);background:var(--g);color:#fff}
 .day .dw{font-size:11px;opacity:.7}
@@ -167,6 +177,7 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans T
       <div class="sec-h" id="calHead">เมนูแต่ละวัน</div>
       <div class="shiftbar" id="shiftBar"></div>
       <div class="days" id="days"></div>
+      <div id="skipBar"></div>
       <div id="menuList"></div>
     </div>
   </div>
@@ -198,6 +209,7 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 let SETS=[], PLAN={}, MENUS={};
 let mpType='', mpSize='', mpPath='', selDay='', picks={};   // picks[dateKey][no] = qty
 let dayOffset=0;   // เลื่อนวันเริ่ม — นับเป็น "รอบส่ง" ไม่ใช่วันปฏิทิน
+let skipped=new Set();   // วันที่ลูกค้าขอข้าม — รอบที่เหลือไหลไปวันถัดไปแทน
 
 const DAYS_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
 const MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
@@ -211,12 +223,37 @@ function daysNeeded(){ const b=boxesOf(); return b? Math.max(1, Math.round(b/7))
 function perDay(){ const b=boxesOf(), d=daysNeeded(); return d? Math.round(b/d) : 0; }
 /* วันส่งที่เอามาโชว์ = วันแรกๆ ในแพลนที่ยังไม่ถึง เท่ากับจำนวนวันของคอร์ส */
 function futureDays(){ const t=thaiToday(); return Object.keys(PLAN).filter(k=>k>=t).sort(); }
-function maxOffset(){ return Math.max(0, futureDays().length - daysNeeded()); }
+/* วันที่ยังเลือกได้จริง = วันในอนาคต ลบวันที่ขอข้ามออก
+   พอตัดวันนึงออก วันถัดไปจะไหลเข้ามาแทนเองโดยไม่ต้องคำนวณอะไรเพิ่ม */
+function usableDays(){ return futureDays().filter(k=>!skipped.has(k)); }
+function maxOffset(){ return Math.max(0, usableDays().length - daysNeeded()); }
 function activeDays(){
-  const all=futureDays();
+  const all=usableDays();
   const off=Math.min(dayOffset, Math.max(0, all.length-daysNeeded()));
   return all.slice(off, off+daysNeeded());
 }
+/* ข้าม/เอาคืน — ข้ามได้ต่อเมื่อยังเหลือวันพอครบจำนวนรอบ
+   ถ้าข้ามแล้ววันไม่พอ = คอร์สจะสั้นลงเงียบๆ ซึ่งลูกค้าไม่ได้ตั้งใจ → กันไว้ */
+function canSkip(){ return usableDays().length > daysNeeded(); }
+function toggleSkip(k, ev){
+  if(ev && ev.stopPropagation) ev.stopPropagation();
+  if(skipped.has(k)){ skipped.delete(k); }
+  else{
+    if(!canSkip()){ alert('ข้ามไม่ได้แล้ว — เมนูล่วงหน้ามีถึงแค่วันที่กำหนดไว้\nถ้าข้ามต่อ รอบส่งจะไม่ครบตามที่สั่ง'); return; }
+    if(countDay(k)>0 && !confirm('ข้ามวันนี้ เมนูที่เลือกไว้ของวันนี้จะถูกล้าง\n\nข้ามเลยไหม?')) return;
+    delete picks[k];
+    skipped.add(k);
+  }
+  selDay='';
+  renderCal(); renderCta();
+}
+function skipBarHtml(){
+  if(!skipped.size) return '';
+  const names=[...skipped].sort().map(k=>{ const f=fmtDay(k); return f.w+' '+f.d+' '+f.m; });
+  return '<div class="skipbar">ข้ามไว้ '+skipped.size+' วัน · '+names.join(' · ')
+       + ' <button class="undo" onclick="clearSkips()">เอาคืนทั้งหมด</button></div>';
+}
+function clearSkips(){ skipped=new Set(); selDay=''; renderCal(); renderCta(); }
 /* เลื่อนแล้วของที่เลือกไว้ในวันที่หลุดออกนอกช่วง ต้องไม่ค้างนับต่อ
    ไม่งั้นตัวนับจะบอกว่าเลือกครบแล้วทั้งที่วันนั้นไม่อยู่ในคอร์สแล้ว */
 function shiftDays(d){
@@ -298,7 +335,7 @@ function renderSizes(){
   if(nb) nb.style.display = mpType ? 'block' : 'none';
 }
 function setType(t){ mpType=t; renderTypes(); renderSizes(); renderCal(); renderCta(); }
-function setSize(s){ mpSize=s; picks={}; selDay=''; dayOffset=0; renderSizes(); renderCal(); renderCta(); }
+function setSize(s){ mpSize=s; picks={}; selDay=''; dayOffset=0; skipped=new Set(); renderSizes(); renderCal(); renderCta(); }
 function setPath(p){
   mpPath=p;
   document.getElementById('path-auto').classList.toggle('on', p==='auto');
@@ -308,7 +345,7 @@ function setPath(p){
 function renderPathNote(){
   const el=document.getElementById('pathNote');
   if(mpPath==='auto') el.innerHTML='เราจัดเมนูให้ตามที่ครัวทำในแต่ละวัน สลับไม่ให้ซ้ำ — <b>เลื่อนลงไปดูได้ว่าแต่ละวันมีเมนูอะไร</b>';
-  else if(mpPath==='pick') el.innerHTML='กดเลือกเมนูที่อยากได้ <b>เลือกซ้ำได้</b> · เมนูทะเลเลือกได้ไม่เกิน 4 ต่อคอร์ส · ที่เหลือไม่จำกัด';
+  else if(mpPath==='pick') el.innerHTML='กดเลือกเมนูที่อยากได้ <b>เลือกซ้ำได้</b> · เมนูทะเลเลือกได้ไม่เกิน 4 ต่อคอร์ส · ที่เหลือไม่จำกัด<br>ไม่สะดวกรับวันไหน กด <b>✕</b> มุมวันนั้นเพื่อข้ามไปรับรอบถัดไป';
   else el.innerHTML='เลือกทางไหนก็ได้ — <b>ทั้งสองทางสั่งได้เหมือนกัน</b> ไม่ต้องเลือกเมนูก็สั่งได้';
 }
 
@@ -337,9 +374,11 @@ function renderCal(){
   document.getElementById('days').innerHTML = days.map(k=>{
     const f=fmtDay(k), n=countDay(k);
     return `<div class="day${selDay===k?' on':''}" onclick="pickDay('${k}')">
+      <button class="skip" title="ข้ามรอบส่งวันนี้ ไปรับวันถัดไปแทน" onclick="toggleSkip('${k}',event)">✕</button>
       <div class="dw">${f.w}</div><div class="dd">${f.d}</div><div class="dm">${f.m}</div>
       ${mpPath==='pick'?`<div class="cnt">${n}/${perDay()}</div>`:''}</div>`;
   }).join('');
+  document.getElementById('skipBar').innerHTML = skipBarHtml();
   renderMenus();
   document.getElementById('pickbar').style.display = (mpPath==='pick')?'block':'none';
   renderPickBar();
