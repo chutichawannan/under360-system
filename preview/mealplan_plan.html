@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>Under360 — Meal Plan · เมนูล่วงหน้า</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ══════════════════════════════════════════════════════════════════════════
+   หน้าขาย Meal Plan แบบใหม่ — โชว์เมนูล่วงหน้า + ให้เลือกเอง หรือให้เราจัดให้
+   นัทสั่งเอง 20 ส.ค. 2569 (ผ่านเลขา)
+
+   🔑 หัวใจที่นัทเน้น: **2 ทาง ทางไหนก็จบการขายได้**
+      "เลือกเอง" กับ "ให้เราจัดให้" ต้องดูเท่ากัน — ห้ามทำให้ทางที่ไม่เลือกดูด้อยกว่า
+      และห้ามบังคับเลือกเมนูก่อนถึงจะสั่งได้
+
+   ⛔ ห้ามเขียนว่า "เลือกวัน/เวลาส่งได้" — Meal Plan ทำสด ส่ง จ/พ/ศ เท่านั้น
+      หน้านี้ให้ลูกค้า "ดู" ว่าวันไหนมีเมนูอะไร ไม่ใช่ให้เลือกวัน
+   ══════════════════════════════════════════════════════════════════════════ */
+:root{
+  --g:#1F4D3A; --gs:#EBF3EF; --gold:#C9573F; --ink:#1A1A1A; --soft:#6B7280;
+  --line:#E5E5E1; --bg:#FAFAF7; --white:#fff; --sea:#0E7490; --seas:#ECFEFF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai',sans-serif;padding-bottom:110px}
+.wrap{max-width:520px;margin:0 auto}
+
+/* ── หัวเรื่อง ── */
+.hero{background:var(--g);color:#fff;padding:22px 18px 26px}
+.hero h1{margin:0;font-size:22px;font-weight:700;letter-spacing:-.3px}
+.hero p{margin:6px 0 0;font-size:13.5px;opacity:.85;line-height:1.55}
+.hero .badge{display:inline-block;background:rgba(255,255,255,.15);border-radius:999px;padding:4px 12px;font-size:11.5px;font-weight:600;margin-bottom:10px}
+
+/* ── เลือกแพลน ── */
+.sec{padding:18px 16px 0}
+.sec-h{font-size:12.5px;font-weight:700;color:var(--soft);margin-bottom:9px}
+.types{display:flex;gap:9px}
+.type{flex:1;border:2px solid var(--line);background:var(--white);border-radius:14px;padding:13px 10px;text-align:center;cursor:pointer}
+.type.on{border-color:var(--g);background:var(--g);color:#fff}
+.type .t{font-size:15px;font-weight:700;margin-top:5px}
+.type .d{font-size:11px;opacity:.75;margin-top:2px}
+.sizes{display:flex;flex-direction:column;gap:8px}
+.size{display:flex;align-items:center;justify-content:space-between;border:2px solid var(--line);background:var(--white);border-radius:12px;padding:13px 15px;cursor:pointer}
+.size.on{border-color:var(--g);background:var(--gs)}
+.size .l{font-size:15px;font-weight:700}
+.size .s{font-size:12px;color:var(--soft);margin-top:2px}
+.size .p{font-size:17px;font-weight:800;color:var(--gold)}
+.size.on .p{color:var(--g)}
+
+/* ── 2 ทางเลือก — ต้องดูเท่ากัน ── */
+.paths{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.path{border:2px solid var(--line);background:var(--white);border-radius:14px;padding:15px 12px;cursor:pointer;text-align:center;position:relative}
+.path.on{border-color:var(--g);box-shadow:0 0 0 3px rgba(31,77,58,.10)}
+.path .ico{font-size:26px}
+.path .t{font-size:14.5px;font-weight:800;margin-top:6px}
+.path .d{font-size:11.5px;color:var(--soft);margin-top:4px;line-height:1.5}
+.path.on .t{color:var(--g)}
+
+/* ── ปฏิทินวัน ── */
+.days{display:flex;gap:8px;overflow-x:auto;padding:2px 0 6px;-webkit-overflow-scrolling:touch}
+.days::-webkit-scrollbar{display:none}
+.day{flex-shrink:0;min-width:74px;border:2px solid var(--line);background:var(--white);border-radius:12px;padding:9px 8px;text-align:center;cursor:pointer}
+.day.on{border-color:var(--g);background:var(--g);color:#fff}
+.day .dw{font-size:11px;opacity:.7}
+.day .dd{font-size:19px;font-weight:800;line-height:1.15}
+.day .dm{font-size:10.5px;opacity:.7}
+.day .cnt{font-size:10px;margin-top:3px;opacity:.8}
+
+/* ── รายการเมนูของวัน ── */
+.mday{margin-top:14px}
+.mday-h{display:flex;align-items:baseline;gap:8px;margin-bottom:8px}
+.mday-h .t{font-size:14.5px;font-weight:800}
+.mday-h .s{font-size:11.5px;color:var(--soft)}
+.mi{display:flex;align-items:center;gap:11px;background:var(--white);border:1.5px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:7px}
+.mi.picked{border-color:var(--g);background:var(--gs)}
+.mi .ph{width:44px;height:44px;border-radius:9px;background:#F2F1EC;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;overflow:hidden}
+.mi .ph img{width:100%;height:100%;object-fit:cover}
+.mi .info{flex:1;min-width:0}
+.mi .nm{font-size:13.5px;font-weight:600;line-height:1.35}
+.mi .tag{display:inline-block;font-size:10px;font-weight:700;border-radius:6px;padding:1px 6px;margin-top:3px}
+.tag-sea{color:var(--sea);background:var(--seas);border:1px solid #A5F3FC}
+.tag-land{color:#57534E;background:#F5F5F4;border:1px solid #E7E5E4}
+.qbox{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.qb{width:30px;height:30px;border-radius:8px;border:1.5px solid var(--line);background:var(--white);font-size:16px;font-weight:700;cursor:pointer;line-height:1}
+.qb.plus{border-color:var(--g);color:var(--g)}
+.qb:disabled{opacity:.3;cursor:not-allowed}
+.qn{min-width:20px;text-align:center;font-size:15px;font-weight:800;font-family:ui-monospace,monospace}
+
+/* ── สรุปเลือก ── */
+.pickbar{position:sticky;top:0;z-index:5;background:var(--bg);padding:10px 16px 8px;border-bottom:1px solid var(--line)}
+.pickbar .row{display:flex;align-items:center;justify-content:space-between;font-size:12.5px}
+.bar{height:7px;border-radius:99px;background:#EAEAE5;margin-top:7px;overflow:hidden}
+.bar > i{display:block;height:100%;background:var(--g);border-radius:99px;transition:width .2s}
+.seahint{font-size:11.5px;color:var(--sea);margin-top:5px}
+.seahint.hit{color:var(--gold);font-weight:700}
+
+/* ── ปุ่มล่าง ── */
+.cta{position:fixed;left:0;right:0;bottom:0;background:var(--white);border-top:1px solid var(--line);padding:11px 16px calc(11px + env(safe-area-inset-bottom))}
+.cta-in{max-width:520px;margin:0 auto;display:flex;gap:10px;align-items:center}
+.cta .sum{flex:1;min-width:0}
+.cta .sum .a{font-size:11.5px;color:var(--soft)}
+.cta .sum .b{font-size:19px;font-weight:800;color:var(--g)}
+.btn{border:none;border-radius:12px;padding:14px 20px;font-size:15px;font-weight:800;font-family:inherit;cursor:pointer;background:var(--g);color:#fff}
+.btn[disabled]{background:#C8CFCB;cursor:not-allowed}
+.note{font-size:12px;color:var(--soft);line-height:1.6;background:#FEF9E7;border:1px solid #F5E4A8;border-radius:10px;padding:10px 12px;margin-top:12px;color:#8A6D1F}
+.empty{padding:30px 16px;text-align:center;color:var(--soft);font-size:13.5px;line-height:1.7}
+.pv{background:#FEF3C7;color:#8A6D1F;font-size:11.5px;text-align:center;padding:6px 10px;font-weight:700}
+</style>
+</head>
+<body>
+<div class="pv">หน้าตัวอย่างสำหรับรีวิว — ยังไม่ใช่หน้าขายจริง</div>
+<div class="wrap">
+
+  <div class="hero">
+    <div class="badge">🍱 ทำสดใหม่ทุกเช้า · ส่ง จันทร์ / พุธ / ศุกร์</div>
+    <h1>รู้ก่อนสั่ง ว่าจะได้กินอะไร</h1>
+    <p>ดูเมนูล่วงหน้าได้ทุกวันส่ง จะเลือกเมนูเองก็ได้ หรือให้เราจัดให้ก็ได้</p>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">1. เลือกแพลน</div>
+    <div class="types" id="types"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">2. เลือกขนาด</div>
+    <div class="sizes" id="sizes"></div>
+  </div>
+
+  <div class="sec">
+    <div class="sec-h">3. เมนูของคุณ</div>
+    <div class="paths">
+      <div class="path" id="path-auto" onclick="setPath('auto')">
+        <div class="ico">🎁</div>
+        <div class="t">ให้เราจัดให้</div>
+        <div class="d">ไม่ต้องเลือกอะไร<br>เราจัดเมนูให้ครบ</div>
+      </div>
+      <div class="path" id="path-pick" onclick="setPath('pick')">
+        <div class="ico">✋</div>
+        <div class="t">เลือกเอง</div>
+        <div class="d">อยากได้อะไร<br>กดเลือกได้เลย</div>
+      </div>
+    </div>
+    <div class="note" id="pathNote"></div>
+  </div>
+
+  <div id="calWrap" style="display:none">
+    <div class="pickbar" id="pickbar" style="display:none">
+      <div class="row"><span id="pkCount">เลือกแล้ว 0 / 0 มื้อ</span><span id="pkLeft"></span></div>
+      <div class="bar"><i id="pkBar" style="width:0%"></i></div>
+      <div class="seahint" id="pkSea"></div>
+    </div>
+    <div class="sec">
+      <div class="sec-h" id="calHead">เมนูแต่ละวัน</div>
+      <div class="days" id="days"></div>
+      <div id="menuList"></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="cta">
+  <div class="cta-in">
+    <div class="sum">
+      <div class="a" id="ctaA">เลือกแพลนและขนาดก่อน</div>
+      <div class="b" id="ctaB">—</div>
+    </div>
+    <button class="btn" id="ctaBtn" disabled onclick="confirmOrder()">ใส่ตะกร้า</button>
+  </div>
+</div>
+
+<script>
+/* ══ ข้อมูล ══════════════════════════════════════════════════════════════
+   ลำดับการหาแหล่งข้อมูล (ห้าม hardcode เมนู — เลขาสั่งไว้):
+     ① kitchen_data key 'mp_menu_plan'  ← ของจริงเมื่อฟ้า/แอดมินลงระบบแล้ว
+     ② preview/mp_plan_seed.json        ← ชุดที่ถอดจากแพลนฟ้า ใช้ระหว่างรอลง DB
+   ชื่อ/รูปเมนู resolve จาก menu_items ด้วยรหัส (LC.. / HP..) เสมอ
+   ⚠️ ที่ต้องยอมรับ: ตอนนี้แพลนของฟ้ายังไม่ลง DB (รอนัทเคาะ) หน้านี้จึงอ่านจาก ②
+      พอลง DB เมื่อไหร่ หน้านี้จะสลับไปใช้ ① เองโดยไม่ต้องแก้โค้ด */
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+let SETS=[], PLAN={}, MENUS={};
+let mpType='', mpSize='', mpPath='', selDay='', picks={};   // picks[dateKey][no] = qty
+
+const DAYS_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const h=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function thaiToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+function fmtDay(k){ const d=new Date(k+'T00:00:00'); return {w:DAYS_TH[d.getDay()],d:d.getDate(),m:MON_TH[d.getMonth()]}; }
+
+/* กี่มื้อต่อ 1 วันส่ง — ทั้งคอร์สหารด้วยจำนวนวันส่ง (21 มื้อ = 3 วัน วันละ 7) */
+function boxesOf(){ const s=SETS.find(x=>x.set_key===mpSize); return s? s.boxes : 0; }
+function daysNeeded(){ const b=boxesOf(); return b? Math.max(1, Math.round(b/7)) : 0; }
+function perDay(){ const b=boxesOf(), d=daysNeeded(); return d? Math.round(b/d) : 0; }
+/* วันส่งที่เอามาโชว์ = วันแรกๆ ในแพลนที่ยังไม่ถึง เท่ากับจำนวนวันของคอร์ส */
+function activeDays(){
+  const today=thaiToday();
+  return Object.keys(PLAN).filter(k=>k>=today).sort().slice(0, daysNeeded());
+}
+function priceOf(){ const s=SETS.find(x=>x.set_key===mpSize); if(!s) return 0; return mpType==='lc'? s.price_lc : s.price_hp; }
+
+async function load(){
+  try{
+    const [setRes, cfgRes] = await Promise.all([
+      sb.from('mp_offer_sets').select('*').eq('is_active',true).order('display_order'),
+      sb.from('kitchen_data').select('data').eq('key','mp_menu_plan').maybeSingle()
+    ]);
+    SETS = (setRes.data||[]).filter(s=>!/hyrox/i.test(s.set_key));
+    if(cfgRes && cfgRes.data && cfgRes.data.data && Object.keys(cfgRes.data.data).length){
+      PLAN = cfgRes.data.data;                       // ① ของจริงจาก DB
+    }else{
+      PLAN = await fetch('mp_plan_seed.json').then(r=>r.json()).catch(()=>({}));   // ② ชุดสำรอง
+    }
+    // ชื่อ/รูปจริงจากตารางเมนู — เอาไว้ทับชื่อในแพลนถ้ามี
+    const codes=[];
+    Object.values(PLAN).forEach(list=>list.forEach(m=>{ codes.push('LC'+m.no); codes.push('HP'+m.no); }));
+    if(codes.length){
+      const r = await sb.from('menu_items').select('code,name,image_urls').in('code',[...new Set(codes)]).limit(500);
+      (r.data||[]).forEach(m=>{ MENUS[m.code]=m; });
+    }
+  }catch(e){ console.warn('load',e); }
+  renderTypes(); renderSizes(); renderPathNote(); renderCta();
+}
+
+function renderTypes(){
+  const CFG={ hp:{e:'💪',t:'High Protein',d:'เนื้อสัตว์ดิบ 170g'}, lc:{e:'🥗',t:'Low Carb',d:'เนื้อสัตว์ดิบ 120g'} };
+  document.getElementById('types').innerHTML = ['hp','lc'].map(k=>
+    `<div class="type${mpType===k?' on':''}" onclick="setType('${k}')">
+       <div style="font-size:24px">${CFG[k].e}</div>
+       <div class="t">${CFG[k].t}</div><div class="d">${CFG[k].d}</div></div>`).join('');
+}
+function renderSizes(){
+  const el=document.getElementById('sizes');
+  if(!SETS.length){ el.innerHTML='<div class="empty">ยังไม่มีแพลนเปิดขาย</div>'; return; }
+  el.innerHTML = SETS.map(s=>{
+    const d = Math.max(1, Math.round(s.boxes/7));
+    const p = mpType ? (mpType==='lc'? s.price_lc : s.price_hp) : 0;
+    return `<div class="size${mpSize===s.set_key?' on':''}" onclick="setSize('${s.set_key}')">
+      <div><div class="l">${h(s.label)}</div><div class="s">${s.boxes} มื้อ · ส่ง ${d} วัน</div></div>
+      <div class="p">${mpType? '฿'+p.toLocaleString() : '—'}</div></div>`;
+  }).join('');
+}
+function setType(t){ mpType=t; renderTypes(); renderSizes(); renderCal(); renderCta(); }
+function setSize(s){ mpSize=s; picks={}; selDay=''; renderSizes(); renderCal(); renderCta(); }
+function setPath(p){
+  mpPath=p;
+  document.getElementById('path-auto').classList.toggle('on', p==='auto');
+  document.getElementById('path-pick').classList.toggle('on', p==='pick');
+  renderPathNote(); renderCal(); renderCta();
+}
+function renderPathNote(){
+  const el=document.getElementById('pathNote');
+  if(mpPath==='auto') el.innerHTML='เราจัดเมนูให้ตามที่ครัวทำในแต่ละวัน สลับไม่ให้ซ้ำ — <b>เลื่อนลงไปดูได้ว่าแต่ละวันมีเมนูอะไร</b>';
+  else if(mpPath==='pick') el.innerHTML='กดเลือกเมนูที่อยากได้ <b>เลือกซ้ำได้</b> · เมนูทะเลเลือกได้ไม่เกิน 4 ต่อคอร์ส · ที่เหลือไม่จำกัด';
+  else el.innerHTML='เลือกทางไหนก็ได้ — <b>ทั้งสองทางสั่งได้เหมือนกัน</b> ไม่ต้องเลือกเมนูก็สั่งได้';
+}
+
+/* ── ปฏิทิน + รายการเมนู ─────────────────────────────────────────────── */
+function renderCal(){
+  const wrap=document.getElementById('calWrap');
+  if(!mpType || !mpSize || !mpPath){ wrap.style.display='none'; return; }
+  wrap.style.display='block';
+  const days=activeDays();
+  document.getElementById('calHead').textContent =
+    mpPath==='pick' ? ('เลือกเมนูของคุณ — '+days.length+' วันส่ง') : ('เมนูที่จะได้ — '+days.length+' วันส่ง');
+  if(!days.length){
+    document.getElementById('days').innerHTML='';
+    document.getElementById('menuList').innerHTML='<div class="empty">ยังไม่ได้วางเมนูของช่วงนี้<br>สั่งได้ตามปกติ ครัวจะจัดเมนูให้ตอนถึงวันส่ง</div>';
+    document.getElementById('pickbar').style.display='none';
+    return;
+  }
+  if(!selDay || days.indexOf(selDay)<0) selDay=days[0];
+  document.getElementById('days').innerHTML = days.map(k=>{
+    const f=fmtDay(k), n=countDay(k);
+    return `<div class="day${selDay===k?' on':''}" onclick="pickDay('${k}')">
+      <div class="dw">${f.w}</div><div class="dd">${f.d}</div><div class="dm">${f.m}</div>
+      ${mpPath==='pick'?`<div class="cnt">${n}/${perDay()}</div>`:''}</div>`;
+  }).join('');
+  renderMenus();
+  document.getElementById('pickbar').style.display = (mpPath==='pick')?'block':'none';
+  renderPickBar();
+}
+function pickDay(k){ selDay=k; renderCal(); }
+function countDay(k){ const p=picks[k]||{}; return Object.values(p).reduce((s,n)=>s+n,0); }
+function totalPicked(){ return Object.keys(picks).reduce((s,k)=>s+countDay(k),0); }
+function seaPicked(){
+  let n=0;
+  Object.keys(picks).forEach(k=>{
+    const list=PLAN[k]||[];
+    Object.keys(picks[k]).forEach(no=>{ const m=list.find(x=>x.no===no); if(m&&m.sea) n+=picks[k][no]; });
+  });
+  return n;
+}
+const SEA_MAX=4;
+
+function renderMenus(){
+  const list=PLAN[selDay]||[];
+  const el=document.getElementById('menuList');
+  if(!list.length){ el.innerHTML='<div class="empty">วันนี้ยังไม่ได้วางเมนู</div>'; return; }
+  const f=fmtDay(selDay);
+  let html=`<div class="mday"><div class="mday-h"><span class="t">${f.w} ${f.d} ${f.m}</span>`
+    + (mpPath==='pick'? `<span class="s">เลือกได้ ${perDay()} มื้อ · เลือกแล้ว ${countDay(selDay)}</span>`
+                      : `<span class="s">ครัวทำ ${list.length} เมนูวันนี้</span>`) + `</div>`;
+  list.forEach(m=>{
+    const code=(mpType==='lc'?'LC':'HP')+m.no;
+    const mi=MENUS[code]||{};
+    const img=(mi.image_urls&&mi.image_urls[0])
+      ? `<img src="${h(mi.image_urls[0])}" loading="lazy" onerror="this.parentNode.textContent='🍱'">` : '🍱';
+    const q=(picks[selDay]&&picks[selDay][m.no])||0;
+    const dayFull=countDay(selDay)>=perDay();
+    const seaFull=m.sea && seaPicked()>=SEA_MAX;
+    let ctrl='';
+    if(mpPath==='pick'){
+      ctrl=`<div class="qbox">
+        <button class="qb" onclick="chg('${m.no}',-1)" ${q?'':'disabled'}>−</button>
+        <span class="qn">${q}</span>
+        <button class="qb plus" onclick="chg('${m.no}',1)" ${(dayFull||seaFull)?'disabled':''}>+</button></div>`;
+    }
+    html+=`<div class="mi${q?' picked':''}">
+      <div class="ph">${img}</div>
+      <div class="info">
+        <div class="nm">${h(mi.name||m.name)}</div>
+        <span class="tag ${m.sea?'tag-sea':'tag-land'}">${m.sea?'ทะเล':h(String(m.protein||'').split(' ')[0])}</span>
+      </div>${ctrl}</div>`;
+  });
+  el.innerHTML=html+'</div>';
+}
+function chg(no,d){
+  if(!picks[selDay]) picks[selDay]={};
+  const cur=picks[selDay][no]||0;
+  const next=cur+d;
+  if(next<0) return;
+  if(d>0){
+    if(countDay(selDay)>=perDay()) return;
+    const m=(PLAN[selDay]||[]).find(x=>x.no===no);
+    if(m&&m.sea && seaPicked()>=SEA_MAX) return;
+  }
+  if(next===0) delete picks[selDay][no]; else picks[selDay][no]=next;
+  renderCal(); renderCta();
+}
+function renderPickBar(){
+  const total=boxesOf(), got=totalPicked(), sea=seaPicked();
+  document.getElementById('pkCount').textContent='เลือกแล้ว '+got+' / '+total+' มื้อ';
+  document.getElementById('pkLeft').textContent = got>=total ? 'ครบแล้ว ✓' : ('เหลือ '+(total-got));
+  document.getElementById('pkBar').style.width = total? Math.min(100, got/total*100)+'%' : '0%';
+  /* 🐟 ตัวช่วยเงียบๆ — นิวคำนวณจาก 42,511 แถวจริงว่าลูกค้าเลือกทะเลแค่ 28%
+     เพดาน 4 จาก 10 (40%) จึงสูงกว่าพฤติกรรมจริง = แทบไม่มีใครชน
+     เลยไม่ทำให้เด่นจนน่ากลัว โชว์เป็นบรรทัดเล็ก และเปลี่ยนสีเฉพาะตอนใกล้ชนจริง */
+  const se=document.getElementById('pkSea');
+  se.textContent = sea? ('เมนูทะเล '+sea+'/'+SEA_MAX) : '';
+  se.className='seahint'+(sea>=SEA_MAX?' hit':'');
+}
+
+/* ── ปุ่มล่าง — ทั้ง 2 ทางต้องกดสั่งได้ ─────────────────────────────────── */
+function renderCta(){
+  const a=document.getElementById('ctaA'), b=document.getElementById('ctaB'), btn=document.getElementById('ctaBtn');
+  if(!mpType||!mpSize){ a.textContent='เลือกแพลนและขนาดก่อน'; b.textContent='—'; btn.disabled=true; return; }
+  const s=SETS.find(x=>x.set_key===mpSize);
+  a.textContent=(mpType==='hp'?'High Protein':'Low Carb')+' · '+s.label+' · '+s.boxes+' มื้อ';
+  b.textContent='฿'+priceOf().toLocaleString();
+  if(!mpPath){ btn.disabled=true; btn.textContent='เลือกวิธีจัดเมนู'; return; }
+  btn.disabled=false;
+  /* 🔑 ทางไหนก็สั่งได้ — "เลือกเอง" ที่ยังเลือกไม่ครบ ก็ยังสั่งได้
+     ส่วนที่เหลือให้ครัวจัดให้ (นัทเน้น: ห้ามบังคับเลือกก่อนถึงจะสั่งได้) */
+  if(mpPath==='auto'){ btn.textContent='ใส่ตะกร้า'; return; }
+  const got=totalPicked(), total=boxesOf();
+  btn.textContent = got>=total ? 'ใส่ตะกร้า' : (got? 'ใส่ตะกร้า ('+got+' มื้อที่เลือก)' : 'ใส่ตะกร้า');
+}
+function confirmOrder(){
+  const s=SETS.find(x=>x.set_key===mpSize);
+  const got=totalPicked(), total=boxesOf();
+  const lines=[];
+  Object.keys(picks).sort().forEach(k=>{
+    const f=fmtDay(k), list=PLAN[k]||[];
+    const items=Object.keys(picks[k]).map(no=>{
+      const m=list.find(x=>x.no===no)||{};
+      const code=(mpType==='lc'?'LC':'HP')+no;
+      return (MENUS[code]&&MENUS[code].name||m.name||code)+' ×'+picks[k][no];
+    });
+    if(items.length) lines.push(f.w+' '+f.d+' '+f.m+' — '+items.join(', '));
+  });
+  alert('ตัวอย่างสรุป (หน้าจริงจะพาไปตะกร้า)\n\n'
+    + (mpType==='hp'?'High Protein':'Low Carb')+' · '+s.label+' · '+s.boxes+' มื้อ\n'
+    + '฿'+priceOf().toLocaleString()+'\n\n'
+    + (mpPath==='auto' ? 'ให้เราจัดเมนูให้ทั้งหมด'
+       : (got? ('เลือกเอง '+got+'/'+total+' มื้อ'+(got<total?' · ที่เหลือให้เราจัดให้':'')+'\n\n'+lines.join('\n'))
+             : 'ยังไม่ได้เลือกเมนู — ให้เราจัดให้ทั้งหมด')));
+}
+load();
+</script>
+</body>
+</html>

@@ -1,0 +1,457 @@
+{
+  "2026-08-21": [
+    {
+      "no": "57",
+      "name": "Flaxseed Wrap ทูน่ามาโย",
+      "protein": "ทะเล (ทูน่า)",
+      "sea": true,
+      "locked": true
+    },
+    {
+      "no": "18",
+      "name": "Full Breakfast",
+      "protein": "ไข่/หมู(เบคอน)",
+      "sea": false,
+      "locked": true
+    },
+    {
+      "no": "44",
+      "name": "เกี๊ยวน้ำอกไก่กุ้งโฮมเมด",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "64",
+      "name": "กุ้งผัดพริกขี้หนู",
+      "protein": "ทะเล (กุ้ง)",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "40",
+      "name": "อกไก่ห่อสาหร่าย",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "71",
+      "name": "เสี่ยวหลงเปาถาด",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "61",
+      "name": "เกี๊ยวต้มยำน้ำใสอกไก่",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "20",
+      "name": "Pasta Pesto Salmon",
+      "protein": "ทะเล (แซลมอน)",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "59",
+      "name": "ข้าวหมูสับลีนซอส Peking",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    }
+  ],
+  "2026-08-24": [
+    {
+      "no": "12",
+      "name": "Mexican Beef Bowl",
+      "protein": "เนื้อ",
+      "sea": false,
+      "locked": true
+    },
+    {
+      "no": "36",
+      "name": "ก๋วยเตี๋ยวหลอดกุ้งอกไก่",
+      "protein": "ทะเล/ไก่",
+      "sea": true,
+      "locked": true
+    },
+    {
+      "no": "31",
+      "name": "ข้าวขยำแซลมอนทอด",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "54",
+      "name": "กุ้งผัดมันกุ้งน้ำจิ้มซีฟู้ด",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "63",
+      "name": "ข้าวขยำหมูทอด",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "68",
+      "name": "ซีซ่าสลัดอกไก่ซูวี",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "47",
+      "name": "ข้าวหมูย่างสันจิ้มแจ่ว",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "41",
+      "name": "แซลมอนโปเกะโบล",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "66",
+      "name": "เส้นหมี่น้ำเงี้ยวอกไก่",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    }
+  ],
+  "2026-08-26": [
+    {
+      "no": "46",
+      "name": "ข้าวยำแซลมอน",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "69",
+      "name": "Sushi Bake ทูน่าปูอัดไข่กุ้ง",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "65",
+      "name": "แรปแซลมอนซอสมาโยแครนเบอร์รี่",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "60",
+      "name": "ข้าวไข่ตุ๋นกุ้งเด้ง",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "67",
+      "name": "ปลากระพงอบซอสเต้าเจี้ยว",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "50",
+      "name": "(Z1) Chicken Cranberry Wrap",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "79",
+      "name": "โรลหมี่คลุกยำหมูย่างน้ำจิ้มซีฟู๊ด",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "34",
+      "name": "เนื้อสับกิมจิ ครีมมี่ซอส",
+      "protein": "เนื้อ(?)",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "30",
+      "name": "ผักกาดขาวห่อเต้าหู้อกไก่",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    }
+  ],
+  "2026-08-28": [
+    {
+      "no": "06",
+      "name": "หมูอบซอสกระเทียมพริกไทย",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "07",
+      "name": "ลาบแซลมอน + ข้าวไรซ์เบอร์รี่",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "22",
+      "name": "กุ้งผัดกระเทียมพริกไทย",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "24",
+      "name": "ปลาทูต้มมะนาว",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "04",
+      "name": "สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "03",
+      "name": "ปลาทูน่าสเต๊ก + มันฝรั่งต้ม",
+      "protein": "ทะเล(ทูน่า)",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "11",
+      "name": "ทอดมันอกไก่",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "10",
+      "name": "ยำไข่มะตูม",
+      "protein": "ไข่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "72",
+      "name": "ข้าวเต้าหู้ไข่ทรงเครื่อง",
+      "protein": "เต้าหู้/ไข่",
+      "sea": false,
+      "locked": false
+    }
+  ],
+  "2026-08-31": [
+    {
+      "no": "19",
+      "name": "Pasta Chicken Basil",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": true
+    },
+    {
+      "no": "51",
+      "name": "(Z2) Rosemary Pork + Apple Sauce",
+      "protein": "หมู",
+      "sea": false,
+      "locked": true
+    },
+    {
+      "no": "33",
+      "name": "กะเพราเนื้อพริกแห้ง",
+      "protein": "เนื้อ",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "02",
+      "name": "แซลมอนย่างเกลือ + ข้าวกล้อง",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "09",
+      "name": "หมูสันในหวานไร้มัน + ไข่ฝอย",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "78",
+      "name": "ข้าวไข่ข้นยำทูน่า",
+      "protein": "ทะเล(ทูน่า)",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "82",
+      "name": "กุ้งผัดพริกขี้หนู ไข่ข้น",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "52",
+      "name": "(Z3) Grilled Chicken Cranberry",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "42",
+      "name": "อกไก่อบผักโขมชีส",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    }
+  ],
+  "2026-09-02": [
+    {
+      "no": "05",
+      "name": "หมูย่างน้ำจิ้มแจ่ว + ข้าวกล้อง",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "13",
+      "name": "Mexican Chicken Avocado",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "14",
+      "name": "เกี๊ยวน้ำอกไก่และกุ้ง",
+      "protein": "ไก่/ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "16",
+      "name": "ไข่ม้วนไส้ผักโขมชีส",
+      "protein": "ไข่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "17",
+      "name": "หมูผัดพริกหวานควินัว",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "23",
+      "name": "ปลาซาบะย่างซีอิ๊ว",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "25",
+      "name": "สเต็กปลากระพงเพสโต้",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "26",
+      "name": "สเต๊กอกไก่ย่าง",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "55",
+      "name": "กุ้งผัดแกงเขียวหวาน",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    }
+  ],
+  "2026-09-04": [
+    {
+      "no": "39",
+      "name": "บิบิมบับหมู",
+      "protein": "หมู",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "45",
+      "name": "เครปมันม่วงไก่ผัดเนย",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "53",
+      "name": "(Z4) Baked Salmon Butter Lemon",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "58",
+      "name": "Flaxseed Wrap แซลมอนอโวคาโด",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "77",
+      "name": "แร๊บอกไก่แครนเบอร์รี่",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "48",
+      "name": "Korean Beef Protein Bowl",
+      "protein": "เนื้อ",
+      "sea": false,
+      "locked": false
+    },
+    {
+      "no": "28",
+      "name": "แรปทูน่าไข่โปรตีนสูง",
+      "protein": "ทะเล(ทูน่า)",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "08",
+      "name": "ข้าวคลุกกะปิ",
+      "protein": "ทะเล",
+      "sea": true,
+      "locked": false
+    },
+    {
+      "no": "32",
+      "name": "หมี่ไก่ฉีก ไข่มะตูม",
+      "protein": "ไก่",
+      "sea": false,
+      "locked": false
+    }
+  ]
+}
