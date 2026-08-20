@@ -452,6 +452,51 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
   }catch(e){}
 })();
 
+/* ═══ ที่มาของลูกค้า: เก็บให้ครบ + ส่งต่อไปปลายทาง (m-track 20 ส.ค. 2026) ═══
+   ชื่อพารามิเตอร์ใช้ "ชื่อมาตรฐาน" ทั้งหมด (utm_source/utm_medium/utm_campaign/utm_content/fbclid)
+   เพื่อให้ฝั่ง LIFF อ่านได้โดยไม่ต้องตกลงชื่อกันใหม่ */
+(function(){
+  try{
+    var p = new URLSearchParams(location.search);
+    var old = {};
+    try{ old = JSON.parse(localStorage.getItem('u360_utm')||'{}') || {}; }catch(e){}
+    var fbclid = p.get('fbclid') || '';
+    var src = p.get('utm_source') || '';
+    /* มาจากแอด Facebook แต่ไม่ได้ติดแท็ก UTM → ยังต้องนับได้ ไม่ปล่อยหลุด */
+    if(!src && fbclid) src = 'fb';
+    if(src){
+      var u = {
+        source:   src,
+        medium:   p.get('utm_medium')   || (fbclid ? 'paid' : '') || old.medium || '',
+        campaign: p.get('utm_campaign') || old.campaign || '',
+        content:  p.get('utm_content')  || old.content  || '',
+        fbclid:   fbclid || old.fbclid || '',
+        ts: Date.now()
+      };
+      try{ localStorage.setItem('u360_utm', JSON.stringify(u)); }catch(e){}
+    }
+  }catch(e){}
+})();
+
+/* ต่อที่มาท้ายลิงก์ ณ ตอนที่ลูกค้ากด — ไม่มีค่า = คืนลิงก์เดิม ปุ่มต้องไม่พัง */
+function u360Tracked(base){
+  try{
+    var q = new URLSearchParams(location.search);
+    var st = {};
+    try{ st = JSON.parse(localStorage.getItem('u360_utm')||'{}') || {}; }catch(e){}
+    var out = new URLSearchParams();
+    var put = function(k,v){ v = String(v==null?'':v).trim(); if(v) out.set(k, v.slice(0,80)); };
+    put('utm_source',   q.get('utm_source')   || st.source);
+    put('utm_medium',   q.get('utm_medium')   || st.medium);
+    put('utm_campaign', q.get('utm_campaign') || st.campaign);
+    put('utm_content',  q.get('utm_content')  || st.content);
+    put('fbclid',       q.get('fbclid')       || st.fbclid);
+    var s = out.toString();
+    if(!s) return base;
+    return base + (String(base).indexOf('?') >= 0 ? '&' : '?') + s;
+  }catch(e){ return base; }
+}
+
 /* ═══ web_events tracking (fire-and-forget — ห้าม await, ห้ามบล็อก UX, catch เงียบ) ═══ */
 function track(event, page){
   try{
@@ -479,7 +524,7 @@ function orderNow(el){
       gtag('event','conversion',{ 'send_to':'AW-XXXXXXXXXX/CONVERSION_LABEL' });
     }
   }catch(e){}
-  window.location.href = ORDER_URL;
+  window.location.href = u360Tracked(ORDER_URL);
   return false;
 }
 </script>
