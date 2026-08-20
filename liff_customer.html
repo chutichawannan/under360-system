@@ -950,7 +950,11 @@ body{background:#fff!important}
     <div class="hdr-title">ออเดอร์ของฉัน</div>
   </div>
   <div class="scroll pb-nav">
-    <div onclick="showScr('s-mp-manage'); renderMpManage();" style="margin:14px 14px 0;background:#EBF3EF;border:2px solid #1F4D3A;border-radius:14px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;">
+    <!-- 🥗 การ์ดนี้โผล่เฉพาะคนที่มี Meal Plan ที่ยังเดินอยู่จริง (นัทสั่ง 20 ส.ค.)
+         เดิมขึ้นให้ทุกคนตลอด — คนที่ไม่เคยซื้อ MP กดเข้าไปเจอหน้าว่าง
+         และคนที่เคยซื้อแต่จบไปแล้วก็ยังเห็น เหมือนมีของค้างอยู่ทั้งที่จบแล้ว
+         ตัวเช็คอยู่ที่ mpEntryCheck() — เรียกตอนโหลดหน้าประวัติ -->
+    <div id="mp-entry" onclick="showScr('s-mp-manage'); renderMpManage();" style="display:none;margin:14px 14px 0;background:#EBF3EF;border:2px solid #1F4D3A;border-radius:14px;padding:14px 16px;align-items:center;justify-content:space-between;cursor:pointer;">
       <div style="font-size:14px;font-weight:800;color:#1F4D3A;">🥗 จัดการ Meal Plan</div>
       <div style="font-size:18px;color:#1F4D3A;">→</div>
     </div>
@@ -4571,8 +4575,37 @@ async function loadOrders() {
 }
 
 let _lastOrders = [];      // เก็บไว้ re-render ตอนเปิด/ปิดตัวเลือกวัน โดยไม่ต้องยิง DB ซ้ำ
+/* 🥗 การ์ด "จัดการ Meal Plan" โผล่เฉพาะคนที่มี MP ที่ยังเดินอยู่จริง (นัทสั่ง 20 ส.ค.)
+   เดิมขึ้นให้ทุกคนตลอด — คนไม่เคยซื้อ MP กดเข้าไปเจอหน้าว่าง
+   คนที่เคยซื้อแต่จบไปแล้วก็ยังเห็น เหมือนมีของค้างทั้งที่จบแล้ว
+   นับเฉพาะรอบที่ "วันส่งยังไม่ถึง" และยังไม่ถูกยกเลิก/ข้าม */
+/* หาแถวของลูกค้าคนนี้ให้ครบทุกทาง — line_uid หรือ customer_id ก็ได้
+   (ตาราง mp_deliveries มีทั้ง 2 แบบปนกัน แล้วแต่ว่าใบนั้นเกิดจากทางไหน) */
+function mpOwnerFilter(q){
+  const conds=[];
+  if(lineProfile && lineProfile.userId) conds.push('line_uid.eq.'+lineProfile.userId);
+  if(customer && customer.id)           conds.push('customer_id.eq.'+customer.id);
+  if(!conds.length) return null;
+  return q.or(conds.join(','));
+}
+async function mpEntryCheck(){
+  const card=document.getElementById('mp-entry'); if(!card) return;
+  try{
+    const today=localYMD(new Date());
+    let q = sb.from('mp_deliveries').select('id')
+      .gte('delivery_date', today)
+      .not('status','in','(cancelled,skipped)')
+      .limit(1);
+    q = mpOwnerFilter(q);
+    if(!q){ card.style.display='none'; return; }
+    const { data } = await q;
+    card.style.display = (data && data.length) ? 'flex' : 'none';
+  }catch(e){ /* อ่านไม่ได้ = ซ่อนไว้ ดีกว่าโชว์ปุ่มที่กดเข้าไปแล้วว่าง */ }
+}
+
 function renderOrders(orders) {
   if (Array.isArray(orders)) _lastOrders = orders; else orders = _lastOrders || [];
+  mpEntryCheck();
   const el = document.getElementById('olist');
   if (!orders.length) {
     el.innerHTML = '<div class="empty"><div class="empty-ico">📦</div><div class="empty-txt">ยังไม่มีออเดอร์<br><small>สั่งอาหารครั้งแรกได้เลย!</small></div></div>';
@@ -4754,11 +4787,15 @@ function moveOrderPickerHtml(o){
   const DAYS=['อา','จ','อ','พ','พฤ','ศ','ส'];
   const MONTHS=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
   const now=new Date();
+  /* กติกาเดียวกับหน้าสั่งของเป๊ะ — เลย 18:00 แล้ว พรุ่งนี้ปิดยอดไปแล้ว เริ่มได้ที่มะรืน */
+  const pastCutoff = now.getHours() >= CUTOFF_HOUR;
+  const startAt = pastCutoff ? 2 : 1;
   let chips='';
-  for(let i=1;i<=MOVE_MAX_DAYS;i++){
+  for(let i=startAt;i<=startAt+MOVE_MAX_DAYS-1;i++){
     const d=new Date(now); d.setDate(now.getDate()+i);
     const key=localYMD(d);
     if(key===o.delivery_date) continue;                 // วันเดิมไม่ต้องโชว์
+    if(isClosedYMD(key)) continue;                      // วันที่ร้านไม่ส่ง (เสาร์ + วันหยุดเฉพาะกิจ)
     const on=moveOrderSel===key;
     chips+=`<div onclick="event.stopPropagation();selectMoveDate('${key}')" style="flex-shrink:0;text-align:center;background:${on?'#EBF3EF':'#fff'};border:2px solid ${on?'#1F4D3A':'#E5E5E1'};border-radius:12px;padding:7px 11px;cursor:pointer;min-width:52px;">
       <div style="font-size:11px;color:${on?'#1F4D3A':'#9AA0AC'};font-weight:600">${DAYS[d.getDay()]}</div>
@@ -4769,6 +4806,7 @@ function moveOrderPickerHtml(o){
   return `<div style="margin-top:8px;background:#F7F8F6;border-radius:12px;padding:10px" onclick="event.stopPropagation()">
     <div style="font-size:12px;color:#374151;font-weight:600;margin-bottom:2px">เลือกวันรับใหม่</div>
     <div style="font-size:11px;color:#6B7280;margin-bottom:8px">เลื่อนได้ล่วงหน้าไม่เกิน ${MOVE_MAX_DAYS} วัน · <b>ยกทั้งออเดอร์ ไม่มีค่าส่งเพิ่ม</b> · เลื่อนกี่ครั้งก็ได้</div>
+    ${pastCutoff?'<div style="font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;padding:5px 9px;margin-bottom:8px;line-height:1.4">⏰ เลย '+CUTOFF_HOUR+':00 น. แล้ว — วันแรกที่เลื่อนไปได้คือมะรืนนี้</div>':''}
     <div style="display:flex;gap:7px;overflow-x:auto;padding-bottom:4px">${chips}</div>
     <button ${moveOrderSel?'':'disabled'} onclick="confirmMoveOrder('${o.id}')"
       style="margin-top:9px;width:100%;padding:11px;border:none;border-radius:10px;font-family:inherit;font-size:14px;font-weight:700;color:#fff;background:${moveOrderSel?'#1F4D3A':'#C7CDC9'};cursor:${moveOrderSel?'pointer':'default'}">
@@ -4836,10 +4874,10 @@ async function renderMpManage() {
   ensureMpCountdownTicker();
   el.innerHTML = '<div class="empty"><div class="spin"></div></div>';
   try {
-    const { data } = await sb.from('mp_deliveries')
-      .select('*')
-      .eq('line_uid', lineProfile.userId)
-      .order('delivery_date');
+    /* ใช้ตัวกรองเดียวกับการ์ดหน้าประวัติ ไม่งั้นการ์ดโชว์แต่กดเข้ามาแล้วว่าง */
+    let q = sb.from('mp_deliveries').select('*').order('delivery_date');
+    q = mpOwnerFilter(q);
+    const { data } = q ? await q : { data: [] };
     mpManageRows = data || [];
   } catch(e) {
     console.warn('load mp_deliveries failed', e);
@@ -4914,15 +4952,24 @@ function ensureMpCountdownTicker() {
   }, 30000);
 }
 
+/* วันส่งเลยมาแล้ว = จบรอบ ไม่ว่าสถานะใน DB จะค้างอยู่ที่อะไร
+   นัทเจอเอง 20 ส.ค.: รอบวันที่ 7/10/12 ส.ค. ยังขึ้นปุ่ม "ขอเลื่อน/ย้ายวันส่ง" อยู่
+   ของที่ส่งไปแล้วเลื่อนไม่ได้ — ปุ่มที่กดแล้วไม่ควรได้ผล ไม่ควรมีให้กดตั้งแต่แรก
+   ⚠️ เช็คด้วยวันจริง ไม่พึ่ง status เพราะสถานะค้างเป็นเรื่องปกติ (ไม่มีใครไปกดปิด) */
+function mpRoundPassed(r){
+  return !!r.delivery_date && r.delivery_date < localYMD(new Date());
+}
 function mpManageRenderRound(r) {
+  const passed = mpRoundPassed(r);
   const expired = r.status === 'request_open' && mpIsExpired(r);
-  const st = expired ? { t:'⏰ หมดเวลาปรับเมนูแล้ว', c:'gray' } : (MP_STATUS[r.status] || { t:r.status, c:'gray' });
+  const st = passed ? { t:'จบรอบแล้ว', c:'gray' }
+           : (expired ? { t:'⏰ หมดเวลาปรับเมนูแล้ว', c:'gray' } : (MP_STATUS[r.status] || { t:r.status, c:'gray' }));
   const col = MP_STATUS_COLORS[st.c] || MP_STATUS_COLORS.gray;
-  const canPick = r.status === 'request_open' && !expired;
-  const canSkip = !['delivered','skipped','cancelled'].includes(r.status);
+  const canPick = !passed && r.status === 'request_open' && !expired;
+  const canSkip = !passed && !['delivered','skipped','cancelled'].includes(r.status);
   const isOpen = mpManageOpenReq === r.id;
   const deadlineMs = mpDeadlineMs(r);
-  return `<div style="border-top:1px solid #F0F0EE;padding:10px 0;">
+  return `<div style="border-top:1px solid #F0F0EE;padding:10px 0;${passed?'opacity:.55;':''}">
     <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;${canPick?'cursor:pointer;':''}" ${canPick?`onclick="mpManageToggleReqPicker('${r.id}')"`:''}>
       <div style="font-size:13px;color:#1A1A1A;">
         <b>รอบ ${r.round_no}</b> · ${fmtDate(r.delivery_date)}
