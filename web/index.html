@@ -380,6 +380,48 @@ nav a,footer a{color:var(--muted)!important;text-decoration:none}
 nav a:hover,footer a:hover{color:var(--ink)!important}
 footer{background:var(--bg-soft)!important;color:var(--muted)!important;border-top:1px solid var(--hair)}
 
+/* ── ⑮ u360-color-lock : สีพื้นทั้งเว็บเหลือ 3 + เขียวเฉพาะปุ่ม ── */
+/* เดิมมีเขียวเข้ม 2 บล็อก + ครีม 1 → รวบเป็นดำเดียวกับแถบตัวเลข */
+.soul,.final{background-color:var(--ink)!important}
+.soul{background-blend-mode:multiply}
+.final{background-image:none!important}
+.bcover{background:var(--bg-soft)!important}
+/* เขียวแบรนด์ = ปุ่มเท่านั้น */
+.final .btn,.final a.btn-line,.soul .btn{background:var(--green)!important;color:#fff!important;border:0!important}
+
+/* ── ⑭ u360-hero-light : ฮีโร่เขียวทั้งบล็อก → พื้นขาว (เขียวเหลือเฉพาะปุ่ม) ── */
+.hero{background:var(--paper)!important;color:var(--ink)!important;padding:84px 0 96px!important}
+.hero h1,.hero h1 em{color:var(--ink)!important}
+.hero h1 em{color:var(--green)!important}
+.hero p.lede{color:var(--muted)!important}
+.hero .eyebrow{color:var(--muted)!important}
+/* ชิปเลือกเป้าหมาย: ขอบขาวจางบนเขียว → ขอบเทาบนขาว */
+.goal-chips button{border:1px solid var(--hair)!important;color:var(--muted)!important;background:none!important}
+.goal-chips button.on,.goal-chips button:hover{background:var(--ink)!important;color:#fff!important;border-color:var(--ink)!important}
+/* กล่องคำแนะนำตามเป้าหมาย */
+.hero .goal-out,.hero .goalbox,.hero .goal-answer{background:var(--bg-soft)!important;color:var(--ink)!important;border:1px solid var(--hair)!important;border-radius:var(--radius)!important}
+.hero .goal-out *,.hero .goalbox *,.hero .goal-answer *{color:var(--ink)!important}
+/* ป้ายราคาในฮีโร่ (เดิมออกแบบไว้บนพื้นเข้ม) */
+.pricetag small,.pricetag i{color:var(--muted)!important}
+.pricetag b{color:var(--ink)!important}
+.hero-price>div:last-child{color:var(--muted)!important}
+.hero-price>div:last-child b{color:var(--ink)!important}
+/* ลิสต์ประโยชน์: เส้นขาวจาง → เส้นเทา */
+.benefits{border-top:1px solid var(--hair)!important}
+.benefit{border-bottom:1px solid var(--hair)!important}
+.benefit b{color:var(--ink)!important}
+.benefit span{color:var(--muted)!important}
+/* ข้อความใต้ปุ่ม */
+.hero small,.hero .note,.hero .micro{color:var(--muted)!important}
+/* รูปฮีโร่: เอากรอบ/พื้นหลังออก ปล่อยรูปพูด */
+.hero-img{background:none!important;padding:0!important;border:0!important}
+.hero-img img{width:100%!important;border-radius:var(--radius)!important}
+/* ปุ่มหลัก = เขียวแบรนด์ (จุดเดียวที่ใช้สี) · ปุ่มรอง = เส้นขอบ */
+.hero-cta a:first-child,a.btn-line,.btn-primary{background:var(--green)!important;color:#fff!important;border:0!important}
+.hero-cta a:last-child,.btn-ghost{background:none!important;color:var(--ink)!important;border:1px solid var(--ink)!important}
+/* ปุ่มบนแถบนำทาง */
+nav a.btn,nav .btn{background:var(--green)!important;color:#fff!important;border:0!important}
+
 /* ── ⑬ u360-scale-lock : บังคับสเกล 6 ขนาด ที่เหลือ inherit ทั้งหมด ── */
 body *:not(h1):not(h2):not(.sec):not(h3):not(h4):not(blockquote):not(.eyebrow):not(.proof b):not(.pricetag b):not(.pricetag small):not(.pricetag i):not(th):not(.logo){font-size:inherit!important}
 body{font-size:17px!important}
