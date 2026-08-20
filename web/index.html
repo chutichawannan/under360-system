@@ -252,6 +252,19 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 .soul .sig{margin-top:18px;font-family:'Prompt';color:#9FE3AE;font-size:.95rem}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
 </style>
+<!-- Meta Pixel (m-track 20 ส.ค. 2026) -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','949287485825587');
+fbq('track','PageView');
+</script>
+<noscript><img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=""></noscript>
+<!-- End Meta Pixel -->
 </head>
 <body>
 
@@ -584,6 +597,7 @@ _pingPresence(); setInterval(_pingPresence, 15000);
 
 /* ═══ Order CTA + Google Ads conversion ═══ */
 function orderNow(el){
+  try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'index'}); }catch(e){}
   track('cta_click','index');
   try{
     if(typeof gtag === 'function'){
