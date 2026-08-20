@@ -424,8 +424,8 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 </div>
 
 <div class="tab-bar">
-  <button class="tab-btn active" id="tab1" onclick="switchTab(1)">📋 รายสินค้า</button>
-  <button class="tab-btn" id="tab2" onclick="switchTab(2)">📦 รายออเดอร์</button>
+  <button class="tab-btn" id="tab1" onclick="switchTab(1)">📋 รายสินค้า</button>
+  <button class="tab-btn active" id="tab2" onclick="switchTab(2)">📦 รายออเดอร์</button>
   <button class="tab-btn" id="tab3" onclick="switchTab(3)">📊 ตั้งสต็อค</button>
 </div>
 
@@ -447,13 +447,13 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 <div id="dateBanner"></div>
 
 <!-- TAB 1: รายสินค้า -->
-<div class="main" id="tabContent1">
+<div class="main" id="tabContent1" style="display:none">
   <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
   <div id="mpQueueView"></div>
 </div>
 
 <!-- TAB 2: รายออเดอร์ -->
-<div class="main" id="tabContent2" style="display:none">
+<div class="main" id="tabContent2">
   <div id="orderView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
 </div>
 
@@ -468,6 +468,7 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
     <h3>🖨️ พิมพ์เอกสาร</h3>
     <button class="print-opt" onclick="doPrint('daily')">📋 สรุปรายสินค้าวันนี้</button>
     <button class="print-opt" onclick="doPrint('orders')">📦 ใบจัดกล่องรายออเดอร์</button>
+    <button class="print-opt" onclick="doPrint('pickslip')">🖨️ ใบจัดของ (สลิปเทอร์มอล)</button>
     <div style="font-size:11px;color:var(--soft);margin:8px 0 4px;line-height:1.6">
       🖨️ รองรับ: HT400 (Hprt) และเครื่องพิมพ์ทุกรุ่นที่ผ่าน browser<br>
       ตั้งค่า: กระดาษ 80mm · ไม่มีขอบ · แนวตั้ง
@@ -555,7 +556,7 @@ async function logKqActivity(summary){
 // ── STATE ────────────────────────────────────────────────
 var allOrders=[], allItems=[], allMenus=[], allMpDeliveries=[];
 var custPrefs={};   // customer_id -> {allergies, dislikes} — ข้อจำกัดอาหารที่ต้องเด้งบนการ์ด
-var dateMode="today", slotMode="all", tabMode=1;
+var dateMode="today", slotMode="all", tabMode=2;   /* เปิดมา = แท็บรายออเดอร์ (นัทสั่ง 21 ส.ค.) */
 var codeMode="code"; // code | name | subcode
 var SLOT_LABELS={all_day:"🕐 รับได้ตลอดวัน", morning:"🌅 ช่วงเช้า", afternoon:"🌇 ช่วงบ่าย", express:"🚗 ด่วน"};
 
@@ -1763,6 +1764,14 @@ function openPrint(){document.getElementById("printModal").style.display="flex";
 function closePrint(){document.getElementById("printModal").style.display="none";}
 function doPrint(type){
   closePrint();
+  /* ใบจัดของสลิปเทอร์มอลอยู่คนละหน้า (จัดหน้ากระดาษ 58/80mm คนละแบบกับหน้าจอ)
+     → เปิดหน้านั้นพร้อมวันที่ที่ครัวเลือกอยู่ ไม่ต้องไปเลือกวันซ้ำอีกรอบ
+     ไม่มีวันเจาะจง (ดู "ทั้งหมด") = ส่งวันนี้ไป กันเปิดมาเจอทุกวันปนกัน */
+  if(type==="pickslip"){
+    var d=getTargetDate()||today();
+    window.open("print_pickslip.html?date="+encodeURIComponent(d)+"&auto=1","_blank");
+    return;
+  }
   if(type==="daily")switchTab(1);
   else switchTab(2);
   setTimeout(function(){window.print();},300);
