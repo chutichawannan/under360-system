@@ -3666,12 +3666,47 @@ async function saveBirthday(){
    🔴 กฎเหล็กของงานนี้: ไม่มี UTM ต้องสั่งได้เหมือนเดิม — ทุกจุด try/catch และถ้าไม่มีค่า
       จะไม่ยัดฟิลด์ลง payload เลย (ไม่ส่ง null ไปให้ DB ตีความ) */
 const UTM_MAX_AGE_DAYS = 30;   // เกินนี้ = ไม่นับว่ามาจากแอดตัวนั้นแล้ว (กันแอดเก่าเคลมยอดใหม่)
+/* 🍪 คุกกี้ที่ Meta Pixel ตั้งไว้ — เก็บไว้เฉยๆ ก่อน ยังไม่ส่งไปไหน (เลขาสั่ง 20 ส.ค.)
+   fbp = รหัสเบราว์เซอร์ · fbc = รหัสคลิกที่ Pixel แปลงจาก fbclid ให้แล้ว
+   วันไหนทำงาน "ส่งข้อมูลกลับ Meta จากฝั่งเซิร์ฟเวอร์" 2 ตัวนี้คือของที่ต้องใช้
+   ⚠️ หน้านี้ยังไม่มี Pixel (เลขาสั่งไม่ต้องติด) → ค่ามักว่าง = ปกติ ไม่ใช่ error */
+function fbCookies(){
+  const out={};
+  try{
+    String(document.cookie||'').split(';').forEach(c=>{
+      const i=c.indexOf('='); if(i<0) return;
+      const k=c.slice(0,i).trim(), v=c.slice(i+1).trim();
+      if(k==='_fbp') out.fbp=v;
+      if(k==='_fbc') out.fbc=v;
+    });
+  }catch(e){}
+  return out;
+}
 function utmRead(){
   try{
     const p = new URLSearchParams(location.search);
+    /* 🔴 fbclid = รหัสคลิกโฆษณาของ Meta ติดมากับ URL ทุกครั้งที่คนกดแอด
+       เป็นตัวเดียวที่บอกได้ว่ายอดนี้มาจากแอดตัวไหน — ไม่เก็บตอนนี้ = ย้อนไม่ได้
+       ⚠️ ห้ามให้ทับ utm_source — เก็บเป็นฟิลด์เพิ่ม
+       ⚠️ ต้องรับได้แม้ลิงก์มีแต่ fbclid ไม่มี utm_* เลย (Meta เติมให้เองอัตโนมัติ)
+       🤝 กติกาตรงกับฝั่งเว็บของห้อง M เป๊ะ (key u360_utm · ฟิลด์เดียวกัน · กฎ fallback เดียวกัน)
+          รวม utm_content ที่ M ส่งมาด้วย */
+    const fbclid = p.get('fbclid') || '';
+    const ck = fbCookies();
     // ① จาก URL ของ LIFF เอง — มาก่อนเสมอ เพราะเป็นของสดที่สุด
-    if(p.get('utm_source')){
-      const u = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'), ts:Date.now() };
+    if(p.get('utm_source') || fbclid){
+      /* เติมค่าแทนได้เฉพาะตอน "ไม่มี utm_source เลย"
+         ถ้า 06 ตั้ง utm_source มาแล้วแต่ไม่ได้ตั้ง medium เราต้องไม่ไปเดาว่าเป็น paid ให้เขา */
+      const noUtm = !p.get('utm_source');
+      const u = {
+        source:   p.get('utm_source') || (fbclid ? 'fb' : ''),
+        medium:   p.get('utm_medium') || ((noUtm && fbclid) ? 'paid' : ''),
+        campaign: p.get('utm_campaign') || '',
+        content:  p.get('utm_content') || '',
+        fbclid:   fbclid || '',
+        fbp: ck.fbp || '', fbc: ck.fbc || '',
+        ts: Date.now()
+      };
       try{ localStorage.setItem('u360_utm', JSON.stringify(u)); }catch(e){}
       return u;
     }
@@ -3679,6 +3714,9 @@ function utmRead(){
     const u = JSON.parse(localStorage.getItem('u360_utm') || '{}');
     if(!u || !u.source) return null;
     if(u.ts && (Date.now() - Number(u.ts)) > UTM_MAX_AGE_DAYS*86400000) return null;
+    // คุกกี้อ่านสดเสมอ — ของที่เก็บไว้อาจเก่ากว่าที่ Pixel เพิ่งตั้ง
+    if(!u.fbp && ck.fbp) u.fbp = ck.fbp;
+    if(!u.fbc && ck.fbc) u.fbc = ck.fbc;
     return u;
   }catch(e){ return null; }
 }
@@ -3689,9 +3727,20 @@ function utmTag(){
   const clean = v => String(v||'').trim().replace(/[^A-Za-z0-9._\-]/g,'').slice(0,40);
   /* ช่องว่างกลางทางต้องหายไป ไม่ใช่เหลือ // คั่น
      (เจอตอนเทส: มี source กับ campaign แต่ไม่มี medium -> "fb//camp" อ่านยากและตัดคำพลาด) */
-  const parts = [clean(u.source), clean(u.medium), clean(u.campaign)].filter(Boolean);
-  const tag = parts.join('/');
-  return tag ? tag.slice(0,120) : null;
+  const parts = [clean(u.source), clean(u.medium), clean(u.campaign), clean(u.content)].filter(Boolean);
+  let tag = parts.join('/');
+  /* 🔗 ต่อรหัสคลิกท้ายป้าย คั่นด้วย " | " — ตั้งใจให้รายงานเดิมไม่พัง
+     ตัวกรองที่ใช้อยู่เป็นแบบ "ขึ้นต้นด้วย" (like.fb/*) → ยังตรงเหมือนเดิมทุกอัน
+     เก็บในคอลัมน์เดิม เพราะ orders ไม่มีคอลัมน์ว่าง และเพิ่มคอลัมน์ต้องรัน SQL */
+  const cid = String(u.fbclid||'').replace(/[^A-Za-z0-9._-]/g,'').slice(0,120);
+  if(cid) tag = (tag ? tag+' | ' : '') + 'fbclid:' + cid;
+  const ck = [];
+  if(u.fbp) ck.push('fbp:'+String(u.fbp).replace(/[^A-Za-z0-9._-]/g,'').slice(0,60));
+  if(u.fbc) ck.push('fbc:'+String(u.fbc).replace(/[^A-Za-z0-9._-]/g,'').slice(0,120));
+  if(ck.length) tag = (tag ? tag+' | ' : '') + ck.join(' ');
+  /* 🪤 เพดานเดิม 120 ตัวถูกตั้งตอนที่ป้ายมีแค่ "fb/cpc/camp"
+     พอต่อ fbclid + fbp + fbc เข้าไป มันจะโดนตัดหางทิ้งหมด = เก็บรหัสคลิกไม่ได้เลย */
+  return tag ? tag.slice(0,400) : null;
 }
 
 // normalize เบอร์ให้เทียบกันได้ (DB เก็บเป็น 0xxxxxxxxx)

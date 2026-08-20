@@ -16,9 +16,10 @@ function grab(name){
 const UTM_MAX_AGE_DAYS = 30;
 
 // จำลอง browser เท่าที่ฟังก์ชันใช้
-function makeCtx({ query='', stored=null }){
+function makeCtx({ query='', stored=null, cookie='' }){
   const store = { u360_utm: stored===null ? null : JSON.stringify(stored) };
   return {
+    document:{ cookie },
     location:{ search: query },
     localStorage:{
       getItem:k=>store[k],
@@ -29,12 +30,13 @@ function makeCtx({ query='', stored=null }){
   };
 }
 function run(ctx){
-  const fn = new Function('location','localStorage','URLSearchParams','UTM_MAX_AGE_DAYS', `
+  const fn = new Function('location','localStorage','URLSearchParams','UTM_MAX_AGE_DAYS','document', `
+    ${grab('fbCookies')}
     ${grab('utmRead')}
     ${grab('utmTag')}
     return utmTag();
   `);
-  return fn(ctx.location, ctx.localStorage, ctx.URLSearchParams, UTM_MAX_AGE_DAYS);
+  return fn(ctx.location, ctx.localStorage, ctx.URLSearchParams, UTM_MAX_AGE_DAYS, ctx.document);
 }
 
 const DAY = 86400000;
@@ -49,6 +51,15 @@ const cases = [
   ['เก่าเกิน 30 วัน = ไม่นับ            ', { query:'', stored:{source:'fb',ts:Date.now()-31*DAY} }, null],
   ['29 วัน = ยังนับ                     ', { query:'', stored:{source:'fb',ts:Date.now()-29*DAY} }, 'fb'],
   ['อักขระแปลกปลอม ถูกตัดออก           ', { query:'?utm_source=fb%3Cscript%3E&utm_campaign=a%20b' }, 'fbscript/ab'],
+  /* ── fbclid: รหัสคลิกโฆษณาของ Meta (เลขาสั่งเพิ่ม 20 ส.ค.) ── */
+  ['มีแต่ fbclid ไม่มี utm เลย         ', { query:'?fbclid=ABC123' }, 'fb/paid | fbclid:ABC123'],
+  ['fbclid มาคู่กับ utm ครบ            ', { query:'?utm_source=fb&utm_medium=cpc&utm_campaign=aug&fbclid=XYZ' }, 'fb/cpc/aug | fbclid:XYZ'],
+  ['fbclid ต้องไม่ทับ utm_source       ', { query:'?utm_source=ig&fbclid=Q1' }, 'ig | fbclid:Q1'],
+  ['คุกกี้ fbp/fbc ถูกเก็บด้วย          ', { query:'?utm_source=fb', cookie:'_fbp=fb.1.99; _fbc=fb.1.88' }, 'fb | fbp:fb.1.99 fbc:fb.1.88'],
+  ['ไม่มีคุกกี้ = ไม่ต่ออะไรเพิ่ม        ', { query:'?utm_source=fb' }, 'fb'],
+  /* ── utm_content: ห้อง M ส่งมาด้วย ต้องรับให้ตรงกัน (20 ส.ค.) ── */
+  ['รับ utm_content ที่ M ส่งมา        ', { query:'?utm_source=fb&utm_medium=cpc&utm_campaign=aug&utm_content=vid1' }, 'fb/cpc/aug/vid1'],
+  ['utm_content + fbclid พร้อมกัน      ', { query:'?utm_source=fb&utm_content=a1&fbclid=Z9' }, 'fb/a1 | fbclid:Z9'],
 ];
 
 let pass=0, fail=0;
