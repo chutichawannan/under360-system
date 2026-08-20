@@ -61,6 +61,8 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
 @media(max-width:640px){.liverow{grid-template-columns:58px 1fr}.liverow .lp,.liverow .lago{grid-column:2}}
 .live.flash{animation:flashbg 1s ease}
 @keyframes flashbg{0%{background:#FFF1DE}45%{background:#FFF1DE}100%{background:var(--paper)}}
+.rngBtn{font-family:inherit;font-size:.88rem;padding:7px 16px;border-radius:999px;border:1px solid #d8d8d2;background:#fff;color:#666;cursor:pointer}
+.rngBtn.on{background:#14171A;color:#fff;border-color:#14171A}
 </style>
 </head>
 <body>
@@ -110,6 +112,25 @@ td.num{text-align:right;font-family:'Prompt';font-weight:600;color:var(--deep)}
       <tbody id="tbCmp"><tr><td colspan="3" class="empty">กำลังโหลด…</td></tr></tbody></table>
       <div class="hint">ตัวเลข "กด LINE" = คนที่ตั้งใจสั่งจริง — ใช้ตัวนี้ตัดสินว่าจะเทงบไปทางไหน</div>
     </div>
+  </div>
+
+  <div class="card" id="adRevCard">
+    <h2>💰 แอดตัวไหนทำเงิน</h2>
+    <div class="hint" style="margin:0 0 10px">
+      นับจาก<b>ใบสั่งซื้อจริงในระบบเรา</b> — ไม่ได้เอาตัวเลขจาก Facebook มาโชว์
+      (Meta เห็นแค่คนทัก ไม่เห็นยอดซื้อ เพราะเราปิดการขายใน LINE)
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+      <button class="rngBtn on" data-days="7">7 วัน</button>
+      <button class="rngBtn" data-days="30">30 วัน</button>
+      <button class="rngBtn" data-days="month">เดือนนี้</button>
+    </div>
+    <table><thead><tr>
+      <th>แคมเปญ</th><th style="text-align:right">ออเดอร์</th>
+      <th style="text-align:right">ยอดเงิน</th><th style="text-align:right">ลูกค้าใหม่</th>
+    </tr></thead>
+    <tbody id="tbAdRev"><tr><td colspan="4" class="empty">กำลังโหลด…</td></tr></tbody></table>
+    <div class="hint" id="adRevNote" style="margin-top:10px"></div>
   </div>
 
   <div class="card">
@@ -272,6 +293,118 @@ loadLive();
 loadPresence();
 setInterval(loadLive, 10000);
 setInterval(loadPresence, 12000);
+
+/* ═══ แอดตัวไหนทำเงิน — อ่านจาก orders เท่านั้น (m-track 20 ส.ค. 2026) ═══ */
+const AD_TEST_NAMES = ['nut','test user','ทดลอบ 1','ploy ♡','schematest'];
+function adLooseTest(name){
+  const s = String(name||'').trim().toLowerCase();
+  if(!s) return false;
+  if(AD_TEST_NAMES.indexOf(s) >= 0) return true;
+  /* "Nut เทสสสส" ต้องโดนด้วย — เดิมเทียบตรงเป๊ะเลยหลุด (ปี 2026 หลุด 24 ใบ ฿32,475) */
+  for(var i=0;i<AD_TEST_NAMES.length;i++){ if(s.indexOf(AD_TEST_NAMES[i]) === 0) return true; }
+  return /เทส|ทดสอบ|ทดลอบ|test/.test(s);
+}
+function adIsTest(o){
+  if(o.source === 'parallel_test') return true;
+  if(o.created_by === '[TEST-P] Claude') return true;
+  if(String(o.notes||'').startsWith('[PARALLEL]')) return true;
+  return adLooseTest(o.customer_name);
+}
+function adIsLoyalty(o){
+  return o.source === 'hato_loyalty_log' || String(o.order_number||'').startsWith('HS-');
+}
+/* ดึงครบทุกแถว — PostgREST คืนทีละ 1000 (บทเรียน 1000-cap) */
+async function adFetchAll(path){
+  const out = [];
+  for(let off = 0; ; off += 1000){
+    const r = await fetch(SB_URL + '/rest/v1/' + path + '&limit=1000&offset=' + off,
+      { headers:{ apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY } });
+    const rows = await r.json();
+    if(!Array.isArray(rows)) throw new Error('supabase');
+    out.push.apply(out, rows);
+    if(rows.length < 1000) return out;
+  }
+}
+async function loadAdRevenue(days){
+  const tb = document.getElementById('tbAdRev');
+  const note = document.getElementById('adRevNote');
+  try{
+    let from;
+    if(days === 'month'){ const n = new Date(); from = new Date(n.getFullYear(), n.getMonth(), 1); }
+    else { from = new Date(Date.now() - Number(days)*86400000); }
+    const iso = from.toISOString();
+
+    const orders = await adFetchAll(
+      'orders?select=order_number,total,source,source_campaign,customer_id,customer_name,created_by,notes,created_at' +
+      '&created_at=gte.' + iso + '&order=created_at.desc');
+
+    /* ตัวกรองเดียวกับ finance/orders.mjs — ห้ามต่างกัน */
+    const clean = orders.filter(function(o){
+      return Number(o.total) > 0 && !adIsTest(o) && !adIsLoyalty(o);
+    });
+
+    if(!clean.length){
+      tb.innerHTML = '<tr><td colspan="4" class="empty">ยังไม่มีออเดอร์ในช่วงนี้</td></tr>';
+      note.textContent = '';
+      return;
+    }
+
+    /* ลูกค้าใหม่ = ลูกค้าที่เพิ่งถูกสร้างในช่วงเวลาเดียวกัน */
+    const ids = Array.from(new Set(clean.map(function(o){ return o.customer_id; }).filter(Boolean)));
+    const newIds = new Set();
+    for(let i = 0; i < ids.length; i += 100){
+      const chunk = ids.slice(i, i+100);
+      try{
+        const r = await fetch(SB_URL + '/rest/v1/customers?select=id,created_at&id=in.(' + chunk.join(',') + ')&limit=200',
+          { headers:{ apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY } });
+        const cs = await r.json();
+        if(Array.isArray(cs)) cs.forEach(function(c){ if(c.created_at && c.created_at >= iso) newIds.add(c.id); });
+      }catch(e){}
+    }
+
+    const g = {};
+    clean.forEach(function(o){
+      /* ไม่มีป้าย = "ไม่รู้ที่มา" — ต้องโชว์ ห้ามซ่อน */
+      const k = o.source_campaign || '(ไม่รู้ที่มา)';
+      if(!g[k]) g[k] = { n:0, sum:0, cust:new Set(), fresh:new Set() };
+      g[k].n++; g[k].sum += Number(o.total) || 0;
+      if(o.customer_id){ g[k].cust.add(o.customer_id); if(newIds.has(o.customer_id)) g[k].fresh.add(o.customer_id); }
+    });
+
+    const rows = Object.keys(g).map(function(k){ return { k:k, v:g[k] }; })
+      .sort(function(a,b){ return b.v.sum - a.v.sum; });
+    const baht = function(n){ return '฿' + Math.round(n).toLocaleString('th-TH'); };
+
+    tb.innerHTML = rows.map(function(r){
+      const unknown = r.k === '(ไม่รู้ที่มา)';
+      return '<tr' + (unknown ? ' style="opacity:.72"' : '') + '>' +
+        '<td>' + (unknown ? '<b>' + r.k + '</b>' : r.k) + '</td>' +
+        '<td style="text-align:right">' + r.v.n + '</td>' +
+        '<td style="text-align:right"><b>' + baht(r.v.sum) + '</b></td>' +
+        '<td style="text-align:right">' + r.v.fresh.size + '</td></tr>';
+    }).join('');
+
+    const tagged = rows.filter(function(r){ return r.k !== '(ไม่รู้ที่มา)'; })
+                       .reduce(function(s,r){ return s + r.v.sum; }, 0);
+    const all = rows.reduce(function(s,r){ return s + r.v.sum; }, 0);
+    const pct = all ? Math.round(tagged*100/all) : 0;
+    note.innerHTML = 'ยอดที่รู้ที่มา <b>' + baht(tagged) + '</b> จากทั้งหมด ' + baht(all) +
+      ' (<b>' + pct + '%</b>) · ตัดใบยอด ฿0 · ออเดอร์เทส · log แต้ม ออกแล้ว' +
+      (pct < 50 ? '<br>⚠️ ก้อน "ไม่รู้ที่มา" ยังใหญ่ — ปกติช่วงแรกที่เพิ่งติดป้าย ถ้าไม่ลดลงเมื่อเริ่มยิงแอด แปลว่าป้ายหลุดที่ไหนสักแห่ง' : '');
+  }catch(e){
+    tb.innerHTML = '<tr><td colspan="4" class="empty">โหลดไม่สำเร็จ</td></tr>';
+    note.textContent = '';
+  }
+}
+document.querySelectorAll('.rngBtn').forEach(function(b){
+  b.addEventListener('click', function(){
+    document.querySelectorAll('.rngBtn').forEach(function(x){ x.classList.remove('on'); });
+    b.classList.add('on');
+    loadAdRevenue(b.dataset.days);
+  });
+});
+loadAdRevenue(7);
+
 </script>
 </body>
 </html>
