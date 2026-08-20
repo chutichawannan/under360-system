@@ -23,7 +23,21 @@ const q = async (path) => {
 };
 
 /* คืนไอดีสำรอง (ยุค Hato) ของลูกค้าคนเดียวกัน — ไม่มีก็คืน null */
+/* ตารางผูกไลน์ 2 ชุดของคนเดียวกันด้วยมือ — เก็บใน kitchen_data key 'line_uid_alias'
+   รูปแบบ { "ไอดีชุดใหม่": "ไอดีชุดเก่าที่ส่งถึงได้" }
+   ใช้กับเคสที่จับคู่อัตโนมัติไม่ได้ (เช่น ใบเทสที่กรอกเบอร์สมมติ) */
+let _aliasCache = null, _aliasAt = 0;
+async function aliasMap() {
+  if (_aliasCache && Date.now() - _aliasAt < 300000) return _aliasCache;
+  const r = await q("kitchen_data?select=data&key=eq.line_uid_alias");
+  _aliasCache = (r[0] && r[0].data) || {};
+  _aliasAt = Date.now();
+  return _aliasCache;
+}
+
 async function legacyUid(order) {
+  const map = await aliasMap();
+  if (order.line_uid && map[order.line_uid]) return map[order.line_uid];
   if (!order) return null;
   if (order.customer_id) {
     const r = await q(`orders?select=line_uid&order_number=like.HT-*&line_uid=not.is.null&customer_id=eq.${order.customer_id}&order=created_at.desc&limit=1`);
