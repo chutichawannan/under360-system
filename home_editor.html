@@ -288,6 +288,7 @@ async function loadCards(){
       size:COL_SPAN_TO_SIZE[r.col_span]||'square',
       link_cat:(r.item_filter||{}).category||(r.item_filter||{}).he_group||'',
       sort_order:r.sort_order||0,
+      is_active:r.is_active!==false,      // การ์ดที่ปิดขายอยู่ ต้องรู้ว่าปิด ไม่งั้นกดบันทึกทีเดียวเปิดคืนทั้งหมด
       show_cta:(r.item_filter||{}).show_cta!==false,
       cta_text:(r.item_filter||{}).cta_text||'ดูเมนู →',
       overlay:(r.item_filter||{}).overlay||'gradient'
@@ -404,7 +405,11 @@ function renderPrevCard(c,idx){
   const bg=`background:${c.bg_color}`;
   const img=c.bg_image?`<img src="${c.bg_image}" onerror="this.style.display='none'">`:'';
   const active=activeCardIdx===idx?' active':'';
-  return `<div class="col-card-he ${CARD_FMT_CLASS[fmt]}${active}" style="${bg}" onclick="selectCard(${idx})">
+  // การ์ดที่ซ่อนอยู่ = ลูกค้าไม่เห็น · พรีวิวต้องบอกให้ชัด ไม่งั้นดูแล้วนึกว่าหน้าร้านเป็นแบบนี้
+  const dim = c.is_active===false ? 'opacity:.32;filter:grayscale(1);' : '';
+  const hideTag = c.is_active===false
+    ? '<div style="position:absolute;top:6px;left:6px;z-index:3;background:#FEF9E7;color:#92400E;border:1px solid #F5E4A8;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:800;">🙈 ซ่อนอยู่</div>' : '';
+  return `<div class="col-card-he ${CARD_FMT_CLASS[fmt]}${active}" style="${bg};${dim}position:relative" onclick="selectCard(${idx})">${hideTag}
     ${img}
     <div class="col-ov-he"></div>
     <div class="col-body-he">
@@ -428,12 +433,25 @@ function renderCardList(){
         onclick="event.stopPropagation()">⠿</span>
       <div class="card-list-thumb">${thumbBg}</div>
       <div class="card-list-info">
-        <div class="card-list-name">${esc(c.title)||'(ไม่มีชื่อ)'}</div>
-        <div class="card-list-sz">${CARD_FMT_LABEL[c.size]||CARD_FMT_LABEL.square} · #${i+1}</div>
+        <div class="card-list-name" style="${c.is_active===false?'opacity:.45;text-decoration:line-through;':''}">${esc(c.title)||'(ไม่มีชื่อ)'}</div>
+        <div class="card-list-sz">${CARD_FMT_LABEL[c.size]||CARD_FMT_LABEL.square} · #${i+1}${c.is_active===false?' · <b style="color:#B45309">ซ่อนอยู่</b>':''}</div>
       </div>
+      <button class="card-hide-btn" title="${c.is_active===false?'กดเพื่อเอากลับมาโชว์':'ซ่อนการ์ดนี้ (ไม่ลบทิ้ง เอากลับมาได้)'}"
+        onclick="event.stopPropagation();toggleCardActive(${i})"
+        style="border:1.5px solid ${c.is_active===false?'#F5E4A8':'var(--line,#E5E5E1)'};background:${c.is_active===false?'#FEF9E7':'#fff'};border-radius:8px;padding:5px 9px;font-size:14px;cursor:pointer;margin-right:6px">${c.is_active===false?'🙈':'👁'}</button>
       <button class="card-del-btn" onclick="event.stopPropagation();deleteCard(${i})">🗑</button>
     </div>`;
   }).join('');
+}
+
+/* 👁 ซ่อน/โชว์การ์ด — ทำผ่านหน้าจอได้ ไม่ต้องให้ใครไปแก้ฐานข้อมูลให้
+   นัทติเอง 21 ส.ค.: "ซ่อนโดยดำเนินการผ่านโค้ดดิ้ง ทำให้คนมาแก้งานต่อไม่ได้
+                      มันควรจะแก้ผ่านช่องทางปกติที่คนทำสิ" — ถูกต้อง
+   ต่างจากปุ่มลบ 🗑 ตรงที่ "ซ่อน" เอากลับมาได้ ไม่ต้องสร้างการ์ดใหม่ทั้งใบ */
+function toggleCardActive(i){
+  const c=cards[i]; if(!c) return;
+  c.is_active = (c.is_active===false);
+  renderAll();
 }
 
 // ลากเรียงลำดับ Card ใน HomeGrid (เดียวกับ pattern ลากเรียงหมวดที่ catDragStart/catDrop ใช้)
@@ -1073,7 +1091,9 @@ async function saveAll(){
         title:c.title, subtitle:c.subtitle, bg_color:c.bg_color, bg_image:c.bg_image||'',
         text_color:'#fff',
         item_filter:Object.assign(c.link_cat?{category:c.link_cat}:{}, c.show_cta!==false?{show_cta:true,cta_text:c.cta_text||'ดูเมนู →'}:{show_cta:false}, {overlay:c.overlay||'gradient'}),
-        sort_order:i, is_active:true, updated_at:new Date().toISOString()
+        /* 🔴 เดิมฝัง is_active:true ไว้ตรงนี้ = กดบันทึกทีเดียว การ์ดที่ปิดไว้กลับมาโชว์หมดทุกใบ
+           (เจอ 21 ส.ค. — การ์ดที่พลอยสั่งให้เอาออก 11 ใบ จะเด้งกลับทันทีที่ใครกดบันทึกในหน้านี้) */
+        sort_order:i, is_active:(c.is_active!==false), updated_at:new Date().toISOString()
       },{onConflict:'section_key'});
       if(upErr) throw upErr;   // เดิมไม่รับ error → v2 ไม่ throw → catch ไม่เคยทำงาน = ขึ้น "✅ สำเร็จ" ทั้งที่ลูกค้ายังเห็นของเก่า
     }
