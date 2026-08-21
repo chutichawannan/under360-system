@@ -1594,6 +1594,8 @@ function openMealPlanPicker(offerSetKey) {
     mpSetId = '';
   }
   loadMyPrefs();   // ดึงของแพ้/ข้อจำกัดเดิมมาเติมช่อง (ไม่ await — เติมแล้ว re-render เอง)
+  mpPath = ''; mpResetPlanChoices();
+  loadMpPlan();    // แพลนเมนูล่วงหน้า — ไม่ await เหมือนกัน โหลดเสร็จค่อย re-render เอง
   renderMealPlanPicker();
   document.getElementById('s-menu').classList.add('on');       // เมนูอยู่ข้างหลัง
   document.getElementById('mp-backdrop').classList.add('on');
@@ -1611,10 +1613,128 @@ function toggleMPReq(i){
   renderMealPlanPicker();
 }
 
+/* ══════════════════════════════════════════════════════════════════════════════
+   Meal Plan picker — รื้อใหม่ตามหน้าที่นัทเคาะ (21 ส.ค. 2569)
+   นัทสั่งเอง: "ไม่ merge ไฟล์ใหม่ · แก้ของเดิมให้ได้แบบนี้แหละ" + "เคาะ ก. แทนป้อบเดิม"
+   เพิ่มจากของเดิม: ราคาต่อมื้อ+ส่วนลด% · 2 ทางเลือกเท่ากัน (จัดให้/เลือกเอง)
+                    ปฏิทินเมนูล่วงหน้า · เลื่อนวันเริ่ม · ข้ามรอบส่งรายวัน
+                    เพดานเมนูทะเล 4/คอร์ส · ปุ่มขอเปลี่ยนเนื้อเป็นหมู
+   ⚠️ ตะกร้า/checkout/การคิดเงิน ใช้ของเดิมทั้งหมด — ของใหม่แค่แนบข้อมูลเพิ่มไปกับรายการในตะกร้า
+   ══════════════════════════════════════════════════════════════════════════════ */
+let mpPath = '', mpSelDay = '', mpPicks = {}, mpDayOffset = 0;
+let mpSkipped = [];              // เก็บเป็น array ไม่ใช่ Set — ต้อง JSON.stringify ลงตะกร้าได้
+let mpSwap = {};                 // mpSwap['วันที่|เลขเมนู'] = true  → ลูกค้าขอเปลี่ยนเนื้อเป็นหมู
+let MP_PLAN = {}, MP_PLAN_MENUS = {}, mpPlanLoading = false, mpPlanLoaded = false;
+
+const MP_DAYS_TH = ['อา','จ','อ','พ','พฤ','ศ','ส'];
+const MP_MON_TH  = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+const MP_SEA_MAX = 4;
+function mpFmtDay(k){ const d = new Date(k+'T00:00:00'); return {w:MP_DAYS_TH[d.getDay()], d:d.getDate(), m:MP_MON_TH[d.getMonth()]}; }
+/* เนื้อวัวเท่านั้น — "เนื้อสัตว์" ไม่นับ (คำนั้นใช้กับทุกโปรตีน) */
+function mpIsBeef(m){ const p = String((m&&m.protein)||''); return /เนื้อ/.test(p) && !/เนื้อสัตว์/.test(p); }
+
+/* แพลนเมนูล่วงหน้า: ① ของจริงจาก DB  ② ชุดสำรองที่ deploy ไปด้วย
+   หาไม่เจอทั้งคู่ = ไม่พัง แค่ไม่โชว์ปฏิทิน ลูกค้ายังสั่งได้ตามปกติ (ครัวจัดเมนูให้) */
+async function loadMpPlan(){
+  if (mpPlanLoaded || mpPlanLoading) return;
+  mpPlanLoading = true;
+  try{
+    const r = await sb.from('kitchen_data').select('data').eq('key','mp_menu_plan').maybeSingle();
+    if (r && r.data && r.data.data && Object.keys(r.data.data).length) MP_PLAN = r.data.data;
+    else MP_PLAN = await fetch('preview/mp_plan_seed.json').then(x=>x.json()).catch(()=>({}));
+    const codes = [];
+    Object.values(MP_PLAN).forEach(list => (list||[]).forEach(m => { codes.push('LC'+m.no); codes.push('HP'+m.no); }));
+    if (codes.length){
+      const mr = await sb.from('menu_items').select('code,name,image_urls').in('code',[...new Set(codes)]).limit(500);
+      (mr.data||[]).forEach(m => { MP_PLAN_MENUS[m.code] = m; });
+    }
+  }catch(e){ /* โหลดแพลนไม่ได้ = ซ่อนปฏิทินเฉยๆ ห้ามบล็อกการสั่ง */ }
+  mpPlanLoading = false; mpPlanLoaded = true;
+  if (document.getElementById('s-meal-plan')?.classList.contains('on')) renderMealPlanPicker();
+}
+
+function mpBoxesOf(){ const s = MP_SETS.find(x=>x.id===mpSetId); return s ? s.boxes : 0; }
+function mpDaysNeeded(){ const b = mpBoxesOf(); return b ? Math.max(1, Math.round(b/7)) : 0; }
+function mpPerDay(){ const b = mpBoxesOf(), d = mpDaysNeeded(); return d ? Math.round(b/d) : 0; }
+function mpFutureDays(){ const t = localYMD(new Date()); return Object.keys(MP_PLAN).filter(k=>k>=t).sort(); }
+function mpUsableDays(){ return mpFutureDays().filter(k => mpSkipped.indexOf(k) < 0); }
+function mpMaxOffset(){ return Math.max(0, mpUsableDays().length - mpDaysNeeded()); }
+function mpActiveDays(){
+  const all = mpUsableDays(), need = mpDaysNeeded();
+  if (!need) return [];
+  const off = Math.min(mpDayOffset, Math.max(0, all.length - need));
+  return all.slice(off, off + need);
+}
+function mpCanSkip(){ return mpUsableDays().length > mpDaysNeeded(); }
+function mpToggleSkip(k, ev){
+  if (ev) ev.stopPropagation();
+  const i = mpSkipped.indexOf(k);
+  if (i >= 0) mpSkipped.splice(i,1);
+  else {
+    /* ข้ามได้ก็ต่อเมื่อยังมีวันสำรองพอ — ไม่งั้นข้ามแล้วรอบหาย ลูกค้าได้ของไม่ครบ */
+    if (!mpCanSkip()) { toast('ยังไม่มีวันสำรองพอให้ข้าม'); return; }
+    mpSkipped.push(k);
+    /* ลบเมนูที่เลือกไว้ของวันที่ข้าม ไม่งั้นจำนวนที่เลือกจะค้างเกินโดยมองไม่เห็น */
+    delete mpPicks[k];
+    Object.keys(mpSwap).forEach(kk => { if (kk.indexOf(k+'|')===0) delete mpSwap[kk]; });
+  }
+  mpSelDay = ''; renderMealPlanPicker();
+}
+function mpClearSkips(){ mpSkipped = []; mpSelDay = ''; renderMealPlanPicker(); }
+function mpShiftDays(d){
+  const mo = mpMaxOffset();
+  mpDayOffset = Math.max(0, Math.min(mo, mpDayOffset + d));
+  mpSelDay = ''; renderMealPlanPicker();
+}
+function mpCountDay(k){ const p = mpPicks[k]||{}; return Object.values(p).reduce((s,n)=>s+n,0); }
+function mpTotalPicked(){ return Object.keys(mpPicks).reduce((s,k)=>s+mpCountDay(k),0); }
+function mpSeaPicked(){
+  let n = 0;
+  Object.keys(mpPicks).forEach(k => {
+    const list = MP_PLAN[k]||[];
+    Object.keys(mpPicks[k]).forEach(no => { const m = list.find(x=>x.no===no); if (m && m.sea) n += mpPicks[k][no]; });
+  });
+  return n;
+}
+function mpSetPath(p){ mpPath = p; renderMealPlanPicker(); }
+function mpPickDay(k){ mpSelDay = k; renderMealPlanPicker(); }
+function mpChg(no, d){
+  if (!mpSelDay) return;
+  if (!mpPicks[mpSelDay]) mpPicks[mpSelDay] = {};
+  const cur = mpPicks[mpSelDay][no]||0, next = cur + d;
+  if (next < 0) return;
+  if (d > 0){
+    if (mpCountDay(mpSelDay) >= mpPerDay()) return;
+    const m = (MP_PLAN[mpSelDay]||[]).find(x=>x.no===no);
+    if (m && m.sea && mpSeaPicked() >= MP_SEA_MAX) return;
+  }
+  if (next === 0){
+    delete mpPicks[mpSelDay][no];
+    delete mpSwap[mpSelDay+'|'+no];        // ไม่ได้สั่งแล้ว = คำขอเปลี่ยนเนื้อไม่มีความหมาย ต้องล้างทิ้ง
+  } else mpPicks[mpSelDay][no] = next;
+  renderMealPlanPicker();
+}
+/* 🥩 ปุ่มขอเปลี่ยนเนื้อเป็นหมู (นัทสั่ง 20 ส.ค.)
+   ต้องไปโผล่ทั้งหน้าแพลนเมนูของแอดมิน และใบงานครัว — ส่งไปกับ customer_request ของรอบนั้น */
+function mpToggleSwap(k, no, ev){
+  if (ev) ev.stopPropagation();
+  const key = k+'|'+no;
+  if (mpSwap[key]) delete mpSwap[key]; else mpSwap[key] = true;
+  renderMealPlanPicker();
+}
+
+/* เซ็ตที่มื้อน้อยสุด = ราคาต่อมื้อแพงสุด → ใช้เป็นฐานเทียบให้เห็นว่าสั่งเยอะแล้วถูกลงกี่ % */
+function mpBaseUnit(t){
+  const list = mpSetsForType(t);
+  if (!list.length) return 0;
+  const small = list.slice().sort((a,b)=>a.boxes-b.boxes)[0];
+  const p = mpPriceOf(small, t);
+  return small.boxes ? p/small.boxes : 0;
+}
+
 function renderMealPlanPicker() {
   const el = document.getElementById('mp-picker-body');
   if (!el) return;
-  // Hyrox โผล่ก็ต่อเมื่อมีเซ็ต hyrox ที่ is_active ใน DB — ปิดที่ DB = หน้าตากลับเป็น 2 ตัวเลือกเหมือนเดิม
   const MP_TYPE_CFG = {
     hp:{label:'High Protein',emoji:'💪',desc:'เนื้อสัตว์ดิบ 170g',color:'#1F4D3A'},
     lc:{label:'Low Carb',    emoji:'🥗',desc:'เนื้อสัตว์ดิบ 120g',color:'#2D6B53'},
@@ -1622,8 +1742,7 @@ function renderMealPlanPicker() {
   };
   const mpTypes = mpHasHyrox() ? ['hp','lc','hyrox'] : ['hp','lc'];
   const typeHtml = mpTypes.map(t => {
-    const cfg = MP_TYPE_CFG[t];
-    const on = mpType===t;
+    const cfg = MP_TYPE_CFG[t], on = mpType===t;
     return `<div onclick="selectMPType('${t}')" style="
         flex:1;min-width:0;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;
         border:2px solid ${on?cfg.color:'#E5E5E1'};
@@ -1633,22 +1752,36 @@ function renderMealPlanPicker() {
       <div style="font-size:11.5px;margin-top:3px;opacity:.75;">${cfg.desc}</div>
     </div>`;
   }).join('');
+
+  const base = mpType ? mpBaseUnit(mpType) : 0;
   const setsHtml = mpActiveSets.map(s => {
-    const price = mpPriceOf(s, mpType);
-    const on = mpSetId===s.id;
+    const price = mpPriceOf(s, mpType), on = mpSetId===s.id;
+    const dayN  = Math.max(1, Math.round(s.boxes/7));
+    const unit  = mpType && s.boxes ? Math.round(price/s.boxes) : 0;
+    const full  = mpType ? Math.round(base*s.boxes) : 0;
+    const save  = full - price, pct = full>0 ? Math.round(save/full*100) : 0;
+    /* โชว์ส่วนลดเฉพาะตอนถูกลงจริงตั้งแต่ 3% ขึ้นไป — ต่ำกว่านั้นขึ้น "ประหยัด ฿0" แล้วดูตลก */
+    const deal = (mpType && pct>=3)
+      ? `<div style="margin-top:5px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+           <span style="font-size:12px;color:#9AA0AC;text-decoration:line-through;">฿${full.toLocaleString()}</span>
+           <span style="font-size:11.5px;font-weight:800;color:#fff;background:#C9573F;border-radius:5px;padding:1px 6px;">ถูกลง ${pct}%</span>
+           <span style="font-size:11.5px;color:#1F4D3A;font-weight:700;">ประหยัด ฿${save.toLocaleString()}</span>
+         </div>` : '';
     return `<div onclick="selectMPSet('${s.id}')" style="
-        display:flex;align-items:center;justify-content:space-between;
+        display:flex;align-items:center;justify-content:space-between;gap:10px;
         padding:14px 16px;border-radius:12px;margin-bottom:8px;cursor:pointer;
         border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
-      <div>
-        <div style="font-size:15px;font-weight:700;color:${on?'#1F4D3A':'#1A1A1A'};">${s.label}</div>
-        <div style="font-size:12px;color:#6B7280;margin-top:2px;">${s.boxes} กล่อง</div>
+      <div style="min-width:0">
+        <div style="font-size:15px;font-weight:700;color:${on?'#1F4D3A':'#1A1A1A'};">${h(s.label)}</div>
+        <div style="font-size:12px;color:#6B7280;margin-top:2px;">${s.boxes} มื้อ · ส่ง ${dayN} วัน${mpType?' · <b>฿'+unit.toLocaleString()+'/มื้อ</b>':''}</div>
+        ${deal}
       </div>
-      <div style="font-size:18px;font-weight:800;color:${on?'#1F4D3A':'#C9573F'};">
+      <div style="font-size:18px;font-weight:800;white-space:nowrap;color:${on?'#1F4D3A':'#C9573F'};">
         ${mpType ? '฿'+price.toLocaleString() : '—'}
       </div>
     </div>`;
   }).join('');
+
   el.innerHTML = `
     <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">1. เลือกประเภท</div>
     <div style="display:flex;gap:10px;margin-bottom:20px;">${typeHtml}</div>
@@ -1656,23 +1789,15 @@ function renderMealPlanPicker() {
     ${mpType ? setsHtml : '<div style="padding:12px;text-align:center;color:#B8BCC8;font-size:14px;">เลือกประเภทก่อน</div>'}
     ${mpType&&mpSetId ? `
     <div style="background:#FEF9E7;border:1px solid #F5E4A8;border-radius:10px;padding:10px 12px;margin-top:10px;font-size:12.5px;color:#8A6D1F;line-height:1.6;">
-      📅 <strong>จัดส่งเฉพาะวันจันทร์ / พุธ / ศุกร์</strong> — วันละ 7 กล่อง
+      📅 <strong>จัดส่งเฉพาะวันจันทร์ / พุธ / ศุกร์</strong> — วันละ ${mpPerDay()} กล่อง
     </div>
-    ${/* ⛔ บล็อก "3. เมนู Request" ถูกซ่อนตามบรีฟพลอย 20 ส.ค. — ตัวหนังสือยาวแต่เลือกจริงไม่ได้
-          โค้ดเดิมอยู่ใน git history (ก่อน commit นี้) · ตัวแปร mpReqSel/mpRequestMenus ยังทำงานอยู่
-          จะเอากลับมาเมื่อทำให้ลูกค้าเลือกเมนูได้จริง */''}
-    ${/* N-41 · ห้องฟ้าแจ้ง 13 ส.ค. 2569 — เคสจริง: ลูกค้าโรคไตขอ "ข้าวนิ่ม" แต่บอกไว้ในแชทไลน์เท่านั้น
-          ระบบไม่มีช่องให้กรอก → ครัวไม่เห็น → เกือบได้ข้าวปกติ
-          เก็บลง customer_preferences (ติดตัวลูกค้าถาวร) → เด้งบนใบครัวทุกใบของคนนี้ตลอดไป */''}
+    ${mpPathHtml()}
+    ${mpCalHtml()}
     <div style="margin-top:18px;">
-      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">3. แพ้อาหาร / ข้อจำกัด</div>
-      <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">
-        กรอกครั้งแรกครั้งเดียว
-      </div>
-      ${/* 🩺 ยังแยก 2 ช่องเหมือนเดิม "โดยตั้งใจ" — ไม่ยุบเป็นช่องเดียว
-            ช่องบน = ของแพ้ ครัวเห็นเป็นแถวแดง "ตัดออกเด็ดขาด" บนใบงาน (เคสลูกค้าโรคไต 13 ส.ค.)
-            ถ้ายุบรวมกับ "ขอข้าวนิ่ม/ไม่เผ็ด" ครัวจะแยกไม่ออกว่าอันไหนห้ามเด็ดขาด = เรื่องความปลอดภัย
-            ตัดแค่ "ตัวหนังสือ" ให้สั้นตามที่พลอยขอ ไม่ตัดตัวแยกประเภท */''}
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:2px;">4. แพ้อาหาร / ข้อจำกัด</div>
+      <div style="font-size:11.5px;color:#9AA0AC;margin-bottom:8px;line-height:1.5;">กรอกครั้งแรกครั้งเดียว</div>
+      ${/* 🩺 ยังแยก 2 ช่องโดยตั้งใจ — ช่องบนครัวเห็นเป็นแถวแดง "ตัดออกเด็ดขาด"
+            ถ้ายุบรวมกับ "ขอข้าวนิ่ม/ไม่เผ็ด" ครัวจะแยกไม่ออกว่าอันไหนห้ามจริง = เรื่องความปลอดภัย */''}
       <input id="mp-allergy" type="text" value="${h(mpAllergy)}" oninput="mpAllergy=this.value"
         placeholder="แพ้อาหาร เช่น กุ้ง ถั่ว"
         style="width:100%;box-sizing:border-box;border:2px solid #F0C9C9;background:#FFF7F7;border-radius:11px;padding:11px 12px;font-size:14px;font-family:inherit;margin-bottom:8px;">
@@ -1683,44 +1808,223 @@ function renderMealPlanPicker() {
   updateMPConfirmBtn();
 }
 
+/* ── 3. สองทางที่ "เท่ากัน" — นัทย้ำว่าห้ามบังคับเลือกเมนูก่อนถึงจะสั่งได้ ── */
+function mpPathHtml(){
+  const card = (k, emoji, title, sub) => {
+    const on = mpPath===k;
+    return `<div onclick="mpSetPath('${k}')" style="
+        flex:1;min-width:0;border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;
+        border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#EBF3EF':'#fff'};">
+      <div style="font-size:24px;margin-bottom:4px;">${emoji}</div>
+      <div style="font-size:14px;font-weight:800;color:${on?'#1F4D3A':'#1A1A1A'};">${title}</div>
+      <div style="font-size:11px;color:#6B7280;margin-top:3px;line-height:1.4;">${sub}</div>
+    </div>`;
+  };
+  const note = mpPath==='auto'
+    ? 'เราจัดเมนูให้ตามที่ครัวทำในแต่ละวัน สลับไม่ให้ซ้ำ — <b>เลื่อนลงดูได้ว่าแต่ละวันมีอะไร</b>'
+    : mpPath==='pick'
+    ? 'กดเลือกเมนูที่อยากได้ <b>เลือกซ้ำได้</b> · เมนูทะเลไม่เกิน '+MP_SEA_MAX+' ต่อคอร์ส · ที่เหลือไม่จำกัด<br>ไม่สะดวกรับวันไหน กด <b>✕</b> มุมวันนั้นเพื่อข้ามไปรับรอบถัดไป'
+    : 'เลือกทางไหนก็ได้ — <b>สั่งได้เหมือนกันทั้งคู่</b> ไม่เลือกเมนูก็สั่งได้';
+  return `
+    <div style="font-size:13px;font-weight:700;color:#6B7280;margin:18px 0 10px;">3. เมนูจะมายังไง</div>
+    <div style="display:flex;gap:10px;">
+      ${card('auto','🎁','ให้เราจัดให้','ไม่ต้องคิดอะไรเลย')}
+      ${card('pick','🖐️','เลือกเอง','กดเลือกทีละมื้อ')}
+    </div>
+    <div style="font-size:12px;color:#6B7280;line-height:1.6;margin-top:8px;">${note}</div>`;
+}
+
+/* ── ปฏิทินเมนูล่วงหน้า + รายการเมนูของวันที่เลือก ── */
+function mpCalHtml(){
+  if (!mpPath) return '';
+  if (!mpPlanLoaded) return `<div style="padding:16px;text-align:center;color:#B8BCC8;font-size:13px;">กำลังโหลดเมนู…</div>`;
+  const days = mpActiveDays();
+  if (!days.length){
+    return `<div style="margin-top:14px;background:#F7F7F4;border-radius:12px;padding:16px;text-align:center;color:#6B7280;font-size:13px;line-height:1.7;">
+      ยังไม่ได้วางเมนูของช่วงนี้<br><b>สั่งได้ตามปกติ</b> ครัวจะจัดเมนูให้ตอนถึงวันส่ง</div>`;
+  }
+  if (!mpSelDay || days.indexOf(mpSelDay) < 0) mpSelDay = days[0];
+  const mo = mpMaxOffset(), f0 = mpFmtDay(days[0]);
+  const shift = mo>0 ? `
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+      <button onclick="mpShiftDays(-1)" ${mpDayOffset<=0?'disabled':''} style="border:1.5px solid #E5E5E1;background:#fff;border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;font-weight:700;color:#1F4D3A;${mpDayOffset<=0?'opacity:.35;':''}">◀ เร็วขึ้น</button>
+      <span style="flex:1;text-align:center;font-size:12.5px;color:#6B7280;">เริ่มส่ง <b style="color:#1A1A1A;">${f0.w} ${f0.d} ${f0.m}</b></span>
+      <button onclick="mpShiftDays(1)" ${mpDayOffset>=mo?'disabled':''} style="border:1.5px solid #E5E5E1;background:#fff;border-radius:9px;padding:7px 11px;font-size:12.5px;font-family:inherit;font-weight:700;color:#1F4D3A;${mpDayOffset>=mo?'opacity:.35;':''}">ช้าลง ▶</button>
+    </div>` : '';
+  const dayChips = days.map(k => {
+    const f = mpFmtDay(k), n = mpCountDay(k), on = mpSelDay===k;
+    return `<div onclick="mpPickDay('${k}')" style="
+        position:relative;flex:0 0 auto;min-width:56px;text-align:center;cursor:pointer;
+        border:2px solid ${on?'#1F4D3A':'#E5E5E1'};background:${on?'#1F4D3A':'#fff'};
+        color:${on?'#fff':'#1A1A1A'};border-radius:12px;padding:8px 6px 7px;">
+      <button onclick="mpToggleSkip('${k}',event)" title="ข้ามรอบส่งวันนี้"
+        style="position:absolute;top:-7px;right:-7px;width:20px;height:20px;border-radius:50%;
+               border:1.5px solid #E5E5E1;background:#fff;color:#9AA0AC;font-size:11px;line-height:1;padding:0;">✕</button>
+      <div style="font-size:11px;opacity:.75;">${f.w}</div>
+      <div style="font-size:19px;font-weight:800;line-height:1.15;">${f.d}</div>
+      <div style="font-size:10.5px;opacity:.7;">${f.m}</div>
+      ${mpPath==='pick'?`<div style="font-size:10.5px;font-weight:800;margin-top:3px;">${n}/${mpPerDay()}</div>`:''}
+    </div>`;
+  }).join('');
+  const skipBar = mpSkipped.length
+    ? `<div style="margin-top:8px;background:#FEF9E7;border:1px solid #F5E4A8;border-radius:9px;padding:8px 10px;font-size:12px;color:#8A6D1F;display:flex;align-items:center;gap:8px;">
+         <span style="flex:1;">ข้ามไว้ ${mpSkipped.length} วัน — เลื่อนไปรับรอบถัดไปแทน</span>
+         <span onclick="mpClearSkips()" style="font-weight:800;text-decoration:underline;cursor:pointer;">เอาคืน</span>
+       </div>` : '';
+  const need = mpDaysNeeded();
+  const head = mpPath==='pick' ? ('เลือกเมนูของคุณ — '+days.length+' วันส่ง') : ('เมนูที่จะได้ — '+days.length+' วันส่ง');
+  /* ครัววางเมนูล่วงหน้าไม่ครบทุกรอบได้ — ต้องบอกตรงๆ ไม่งั้นลูกค้าเห็น "7 วันส่ง" ทั้งที่ซื้อ 12 รอบ
+     แล้วนึกว่าได้ของไม่ครบ */
+  const partial = days.length < need
+    ? '<div style="margin-top:8px;background:#EEF4FA;border:1px solid #CFE0F0;border-radius:9px;padding:8px 10px;font-size:12px;color:#1E5F8A;line-height:1.6;">'
+      + 'ครัววางเมนูล่วงหน้าไว้ ' + days.length + ' วัน จากทั้งหมด ' + need + ' รอบ — '
+      + '<b>อีก ' + (need-days.length) + ' รอบครัวจะจัดเมนูให้ตอนใกล้ถึงวัน</b></div>'
+    : '';
+  return `
+    <div style="margin-top:18px;">
+      <div style="font-size:13px;font-weight:700;color:#6B7280;margin-bottom:10px;">${head}</div>
+      ${shift}
+      <div style="display:flex;gap:8px;overflow-x:auto;padding:8px 2px 4px;-webkit-overflow-scrolling:touch;">${dayChips}</div>
+      ${partial}
+      ${skipBar}
+      ${mpMenuListHtml()}
+      ${mpPath==='pick' ? mpPickBarHtml() : ''}
+    </div>`;
+}
+
+function mpMenuListHtml(){
+  const list = MP_PLAN[mpSelDay]||[];
+  if (!list.length) return `<div style="padding:16px;text-align:center;color:#B8BCC8;font-size:13px;">วันนี้ยังไม่ได้วางเมนู</div>`;
+  const f = mpFmtDay(mpSelDay);
+  const sub = mpPath==='pick'
+    ? `เลือกได้ ${mpPerDay()} มื้อ · เลือกแล้ว ${mpCountDay(mpSelDay)}`
+    : `ครัวทำ ${list.length} เมนูวันนี้`;
+  let html = `<div style="margin-top:12px;border:1px solid #E5E5E1;border-radius:13px;overflow:hidden;">
+    <div style="background:#F7F7F4;padding:9px 12px;display:flex;align-items:center;gap:8px;">
+      <span style="font-size:13.5px;font-weight:800;">${f.w} ${f.d} ${f.m}</span>
+      <span style="flex:1;text-align:right;font-size:11.5px;color:#6B7280;">${sub}</span></div>`;
+  list.forEach(m => {
+    const code = (mpType==='lc'?'LC':'HP')+m.no;
+    const mi = MP_PLAN_MENUS[code]||{};
+    const src = (mi.image_urls && mi.image_urls[0]) ? thumbUrl(mi.image_urls[0], 120) : '';
+    const ph = src
+      ? `<img src="${h(src)}" loading="lazy" onerror="this.parentNode.textContent='🍱'" style="width:100%;height:100%;object-fit:cover;">`
+      : '🍱';
+    const q = (mpPicks[mpSelDay] && mpPicks[mpSelDay][m.no]) || 0;
+    const dayFull = mpCountDay(mpSelDay) >= mpPerDay();
+    const seaFull = m.sea && mpSeaPicked() >= MP_SEA_MAX;
+    const ctrl = mpPath==='pick' ? `
+      <div style="flex:0 0 auto;display:flex;align-items:center;gap:6px;">
+        <button onclick="mpChg('${m.no}',-1)" ${q?'':'disabled'} style="width:30px;height:30px;border-radius:50%;border:1.5px solid #E5E5E1;background:#fff;font-size:17px;line-height:1;color:#1A1A1A;${q?'':'opacity:.3;'}">−</button>
+        <span style="min-width:16px;text-align:center;font-size:15px;font-weight:800;">${q}</span>
+        <button onclick="mpChg('${m.no}',1)" ${(dayFull||seaFull)?'disabled':''} style="width:30px;height:30px;border-radius:50%;border:none;background:#1F4D3A;color:#fff;font-size:17px;line-height:1;${(dayFull||seaFull)?'opacity:.3;':''}">+</button>
+      </div>` : '';
+    /* 🥩 ปุ่มขอเปลี่ยนเนื้อเป็นหมู — โผล่เฉพาะเมนูเนื้อวัว และเฉพาะตอนสั่งเมนูนั้นจริงแล้ว
+       (ถ้าโชว์ตลอดจะเป็นปุ่มที่กดแล้วไม่มีผล = ลูกค้าเข้าใจผิดว่าเปลี่ยนได้ทั้งที่ยังไม่ได้สั่ง) */
+    const swapKey = mpSelDay+'|'+m.no, swapped = !!mpSwap[swapKey];
+    const swapBtn = (mpPath==='pick' && q>0 && mpIsBeef(m)) ? `
+      <div onclick="mpToggleSwap('${mpSelDay}','${m.no}',event)" style="
+          margin-top:5px;display:inline-flex;align-items:center;gap:5px;cursor:pointer;
+          border:1.5px solid ${swapped?'#1F4D3A':'#E5E5E1'};background:${swapped?'#EBF3EF':'#fff'};
+          border-radius:8px;padding:3px 8px;font-size:11.5px;font-weight:700;color:${swapped?'#1F4D3A':'#6B7280'};">
+        ${swapped?'✓ เปลี่ยนเป็นหมูแล้ว':'🥩 ไม่ทานเนื้อ · ขอเปลี่ยนเป็นหมู'}</div>` : '';
+    const tagBg = m.sea ? '#E3F0FA' : '#F0F4EE', tagFg = m.sea ? '#1E5F8A' : '#3F6B4F';
+    const tagTx = m.sea ? 'ทะเล' : h(String(m.protein||'').split(' ')[0]);
+    html += `<div style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid #F0F0EC;background:${q?'#F6FBF8':'#fff'};">
+      <div style="flex:0 0 auto;width:44px;height:44px;border-radius:9px;background:#F2F1EC;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:20px;">${ph}</div>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13.5px;font-weight:600;line-height:1.35;">${h(mi.name||m.name)}</div>
+        <span style="display:inline-block;margin-top:3px;font-size:10.5px;font-weight:700;border-radius:5px;padding:1px 6px;background:${tagBg};color:${tagFg};">${tagTx}</span>
+        ${swapBtn}
+      </div>${ctrl}</div>`;
+  });
+  return html + '</div>';
+}
+
+function mpPickBarHtml(){
+  const total = mpBoxesOf(), got = mpTotalPicked(), sea = mpSeaPicked();
+  const pct = total ? Math.min(100, got/total*100) : 0;
+  /* 🐟 เพดานทะเล 4/10 (40%) สูงกว่าพฤติกรรมจริง (ลูกค้าเลือกทะเลเฉลี่ย 28%)
+     = แทบไม่มีใครชน จึงทำเป็นบรรทัดเล็ก ไม่ทำให้ดูน่ากลัว และเปลี่ยนสีเฉพาะตอนชนจริง */
+  const seaLine = sea
+    ? `<div style="margin-top:4px;font-size:11px;color:${sea>=MP_SEA_MAX?'#C9573F':'#9AA0AC'};font-weight:${sea>=MP_SEA_MAX?'800':'400'};">เมนูทะเล ${sea}/${MP_SEA_MAX}</div>`
+    : '';
+  return `<div style="margin-top:12px;background:#F7F7F4;border-radius:12px;padding:11px 13px;">
+    <div style="display:flex;align-items:center;gap:8px;font-size:12.5px;">
+      <span style="font-weight:800;">เลือกแล้ว ${got} / ${total} มื้อ</span>
+      <span style="flex:1;text-align:right;color:${got>=total?'#1F4D3A':'#6B7280'};font-weight:${got>=total?'800':'400'};">${got>=total?'ครบแล้ว ✓':'เหลือ '+(total-got)}</span>
+    </div>
+    <div style="height:6px;background:#E5E5E1;border-radius:99px;margin-top:7px;overflow:hidden;">
+      <div style="height:100%;width:${pct}%;background:#1F4D3A;border-radius:99px;transition:width .18s;"></div>
+    </div>${seaLine}
+    <div style="margin-top:6px;font-size:11px;color:#9AA0AC;line-height:1.5;">เลือกไม่ครบก็สั่งได้ — ที่เหลือครัวจัดให้</div>
+  </div>`;
+}
+
 function selectMPType(t) {
-  mpType=t;
-  // สลับประเภท = สลับชุดเซ็ตที่เลือกได้ด้วย (Hyrox มีเซ็ตของตัวเอง ไม่ปนกับ HP/LC)
-  // ⚠️ ถ้าเปิดมาจากการ์ดที่ล็อกเซ็ตไว้ชุดเดียว ห้ามเปลี่ยนลิสต์ — ลูกค้าตั้งใจมาซื้อชุดนั้น
+  mpType = t;
   if (mpActiveSets.length !== 1) mpActiveSets = mpSetsForType(t);
   mpSetId = (mpActiveSets.length===1 ? mpActiveSets[0].id : '');
+  mpResetPlanChoices();
   renderMealPlanPicker();
 }
-function selectMPSet(id)  { mpSetId=id; renderMealPlanPicker(); }
+function selectMPSet(id){ mpSetId = id; mpResetPlanChoices(); renderMealPlanPicker(); }
+/* เปลี่ยนประเภท/ขนาด = จำนวนมื้อต่อวันเปลี่ยน ของที่เลือกไว้เดิมใช้ไม่ได้แล้ว ต้องล้าง
+   ไม่ล้าง = เลือกเกินโควตาโดยที่หน้าจอไม่ฟ้อง แล้วครัวได้ยอดผิด */
+function mpResetPlanChoices(){ mpPicks = {}; mpSwap = {}; mpSelDay = ''; mpDayOffset = 0; mpSkipped = []; }
 
 function updateMPConfirmBtn() {
   const btn = document.getElementById('mp-confirm-btn');
   if (!btn) return;
-  const ready = !!(mpType && mpSetId);
+  const ready = !!(mpType && mpSetId && mpPath);
   btn.disabled = !ready;
   btn.style.opacity = ready ? '1' : '0.5';
-  if (ready) {
-    const s = MP_SETS.find(x=>x.id===mpSetId);
-    const price = mpPriceOf(s, mpType);
-    btn.textContent = '✅ '+mpTypeLabel(mpType)+' · '+s.label+' — ฿'+price.toLocaleString();
-  } else {
-    btn.textContent = 'เลือกประเภทและขนาดก่อน';
-  }
+  if (!mpType || !mpSetId) { btn.textContent = 'เลือกประเภทและขนาดก่อน'; return; }
+  if (!mpPath) { btn.textContent = 'เลือกว่าจะให้เราจัดให้ หรือเลือกเอง'; return; }
+  const s = MP_SETS.find(x=>x.id===mpSetId);
+  const price = mpPriceOf(s, mpType);
+  const got = mpTotalPicked();
+  const tail = (mpPath==='pick' && got) ? ' · เลือกแล้ว '+got+' มื้อ' : '';
+  btn.textContent = '✅ '+mpTypeLabel(mpType)+' · '+s.label+' — ฿'+price.toLocaleString()+tail;
 }
 
 function addMealPlanToCart() {
-  if (!mpType||!mpSetId) return;
+  if (!mpType||!mpSetId||!mpPath) return;
   const s = MP_SETS.find(x=>x.id===mpSetId);
   const price = mpPriceOf(s, mpType);
   const cartId = 'mp_'+mpType+'_'+mpSetId;
+  const days = mpActiveDays();
+  /* สรุปเป็นข้อความให้แอดมิน/ครัวอ่านออกทันที โดยไม่ต้องเปิดโครงสร้างข้อมูล */
+  const lines = [];
+  days.forEach(k => {
+    const f = mpFmtDay(k), list = MP_PLAN[k]||[], p = mpPicks[k]||{};
+    const items = Object.keys(p).map(no => {
+      const m = list.find(x=>x.no===no)||{};
+      const code = (mpType==='lc'?'LC':'HP')+no;
+      const nm = (MP_PLAN_MENUS[code]&&MP_PLAN_MENUS[code].name) || m.name || code;
+      return nm + ' ×' + p[no] + (mpSwap[k+'|'+no] ? ' (เปลี่ยนเป็นหมู)' : '');
+    });
+    if (items.length) lines.push(f.w+' '+f.d+' '+f.m+' — '+items.join(', '));
+  });
+  const swapNote = Object.keys(mpSwap).length ? ' · ขอเปลี่ยนเนื้อเป็นหมู '+Object.keys(mpSwap).length+' มื้อ' : '';
+  const reqText = mpPath==='auto'
+    ? 'ให้ครัวจัดเมนูให้ทั้งหมด'
+    : (lines.length ? ('เลือกเอง '+mpTotalPicked()+'/'+mpBoxesOf()+' มื้อ'+swapNote) : 'ยังไม่ได้เลือกเมนู — ให้ครัวจัดให้');
+
   cart = cart.filter(c=>c.id!==cartId);
   cart.push({
     id:cartId, type:'meal_plan', mp_type:mpType, mp_set:mpSetId,
-    // ชื่อที่ครัว/แอดมิน/ลูกค้าเห็นตรงกันทุกหน้า — HX = Hyrox
     name:'Meal Plan '+(mpType==='hp'?'HP':mpType==='lc'?'LC':'Hyrox')+' · '+s.label+' ('+s.boxes+' กล่อง)',
     code:'MP-'+mpType.toUpperCase()+'-'+mpSetId.slice(0,1).toUpperCase(),
-    price, qty:1, request:mpRequest.trim(),
-    requestList: mpReqSel.map(j => mpRequestMenus[j]).filter(Boolean).map(r => ({code: r.code, name: r.name}))
+    price, qty:1,
+    request: (mpRequest.trim() ? mpRequest.trim()+' · ' : '') + reqText,
+    requestList: mpReqSel.map(j => mpRequestMenus[j]).filter(Boolean).map(r => ({code:r.code, name:r.name})),
+    /* ⬇️ ของใหม่ — ตัวสร้างรอบส่งอ่านไปใช้ต่อ · หน้าเดิมที่ไม่รู้จักฟิลด์พวกนี้ไม่กระทบเลย */
+    mp_path: mpPath,
+    mp_days: days,                        // วันส่งจริงหลังเลื่อน/ข้ามแล้ว
+    mp_picks: JSON.parse(JSON.stringify(mpPicks)),
+    mp_swap: Object.keys(mpSwap),
+    mp_plan_lines: lines
   });
   saveCart(); updateCartUI();
   toast('เพิ่ม Meal Plan เข้าตะกร้าแล้ว ✓');
@@ -1748,11 +2052,45 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
     const isMWF = dt => [1,3,5].includes(dt.getDay());
     let d = new Date(selDate + 'T00:00:00');
     while (!isMWF(d)) d.setDate(d.getDate()+1);
+    /* 📅 ลูกค้าเลื่อนวันเริ่ม / ข้ามรอบไหนไว้ในป้อบ = ใช้วันที่เขาเลือกตรงๆ
+       ไม่งั้นข้ามแล้วรอบยังลงวันเดิม = ลูกค้าไม่อยู่บ้านแต่ของไปส่ง
+       ⚠️ ใช้ก็ต่อเมื่อจำนวนวันตรงกับจำนวนรอบพอดี — ไม่ตรงเมื่อไหร่ถอยไปนับ จ/พ/ศ แบบเดิมทันที
+          (แพลนเมนูอาจหมดกลางคัน วันที่จะได้ไม่ครบ ปล่อยผ่านไปจะกลายเป็นของส่งไม่ครบรอบ) */
+    const picked = Array.isArray(cartItem.mp_days) ? cartItem.mp_days.slice(0, totalRounds) : [];
+    const dates = picked.slice();
+    if (dates.length){
+      let nd = new Date(dates[dates.length-1] + 'T00:00:00');
+      while (dates.length < totalRounds){
+        nd.setDate(nd.getDate()+1);
+        while (!isMWF(nd)) nd.setDate(nd.getDate()+1);
+        dates.push(localYMD(nd));
+      }
+    }
+    /* เมนูที่ลูกค้าเลือกไว้รายวัน → ยัดลง mp_deliveries.menu_items ของรอบนั้นเลย
+       หน้าแพลนเมนูของแอดมินกับใบงานครัวอ่านที่เดียวกัน = เห็นตรงกันทันทีโดยไม่ต้องแก้หน้าไหน */
+    const picks = cartItem.mp_picks || {};
+    const swapSet = new Set(cartItem.mp_swap || []);
+    const menuItemsFor = (dayKey) => {
+      const p = picks[dayKey]; if (!p) return null;
+      const out = [];
+      Object.keys(p).forEach(no => {
+        const code = (cartItem.mp_type === 'lc' ? 'LC' : 'HP') + no;
+        const src  = (MP_PLAN[dayKey]||[]).find(x => x.no === no) || {};
+        const nm   = (MP_PLAN_MENUS[code] && MP_PLAN_MENUS[code].name) || src.name || code;
+        const row  = { code, name: nm, qty: p[no], by: 'customer' };
+        // 🥩 ขอเปลี่ยนเนื้อเป็นหมู — ต้องติดไปกับตัวเมนู ไม่ใช่โน้ตท้ายใบ
+        //    ครัวอ่านทีละบรรทัด ถ้าไปอยู่ท้ายใบจะพลาดได้ง่ายมาก
+        if (swapSet.has(dayKey + '|' + no)) { row.swap = 'หมู'; row.note = 'เปลี่ยนเป็นหมู'; }
+        out.push(row);
+      });
+      return out.length ? out : null;
+    };
     const rows = [];
     for (let i = 1; i <= totalRounds; i++) {
-      const deliveryDateStr = localYMD(d);
-      const opensAt = new Date(d); opensAt.setDate(opensAt.getDate()-3);
-      const deadline = new Date(d); deadline.setDate(deadline.getDate()-1);
+      const deliveryDateStr = dates.length ? dates[i-1] : localYMD(d);
+      const dd = new Date(deliveryDateStr + 'T00:00:00');
+      const opensAt = new Date(dd); opensAt.setDate(opensAt.getDate()-3);
+      const deadline = new Date(dd); deadline.setDate(deadline.getDate()-1);
       rows.push({
         order_id: orderId,
         customer_id: customer?.id || null,
@@ -1770,6 +2108,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
         box_count: boxesPerRound,
         status: 'scheduled',
         customer_request: i === 1 ? (cartItem.requestList || []) : [],
+        menu_items: menuItemsFor(deliveryDateStr),
         request_opens_at: localYMD(opensAt),
         request_deadline: localYMD(deadline)
       });
