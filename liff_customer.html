@@ -1887,7 +1887,7 @@ async function init() {
       //   (เข้าประตู A แต่หน้าเว็บบอกว่าเป็น B → LINE ตอบ 400 Bad Request)
       // วิธีนี้: ประตูใหม่ส่ง ?lid= มาให้ · ประตูเก่าไม่ส่ง = ใช้ค่าเดิม → เปิดได้ทั้งคู่พร้อมกัน
       const _lid = (new URLSearchParams(location.search).get('lid') || '').trim();
-      const _okLid = /^d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : CFG.LIFF_ID;
+      const _okLid = /^\d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : CFG.LIFF_ID;
       await liff.init({ liffId: _okLid });
       if (!liff.isLoggedIn()) { liff.login(); return; }
       lineProfile = await liff.getProfile();
