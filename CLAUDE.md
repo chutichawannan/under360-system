@@ -50,7 +50,9 @@ Vercel:  under360-system.vercel.app (auto-deploy จาก GitHub ทันท�
 ```
 Supabase URL:   https://zdartbvhbvqlwzwyyiia.supabase.co
 Supabase anon:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8
-LIFF ID:        2010442513-NI3JGTkb
+LIFF ID:        2011148232-oul66cEs   <- ใช้จริง (21 ส.ค. 2026) provider UNDER360FOOD = บ้านเดียวกับช่องส่งข้อความ
+LIFF ID (เก่า): 2010442513-NI3JGTkb   <- ยังใช้ได้ (โค้ดรับ 2 ประตู) แต่ push หาลูกค้าไม่ได้ อย่าเอาไปใช้กับของใหม่
+LINE Messaging: แชนแนล 2005639534 (Under360 Cleanfood)
 Google Maps:    AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U
 ครัว LAT/LNG:  13.7179969, 100.5010971
 PROMPTPAY:      0846556601 (ออมสิน 020272500180)
@@ -386,7 +388,13 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 >
 > 🎓 **บทเรียนที่ยังใช้ได้ (CC พลาดเอง 7 ส.ค.):** *"จะทำคืนนี้" ≠ "ทำแล้ว"* — ห้ามบันทึกแผนเป็นผลลัพธ์ · milestone ทุกอันต้อง **verify ด้วยหลักฐานที่เปิดดู/query ซ้ำได้** ก่อนเขียนลง master (รอบนี้ทำตามแล้ว)
 
-## 📮 Hato ถือ "ช่องส่งข้อความ LINE" ของเราอยู่ — ต้องขอคืนตอนบอกเลิก (ยืนยัน 9 ส.ค. 2026)
+## 📮 ~~Hato ถือช่องส่งข้อความ~~ → ✅ **ปิดแล้ว 21 ส.ค. 2026 — ไม่ได้ขอคืน แต่ย้ายบ้าน LIFF ไป provider เดียวกับแชนแนล `2005639534`**
+
+> 🎉 **push หาลูกค้าได้เองแล้ว** (ประตูใหม่ `2011148232-oul66cEs`) · commit `d94d8eb` `6f53892` `d99ce30` `c28eb90`
+> ⚠️ **20 ส.ค. เคยส่งใบยืนยันไปหาลูกค้าผิดคน 3 ข้อความ** (สะพานจับคู่ uid เก่าด้วยเบอร์ → ผิดคน) → **ปิดการส่งไว้ก่อน** (`044a40f`)
+> 📚 ข้อความด้านล่างเก็บเป็นประวัติ อย่าเอาไปสั่งงานต่อ
+
+### (ประวัติ) Hato ถือช่องส่งข้อความ — ต้องขอคืนตอนบอกเลิก (ยืนยัน 9 ส.ค. 2026)
 
 > **นัทสั่งให้เป็น TODO หลัก + CC ทวงทุก 1-2 วัน** — ดู `TODO.md` หัวข้อแรก
 
@@ -552,7 +560,7 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 | 2 | `report.html` ยัง mock data ทั้งหมด | 🟡 นัทอยากได้เร็วขึ้น — ใช้วัด HP vs LC (เสา 3) |
 | 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว เหลือ mock แค่ fallback ตอน query พัง | 🟢 ใกล้เสร็จ |
 | 4 | `liff_register.html` ต่อ Supabase จริงแล้ว — ไม่ใช่ mock แล้ว | ✅ ไม่ใช่ปัญหาแล้ว |
-| 5 | `LINE_CHANNEL_ACCESS_TOKEN` ยังไม่ตั้งใน Vercel env — **บล็อก cron แจ้งเตือน Meal Plan ที่ส่งหาลูกค้า** (เปิด request window / เตือนก่อนส่ง 1 วัน) · *(สรุปออเดอร์เข้าไลน์นัท = ปิดแล้ว ไม่นับเป็นบล็อกเกอร์)* | 🔴 ก่อน launch |
+| 5 | ✅ **ปิดแล้ว 21 ส.ค. 2026** — ส่งข้อความเข้าแชทลูกค้าได้จริง (ย้าย LIFF ไป provider เดียวกับแชนแนลส่งข้อความ) · ⚠️ **แต่ 20 ส.ค. เคยส่งผิดคน → ปิดการส่งไว้ชั่วคราว** รอ CC ซ่อมสะพานจับคู่ uid | 🟡 ปิดชั่วคราว |
 | 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
 | 7 | ✅ แก้แล้ว — สต็อกหลักที่การ์ดเมนูไม่เคย sync ขึ้น `menu_items.stock_total` จริง (ผูกกับ dead code) | ✅ Done |
 | 8 | `mpIsoDate()` ในแท็บ "แผนผลิต" ใช้ `.toISOString().split('T')[0]` — pattern เดียวกับบั๊ก timezone UTC+7 ที่เคยแก้ไปแล้วในไฟล์อื่น แต่ยังไม่มีรายงานปัญหาจริง | 🟡 ระวังไว้ |
