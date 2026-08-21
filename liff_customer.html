@@ -2017,6 +2017,9 @@ async function init() {
   } catch(e) { console.warn('Render error', e); }
   const _screenParam = new URLSearchParams(location.search).get('screen');
   if (_screenParam === 'mp-manage') { showScr('s-mp-manage'); renderMpManage(); }
+  // 21 ส.ค. — ปุ่ม "แนบสลิป" ในใบยืนยันที่ส่งเข้าแชท ลิงก์ตรงมาหน้าออเดอร์เลย
+  //   เดิมปุ่มพาไปหน้าเมนู ลูกค้าต้องหาเองว่าแนบสลิปตรงไหน
+  else if (_screenParam === 'orders') { goOrders(); }
   else { showScr('s-menu'); }
 }
 

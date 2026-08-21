@@ -26,7 +26,9 @@ const SHOP_NAME  = "Under 360";
 const SHOP_BR    = "สาขา กรุงธนบุรี";
 const SHOP_TEL   = "0641736519";                 // เบอร์ปัจจุบัน (ของเก่า 092-756-8826 เลิกใช้แล้ว)
 const PROMPTPAY  = "0846556601";
-const LIFF_URL   = "https://liff.line.me/2010442513-NI3JGTkb";
+const LIFF_ID    = "2011148232-oul66cEs";                       // 21 ส.ค. — ย้ายมาบ้านเดียวกับช่องส่งข้อความแล้ว
+const LIFF_URL   = `https://liff.line.me/${LIFF_ID}?lid=${LIFF_ID}`;
+const SLIP_URL   = `https://liff.line.me/${LIFF_ID}?lid=${LIFF_ID}&screen=orders`;  // เข้าหน้าออเดอร์ตรงๆ เพื่อแนบสลิป
 const NOTIFY_KEY = "order_notified";             // kitchen_data key เก็บเลขใบที่ส่งแล้ว
 const LOOKBACK_MIN = 180;                        // มองย้อนหลังกี่นาที (กันใบตกหล่นตอนระบบล่ม)
 
@@ -83,15 +85,15 @@ const row = (label, value, opt = {}) => ({
 
 function buildFlex(o, items) {
   const lines = rollup(items);
-  const itemRows = lines.slice(0, 12).map((it) => ({
+  const itemRows = lines.slice(0, 40).map((it) => ({
     type: "box", layout: "horizontal", spacing: "sm", contents: [
       { type: "text", text: "x" + it.quantity, size: "sm", color: "#3C7A5C", weight: "bold", flex: 1 },
       { type: "text", text: it.name || "-", size: "sm", color: "#1A1A1A", flex: 6, wrap: true },
       { type: "text", text: baht(it.price * it.quantity), size: "sm", color: "#4A5A52", align: "end", flex: 3 },
     ],
   }));
-  if (lines.length > 12) {
-    itemRows.push({ type: "text", text: `และอีก ${lines.length - 12} รายการ`, size: "xs", color: "#9AA894" });
+  if (lines.length > 40) {
+    itemRows.push({ type: "text", text: `และอีก ${lines.length - 40} รายการ`, size: "xs", color: "#9AA894" });
   }
 
   // 🔴 นัทสั่งเอง 16 ส.ค.: "ถ้าลูกค้ากดอัพสลิปแล้ว อย่าส่งไปเชียว มันเป็นการทำงานซ้ำซ้อน
@@ -175,8 +177,11 @@ function buildFlex(o, items) {
       contents: [
         { type: "button", style: "primary", color: "#3C7A5C", height: "sm",
           action: { type: "uri", label: "ดูออเดอร์ของฉัน", uri: LIFF_URL } },
-        { type: "button", style: "secondary", height: "sm",
-          action: { type: "uri", label: "โทรหาร้าน", uri: "tel:" + SHOP_TEL } },
+        // 21 ส.ค. นัทสั่งเอง: เอา "โทรหาร้าน" ออก ใส่ "แนบสลิป" แทน
+        //   เหตุผล: สิ่งที่ลูกค้าต้องทำต่อคือจ่ายเงิน ไม่ใช่โทร → ปุ่มควรพาไปทำสิ่งนั้นเลย
+        //   แนบสลิปแล้ว (paid/pending_review) = ไม่โชว์ปุ่มนี้ ตามกฎ "อย่าทำงานซ้ำซ้อน"
+        ...(slipSent ? [] : [{ type: "button", style: "secondary", height: "sm",
+          action: { type: "uri", label: "แนบสลิป", uri: SLIP_URL } }]),
       ],
     },
   };
