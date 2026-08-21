@@ -216,12 +216,23 @@ function renderTier(pts){
 // ตอนนี้: ถาม LINE ทุกครั้ง · ไม่มี fallback เดา · ไม่ได้เปิดผ่าน LINE = ไม่โชว์อะไรเลย
 // ════════════════════════════════════════════════════════════════
 const LIFF_ID = '2010442513-NI3JGTkb';
+// 21 ส.ค. 2026 — "2 ประตู" ระหว่างย้ายบ้าน LIFF (ต้องเหมือน liff_customer.html)
+//   หน้านี้เปิดต่อจากหน้าสั่งอาหาร → ถ้าลูกค้าเข้าประตูใหม่ แต่หน้านี้ยืนยันว่าเป็นประตูเก่า
+//   LINE จะตอบ 400 Bad Request = เปิดไม่ได้ (เคยทำร้านล่ม 14 ชม. มาแล้ว 17 ส.ค.)
+const LIFF_ID_NEW = '2011148232-oul66cEs';
+const _lid  = (new URLSearchParams(location.search).get('lid') || '').trim();
+const _door = /^d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : LIFF_ID;
 let _lineUid = null;
 async function currentLineUid(){
   if(_lineUid) return _lineUid;
   try{
     if(typeof liff === 'undefined') throw new Error('no liff sdk');
-    await liff.init({ liffId: LIFF_ID });
+      // ลองประตูที่ระบุมาก่อน ไม่ผ่านลองอีกประตูเองอัตโนมัติ
+      let _ok=false,_err=null;
+      for (const _d of [_door, _door===LIFF_ID ? LIFF_ID_NEW : LIFF_ID]) {
+        try { await liff.init({ liffId: _d }); _ok=true; break; } catch(e){ _err=e; }
+      }
+      if(!_ok) throw (_err || new Error("liff.init ไม่ผ่านทุกประตู"));
     if(!liff.isLoggedIn()){ liff.login(); return null; }
     const prof = await liff.getProfile();
     _lineUid = prof && prof.userId;
