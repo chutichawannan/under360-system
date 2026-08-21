@@ -1587,6 +1587,15 @@ function pkInfo(el,ev){
   if(ev) ev.stopPropagation();   /* กันไปโดนพับการ์ดทั้งใบ */
   var c=el&&el.closest(".oc"); if(c) c.classList.toggle("pk-open");
 }
+function pkSetAll(oid,on){
+  var its=getOrderItems(oid); if(!its||!its.length) return;
+  pkLoadTicks();
+  groupOrderItems(its).forEach(function(g){ g.items.forEach(function(i){
+    var k=pkKeyOf(oid,i);
+    if(on) kqTicks[k]=1; else delete kqTicks[k];
+  }); });
+  pkSaveTicks();
+}
 function pkTick(el,ev){
   if(ev) ev.stopPropagation();
   if(!el) return;
@@ -1747,6 +1756,7 @@ async function markPacked(id){
   var sb_=getSB(); if(!sb_)return;
   var _w5=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id); if(_w5.error){kqWriteFail(_w5.error,"จัดกล่องเสร็จ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  pkSetAll(id,true);
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
   render();
 }
@@ -1755,6 +1765,7 @@ async function markUnpack(id){
   var sb_=getSB(); if(!sb_)return;
   var _w6=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id); if(_w6.error){kqWriteFail(_w6.error,"ย้อนสถานะ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
+  pkSetAll(id,false);
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดกล่อง");
   render();
 }
