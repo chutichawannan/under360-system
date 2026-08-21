@@ -6329,7 +6329,7 @@ async function obSearchCust(q){
   var box=document.getElementById('ob-cust-results'); if(!box)return;
   if(!q||q.length<2){box.innerHTML='';return;}
   var sb_=getSB(); var like='%'+q+'%';
-  var r=await sb_.from('customers').select('id,display_name,phone,addresses').or('display_name.ilike.'+like+',phone.ilike.'+like).limit(8);
+  var r=await sb_.from('customers').select('id,display_name,phone,addresses,line_uid,line_display_name').or('display_name.ilike.'+like+',phone.ilike.'+like).limit(8);
   obCustResults=r.data||[];
   box.innerHTML=obCustResults.length?obCustResults.map(function(c,i){
     return '<div onclick="obPickIdx('+i+')" style="padding:8px 10px;border:1px solid #F3F4F6;border-radius:8px;margin-bottom:4px;cursor:pointer;font-size:13px">'+obEsc(c.display_name||'(ไม่มีชื่อ)')+' · '+obEsc(c.phone||'-')+'</div>';
@@ -6340,7 +6340,10 @@ function obPickIdx(i){
   document.getElementById('ob-cust-search-wrap').style.display='none';
   document.getElementById('ob-cust-new').style.display='none';
   var p=document.getElementById('ob-cust-picked');
-  p.style.display='block'; p.innerHTML='<b>'+obEsc(c.display_name||'(ไม่มีชื่อ)')+'</b> · '+obEsc(c.phone||'-')+' <a onclick="obClearCust()" style="color:#C9573F;cursor:pointer;margin-left:8px;text-decoration:underline">เปลี่ยน</a>';
+  var lineTag = c.line_uid
+    ? '<span style="display:inline-block;margin-left:6px;font-size:11.5px;font-weight:700;color:#1F4D3A;background:#DCFCE7;border-radius:6px;padding:1px 7px;">💬 ส่งไลน์ได้</span>'
+    : '<span style="display:inline-block;margin-left:6px;font-size:11.5px;font-weight:700;color:#92400E;background:#FEF3C7;border-radius:6px;padding:1px 7px;" title="ลูกค้าคนนี้ไม่เคยเปิดแอปผ่าน LINE — ใบนี้จะไม่มีใบยืนยันเด้งเข้าแชท ต้องแจ้งเอง">📵 ไม่มีไลน์</span>';
+  p.style.display='block'; p.innerHTML='<b>'+obEsc(c.display_name||'(ไม่มีชื่อ)')+'</b> · '+obEsc(c.phone||'-')+lineTag+' <a onclick="obClearCust()" style="color:#C9573F;cursor:pointer;margin-left:8px;text-decoration:underline">เปลี่ยน</a>';
   var addr=(c.addresses&&c.addresses[0])?(c.addresses[0].address||''):'';
   if(addr)document.getElementById('ob-addr').value=addr;
   document.getElementById('ob-rname').value=c.display_name||'';
@@ -6386,6 +6389,8 @@ async function obSubmit(){
       delivery_week:'current', source:'admin_manual', notes:'สั่งแทนโดย '+admin,
       payment_status:document.getElementById('ob-paid').checked?'paid':'unpaid' };
     if(obHasCreatedBy) payload.created_by=admin;
+    if(obCust && obCust.line_uid) payload.line_uid = obCust.line_uid;
+    if(obCust && obCust.line_display_name) payload.line_display_name = obCust.line_display_name;
     var ord=await sb_.from('orders').insert(payload).select().single(); if(ord.error)throw ord.error;
     /* order_items — เขียน notes ให้ตรงกับที่ LIFF ใช้ ไม่งั้น KQ/แพลนเมนู/รายงาน อ่านประเภทออเดอร์ไม่ออก */
     var items=[];
@@ -6443,6 +6448,7 @@ async function obSubmit(){
       var ymd=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
       for(var i=1;i<=rounds;i++){
         planRows.push({ order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
+          line_uid:(obCust&&obCust.line_uid)||null,
           mp_type:c.planType, mp_set:mpSet, round_no:i, total_rounds:rounds,
           delivery_date: (i===1 ? date : ymd(d)),
           time_slot:slot, time_slot_label:slotLabels[slot]||'',
