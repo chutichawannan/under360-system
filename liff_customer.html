@@ -974,6 +974,7 @@ const CFG = {
   SUPABASE_URL:  'https://zdartbvhbvqlwzwyyiia.supabase.co',        // https://xxxxx.supabase.co
   SUPABASE_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8',   // eyJ...
   LIFF_ID:       '2010442513-NI3JGTkb',             // 1234567890-xxxxxxxx
+  LIFF_ID_NEW:   '2011148232-oul66cEs',             // ประตูใหม่ (บ้าน UNDER360FOOD) — ใช้ตอนย้าย
   DEV_MODE:      false,                     // true = ใช้ test user แทน Line login
   DEV_PROFILE: { userId:'dev_001', displayName:'Test User', pictureUrl:'' }
 };
@@ -1888,7 +1889,17 @@ async function init() {
       // วิธีนี้: ประตูใหม่ส่ง ?lid= มาให้ · ประตูเก่าไม่ส่ง = ใช้ค่าเดิม → เปิดได้ทั้งคู่พร้อมกัน
       const _lid = (new URLSearchParams(location.search).get('lid') || '').trim();
       const _okLid = /^\d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : CFG.LIFF_ID;
-      await liff.init({ liffId: _okLid });
+      // ลองประตูที่ระบุมาก่อน · ไม่ผ่านให้ลองอีกประตูอัตโนมัติ
+      //   เหตุผล: LINE ไม่ยอมให้ใส่ ?lid= ในช่องปลายทางของ LIFF (ลองแล้ว 21 ส.ค. มันตัดทิ้ง)
+      //   → พารามิเตอร์ต้องมาจากตัวลิงก์ริชเมนู ซึ่งอาจหายได้ในบางทาง (เช่น ลิงก์เก่าที่ลูกค้าเซฟไว้)
+      //   ตัวสำรองนี้ทำให้ "เข้าประตูไหนก็เข้าได้" — กัน 400 Bad Request ซ้ำรอย 17 ส.ค. เด็ดขาด
+      const _doors = [_okLid, _okLid === CFG.LIFF_ID ? CFG.LIFF_ID_NEW : CFG.LIFF_ID].filter(Boolean);
+      let _opened = false, _lastErr = null;
+      for (const _d of _doors) {
+        try { await liff.init({ liffId: _d }); _opened = true; break; }
+        catch (err) { _lastErr = err; }
+      }
+      if (!_opened) throw (_lastErr || new Error("liff.init ไม่ผ่านทุกประตู"));
       if (!liff.isLoggedIn()) { liff.login(); return; }
       lineProfile = await liff.getProfile();
     }
