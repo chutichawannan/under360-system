@@ -1880,7 +1880,15 @@ async function init() {
     if (CFG.DEV_MODE) {
       lineProfile = CFG.DEV_PROFILE;
     } else {
-      await liff.init({ liffId: CFG.LIFF_ID });
+      // 21 ส.ค. 2026 — "2 ประตู" ระหว่างย้ายบ้าน LIFF
+      //   ประตูเก่า 2010442513-NI3JGTkb (provider: Under360 system) — ลูกค้าปัจจุบันใช้อยู่
+      //   ประตูใหม่ 2011148232-oul66cEs (provider: UNDER360FOOD — บ้านเดียวกับช่องส่งข้อความ)
+      // ⚠️ ห้ามฮาร์ดโค้ดรหัสเดียวแล้วสลับ — เคยทำมาแล้ว 17 ส.ค. ร้านสั่งของไม่ได้ 14 ชม.
+      //   (เข้าประตู A แต่หน้าเว็บบอกว่าเป็น B → LINE ตอบ 400 Bad Request)
+      // วิธีนี้: ประตูใหม่ส่ง ?lid= มาให้ · ประตูเก่าไม่ส่ง = ใช้ค่าเดิม → เปิดได้ทั้งคู่พร้อมกัน
+      const _lid = (new URLSearchParams(location.search).get('lid') || '').trim();
+      const _okLid = /^d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : CFG.LIFF_ID;
+      await liff.init({ liffId: _okLid });
       if (!liff.isLoggedIn()) { liff.login(); return; }
       lineProfile = await liff.getProfile();
     }
