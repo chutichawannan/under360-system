@@ -3982,11 +3982,20 @@ function isNewMemberCustomer(){
   if(notes.includes('[PRE-HATO')||notes.includes('[B2B')||notes.includes('[ADMIN')) return false;
   return true;
 }
+/* 👑 "เพื่อนนัท" — นัทสั่งเอง 21 ส.ค.: ลด 10% + ส่งฟรี ทุกครั้งที่สั่ง ตลอดไป
+   ธงอยู่ที่ customers.customer_type = 'vip_friend' — แอดมินกดติดป้ายเองในหน้าลูกค้า
+   ⛔ ไม่ผูกกับเบอร์/ชื่อ — 20 ส.ค. เคยเดาตัวตนจากเบอร์แล้วข้อมูลไปหาลูกค้าผิดคน
+      (658 เบอร์ผูกหลายชื่อ) → ต้องเป็นแถวที่แอดมินเลือกเองเท่านั้น */
+function isVipFriend(){ return !!(customer && (customer.customer_type||'')==='vip_friend'); }
 function autoPromos(sub){
   const list = [];
   if(isNewMemberCustomer() && sub>=500)
     list.push({ kind:'welcome', code:'WELCOME50', label:'ส่วนลดสมาชิกใหม่ (ครบ ฿500)', type:'fixed',   value:50 });
-  if(customer && (customer.tier||'')==='Wellness Warriors')
+  /* เพื่อนนัท 10% กับ Wellness Warriors 5% ต้องไม่ทบกันเป็น 15%
+     ให้เพื่อนนัทกินคนเดียว (มากกว่าอยู่แล้ว) — ลูกค้าไม่เสียเปรียบ และเลขไม่เฟ้อ */
+  if(isVipFriend())
+    list.push({ kind:'vip',     code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',      type:'percent', value:10 });
+  else if(customer && (customer.tier||'')==='Wellness Warriors')
     list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
   return list;
 }
@@ -4090,7 +4099,9 @@ async function resolveCanonicalCustomer(phone, uid, lineName){
   try{
     const norm = normalizePhone(phone);
     if(!norm || !uid) return customer;
-    const { data, error } = await sb.from('customers').select('id,line_uid,source_first,admin_notes').eq('phone', norm).limit(10);
+    /* ⚠️ ต้องดึง customer_type/tier มาด้วย — ของที่คืนจากฟังก์ชันนี้ไปแทน customer ทั้งก้อน
+       ถ้าไม่ดึงมา ลูกค้าที่ถูกรวมแถวจะเสียส่วนลดอัตโนมัติทุกตัวแบบเงียบๆ (ทั้ง WW5 เดิม และเพื่อนนัท) */
+    const { data, error } = await sb.from('customers').select('id,line_uid,source_first,admin_notes,customer_type,tier').eq('phone', norm).limit(10);
     if(error || !data || !data.length) return customer;
     // แถวเก่า = เบอร์นี้ที่ line_uid "ว่าง" เท่านั้น (migrate/keyed-by-phone) — ไม่แตะแถวที่มี line_uid ของคนอื่นอยู่ (กัน hijack เบอร์แชร์)
     const old = data.find(r => !r.line_uid && r.id !== (customer && customer.id));
@@ -4217,7 +4228,10 @@ function computeOrder(){
   const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
   // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB + Meal Plan ทุกแพ็ค → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
   const pkgFreeShip = cartHasFreeShipping();
-  if(pkgFreeShip) shipDisc = fee;
+  /* ส่งฟรีมี 2 ระดับแล้ว: ระดับสินค้า (แพคที่ติ๊กไว้) และระดับลูกค้า (เพื่อนนัท)
+     เขียนแยกบรรทัดตั้งใจ — คนทั่วไปไม่โดนอะไรเปลี่ยนเลย ตรรกะค่าส่งเดิมไม่ถูกแตะ */
+  const vipFreeShip = isVipFriend();
+  if(pkgFreeShip || vipFreeShip) shipDisc = fee;
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDiscTotal + shipDisc;
   const total = Math.max(0, sub - itemDiscTotal + feeAfter);

@@ -5724,6 +5724,8 @@ function custCategory(c){
   var t=c.customer_type||"";
   if(t==="b2b") return {key:"b2b", label:"ร้านค้า B2B", bg:"#EDE9FE", fg:"#6D28D9"};
   if(t==="vip") return {key:"vip", label:"VIP",         bg:"#FEF3C7", fg:"#B45309"};
+  // 👑 เพื่อนนัท = ลด 10% + ส่งฟรีอัตโนมัติทุกใบ (ระบบให้เอง แอดมินไม่ต้องกดโค้ด)
+  if(t==="vip_friend") return {key:"vip_friend", label:"👑 เพื่อนนัท", bg:"#FDE68A", fg:"#92400E"};
   var s=c.source_first||"";
   if(s==="hato")         return {key:"hato",  label:"Hato",        bg:"#DBEAFE", fg:"#1E40AF"};
   if(s==="pre_hato"||s==="legacy") return {key:"old", label:"ก่อน Hato", bg:"#FEF3C7", fg:"#92400E"};
@@ -6021,7 +6023,8 @@ async function selectCustomer(id){
     // ── ตั้งประเภทลูกค้า (แอดมิน override — เช่น ร้านค้า B2B) ──
     +"<div class='p-section'><div class='p-sec-title'>🏷️ ตั้งประเภท (override)</div>"
     +"<div style='display:flex;gap:6px;flex-wrap:wrap'>"
-    +custTypeBtn(id,c,'b2b','🏪 ร้านค้า B2B')+custTypeBtn(id,c,'vip','⭐ VIP')+custTypeBtn(id,c,'','↺ อนุมานเอง')
+    +custTypeBtn(id,c,'b2b','🏪 ร้านค้า B2B')+custTypeBtn(id,c,'vip','⭐ VIP')
+    +custTypeBtn(id,c,'vip_friend','👑 เพื่อนนัท (ลด 10% + ส่งฟรี)')+custTypeBtn(id,c,'','↺ อนุมานเอง')
     +"</div>"
     +"<div style='font-size:11px;color:var(--ink-soft);margin-top:6px'>ตั้งเอง = override การอนุมานจากที่มา (เช่น ร้านค้าที่ลูกเลือกเป็นลูกค้า → กรองออกจากสถิติผู้บริโภคได้)</div>"
     +"</div>"
