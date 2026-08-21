@@ -21,7 +21,7 @@
  * ข้อความที่ส่ง:
  *   slip_ok   เมื่อ payment_status → paid / pending_review   "ได้รับสลิปแล้ว"
  *   packed    เมื่อ status → ready                            "อาหารพร้อมแล้ว"
- *   shipping  เมื่อ status → delivered                        "กำลังนำไปส่ง"
+ *   shipping  ⛔ ปิดไว้ 21 ส.ค. — delivered = ส่งถึงแล้ว ไม่ใช่กำลังไป (รอมีสถานะ "ออกจากร้าน" ก่อน)
  *
  * เรียกใช้:
  *   /api/notify-order-status?dry=1              ดูว่าจะส่งอะไร ไม่ส่งจริง
@@ -32,14 +32,28 @@
  *    (userId คนละ provider = LINE ไม่รู้จักลูกค้า — ดู docs/LINE_PROVIDER.md)
  */
 const getLineToken = require('./_line_token.js');
-const { pushWithFallback } = require('./_reach_uid.js');
+// 21 ส.ค. — เลิกใช้ _reach_uid.js (สะพานเดา uid ที่ปิดถาวรหลังเหตุ 20 ส.ค. ส่งไปหาลูกค้าคนอื่น)
+//   ส่งเฉพาะ uid ที่อยู่ในใบออเดอร์นั้นเท่านั้น ⛔ ห้ามเดาว่าไอดีไหนเป็นของใคร
+async function pushToOrderUid(token, order, messages) {
+  try {
+    const r = await fetch('https://api.line.me/v2/bot/message/push', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+      body: JSON.stringify({ to: order.line_uid, messages }),
+    });
+    if (r.ok) return { ok: true, via: 'uid ในใบออเดอร์' };
+    return { ok: false, error: 'HTTP ' + r.status + ' ' + (await r.text()).slice(0, 120), via: 'uid ในใบออเดอร์' };
+  } catch (e) { return { ok: false, error: String(e && e.message), via: 'uid ในใบออเดอร์' }; }
+}
 
 const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const H   = { apikey: KEY, Authorization: 'Bearer ' + KEY, 'Content-Type': 'application/json' };
 
 const NOTIFY_KEY = 'order_status_notified';
-const LIFF_URL   = 'https://liff.line.me/2010442513-NI3JGTkb';
+// 21 ส.ค. — ไฟล์นี้ตกสำรวจตอนย้ายบ้าน LIFF (พี่เก่งจับได้ · PM verify กับ origin/main แล้ว)
+const LIFF_ID    = '2011148232-oul66cEs';
+const LIFF_URL   = `https://liff.line.me/${LIFF_ID}?lid=${LIFF_ID}`;
 const SHOP_TEL   = '0641736519';
 const LOOKBACK_H = 48;   // มองย้อนหลังกี่ชั่วโมง (กันใบตกหล่นตอนระบบล่ม)
 
@@ -112,7 +126,11 @@ function kindsFor(o) {
   const out = [];
   if (o.payment_status === 'paid' || o.payment_status === 'pending_review') out.push('slip_ok');
   if (o.status === 'ready') out.push('packed');
-  if (o.status === 'delivered') out.push('shipping');
+  // 🛑 ปิดไว้ 21 ส.ค. — `delivered` ในระบบเรา = **ส่งถึงแล้ว** ไม่ใช่ "กำลังไป"
+  //    ถ้าเปิด ลูกค้าจะได้ข้อความ "คนส่งกำลังเดินทางไปหาคุณ" หลังจากรับของไปแล้ว = ระบบดูโง่
+  //    รากปัญหา: ไม่มีสถานะ "ออกจากร้านแล้ว" เลย มีแค่ confirmed → ready → delivered
+  //    เปิดคืนได้เมื่อมีสถานะนั้นจริง (พี่เก่งเป็นคนชี้ · PM ยืนยัน)
+  // if (o.status === 'delivered') out.push('shipping');
   return out;
 }
 
@@ -149,7 +167,7 @@ module.exports = async (req, res) => {
 
         if (dry) { report.push({ order: o.order_number, kind, to: String(o.line_uid).slice(0, 10) + '…' }); sent.add(mark); continue; }
 
-        const rr = await pushWithFallback(token, o, [bubble(o, kind)]);
+        const rr = await pushToOrderUid(token, o, [bubble(o, kind)]);
         if (rr.ok) { sent.add(mark); report.push({ order: o.order_number, kind, ok: true, "ส่งผ่าน": rr.via }); }
         else { report.push({ order: o.order_number, kind, error: rr.error, "ลองแล้ว": rr.via }); }
       }
