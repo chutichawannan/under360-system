@@ -1656,7 +1656,16 @@ async function loadMpPlan(){
 function mpBoxesOf(){ const s = MP_SETS.find(x=>x.id===mpSetId); return s ? s.boxes : 0; }
 function mpDaysNeeded(){ const b = mpBoxesOf(); return b ? Math.max(1, Math.round(b/7)) : 0; }
 function mpPerDay(){ const b = mpBoxesOf(), d = mpDaysNeeded(); return d ? Math.round(b/d) : 0; }
-function mpFutureDays(){ const t = localYMD(new Date()); return Object.keys(MP_PLAN).filter(k=>k>=t).sort(); }
+/* ⏰ Meal Plan ตัดรอบ 8:30 น. ของวันส่ง — เลยเวลาแล้ววันนี้ต้องหายจากปฏิทินทันที
+   (นัทเจอเอง 21 ส.ค.: วันที่ 21 ยังโผล่ให้เลือกทั้งที่ตัดรอบไปแล้ว)
+   ใช้เกณฑ์เดียวกับตัวเลือกวันส่งที่หน้าเช็คเอาท์ (beforeMpCutoff) ไม่งั้น 2 หน้าจะขัดกันเอง */
+function mpFutureDays(){
+  const now = new Date();
+  const beforeCut = now.getHours() < MP_CUTOFF_HOUR
+    || (now.getHours() === MP_CUTOFF_HOUR && now.getMinutes() < MP_CUTOFF_MIN);
+  const today = localYMD(now);
+  return Object.keys(MP_PLAN).filter(k => beforeCut ? k >= today : k > today).sort();
+}
 function mpUsableDays(){ return mpFutureDays().filter(k => mpSkipped.indexOf(k) < 0); }
 function mpMaxOffset(){ return Math.max(0, mpUsableDays().length - mpDaysNeeded()); }
 function mpActiveDays(){
