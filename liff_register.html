@@ -135,7 +135,7 @@ const LIFF_ID="2010442513-NI3JGTkb";
 //   LINE จะตอบ 400 Bad Request = เปิดไม่ได้ (เคยทำร้านล่ม 14 ชม. มาแล้ว 17 ส.ค.)
 const LIFF_ID_NEW = '2011148232-oul66cEs';
 const _lid  = (new URLSearchParams(location.search).get('lid') || '').trim();
-const _door = /^d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : LIFF_ID;
+const _door = /^\d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : LIFF_ID;
 const DEV=false;
 let sb=null,lineProfile=null,otpCode=null,otpOk=false,cdTimer=null;
 
