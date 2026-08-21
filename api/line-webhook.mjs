@@ -153,13 +153,22 @@ async function getPersona() {
 //     ส่วนห้อง kapan ที่ตั้งไว้ให้ตอบไวกลับไม่มีอะไรวิ่งเข้าเลย — นี่คือต้นเหตุที่ช้าจริงๆ
 const HOME_ROOM = 'kapan';
 
-async function toBoard(text) {
+/* 🤫 กลุ่ม "Claude พลอย+นัท" — ห้องกะปันตอบเองในกลุ่มนี้ (นัทสั่ง 21 ส.ค. · ติมาแล้ว 2 รอบ)
+   ปัญหาเดิม 2 ชั้น:
+     ① ประโยคสำเร็จรูป "รับเรื่องแล้วค่ะ" เด้งก่อนเสมอ = พลอยเห็นของที่ไม่ควรเห็น
+     ② บอร์ดไม่บอกว่าข้อความมาจากกลุ่มไหน → ห้องกะปันเดาปลายทางผิด ตอบไปโผล่แชทเดี่ยวนัท พลอยเลยไม่เห็นคำตอบ
+   ⚠️ ผูกกับ groupId เดียวเท่านั้น — กลุ่มครัว/คุณหมิว/กิ๊ฟ ต้องเงียบเหมือนเดิม (นัทสั่งไว้ 2 รอบ) */
+const PLOY_GROUP = 'Cf191629bb565e05ad31806a3a670354b';
+
+async function toBoard(text, tag) {
   const { room, body, explicit } = routeRoom(text);
   const target = explicit ? room : HOME_ROOM;      // ระบุห้องมาเอง = ส่งตรงห้องนั้น · ไม่ระบุ = เข้าห้องกะปัน
-  const rows = [{ room: target, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: body }];
+  // ป้ายบอกที่มา (เช่น "[กลุ่มพลอย]") — เติมหลังแยกห้องแล้ว ไม่งั้นตัวแยกห้องอ่านชื่อห้องไม่เจอ
+  const shown = tag ? (tag + ' ' + body) : body;
+  const rows = [{ room: target, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: shown }];
   // สั่งห้องอื่นตรงๆ — ให้กะปันรู้ด้วยว่านัทสั่งอะไรไปไหน จะได้ตามงานให้ถูก
   if (target !== HOME_ROOM) rows.push({ room: HOME_ROOM, sender: 'นัท (สั่งผ่านไลน์)', role: 'user',
-    text: '[นัทสั่งตรงไปห้อง ' + target + '] ' + body });
+    text: '[นัทสั่งตรงไปห้อง ' + target + '] ' + shown });
   try {
     await fetch(SB + '/session_messages', {
       method: 'POST',
@@ -489,8 +498,10 @@ export default async function handler(req, res) {
         // 📮 นัทสั่งให้ "ถาม" ในกลุ่ม = ตั้งโหมดรอคำตอบของกลุ่มนี้ไว้
         //    (คำว่า ถาม/สอบถาม/ขอ/เช็ค/ทวง = สั่งให้ไปเอาคำตอบมา ไม่ใช่แค่ส่งงานเข้าห้อง)
         if (/ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
-        await toBoard(body);
-        await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
+        const _ploy = (groupId === PLOY_GROUP);
+        await toBoard(body, _ploy ? '[กลุ่มพลอย]' : '');
+        // กลุ่มพลอย = ห้องกะปันตอบเอง อย่าเด้งประโยคสำเร็จรูปตัดหน้า · กลุ่มอื่นคงเดิมทุกอย่าง
+        if (!_ploy) await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
       }
       continue;
     }
