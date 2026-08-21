@@ -4603,7 +4603,8 @@ var MSG_MAX_STOPS   = 3;
 // 🔧 6 ส.ค. 2569 (ห้องพี่เก่ง): ขยับ 8 → 12 หลังวัดจริง — คู่จตุจักร↔บางเขน ห่างกัน 8.2 กม.
 //    ถูกตัดทิ้งเพราะเกิน 8 ไปนิดเดียว ทั้งที่อยู่ทางเดียวกัน (จุดไกลอยู่ถัดจากจุดใกล้) รวมแล้วประหยัด ฿144 (37%)
 //    → ปลอดภัยที่จะขยาย เพราะ "ราคาจริง" เป็นคนตัดสินอยู่แล้ว รอบไหนรวมแล้วไม่ถูกลงจะถูกแตกออกอัตโนมัติ
-var MSG_MAX_PAIR_KM = 12;
+// ⚠️ ไม่ใช้คัดผู้สมัครใน DP แล้ว (ดูเหตุผลใน msgPickGroups) — เหลือใช้เฉพาะตอนงานเกิน 16 จุดที่ DP ไม่ไหว
+var MSG_FALLBACK_PAIR_KM = 20;
 // สูตรประเมินราคา จากเรทจริง 47 ตัวอย่าง (R²=0.885) — ใช้ "คัดผู้สมัคร" เท่านั้น
 // ราคาที่โชว์บนจอเป็นเรทจริงที่ขอสดทุกตัว ไม่เคยเอาสูตรมาโชว์
 var MSG_EST_BASE = 53, MSG_EST_PER_KM = 9.4;
@@ -4695,7 +4696,7 @@ function msgPickGroups(pts){
     while(left.length){
       var seed=left.shift(), g=[seed];
       while(g.length<MSG_MAX_STOPS){
-        var bi=-1,bd=MSG_MAX_PAIR_KM;
+        var bi=-1,bd=MSG_FALLBACK_PAIR_KM;
         for(var i=0;i<left.length;i++){ var d=msgKm(seed,left[i]); if(d<bd){bd=d;bi=i;} }
         if(bi<0) break;
         g.push(left.splice(bi,1)[0]);
@@ -4704,13 +4705,26 @@ function msgPickGroups(pts){
     }
     return out;
   }
+  // 🔴 เลิกใช้ "เพดานระยะระหว่างจุด" มาคัดผู้สมัคร — นัทเคาะ 21 ส.ค. 2569
+  //    เดิมตัดคู่ที่ห่างกันเกินเพดานทิ้งก่อนคำนวณ = "ไม่เคยลอง" คู่นั้นเลยแม้แต่ครั้งเดียว
+  //    วัดจริง 21 ส.ค.: 45 คู่ที่เวลารวมกันได้ถูกตัดทิ้ง · 17 คู่ในนั้นรวมแล้วประหยัดจริงเกิน ฿20
+  //    เคสที่ชัดสุด — Aunaun + Raining ห่างกัน 12.3 กม. (เกินเพดานแค่ 0.3!) รวมแล้วประหยัด ฿62
+  //    เจอปัญหาเดียวกันมาแล้ว 3 รอบ: เพดาน 8 ทิ้ง ฿144 · เพดาน 12 ทิ้ง ฿65 · วันนี้ ฿62
+  //    🎓 บทเรียน: "ห่างกันกี่กิโล" ไม่ใช่ตัวชี้ว่าคุ้ม — "อยู่ทางเดียวกันหรือเปล่า" ต่างหาก
+  //       ไล่ขยับเพดานทีละครั้งจะเจอเคสใหม่ไปเรื่อยๆ ไม่มีวันจบ
+  //    ตอนนี้ให้ msgEstimate (คิดจาก "ระยะรวมทั้งรอบ") เป็นคนตัดสิน — คู่ที่อ้อมไกลจริงมันไม่เลือกเอง
+  //    + ราคาจริงยังเป็นด่านสุดท้าย: รอบไหนรวมแล้วไม่ถูกลงจะถูกแตกออกใน msgPlanRoutes อยู่แล้ว
   var FULL=(1<<N)-1, cands=[];
+  // แยกผู้สมัครใส่ถังตาม "จุดที่เล็กที่สุดในกลุ่ม" — พอไม่มีเพดานคัด ผู้สมัครเยอะขึ้นมาก
+  // (16 จุด = 696 กลุ่ม) ถ้าวนทั้งกองทุก state = ~45 ล้านรอบ → หน้าจอค้าง
+  // แยกถังก่อน แล้วแต่ละ state หยิบเฉพาะถังที่ใช้ได้ → เหลือ ~3 ล้านรอบ
+  var byLow=[]; for(var i=0;i<N;i++) byLow.push([]);
   for(var m=1;m<=FULL;m++){
-    var g=[]; for(var i=0;i<N;i++) if(m&(1<<i)) g.push(pts[i]);
+    var g=[], lowIdx=-1;
+    for(var i=0;i<N;i++) if(m&(1<<i)){ g.push(pts[i]); if(lowIdx<0) lowIdx=i; }
     if(g.length>MSG_MAX_STOPS) continue;
-    var ok=true;
-    for(var x=0;x<g.length&&ok;x++) for(var y=x+1;y<g.length;y++) if(msgKm(g[x],g[y])>MSG_MAX_PAIR_KM){ok=false;break;}
-    if(ok) cands.push({m:m,g:g,cost:msgEstimate(g)});
+    var q={m:m,g:g,cost:msgEstimate(g)};
+    cands.push(q); byLow[lowIdx].push(q);
   }
   var dp=new Array(FULL+1).fill(Infinity), pick=new Array(FULL+1).fill(null);
   dp[0]=0;
@@ -4718,10 +4732,11 @@ function msgPickGroups(pts){
     if(dp[s]===Infinity) continue;
     var rest=FULL&~s; if(!rest) continue;
     var low=rest&-rest;                       // ล็อกจุดแรกที่ยังไม่ถูกจัด กันนับซ้ำ
-    for(var c=0;c<cands.length;c++){
-      var q=cands[c];
-      if(q.m&s) continue; if(!(q.m&low)) continue;
-      if(dp[s]+q.cost<dp[s|q.m]){ dp[s|q.m]=dp[s]+q.cost; pick[s|q.m]={prev:s,g:q.g}; }
+    var bucket=byLow[31-Math.clz32(low)];
+    for(var c=0;c<bucket.length;c++){
+      var q2=bucket[c];
+      if(q2.m&s) continue;
+      if(dp[s]+q2.cost<dp[s|q2.m]){ dp[s|q2.m]=dp[s]+q2.cost; pick[s|q2.m]={prev:s,g:q2.g}; }
     }
   }
   var out2=[], cur=FULL;
