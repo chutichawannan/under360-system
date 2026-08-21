@@ -23,6 +23,27 @@ async function knownGroup(gid) {
   } catch { return false; }
 }
 
+/* 📝 จดคำตอบของกะปันลงตารางเดียวกับข้อความคน (CC สั่ง 21 ส.ค.)
+   เดิมจดแต่ข้อความคน → กะปันเปิดห้องรอบใหม่แล้วไม่เห็นว่าตัวเองตอบอะไรไป
+   = ตอบซ้ำเรื่องเดิม พลอยจะรู้สึกว่าคุยกับคนความจำสั้น
+   ⚠️ จดไม่ได้ต้องไม่ทำให้ "ส่งข้อความ" ล้ม — การส่งถึงคนสำคัญกว่าการจด */
+async function logBotSaid(gid, text) {
+  if (!SRV) return;
+  try {
+    await fetch(SB + '/line_group_messages', {
+      method: 'POST',
+      headers: { apikey: SRV, Authorization: 'Bearer ' + SRV, 'Content-Type': 'application/json',
+                 Prefer: 'return=minimal,resolution=ignore-duplicates' },
+      body: JSON.stringify({
+        message_id: 'say_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8),
+        group_id: gid || null, user_id: 'bot', display_name: 'กะปัน',
+        msg_type: 'text', text: text, is_bot_reply: true,
+        line_ts: new Date().toISOString(),
+      }),
+    });
+  } catch (e) { console.error('logBotSaid failed:', e); }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') return res.status(200).send('ok');
 
@@ -68,6 +89,7 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
       body: JSON.stringify({ to: target, messages: msgs }),
     });
+    if (r.ok) await logBotSaid(toGroup, full);   // จดเฉพาะที่ส่งสำเร็จ ไม่งั้นประวัติจะมีของที่ไม่เคยถึงใคร
     return res.status(200).json({ ok: r.ok, status: r.status, ชุด: msgs.length, ปลายทาง: toGroup ? 'กลุ่ม' : 'นัท' });
   } catch (e) {
     return res.status(500).json({ ok: false, why: String(e) });

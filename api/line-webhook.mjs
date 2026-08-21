@@ -160,11 +160,14 @@ const HOME_ROOM = 'kapan';
    ⚠️ ผูกกับ groupId เดียวเท่านั้น — กลุ่มครัว/คุณหมิว/กิ๊ฟ ต้องเงียบเหมือนเดิม (นัทสั่งไว้ 2 รอบ) */
 const PLOY_GROUP = 'Cf191629bb565e05ad31806a3a670354b';
 
-async function toBoard(text, tag) {
+async function toBoard(text, tag, foot) {
   const { room, body, explicit } = routeRoom(text);
   const target = explicit ? room : HOME_ROOM;      // ระบุห้องมาเอง = ส่งตรงห้องนั้น · ไม่ระบุ = เข้าห้องกะปัน
   // ป้ายบอกที่มา (เช่น "[กลุ่มพลอย]") — เติมหลังแยกห้องแล้ว ไม่งั้นตัวแยกห้องอ่านชื่อห้องไม่เจอ
-  const shown = tag ? (tag + ' ' + body) : body;
+  let shown = tag ? (tag + ' ' + body) : body;
+  // ท้ายข้อความบอกปลายทางตรงๆ — เดิมบอร์ดไม่บอกว่ามาจากกลุ่มไหน ห้องกะปันเลยเดาผิด
+  // แล้วตอบไปโผล่แชทเดี่ยวนัท พลอยไม่เห็นคำตอบ (นัทติมาแล้ว 2 รอบ)
+  if (foot) shown += '\n\n' + foot;
   const rows = [{ room: target, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text: shown }];
   // สั่งห้องอื่นตรงๆ — ให้กะปันรู้ด้วยว่านัทสั่งอะไรไปไหน จะได้ตามงานให้ถูก
   if (target !== HOME_ROOM) rows.push({ room: HOME_ROOM, sender: 'นัท (สั่งผ่านไลน์)', role: 'user',
@@ -499,7 +502,8 @@ export default async function handler(req, res) {
         //    (คำว่า ถาม/สอบถาม/ขอ/เช็ค/ทวง = สั่งให้ไปเอาคำตอบมา ไม่ใช่แค่ส่งงานเข้าห้อง)
         if (/ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
         const _ploy = (groupId === PLOY_GROUP);
-        await toBoard(body, _ploy ? '[กลุ่มพลอย]' : '');
+        await toBoard(body, _ploy ? '[กลุ่มพลอย]' : '',
+          _ploy ? '↩ ตอบกลับ "เข้ากลุ่มนี้" เท่านั้น — POST /api/kapan-say  { group: "' + PLOY_GROUP + '" }  ⛔ ห้ามส่งเข้าแชทเดี่ยวนัท' : '');
         // กลุ่มพลอย = ห้องกะปันตอบเอง อย่าเด้งประโยคสำเร็จรูปตัดหน้า · กลุ่มอื่นคงเดิมทุกอย่าง
         if (!_ploy) await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
       }
