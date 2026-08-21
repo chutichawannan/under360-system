@@ -160,6 +160,20 @@ const HOME_ROOM = 'kapan';
    ⚠️ ผูกกับ groupId เดียวเท่านั้น — กลุ่มครัว/คุณหมิว/กิ๊ฟ ต้องเงียบเหมือนเดิม (นัทสั่งไว้ 2 รอบ) */
 const PLOY_GROUP = 'Cf191629bb565e05ad31806a3a670354b';
 
+/* 🏷️ ป้ายต้นทางบนบอร์ด (CC/กะปัน สั่ง 21 ส.ค. — ข้อ ③)
+   กะปันชี้ว่า **นี่คือต้นเหตุจริงที่ตอบผิดห้อง** ไม่ใช่แค่ประโยคสำเร็จรูป
+   เดิมบอร์ดได้ข้อความเปล่า ไม่รู้ว่ามาจากกลุ่มไหน → ต้องเดาปลายทางทุกครั้ง
+   ใช้ชื่อกลุ่มจริงจาก LINE (มีแคชอยู่แล้ว ไม่ยิง API ซ้ำ)
+   ยกเว้นกลุ่มพลอย บังคับใช้คำว่า "กลุ่มพลอย" ให้ตรงกับที่ห้องกะปันมองหา */
+async function srcTag(groupId, token) {
+  if (!groupId) return '[แชทเดี่ยว]';
+  if (groupId === PLOY_GROUP) return '[กลุ่มพลอย]';
+  const n = await groupName(groupId, token);
+  // ชื่อกลุ่มเป็นข้อความที่คนตั้งเอง — ล้างวงเล็บ/ขึ้นบรรทัดใหม่ออก กันป้ายแตกแล้วอ่านต้นทางผิด
+  const safe = String(n || '').replace(/[\[\]\r\n]/g, ' ').trim().slice(0, 40);
+  return '[' + (safe || groupId.slice(0, 8)) + ']';
+}
+
 async function toBoard(text, tag, foot) {
   const { room, body, explicit } = routeRoom(text);
   const target = explicit ? room : HOME_ROOM;      // ระบุห้องมาเอง = ส่งตรงห้องนั้น · ไม่ระบุ = เข้าห้องกะปัน
@@ -443,11 +457,11 @@ export default async function handler(req, res) {
           'เช็คทุก ' + (next.poll / 1000) + ' วิ', token);
         continue;
       }
-      if (wantsData) { await toBoard(t); await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
+      if (wantsData) { await toBoard(t, '[แชทเดี่ยว]'); await lineReply(ev.replyToken, await buildAnswer(), token); continue; }
 
       // ไม่ใช่คำถามยอด = ส่งเข้าห้องกะปัน (โมเดลเล็ก เปิดค้าง) แล้วเงียบ
       // ห้องกะปันเป็นคนตอบเอง หรือโยนต่อให้ห้องที่ใช่ — webhook ไม่คิดแทน ไม่เสียค่า API
-      await toBoard(t);
+      await toBoard(t, '[แชทเดี่ยว]');
       continue;
     }
 
@@ -502,7 +516,7 @@ export default async function handler(req, res) {
         //    (คำว่า ถาม/สอบถาม/ขอ/เช็ค/ทวง = สั่งให้ไปเอาคำตอบมา ไม่ใช่แค่ส่งงานเข้าห้อง)
         if (/ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
         const _ploy = (groupId === PLOY_GROUP);
-        await toBoard(body, _ploy ? '[กลุ่มพลอย]' : '',
+        await toBoard(body, await srcTag(groupId, token),
           _ploy ? '↩ ตอบกลับ "เข้ากลุ่มนี้" เท่านั้น — POST /api/kapan-say  { group: "' + PLOY_GROUP + '" }  ⛔ ห้ามส่งเข้าแชทเดี่ยวนัท' : '');
         // กลุ่มพลอย = ห้องกะปันตอบเอง อย่าเด้งประโยคสำเร็จรูปตัดหน้า · กลุ่มอื่นคงเดิมทุกอย่าง
         if (!_ploy) await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
