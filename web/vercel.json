@@ -124,6 +124,18 @@
     {
       "source": "/k",
       "destination": "https://under360-system.vercel.app/k.html"
+    },
+    {
+      "source": "/mealplan",
+      "destination": "/mealplan.html"
+    },
+    {
+      "source": "/blog",
+      "destination": "/blog.html"
+    },
+    {
+      "source": "/home",
+      "destination": "/index.html"
     }
   ]
 }
