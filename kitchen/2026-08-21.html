@@ -119,9 +119,9 @@
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">44. <span data-i="m44">เกี๊ยวน้ำอกไก่และกุ้งโฮมเมดไส้ต้ม</span></div></div><span class="tot">3</span></div>
+  <div class="mh"><div class="nm"><div class="t1">44. <span data-i="m44">เกี๊ยวน้ำอกไก่และกุ้งโฮมเมดไส้ต้ม</span></div></div><span class="tot">6</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="chickenshrimp">อกไก่+กุ้ง</span> 120g</b> · <span data-i="dumpling">เกี๊ยวน้ำโฮมเมด</span></div><span class="q">1</span></div>
-  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chickenshrimp">อกไก่+กุ้ง</span> 170g</b> · <span data-i="dumpling">เกี๊ยวน้ำโฮมเมด</span></div><span class="q">2</span></div>
+  <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="chickenshrimp">อกไก่+กุ้ง</span> 170g</b> · <span data-i="dumpling">เกี๊ยวน้ำโฮมเมด</span></div><span class="q">5</span></div>
 </div>
 
 <div class="m">
@@ -149,7 +149,7 @@
 </div>
 
 <div class="m">
-  <div class="mh"><div class="nm"><div class="t1">20. <span data-i="m20">Pasta Pesto Salmon</span></div><div style="color:#92400E;font-size:12px;font-weight:800" data-i="v20note">📊 เมนูน้อยสุดวันนี้ (2 ยืนยัน + 1 คุณแชมป์ยังไม่ยืนยัน) — BRIGHT เลี่ยงเพราะเคยได้ 14 ส.ค.</div></div><span class="tot">3</span></div>
+  <div class="mh"><div class="nm"><div class="t1" style="text-decoration:line-through;opacity:.55">20. <span data-i="m20">Pasta Pesto Salmon</span></div><div style="color:#B91C1C;font-size:12px;font-weight:800" data-i="v20stop">🛑 งดทำ — นัทสั่งระงับ (คุณภาพแปลก) · 3 กล่องเปลี่ยนเป็นเมนู 44</div></div><span class="tot">0</span></div>
   <div class="ln lc"><span class="tag">LC</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 120g</b> · <span data-i="pastapesto">พาสต้าซอสเพสโต้</span></div><span class="q">0</span></div>
   <div class="ln hp"><span class="tag">HP</span><div class="d"><b><span data-i="salmon">แซลมอน</span> 170g</b> · <span data-i="pastapesto">พาสต้าซอสเพสโต้</span></div><span class="q">3</span></div>
 </div>
@@ -190,7 +190,7 @@
   <tr><td>อกไก่ (ห่อสาหร่าย)</td><td>40</td><td>LC1×120g + HP5×170g</td><td><b>0.97 กก.</b></td></tr>
   <tr><td>หมู (เสี่ยวหลงเปา)</td><td>71</td><td>HP4×170g</td><td><b>0.68 กก.</b></td></tr>
   <tr><td>อกไก่ (เกี๊ยวต้มยำ)</td><td>61</td><td>HP5×170g</td><td><b>0.85 กก.</b></td></tr>
-  <tr><td>แซลมอน (พาสต้าเพสโต้)</td><td>20</td><td>HP3×170g <span style="color:#92400E">(1 กล่องรอยืนยัน)</span></td><td><b>0.51 กก.</b></td></tr>
+  <tr><td style="text-decoration:line-through;opacity:.5">แซลมอน (เมนู 20)</td><td>20</td><td>—</td><td><b style="color:#B91C1C">🛑 งดทำ ไม่ต้องสั่ง</b></td></tr>
   <tr><td>หมูสับ (Peking)</td><td>59</td><td>LC1×120g + HP3×170g</td><td><b>0.63 กก.</b></td></tr>
 </table>
 <b>รวมโปรตีนทั้งหมด = <span style="color:#0F766E">6.67 กก.</span> <small style="color:#6B7280;font-weight:600">แยกเป็น อกไก่(ล้วน) 1.82 กก. · <b>ไก่ เมนู 18 = 1.14 กก.</b> · หมู(ล้วน) 0.68 กก. · ทะเล(ทูน่า+กุ้ง+แซลมอน) 2.11 กก. · ไก่+กุ้งผสม(44) 0.46 กก. · หมูสับ(59) 0.63 กก.</small></b>
@@ -264,7 +264,7 @@ const T = {
   mayo:{th:'มาโย', shn:'Mayo', my:'မာယွန်နိစ်'},
   flaxwrap:{th:'แผ่นห่อเมล็ดแฟลกซ์', shn:'ၽိုၼ်ႁူမ်ႈ Flaxseed', my:'ဖလက်ဆိဒ် ထုပ်'},
   sp57:{th:'(ไม่มีข้อห้ามพิเศษสำหรับเมนูนี้วันนี้)', shn:'(ဢမ်ႇမီးၶေႃႈႁၢမ်ႈ)', my:'(အထူးတားမြစ်ချက် မရှိပါ)'},
-  v20note:{th:'📊 เมนูน้อยสุดวันนี้ (2 ยืนยัน + 1 คุณแชมป์ยังไม่ยืนยัน) — BRIGHT เลี่ยงเพราะเคยได้ 14 ส.ค.', shn:'📊 mo 20 — 2 ႁိပ်ႇ ၸႅင်ႈလႅင်း', my:'📊 မီနူး ၂၀ — ၂ ဘူး သေချာ'},
+  v20stop:{th:'🛑 งดทำ — นัทสั่งระงับ (คุณภาพแปลก) · 3 กล่องเปลี่ยนเป็นเมนู 44', shn:'🛑 ယႃႇႁဵတ်း — ၸဝ်ႈႁၢၼ်ႉသင်ႇ', my:'🛑 မလုပ်ရ — ပိုင်ရှင်ညွှန်ကြား'},
   m18:{th:'Full Breakfast', shn:'Breakfast Set', my:'မနက်စာအစုံ'},
   v18note:{th:'⚠️ เมนูรีเควส · โปรตีน = ไก่ (ไม่ใช่เบคอน)', shn:'⚠️ ၵူတ်ႇထတ်းၸိတ်ႈ', my:'⚠️ ဟင်းချက်ချက်ထုံးစစ်ပါ'},
   chickenbf:{th:'ไก่', shn:'ၼိူဝ်ႉၵႆႇ', my:'ကြက်သား'},
