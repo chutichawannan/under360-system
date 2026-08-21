@@ -290,6 +290,19 @@ h2.sec{font-size:clamp(1.45rem,3vw,2rem);color:var(--deep);margin-top:8px}
 .soul p{color:rgba(250,246,236,.85);margin-top:14px;font-size:1.02rem}
 .soul .sig{margin-top:18px;font-family:'Prompt';color:#9FE3AE;font-size:.95rem}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* ── copy พลอย 21 ส.ค. — ตารางราคา 2 ฝั่ง + หัวเรื่อง Why Us ── */
+.price2{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:26px 0;border:1px solid var(--hair);border-radius:var(--radius);overflow:hidden}
+.p2col{padding:20px 22px}
+.p2col+.p2col{border-left:1px solid var(--hair)}
+.p2col.best{background:var(--bg-soft)}
+.p2head{font-family:'Prompt';font-weight:600;color:var(--muted);margin:0 0 8px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.p2tag{background:var(--green);color:#fff;font-size:.72rem!important;padding:3px 10px;border-radius:999px;font-weight:600}
+.p2num{margin:0 0 6px;font-family:'Prompt';color:var(--ink)}
+.p2num b{font-size:1.9rem;font-weight:700;letter-spacing:-.02em}
+.p2num span{color:var(--muted)}
+.p2note{margin:0;color:var(--muted);font-size:.9375rem!important}
+.whyus{font-family:'Prompt';font-weight:700;color:var(--ink);margin:30px 0 4px;letter-spacing:-.01em;font-size:1.25rem!important}
+@media(max-width:560px){.price2{grid-template-columns:1fr}.p2col+.p2col{border-left:0;border-top:1px solid var(--hair)}}
 </style>
 <!-- Meta Pixel (m-track 20 ส.ค. 2026) -->
 <script>
@@ -499,14 +512,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="wrap">
     <div>
       <p class="eyebrow" style="color:#9FE3AE">ประสบการณ์กว่า 10 ปี · ปรุงสดทุกวัน</p>
-      <h1>เราไม่ได้ขายอาหารคลีน<br>เราขายอาหารที่<em>เข้ากับเป้าหมายของคุณ</em></h1>
-      <p class="lede">โปรตีนเป็นแกน รสชาติกินได้ทุกวันจริง — บอกเป้าหมายมา แล้วให้ครัวเราจัดเมนูให้ ตัดของแพ้ให้อัตโนมัติ ส่งถึงหน้าบ้านทั่วกรุงเทพ</p>
+      <h1>เราไม่ได้ขายอาหารคลีน<br>แต่เราทำอาหาร <em>Balanced Diet food</em><br>ให้ตรงกับเป้าหมายของคุณ</h1>
+      <p class="lede">เลือกอาหารให้ตรงกับเป้าหมายและ Lifestyle ได้เลย ไม่ว่าจะเป็นลดไขมัน เพิ่มกล้ามเนื้อ หรือคุมอาหาร ร้านเราพร้อมจัดเมนูให้ตอบโจทย์กับความต้องการ สารอาหารครบ รสชาติอร่อย ส่งตรงถึงบ้าน</p>
 
       <div class="goal-chips" role="tablist" aria-label="เลือกเป้าหมายของคุณ">
         <button class="on" data-goal="fat" onclick="pickGoal(this)">ลดไขมัน</button>
         <button data-goal="muscle" onclick="pickGoal(this)">เพิ่มกล้าม</button>
-        <button data-goal="daily" onclick="pickGoal(this)">กินดีทุกวัน</button>
-        <button data-goal="athlete" onclick="pickGoal(this)">ซ้อม/เตรียมแข่ง</button>
+        <button data-goal="daily" onclick="pickGoal(this)">Stay Healthy</button>
       </div>
       <div class="goal-answer" id="goalAnswer" aria-live="polite"></div>
 
@@ -522,6 +534,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
         <a class="btn-ghost" style="border-color:rgba(255,255,255,.5);color:var(--cream)" href="mealplan.html">ดู Meal Plan →</a>
       </div>
       <p class="note">🕐 <b>สั่งเองได้ตลอด 24 ชม.</b> — เลือกเมนู ดูราคา จ่ายจบในแอป ไม่ต้องรอแอดมินตอบ · แจ้งช่วงเวลาที่สะดวกรับได้</p>
+      <p class="whyus">Why Us UNDER360?</p>
       <div class="benefits">
         <div class="benefit"><div class="ic">🍱</div><div><b>เลือกเมนูเองได้ทุกกล่อง</b><span>ไม่ใช่เมนูที่ร้านจัดมาให้ — วันนี้มีให้เลือกกว่า 100 เมนู</span></div></div>
         <div class="benefit"><div class="ic">🥩</div><div><b>โปรตีนแน่นทุกกล่อง 120–170 g</b><span>อิ่มจริง ไม่ใช่ผักล้วนโรยไก่</span></div></div>
@@ -897,8 +910,7 @@ function orderNow(el){
 const GOALS = {
   fat:    '<strong>ลดไขมัน →</strong> แนะนำ Meal Plan <strong>LC (Low Carb)</strong> — คุมคาร์บ โปรตีน 120 g ต่อกล่อง อิ่มโดยไม่ต้องอด เมนูหมุนเวียนไม่จำเจ',
   muscle: '<strong>เพิ่มกล้าม →</strong> แนะนำ Meal Plan <strong>HP (High Protein)</strong> — โปรตีนแน่น 170 g ต่อกล่อง รองรับสายเวท สายวิ่ง และคนเตรียมแข่ง',
-  daily:  '<strong>กินดีทุกวัน →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ · จัดเป็น<strong>คอร์ส/เซ็ต เลือกเมนู+วันรับเอง</strong> · หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์',
-  athlete:'<strong>ซ้อม/เตรียมแข่ง →</strong> แนะนำ Meal Plan <strong>HX (Hyrox / Athlete)</strong> — จัดสัดส่วนคาร์บ+โปรตีนให้เข้ากับรอบซ้อม เมนูเฉพาะสาย HX สำหรับคนลง Hyrox ไตรกีฬา วิ่งระยะไกล'
+  daily:  '<strong>Stay Healthy →</strong> เลือก<strong>ข้าวกล่องสุขภาพ</strong>ทีละมื้อ · จัดเป็น<strong>คอร์ส/เซ็ต เลือกเมนู+วันรับเอง</strong> · หรือให้ครัวจัด Meal Plan สลับ HP/LC ตามไลฟ์สไตล์'
 };
 function pickGoal(btn){
   document.querySelectorAll('.goal-chips button').forEach(b=>b.classList.remove('on'));
