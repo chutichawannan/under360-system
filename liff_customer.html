@@ -970,11 +970,15 @@ body{background:#fff!important}
 </div>
 
 <script>
+/* ประตูที่เปิดผ่านจริงในรอบนี้ — ส่งต่อให้หน้าถัดไป (โปรไฟล์/สมัครสมาชิก)
+   ประกาศไว้บนสุดเพราะ let มีช่วงห้ามใช้ก่อนประกาศ (TDZ) — วางไว้ท้ายไฟล์แล้ว init วิ่งก่อน = แอปพังทั้งหน้า */
+var openedLid = '';
 const CFG = {
   SUPABASE_URL:  'https://zdartbvhbvqlwzwyyiia.supabase.co',        // https://xxxxx.supabase.co
   SUPABASE_KEY:  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8',   // eyJ...
   LIFF_ID:       '2010442513-NI3JGTkb',             // 1234567890-xxxxxxxx
   LIFF_ID_NEW:   '2011148232-oul66cEs',             // ประตูใหม่ (บ้าน UNDER360FOOD) — ใช้ตอนย้าย
+  // (ประตูที่เปิดผ่านจริงเก็บใน openedLid ด้านล่าง — ส่งต่อให้หน้าโปรไฟล์/สมัครสมาชิก)
   DEV_MODE:      false,                     // true = ใช้ test user แทน Line login
   DEV_PROFILE: { userId:'dev_001', displayName:'Test User', pictureUrl:'' }
 };
@@ -1896,7 +1900,7 @@ async function init() {
       const _doors = [_okLid, _okLid === CFG.LIFF_ID ? CFG.LIFF_ID_NEW : CFG.LIFF_ID].filter(Boolean);
       let _opened = false, _lastErr = null;
       for (const _d of _doors) {
-        try { await liff.init({ liffId: _d }); _opened = true; break; }
+        try { await liff.init({ liffId: _d }); _opened = true; openedLid = _d; break; }
         catch (err) { _lastErr = err; }
       }
       if (!_opened) throw (_lastErr || new Error("liff.init ไม่ผ่านทุกประตู"));
@@ -2069,7 +2073,14 @@ function goMenu()    { showScr('s-menu'); }
 function goProfile() {
   // ไป liff_profile.html พร้อม pass line_uid ไปด้วย
   const uid = lineProfile?.userId || '';
-  window.location.href = 'liff_profile.html' + (uid ? '?uid=' + encodeURIComponent(uid) : '');
+  /* 🚪 ส่งเลขประตูที่ "หน้านี้เข้ามาได้จริง" ต่อไปด้วย (เพิ่ม 21 ส.ค.)
+     หน้าโปรไฟล์มีตัวสำรองลองอีกประตูอยู่แล้ว แต่ถ้าไม่บอกไป มันจะเริ่มจากประตูเก่าเสมอ
+     = ลูกค้าที่เข้าประตูใหม่ต้องเสียเวลารอ init พังหนึ่งรอบก่อนทุกครั้ง */
+  const q = new URLSearchParams();
+  if (uid) q.set('uid', uid);
+  if (openedLid) q.set('lid', openedLid);
+  const qs = q.toString();
+  window.location.href = 'liff_profile.html' + (qs ? '?' + qs : '');
 }
 function updatePaymentUI(acct){
   acct = acct || selectedPaymentAccount;
