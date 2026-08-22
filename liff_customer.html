@@ -3595,13 +3595,19 @@ async function submitOrder() {
   // ───────────────────────────────────────────────────────────
 
   try {
+    /* 🔴 ต้องรวมแถวลูกค้า "ก่อน" คิดเงิน — เดิมคิดเงินก่อนแล้วค่อยรวม ห่างกันบรรทัดเดียวแต่ผลต่างกันมาก
+       เคสจริง (22 ส.ค.): ลูกค้าที่ถูกติดป้าย 👑 เพื่อนนัท ไว้แล้ว แต่ยังไม่เคยเปิดแอปผ่านไลน์
+       (แถวถูกคีย์ด้วยเบอร์ ยังไม่มี line_uid) → พอเปิดแอปครั้งแรกจะได้แถวใหม่ที่ยังไม่มีป้าย
+       → คิดเงินตอนนั้น = ไม่ได้ลด 10% ไม่ได้ส่งฟรี → ค่อยไปรวมแถวทีหลังตอนที่สายไปแล้ว
+       = ใบแรกจ่ายเต็ม ทั้งที่เป็นเพื่อนเจ้าของ (เรื่องเดียวกับที่ระบบตั้งใจจะเลิกให้แอดมินจำเอง)
+       ย้ายขึ้นมาก่อน = ป้าย/tier ที่ติดไว้มีผลตั้งแต่ใบแรก · ลูกค้าทั่วไปไม่มีอะไรเปลี่ยน */
+    // กันลูกค้าซ้ำ: ถ้าเบอร์นี้เป็นลูกค้าเดิม (migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า ใช้เป็น customer_id (เก็บประวัติ ไม่สร้างซ้ำ) · พลาด=ใช้ customer เดิม
+    customer = (await resolveCanonicalCustomer(recipientPhone, lineProfile.userId, lineProfile.displayName)) || customer;
     // 1. Create order — คิดยอดผ่าน computeOrder (ค่าส่ง + ส่วนลดคูปอง)
     const o = computeOrder();
     const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
     const grandTotal  = o.total;             // ยอดสุทธิ
-    const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5)
-    // กันลูกค้าซ้ำ: ถ้าเบอร์นี้เป็นลูกค้าเดิม (migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า ใช้เป็น customer_id (เก็บประวัติ ไม่สร้างซ้ำ) · พลาด=ใช้ customer เดิม
-    customer = (await resolveCanonicalCustomer(recipientPhone, lineProfile.userId, lineProfile.displayName)) || customer;
+    const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5/VIPFRIEND)
     const orderPayload = {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
