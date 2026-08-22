@@ -864,9 +864,10 @@ function groupOrderItems(items){
     if(i._fromPlan) g.fromPlan=i._fromPlan;
     var cr=String(i.notes||"").match(/course:(\d+)\s*\/\s*(\d+)/);
     if(cr) g.round=cr[1]+"/"+cr[2];
-    var ik=(i.code||"")+"|"+(i.name||"");
+    var isGift=/:gift(|$)/.test(String(i.notes||""));
+    var ik=(i.code||"")+"|"+(i.name||"")+(isGift?"|gift":"");
     if(g._seen[ik]) g._seen[ik].qty+=(i.qty||1);
-    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1),boxNote:i._boxNote||""}; g.items.push(g._seen[ik]); }
+    else { g._seen[ik]={code:i.code,name:i.name,qty:(i.qty||1),boxNote:i._boxNote||"",gift:isGift}; g.items.push(g._seen[ik]); }
   });
   groups.sort(function(a,b){ return (a.pkg?1:0)-(b.pkg?1:0); });   // เมนูเดี่ยวก่อน แล้วค่อยเซ็ต
   return groups;
@@ -1651,7 +1652,9 @@ function renderCard(o){
   //    ชื่อเมนูไทยยาว 20-40 ตัว เช่น "สเต็กไก่อบน้ำผึ้งผักย่าง" เหลือ "สเต็กไก่อบน้ำ" = อ่านไม่รู้เรื่องว่ารับอะไร
   //    (นัทเห็นกับตาบนจอครัวจริง 5 ส.ค. 2569) → โชว์เต็ม แล้วให้ CSS ตัดบรรทัดเอา
   var chip=function(i){
-    return "<div class='item-chip'><span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
+    return "<div class='item-chip'"+(i.gift?" style='background:#FEF3C7;border-color:#F5E4A8'":"")+">"
+      +(i.gift?"<span style='font-size:11px;font-weight:800;color:#92400E'>🎁</span> ":"")
+      +"<span class='ic-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span>"
       +(codeMode!=="name"?" <span class='ic-name'>"+escH(i.name)+"</span>":"")
       +" <span class='ic-qty'>×"+i.qty+"</span>"
       // 📌 โน้ตรายกล่องจากแพลนเมนู เช่น "กล่อง 2: ข้าวไรซ์เบอร์รี่" — ครัวต้องเห็นตอนจัดกล่อง
@@ -1664,6 +1667,7 @@ function renderCard(o){
       var k=pkKeyOf(o.id,i), on=kqTicks[k]?" on":"";
       return "<div class='pk-row"+on+"' data-q='"+(i.qty||1)+"' data-oid=\""+escA(o.id)+"\" data-k=\""+escA(k)+"\" onclick='pkTick(this,event)'>"
         +"<span class='pk-box'></span><span class='pk-main'>"
+        +(i.gift?"<span style='font-size:11px;font-weight:800;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;margin-right:5px;'>🎁 แถม</span>":"")
         +"<span class='pk-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span> "
         +"<span class='pk-name'>"+escH(i.name)+"</span>"
         +(i.boxNote?"<span class='pk-note'>📌 "+escH(i.boxNote)+"</span>":"")

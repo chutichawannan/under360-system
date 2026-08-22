@@ -1289,6 +1289,7 @@ function addPkgToCart() {
     price:      pkgCurrentPrice(),
     qty:        1,
     items,
+    gifts: pkgGiftsOf(currentPkg.id),
     free_shipping: !!currentPkg.free_shipping
   });
   saveCart(); updateCartUI();
@@ -1326,6 +1327,24 @@ function pkgGroupEligible(g){
    (ไม่ต้องรัน SQL — แอดมินแก้ % / ขั้นต่ำ ได้ที่หน้า DB แท็บ 🏷️ บ่อเซล)          */
 const PKGCLR_KEY = 'pkg_clearance';
 let pkgClearance = {};
+
+/* ── 🎁 ของแถมติดเซ็ต ────────────────────────────────────────────────────────
+   นัทสั่ง 22 ส.ค. 2569 (เคสจริง: เซ็ตสารทจีน 8 เมนู แถมซาลาเปา 2 ลูก)
+   ปัญหาที่แก้: ของแถมที่เขียนไว้แค่ในคำโฆษณา **ไม่มีอะไรวิ่งเข้า order_items**
+                → หน้าครัวไม่เห็น → จัดของขาดทุกใบ แล้วไปโผล่ตอนลูกค้าทัก
+                (กลไกเดียวกับที่ทำให้โค้ดของแถม SALMON มีคนใช้ 0 คน — ต้องพึ่งคนจำ)
+   ที่เก็บ: kitchen_data คีย์ 'pkg_gifts' = { "<package id>": [ {code,name,qty} ] }
+   ⚠️ ไม่ต้องรัน SQL · แอดมิน/นิว ตั้งเองได้ที่หน้า DB แท็บแพคเกจ
+   ⚠️ ของแถม "ลูกค้าไม่ต้องกด" — ไม่ใช่กลุ่มการเลือก ไม่นับรวมโควตากล่อง ไม่คิดเงิน */
+const PKGGIFT_KEY = 'pkg_gifts';
+let pkgGifts = {};
+function pkgGiftsOf(pkgId){
+  const raw = pkgGifts[pkgId];
+  if(!Array.isArray(raw)) return [];
+  return raw.map(g => ({ code:String(g.code||'').trim(), name:String(g.name||g.code||'').trim(), qty:Math.max(1, Number(g.qty)||1) }))
+            .filter(g => g.code);
+}
+function giftLineText(list){ return (list||[]).map(g => g.name + (g.qty>1 ? ' ×'+g.qty : '')).join(' · '); }
 function pkgClr(pkg){
   const p = pkg || currentPkg;
   if (!p) return null;
@@ -1435,6 +1454,7 @@ function renderPkgSelectGrouped(){
       </div>
       ${_clr?`<div style="font-size:11.5px;color:#DC2626;background:#FEF2F2;border-radius:8px;padding:4px 8px;margin-top:4px;font-weight:700;">🏷️ เลือกอย่างน้อย ${_clr.min_items} อย่าง ลดทันที ${_clr.percent}% · เลือกเพิ่มได้ไม่จำกัด</div>`:''}
       ${currentPkg.delivery_rounds>1?`<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:4px 8px;margin-top:4px;">📦 เซ็ตนี้แบ่งส่ง ${currentPkg.delivery_rounds} รอบ${currentPkg.flexible_delivery?' · เลือกวันรับเองได้ตอนเช็คเอาท์':''}</div>`:''}
+      ${pkgGiftsOf(currentPkg.id).length?`<div style="font-size:12px;color:#92400E;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:8px;padding:5px 9px;margin-top:4px;font-weight:700;">🎁 แถมในเซ็ตนี้: ${h(giftLineText(pkgGiftsOf(currentPkg.id)))} <span style="font-weight:400;">— ไม่ต้องเลือก ใส่ให้อัตโนมัติ</span></div>`:''}
     </div>`;
   }
   const listEl=document.getElementById('pkg-mlist');
@@ -1529,6 +1549,7 @@ function addGroupedPkgToCart(){
     id:'pkg_'+currentPkg.id, type:'package', package_id:currentPkg.id,
     name:currentPkg.name, code:'SET-'+(currentPkg.size||''), base_price:currentPkg.base_price,
     price:pkgGroupedPrice(), qty:1, items,
+    gifts: pkgGiftsOf(currentPkg.id),
     delivery_rounds:(currentPkg.delivery_rounds||1), flexible_delivery:!!currentPkg.flexible_delivery,
     free_shipping:!!currentPkg.free_shipping
   });
@@ -2278,7 +2299,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2340,6 +2361,7 @@ async function init() {
       });
     } catch(e) { salePctByCode = {}; }
     pkgClearance = (cfgMap[PKGCLR_KEY] && typeof cfgMap[PKGCLR_KEY]==='object') ? cfgMap[PKGCLR_KEY] : {};
+    pkgGifts     = (cfgMap[PKGGIFT_KEY] && typeof cfgMap[PKGGIFT_KEY]==='object') ? cfgMap[PKGGIFT_KEY] : {};
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
     const dbCats = (cfgMap.appConfig && Array.isArray(cfgMap.appConfig.categories)) ? cfgMap.appConfig.categories : [];
@@ -3050,6 +3072,7 @@ function renderCart() {
         <div style="flex:1;min-width:0;">
           <div class="citem-name" style="color:#7c4f10;">📦 ${h(c.name)}${c.free_shipping?' <span style="font-size:10px;font-weight:800;background:#D1FAE5;color:#065F46;padding:1px 7px;border-radius:8px;">🚚 ส่งฟรี</span>':''}</div>
           <div style="margin:6px 0 4px;">${ilist}</div>
+          ${(c.gifts||[]).length?`<div style="font-size:11.5px;color:#92400E;background:#FEF3C7;border-radius:7px;padding:3px 8px;margin:0 0 5px;font-weight:700;display:inline-block;">🎁 แถม ${h(giftLineText(c.gifts))}</div>`:''}
           <div class="citem-sub" style="color:#D98C2B;font-weight:700;">฿${c.price.toLocaleString()}</div>
         </div>
         <button onclick="removePkgFromCart('${c.id}')"
@@ -3762,6 +3785,16 @@ async function submitOrder() {
             menu_name: it.name, menu_code: it.sku,
             quantity: 1, unit_price: it.extra_price, subtotal: it.extra_price,
             notes: 'pkg:' + c.package_id + (chunks ? ':course:1/' + roundCount : '') });
+        });
+        /* 🎁 ของแถม — บรรทัดแยกของตัวเอง ราคา 0
+           ต้องเป็นแถวจริงใน order_items ไม่ใช่โน้ตท้ายใบ เพราะครัวอ่านทีละบรรทัด
+           แบ่งส่งหลายรอบ = แถมไปกับรอบแรกรอบเดียว (ของแถมต่อ 1 เซ็ต ไม่ใช่ต่อรอบ) */
+        (c.gifts||[]).forEach(g => {
+          const gm = menuItems.find(m => m.code === g.code);
+          items.push({ order_id: ord.id, menu_item_id: gm ? gm.id : null,
+            menu_name: g.name, menu_code: g.code,
+            quantity: g.qty, unit_price: 0, subtotal: 0,
+            notes: 'pkg:' + c.package_id + ':gift' });
         });
       } else if (c.type === 'meal_plan') {
         items.push({ order_id: ord.id, menu_item_id: null,
