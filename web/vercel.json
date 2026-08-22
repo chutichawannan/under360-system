@@ -136,6 +136,10 @@
     {
       "source": "/home",
       "destination": "/index.html"
+    },
+    {
+      "source": "/blog/:slug",
+      "destination": "/blog.html?post=:slug"
     }
   ]
 }

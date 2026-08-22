@@ -14,7 +14,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>บทความสุขภาพ | Under360</title>
 <meta name="description" content="บทความความรู้เรื่องอาหารสุขภาพ โปรตีน โภชนาการ และการเลือกอาหารให้เข้ากับเป้าหมาย จากครัว Under360">
-<link rel="canonical" href="https://www.360foodbox.com/blog">
+<link rel="canonical" href="https://www.360foodbox.com/blog" id="canon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -402,6 +402,12 @@ async function showArticle(slug){
       .select('*').eq('slug', slug).eq('published', true).single();
     if(error || !data) throw error;
     document.title = data.title + ' | Under360';
+    /* u360-canonical-fix: เดิมทุกบทความประกาศ canonical เป็นหน้ารวมบล็อกหน้าเดียวกันหมด
+       = สั่ง Google ให้ยุบ 61 บทความรวมเป็นหน้าเดียว → ต้องชี้กลับมาที่ตัวเอง */
+    try{
+      var canon = document.getElementById('canon');
+      if(canon && data.slug) canon.href = 'https://www.360foodbox.com/blog/' + data.slug;
+    }catch(e){}
     document.getElementById('aTitle').textContent = data.title;
     document.getElementById('aMeta').textContent = fmtDate(data.created_at);
     if(data.cover_url){
