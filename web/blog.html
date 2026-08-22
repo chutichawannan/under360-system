@@ -203,13 +203,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header>
   <div class="wrap nav" style="max-width:1080px">
-    <a class="logo" href="index.html">
-      <img src="img/img15.jpg" alt="Under360 logo">
+    <a class="logo" href="/index.html">
+      <img src="/img/u360_logo.svg" alt="Under360 logo">
       Under360
     </a>
     <nav>
-      <a href="index.html">หน้าแรก</a>
-      <a href="mealplan.html">Meal Plan</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
+      <a href="/index.html">หน้าแรก</a>
+      <a href="/mealplan.html">Meal Plan</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
     </nav>
   </div>
 </header>
@@ -228,7 +228,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ARTICLE VIEW -->
 <article id="articleView">
   <div class="wrap">
-    <a class="back" href="blog.html">← บทความทั้งหมด</a>
+    <a class="back" href="/blog.html">← บทความทั้งหมด</a>
     <h1 id="aTitle"></h1>
     <div class="meta" id="aMeta"></div>
     <div class="cover" id="aCover"></div>
@@ -242,14 +242,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h3>อ่านจบแล้ว — ลองของจริงเลยไหม?</h3>
       <p>ข้าวกล่องเริ่ม ฿125 สั่งทีละกล่องก็ได้ · หรือ Meal Plan ทำสดรายวัน 2 สาย (HP · LC) ส่งฟรีทั่วกรุงเทพ<br><b style="color:#9FE3AE">สั่งเองได้ 24 ชม. ไม่ต้องรอแอดมินตอบ</b></p>
       <a class="btn-line" href="#" onclick="return orderNow(this)">สั่งใน LINE เลย</a>
-      <a href="mealplan.html" style="display:inline-block;margin-left:14px;color:rgba(250,246,236,.85);font-family:'Prompt';font-size:.93rem">ดู Meal Plan →</a>
+      <a href="/mealplan.html" style="display:inline-block;margin-left:14px;color:rgba(250,246,236,.85);font-family:'Prompt';font-size:.93rem">ดู Meal Plan →</a>
     </div>
   </div>
 </article>
 
 <footer>
   <div class="wrap">
-    <b style="font-family:'Prompt';color:#fff">Under360</b> · <a href="index.html">หน้าแรก</a> · <a href="mealplan.html">Meal Plan</a>
+    <b style="font-family:'Prompt';color:#fff">Under360</b> · <a href="/index.html">หน้าแรก</a> · <a href="/mealplan.html">Meal Plan</a>
   </div>
 </footer>
 
@@ -386,7 +386,7 @@ async function showList(){
       return;
     }
     box.innerHTML = data.map(p=>`
-      <a class="post-card" href="blog.html?post=${encodeURIComponent(p.slug)}">
+      <a class="post-card" href="/blog/${encodeURIComponent(p.slug)}">
         ${p.cover_url ? `<img class="post-cover" src="${esc(p.cover_url)}" alt="${esc(p.title)}" loading="lazy">` : ''}
         <h2>${esc(p.title)}</h2>
         ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ''}
@@ -437,7 +437,7 @@ async function showArticle(slug){
     document.head.appendChild(ld);
   }catch(e){
     document.getElementById('aTitle').textContent = 'ไม่พบบทความนี้';
-    document.getElementById('aContent').innerHTML = '<p>บทความอาจถูกย้ายหรือลบไปแล้ว <a href="blog.html">กลับไปหน้าบทความทั้งหมด</a></p>';
+    document.getElementById('aContent').innerHTML = '<p>บทความอาจถูกย้ายหรือลบไปแล้ว <a href="/blog.html">กลับไปหน้าบทความทั้งหมด</a></p>';
   }
 }
 
