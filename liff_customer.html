@@ -2187,6 +2187,21 @@ function readyDateLabel(item) {
   return `${DAYS[d.getDay()]}ที่ ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+/* 🔒 วันแรกที่ส่งได้จริง = วันที่ช้าที่สุดของ available_from ในตะกร้า
+   เดิม renderDatePick คิดวันแรกจาก "เวลาตัดรอบ" อย่างเดียว ไม่เคยดู available_from เลย
+   → เมนูพรีออเดอร์ที่ยังไม่ถึงวันขาย ลูกค้าเลือกวันส่งก่อนหน้าได้ (เจอจริง ใบ U-0823-013
+     เมนูเริ่ม 24 ส.ค. แต่สั่งส่ง 23 ส.ค. ครัวต้องทำของที่ยังไม่ได้วางแผน) */
+function cartEarliestReadyDate(){
+  let latest = null;
+  for (const c of cart) {
+    const item = menuItems.find(m => m.id === c.id);
+    if (!item || !item.available_from) continue;
+    const ymd = String(item.available_from).slice(0,10);
+    if (!latest || ymd > latest) latest = ymd;
+  }
+  return latest;   // 'YYYY-MM-DD' หรือ null
+}
+
 function cartWeekType() {
   // 'next' | 'current' | null
   for (const c of cart) {
@@ -3150,6 +3165,22 @@ function renderDatePick() {
     startOffset = isOutOfProvince ? baseOffset + 1 : baseOffset;
   }
 
+  // 🔒 ของพรีออเดอร์: ดันวันแรกไปให้ถึงวันที่เมนูพร้อมขายจริง ห้ามเลือกก่อนหน้า
+  const _ready = cartEarliestReadyDate();
+  let readyBlocked = false;
+  if (_ready) {
+    const todayY = localYMD(now);
+    let off = 0;
+    while (off <= 60) {
+      const dd = new Date(now); dd.setDate(now.getDate() + off);
+      if (localYMD(dd) >= _ready) break;
+      off++;
+    }
+    if (off > startOffset) { startOffset = off; readyBlocked = true; }
+    if (selDate && selDate < _ready) selDate = null;   // ที่เลือกค้างไว้ก่อนหน้า = ล้างทิ้ง
+    void todayY;
+  }
+
   let spanDays = 7;   // เดิม 6 — เพิ่ม 1 ชดเชยวันเสาร์ที่ปิด ลูกค้าจะยังเห็นวันเลือกได้เท่าเดิม
 
   // วันที่เคยเลือกไว้ตกวันหยุดส่ง (เช่นเสาร์) → ล้างทิ้ง ไม่ให้ค้างแล้วสั่งผ่าน
@@ -3157,6 +3188,13 @@ function renderDatePick() {
 
   // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
   if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
+
+  let readyNotice = '';
+  if (readyBlocked) {
+    const rd = new Date(_ready + 'T00:00:00');
+    readyNotice = `<div style="padding:6px 14px 4px;font-size:11px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;margin:0 14px 4px;line-height:1.5">
+      📅 <b>ในตะกร้ามีเมนูที่เริ่มส่งวันที่ ${rd.getDate()} ${MONTHS[rd.getMonth()]}</b> — วันก่อนหน้านั้นเลือกไม่ได้</div>`;
+  }
 
   let noticeHtml = (!isMeal && isPastCutoff)
     ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
@@ -3174,7 +3212,7 @@ function renderDatePick() {
     if(why) noticeHtml += `<div style="padding:6px 14px 4px;font-size:11px;color:#B45309;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;margin:0 14px 4px;line-height:1.5">
       🏵️ <b>${dd.getDate()} ${MONTHS[dd.getMonth()]} ร้านหยุด</b> — ${why} · วันนั้นเลือกไม่ได้ วันอื่นส่งปกติ</div>`;
   }
-  if(notice) notice.innerHTML = noticeHtml;
+  if(notice) notice.innerHTML = readyNotice + noticeHtml;
 
   let html = '';
   for(let i = startOffset; i <= startOffset + spanDays; i++){
