@@ -650,10 +650,14 @@ var STK_CAT_ORDER=["no_special","pack_regular","pack_special","cat_mqz49my7l8r",
 //   เมนูที่มีชื่อเล่นประจำสัปดาห์ (S1-S8 / D1-D5) ต้องอยู่บนสุดของหมวด เรียงตามเลข
 //   ที่เหลือเรียงตามรหัสจริงเหมือนเดิม
 function subRankKQ(m){
+  // ไม่ใช้ regex ตั้งใจ — heredoc เคยกินแบ็กสแลชจน d กลายเป็น d แล้วเรียงไม่ทำงาน (22 ส.ค.)
   var sc=String((m&&m.subcode)||"").trim().toUpperCase();
-  var mm=sc.match(/^([SD])(d+)$/);
-  if(!mm) return 9999;
-  return (mm[1]==="S"?0:100)+parseInt(mm[2],10);
+  var head=sc.charAt(0);
+  if(head!=="S"&&head!=="D") return 9999;
+  var rest=sc.slice(1);
+  var n=parseInt(rest,10);
+  if(!(n>0) || String(n)!==rest) return 9999;   // กัน xS1 / S1a / ว่าง
+  return (head==="S"?0:100)+n;
 }
 function stkCatRank(c){ var i=STK_CAT_ORDER.indexOf(c||""); return i<0?999:i; }
 function getCodeDisplay(code,name){
