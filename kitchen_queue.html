@@ -646,6 +646,15 @@ function tagsHtml(m){
 var FRESH_CATS=["meal_hp","meal_lc","hyrox"];
 /* ลำดับแท็บหมวดในแท็บตั้งสต็อค — นัทเรียงเอง 18 ส.ค. · หมวดนอกลิสต์ไปต่อท้าย */
 var STK_CAT_ORDER=["no_special","pack_regular","pack_special","cat_mqz49my7l8r","cat_mqz6m6b7gkm","cat_mqwg0bh3vho"];
+// นัทสั่ง 22 ส.ค.: "ช่วยเรียงให้สวยๆ หน่อย s1-s8"
+//   เมนูที่มีชื่อเล่นประจำสัปดาห์ (S1-S8 / D1-D5) ต้องอยู่บนสุดของหมวด เรียงตามเลข
+//   ที่เหลือเรียงตามรหัสจริงเหมือนเดิม
+function subRankKQ(m){
+  var sc=String((m&&m.subcode)||"").trim().toUpperCase();
+  var mm=sc.match(/^([SD])(d+)$/);
+  if(!mm) return 9999;
+  return (mm[1]==="S"?0:100)+parseInt(mm[2],10);
+}
 function stkCatRank(c){ var i=STK_CAT_ORDER.indexOf(c||""); return i<0?999:i; }
 function getCodeDisplay(code,name){
   if(codeMode==="name")return name;
@@ -908,7 +917,11 @@ function renderProd(){
       agg[key].qty+=i.qty;
     });
   });
-  var rows=Object.values(agg).sort(function(a,b){return cmpCode(a.code,b.code);});
+  var rows=Object.values(agg).sort(function(a,b){
+    var ma=(allMenus||[]).find(function(x){return x.code===a.code;});
+    var mb=(allMenus||[]).find(function(x){return x.code===b.code;});
+    return (subRankKQ(ma)-subRankKQ(mb)) || cmpCode(a.code,b.code);
+  });
   var unplanned=prodUnplanned(tgt);
   if(!rows.length && !unplanned.rounds.length){
     document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
@@ -1100,7 +1113,9 @@ function renderStock(){
   var el=document.getElementById("stockView"); if(!el)return;
   var menus=(allMenus||[]).filter(function(m){ return FRESH_CATS.indexOf(m.category)<0; })
     .sort(function(a,b){ return (stkCatRank(a.category)-stkCatRank(b.category))
-      || (a.category||"").localeCompare(b.category||"") || cmpCode(a.code,b.code); });
+      || (a.category||"").localeCompare(b.category||"")
+      || (subRankKQ(a)-subRankKQ(b))
+      || cmpCode(a.code,b.code); });
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
   var om=stkOrderedMap();
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>"
