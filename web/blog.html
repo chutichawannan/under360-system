@@ -360,7 +360,11 @@ async function init(){
     const _new = LEGACY_MAP[_legacy.replace(/^\/+|\/+$/g,'')];
     if(_new){ location.replace('blog.html?post=' + encodeURIComponent(_new)); return; }
   }
-  const slug = new URLSearchParams(location.search).get('post');
+  /* u360-slug-from-path: เปิดผ่าน /blog/<slug> ได้ด้วย
+     rewrite ของ Vercel ไม่เปลี่ยน URL ในเบราว์เซอร์ -> location.search ว่าง
+     ถ้าอ่านแต่ ?post= จะเด้งไปหน้ารวมบทความแทนที่จะเปิดบทความ (เจอตอนเทส riceberry) */
+  const _mPath = location.pathname.match(/^\/blog\/(.+?)\/?$/);
+  const slug = new URLSearchParams(location.search).get('post') || (_mPath ? decodeURIComponent(_mPath[1]) : null);
   track('pageview', slug ? 'blog:'+slug : 'blog');
 
   /* ═══ presence heartbeat — นับคนออนไลน์ real-time (fire-and-forget) ═══ */
