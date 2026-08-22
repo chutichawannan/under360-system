@@ -2671,6 +2671,9 @@ function refreshItemViews(){
 //      พอขึ้นสัปดาห์ใหม่ป้ายเลื่อนสถานะเอง ไม่ต้องมีใครไปไล่แก้ทุกวันจันทร์
 //   ⛔ เลิกใช้ระบบเติม x นำหน้า (xS3) แล้ว — วันที่บอกได้ตรงกว่าและไม่ต้อง maintain
 const WEEK_KEY = 'menu_special_weeks';   // kitchen_data — { "S103": "2026-08-03", ... }
+// สีแถบซ้ายของเมนูสัปดาห์หน้า — เปลี่ยนตามธีมของสัปดาห์นั้น แก้ที่นี่ที่เดียว
+//   22 ส.ค. 2026 นัทสั่งเปลี่ยนจากฟ้า #3B82F6 เป็นแดง ให้เข้าธีมสารทจีน
+const WEEK_ACCENT = '#C1272D';
 let menuWeeks = {};
 
 // เซ็ตที่ครัวเป็นคนจัดเมนูให้ (ต้องเข้าหน้า "แพลนเมนู" เหมือน Meal Plan)
@@ -2792,7 +2795,9 @@ function subcodeNo(m){
 // ⚠️ เดิมใช้ Math.max(0,ago) → สัปดาห์หน้ากับสัปดาห์นี้ได้อันดับเท่ากัน = เรียงปนกัน
 function weeklyRank(m){
   const a = weeksAgo(m);
-  if (a !== null) return a === 0 ? 0 : (a < 0 ? 0.5 : a);
+  // นัทสั่ง 22 ส.ค.: "เมนูพิเศษใหม่ล่าสุดจะอยู่บนสุดเสมอ"
+  //   สัปดาห์หน้า (พรีออเดอร์ a<0) = ใหม่สุด → บนสุด · แล้วสัปดาห์นี้ · แล้วรอบก่อน (ใหม่→เก่า)
+  if (a !== null) return a < 0 ? -1 : a;
   return (subcodeInfo(m) || (m && m.is_weekly_special)) ? 0 : 99;   // ยังไม่ติดแท็ก
 }
 function sortWeeklyFirst(list){
@@ -2876,7 +2881,7 @@ function renderMenu() {
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
-    return `<div class="mi-v2${isOut?' out-of-stock':''}" id="menu-item-${h(item.code||item.id)}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" id="menu-item-${h(item.code||item.id)}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid '+WEEK_ACCENT+';padding-left:9px;':''}">` +
       img +
       `<div class="mi-v2-info"><div class="mi-v2-code">${codeLineHtml(item)}</div><div class="mi-v2-name" onclick="openMenuDetail('${item.id}')">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
       `<div class="mi-v2-right">${priceBlockHtml(item)}${ctrl}</div></div>`;
