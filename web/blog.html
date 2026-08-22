@@ -402,8 +402,13 @@ async function showArticle(slug){
   const art = document.getElementById('articleView');
   art.style.display = 'block';
   try{
-    const { data, error } = await sb.from('blog_posts')
-      .select('*').eq('slug', slug).eq('published', true).single();
+    /* u360-draft-preview: เปิดร่างที่ยังไม่เผยแพร่ได้ด้วย ?preview=1
+       ฐานข้อมูลเป็นตัวเดียวกันทั้ง preview และของจริง → "เปิดเฉพาะ preview" ทำไม่ได้
+       ทางนี้ให้เจ้าของอ่านร่างได้โดยไม่ต้องเผยแพร่จริง
+       ⚠️ หน้ารวมบทความยังกรอง published=true เหมือนเดิม → ร่างไม่หลุดไปโผล่ในลิสต์ */
+    let _q = sb.from('blog_posts').select('*').eq('slug', slug);
+    if(new URLSearchParams(location.search).get('preview') !== '1') _q = _q.eq('published', true);
+    const { data, error } = await _q.single();
     if(error || !data) throw error;
     document.title = data.title + ' | Under360';
     /* u360-canonical-fix: เดิมทุกบทความประกาศ canonical เป็นหน้ารวมบล็อกหน้าเดียวกันหมด
