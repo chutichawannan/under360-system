@@ -1794,6 +1794,8 @@ function pkSyncProg(oid){
   p.classList.toggle("full", tot>0 && done>=tot);
 }
 function renderCard(o){
+  var packed = (o.status==="ready"||o.status==="delivered");
+  var shipped = (o.status==="delivered");
   var items=getOrderItems(o.id);
   var badge=detectBadge(items);
   var isPkg=!!(o.package_type);
@@ -1824,7 +1826,13 @@ function renderCard(o){
   /* โหมดจัดของ: บรรทัดละรายการ + ช่องติ๊ก · โหมดปกติ: ชิปแบบเดิมทุกอย่าง */
   if(kqPackMode){
     chip=function(i){
-      var k=pkKeyOf(o.id,i), dn=pkDoneQty(o.id,i.code), full=(dn>=(i.qty||1));
+      /* 🔴 เครื่องหมายติ๊กเปล่าๆ เก็บใน localStorage = เครื่องใครเครื่องมัน
+         เคสจริง 23 ส.ค.: ครัวกดจัดครบแล้วส่งรูปมาให้นัทดู จอครัวขึ้น 12/12
+         แต่จอนัทขึ้น 0/12 ทั้งที่ใบเดียวกันและปิดงานไปแล้ว → นัทนึกว่าครัวยังไม่ได้ทำ
+         แก้: อะไรที่ "จริง" ต้องมาจาก DB — ใบที่ปิดแล้ว/จัดบางส่วนแล้ว ติ๊กให้เองทุกเครื่อง
+              ส่วนติ๊กในเครื่องเหลือหน้าที่เดียว = กันหลงตาระหว่างไล่หยิบของที่ยังไม่ยืนยัน */
+      var k=pkKeyOf(o.id,i), dn=pkDoneQty(o.id,i.code);
+      var full=(dn>=(i.qty||1)) || packed;
       var on=(full||kqTicks[k])?" on":"";
       /* จัดไปแล้ว = ล็อกไว้ กดไม่ได้ ต้องกด "ยกเลิกจัดบางส่วน" ถึงจะแก้ได้
          ถ้าปล่อยให้กดสลับเล่นได้ สต็อกจะขยับตามนิ้วที่เผลอแตะ */
@@ -1863,8 +1871,6 @@ function renderCard(o){
   // Meal Plan = ซื้อทั้ง subscription ครั้งเดียว ไม่ใช่ของที่ต้องจัดกล่องในวันนี้วันเดียว
   // รอบส่งจริง + เมนูที่กำหนด อยู่ที่ mp_deliveries → ลิ้งไปดูที่แท็บ "รายสินค้า" แทนปุ่มจัดกล่อง
   // ปุ่ม 2 ขั้น: จัดกล่องเสร็จ → ส่งแมสแล้ว · ยกเลิกย้อนได้ทั้งคู่ (นัทสั่ง 6 ส.ค. 2569)
-  var packed = (o.status==="ready"||o.status==="delivered");
-  var shipped = (o.status==="delivered");
   var actions;
   if(isMp){
     actions="<div class='oc-actions'><span onclick='switchTab(1)' style='color:var(--g);font-weight:700;cursor:pointer;text-decoration:underline'>📋 ดูรอบส่ง & เมนูที่แท็บ \"รายสินค้า\" →</span></div>";
@@ -1899,7 +1905,7 @@ function renderCard(o){
     groupOrderItems(items).forEach(function(g){ g.items.forEach(function(i){
       var q=i.qty||1; _tot+=q;
       var dn=pkDoneQty(o.id,i.code);
-      if(dn>=q) _done+=q;                       // ยืนยันแล้ว = นับเสมอ ไม่ขึ้นกับช่องติ๊กในเครื่อง
+      if(packed || dn>=q) _done+=q;             // ปิดใบแล้ว/ยืนยันแล้ว = นับเสมอ ไม่ขึ้นกับเครื่อง
       else if(kqTicks[pkKeyOf(o.id,i)]) _done+=q;
     }); });
     var _dnAll=pkDoneTotal(o.id);
