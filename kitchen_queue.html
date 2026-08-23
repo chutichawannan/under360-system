@@ -191,6 +191,10 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .oc.mealplan{border-color:#1E5F8A;background:#EEF6FC;}
 .oc.todo{border-color:#DC2626;background:#FEF2F2;}
 .oc.todo .oc-name{color:#B91C1C;}
+/* ใบที่เลยวันส่งไปแล้ว — เทา ไม่ใช่แดง · ถ้าแดงหมายถึง 2 อย่าง มันจะไม่หมายถึงอะไรเลย */
+.oc.stale{border-color:#D1D5DB;background:#F7F7F5;opacity:.8;}
+.oc.stale .oc-name{color:var(--soft);}
+.stale-tag{font-size:10.5px;font-weight:800;color:#6B7280;background:#E5E7EB;border-radius:6px;padding:1px 7px;}
 .oc.mealplan.todo{border-color:#1E5F8A;background:#EEF6FC;}   /* MP ไม่ต้องแดง — ไม่ได้จัดจากหน้านี้ */
 .oc.mealplan.todo .oc-name{color:var(--ink);}
 .oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;}
@@ -501,7 +505,8 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 <div class="ctrl-bar" id="ctrlBar">
   <button class="chip on" id="d-today" onclick="setDate('today',this)">วันนี้</button>
   <button class="chip" id="d-tomorrow" onclick="setDate('tomorrow',this)">พรุ่งนี้</button>
-  <button class="chip" id="d-all" onclick="setDate('all',this)">ทั้งหมด</button>
+  <button class="chip" id="d-all" onclick="setDate('all',this)" title="วันนี้เป็นต้นไป — ของที่เลยวันส่งแล้วไม่ปน">ทั้งหมด</button>
+  <button class="chip" id="d-past" onclick="setDate('past',this)" title="ใบที่เลยวันส่งไปแล้ว — ตามงานค้างเก่า">⏮ ย้อนหลัง</button>
   <select class="date-sel" id="calPicker" onchange="setDate('custom',this)"><option value="">📅 เลือกวัน...</option></select>
   <div class="sep"></div>
   <button class="chip on" id="s-all" onclick="setSlot('all',this)">ทุกช่วง</button>
@@ -851,7 +856,16 @@ function kqWriteFail(e,what){ console.error("KQ write failed:",what,e); alert("�
 // ── FILTER ───────────────────────────────────────────────
 function filteredOrders(){
   var tgt=getTargetDate();
+  /* 📅 "ทั้งหมด" = วันนี้เป็นต้นไป ไม่ใช่ทุกวันในประวัติศาสตร์ (นัทเคาะ 23 ส.ค.)
+     นัทพูดเอง: "ของเก่าที่แก้กันไปแล้ว กดดูทั้งหมดมันจะพอกหางหมูโชว์ขึ้นไม่มีจบสิ้น"
+     วัดจริง: แค่ย้อน 3 วันก็มีใบไม่เคยกดจัด 19 ใบ · ย้อนถึงต้นเดือน = 195 ใบ (+~6/วัน)
+     ปล่อยไว้กองแดงจะยาวกว่างานวันนี้ → ครัวเลิกมองสีแดง = สีหมดความหมาย
+     หน้านี้คือหน้าจัดของ — ของที่เลยวันส่งไปแล้วไม่ใช่งานครัวอีกต่อไป
+     ใครอยากตามงานค้างเก่า ใช้ปุ่ม "⏮ ย้อนหลัง" แยกต่างหาก ไม่ปนกับงานวันนี้ */
+  var tday=today();
   return allOrders.filter(function(o){
+    if(dateMode==="all"  && o.delivery_date && o.delivery_date <  tday) return false;
+    if(dateMode==="past" && (!o.delivery_date || o.delivery_date >= tday)) return false;
     if(tgt&&o.delivery_date!==tgt)return false;
     if(slotMode!=="all"&&o.time_slot!==slotMode)return false;
     // 🔴 ใบที่ยกเลิก + ออเดอร์เทส ต้องไม่โผล่หน้าครัว — ครัวเคยเห็น 13 ใบทั้งที่งานจริง 12
@@ -1882,6 +1896,7 @@ function dupBadge(o){
 function renderCard(o){
   var packed = (o.status==="ready"||o.status==="delivered");
   var shipped = (o.status==="delivered");
+  var stale  = !!(o.delivery_date && o.delivery_date < today());
   var items=getOrderItems(o.id);
   var badge=detectBadge(items);
   var isPkg=!!(o.package_type);
@@ -1993,7 +2008,8 @@ function renderCard(o){
   // Meal Plan ที่แอดมินยังไม่ assign เมนู จะไม่มี order_items เลย → นับกล่องจากรอบส่ง (mp_deliveries.box_count)
   // ไม่งั้นตอนพับจะขึ้น "0 กล่อง" ทั้งที่จริงมีของต้องทำ
   if(!nBox){ var _mp=findMpFor(o); if(_mp&&_mp.box_count) nBox=_mp.box_count; }
-  var boxTag="<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
+  var boxTag=(stale?"<span class='stale-tag'>⏮ เลยวันส่งแล้ว ("+escH(fmtDate(o.delivery_date))+")</span> ":"")
+    +"<span class='oc-boxn'>📦 "+nBox+" กล่อง</span>";
   /* ตัวนับอยู่บนหัว = ตอนพับการ์ดก็ยังเห็นว่าใบนี้จัดไปถึงไหน */
   if(kqPackMode && items.length && !isMp){
     var _tot=0,_done=0;
@@ -2008,7 +2024,7 @@ function renderCard(o){
     boxTag+="<span class='oc-prog"+((_tot&&_done>=_tot)?" full":"")+"'>☑ "+_done+"/"+_tot+"</span>";
   }
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
-  return "<div class='"+cardCls+(packed?"":" todo")+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+(kqPackMode?" pk-lean":"")+"' data-oid='"+escH(o.id)+"'>"
+  return "<div class='"+cardCls+(stale?" stale":(packed?"":" todo"))+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+(kqPackMode?" pk-lean":"")+"' data-oid='"+escH(o.id)+"'>"
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
         +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
