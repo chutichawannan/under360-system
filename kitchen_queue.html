@@ -1122,7 +1122,7 @@ function renderStock(){
       || (subRankKQ(a)-subRankKQ(b))
       || cmpCode(a.code,b.code); });
   if(!menus.length){ el.innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีเมนู</div>"; return; }
-  var om=stkOrderedMap();
+  var om=stkOrderedMap(), omToday=stkOrderedTodayMap();
   var html="<div style='padding:10px 12px;font-size:12px;color:var(--soft);background:#EBF3EF;border-radius:10px;margin-bottom:8px'>"
     +"เลขใหญ่ = <b>ลูกค้ายังสั่งได้อีกกี่กล่อง</b> · แตะ <b>✏️</b> เพื่อแก้<br>"
     +"<span style='color:var(--g);font-weight:700'>มีของจริง + กำลังเติม − สั่งแล้ว = ลูกค้าสั่งได้อีก</span><br>"
@@ -1156,7 +1156,7 @@ function renderStock(){
   var lastCat=null;
   shown.forEach(function(m){
     if(m.category!==lastCat){ lastCat=m.category; html+="<div style='font-size:13px;font-weight:800;color:var(--g);margin:12px 0 2px;padding:0 4px'>"+escH(catLabelMap[m.category]||CATLBL_STK[m.category]||m.category||"อื่นๆ")+"</div>"; }
-    html+=stkRowHtml(m,om[m.id]||0);
+    html+=stkRowHtml(m,om[m.id]||0,omToday[m.id]||0);
   });
   html+="<div id='stkHist' class='stk-hist'></div>";
   el.innerHTML=html;
@@ -1171,7 +1171,34 @@ function renderStock(){
    แก้: ช่องกรอก = **ของที่ทำไว้ทั้งหมด** · ระบบหักที่สั่งไปแล้วเอง แล้วเก็บส่วนที่เหลือลง stock_total
    ✅ คุณสมบัติที่ทำให้ตัวเลขนิ่ง: ลูกค้าสั่งเพิ่ม 1 → stock_total ลด 1 · สั่งแล้ว +1
       → "ทำไว้" ที่ครัวเห็น = เท่าเดิมเสมอ ไม่ขยับเองระหว่างวัน */
+/* ══ นัทอธิบายเอง 23 ส.ค. 2569 ══════════════════════════════════════════════
+   "ของมี 5 ลูกค้าสั่งไป 5 → ช่องซ้ายต้องมี 5 เหลืออยู่ แต่มีตัวเล็กบอกว่าสั่งไปแล้ว 5"
+   "ช่องซ้าย = ของในตู้เย็น จะลดก็ต่อเมื่อครัวกดว่าจัดของแล้วเท่านั้น"
+
+   🐞 ของเดิม: ตัวนับนี้ใช้ filteredOrders() = **นับเฉพาะวันที่ครัวเปิดดูอยู่**
+      แต่ stock_total ถูกหักจากออเดอร์ **ทุกวันรวมกัน** (RPC adjust_stock ตอนลูกค้าสั่ง)
+      → 2 ค่าคนละขอบเขต แล้วเอามาเข้าสูตรเดียวกัน
+      → ช่องซ้ายลดลงทั้งที่ครัวยังไม่ได้จัดของ และหน้าจอขึ้น "สั่งแล้ว 0"
+      (นัทเจอเอง: ตั้ง s1-s8 อย่างละ 5 เปิดมาเห็น 4·3·3·1·5·2·2·1 แต่สั่งแล้ว 0 ทุกตัว)
+
+   ✅ กฎใหม่: นับ "ออเดอร์ที่ครัวยังไม่ได้กดจัดของ · ทุกวัน"
+      · ลูกค้าสั่ง  → stock_total ลด แต่ตัวนี้บวกกลับ → ช่องซ้ายไม่ขยับ
+      · ครัวกดจัดของ → ใบหลุดจากตัวนับ           → ช่องซ้ายลด  ← ตรงกับที่นัทสั่งเป๊ะ
+   ⚠️ ต้องตัดใบที่จัดแล้ว/ส่งแล้วออก ไม่งั้นบวกกลับของที่ออกจากตู้ไปแล้ว = ช่องซ้ายค้างสูงเกินจริง
+   ⚠️ ตัดวันที่ผ่านมาแล้วออกด้วย — ใบเก่าที่ไม่มีใครกดปิด จะบวกกลับค้างตลอดกาล */
 function stkOrderedMap(){
+  var om={}, tday=today();
+  (allOrders||[]).forEach(function(o){
+    if(o.status==="cancelled"||o.status==="ready"||o.status==="delivered") return;
+    if(o.source==="parallel_test") return;
+    if(o.delivery_date && o.delivery_date < tday) return;
+    getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; });
+  });
+  return om;
+}
+/* ตัวนับ "เฉพาะวันที่ครัวเปิดดู" — ใช้แค่โชว์ให้ครัวรู้ว่าวันนี้ต้องจัดกี่กล่อง
+   ห้ามเอาไปเข้าสูตรช่องซ้ายเด็ดขาด (นั่นคือบั๊กเดิม) */
+function stkOrderedTodayMap(){
   var om={};
   filteredOrders().forEach(function(o){ getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; }); });
   return om;
@@ -1213,7 +1240,7 @@ function stkRealOf(m,ordered){
 }
 
 // แถวเมนู 1 แถว — เลขใหญ่ = ลูกค้าสั่งได้อีก · ปุ่มดินสอเปิดแผงแก้
-function stkRowHtml(m,ordered){
+function stkRowHtml(m,ordered,orderedToday){
   var unlimited=(m.stock_total==null);
   var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
   var left=unlimited?null:Number(m.stock_total||0);   // เลขที่ LIFF ใช้จริง ไม่คำนวณใหม่ให้เพี้ยน
@@ -1233,6 +1260,8 @@ function stkRowHtml(m,ordered){
         ? "ขายไม่จำกัด"+(ordered?(" · <b style='color:var(--gold)'>สั่งแล้ว "+ordered+"</b>"):"")
         : "มีจริง <b>"+real+"</b> + กำลังเติม <b class='"+(inc?"inc":"")+"'>"+inc+"</b>"
           +" − สั่งแล้ว <b style='color:var(--gold)'>"+ordered+"</b>"
+          +(ordered? ("<span style='font-size:11px;color:var(--soft)'> (วันที่ดูอยู่ "+(orderedToday||0)
+              +(ordered>(orderedToday||0)?" · วันอื่น "+(ordered-(orderedToday||0)):"")+")</span>") : "")
           +(incAge?("<span class='inc-old'>"+incAge+"</span>"):""))
     +"</div></div>"
     +"<div class='stk-ctrl'>"
@@ -1774,44 +1803,6 @@ async function markUnship(id){
   render();
 }
 
-/* ══ N-78 · จัดลงถุงแล้ว "ของจริงบนชั้น" ต้องลดตาม ══════════════════════════
-   นัทพูดเอง 20 ส.ค.: "ลูกค้าเห็นว่ามี 0 ครัวเห็นว่ามี 1 เพราะมันยังไม่ถูกจัดลงถุง
-                       เมื่อไหร่ที่มันถูกจัดแล้ว มันจะหายจาก 1 ด้วยสิ"
-   คนละคอลัมน์ คนละหน้าที่ — ห้ามสับสน:
-     · stock_total  = "ลูกค้าสั่งได้อีกกี่กล่อง" → หักตอนลูกค้ากดสั่งไปแล้ว ⛔ ห้ามหักซ้ำตรงนี้
-     · actual_stock = "ของจริงบนชั้น/ในตู้"      → ไม่เคยมีอะไรลดมันเลย = เลขครัวเฟ้อสะสมทุกวัน
-   เลขครัวที่เฟ้อ คือกลไกเดียวกับที่ทำให้ใบคุณ Tina (U-0820-001) ของขาดวันส่ง
-   และเป็นตัวเลขที่นิว/ฟ้าจะเอาไปวางแผนผลิต — ผิดตั้งแต่ต้นทาง
-   ⚠️ actual_stock = null แปลว่า "ยังไม่เคยนับ" ไม่ใช่ "ศูนย์" → ข้ามไป ห้ามเดาเลขให้
-   ⚠️ Meal Plan ทำสดวันส่ง ไม่ใช่ของบนชั้น → ข้าม (_fromPlan) */
-async function stkOnPack(orderId, dir){
-  var sb_=getSB(); if(!sb_) return;
-  var its=getOrderItems(orderId)||[];
-  var want={};
-  its.forEach(function(i){
-    if(i._fromPlan) return;                                  // Meal Plan — ไม่ใช่ของสต็อค
-    var m = i.menu_item_id ? allMenus.find(function(x){return x.id===i.menu_item_id;}) : null;
-    if(!m && i.code) m = allMenus.find(function(x){return String(x.code||"").toUpperCase()===String(i.code).toUpperCase();});
-    if(!m || m.actual_stock==null) return;                   // ไม่เคยนับ = ไม่แตะ
-    want[m.id]=(want[m.id]||0)+(i.qty||1);
-  });
-  var ids=Object.keys(want); if(!ids.length) return;
-  for(var n=0;n<ids.length;n++){
-    var mid=ids[n], qty=want[mid];
-    var m=allMenus.find(function(x){return x.id===mid;}); if(!m) continue;
-    // อ่านค่าสดก่อนเขียน — ครัวเปิดหลายเครื่องพร้อมกันได้ ค่าที่ถืออยู่ในหน้าอาจเก่าแล้ว
-    try{
-      var cur=await sb_.from("menu_items").select("actual_stock").eq("id",mid).maybeSingle();
-      var base=(cur&&cur.data&&cur.data.actual_stock!=null)?Number(cur.data.actual_stock):Number(m.actual_stock||0);
-      var next = dir<0 ? Math.max(0, base-qty) : (base+qty);
-      var w=await sb_.from("menu_items").update({actual_stock:next}).eq("id",mid);
-      if(w.error){ kqWriteFail(w.error,"ปรับของจริงบนชั้น"); continue; }
-      m.actual_stock=next;
-      logStock(m, (dir<0?"จัดลงถุง −":"ยกเลิกจัด +")+qty, {real:base}, {real:next});
-    }catch(e){ /* ปรับเลขไม่สำเร็จ = ไม่บล็อกการกดปุ่ม สถานะออเดอร์สำคัญกว่า */ }
-  }
-}
-
 async function markPacked(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
@@ -1820,7 +1811,6 @@ async function markPacked(id){
   if(o0 && (o0.status==="ready"||o0.status==="delivered")){ render(); return; }
   var _w5=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id); if(_w5.error){kqWriteFail(_w5.error,"จัดกล่องเสร็จ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
-  await stkOnPack(id,-1);
   pkSetAll(id,true);
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
   render();
@@ -1832,7 +1822,6 @@ async function markUnpack(id){
   if(o0 && o0.status!=="ready"){ render(); return; }   // ไม่ได้อยู่สถานะจัดแล้ว = ไม่มีอะไรให้คืน
   var _w6=await sb_.from("orders").update({status:"confirmed",updated_at:new Date().toISOString()}).eq("id",id); if(_w6.error){kqWriteFail(_w6.error,"ย้อนสถานะ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="confirmed";
-  await stkOnPack(id,1);                               // คืนเลขให้ครัว ไม่งั้นกดพลาดแล้วของหายจากระบบ
   pkSetAll(id,false);
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดกล่อง");
   render();
