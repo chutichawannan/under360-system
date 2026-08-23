@@ -988,16 +988,28 @@ function renderProd(){
     renderMpQueue();
     return;
   }
+  /* 🧭 2 ชั้นที่ต้องไม่ปนกัน (นัทคิดออกเอง 23 ส.ค.: "แพลนงานก็ส่วนแพลนงาน
+       ทำเติมจริงก็จะได้ยอดจริง ฝั่งของครัวคือฝั่งที่มีแต่ความจริงเพราะอยู่กับของ")
+       · สั่ง   = ของ "วันที่เลือกดู"        → เป็นแพลน ขึ้นกับวัน
+       · ทำไว้/เหลือ = ของจริงในตู้ตอนนี้     → เป็นความจริง ไม่ขึ้นกับวัน
+     🐞 ของเดิม: ทำไว้ = stock_total + r.qty  โดย r.qty กรองตามวันที่ดู
+        = เอาเลขที่ไม่ผูกวัน มาบวกกับเลขที่ผูกวัน (พลาดแบบเดียวกับช่องซ้ายในแท็บตั้งสต็อค)
+        ผลจริงที่วัดได้: S149 เลือก "ทั้งหมด" ทำไว้ 5 · เลือก "พรุ่งนี้" ทำไว้ 3
+        → ของในตู้ไม่ได้เปลี่ยน แต่ตัวเลขเปลี่ยนเพราะกดดูคนละวัน = ครัวเชื่อไม่ได้ */
+  var omAll=stkOrderedMap();
   var html=unplannedHtml(unplanned)+"<div class='prod-wrap'>"
+    +"<div style='font-size:11.5px;color:var(--soft);padding:6px 10px;line-height:1.6'>"
+    +"<b style='color:var(--gold)'>สั่ง</b> = ของวันที่เลือกดู · "
+    +"<b style='color:var(--g)'>ทำไว้</b> / <b>เหลือ</b> = ของจริงในตู้ตอนนี้ (ไม่เปลี่ยนตามวันที่เลือก)</div>"
     +"<div class='pt-head'><span>สินค้า</span><span>สั่ง</span><span style='color:var(--g)'>ทำไว้</span><span>เหลือ</span></div>";
   rows.forEach(function(r){
     var m=allMenus.find(function(x){return x.id===r.id;})||{};
     var unlimited=(m.stock_total==null);
     /* ⚠️ ตั้งแต่ 16 ส.ค. `stock_total` = "ขายได้อีก" (หักของที่สั่งไปแล้วเรียบร้อย)
-       ไม่ใช่ "ของที่ทำไว้" อีกต่อไป → ช่อง "ทำไว้" ต้องบวกที่สั่งแล้วกลับเข้าไป
-       ถ้าไม่แก้ตรงนี้ ช่อง "เหลือ" จะหักยอดสั่งซ้ำสองรอบ = ครัวเห็นของขาดทั้งที่ของพอ */
+       ไม่ใช่ "ของที่ทำไว้" → ต้องบวกที่สั่งไปแล้วกลับเข้าไป
+       แต่ต้องบวก "ทุกวัน" (omAll) ไม่ใช่เฉพาะวันที่ดู ไม่งั้นตัวเลขแกว่งตามปุ่มที่กด */
     var rem=unlimited?null:m.stock_total;
-    var stk=unlimited?null:(m.stock_total + r.qty);
+    var stk=unlimited?null:(m.stock_total + (omAll[r.id]||0));
     var rowCls=(rem!=null&&rem<0)?"danger":(rem!=null&&rem<3)?"warn":"";
     // ชื่อเมนูตัดบรรทัดได้ ไม่ตัดข้อความทิ้ง (เดิม ellipsis+nowrap = ชื่อยาวอ่านไม่จบว่าต้องผลิตอะไร)
     html+="<div class='pt-row "+rowCls+"'>"
