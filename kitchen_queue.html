@@ -185,7 +185,14 @@ body.tablet .date-banner{font-size:16px;padding:14px 18px;}
 .btn-ship{background:#1E40AF;color:#fff;border:none;border-radius:8px;padding:0 16px;min-height:44px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--sans);}
 .oc:last-child{margin-bottom:0;}
 .oc.pkg{border-color:var(--gold);background:var(--golds);}
-.oc.mealplan{border-color:var(--g);background:var(--gs);}
+/* 🎨 สีบอกสถานะงาน (นัทสั่ง 23 ส.ค.) — ครัวกวาดตาแล้วรู้ทันทีว่าเหลืออะไร
+   ยังไม่กดจัด = แดง (งานค้าง) · จัดแล้ว = ขาวปกติ (จบแล้ว ไม่ต้องดึงสายตา)
+   Meal Plan = ฟ้า (คนละงาน ไม่ได้จัดจากหน้านี้) */
+.oc.mealplan{border-color:#1E5F8A;background:#EEF6FC;}
+.oc.todo{border-color:#DC2626;background:#FEF2F2;}
+.oc.todo .oc-name{color:#B91C1C;}
+.oc.mealplan.todo{border-color:#1E5F8A;background:#EEF6FC;}   /* MP ไม่ต้องแดง — ไม่ได้จัดจากหน้านี้ */
+.oc.mealplan.todo .oc-name{color:var(--ink);}
 .oc-top{display:flex;align-items:flex-start;gap:8px;margin-bottom:6px;cursor:pointer;}
 /* ── พับ/กางการ์ด (N-13) ── ค่าเริ่มต้น = กางไว้ · พับแล้วเหลือ ชื่อ+กล่อง+สถานะ ── */
 .oc-caret{flex-shrink:0;font-size:14px;color:var(--soft);line-height:1.4;margin-top:1px;transition:transform .12s;}
@@ -1723,16 +1730,22 @@ function renderOrders(){
     if(!bySlot[s])bySlot[s]=[];
     bySlot[s].push(o);
   });
-  // 🍳 ในแต่ละช่วงเวลา: Meal Plan ขึ้นก่อน แล้วเรียงตามเวลาที่ลูกค้าสั่งเข้ามา (นัทสั่ง 6 ส.ค. 2569)
-  //    เดิมไม่ได้กำหนดลำดับในกลุ่มเลย → สลับที่ทุกครั้งที่โหลด ครัวจำตำแหน่งไม่ได้
-  //    ที่เอา Meal Plan ขึ้นบน เพราะเป็นของทำสดต้องลงมือก่อน · สต็อก/เซ็ตหยิบทีหลังได้
+  /* 🍳 ลำดับในแต่ละช่วงเวลา (นัทสั่งใหม่ 23 ส.ค. 2569 — สลับจากของเดิม)
+     ① ออเดอร์ที่ยังไม่ได้จัด  ② ออเดอร์ที่จัดแล้ว  ③ Meal Plan (ล่างสุด)
+     เหตุผล: หน้านี้ครัวใช้ "ไล่จัดของ" → งานที่ยังไม่ทำต้องอยู่บนสุดเสมอ
+     Meal Plan ไม่ได้จัดจากหน้านี้ (ไปดูรอบส่งที่แท็บรายสินค้า) จึงลงไปอยู่ล่าง
+     ⚠️ เดิมเอา Meal Plan ขึ้นบนเพราะเป็นของทำสดต้องลงมือก่อน — เหตุผลนั้นยังจริง
+        แต่เป็นเรื่อง "ผลิต" ไม่ใช่ "จัดของ" คนละงานกับที่หน้านี้ทำ */
   Object.keys(bySlot).forEach(function(s){
     bySlot[s].forEach(function(o){
       var it=getOrderItems(o.id);
       o._isMp = it.some(function(i){ return /^(HP|LC|MP)/i.test(i.code||""); }) || it.some(function(i){ return i._fromPlan; });
     });
     bySlot[s].sort(function(a,b){
-      if(a._isMp!==b._isMp) return a._isMp?-1:1;                                   // Meal Plan ก่อน
+      if(a._isMp!==b._isMp) return a._isMp?1:-1;                                   // Meal Plan ไปล่างสุด
+      var ap=(a.status==="ready"||a.status==="delivered")?1:0;
+      var bp=(b.status==="ready"||b.status==="delivered")?1:0;
+      if(ap!==bp) return ap-bp;                                                    // ยังไม่จัด ขึ้นก่อน
       return String(a.created_at||"").localeCompare(String(b.created_at||""));      // แล้วใครสั่งก่อนอยู่ก่อน
     });
   });
@@ -1953,7 +1966,7 @@ function renderCard(o){
     boxTag+="<span class='oc-prog"+((_tot&&_done>=_tot)?" full":"")+"'>☑ "+_done+"/"+_tot+"</span>";
   }
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
-  return "<div class='"+cardCls+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+(kqPackMode?" pk-lean":"")+"' data-oid='"+escH(o.id)+"'>"
+  return "<div class='"+cardCls+(packed?"":" todo")+(shipped?" oc-done":"")+(isCol?" oc-collapsed":"")+(kqPackMode?" pk-lean":"")+"' data-oid='"+escH(o.id)+"'>"
     +"<div class='oc-2col'>"
       +"<div class='oc-left'>"
         +"<div class='oc-top' onclick='toggleCard(\""+o.id+"\")' title='แตะเพื่อพับ/กาง'>"
