@@ -1828,6 +1828,15 @@ function pkTick(el,ev){
   pkSaveTicks();
   el.classList.toggle("on",!!kqTicks[k]);
   pkSyncProg(oid);
+  pkSyncPartBtn(oid);
+}
+function pkSyncPartBtn(oid){
+  var card=document.querySelector(".oc[data-oid='"+oid+"']"); if(!card) return;
+  var btn=card.querySelector(".btn-part"); if(!btn) return;
+  var n=0;
+  card.querySelectorAll(".pk-row:not(.pk-locked).on").forEach(function(r){ n+=Number(r.getAttribute("data-q"))||0; });
+  btn.textContent = n ? ("📦 ยืนยันจัดเสร็จ "+n+" กล่อง") : "📦 จัดเสร็จบางส่วน";
+  btn.classList.toggle("hot", n>0);
 }
 function pkSyncProg(oid){
   var card=document.querySelector(".oc[data-oid='"+oid+"']"); if(!card) return;
