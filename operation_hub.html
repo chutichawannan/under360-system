@@ -1123,6 +1123,38 @@ body.counts-folded .count-grid{display:none}
   </div>
 </div>
 
+<!-- ❓ เหตุผลที่ยกเลิก (f-track ขอผ่าน CC · 22 ส.ค. 2026)
+     ทำไมต้องมี: โน้ตเดิมบอกแค่ "ใครกดยกเลิก" ไม่เคยบอก "ทำไม"
+     → ห้องการเงินตอบไม่ได้ว่าเดือนนี้เสียออเดอร์เพราะอะไร (ส.ค. ยกเลิก 12 ใบ · ใบที่ยกเลิกมีสัดส่วนค่าส่งสูงผิดปกติ แต่ยังฟันธงไม่ได้เพราะไม่มีเหตุผล)
+     เก็บเป็นข้อความรูปแบบตายตัวในโน้ต [เหตุผล: xxx] → รายงานนับได้เลย ไม่ต้องเพิ่มคอลัมน์/รัน SQL ใหม่ -->
+<div id="cxOverlay" onclick="if(event.target===this)cxClose()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4200;padding:16px;overflow:auto">
+  <div style="max-width:420px;margin:60px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)">
+    <div style="padding:13px 16px;background:#B91C1C;color:#fff;font-size:15px;font-weight:800">🗑️ ยกเลิกออเดอร์</div>
+    <div style="padding:16px;font-size:13px;line-height:1.7">
+      <div id="cxWhat" style="background:#FEF2F2;border-radius:10px;padding:10px 12px;margin-bottom:12px"></div>
+      <div style="font-weight:700;margin-bottom:6px">ยกเลิกเพราะอะไร? <span style="color:#B91C1C">*</span></div>
+      <select id="cxReason" onchange="document.getElementById('cxOther').style.display=(this.value==='อื่นๆ'?'':'none')"
+        style="width:100%;padding:10px;border:1px solid #D6DDD8;border-radius:9px;font-size:14px;font-family:inherit">
+        <option value="">— เลือกเหตุผล —</option>
+        <option>ลูกค้าเปลี่ยนใจ</option>
+        <option>ค่าส่งแพง</option>
+        <option>สั่งซ้ำ</option>
+        <option>ของหมด</option>
+        <option>อื่นๆ</option>
+      </select>
+      <input id="cxOther" placeholder="พิมพ์เหตุผลสั้นๆ" maxlength="60"
+        style="display:none;width:100%;margin-top:8px;padding:10px;border:1px solid #D6DDD8;border-radius:9px;font-size:14px;font-family:inherit">
+      <div style="color:#6B7280;font-size:12px;margin-top:10px">ใบนี้จะหายจากรายการออเดอร์ · หน้าครัว · แพลนเมนู · ใบทวงเงิน (กู้คืนได้ที่ปุ่ม "ใบที่ยกเลิก")</div>
+      <div id="cxErr" style="display:none;color:#B91C1C;font-size:12px;margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button onclick="cxClose()" style="flex:1;padding:11px;border:1px solid #D6DDD8;background:#fff;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">ไม่ยกเลิก</button>
+        <button id="cxGo" onclick="cxConfirm()" style="flex:1;padding:11px;border:none;background:#B91C1C;color:#fff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">ยืนยันยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ── SUPABASE: daily_menu_assignments ─────────────────────────────────────
@@ -2518,16 +2550,47 @@ async function odRestock(id, sign, label){
     return {menus:keys.length, ok:ok, boxes:box, label:label};
   }catch(e){ console.error("odRestock:",e); return null; }
 }
+/* ── ถามเหตุผลก่อน แล้วค่อยยกเลิกจริง ─────────────────────────────────────
+   เดิมเป็น window.confirm ล้วน → โน้ตบอกได้แค่ "ใครกด" ไม่เคยบอก "ทำไม"
+   บังคับเลือกเหตุผล ข้ามไม่ได้ — ถ้าปล่อยให้ข้ามได้ ทุกคนจะข้าม แล้วก็ได้ข้อมูลเปล่าเหมือนเดิม */
+var _cxCtx=null;
+function cxClose(){ var e=document.getElementById("cxOverlay"); if(e) e.style.display="none"; _cxCtx=null; }
 async function odCancelOrder(id){
   var sb_=getSB(); if(!sb_)return;
   var o=(ordRows||[]).find(function(x){return x.id===id;});
   if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
   if(!o) return alert("ไม่พบออเดอร์");
   var who=odWho(); if(!who) return;
-  if(!window.confirm("ยกเลิกออเดอร์นี้?\n\n"+(o.order_number||"")+" · "+(o.customer_name||"")+"\nยอด "+fmtB(o.total)+" · ส่ง "+(o.delivery_date||"—")
-    +"\n\nใบนี้จะหายจากรายการออเดอร์ · หน้าครัว · แพลนเมนู · ใบทวงเงิน\n(กู้คืนได้ที่ปุ่ม \"ใบที่ยกเลิก\")\n\nคนกด: "+who)) return;
+  _cxCtx={id:id,o:o,who:who};
+  document.getElementById("cxWhat").innerHTML="<b>"+esc2(o.order_number||"")+"</b> · "+esc2(o.customer_name||"")
+    +"<br>ยอด "+fmtB(o.total)+" · ส่ง "+esc2(o.delivery_date||"—")
+    +"<br><span style='color:#6B7280'>คนกด: "+esc2(who)+"</span>";
+  document.getElementById("cxReason").value="";
+  document.getElementById("cxOther").value="";
+  document.getElementById("cxOther").style.display="none";
+  document.getElementById("cxErr").style.display="none";
+  var g=document.getElementById("cxGo"); g.disabled=false; g.textContent="ยืนยันยกเลิก";
+  document.getElementById("cxOverlay").style.display="";
+}
+async function cxConfirm(){
+  if(!_cxCtx) return;
+  var sel=document.getElementById("cxReason").value;
+  var other=(document.getElementById("cxOther").value||"").trim();
+  var reason = (sel==="อื่นๆ") ? other : sel;
+  var err=document.getElementById("cxErr");
+  if(!reason){ err.textContent = (sel==="อื่นๆ") ? "พิมพ์เหตุผลด้วยค่ะ" : "เลือกเหตุผลก่อนนะคะ"; err.style.display=""; return; }
+  var btn=document.getElementById("cxGo"); btn.disabled=true; btn.textContent="⏳ กำลังยกเลิก...";
+  var id=_cxCtx.id, o=_cxCtx.o, who=_cxCtx.who;
+  var sb_=getSB();
+  cxClose();
   try{
-    var stamp="[ยกเลิกโดย "+who+" "+today2()+"]";
+    /* รูปแบบตายตัว [เหตุผล: xxx] — ห้องการเงินนับจากโน้ตได้เลย ไม่ต้องรอคอลัมน์ใหม่
+       ตัดวงเล็บเหลี่ยมออกจากข้อความที่คนพิมพ์ ไม่งั้นตัวอ่านโน้ตจะตัดคำผิด */
+    var nob=function(t){ return String(t||"").split("[").join("").split("]").join(""); };
+    /* ⚠️ ชื่อคนกดก็ต้องตัดวงเล็บเหลี่ยมด้วย — เจอตอนเทส 23 ส.ค.: ชื่อที่มี ] ทำให้ตัวลบป้ายตอนกู้คืน
+       ตัดผิดตำแหน่ง แล้วเหลือเศษวันที่ค้างในโน้ตลูกค้า (บั๊กเดิม โผล่เฉพาะชื่อที่มีวงเล็บ) */
+    var safe=nob(reason).slice(0,60);
+    var stamp="[ยกเลิกโดย "+nob(who)+" "+today2()+"] [เหตุผล: "+safe+"]";
     var up=await sb_.from("orders").update({
       status:"cancelled",
       notes:String(o.notes||"").indexOf("[ยกเลิกโดย")>=0?o.notes:((o.notes?o.notes+" ":"")+stamp),
@@ -2556,7 +2619,7 @@ async function odClearCancelStamp(sb_,id){
     /* ⚠️ ต้องมี \ หน้า [ ] และ \s — เคยหลุดหายตอนเขียนไฟล์ผ่าน shell แล้วกลายเป็น
        character class ที่ไล่ลบตัวอักษรไทยทีละตัวออกจากโน้ตลูกค้า (เช่น "ห้อง 75 ตึกA")
        ของแบบนี้ไม่มีอะไรฟ้อง เห็นอีกทีคือข้อความลูกค้าแหว่งไปแล้ว */
-    var clean=n.replace(/\[ยกเลิกโดย[^\]]*\]/g,"").replace(/\s+/g," ").trim();
+    var clean=n.replace(/\[ยกเลิกโดย[^\]]*\]/g,"").replace(/\[เหตุผล:[^\]]*\]/g,"").replace(/\s+/g," ").trim();
     await sb_.from("orders").update({notes:clean||null}).eq("id",id);
   }catch(e){}
 }

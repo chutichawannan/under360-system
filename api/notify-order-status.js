@@ -25,8 +25,18 @@
  *
  * เรียกใช้:
  *   /api/notify-order-status?dry=1              ดูว่าจะส่งอะไร ไม่ส่งจริง
+ *   /api/notify-order-status?seed=1             🔴 กดก่อนเปิดใช้ครั้งแรกเสมอ — ดูรายละเอียดด้านล่าง
  *   /api/notify-order-status                    ส่งจริง
  *   /api/notify-order-status?order=U-0817-002   เจาะจงใบเดียว (ใช้ตอนเทส)
+ *   /api/notify-order-status?max=5              จำกัดจำนวนข้อความต่อรอบ (default 20)
+ *
+ * 🔴 กับดักตอนเปิดใช้ครั้งแรก (U เจอ 23 ส.ค. 2026 ตอนรับงานจาก CC — ยังไม่เคยเปิดจริงสักครั้ง)
+ *   สมุด "ส่งไปแล้ว" เริ่มต้นว่างเปล่า + มองย้อนหลัง 48 ชม.
+ *   → รันจริงครั้งแรก = ยิงย้อนหลังใส่ทุกใบใน 2 วันรวดเดียว
+ *     รวมใบที่ลูกค้าได้รับอาหารไปแล้ว (จะได้ข้อความ "อาหารพร้อมแล้ว" ทีหลัง = ระบบดูโง่ และกวนลูกค้าจริง)
+ *   ทางที่ถูก: เรียก ?seed=1 หนึ่งครั้ง (จดว่า "ของเก่าถือว่าส่งแล้ว" โดยไม่ส่งอะไรเลย)
+ *     แล้วค่อยเปิด cron → ตั้งแต่นั้นจะได้เฉพาะใบที่สถานะขยับ "หลังจาก" เปิดระบบ
+ *   และมีเพดานต่อรอบ (max) กันกรณีสมุดหายแล้วยิงซ้ำทั้งกอง
  *
  * ⚠️ ยังส่งไม่ได้จนกว่า LIFF กับแชนแนลข้อความจะอยู่ provider เดียวกัน
  *    (userId คนละ provider = LINE ไม่รู้จักลูกค้า — ดู docs/LINE_PROVIDER.md)
@@ -135,9 +145,11 @@ function kindsFor(o) {
 }
 
 module.exports = async (req, res) => {
-  const q   = (req && req.query) || {};
-  const dry = q.dry === '1' || q.dry === 'true';
-  const one = q.order;
+  const q    = (req && req.query) || {};
+  const dry  = q.dry === '1' || q.dry === 'true';
+  const seed = q.seed === '1' || q.seed === 'true';   // จดว่าส่งแล้ว โดยไม่ส่งจริง (ใช้ครั้งเดียวก่อนเปิด cron)
+  const one  = q.order;
+  const MAX  = Math.max(1, Math.min(200, parseInt(q.max, 10) || 20));   // เพดานข้อความต่อรอบ
 
   try {
     // ── ใบที่ต้องดู ──
@@ -153,12 +165,13 @@ module.exports = async (req, res) => {
     const sent = new Set((Array.isArray(row) && row[0] && Array.isArray(row[0].data)) ? row[0].data : []);
     const before = sent.size;
 
-    const token = dry ? null : await getLineToken();
-    if (!dry && !token) {
+    const token = (dry || seed) ? null : await getLineToken();
+    if (!dry && !seed && !token) {
       return res.status(200).json({ ok: false, why: 'ยังออก token ไม่ได้ — ดู /api/line-check' });
     }
 
     const report = [];
+    let pushed = 0, capped = 0;
     for (const o of orders) {
       if (!o.line_uid) { report.push({ order: o.order_number, skip: 'ไม่มี LINE uid' }); continue; }
       for (const kind of kindsFor(o)) {
@@ -166,6 +179,11 @@ module.exports = async (req, res) => {
         if (sent.has(mark)) continue;                 // ← กันส่งซ้ำ กฎเหล็กของนัท
 
         if (dry) { report.push({ order: o.order_number, kind, to: String(o.line_uid).slice(0, 10) + '…' }); sent.add(mark); continue; }
+        // ✏️ seed = จดว่า "ถือว่าส่งแล้ว" โดยไม่ส่ง — ใช้ครั้งเดียวก่อนเปิด cron กันยิงย้อนหลังใส่ลูกค้า
+        if (seed) { report.push({ order: o.order_number, kind, "จดว่าส่งแล้ว(ไม่ส่งจริง)": true }); sent.add(mark); continue; }
+        // 🚧 เพดานต่อรอบ — ของที่เกินไม่ถูกจดว่าส่งแล้ว รอบหน้าได้ต่อ (ไม่หาย แค่ทยอย)
+        if (pushed >= MAX) { capped++; continue; }
+        pushed++;
 
         const rr = await pushToOrderUid(token, o, [bubble(o, kind)]);
         if (rr.ok) { sent.add(mark); report.push({ order: o.order_number, kind, ok: true, "ส่งผ่าน": rr.via }); }
@@ -184,9 +202,11 @@ module.exports = async (req, res) => {
     }
 
     return res.status(200).json({
-      mode: dry ? 'ทดสอบ (ไม่ส่งจริง)' : 'ส่งจริง',
+      mode: dry ? 'ทดสอบ (ไม่ส่งจริง)' : (seed ? 'จดว่าส่งแล้ว (ไม่ส่งจริง)' : 'ส่งจริง'),
       ใบที่ดู: orders.length,
       ส่งได้: report.filter(r => r.ok).length,
+      เกินเพดานรอบนี้: capped,
+      เพดานต่อรอบ: MAX,
       รายละเอียด: report,
     });
   } catch (e) {

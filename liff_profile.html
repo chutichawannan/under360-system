@@ -124,6 +124,25 @@ body{font-family:var(--sans);background:var(--bg);padding-bottom:24px;}
 
 <div class="main">
 
+  <!-- ══ N-55 · ผูกบัญชีเดิมด้วยเบอร์ (นัทเคาะ 10 ส.ค. · CC ทวงรอบ 2 · 22 ส.ค.) ══
+       ทำไมต้องมี: ลูกค้ายุค Hato ถูกออกรหัส LINE คนละ provider กับของเรา
+       → เปิดหน้านี้แล้วระบบ "ไม่รู้จัก" ทั้งที่สั่งกับร้านมาเป็นปี (probe จริง 22 ส.ค. พบ ~40% ส่งข้อความไม่ถึง)
+       กติกาที่ห้ามผิด: ผูกได้เฉพาะแถวที่ line_uid **ว่าง** เท่านั้น
+       แถวที่ผูก LINE คนอื่นไว้แล้ว = ไม่แตะ ไม่โชว์ข้อมูล (กันสวมบัญชีจากการเดาเบอร์) -->
+  <div class="card" id="linkOldCard" style="display:none">
+    <div class="ch">🔗 เคยสั่งกับร้านมาก่อน?</div>
+    <div class="cb">
+      <div style="font-size:12px;line-height:1.55;color:var(--ink-soft);margin-bottom:10px">
+        ถ้าคุณเคยสั่งกับ Under360 ด้วยเบอร์นี้ พิมพ์เบอร์เพื่อ<b style="color:var(--forest)">ดึงประวัติการสั่งและแต้มสะสมเดิมกลับมา</b>
+      </div>
+      <div style="display:flex;gap:6px">
+        <input class="fi" id="lnkPhone" type="tel" maxlength="10" inputmode="numeric" placeholder="0812345678" style="flex:1;padding:9px 11px;font-size:14px">
+        <button id="lnkBtn" onclick="lookupOldAccount()" style="background:var(--forest);color:#fff;border:none;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;cursor:pointer;white-space:nowrap">ค้นหา</button>
+      </div>
+      <div id="lnkResult" style="margin-top:10px"></div>
+    </div>
+  </div>
+
   <!-- Info (read-only) -->
   <div class="card">
     <div class="ch">📋 ข้อมูลส่วนตัว</div>
@@ -223,6 +242,11 @@ const LIFF_ID_NEW = '2011148232-oul66cEs';
 const _lid  = (new URLSearchParams(location.search).get('lid') || '').trim();
 const _door = /^\d{10}-[A-Za-z0-9]+$/.test(_lid) ? _lid : LIFF_ID;
 let _lineUid = null;
+/* N-54 (นัทเจอ 10 ส.ค. · ค้าง 12 วัน) — เดิมเรียก liff.getProfile() แล้วหยิบไปแค่ userId
+   ทั้งที่ LINE ส่ง displayName + pictureUrl มาให้ในก้อนเดียวกันฟรีๆ
+   ผลคือหน้านี้โชว์รูป/ชื่อไลน์ได้ก็ต่อเมื่อแถวใน DB มีค่าอยู่แล้ว — ซึ่งลูกค้าที่ย้ายมาจาก Hato ส่วนใหญ่ไม่มี
+   → เก็บทั้งก้อนไว้ใช้เป็นตัวสำรอง (และเติมกลับเข้า DB ให้ด้วย) */
+let _lineProf = null;
 async function currentLineUid(){
   if(_lineUid) return _lineUid;
   try{
@@ -235,6 +259,7 @@ async function currentLineUid(){
       if(!_ok) throw (_err || new Error("liff.init ไม่ผ่านทุกประตู"));
     if(!liff.isLoggedIn()){ liff.login(); return null; }
     const prof = await liff.getProfile();
+    _lineProf = prof || null;
     _lineUid = prof && prof.userId;
   }catch(e){ console.error('LIFF init failed:', e); _lineUid = null; }
   if(!_lineUid){
@@ -245,7 +270,99 @@ async function currentLineUid(){
     return null;
   }
   localStorage.setItem('line_uid', _lineUid);
+  paintLineIdentity();
   return _lineUid;
+}
+
+/* วาดรูป+ชื่อจาก LINE ก่อน (เร็วกว่า DB และไม่มีวันว่าง) — ค่าจาก DB จะมาทับทีหลังถ้ามีของจริง */
+function paintLineIdentity(){
+  if(!_lineProf) return;
+  const nm=_lineProf.displayName||'';
+  const setTxt=(id,v)=>{ const el=document.getElementById(id); if(el&&v) el.textContent=v; };
+  if(nm){ setTxt('hName',nm); setTxt('hLine','@'+nm); setTxt('infoLine',nm); }
+  if(_lineProf.pictureUrl){
+    const av=document.getElementById('hAv'), em=document.getElementById('hEmoji');
+    if(av){ av.src=_lineProf.pictureUrl; av.style.display=''; }
+    if(em) em.style.display='none';
+  }
+}
+
+/* ══════════ N-55 · ผูกบัญชีเดิมด้วยเบอร์ ══════════ */
+function normPhoneP(p){ if(!p) return ""; var s=String(p).replace(/[^0-9]/g,""); if(s.indexOf("66")===0) s="0"+s.slice(2); if(s.length===9) s="0"+s; return s; }
+/* โชว์ชื่อแบบปิดบัง — ยืนยันได้ว่า "ใช่ฉัน" แต่ไล่สุ่มเบอร์เก็บชื่อคนอื่นไม่ได้ */
+function maskName(n){
+  return String(n||"").trim().split(/[ ]+/).filter(Boolean).slice(0,2)
+    .map(w=>Array.from(w)[0]+"•".repeat(Math.max(1,Math.min(4,w.length-1)))).join(" ") || "สมาชิกเดิม";
+}
+function showLinkOldBox(){ const c=document.getElementById("linkOldCard"); if(c) c.style.display=""; }
+function lnkSay(html){ const r=document.getElementById("lnkResult"); if(r) r.innerHTML=html; }
+
+let _lnkFound=null;
+async function lookupOldAccount(){
+  const raw=(document.getElementById("lnkPhone").value||"").trim();
+  const norm=normPhoneP(raw);
+  _lnkFound=null;
+  if(!/^0[0-9]{9}$/.test(norm)){ lnkSay('<div style="font-size:12px;color:#b0342c">กรุณากรอกเบอร์ 10 หลักให้ถูกต้อง</div>'); return; }
+  const sb_=getSB(); if(!sb_){ lnkSay('<div style="font-size:12px;color:#b0342c">ต่อระบบไม่ได้ ลองใหม่อีกครั้ง</div>'); return; }
+  const btn=document.getElementById("lnkBtn"); btn.disabled=true; btn.textContent="⏳";
+  try{
+    const { data, error } = await sb_.from("customers")
+      .select("id,line_uid,display_name,line_display_name,loyalty_points,phone").eq("phone",norm).limit(10);
+    if(error) throw error;
+    const rows=data||[];
+    /* ⚠️ เข้มกว่าตัวรวมแถวตอน checkout โดยตั้งใจ — ตรงนั้นระบบรู้เบอร์จากใบสั่งจริง
+       แต่ตรงนี้ลูกค้าพิมพ์เบอร์อะไรก็ได้เอง → ถ้าเบอร์นี้มีคนผูก LINE ไว้แล้วแม้แถวเดียว
+       ห้ามยกแถวซ้ำที่เหลือให้ใครทั้งนั้น ต้องให้แอดมินรวมมือ (เจอเคสจริงตอนเทส: 1 เบอร์ 2 แถว) */
+    const taken=rows.some(r=>r.line_uid && r.line_uid!==_lineUid);
+    const old=taken ? null : rows.find(r=>!r.line_uid);
+    if(!old){
+      lnkSay(rows.length
+        ? '<div style="font-size:12px;line-height:1.5;color:#8a5a00;background:#fff5e0;border-radius:9px;padding:9px 11px">เบอร์นี้ผูกกับบัญชี LINE อื่นอยู่แล้ว<br><span style="color:var(--ink-soft)">ถ้าเป็นเบอร์ของคุณจริง กรุณาทักแอดมินให้รวมบัญชีให้</span></div>'
+        : '<div style="font-size:12px;color:var(--ink-soft)">ไม่พบบัญชีเดิมของเบอร์นี้ — สมัครสมาชิกใหม่ได้เลย</div>');
+      return;
+    }
+    /* นับออเดอร์เก่าแบบไม่ดึงข้อมูลจริงมา (head:true) — ใช้แค่ยืนยันว่าใช่บัญชีตัวเอง */
+    let cnt=0;
+    try{ const r2=await sb_.from("orders").select("id",{count:"exact",head:true}).eq("customer_id",old.id); cnt=r2.count||0; }catch(e){}
+    _lnkFound=old;
+    lnkSay('<div style="background:var(--forest-soft);border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.6;color:var(--forest)">'
+      +'พบบัญชีเดิม: <b>'+maskName(old.display_name||old.line_display_name)+'</b>'
+      +'<div style="color:var(--ink-soft);font-size:12px">เคยสั่ง '+cnt+' ครั้ง · แต้มสะสม '+Number(old.loyalty_points||0).toLocaleString()+'</div>'
+      +'</div>'
+      +'<button onclick="bindOldAccount()" id="lnkOkBtn" style="width:100%;margin-top:8px;background:var(--forest);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer">ใช่ นี่บัญชีของฉัน — ผูกกับ LINE นี้</button>'
+      +'<div style="font-size:11px;color:var(--ink-soft);margin-top:6px;text-align:center">ผูกแล้วเปลี่ยนเองไม่ได้ ต้องให้แอดมินแก้</div>');
+  }catch(e){ lnkSay('<div style="font-size:12px;color:#b0342c">ค้นหาไม่สำเร็จ ลองใหม่อีกครั้ง</div>'); }
+  finally{ btn.disabled=false; btn.textContent="ค้นหา"; }
+}
+
+async function bindOldAccount(){
+  if(!_lnkFound || !_lineUid) return;
+  const sb_=getSB(); if(!sb_) return;
+  const ok=document.getElementById("lnkOkBtn"); if(ok){ ok.disabled=true; ok.textContent="⏳ กำลังผูก..."; }
+  const today=new Date().toISOString().slice(0,10);
+  try{
+    /* กติกาเดียวกับ resolveCanonicalCustomer ในหน้าสั่งอาหาร — ปลด stub ที่ถือ uid นี้ก่อน กัน unique conflict */
+    const { data:byUid } = await sb_.from("customers").select("id,admin_notes").eq("line_uid",_lineUid).limit(2);
+    const stub=(byUid||[]).find(r=>r.id!==_lnkFound.id);
+    if(stub){
+      const s1=await sb_.from("customers").update({ line_uid:null, is_blocked:true,
+        admin_notes:((stub.admin_notes||"")+" [รวมเข้า "+_lnkFound.id.slice(0,8)+"]").trim() }).eq("id",stub.id);
+      if(s1.error) throw s1.error;
+    }
+    const upd={ line_uid:_lineUid };
+    if(_lineProf&&_lineProf.displayName) upd.line_display_name=_lineProf.displayName;
+    if(_lineProf&&_lineProf.pictureUrl)  upd.picture_url=_lineProf.pictureUrl;
+    upd.admin_notes=" [🔗 ลูกค้าผูกบัญชีเดิมเอง "+today+"]";
+    /* ต่อท้ายโน้ตเดิม ไม่ทับ */
+    const { data:cur } = await sb_.from("customers").select("admin_notes").eq("id",_lnkFound.id).limit(1);
+    upd.admin_notes=(((cur&&cur[0]&&cur[0].admin_notes)||"")+upd.admin_notes).trim();
+    const u=await sb_.from("customers").update(upd).eq("id",_lnkFound.id);
+    if(u.error) throw u.error;
+    document.getElementById("linkOldCard").style.display="none";
+    await loadProfile();
+  }catch(e){
+    lnkSay('<div style="font-size:12px;color:#b0342c">ผูกไม่สำเร็จ ลองใหม่อีกครั้ง หรือทักแอดมิน</div>');
+  }
 }
 
 async function loadProfile(){
@@ -262,19 +379,33 @@ async function loadProfile(){
   }
   // ❌ เดิมมี mock "Test User · 4,200 แต้ม · ออเดอร์ปลอม" → ลูกค้าจริงที่ยังไม่สมัครเห็นข้อมูลคนอื่น (แก้ 3 ส.ค. 2026)
   if(!p){
-    document.getElementById("hName").textContent="ยังไม่ได้สมัครสมาชิก";
-    document.getElementById("hLine").textContent="สมัครเพื่อสะสมแต้มและดูประวัติ";
-    document.getElementById("histBody").innerHTML='<div style="text-align:center;padding:18px"><div style="color:var(--ink-soft);font-size:13px;margin-bottom:10px">ยังไม่มีข้อมูลสมาชิก</div><a href="liff_register.html" style="display:inline-block;background:var(--forest);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700">สมัครสมาชิก →</a></div>';
+    /* N-54: เดิมบรรทัดนี้เขียนทับชื่อไลน์ทิ้ง → ลูกค้าเห็นแต่คำว่า "ยังไม่ได้สมัครสมาชิก" ล้วนๆ
+       ตอนนี้ชื่อ+รูปไลน์ยังอยู่ (paintLineIdentity วาดไปแล้ว) แล้วบอกสถานะที่บรรทัดรอง */
+    if(!(_lineProf && _lineProf.displayName)) document.getElementById("hName").textContent="ยังไม่ได้สมัครสมาชิก";
+    document.getElementById("hLine").textContent="ยังไม่มีข้อมูลสมาชิกในระบบใหม่";
+    document.getElementById("histBody").innerHTML='<div style="text-align:center;padding:18px"><div style="color:var(--ink-soft);font-size:13px;margin-bottom:10px">ยังไม่มีประวัติในบัญชีนี้</div><a href="liff_register.html" style="display:inline-block;background:var(--forest);color:#fff;text-decoration:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:700">สมัครสมาชิก →</a></div>';
+    showLinkOldBox();     // N-55 — เคยสั่งกับร้านมาก่อน? พิมพ์เบอร์เพื่อดึงประวัติ/แต้มกลับมา
     return;
   }
   // ชื่อคอลัมน์จริงใน DB: display_name / date_of_birth / picture_url (เดิมอ้าง name/birth_date/line_picture_url ที่ไม่มีจริง → ขึ้น "—" ทั้งที่กรอกไว้)
-  document.getElementById("hName").textContent=p.display_name||p.line_display_name||"—";
-  document.getElementById("hLine").textContent="@"+(p.line_display_name||"—");
+  const lnName=(_lineProf&&_lineProf.displayName)||"", lnPic=(_lineProf&&_lineProf.pictureUrl)||"";
+  document.getElementById("hName").textContent=p.display_name||p.line_display_name||lnName||"—";
+  document.getElementById("hLine").textContent="@"+(p.line_display_name||lnName||"—");
   document.getElementById("infoName").textContent=p.display_name||"—";
   document.getElementById("infoPhone").textContent=p.phone||"—";
   document.getElementById("infoDob").textContent=p.date_of_birth||"—";
-  document.getElementById("infoLine").textContent=p.line_display_name||"—";
-  if(p.picture_url){document.getElementById("hAv").src=p.picture_url;document.getElementById("hEmoji").style.display="none";}
+  document.getElementById("infoLine").textContent=p.line_display_name||lnName||"—";
+  const pic=p.picture_url||lnPic;
+  if(pic){const av=document.getElementById("hAv");av.src=pic;av.style.display="";document.getElementById("hEmoji").style.display="none";}
+  /* เติมชื่อ/รูปไลน์กลับเข้าแถวลูกค้าถ้ายังว่าง — หน้าแอดมิน/บรอดแคสต์อ่านจาก DB ไม่ได้อ่านจาก LINE
+     เขียนเฉพาะตอนว่างจริง ห้ามทับของเดิม · พลาดก็ไม่เป็นไร (หน้าลูกค้าไม่ต้องรอ) */
+  try{
+    const fill={};
+    if(!p.line_display_name && lnName) fill.line_display_name=lnName;
+    if(!p.picture_url && lnPic)        fill.picture_url=lnPic;
+    if(sb_ && Object.keys(fill).length) sb_.from("customers").update(fill).eq("id",p.id).then(()=>{},()=>{});
+  }catch(e){}
+  if(!p.phone) showLinkOldBox();   // N-55 — แถวนี้ยังไม่มีเบอร์ = ผูกประวัติเก่าไม่ได้
   renderTier(p.loyalty_points||0);
   // history
   renderHistory(p.orders||[]);

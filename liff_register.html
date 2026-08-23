@@ -108,8 +108,10 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;display:flex;
     <!-- Phone -->
     <div class="fg">
       <label class="fl">เบอร์โทรศัพท์ <span style="color:var(--ink-soft);text-transform:none;font-weight:400">(ไว้ติดต่อ/จัดส่ง)</span></label>
-      <input class="fi" id="fPhone" type="tel" maxlength="10" inputmode="numeric" placeholder="0812345678">
+      <input class="fi" id="fPhone" type="tel" maxlength="10" inputmode="numeric" placeholder="0812345678" oninput="hintOldAccount()">
       <div class="fe" id="errPhone"></div>
+      <!-- N-55 · บอกลูกค้าตรงนี้เลยว่าเจอบัญชีเดิม — เดิมระบบรวมประวัติให้เงียบๆ ลูกค้าไม่รู้ว่าแต้ม/ประวัติจะตามมา -->
+      <div id="oldHint" style="display:none;margin-top:7px;font-size:12px;line-height:1.5;border-radius:9px;padding:8px 10px"></div>
     </div>
 
     <div class="err-box" id="errBox"></div>
@@ -276,6 +278,46 @@ async function doRegister(){
     document.getElementById("successArea").style.display="block";
   }catch(e){ showErr("บันทึกไม่สำเร็จ ลองใหม่อีกครั้ง"); btn.disabled=false; btn.textContent="สมัครสมาชิก →"; }
 }
+/* ══ N-55 · ใบ้ให้ลูกค้ารู้ว่าเบอร์นี้มีบัญชีเดิมอยู่ (แค่บอก ไม่เปลี่ยนตรรกะ merge ที่ใช้อยู่จริง) ══
+   ปิดบังชื่อไว้ — พอให้เจ้าของเบอร์ยืนยันว่า "ใช่ฉัน" แต่ไล่สุ่มเบอร์เก็บชื่อคนอื่นไม่ได้ */
+let _hintTimer=null, _hintLast="";
+function maskNm(n){ return String(n||"").trim().split(/[ ]+/).filter(Boolean).slice(0,2)
+  .map(w=>Array.from(w)[0]+"•".repeat(Math.max(1,Math.min(4,w.length-1)))).join(" ") || "สมาชิกเดิม"; }
+function hintOldAccount(){
+  clearTimeout(_hintTimer);
+  _hintTimer=setTimeout(doHintOldAccount,450);   // รอให้พิมพ์จบก่อน ไม่ยิง query ทุกตัวอักษร
+}
+async function doHintOldAccount(){
+  const box=document.getElementById("oldHint");
+  const norm=normPhone((document.getElementById("fPhone").value||"").trim());
+  if(!/^0[0-9]{9}$/.test(norm)){ box.style.display="none"; _hintLast=""; return; }
+  if(norm===_hintLast) return;
+  _hintLast=norm;
+  const sb_=getSB(); if(!sb_) return;
+  try{
+    const { data, error } = await sb_.from("customers")
+      .select("id,line_uid,display_name,line_display_name,loyalty_points").eq("phone",norm).limit(10);
+    if(error) throw error;
+    const rows=data||[], uid=lineProfile&&lineProfile.userId;
+    const mine=rows.find(r=>uid&&r.line_uid===uid);
+    const old=rows.find(r=>!r.line_uid);
+    if(mine){ box.style.display="none"; return; }        // บัญชีตัวเองอยู่แล้ว ไม่ต้องใบ้
+    if(old){
+      let cnt=0;
+      try{ const r2=await sb_.from("orders").select("id",{count:"exact",head:true}).eq("customer_id",old.id); cnt=r2.count||0; }catch(e){}
+      box.style.background="#e8f5ec"; box.style.color="#1d6b3f";
+      box.innerHTML="✅ พบบัญชีเดิมของเบอร์นี้: <b>"+maskNm(old.display_name||old.line_display_name)+"</b>"
+        +'<div style="color:#4a6b57">เคยสั่ง '+cnt+" ครั้ง · แต้มสะสม "+Number(old.loyalty_points||0).toLocaleString()
+        +" — สมัครแล้วประวัติและแต้มจะรวมมาให้อัตโนมัติ</div>";
+      box.style.display="";
+    } else if(rows.length){
+      box.style.background="#fff5e0"; box.style.color="#8a5a00";
+      box.innerHTML="⚠️ เบอร์นี้ผูกกับบัญชี LINE อื่นอยู่แล้ว<div style=\"color:#8a7a55\">สมัครต่อได้ แต่ประวัติเดิมจะยังไม่รวมให้ — แอดมินจะตรวจและรวมให้ทีหลัง</div>";
+      box.style.display="";
+    } else { box.style.display="none"; }
+  }catch(e){ box.style.display="none"; }
+}
+
 function showErr(m){const e=document.getElementById("errBox");e.textContent=m;e.style.display="block";setTimeout(()=>e.style.display="none",3000);}
 </script>
 </body>
