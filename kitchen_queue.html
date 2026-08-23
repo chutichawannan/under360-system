@@ -32,6 +32,18 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .stk-cat.on{background:var(--g);border-color:var(--g);color:#fff;}
 .stk-cat.on span{opacity:.75;}
 .stk-find{width:100%;box-sizing:border-box;border:1px solid var(--xsoft);border-radius:10px;padding:11px 12px;font-size:16px;margin-bottom:6px;font-family:inherit;}
+/* 👥 รายชื่อคนสั่ง — เปิดจากการกดเลข "สั่งแล้ว" */
+.ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
+.stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
+.stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
+.stk-who-row:first-of-type{border-top:none;}
+.stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stk-who .w-o{font-family:var(--mono);font-size:11px;color:var(--soft);flex-shrink:0;}
+.stk-who .w-d{font-size:11px;color:var(--g);font-weight:700;flex-shrink:0;}
+.stk-who .w-q{font-family:var(--mono);font-weight:800;color:#92400E;flex-shrink:0;min-width:26px;text-align:right;}
+body.tablet .stk-who-row{font-size:15px;}
+body.tablet .stk-who .w-o,body.tablet .stk-who .w-d{font-size:14px;}
 .stk-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-bottom:1px solid var(--xsoft);}
 .stk-name{min-width:0;flex:1;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;}
 .stk-ctrl{display:flex;align-items:center;gap:5px;flex-shrink:0;}
@@ -46,7 +58,19 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
    → จอแคบให้ชื่อขึ้นบรรทัดของตัวเองเต็มความกว้าง แล้วปุ่มอยู่บรรทัดล่าง
      ไม่ลดขนาดปุ่ม เพราะครัวกดด้วยนิ้วเปียก/ใส่ถุงมือ ปุ่มเล็กลง = กดพลาด */
 @media (max-width:520px){
-  .stk-row{flex-wrap:wrap;}
+  /* 👥 รายชื่อคนสั่ง — เปิดจากการกดเลข "สั่งแล้ว" */
+.ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
+.stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
+.stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
+.stk-who-row:first-of-type{border-top:none;}
+.stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stk-who .w-o{font-family:var(--mono);font-size:11px;color:var(--soft);flex-shrink:0;}
+.stk-who .w-d{font-size:11px;color:var(--g);font-weight:700;flex-shrink:0;}
+.stk-who .w-q{font-family:var(--mono);font-weight:800;color:#92400E;flex-shrink:0;min-width:26px;text-align:right;}
+body.tablet .stk-who-row{font-size:15px;}
+body.tablet .stk-who .w-o,body.tablet .stk-who .w-d{font-size:14px;}
+.stk-row{flex-wrap:wrap;}
   .stk-name{flex:1 0 100%;white-space:normal;overflow:visible;text-overflow:clip;line-height:1.35;margin-bottom:6px;}
   .stk-ctrl{margin-left:auto;}
 
@@ -375,7 +399,19 @@ body.tablet .btn-pack,body.tablet .btn-done,body.tablet .btn-undo,body.tablet .b
   font-size:17px;padding:15px 26px;border-radius:12px;min-height:56px;}
 body.tablet .oc-actions{gap:10px;margin-top:12px;}
 /* แท็บตั้งสต็อค */
-body.tablet .stk-row{padding:12px 14px;}
+body.tablet /* 👥 รายชื่อคนสั่ง — เปิดจากการกดเลข "สั่งแล้ว" */
+.ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
+.stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
+.stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
+.stk-who-row:first-of-type{border-top:none;}
+.stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.stk-who .w-o{font-family:var(--mono);font-size:11px;color:var(--soft);flex-shrink:0;}
+.stk-who .w-d{font-size:11px;color:var(--g);font-weight:700;flex-shrink:0;}
+.stk-who .w-q{font-family:var(--mono);font-weight:800;color:#92400E;flex-shrink:0;min-width:26px;text-align:right;}
+body.tablet .stk-who-row{font-size:15px;}
+body.tablet .stk-who .w-o,body.tablet .stk-who .w-d{font-size:14px;}
+.stk-row{padding:12px 14px;}
 body.tablet .stk-name{font-size:18px;}
 body.tablet .stk-btn{width:58px;height:58px;font-size:30px;}
 body.tablet .stk-num{width:82px;height:58px;font-size:24px;}
@@ -1230,6 +1266,46 @@ function stkOrderedTodayMap(){
 }
 function stkOrderedOf(menuId){ return stkOrderedMap()[menuId]||0; }
 
+/* 👥 กดเลข "สั่งแล้ว" แล้วดูว่าใครสั่งบ้าง (นัทสั่ง 23 ส.ค.)
+   เดิมเห็นแต่ตัวเลขรวม — พอของไม่พอ ครัวไม่รู้ว่าต้องไปคุยกับใบไหน
+   เอาเฉพาะที่จำเป็น: ชื่อ · รหัสออเดอร์ · วันส่ง (นัทย้ำว่า "แค่นั้นเอง เอาตัวเล็กๆ") */
+var stkWhoId=null;
+function stkWhoList(menuId){
+  var out=[], tday=today();
+  (allOrders||[]).forEach(function(o){
+    if(o.status==="cancelled"||o.status==="ready"||o.status==="delivered") return;
+    if(o.source==="parallel_test") return;
+    if(o.delivery_date && o.delivery_date < tday) return;
+    var dn=pkDoneOf(o.id), n=0;
+    getOrderItems(o.id).forEach(function(i){
+      if(i.menu_item_id!==menuId) return;
+      n += (i.qty||1) - (Number(dn[String(i.code||"")])||0);   // หักที่จัดไปแล้วออก ให้ตรงกับเลขที่โชว์
+    });
+    if(n>0) out.push({ name:o.customer_name||"ลูกค้า", num:o.order_number||"—", date:o.delivery_date||"", qty:n });
+  });
+  out.sort(function(a,b){ return String(a.date).localeCompare(String(b.date)) || String(a.num).localeCompare(String(b.num)); });
+  return out;
+}
+function stkWho(menuId,ev){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  stkWhoId = (stkWhoId===menuId) ? null : menuId;   // กดซ้ำ = ปิด
+  renderStock();
+}
+function stkWhoHtml(m){
+  if(stkWhoId!==m.id) return "";
+  var list=stkWhoList(m.id);
+  if(!list.length) return "<div class='stk-who'>ไม่มีใบที่ยังไม่ได้จัด</div>";
+  var rows=list.map(function(r){
+    var d=r.date?fmtDate(r.date):"—";
+    return "<div class='stk-who-row'><span class='w-n'>"+escH(r.name)+"</span>"
+      +"<span class='w-o'>"+escH(r.num)+"</span>"
+      +"<span class='w-d'>"+escH(d)+"</span>"
+      +"<span class='w-q'>×"+r.qty+"</span></div>";
+  }).join("");
+  var tot=list.reduce(function(a,r){return a+r.qty;},0);
+  return "<div class='stk-who'><div class='stk-who-hd'>👥 ใครสั่งบ้าง — "+list.length+" ใบ รวม "+tot+" กล่อง</div>"+rows+"</div>";
+}
+
 /* ══════════════════════════════════════════════════════════════════════════
    📦 แผงเติมสต็อค — ออกแบบตามที่นัทอธิบายเอง 18 ส.ค. 2569
 
@@ -1284,7 +1360,9 @@ function stkRowHtml(m,ordered,orderedToday){
       +(unlimited
         ? "ขายไม่จำกัด"+(ordered?(" · <b style='color:var(--gold)'>สั่งแล้ว "+ordered+"</b>"):"")
         : "มีจริง <b>"+real+"</b> + กำลังเติม <b class='"+(inc?"inc":"")+"'>"+inc+"</b>"
-          +" − สั่งแล้ว <b style='color:var(--gold)'>"+ordered+"</b>"
+          +" − สั่งแล้ว "+(ordered
+              ? "<b class='ord-btn' onclick='stkWho(\""+m.id+"\",event)' title='กดดูว่าใครสั่งบ้าง'>"+ordered+" 👥</b>"
+              : "<b style='color:var(--gold)'>0</b>")
           +(ordered? ("<span style='font-size:11px;color:var(--soft)'> (วันที่ดูอยู่ "+(orderedToday||0)
               +(ordered>(orderedToday||0)?" · วันอื่น "+(ordered-(orderedToday||0)):"")+")</span>") : "")
           +(incAge?("<span class='inc-old'>"+incAge+"</span>"):""))
@@ -1297,6 +1375,7 @@ function stkRowHtml(m,ordered,orderedToday){
       +"'>"+(hidden?"👁":"🙈")+"</button>"
       +"<button class='stk-pen' onclick=\"stkEdit('"+m.id+"')\" title='แก้จำนวนแบบละเอียด'>✏️</button>"
     +"</div></div>";
+  h+=stkWhoHtml(m);
   if(quick) h+=stkQuickBar(m,inc);
   if(open)  h+=stkEditPanel(m,ordered);
   return h;
