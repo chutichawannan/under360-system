@@ -2267,6 +2267,23 @@ function odMoveBadge(o){
   var byCust=/โดยลูกค้า/.test(String(o.notes||""));
   return "<span title='"+esc2(odMovedInfo(o))+"' style='font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;border-radius:7px;padding:1px 6px;margin-left:5px'>🔁 "+(byCust?"ลูกค้าเลื่อน":"เลื่อนแล้ว")+"</span>";
 }
+/* คืน "วันต้นทางของการเลื่อนครั้งล่าสุด" — โน้ตเก็บสะสมทุกครั้งที่เลื่อน
+   เช่น [08-19 → 08-24] [08-24 → 09-14]  →  ต้องได้ 2026-08-24 ไม่ใช่ 2026-08-19 */
+function planMovedFrom(notes){
+  var re = new RegExp("\\[เลื่อนวัน(?:ส่ง|โดยลูกค้า)\\s+([0-9-]+)\\s*→\\s*([0-9-]+)[^\\]]*\\]", "g");
+  var all = String(notes||"").match(re);
+  if(!all || !all.length) return "";
+  var last = all[all.length-1].match(/([0-9-]+)\s*→\s*([0-9-]+)/);
+  return last ? last[1] : "";
+}
+function planMovedBadge(om){
+  if(!om || !om.movedFrom) return "";
+  var d=String(om.movedFrom).slice(5).split("-");
+  var TH=["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  var label=(d.length===2)?(Number(d[1])+" "+(TH[Number(d[0])]||"")):om.movedFrom;
+  return "<span title='รอบนี้ถูกเลื่อนมาจาก "+esc2(om.movedFrom)+" — ไม่ใช่รอบที่ค้างอยู่' "
+    +"style='font-size:9.5px;font-weight:700;color:#B45309;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:4px;padding:0 4px;margin-left:4px'>🔁 เลื่อนมาจาก "+esc2(label)+"</span>";
+}
 function odMovedInfo(o){
   var m=String(o&&o.notes||"").match(/\[เลื่อนวัน(?:ส่ง|โดยลูกค้า)\s+([0-9-]+)\s*→\s*([0-9-]+)[^\]]*\]/);
   if(!m) return "";
@@ -2997,7 +3014,7 @@ async function loadMpOrderNumbers(){
   mpPlanRows.forEach(function(r){ if(r.delivery_date&&dates.indexOf(r.delivery_date)<0) dates.push(r.delivery_date); });
   if(!dates.length) return;
   try{
-    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status")
+    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status,notes")
       .in("delivery_date",dates).neq("status","cancelled").limit(2000);
     if(res.error) throw res.error;
     var os=res.data||[];
@@ -3010,7 +3027,10 @@ async function loadMpOrderNumbers(){
         return o.delivery_date===r.delivery_date &&
           ((r.line_uid&&o.line_uid===r.line_uid)||(r.customer_id&&o.customer_id===r.customer_id));
       });
-      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id}:null;
+      /* 🔁 รอบที่ถูกเลื่อนมาแล้ว หน้าตาเหมือนรอบที่ไม่เคยถูกแตะเลย
+         กิ๊ฟเลยแยกไม่ออกว่า "อันไหนย้ายมาแล้ว อันไหนคือของเดิมที่ยังค้าง"
+         (นัทแจ้ง 23 ส.ค. — ตรวจแล้วข้อมูลถูกทุกจุด ปัญหาคือหน้าจอไม่บอก) */
+      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id,movedFrom:planMovedFrom(hit.notes)}:null;
     });
   }catch(e){ console.error("loadMpOrderNumbers:",e); }
   document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
@@ -4109,7 +4129,7 @@ function renderPlanCell(rowId){
   // N-28/N-27 · เลขใบต้นทาง + เตือนถ้ารอบนี้ยังไม่มีใบ (= ครัวกับแมสมองไม่เห็นรอบนี้เลย)
   var om=mpOrderMap[rowId];
   var orderTag = (om===undefined) ? ""
-    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"
+    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"+planMovedBadge(om)
          : "<span onclick='planCreateTicket(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — ครัว/แมสมองไม่เห็น · กดเพื่อเปิดใบให้เลย'>⚠ ไม่มีใบ · กดเปิด</span>";
   /* N-66 · เลื่อนวัน/ยกเลิกรอบ ทำได้จากหน้านี้เลย (กิ๊ฟขอ)
      เดิมมีแต่ที่หน้าออเดอร์ → แอดมินกำลังจัดเมนูอยู่ ต้องออกไปอีกหน้าแล้วหากลับมาใหม่ */

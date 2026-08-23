@@ -1837,6 +1837,39 @@ function pkSyncProg(oid){
   p.textContent="☑ "+done+"/"+tot;
   p.classList.toggle("full", tot>0 && done>=tot);
 }
+/* ⚠️ ใบที่อาจเป็นออเดอร์ซ้ำ — ลูกค้าคนเดียวกัน วันส่งเดียวกัน สั่งห่างกันไม่เกิน 30 นาที
+   เคสจริง 23 ส.ค.: Leklucky สั่ง 2 ใบห่างกัน 4 นาที (ใบแรกไม่จ่าย) ครัวจัดไปแล้วทั้งคู่
+   ครัวต้องเห็น "ก่อนจัด" ไม่ใช่รู้ตอนของหายไปแล้ว
+   ⚠️ ไม่ซ่อนใบไหนทั้งนั้น — แค่ติดป้ายให้คนตัดสินใจ ระบบไม่มีทางรู้แน่ว่าใบไหนคือของจริง */
+var DUP_WINDOW_MIN = 30;
+function dupMate(o){
+  if(!o || !o.delivery_date) return null;
+  /* ⚠️ ดูเฉพาะใบที่มียอดเงินจริง
+     ใบยอด ฿0 = ใบรอบย่อยของคอร์สที่ระบบเปิดให้เอง (เช่น โอ๋สั่ง LC+HP คู่กัน = ตั้งใจ ไม่ใช่ซ้ำ)
+     ถ้าไม่กรอง จะติดป้ายเตือน 10 ใบทั้งที่ของจริงซ้ำแค่คู่เดียว = ครัวจะเลิกเชื่อป้ายนี้ */
+  if(!(Number(o.total)>0)) return null;
+  var mine = o.line_uid || o.customer_name;
+  if(!mine) return null;
+  var t0 = new Date(o.created_at||0).getTime();
+  return (allOrders||[]).find(function(x){
+    if(x.id===o.id) return false;
+    if(x.status==="cancelled" || x.source==="parallel_test") return false;
+    if(!(Number(x.total)>0)) return false;
+    if(x.delivery_date!==o.delivery_date) return false;
+    if((x.line_uid||x.customer_name)!==mine) return false;
+    var dt=Math.abs(new Date(x.created_at||0).getTime()-t0)/60000;
+    return dt<=DUP_WINDOW_MIN;
+  })||null;
+}
+function dupBadge(o){
+  var m=dupMate(o); if(!m) return "";
+  var unpaid = (o.payment_status!=="paid");
+  return "<span title='ลูกค้าคนนี้มีอีกใบวันเดียวกัน ("+escH(m.order_number||"—")+") สั่งห่างกันไม่ถึง "+DUP_WINDOW_MIN+" นาที — เช็คก่อนจัด' "
+    +"style='font-size:11px;font-weight:800;border-radius:6px;padding:1px 7px;"
+    +(unpaid?"color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5":"color:#92400E;background:#FEF3C7;border:1px solid #F5E4A8")
+    +"'>⚠️ อาจซ้ำกับ "+escH(m.order_number||"—")+"</span>";
+}
+
 function renderCard(o){
   var packed = (o.status==="ready"||o.status==="delivered");
   var shipped = (o.status==="delivered");
@@ -1976,6 +2009,7 @@ function renderCard(o){
         +boxTag
         +"<span class='oc-pay "+(o.payment_status==="paid"?"is-paid":"is-unpaid")+"' title='สถานะการโอน (แก้ที่หน้า OH)'>"+(o.payment_status==="paid"?"💰 โอนแล้ว":"⏳ รอโอน")+"</span>"
         +stateTag
+        +dupBadge(o)
         +(kqPackMode?"<span class='pk-info' onclick='pkInfo(this,event)'>📍 ที่อยู่/เบอร์</span>":"")
         +"</div>"
         +"<div class='oc-meta'>📍 "+escH(o.delivery_address_text||o.delivery_address||"—")+"</div>"
