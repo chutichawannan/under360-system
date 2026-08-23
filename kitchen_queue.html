@@ -2109,9 +2109,24 @@ function dietBox(o){
   if(dl) h+="<div class='oc-diet oc-diet-dl'>ไม่ทาน "+escH(dl)+"</div>";
   return h;
 }
+/* ชื่อที่ "ระบุตัวคนไม่ได้" = ไม่มีตัวอักษรไทย/อังกฤษให้อ่านเลย
+   เคสจริง 23 ส.ค.: ลูกค้าใช้ชื่อไลน์เป็นอีโมจิตัวเดียว "🖤" และช่องชื่อผู้รับก็ได้อีโมจิตามมา
+   → ครัวเห็น "🖤" · แมสถือใบไปส่งแล้วไม่รู้ว่าใคร · โทรถามก็ไม่มีชื่อจะเอ่ย
+   วิธีเดิม (วงเล็บชื่อไลน์ต่อท้าย) ช่วยไม่ได้ เพราะ 2 ช่องเป็นอีโมจิเหมือนกันทั้งคู่
+   → กรณีนี้ต้องเอา "เบอร์" มาแทน เพราะเป็นสิ่งเดียวที่ระบุตัวได้จริง */
+function nameUnreadable(n){
+  var t=String(n||"").replace(/[^฀-๿a-zA-Z0-9]/g,"");
+  return t.length<=1;
+}
 function lineTag(o){
-  if(!o||!o.line_display_name||o.line_display_name===o.customer_name) return "";
-  return " <span style='font-size:10px;color:#9CA3AF;font-weight:400'>(LINE: "+escH(o.line_display_name)+")</span>";
+  if(!o) return "";
+  var tag="";
+  if(o.line_display_name && o.line_display_name!==o.customer_name)
+    tag=" <span style='font-size:10px;color:#9CA3AF;font-weight:400'>(LINE: "+escH(o.line_display_name)+")</span>";
+  // ชื่ออ่านไม่ออก → แปะเบอร์ให้เห็นตั้งแต่หัวการ์ด ไม่ต้องกดกางที่อยู่ก่อน
+  if(nameUnreadable(o.customer_name) && o.customer_phone)
+    tag+=" <span style='font-size:11px;color:#B91C1C;font-weight:800'>📞 "+escH(o.customer_phone)+"</span>";
+  return tag;
 }
 
 // ── INIT ─────────────────────────────────────────────────
