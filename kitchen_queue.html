@@ -196,6 +196,12 @@ body.tablet .pk-info{font-size:14px;padding:2px 9px;}
 .pk-box{flex-shrink:0;width:19px;height:19px;border:1.5px solid var(--xsoft);border-radius:5px;background:#fff;
   display:flex;align-items:center;justify-content:center;font-size:13px;line-height:1;color:#fff;}
 .pk-row.on{background:#F0FDF4;}
+/* แถวที่ยืนยันว่าจัดแล้ว = แตะไม่ได้ · ต้องต่างจาก "ติ๊กเล่นไว้" ให้เห็นด้วยตา
+   ไม่งั้นครัวแยกไม่ออกว่าอันไหนตัดสต็อกไปแล้วจริง */
+.pk-row.pk-locked{background:#DCFCE7;cursor:default;opacity:.85;}
+.pk-row.pk-locked .pk-box{background:#16A34A;border-color:#16A34A;}
+.btn-part{background:#FEF3C7;color:#92400E;border:1.5px solid #F5E4A8;border-radius:9px;padding:8px 12px;font-size:13px;font-weight:800;font-family:inherit;}
+body.tablet .btn-part{font-size:16px;padding:11px 15px;}
 .pk-row.on .pk-box{background:#16A34A;border-color:#16A34A;}
 .pk-row.on .pk-box:after{content:"✓";}
 .pk-row.on .pk-main{opacity:.5;text-decoration:line-through;}
@@ -755,6 +761,10 @@ async function loadAll(){
        (ของเก่า/เลิกขาย/ยังไม่เปิด) ถ้าเอาทุกตัวที่ปิดมาโชว์ หน้าครัวจะท่วมจนใช้ไม่ได้
        เก็บเฉพาะที่ครัวกดซ่อน = ตัวที่ต้องมีทางกดเปิดคืน */
     stockHidden=(_kd.find(function(x){return x.key==="stock_hidden";})||{}).data||{};
+    /* 📦 ของที่ครัว "จัดไปแล้วบางส่วน" ในใบที่ยังจัดไม่ครบ
+       ต้องเก็บใน DB ไม่ใช่ในเครื่อง — ครัวเปิดหลายจอ ถ้าเก็บในเครื่อง จอ A จัดแล้ว จอ B ไม่รู้
+       แล้วสต็อกจะเพี้ยนตามจอที่เปิด (ต่างจากช่องติ๊กเปล่าๆ ที่เป็นแค่กันหลงตา ไม่กระทบตัวเลข) */
+    pkDone=(_kd.find(function(x){return x.key==="pk_done";})||{}).data||{};
     var _hidIds=Object.keys(stockHidden||{}).filter(function(k){return stockHidden[k];});
     if(_hidIds.length){
       try{
@@ -1192,7 +1202,13 @@ function stkOrderedMap(){
     if(o.status==="cancelled"||o.status==="ready"||o.status==="delivered") return;
     if(o.source==="parallel_test") return;
     if(o.delivery_date && o.delivery_date < tday) return;
-    getOrderItems(o.id).forEach(function(i){ om[i.menu_item_id]=(om[i.menu_item_id]||0)+i.qty; });
+    /* หักของที่ครัวกด "จัดเสร็จบางส่วน" ไปแล้วออก — ของออกจากตู้ไปแล้วเหมือนกัน
+       ต่างจากใบที่จัดครบ (ทั้งใบหลุดไปตั้งแต่ status=ready) ตรงที่ใบนี้ยังค้างอยู่บางส่วน */
+    var _dn=pkDoneOf(o.id);
+    getOrderItems(o.id).forEach(function(i){
+      var left=(i.qty||1)-(Number(_dn[String(i.code||"")])||0);
+      if(left>0) om[i.menu_item_id]=(om[i.menu_item_id]||0)+left;
+    });
   });
   return om;
 }
@@ -1620,6 +1636,21 @@ function renderOrders(){
    แยกตามวัน = เปิดวันใหม่เริ่มนับใหม่เอง ไม่ต้องมีใครไปล้าง */
 var kqPackMode = (function(){ try{ var v=localStorage.getItem("kq_pack_mode"); return v===null?true:v==="1"; }catch(e){ return true; } })();
 var kqTicks = {};
+/* pkDone = { "<order id>": { "<รหัสเมนู>": จำนวนที่จัดไปแล้ว } }
+   นัทสั่ง 23 ส.ค.: "อยากได้ปุ่มจัดกล่องเสร็จบางส่วน เพื่อให้มันตัดสต็อกก่อน
+                      บางอย่างมันต้องรอของทำในวันถัดไป" */
+var pkDone = {};
+function pkDoneOf(oid){ var d=pkDone[oid]; return (d&&typeof d==="object")?d:{}; }
+function pkDoneQty(oid,code){ return Number(pkDoneOf(oid)[String(code||"")])||0; }
+function pkDoneTotal(oid){ var d=pkDoneOf(oid), n=0; Object.keys(d).forEach(function(k){ n+=Number(d[k])||0; }); return n; }
+async function pkSaveDone(){
+  var sb_=getSB(); if(!sb_) return false;
+  try{
+    var w=await sb_.from("kitchen_data").upsert({key:"pk_done", data:pkDone},{onConflict:"key"});
+    if(w.error) throw w.error;
+    return true;
+  }catch(e){ kqWriteFail(e,"บันทึกของที่จัดแล้ว"); return false; }
+}
 function pkTickKey(){ return "kq_ticks_"+(getTargetDate()||"all"); }
 function pkLoadTicks(){ try{ kqTicks=JSON.parse(localStorage.getItem(pkTickKey())||"{}")||{}; }catch(e){ kqTicks={}; } }
 function pkSaveTicks(){ try{ localStorage.setItem(pkTickKey(),JSON.stringify(kqTicks)); }catch(e){} }
@@ -1693,9 +1724,15 @@ function renderCard(o){
   /* โหมดจัดของ: บรรทัดละรายการ + ช่องติ๊ก · โหมดปกติ: ชิปแบบเดิมทุกอย่าง */
   if(kqPackMode){
     chip=function(i){
-      var k=pkKeyOf(o.id,i), on=kqTicks[k]?" on":"";
-      return "<div class='pk-row"+on+"' data-q='"+(i.qty||1)+"' data-oid=\""+escA(o.id)+"\" data-k=\""+escA(k)+"\" onclick='pkTick(this,event)'>"
+      var k=pkKeyOf(o.id,i), dn=pkDoneQty(o.id,i.code), full=(dn>=(i.qty||1));
+      var on=(full||kqTicks[k])?" on":"";
+      /* จัดไปแล้ว = ล็อกไว้ กดไม่ได้ ต้องกด "ยกเลิกจัดบางส่วน" ถึงจะแก้ได้
+         ถ้าปล่อยให้กดสลับเล่นได้ สต็อกจะขยับตามนิ้วที่เผลอแตะ */
+      return "<div class='pk-row"+on+(full?" pk-locked":"")+"' data-q='"+(i.qty||1)+"' data-oid=\""+escA(o.id)+"\" data-k=\""+escA(k)+"\""
+        +(full?"":" onclick='pkTick(this,event)'")+">"
         +"<span class='pk-box'></span><span class='pk-main'>"
+        +(full?"<span style='font-size:11px;font-weight:800;color:#166534;background:#DCFCE7;border-radius:5px;padding:1px 6px;margin-right:5px;'>จัดแล้ว</span>":"")
+        +(dn>0&&!full?"<span style='font-size:11px;font-weight:800;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;margin-right:5px;'>จัดแล้ว "+dn+"/"+(i.qty||1)+"</span>":"")
         +(i.gift?"<span style='font-size:11px;font-weight:800;color:#92400E;background:#FEF3C7;border-radius:5px;padding:1px 6px;margin-right:5px;'>🎁 แถม</span>":"")
         +"<span class='pk-code'>"+escH(getCodeDisplay(i.code,i.name))+"</span> "
         +"<span class='pk-name'>"+escH(i.name)+"</span>"
@@ -1733,6 +1770,11 @@ function renderCard(o){
     actions="<div class='oc-actions'><span onclick='switchTab(1)' style='color:var(--g);font-weight:700;cursor:pointer;text-decoration:underline'>📋 ดูรอบส่ง & เมนูที่แท็บ \"รายสินค้า\" →</span></div>";
   }else{
     var b="";
+    /* 📦 จัดเสร็จบางส่วน — โผล่เฉพาะตอนอยู่โหมดจัดของ + ติ๊กไว้บ้างแต่ยังไม่ครบ
+       เหตุผลที่ต้องมี (นัท): บางเมนูต้องรอของทำวันถัดไป แต่ที่จัดได้แล้วควรตัดสต็อกไปก่อน
+       ไม่งั้นของที่ออกจากตู้ไปแล้วยังนับว่าอยู่ = ครัวหยิบไปใช้กับใบอื่นซ้ำ */
+    if(!packed && kqPackMode) b+="<button class='btn-part' onclick='markPackedPartial(\""+o.id+"\")'>📦 จัดเสร็จบางส่วน</button>";
+    if(!packed && pkDoneTotal(o.id)) b+="<button class='btn-undo' onclick='clearPartial(\""+o.id+"\")'>↩ ยกเลิกจัดบางส่วน</button>";
     if(!packed) b+="<button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button>";
     else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
     if(packed&&!shipped) b+="<button class='btn-ship' onclick='markShipped(\""+o.id+"\")'>🛵 ส่งแมสแล้ว</button>";
@@ -1755,8 +1797,13 @@ function renderCard(o){
   if(kqPackMode && items.length && !isMp){
     var _tot=0,_done=0;
     groupOrderItems(items).forEach(function(g){ g.items.forEach(function(i){
-      var q=i.qty||1; _tot+=q; if(kqTicks[pkKeyOf(o.id,i)]) _done+=q;
+      var q=i.qty||1; _tot+=q;
+      var dn=pkDoneQty(o.id,i.code);
+      if(dn>=q) _done+=q;                       // ยืนยันแล้ว = นับเสมอ ไม่ขึ้นกับช่องติ๊กในเครื่อง
+      else if(kqTicks[pkKeyOf(o.id,i)]) _done+=q;
     }); });
+    var _dnAll=pkDoneTotal(o.id);
+    if(_dnAll) boxTag+="<span style='font-size:11.5px;font-weight:800;color:#166534;background:#DCFCE7;border:1px solid #86EFAC;border-radius:6px;padding:1px 7px;'>📦 จัดแล้ว "+_dnAll+"/"+_tot+"</span>";
     boxTag+="<span class='oc-prog"+((_tot&&_done>=_tot)?" full":"")+"'>☑ "+_done+"/"+_tot+"</span>";
   }
   // 🖥️ 2 คอลัมน์: ซ้าย = ข้อมูลลูกค้า · ขวา = ของที่ต้องจัด + ปุ่ม (จอแคบยุบเป็นคอลัมน์เดียวเอง)
@@ -1803,6 +1850,46 @@ async function markUnship(id){
   render();
 }
 
+/* 📦 จัดเสร็จบางส่วน — ยืนยันเฉพาะที่ติ๊กไว้ตอนนี้ ว่า "ของออกจากตู้แล้ว"
+   ใบยังไม่ปิด (status ยังเป็น confirmed) ครัวยังเห็นการ์ดอยู่ เพราะยังมีของค้างต้องทำ */
+async function markPackedPartial(id){
+  if(!requireKqUser())return;
+  var o=allOrders.find(function(x){return x.id===id;}); if(!o) return;
+  var its=getOrderItems(id)||[];
+  var add={}, n=0;
+  its.forEach(function(i){
+    var code=String(i.code||""); if(!code) return;
+    var already=pkDoneQty(id,code);
+    if(already>=(i.qty||1)) return;                 // จัดครบแล้ว ข้าม
+    if(!kqTicks[pkKeyOf(id,i)]) return;             // ยังไม่ติ๊ก = ยังไม่จัด
+    add[code]=(i.qty||1); n+=(i.qty||1)-already;
+  });
+  if(!n){ toast("ยังไม่ได้ติ๊กรายการที่จัดเสร็จ — แตะบรรทัดที่จัดลงถุงแล้วก่อน"); return; }
+  var tot=its.reduce(function(a,i){return a+(i.qty||1);},0);
+  var doneAfter=Object.keys(add).reduce(function(a,c){return a+add[c];},0)
+    + its.filter(function(i){return !add[String(i.code||"")];}).reduce(function(a,i){return a+pkDoneQty(id,String(i.code||""));},0);
+  if(!confirm("ยืนยันว่าจัดลงถุงแล้ว "+n+" กล่อง?\n\nของจะถูกตัดออกจากสต็อกทันที\nใบนี้ยังไม่ปิด — เหลืออีก "+(tot-doneAfter)+" กล่องรอทำ")) return;
+  var prev=JSON.parse(JSON.stringify(pkDone[id]||{}));
+  pkDone[id]=Object.assign(pkDoneOf(id),add);
+  var ok=await pkSaveDone();
+  if(!ok){ pkDone[id]=prev; render(); return; }     // เขียนไม่ผ่าน = ถอยคืน ห้ามให้จอกับ DB ไม่ตรงกัน
+  logKqActivity((o.customer_name||"")+" ("+(o.order_number||"—")+") — 📦 จัดเสร็จบางส่วน "+n+" กล่อง (เหลือ "+(tot-doneAfter)+")");
+  render();
+}
+/* ยกเลิกจัดบางส่วน = คืนของกลับเข้าสต็อก ทั้งใบ (ไม่ให้ยกเลิกทีละรายการ — ครัวจะงงว่าตัวไหนคืนแล้ว) */
+async function clearPartial(id){
+  if(!requireKqUser())return;
+  var n=pkDoneTotal(id); if(!n) return;
+  if(!confirm("ยกเลิก "+String.fromCharCode(34)+"จัดเสร็จบางส่วน"+String.fromCharCode(34)+" ทั้งใบ?\n\nของ "+n+" กล่องจะถูกคืนกลับเข้าสต็อก")) return;
+  var prev=JSON.parse(JSON.stringify(pkDone[id]||{}));
+  delete pkDone[id];
+  var ok=await pkSaveDone();
+  if(!ok){ pkDone[id]=prev; render(); return; }
+  var o=allOrders.find(function(x){return x.id===id;});
+  logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"↩ ยกเลิกจัดบางส่วน (คืน "+n+" กล่อง)");
+  render();
+}
+
 async function markPacked(id){
   if(!requireKqUser())return;
   var sb_=getSB(); if(!sb_)return;
@@ -1811,6 +1898,9 @@ async function markPacked(id){
   if(o0 && (o0.status==="ready"||o0.status==="delivered")){ render(); return; }
   var _w5=await sb_.from("orders").update({status:"ready",updated_at:new Date().toISOString()}).eq("id",id); if(_w5.error){kqWriteFail(_w5.error,"จัดกล่องเสร็จ");return;}
   var o=allOrders.find(function(x){return x.id===id;}); if(o)o.status="ready";
+  /* ใบที่ปิดครบแล้วหลุดจากตัวนับสต็อกทั้งใบอยู่แล้ว — ถ้าปล่อย pkDone ค้างไว้
+     พอกด "ยังไม่จัด" ย้อนกลับมา ของจะถูกหักซ้ำรอบสอง */
+  if(pkDone[id]){ delete pkDone[id]; pkSaveDone(); }
   pkSetAll(id,true);
   logKqActivity((o?o.customer_name+" ("+(o.order_number||"—")+") — ":"")+"✅ จัดกล่องเสร็จ");
   render();
