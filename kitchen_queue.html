@@ -129,16 +129,10 @@ body.tablet .mp-req{font-size:16px;padding:8px 12px;}
 .date-banner.past{background:#E5E7EB;color:#374151;border:1.5px solid #9CA3AF;}
 .db-back{display:inline-block;margin-left:6px;font-weight:700;text-decoration:underline;cursor:pointer;}
 body.tablet .date-banner{font-size:16px;padding:14px 18px;}
-.oc{border:1px solid var(--xsoft);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--w);
-  /* 🩹 หน้าขาวเป็นแถบยาวบนมือถือ (นัทเจอเอง 23 ส.ค. 2569)
-     ไม่ใช่โค้ดพัง — โหมด "ทั้งหมด" มี 132 ใบ · 805 บรรทัด · สูง 63,745px = ยาว 79 จอ
-     มือถือวาดไม่ทันทั้งหน้า เลยเหลือช่องขาวตรงที่ยังไม่ได้วาด (เลื่อนผ่านเร็วๆ จะเห็นชัด)
-     content-visibility:auto = บอกเบราว์เซอร์ว่า "ใบที่ยังไม่ถึงตา ไม่ต้องวาด"
-     contain-intrinsic-size = เดาความสูงไว้ก่อน แถบเลื่อนจะได้ไม่กระตุก
-     ⚠️ ต้องมีคู่กันเสมอ — ใส่ content-visibility เฉยๆ แถบเลื่อนจะเด้งไปมาตอนเลื่อน
-     ⚠️ ไม่กระทบการพิมพ์: @media print ปิดไว้ ไม่งั้นใบที่ยังไม่ถูกวาดจะพิมพ์ออกมาว่าง */
-  content-visibility:auto; contain-intrinsic-size:auto 420px;}
-@media print{ .oc{content-visibility:visible;contain-intrinsic-size:none;} }
+/* ⛔ เคยใส่ content-visibility:auto ตรงนี้ (23 ส.ค. เย็น) เพื่อแก้ช่องขาวตอนเลื่อนบนมือถือ
+   ถอนออกแล้ววันเดียวกัน — บน iPhone มันเดาความสูงการ์ดผิดตอนเลื่อนเข้าจอ แล้ว "หน้ากระโดด"
+   ครัวกำลังไล่ติ๊กของอยู่แล้วหน้าเด้ง = แย่กว่าช่องขาวเยอะ  ❌ อย่าใส่กลับมาโดยไม่เทสบน iPhone จริง */
+.oc{border:1px solid var(--xsoft);border-radius:10px;padding:12px 14px;margin-bottom:10px;background:var(--w);}
 /* 🖥️ ดูบนเว็บ/จอกว้าง: แบ่ง 2 คอลัมน์ — ซ้ายข้อมูลลูกค้า ขวาของที่ต้องจัด+ปุ่ม (นัทสั่ง 6 ส.ค. 2569)
    จอแคบกว่า 720px ยุบเป็นคอลัมน์เดียวเหมือนเดิม มือถือแอดมินไม่กระทบ */
 .oc-2col{display:block;}
@@ -916,12 +910,18 @@ function updateDateBanner(){
   }
 }
 function render(){
-  // ถ้าเปิดหน้าค้างข้ามวัน (ครัวไม่เคยปิดจอ) ตัวเลือกวันจะเก่า → สร้างใหม่เมื่อวันไทยเปลี่ยน
+  /* จำที่อยู่บนหน้าไว้ก่อนวาดใหม่ แล้วเลื่อนกลับที่เดิม
+     ไม่งั้นครัวกด "จัดกล่องเสร็จ" ใบที่ 12 แล้วหน้าดีดกลับไปใบแรก ต้องเลื่อนหาใหม่ทุกครั้ง
+     (นัทเจอบน iPhone 23 ส.ค. — เรียกว่า "เด้งออก") */
+  var _y = window.scrollY || document.documentElement.scrollTop || 0;
   if(kqPickerBuiltFor && kqPickerBuiltFor!==today()) buildDatePicker();
   updateDateBanner();
   if(tabMode===1)renderProd();
   else if(tabMode===3)renderStock();
   else renderOrders();
+  /* คืนตำแหน่งหลังเบราว์เซอร์วาดเสร็จ — เรียกทันทีจะได้ค่าก่อนหน้าใหม่มีความสูง แล้วเลื่อนไม่ไปไหน
+     ข้ามให้ตอนอยู่บนสุดอยู่แล้ว (เปิดหน้าใหม่/สลับแท็บ) จะได้ไม่ไปฝืนพฤติกรรมปกติ */
+  if(_y > 0) requestAnimationFrame(function(){ window.scrollTo(0, _y); });
 }
 
 // TAB 1: รายสินค้า aggregated
