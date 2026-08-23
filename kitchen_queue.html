@@ -36,6 +36,10 @@ body{font-family:var(--sans);background:var(--bg);min-height:100vh;}
 .ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
 .stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
 .stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-sub{font-size:11px;font-weight:800;color:var(--soft);margin:6px 0 1px;}
+.pt-who{grid-column:1/-1;padding:0 10px 8px;}
+.stk-who-row.done{opacity:.6;}
+.stk-who-row.done .w-n{text-decoration:line-through;}
 .stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
 .stk-who-row:first-of-type{border-top:none;}
 .stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -62,6 +66,10 @@ body.tablet .stk-who .w-o,body.tablet .stk-who .w-d{font-size:14px;}
 .ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
 .stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
 .stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-sub{font-size:11px;font-weight:800;color:var(--soft);margin:6px 0 1px;}
+.pt-who{grid-column:1/-1;padding:0 10px 8px;}
+.stk-who-row.done{opacity:.6;}
+.stk-who-row.done .w-n{text-decoration:line-through;}
 .stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
 .stk-who-row:first-of-type{border-top:none;}
 .stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -228,6 +236,10 @@ body.tablet .pk-info{font-size:14px;padding:2px 9px;}
 .pk-row.pk-locked{background:#DCFCE7;cursor:default;opacity:.85;}
 .pk-row.pk-locked .pk-box{background:#16A34A;border-color:#16A34A;}
 .btn-part{background:#FEF3C7;color:#92400E;border:1.5px solid #F5E4A8;border-radius:9px;padding:8px 12px;font-size:13px;font-weight:800;font-family:inherit;}
+/* ติ๊กไว้แล้วแต่ยังไม่กด = ต้องสะดุดตา ไม่งั้นครัวเดินจากไปโดยคิดว่าจบแล้ว */
+.btn-part.hot{background:#F59E0B;color:#fff;border-color:#D97706;animation:partpulse 1.6s ease-in-out infinite;}
+@keyframes partpulse{0%,100%{box-shadow:0 0 0 0 rgba(245,158,11,.55)}50%{box-shadow:0 0 0 6px rgba(245,158,11,0)}}
+@media (prefers-reduced-motion:reduce){.btn-part.hot{animation:none}}
 body.tablet .btn-part{font-size:16px;padding:11px 15px;}
 .pk-row.on .pk-box{background:#16A34A;border-color:#16A34A;}
 .pk-row.on .pk-box:after{content:"✓";}
@@ -403,6 +415,10 @@ body.tablet /* 👥 รายชื่อคนสั่ง — เปิดจ�
 .ord-btn{color:var(--gold);border-bottom:1.5px dashed var(--gold);cursor:pointer;padding:0 2px;}
 .stk-who{margin:6px 0 2px;background:#FFFBEB;border:1px solid #F5E4A8;border-radius:9px;padding:7px 9px;}
 .stk-who-hd{font-size:11.5px;font-weight:800;color:#92400E;margin-bottom:4px;}
+.stk-who-sub{font-size:11px;font-weight:800;color:var(--soft);margin:6px 0 1px;}
+.pt-who{grid-column:1/-1;padding:0 10px 8px;}
+.stk-who-row.done{opacity:.6;}
+.stk-who-row.done .w-n{text-decoration:line-through;}
 .stk-who-row{display:flex;align-items:baseline;gap:7px;font-size:12px;padding:3px 0;border-top:1px solid #F5E9C8;}
 .stk-who-row:first-of-type{border-top:none;}
 .stk-who .w-n{flex:1;min-width:0;font-weight:700;color:var(--ink);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
@@ -1018,10 +1034,13 @@ function renderProd(){
       +tagsHtml(m.code?m:{code:r.code,subcode:(m||{}).subcode})
       +(codeMode!=="name"?"<span style='font-size:12px;font-weight:600;white-space:normal;word-break:break-word;min-width:0'>"+escH(r.name)+"</span>":"")
       +"</div>"
-      +"<div class='pt-n' style='color:var(--gold)'>"+r.qty+"</div>"
+      +"<div class='pt-n'>"+(r.id
+          ? "<b class='ord-btn' onclick='stkWho(\""+r.id+"\",event)' title='กดดูว่าใครสั่งบ้าง'>"+r.qty+" 👥</b>"
+          : "<span style='color:var(--gold)'>"+r.qty+"</span>")+"</div>"
       +"<div class='pt-n'>"+(unlimited?"∞":stk)+"</div>"
       +"<div class='pt-n' style='color:"+((rem!=null&&rem<0)?"var(--r)":"var(--g)")+"'>"+(unlimited?"∞":rem)+"</div>"
       +"</div>";
+    if(r.id && stkWhoId===r.id) html+="<div class='pt-who'>"+stkWhoHtml({id:r.id})+"</div>";
   });
   var boxTotal=rows.reduce(function(s,r){return s+r.qty;},0);
   html+="<div style='padding:8px 12px;font-size:11px;color:var(--soft);border-top:1px solid var(--xsoft)'>"
@@ -1282,40 +1301,54 @@ function stkOrderedOf(menuId){ return stkOrderedMap()[menuId]||0; }
    เดิมเห็นแต่ตัวเลขรวม — พอของไม่พอ ครัวไม่รู้ว่าต้องไปคุยกับใบไหน
    เอาเฉพาะที่จำเป็น: ชื่อ · รหัสออเดอร์ · วันส่ง (นัทย้ำว่า "แค่นั้นเอง เอาตัวเล็กๆ") */
 var stkWhoId=null;
+/* คืนทุกใบที่มีเมนูนี้ แยกว่า "จัดแล้ว" หรือ "ยังไม่จัด"
+   🔴 เดิมคืนเฉพาะที่ยังไม่จัด → พอครัวจัดครบ รายชื่อว่างเปล่า
+      เคสจริง 23 ส.ค.: S104 เกี๊ยวกุ้ง มีคนสั่ง 10 กล่อง 6 ใบ แต่จัดครบหมดแล้ว
+      → หน้าจอขึ้น "สั่งแล้ว 0" และกดดูไม่ได้ → นัทหาไม่เจอว่าใครรับไป
+      "ไม่เหลือค้าง" กับ "ไม่มีใครสั่ง" เป็นคนละเรื่อง ต้องแยกให้เห็น */
 function stkWhoList(menuId){
   var out=[], tday=today();
   (allOrders||[]).forEach(function(o){
-    if(o.status==="cancelled"||o.status==="ready"||o.status==="delivered") return;
+    if(o.status==="cancelled") return;
     if(o.source==="parallel_test") return;
     if(o.delivery_date && o.delivery_date < tday) return;
-    var dn=pkDoneOf(o.id), n=0;
+    var packed=(o.status==="ready"||o.status==="delivered");
+    var dn=pkDoneOf(o.id), tot=0, left=0;
     getOrderItems(o.id).forEach(function(i){
       if(i.menu_item_id!==menuId) return;
-      n += (i.qty||1) - (Number(dn[String(i.code||"")])||0);   // หักที่จัดไปแล้วออก ให้ตรงกับเลขที่โชว์
+      var q=i.qty||1; tot+=q;
+      left += packed ? 0 : (q - (Number(dn[String(i.code||"")])||0));
     });
-    if(n>0) out.push({ name:o.customer_name||"ลูกค้า", num:o.order_number||"—", date:o.delivery_date||"", qty:n });
+    if(tot>0) out.push({ name:o.customer_name||"ลูกค้า", num:o.order_number||"—",
+      date:o.delivery_date||"", qty:tot, left:left, done:(left<=0) });
   });
-  out.sort(function(a,b){ return String(a.date).localeCompare(String(b.date)) || String(a.num).localeCompare(String(b.num)); });
+  out.sort(function(a,b){ return (a.done?1:0)-(b.done?1:0)
+    || String(a.date).localeCompare(String(b.date)) || String(a.num).localeCompare(String(b.num)); });
   return out;
 }
 function stkWho(menuId,ev){
   if(ev){ ev.stopPropagation(); ev.preventDefault(); }
   stkWhoId = (stkWhoId===menuId) ? null : menuId;   // กดซ้ำ = ปิด
-  renderStock();
+  render();                                         // ต้องวาดแท็บที่เปิดอยู่ ไม่ใช่แท็บสต็อคเสมอ
 }
 function stkWhoHtml(m){
   if(stkWhoId!==m.id) return "";
   var list=stkWhoList(m.id);
-  if(!list.length) return "<div class='stk-who'>ไม่มีใบที่ยังไม่ได้จัด</div>";
-  var rows=list.map(function(r){
+  if(!list.length) return "<div class='stk-who'>ยังไม่มีใครสั่งเมนูนี้</div>";
+  var row=function(r){
     var d=r.date?fmtDate(r.date):"—";
-    return "<div class='stk-who-row'><span class='w-n'>"+escH(r.name)+"</span>"
+    return "<div class='stk-who-row"+(r.done?" done":"")+"'>"
+      +"<span class='w-n'>"+escH(r.name)+"</span>"
       +"<span class='w-o'>"+escH(r.num)+"</span>"
       +"<span class='w-d'>"+escH(d)+"</span>"
       +"<span class='w-q'>×"+r.qty+"</span></div>";
-  }).join("");
-  var tot=list.reduce(function(a,r){return a+r.qty;},0);
-  return "<div class='stk-who'><div class='stk-who-hd'>👥 ใครสั่งบ้าง — "+list.length+" ใบ รวม "+tot+" กล่อง</div>"+rows+"</div>";
+  };
+  var wait=list.filter(function(r){return !r.done;}), done=list.filter(function(r){return r.done;});
+  var nWait=wait.reduce(function(a,r){return a+r.qty;},0), nDone=done.reduce(function(a,r){return a+r.qty;},0);
+  var h="<div class='stk-who'><div class='stk-who-hd'>👥 ใครสั่งบ้าง — "+list.length+" ใบ รวม "+(nWait+nDone)+" กล่อง</div>";
+  if(wait.length) h+="<div class='stk-who-sub'>⏳ ยังไม่ได้จัด "+nWait+" กล่อง</div>"+wait.map(row).join("");
+  if(done.length) h+="<div class='stk-who-sub'>✅ จัดไปแล้ว "+nDone+" กล่อง</div>"+done.map(row).join("");
+  return h+"</div>";
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
@@ -1372,9 +1405,7 @@ function stkRowHtml(m,ordered,orderedToday){
       +(unlimited
         ? "ขายไม่จำกัด"+(ordered?(" · <b style='color:var(--gold)'>สั่งแล้ว "+ordered+"</b>"):"")
         : "มีจริง <b>"+real+"</b> + กำลังเติม <b class='"+(inc?"inc":"")+"'>"+inc+"</b>"
-          +" − สั่งแล้ว "+(ordered
-              ? "<b class='ord-btn' onclick='stkWho(\""+m.id+"\",event)' title='กดดูว่าใครสั่งบ้าง'>"+ordered+" 👥</b>"
-              : "<b style='color:var(--gold)'>0</b>")
+          +" − สั่งแล้ว <b class='ord-btn' onclick='stkWho(\""+m.id+"\",event)' title='กดดูว่าใครสั่งบ้าง (รวมใบที่จัดไปแล้ว)'>"+ordered+" 👥</b>"
           +(ordered? ("<span style='font-size:11px;color:var(--soft)'> (วันที่ดูอยู่ "+(orderedToday||0)
               +(ordered>(orderedToday||0)?" · วันอื่น "+(ordered-(orderedToday||0)):"")+")</span>") : "")
           +(incAge?("<span class='inc-old'>"+incAge+"</span>"):""))
@@ -1879,7 +1910,16 @@ function renderCard(o){
     /* 📦 จัดเสร็จบางส่วน — โผล่เฉพาะตอนอยู่โหมดจัดของ + ติ๊กไว้บ้างแต่ยังไม่ครบ
        เหตุผลที่ต้องมี (นัท): บางเมนูต้องรอของทำวันถัดไป แต่ที่จัดได้แล้วควรตัดสต็อกไปก่อน
        ไม่งั้นของที่ออกจากตู้ไปแล้วยังนับว่าอยู่ = ครัวหยิบไปใช้กับใบอื่นซ้ำ */
-    if(!packed && kqPackMode) b+="<button class='btn-part' onclick='markPackedPartial(\""+o.id+"\")'>📦 จัดเสร็จบางส่วน</button>";
+    if(!packed && kqPackMode){
+      var _tk=0;
+      groupOrderItems(items).forEach(function(g){ g.items.forEach(function(i){
+        if(pkDoneQty(o.id,i.code) >= (i.qty||1)) return;      // ยืนยันไปแล้ว ไม่ต้องนับซ้ำ
+        if(kqTicks[pkKeyOf(o.id,i)]) _tk += (i.qty||1);
+      }); });
+      b+= _tk
+        ? "<button class='btn-part hot' onclick='markPackedPartial(\""+o.id+"\")'>📦 ยืนยันจัดเสร็จ "+_tk+" กล่อง</button>"
+        : "<button class='btn-part' onclick='markPackedPartial(\""+o.id+"\")'>📦 จัดเสร็จบางส่วน</button>";
+    }
     if(!packed && pkDoneTotal(o.id)) b+="<button class='btn-undo' onclick='clearPartial(\""+o.id+"\")'>↩ ยกเลิกจัดบางส่วน</button>";
     if(!packed) b+="<button class='btn-pack' onclick='markPacked(\""+o.id+"\")'>✅ จัดกล่องเสร็จ</button>";
     else b+="<button class='btn-undo' onclick='markUnpack(\""+o.id+"\")'>↩ ยังไม่จัด</button>";
