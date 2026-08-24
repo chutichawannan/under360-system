@@ -1029,6 +1029,18 @@ function mpHasHyrox(){ return MP_SETS.some(s => s.isHx); }
 function mpPriceOf(s, t){ if(!s) return 0; return t==='lc' ? s.price_lc : s.price_hp; }
 function mpTypeLabel(t){ return t==='hp' ? 'High Protein' : t==='lc' ? 'Low Carb' : 'Hyrox'; }
 
+/* อ่านว่า "ใบนี้เป็น Meal Plan ประเภทไหน" จากแถวเซ็ตในใบเดียวกัน
+   ทำไมต้องมี: แถวกล่องเมนูรายวันเก็บ notes ว่า "meal_plan:box:r1/3"
+   — ในตัวมันเองไม่ได้บอกว่า HP/LC/Hyrox เลย ต้องไปดูแถวเซ็ตที่อยู่ใบเดียวกัน
+   คืน 'hp' | 'lc' | 'hyrox' | null (null = หาไม่เจอ เช่นใบรอบ 2 ที่มีแต่แถวกล่อง) */
+function mpTypeOfOrder(o){
+  for (const it of ((o && o.order_items) || [])) {
+    const m = String(it.notes || '').match(/^meal_plan:(hp|lc|hyrox):/);
+    if (m) return m[1];
+  }
+  return null;
+}
+
 async function loadMpOfferSets(){
   try{
     const { data, error } = await sb.from('mp_offer_sets').select('*').eq('is_active', true).order('display_order');
@@ -5155,7 +5167,17 @@ function renderOrders(orders) {
           const _notes = i.notes || '';
           let _tag = '';
           if (_notes.startsWith('pkg:')) _tag = '📦 แพคเกจ';
-          else if (_notes.startsWith('meal_plan:')) _tag = _notes.includes(':hp:') ? '🥗 High Protein' : _notes.includes(':lc:') ? '🥗 Low Carb' : '🏋️ Hyrox';
+          else if (_notes.startsWith('meal_plan:')) {
+            /* 🔴 เดิม: ไม่เจอ ':hp:' และ ':lc:' → เหมาว่าเป็น Hyrox
+               ผลคือแถวกล่องเมนู ("meal_plan:box:r1/3") ซึ่งไม่มีประเภทอยู่ในตัวเอง
+               ถูกติดป้าย Hyrox หมด — 604 บรรทัดทั่วระบบ ทั้งที่ไม่มีลูกค้า Hyrox สักคน
+               เคสจริง: tarn ใบ U-0824-010 สั่ง LC แต่เมนูทั้ง 7 กล่องขึ้น "Hyrox"
+               (นัทเจอเอง 24 ส.ค. 2569 · ลูกค้าเปิดดูแล้วงงว่าสั่งอะไรไป)
+               ตอนนี้: แถวกล่องยืมประเภทจากแถวเซ็ตในใบเดียวกัน หาไม่เจอ = ไม่เดา */
+            const _m  = _notes.match(/^meal_plan:(hp|lc|hyrox):/);
+            const _mt = _m ? _m[1] : mpTypeOfOrder(o);
+            _tag = _mt === 'hp' ? '🥗 High Protein' : _mt === 'lc' ? '🥗 Low Carb' : _mt === 'hyrox' ? '🏋️ Hyrox' : '🥗 Meal Plan';
+          }
           else { const _mi = menuItems.find(m => m.code === i.menu_code); if (_mi && _mi.category) _tag = getCatLabel(_mi.category); }
           const _tagHtml = _tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(_tag)}</span>` : '';
           return `<div class="oline">${h(i.menu_name)} × ${i.quantity}${_tagHtml}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`;
