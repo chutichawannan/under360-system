@@ -6245,10 +6245,240 @@ function obRenderSets(){
   if(mw) mw.innerHTML=obMpSets.map(function(s,i){
     var sub=(s.boxes||0)+' กล่อง';
     if(s.price_hp===s.price_lc) return obChip('obAddMp('+i+',\'hyrox\')',s.label,sub,s.price_hp);
-    return obChip('obAddMp('+i+',\'hp\')','HP · '+s.label,sub+' · โปรตีนสูง',s.price_hp)
-         + obChip('obAddMp('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
+    /* กดแล้วเปิดตัวเลือกเมนูก่อน แบบเดียวกับที่ลูกค้าเห็นในแอป (นัทสั่ง 24 ส.ค.)
+       ในนั้นมีปุ่ม "ข้ามไปก่อน" ให้ใส่ตะกร้าเลย = พฤติกรรมเดิมยังใช้ได้ ไม่บังคับแอดมิน */
+    return obChip('obOpenMpPick('+i+',\'hp\')','HP · '+s.label,sub+' · โปรตีนสูง',s.price_hp)
+         + obChip('obOpenMpPick('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
   }).join('')||'<span style="color:#9CA3AF;font-size:13px">ไม่มีชุด Meal Plan</span>';
 }
+/* ══════════════════════════════════════════════════════════════════════════════
+   🥗 เลือกเมนู Meal Plan ในหน้า "สั่งแทนลูกค้า" (นัทสั่ง 24 ส.ค. 2569)
+   นัทขอ: "ขอมีแบบนี้ในหน้าสั่งแทนลูกค้าให้แอดมินด้วยที" — แบบเดียวกับที่ลูกค้าเห็นในแอป
+
+   ทำไมสำคัญ: ลูกค้าที่โทร/ทักมาสั่ง ก็อยากเลือกเมนูเหมือนคนที่กดเอง
+   ถ้าแอดมินเลือกให้ไม่ได้ = ลูกค้ากลุ่มนี้โดนครัวจัดให้อย่างเดียวตลอดไป (เสียเปรียบโดยไม่รู้ตัว)
+
+   ⚠️ ต่างจากฝั่งลูกค้า 1 อย่าง: แอดมิน "ข้ามได้" — กดใส่ตะกร้าเลยโดยไม่เลือกเมนูก็ได้
+      เพราะบางทีลูกค้ายังไม่เคาะเมนู แต่ต้องเปิดใบไว้ก่อน (ครัวจัดให้ตามเดิม)
+   ══════════════════════════════════════════════════════════════════════════════ */
+var OB_PLAN={}, OB_PLANMENU={}, obPlanLoaded=false, obPlanLoading=false;
+var obMpPick=null;   // { setIdx, type, path, days[], sel{}, swap{}, selDay, offset, skipped[] }
+var OB_SEA_MAX=4;
+var OB_DAYS_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
+var OB_MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function obFmtDay(k){ var d=new Date(k+'T00:00:00'); return {w:OB_DAYS_TH[d.getDay()],d:d.getDate(),m:OB_MON_TH[d.getMonth()]}; }
+function obToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+function obIsBeef(m){ var p=String((m&&m.protein)||''); return /เนื้อ/.test(p) && !/เนื้อสัตว์/.test(p); }
+
+/* แพลนเมนูล่วงหน้า — แหล่งเดียวกับฝั่งลูกค้าเป๊ะ ไม่งั้น 2 หน้าจะโชว์เมนูคนละชุด */
+async function obLoadPlan(){
+  if(obPlanLoaded||obPlanLoading) return;
+  obPlanLoading=true;
+  try{
+    var sb_=getSB();
+    var r=await sb_.from('kitchen_data').select('data').eq('key','mp_menu_plan').maybeSingle();
+    if(r&&r.data&&r.data.data&&Object.keys(r.data.data).length) OB_PLAN=r.data.data;
+    else OB_PLAN=await fetch('preview/mp_plan_seed.json').then(function(x){return x.json();}).catch(function(){return {};});
+    var codes=[];
+    Object.keys(OB_PLAN).forEach(function(k){ (OB_PLAN[k]||[]).forEach(function(m){ codes.push('LC'+m.no); codes.push('HP'+m.no); }); });
+    if(codes.length){
+      var uniq=codes.filter(function(v,i,a){return a.indexOf(v)===i;});
+      var mr=await sb_.from('menu_items').select('code,name').in('code',uniq).limit(500);
+      (mr.data||[]).forEach(function(m){ OB_PLANMENU[m.code]=m; });
+    }
+  }catch(e){ /* โหลดไม่ได้ = ไม่มีปฏิทิน แต่ยังสั่งได้ ห้ามบล็อก */ }
+  obPlanLoading=false; obPlanLoaded=true;
+  if(obMpPick) obRenderMpPick();
+}
+
+function obMpSet(){ return obMpSets[obMpPick.setIdx]||{}; }
+function obMpBoxes(){ return Number(obMpSet().boxes)||0; }
+function obMpDaysNeeded(){ var b=obMpBoxes(); return b?Math.max(1,Math.round(b/7)):0; }
+function obMpPerDay(){ var b=obMpBoxes(),d=obMpDaysNeeded(); return d?Math.round(b/d):0; }
+function obFutureDays(){ var t=obToday(); return Object.keys(OB_PLAN).filter(function(k){return k>=t;}).sort(); }
+function obUsableDays(){ return obFutureDays().filter(function(k){return obMpPick.skipped.indexOf(k)<0;}); }
+function obMaxOffset(){ return Math.max(0, obUsableDays().length-obMpDaysNeeded()); }
+function obActiveDays(){
+  var all=obUsableDays(), need=obMpDaysNeeded(); if(!need) return [];
+  var off=Math.min(obMpPick.offset, Math.max(0, all.length-need));
+  return all.slice(off, off+need);
+}
+function obCountDay(k){ var p=obMpPick.sel[k]||{}; return Object.keys(p).reduce(function(s,n){return s+p[n];},0); }
+function obTotalPicked(){ return Object.keys(obMpPick.sel).reduce(function(s,k){return s+obCountDay(k);},0); }
+function obSeaPicked(){
+  var n=0;
+  Object.keys(obMpPick.sel).forEach(function(k){
+    var list=OB_PLAN[k]||[];
+    Object.keys(obMpPick.sel[k]).forEach(function(no){
+      var m=list.find(function(x){return x.no===no;}); if(m&&m.sea) n+=obMpPick.sel[k][no];
+    });
+  });
+  return n;
+}
+
+function obOpenMpPick(i,type){
+  obMpPick={ setIdx:i, type:type, path:'', days:[], sel:{}, swap:{}, selDay:'', offset:0, skipped:[] };
+  document.getElementById('obPickWrap').style.display='flex';
+  obLoadPlan();
+  obRenderMpPick();
+}
+function obCloseMpPick(){
+  document.getElementById('obPickWrap').style.display='none';
+  obMpPick=null;
+}
+function obMpSetPath(p){ obMpPick.path=p; obRenderMpPick(); }
+function obMpPickDay(k){ obMpPick.selDay=k; obRenderMpPick(); }
+function obMpShift(d){
+  var mo=obMaxOffset();
+  obMpPick.offset=Math.max(0,Math.min(mo,obMpPick.offset+d));
+  obMpPick.selDay=''; obRenderMpPick();
+}
+function obMpSkip(k,ev){
+  if(ev)ev.stopPropagation();
+  var i=obMpPick.skipped.indexOf(k);
+  if(i>=0) obMpPick.skipped.splice(i,1);
+  else{
+    if(obUsableDays().length<=obMpDaysNeeded()){ alert('ยังไม่มีวันสำรองพอให้ข้าม'); return; }
+    obMpPick.skipped.push(k);
+    delete obMpPick.sel[k];
+    Object.keys(obMpPick.swap).forEach(function(kk){ if(kk.indexOf(k+'|')===0) delete obMpPick.swap[kk]; });
+  }
+  obMpPick.selDay=''; obRenderMpPick();
+}
+function obMpChg(no,d){
+  var k=obMpPick.selDay; if(!k) return;
+  if(!obMpPick.sel[k]) obMpPick.sel[k]={};
+  var cur=obMpPick.sel[k][no]||0, next=cur+d;
+  if(next<0) return;
+  if(d>0){
+    if(obCountDay(k)>=obMpPerDay()) return;
+    var m=(OB_PLAN[k]||[]).find(function(x){return x.no===no;});
+    if(m&&m.sea&&obSeaPicked()>=OB_SEA_MAX) return;
+  }
+  if(next===0){ delete obMpPick.sel[k][no]; delete obMpPick.swap[k+'|'+no]; }
+  else obMpPick.sel[k][no]=next;
+  obRenderMpPick();
+}
+function obMpSwapBeef(k,no,ev){
+  if(ev)ev.stopPropagation();
+  var key=k+'|'+no;
+  if(obMpPick.swap[key]) delete obMpPick.swap[key]; else obMpPick.swap[key]=true;
+  obRenderMpPick();
+}
+
+function obRenderMpPick(){
+  var el=document.getElementById('obPickBody'); if(!el||!obMpPick) return;
+  var s=obMpSet();
+  var price=(obMpPick.type==='lc')?s.price_lc:s.price_hp;
+  var head='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    +'<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:16px">'+obEsc(String(obMpPick.type).toUpperCase()+' · '+(s.label||''))+'</div>'
+    +'<div style="font-size:12.5px;color:#6B7280">'+(s.boxes||0)+' มื้อ · ส่ง '+obMpDaysNeeded()+' วัน · ฿'+Number(price||0).toLocaleString()+'</div></div>'
+    +'<button onclick="obCloseMpPick()" style="border:none;background:#F3F4F6;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:13px">ปิด</button></div>';
+
+  var pathCard=function(k,emoji,t,sub){
+    var on=obMpPick.path===k;
+    return '<div onclick="obMpSetPath(\''+k+'\')" style="flex:1;min-width:0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;'
+      +'border:2px solid '+(on?'#1F4D3A':'#E5E7EB')+';background:'+(on?'#EBF3EF':'#fff')+'">'
+      +'<div style="font-size:22px">'+emoji+'</div><div style="font-size:13.5px;font-weight:800;color:'+(on?'#1F4D3A':'#111')+'">'+t+'</div>'
+      +'<div style="font-size:11px;color:#6B7280;margin-top:2px">'+sub+'</div></div>';
+  };
+  var paths='<div style="font-size:12.5px;font-weight:700;color:#6B7280;margin-bottom:7px">เมนูจะมายังไง</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px">'
+    +pathCard('auto','🎁','ให้ครัวจัดให้','ไม่ต้องเลือก')
+    +pathCard('pick','🖐️','เลือกเมนูเอง','กดเลือกทีละมื้อ')+'</div>';
+
+  var body='';
+  if(obMpPick.path){
+    if(!obPlanLoaded) body='<div style="padding:16px;text-align:center;color:#9CA3AF;font-size:13px">กำลังโหลดเมนู…</div>';
+    else{
+      var days=obActiveDays();
+      if(!days.length) body='<div style="background:#F7F7F4;border-radius:10px;padding:14px;text-align:center;color:#6B7280;font-size:13px;line-height:1.7">ยังไม่ได้วางเมนูของช่วงนี้<br><b>สั่งได้ตามปกติ</b> ครัวจะจัดเมนูให้ตอนถึงวันส่ง</div>';
+      else{
+        if(!obMpPick.selDay||days.indexOf(obMpPick.selDay)<0) obMpPick.selDay=days[0];
+        var mo=obMaxOffset(), f0=obFmtDay(days[0]);
+        var shift=mo>0?('<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">'
+          +'<button onclick="obMpShift(-1)" '+(obMpPick.offset<=0?'disabled':'')+' style="border:1.5px solid #E5E7EB;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer'+(obMpPick.offset<=0?';opacity:.4':'')+'">◀ เร็วขึ้น</button>'
+          +'<span style="flex:1;text-align:center;font-size:12.5px;color:#6B7280">เริ่มส่ง <b style="color:#111">'+f0.w+' '+f0.d+' '+f0.m+'</b></span>'
+          +'<button onclick="obMpShift(1)" '+(obMpPick.offset>=mo?'disabled':'')+' style="border:1.5px solid #E5E7EB;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer'+(obMpPick.offset>=mo?';opacity:.4':'')+'">ช้าลง ▶</button></div>'):'';
+        var chips=days.map(function(k){
+          var f=obFmtDay(k), n=obCountDay(k), on=obMpPick.selDay===k;
+          return '<div onclick="obMpPickDay(\''+k+'\')" style="position:relative;flex:0 0 auto;min-width:54px;text-align:center;cursor:pointer;'
+            +'border:2px solid '+(on?'#1F4D3A':'#E5E7EB')+';background:'+(on?'#1F4D3A':'#fff')+';color:'+(on?'#fff':'#111')+';border-radius:11px;padding:7px 6px">'
+            +'<button onclick="obMpSkip(\''+k+'\',event)" title="ข้ามรอบส่งวันนี้" style="position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;border:1.5px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:11px;line-height:1;padding:0;cursor:pointer">✕</button>'
+            +'<div style="font-size:10.5px;opacity:.75">'+f.w+'</div><div style="font-size:18px;font-weight:800;line-height:1.15">'+f.d+'</div>'
+            +'<div style="font-size:10px;opacity:.7">'+f.m+'</div>'
+            +(obMpPick.path==='pick'?'<div style="font-size:10px;font-weight:800;margin-top:2px">'+n+'/'+obMpPerDay()+'</div>':'')+'</div>';
+        }).join('');
+        var skipBar=obMpPick.skipped.length?('<div style="margin-top:7px;background:#FEF9E7;border:1px solid #F5E4A8;border-radius:8px;padding:7px 9px;font-size:12px;color:#8A6D1F">ข้ามไว้ '+obMpPick.skipped.length+' วัน — เลื่อนไปรับรอบถัดไปแทน</div>'):'';
+        var list=OB_PLAN[obMpPick.selDay]||[];
+        var fd=obFmtDay(obMpPick.selDay);
+        var menus='<div style="margin-top:10px;border:1px solid #E5E7EB;border-radius:11px;overflow:hidden">'
+          +'<div style="background:#F7F7F4;padding:8px 11px;display:flex;gap:8px;align-items:center">'
+          +'<span style="font-size:13px;font-weight:800">'+fd.w+' '+fd.d+' '+fd.m+'</span>'
+          +'<span style="flex:1;text-align:right;font-size:11.5px;color:#6B7280">'
+          +(obMpPick.path==='pick'?('เลือกได้ '+obMpPerDay()+' มื้อ · เลือกแล้ว '+obCountDay(obMpPick.selDay)):('ครัวทำ '+list.length+' เมนูวันนี้'))+'</span></div>';
+        if(!list.length) menus+='<div style="padding:14px;text-align:center;color:#9CA3AF;font-size:13px">วันนี้ยังไม่ได้วางเมนู</div>';
+        list.forEach(function(m){
+          var code=(obMpPick.type==='lc'?'LC':'HP')+m.no;
+          var nm=(OB_PLANMENU[code]&&OB_PLANMENU[code].name)||m.name||code;
+          var q=(obMpPick.sel[obMpPick.selDay]&&obMpPick.sel[obMpPick.selDay][m.no])||0;
+          var dayFull=obCountDay(obMpPick.selDay)>=obMpPerDay();
+          var seaFull=m.sea&&obSeaPicked()>=OB_SEA_MAX;
+          var ctrl=obMpPick.path==='pick'?('<div style="flex:0 0 auto;display:flex;align-items:center;gap:5px">'
+            +'<button onclick="obMpChg(\''+m.no+'\',-1)" '+(q?'':'disabled')+' style="width:28px;height:28px;border-radius:50%;border:1.5px solid #E5E7EB;background:#fff;font-size:16px;line-height:1;cursor:pointer'+(q?'':';opacity:.3')+'">−</button>'
+            +'<span style="min-width:15px;text-align:center;font-size:14px;font-weight:800">'+q+'</span>'
+            +'<button onclick="obMpChg(\''+m.no+'\',1)" '+((dayFull||seaFull)?'disabled':'')+' style="width:28px;height:28px;border-radius:50%;border:none;background:#1F4D3A;color:#fff;font-size:16px;line-height:1;cursor:pointer'+((dayFull||seaFull)?';opacity:.3':'')+'">+</button></div>'):'';
+          var sk=obMpPick.selDay+'|'+m.no, sw=!!obMpPick.swap[sk];
+          var swapBtn=(obMpPick.path==='pick'&&q>0&&obIsBeef(m))?('<div onclick="obMpSwapBeef(\''+obMpPick.selDay+'\',\''+m.no+'\',event)" style="margin-top:4px;display:inline-flex;gap:4px;cursor:pointer;border:1.5px solid '+(sw?'#1F4D3A':'#E5E7EB')+';background:'+(sw?'#EBF3EF':'#fff')+';border-radius:7px;padding:2px 7px;font-size:11px;font-weight:700;color:'+(sw?'#1F4D3A':'#6B7280')+'">'+(sw?'✓ เปลี่ยนเป็นหมูแล้ว':'🥩 ไม่ทานเนื้อ · ขอเปลี่ยนเป็นหมู')+'</div>'):'';
+          var tagBg=m.sea?'#E3F0FA':'#F0F4EE', tagFg=m.sea?'#1E5F8A':'#3F6B4F';
+          menus+='<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-top:1px solid #F3F4F6;background:'+(q?'#F6FBF8':'#fff')+'">'
+            +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;line-height:1.35">'+obEsc(nm)+'</div>'
+            +'<span style="display:inline-block;margin-top:2px;font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:'+tagBg+';color:'+tagFg+'">'+(m.sea?'ทะเล':obEsc(String(m.protein||'').split(' ')[0]))+'</span>'
+            +swapBtn+'</div>'+ctrl+'</div>';
+        });
+        menus+='</div>';
+        var bar='';
+        if(obMpPick.path==='pick'){
+          var got=obTotalPicked(), tot=obMpBoxes(), sea=obSeaPicked();
+          bar='<div style="margin-top:9px;background:#F7F7F4;border-radius:10px;padding:9px 11px;font-size:12.5px">'
+            +'<b>เลือกแล้ว '+got+' / '+tot+' มื้อ</b>'
+            +'<span style="float:right;color:'+(got>=tot?'#1F4D3A':'#6B7280')+'">'+(got>=tot?'ครบแล้ว ✓':'เหลือ '+(tot-got))+'</span>'
+            +(sea?'<div style="margin-top:3px;font-size:11px;color:'+(sea>=OB_SEA_MAX?'#C9573F':'#9CA3AF')+'">เมนูทะเล '+sea+'/'+OB_SEA_MAX+'</div>':'')
+            +'<div style="margin-top:4px;font-size:11px;color:#9CA3AF">เลือกไม่ครบก็สั่งได้ — ที่เหลือครัวจัดให้</div></div>';
+        }
+        body='<div style="font-size:12.5px;font-weight:700;color:#6B7280;margin:12px 0 7px">'
+          +(obMpPick.path==='pick'?('เลือกเมนู — '+days.length+' วันส่ง'):('เมนูที่จะได้ — '+days.length+' วันส่ง'))+'</div>'
+          +shift+'<div style="display:flex;gap:7px;overflow-x:auto;padding:7px 2px 3px">'+chips+'</div>'+skipBar+menus+bar;
+      }
+    }
+  }
+
+  var got=obTotalPicked();
+  var cta='<button onclick="obMpConfirm()" '+(obMpPick.path?'':'disabled')+' style="width:100%;margin-top:12px;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;'
+    +(obMpPick.path?'background:#1F4D3A;color:#fff':'background:#E5E7EB;color:#9CA3AF')+'">'
+    +(obMpPick.path?('✅ ใส่ตะกร้า'+(got?' ('+got+' มื้อที่เลือก)':'')):'เลือกก่อนว่าจะให้ครัวจัดให้ หรือเลือกเอง')+'</button>'
+    /* ⚠️ ทางลัดของแอดมินโดยเฉพาะ — ลูกค้าโทรมาสั่งแต่ยังไม่เคาะเมนู ต้องเปิดใบไว้ก่อนได้ */
+    +'<button onclick="obMpQuickAdd()" style="width:100%;margin-top:7px;padding:10px;border:1.5px solid #E5E7EB;background:#fff;border-radius:10px;font-size:13px;font-weight:700;color:#6B7280;cursor:pointer">ข้ามไปก่อน — ใส่ตะกร้าเลย (ครัวจัดเมนูให้)</button>';
+
+  el.innerHTML=head+paths+body+cta;
+}
+
+/* ใส่ตะกร้าแบบไม่เลือกเมนู — เหมือนพฤติกรรมเดิมของหน้านี้เป๊ะ */
+function obMpQuickAdd(){
+  var i=obMpPick.setIdx, t=obMpPick.type;
+  obCloseMpPick();
+  obAddMpRaw(i,t,null);
+}
+function obMpConfirm(){
+  var days=obActiveDays();
+  var extra={ path:obMpPick.path, days:days,
+    picks:JSON.parse(JSON.stringify(obMpPick.sel)),
+    swap:Object.keys(obMpPick.swap), type:obMpPick.type };
+  var i=obMpPick.setIdx, t=obMpPick.type;
+  obCloseMpPick();
+  obAddMpRaw(i,t,extra);
+}
+
 /* ── 🧩 เซ็ตที่ต้องเลือกเมนู — บังคับเลือกก่อนเข้าตะกร้า (นัทเจอเองกับมือ 17 ส.ค. 2569) ──
    ปัญหา: หน้านี้ใส่เซ็ตลงตะกร้าได้เลยโดยไม่ต้องเลือกเมนู
      ผลจริงวันนี้: `U-0817-022` ชมพู่ + `U-0817-012` คุณแชมป์ = **Diet Set A 24 กล่องที่ครัวแพ็คไม่ได้**
@@ -6347,11 +6577,22 @@ function obPickConfirm(){
   obPushPkg(p,chosen);
   obClosePicker();
 }
-function obAddMp(i,type){
+function obAddMp(i,type){ obAddMpRaw(i,type,null); }
+function obAddMpRaw(i,type,extra){
   var s=obMpSets[i]; if(!s)return;
   var price=(type==='lc')?s.price_lc:s.price_hp;
-  obPush({kind:'mp',key:'mp:'+s.set_key+':'+type,setKey:s.set_key,mpType:type,
-          name:type.toUpperCase()+' · '+s.label,price:price||0,boxes:s.boxes||0,planType:type});
+  var item={kind:'mp',key:'mp:'+s.set_key+':'+type,setKey:s.set_key,mpType:type,
+          name:type.toUpperCase()+' · '+s.label,price:price||0,boxes:s.boxes||0,planType:type};
+  /* เมนูที่แอดมินเลือกให้ลูกค้า — เดินทางไปกับรายการในตะกร้า แล้วลงเป็นรอบส่งตอนบันทึก */
+  if(extra){
+    item.mpDays=extra.days; item.mpPicks=extra.picks; item.mpSwap=extra.swap; item.mpPath=extra.path;
+    /* คนละวันเริ่ม = คนละรายการ ไม่ยุบรวมกัน (ลูกค้าคนเดียวสั่ง 2 คอร์สคนละช่วงได้จริง) */
+    item.key='mp:'+s.set_key+':'+type+':'+((extra.days&&extra.days[0])||'');
+    var n=Object.keys(extra.picks||{}).reduce(function(a,k){ var p=extra.picks[k];
+      return a+Object.keys(p).reduce(function(b,x){return b+p[x];},0); },0);
+    if(n) item.name+=' · เลือกเมนูแล้ว '+n+' มื้อ';
+  }
+  obPush(item);
 }
 function obPush(item){
   var c=obCart.find(function(x){return x.key===item.key;});
@@ -6532,11 +6773,35 @@ async function obSubmit(){
       var d=new Date(date+'T00:00:00');
       var isMWF=function(x){ return [1,3,5].indexOf(x.getDay())>=0; };
       var ymd=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+      /* 📅 แอดมินเลือกวัน/ข้ามรอบไว้ในตัวเลือกเมนู = ใช้วันนั้นตรงๆ
+         วันไม่พอจำนวนรอบ → ใช้เท่าที่มี แล้วนับ จ/พ/ศ ต่อจากวันสุดท้าย (เหมือนฝั่งลูกค้าเป๊ะ) */
+      var chosen=(c.mpDays&&c.mpDays.length)?c.mpDays.slice(0,rounds):[];
+      if(chosen.length){
+        var nd=new Date(chosen[chosen.length-1]+'T00:00:00');
+        while(chosen.length<rounds){ nd.setDate(nd.getDate()+1); while(!isMWF(nd)) nd.setDate(nd.getDate()+1); chosen.push(ymd(nd)); }
+      }
+      var swapSet=(c.mpSwap||[]);
+      var menuFor=function(dayKey){
+        var p=(c.mpPicks||{})[dayKey]; if(!p) return null;
+        var out=[];
+        Object.keys(p).forEach(function(no){
+          var code=(c.planType==='lc'?'LC':'HP')+no;
+          var src=(OB_PLAN[dayKey]||[]).find(function(x){return x.no===no;})||{};
+          var nm=(OB_PLANMENU[code]&&OB_PLANMENU[code].name)||src.name||code;
+          var row={code:code,name:nm,qty:p[no],by:'admin'};
+          /* 🥩 ขอเปลี่ยนเนื้อเป็นหมู ต้องติดไปกับตัวเมนู ไม่ใช่โน้ตท้ายใบ — ครัวอ่านทีละบรรทัด */
+          if(swapSet.indexOf(dayKey+'|'+no)>=0){ row.swap='หมู'; row.note='เปลี่ยนเป็นหมู'; }
+          out.push(row);
+        });
+        return out.length?out:null;
+      };
       for(var i=1;i<=rounds;i++){
+        var dd=chosen.length?chosen[i-1]:(i===1?date:ymd(d));
         planRows.push({ order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
           line_uid:(obCust&&obCust.line_uid)||null,
           mp_type:c.planType, mp_set:mpSet, round_no:i, total_rounds:rounds,
-          delivery_date: (i===1 ? date : ymd(d)),
+          menu_items: menuFor(dd),
+          delivery_date: dd,
           time_slot:slot, time_slot_label:slotLabels[slot]||'',
           delivery_address:addr||null, box_count:perRound, status:'scheduled' });
         // รอบถัดไป = วัน จ/พ/ศ ถัดไป (รอบแรกยึดวันที่แอดมินเลือกไว้ ไม่แตะ)
