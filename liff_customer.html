@@ -2224,14 +2224,19 @@ function cartEarliestReadyDate(){
 }
 
 function cartWeekType() {
-  // 'next' | 'current' | null
+  /* คืน 'next' ถ้าตะกร้า **มีเมนูพรีออเดอร์อยู่แม้แต่ชิ้นเดียว** ('current' = ของพร้อมส่งทั้งตะกร้า)
+     ⚠️ เดิมตอบตามเมนูชิ้นแรกที่เจอชิ้นเดียว — ใช้ได้ตอนที่ยังห้ามปนตะกร้า
+     พอ 24 ส.ค. 2569 เปิดให้ปนได้ ตะกร้า [เมนูปกติ, เมนูอาทิตย์หน้า] จะถูกตอบว่า
+     'current' ทั้งที่มีของพรีออเดอร์อยู่ → ใบสั่งจะติดธง delivery_week ผิด */
+  let seen = false;
   for (const c of cart) {
     if (c.type === 'package' || c.type === 'meal_plan') continue;
     const item = menuItems.find(m => m.id === c.id);
     if (!item) continue;
-    return isNextWeekItem(item) ? 'next' : 'current';
+    seen = true;
+    if (isNextWeekItem(item)) return 'next';
   }
-  return null;
+  return seen ? 'current' : null;
 }
 
 // ══════════════════════════════════════
@@ -2920,11 +2925,19 @@ function addItem(id) {
   const s = stockInfo(id);
   const ex = cart.find(c => c.id===id);
   if (!s.unlimited && s.remaining <= 0) { toast(stockBlockMsg(s)); return; }
-  // Week-type check: block mixed cart (A)
+  /* 🔴 เดิมบล็อกไม่ให้ปนเมนูอาทิตย์หน้ากับเมนูปกติ — "กรุณาสั่งแยกออเดอร์"
+     ลบออกแล้ว 24 ส.ค. 2569 (นัทสั่งด่วน · ลูกค้าจริงติดจนสั่งไม่ได้ กิ๊ฟรายงานเข้ามา)
+
+     ทำไมเคยต้องบล็อก: 1 ออเดอร์มีวันส่งเดียว ถ้าปนของที่ยังไม่ถึงวันขาย
+     ครัวจะต้องทำของที่ยังไม่ได้วางแผน (เคยเกิดจริง ใบ U-0823-013)
+
+     ทำไมไม่ต้องบล็อกแล้ว: cartEarliestReadyDate() + renderDatePick
+     **ดันวันแรกที่เลือกได้ไปถึงวันที่ของทุกชิ้นในตะกร้าพร้อมส่งอยู่แล้ว**
+     = ปนได้อย่างปลอดภัย ระบบเลือกวันที่ทุกอย่างพร้อมให้เอง
+     กำแพงนี้เลยเหลือแค่ "กันการขาย" ไม่ได้กันของผิดอีกต่อไป
+
+     ⛔ ถ้าจะเอากลับมา ต้องเอาตัวบังคับวันออกก่อน ไม่ใช่ใส่ทับกัน */
   const _isNext = isNextWeekItem(item);
-  const _cwt   = cartWeekType();
-  if (_cwt === 'current' && _isNext)  { toast('เมนูนี้ส่งอาทิตย์หน้า — กรุณาสั่งแยกออเดอร์'); return; }
-  if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูอาทิตย์หน้าอยู่ — กรุณาสั่งแยกออเดอร์'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:salePrice(item), code:item.code||'', qty:1 });
   saveCart(); refreshItemViews();
@@ -3031,10 +3044,13 @@ function renderCart() {
     return;
   }
   // Next-week notice banner
-  const _cwt = cartWeekType();
-  const weekBanner = _cwt === 'next'
+  /* ตะกร้าปนของพรีออเดอร์ได้แล้ว → ป้ายต้องบอก "วันแรกที่ส่งได้จริง"
+     ไม่ใช่ "ส่งอาทิตย์หน้า" ลอยๆ เพราะของในตะกร้าอาจพร้อมคนละวัน
+     ตัวเลขนี้มาจากที่เดียวกับที่ตัวเลือกวันส่งใช้ = พูดตรงกันเสมอ */
+  const _ready = cartEarliestReadyDate();
+  const weekBanner = _ready
     ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1D4ED8;">
-        📅 <b>ออเดอร์นี้ส่งอาทิตย์หน้า</b> — ระบบจะเลือกวันส่งให้อัตโนมัติ
+        📅 <b>ตะกร้านี้เริ่มส่งได้ ${h(readyDateLabel({available_from:_ready}))}</b> — มีเมนูที่ยังไม่ถึงวันขาย ระบบเลือกวันส่งให้เองแล้ว
        </div>` : '';
   el.insertAdjacentHTML('afterbegin', weekBanner);
   const rows = cart.map(c => {
