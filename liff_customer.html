@@ -1034,11 +1034,21 @@ function mpTypeLabel(t){ return t==='hp' ? 'High Protein' : t==='lc' ? 'Low Carb
    — ในตัวมันเองไม่ได้บอกว่า HP/LC/Hyrox เลย ต้องไปดูแถวเซ็ตที่อยู่ใบเดียวกัน
    คืน 'hp' | 'lc' | 'hyrox' | null (null = หาไม่เจอ เช่นใบรอบ 2 ที่มีแต่แถวกล่อง) */
 function mpTypeOfOrder(o){
+  // ชั้นที่ 1 — แถวเซ็ตในใบเดียวกัน (แม่นที่สุด เพราะระบบเขียนเอง)
   for (const it of ((o && o.order_items) || [])) {
     const m = String(it.notes || '').match(/^meal_plan:(hp|lc|hyrox):/);
     if (m) return m[1];
   }
-  return null;
+  /* ชั้นที่ 2 — ใบรอบ 2..N กับใบที่แอดมินเปิดให้ ไม่มีแถวเซ็ตติดมาด้วย
+     แต่มักเขียนประเภทไว้ในโน้ตของใบ ("Low Carb Program รายสัปดาห์ — รอบ 3/3")
+     หรือในชื่อรายการ ("HYROX SET 6 กล่อง") → กู้คืนได้อีก ~30 ใบ
+     ⚠️ จับเฉพาะคำเต็มที่กำกวมไม่ได้ — ไม่จับ "HP"/"LC" ลอยๆ เพราะโน้ตเป็นข้อความอิสระ */
+  const t = [String((o && o.notes) || '')]
+    .concat(((o && o.order_items) || []).map(i => String(i.menu_name || ''))).join(' | ');
+  if (/hyrox/i.test(t)) return 'hyrox';
+  if (/high\s*protein/i.test(t) || /meal\s*plan\s*hp\b/i.test(t)) return 'hp';
+  if (/low\s*carb/i.test(t)     || /meal\s*plan\s*lc\b/i.test(t)) return 'lc';
+  return null;   // หาไม่เจอจริงๆ = ขึ้น "Meal Plan" เฉยๆ ดีกว่าเดาผิด
 }
 
 async function loadMpOfferSets(){
