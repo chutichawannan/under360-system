@@ -89,8 +89,11 @@
   }
   .in{ width:var(--ink); }
 
-  .shop{ text-align:center; font-weight:700; font-size:12px; margin-top:1mm; }
-  .ordno{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.3px;
+  /* 📏 ทุกขนาดในใบต้องเป็น em (สัมพัทธ์กับ --fs) ห้ามเป็น px ตายตัว
+     เหตุ (นัทถ่ายใบจริงมาให้ดู 25 ส.ค. 2569): ตอนพิมพ์ผ่าน RawBT ตัวหลักถูกขยายเป็น 21px
+     แต่บรรทัดที่ตั้ง px ตายตัวไม่ขยายตาม → รายการเมนูย่อยเล็กกว่าครึ่ง อ่านไม่ออกทั้งใบ */
+  .shop{ text-align:center; font-weight:700; font-size:1.15em; margin-top:1mm; }
+  .ordno{ text-align:center; font-weight:800; font-size:1.45em; letter-spacing:.3px;
           font-family:'IBM Plex Mono',ui-monospace,monospace; margin:.5mm 0; }
 
   .dash{ border-top:1px dashed #000; margin:1.5mm 0; }
@@ -99,14 +102,14 @@
   .kv .k{ flex:0 0 15mm; white-space:nowrap; }   /* ห้าม label ตัดคำกลางคำแบบใบ Hato */
   .kv .v{ flex:1 1 auto; font-weight:600; word-break:break-word; }
 
-  .flag{ font-weight:800; font-size:11px; text-align:center; padding:1mm 0;
+  .flag{ font-weight:800; font-size:1.05em; text-align:center; padding:1mm 0;
          border-top:1px solid #000; border-bottom:1px solid #000; margin:1.5mm 0; }
 
   /* 🩺 ข้อจำกัดอาหาร — ต้องอ่านออกแม้พิมพ์ด้วยเครื่องความร้อนขาวดำ
      ใช้กรอบหนา 2 เส้น + ตัวหนา แทนการใช้สี (สีไม่ติดกระดาษความร้อน) */
   .diet{ border:2px solid #000; border-radius:1mm; padding:1.2mm 2mm; margin:1.5mm 0; }
-  .diet-al{ font-weight:900; font-size:12px; line-height:1.35; }
-  .diet-dl{ font-weight:700; font-size:11px; line-height:1.35; margin-top:.6mm; }
+  .diet-al{ font-weight:900; font-size:1.15em; line-height:1.35; }
+  .diet-dl{ font-weight:700; font-size:1.05em; line-height:1.35; margin-top:.6mm; }
   .thead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:.5mm; }
   .thead .q{ flex:0 0 7mm; }
   .thead .n{ flex:1 1 auto; }
@@ -117,16 +120,18 @@
   .line .n{ flex:1 1 auto; font-weight:700; }
   .line .p{ flex:0 0 12mm; text-align:right; }
   /* แถวย่อยของเซ็ต — บรรทัดที่ล้นต้องเยื้องตาม ไม่ใช่กองซ้ายสุดแบบใบ Hato */
-  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:10px; font-weight:500; }
+  /* บรรทัดเมนูในเซ็ต = ของที่ครัวต้องหยิบจริง ต้องอ่านออกพอๆ กับบรรทัดหลัก
+     เดิม 10px + น้ำหนัก 500 → จางที่สุดในใบ ทั้งที่เป็นข้อมูลที่ใช้ทำงานมากที่สุด */
+  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:1em; font-weight:600; }
   .code{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-weight:800; }
   .dim{ color:#555; font-family:'IBM Plex Mono',ui-monospace,monospace; }
-  .new{ font-size:8.5px; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
+  .new{ font-size:.85em; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
   .brk{ border-bottom:1px dotted #999; }
 
   .tot{ display:flex; justify-content:space-between; padding:.4mm 0; }
-  .tot.b{ font-weight:800; font-size:12px; border-top:1px solid #000; margin-top:.8mm; padding-top:1mm; }
-  .note{ font-size:9.5px; margin-top:1.5mm; padding:1mm; border:1px dashed #000; }
-  .sign{ display:flex; gap:2mm; margin-top:3mm; font-size:9px; }
+  .tot.b{ font-weight:800; font-size:1.15em; border-top:1px solid #000; margin-top:.8mm; padding-top:1mm; }
+  .note{ font-size:.95em; margin-top:1.5mm; padding:1mm; border:1px dashed #000; }
+  .sign{ display:flex; gap:2mm; margin-top:3mm; font-size:.9em; }
   .sign div{ flex:1; border-top:1px solid #000; padding-top:.8mm; }
   .empty{ background:#fff; padding:22px; border-radius:10px; max-width:520px; text-align:center; color:#555; }
 
@@ -138,7 +143,8 @@
     body{ background:#fff; }
     .bar, .bar2, .pick{ display:none !important; }
     .sheet{ padding:0; gap:0; display:block; }
-    .slip{ box-shadow:none; page-break-after:always; break-after:page; }
+    /* padding-bottom = ช่องว่างให้ฉีกกระดาษ (ดู --feed ใน applyWidth) */
+    .slip{ box-shadow:none; page-break-after:always; break-after:page; padding-bottom:var(--feed,10mm); }
     .slip:last-child{ page-break-after:auto; break-after:auto; }
     /* ใบที่ไม่ได้ติ๊ก / ถูกกรองออก = ไม่ออกกระดาษ */
     .slip.hide, .slip.skip{ display:none !important; }
@@ -213,7 +219,10 @@ function applyWidth(){
   document.documentElement.style.setProperty('--paper', w[0]+'mm');
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
   // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
-  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '12.5px' : '10.5px');
+  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '13.5px' : '11.5px');
+  /* ฟีดกระดาษเปล่าท้ายใบ — เฉพาะกระดาษม้วนที่ต้องฉีกเอง
+     ป้ายสติกเกอร์ 4 นิ้วมีขนาดตายตัว เพิ่มช่องว่างจะดันเนื้อหาล้นไปป้ายถัดไป */
+  document.documentElement.style.setProperty('--feed', $w.value === '100' ? '0mm' : '10mm');
   /* บอกขนาดกระดาษให้เบราว์เซอร์เป็นตัวเลขจริง — ใส่ var() ใน @page ไม่ได้ (เงียบแล้วกลายเป็น A4)
      ต้องเขียนกฎใหม่ทุกครั้งที่เปลี่ยนขนาด ไม่ใช่ตั้งครั้งเดียวตอนโหลด */
   let st = document.getElementById('pageSizeRule');
@@ -290,13 +299,18 @@ function slipToPng(slip, W){
     const box = document.createElement('div');
     box.setAttribute('style',
       'position:fixed;left:-99999px;top:0;background:#fff;' +
-      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (21 * scale).toFixed(1) + 'px;');
+      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (23 * scale).toFixed(1) + 'px;');
     const clone = slip.cloneNode(true);
     clone.classList.remove('hide','skip');
     clone.style.boxShadow = 'none';
     box.appendChild(clone);
     document.body.appendChild(box);
-    const H = Math.ceil(box.getBoundingClientRect().height) + 8;
+    /* 🧻 ฟีดกระดาษเปล่าท้ายใบ ~1 ซม. (นัทขอเอง 25 ส.ค. — บรรทัดสุดท้ายชนรอยฉีก)
+       หัวพิมพ์อยู่เหนือฟันฉีดประมาณ 1 ซม. ถ้าจบภาพตรงบรรทัดสุดท้ายพอดี
+       บรรทัดนั้นจะยังค้างอยู่ในตัวเครื่อง ฉีกแล้วโดนตัดคำ
+       203 dpi → 1 ซม. ≈ 80 จุด · คูณ scale ตามความกว้างกระดาษ */
+    const FEED = Math.round(80 * scale);
+    const H = Math.ceil(box.getBoundingClientRect().height) + 8 + FEED;
 
     const css = document.querySelector('style').textContent;
     const inner = new XMLSerializer().serializeToString(clone);
