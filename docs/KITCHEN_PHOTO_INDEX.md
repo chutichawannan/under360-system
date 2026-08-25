@@ -21,10 +21,10 @@
 | 6 | ข้าวอกไก่ผัดพริกเหลืองโหระพา | 4 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112445265150362.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112445885382951.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112445651288439.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112446238228839.jpg) |
 | 7 | เพนเน่ซอสโปโรเนส มีทบอลอกไก่ | 6 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112446624367137.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112519974355081.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112519990607994.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112520980988245.jpg) · [5](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112520528003567.jpg) · [6](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-20%2F628112521316532225.jpg) |
 
-> 🔴 **23 ส.ค. — ยืนยันแล้วว่าจับคู่ผิดจริง ห้ามใช้ตารางด้านล่างของวันนี้**
-> เตียงเปิดรูปดูด้วยตา 3 กอง **ผิดทั้ง 3 กอง** — ชื่อเลื่อนตำแหน่งจากรูป (กองที่เขียนว่า "แกงจืด" รูปจริงคือจับฉ่ายฟองเต้าหู้)
-> → **เตียงกำลังจับคู่ใหม่ทั้ง 53 รูปด้วยตาเอง** (เขาจำหน้าตาเมนูได้จากตอนทำโบรชัวร์) · ตารางวันที่ 23 ด้านล่างเก็บไว้เป็นร่องรอยเท่านั้น
-> ✅ วันที่ 20 · 24 · 25 ตรวจแล้วรูปแบบตรงกัน ใช้ได้ตามปกติ
+> ✅ **23 ส.ค. — ซ่อมเสร็จ ปลดล็อกแล้ว (25 ส.ค.)** ตารางด้านล่างของวันนี้คือ**ฉบับผิดเดิม เก็บไว้เป็นร่องรอยเท่านั้น ห้ามใช้**
+> 👉 **ฉบับถูกที่ verify ด้วยตาทุกใบ: [`KITCHEN_PHOTO_23AUG_REPAIRED.md`](KITCHEN_PHOTO_23AUG_REPAIRED.md)** — 9 เมนู 53 รูป (เตียงจับคู่ใหม่ทีละใบ)
+> สาเหตุที่ผิด: พี่อูส่งรูปก่อนพิมพ์ชื่อทีหลัง แล้วตัวแยกกองตัดไม่ตรงรอยต่อ ชื่อเลยเลื่อนคร่อมกอง
+
 
 ## 📅 2026-08-23 — 10 เมนู · 53 รูป
 
