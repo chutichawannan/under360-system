@@ -373,6 +373,10 @@ document.getElementById('prd').onclick = () => printPicked(false);
    ══════════════════════════════════════════════════════════════ */
 const WKEY = 'pickslip_printed_v1';
 let watchOn = false, watchTimer = null, watchBase = null, wakeLock = null;
+/* 🔒 กันรอบเช็คซ้อนกันเอง — 1 รอบใช้เวลาหลายวินาที (วาดรูป + เว้นจังหวะใบละ 2.2 วิ)
+   ถ้ามีใบใหม่ 3 ใบ รอบนั้นกินเวลาเกิน 20 วิ แล้วนาฬิกาจะยิงรอบใหม่ทับ
+   → 2 รอบเห็นใบเดียวกัน = กระดาษออกซ้ำ (เจอจริงตอนเทส 25 ส.ค. ออก 4 ครั้งจาก 2 ใบ) */
+let watchBusy = false;
 const printedSet = new Set(JSON.parse(localStorage.getItem(WKEY) || '[]'));
 function rememberPrinted(no){
   printedSet.add(no);
@@ -383,7 +387,8 @@ function wsay(m){ document.getElementById('wmsg').textContent = m; }
 function wclock(){ return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
 
 async function watchTick(){
-  if (!watchOn) return;
+  if (!watchOn || watchBusy) return;
+  watchBusy = true;
   try{
     const r = await fetch(SB + 'orders?select=order_number,created_at,customer_name'
       + '&created_at=gt.' + encodeURIComponent(watchBase)
@@ -396,11 +401,12 @@ async function watchTick(){
       watchOn = false;
       wsay('⚠️ เจอออเดอร์ใหม่ ' + fresh.length + ' ใบพร้อมกัน — หยุดไว้ก่อน กันพิมพ์รัว กดปุ่มเฝ้าใหม่ถ้าต้องการ');
       document.getElementById('wt').textContent = '👀 เฝ้าออเดอร์ใหม่';
-      return;
+      return;                                        // finally ข้างล่างปลด watchBusy ให้เอง
     }
 
     const keepDate = $d.value, keepOrd = $o.value;
     for (const o of fresh){
+      if (printedSet.has(o.order_number)) continue;   // กันซ้ำอีกชั้น เผื่อถูกพิมพ์ไประหว่างรอบ
       wsay('🖨 เจอใบใหม่ ' + o.order_number + ' (' + (o.customer_name||'') + ') กำลังปริ้น…');
       $o.value = o.order_number;            // โหลดเฉพาะใบนี้ ใช้ทางเดิมทั้งหมด
       await load();
@@ -416,6 +422,8 @@ async function watchTick(){
     wsay('พร้อม · เช็คล่าสุด ' + wclock());
   }catch(e){
     wsay('เช็คไม่สำเร็จ (' + wclock() + ') — จะลองใหม่รอบหน้า');
+  }finally{
+    watchBusy = false;
   }
 }
 
