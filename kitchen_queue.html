@@ -521,6 +521,9 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 
 <!-- TAB 1: รายสินค้า -->
 <div class="main" id="tabContent1" style="display:none">
+  <!-- ⚠️ ช่องค้นหาต้องอยู่ "นอก" #prodView — หน้านี้โหลดใหม่เองทุก 30 วิ (setInterval ท้ายไฟล์)
+       ถ้าอยู่ข้างใน จะถูกสร้างใหม่ทุกรอบ = คีย์บอร์ดปิดคาระหว่างครัวพิมพ์ -->
+  <div id="prodFindBar"></div>
   <div id="prodView"><div style="text-align:center;padding:40px;color:var(--soft)">กำลังโหลด...</div></div>
   <div id="mpQueueView"></div>
 </div>
@@ -1006,8 +1009,18 @@ var saveTimers={};
       (ข) มีเมนูอยู่ แต่วันที่ดูอยู่ไม่มีใครสั่ง  ← อันนี้คือคำตอบที่ครัว/นัทต้องการจริง
    ถ้าตอบแค่ "ไม่เจอ" เฉยๆ คนอ่านจะเดาเองว่าเมนูหายจากระบบ = สร้างความเข้าใจผิดแทนที่จะแก้ */
 var prodQ="";
-function prodSearch(inp){ prodQ=inp.value||""; renderProd();
-  var f=document.getElementById("prodFind"); if(f){ f.focus(); try{f.setSelectionRange(f.value.length,f.value.length);}catch(e){} } }
+function prodSearch(inp){ prodQ=inp.value||""; renderProd(); }
+/* สร้างช่องค้นหาครั้งเดียวแล้วไม่แตะอีก — ถ้าเขียนทับทุกรอบที่หน้าโหลดใหม่ (ทุก 30 วิ)
+   ครัวที่กำลังพิมพ์จะโดนคีย์บอร์ดปิดคากลางคำ */
+function ensureProdFind(){
+  var bar=document.getElementById("prodFindBar"); if(!bar) return;
+  var inp=document.getElementById("prodFind");
+  if(!inp){
+    bar.innerHTML="<input class='stk-find' id='prodFind' placeholder='🔍 ค้นชื่อเมนู / รหัส / ชื่อเล่น...' oninput='prodSearch(this)'>";
+    inp=document.getElementById("prodFind");
+  }
+  if(inp && document.activeElement!==inp && inp.value!==prodQ) inp.value=prodQ;
+}
 function prodHit(q,code,name,sub){
   q=String(q||"").toLowerCase().trim(); if(!q) return true;
   return String(code||"").toLowerCase().indexOf(q)>=0
@@ -1056,10 +1069,9 @@ function renderProd(){
     return prodHit(prodQ,r.code,r.name,m.subcode);
   });
   var unplanned=prodUnplanned(tgt);
-  var findBox="<input class='stk-find' id='prodFind' placeholder='🔍 ค้นชื่อเมนู / รหัส / ชื่อเล่น...' value='"+escH(prodQ)+"' oninput='prodSearch(this)'>";
+  ensureProdFind();
   if(!rowsAll.length && !unplanned.rounds.length){
-    document.getElementById("prodView").innerHTML=findBox
-      +(prodQ?prodMissHtml(prodQ):"")
+    document.getElementById("prodView").innerHTML=(prodQ?prodMissHtml(prodQ):"")
       +"<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
     renderMpQueue();
     return;
@@ -1073,7 +1085,7 @@ function renderProd(){
         ผลจริงที่วัดได้: S149 เลือก "ทั้งหมด" ทำไว้ 5 · เลือก "พรุ่งนี้" ทำไว้ 3
         → ของในตู้ไม่ได้เปลี่ยน แต่ตัวเลขเปลี่ยนเพราะกดดูคนละวัน = ครัวเชื่อไม่ได้ */
   var omAll=stkOrderedMap();
-  var html=findBox+unplannedHtml(unplanned)+"<div class='prod-wrap'>"
+  var html=unplannedHtml(unplanned)+"<div class='prod-wrap'>"
     +"<div style='font-size:11.5px;color:var(--soft);padding:6px 10px;line-height:1.6'>"
     +"<b style='color:var(--gold)'>สั่ง</b> = ของวันที่เลือกดู · "
     +"<b style='color:var(--g)'>ทำไว้</b> / <b>เหลือ</b> = ของจริงในตู้ตอนนี้ (ไม่เปลี่ยนตามวันที่เลือก)</div>"
