@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Under360 — ประวัติสต็อครายวัน</title>
+<meta name="theme-color" content="#10221A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="ประวัติสต็อค">
+<link rel="icon" href="./icon-192.png">
+<!--
+  📊 ประวัติสต็อครายวัน — "วันไหนทำเท่าไหร่ ขายเท่าไหร่ แก้ยอดเท่าไหร่"
+
+  ทำไมต้องมี (นัทถามเอง 25 ส.ค. 2569):
+    "อยากดูว่าวันไหน สั่งสต็อคเติมเท่าไหร่ แต่เราดันทำระบบอยู่กับปัจจุบันไปแล้ว"
+    + คำถามในกลุ่มครัว "ทำไมของที่ลูกค้าสั่งได้ มันถึงหมดทุกที"
+
+  🔒 หน้านี้ **อ่านอย่างเดียว** ไม่มีปุ่มเขียนสักปุ่ม
+     ตั้งใจแยกเป็นไฟล์ของตัวเอง ไม่ไปแตะหน้าครัวที่ใช้งานจริงอยู่ทุกวัน
+
+  ข้อมูลมาจาก 3 ที่ (ไม่ต้องรัน SQL ใหม่ ไม่ต้องสร้างตาราง):
+    · activity_log (action_type=stock) = ทุกครั้งที่ครัวกดเติม/แก้/ซ่อน  ← มีย้อนถึง 4 ก.ค. 2569
+    · orders + order_items            = ขายไปกี่กล่องในวันนั้น
+    · menu_items + kitchen_data       = สถานะตอนนี้ (ในตู้ / กำลังเติม / ขายได้อีก)
+
+  ⚠️ ข้อจำกัดที่ต้องรู้ก่อนเชื่อตัวเลข:
+    1. log เก่า **ไม่มีเหตุผลกำกับ** ว่าทำไมถึงแก้ยอด (ระบบเพิ่งจะเริ่มถาม) → ช่อง "แก้ยอด" บอกได้แค่ว่าแก้ ไม่ได้บอกว่าทำไม
+    2. "ขายไป" นับจากออเดอร์จริง ไม่ได้นับจาก log — log บอกแค่ว่าครัวกรอกอะไร ออเดอร์คือความจริง
+    3. ยอดของวันในอดีตคือ "เกิดอะไรขึ้นวันนั้น" ไม่ใช่ "ของเหลือเท่าไหร่ ณ วันนั้น" (ระบบไม่เคยเก็บภาพนิ่งรายวันไว้ ย้อนสร้างไม่ได้แบบซื่อสัตย์)
+-->
+<style>
+:root{
+  --bg:#0E1512; --panel:#16211C; --panel2:#1D2A24; --line:#2A3A32;
+  --tx:#EAF2ED; --soft:#93A79B; --g:#35D07F; --gold:#F2B33D; --warn:#FF6B6B; --blue:#5AA9FF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+  font-size:16px; line-height:1.45; padding-bottom:60px;
+}
+header{position:sticky;top:0;z-index:20;background:rgba(14,21,18,.97);backdrop-filter:blur(8px);
+  border-bottom:1px solid var(--line);padding:calc(env(safe-area-inset-top) + 12px) 14px 12px}
+.htitle{font-size:19px;font-weight:700}
+.hsub{font-size:12px;color:var(--soft);margin-top:2px}
+.ctrl{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}
+input[type=date],select{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
+  border-radius:10px;padding:9px 11px;font-size:15px;font-family:inherit}
+.btn{background:var(--panel2);color:var(--tx);border:1px solid var(--line);border-radius:10px;
+  padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit}
+.btn.on{background:var(--g);color:#06231A;border-color:var(--g)}
+.wrap{padding:14px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:14px}
+.card h2{font-size:15px;margin:0 0 4px;font-weight:700}
+.card .note{font-size:12px;color:var(--soft);margin-bottom:10px;line-height:1.5}
+.sum{display:flex;gap:10px;flex-wrap:wrap}
+.stat{flex:1 1 100px;background:var(--panel2);border-radius:11px;padding:11px 12px}
+.stat b{display:block;font-size:23px;font-weight:800;line-height:1.2}
+.stat span{font-size:11.5px;color:var(--soft)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th{text-align:left;font-size:11.5px;color:var(--soft);font-weight:600;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:8px 6px;border-bottom:1px solid rgba(42,58,50,.5);vertical-align:top}
+td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.code{font-family:ui-monospace,monospace;font-weight:700;font-size:12.5px;color:var(--blue)}
+.mname{font-size:13px;color:var(--tx)}
+.who{font-size:11.5px;color:var(--soft)}
+.plus{color:var(--g);font-weight:700}
+.minus{color:var(--gold);font-weight:700}
+.fix{color:var(--warn);font-weight:700}
+.empty{color:var(--soft);text-align:center;padding:26px;font-size:14px}
+.rowline{font-size:12px;color:var(--soft);padding:4px 0 0}
+.tag{display:inline-block;font-size:10.5px;padding:1px 6px;border-radius:6px;background:var(--panel2);color:var(--soft);margin-left:4px}
+.warnbox{border-color:#5A2E2E;background:#221616}
+.okbox{border-color:#20452F}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="htitle">📊 ประวัติสต็อครายวัน</div>
+  <div class="hsub" id="hsub">กำลังโหลด…</div>
+  <div class="ctrl">
+    <input type="date" id="d">
+    <button class="btn" id="bToday" onclick="pickToday()">วันนี้</button>
+    <button class="btn" onclick="shiftDay(-1)">◀ ก่อนหน้า</button>
+    <button class="btn" onclick="shiftDay(1)">ถัดไป ▶</button>
+    <button class="btn" onclick="load()">🔄</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div id="alertBox"></div>
+  <div class="card">
+    <h2>วันที่เลือก</h2>
+    <div class="note" id="dayNote"></div>
+    <div class="sum" id="sum"></div>
+  </div>
+  <div class="card">
+    <h2>เกิดอะไรขึ้นกับของแต่ละเมนู</h2>
+    <div class="note">
+      <b class="plus">ทำเพิ่ม</b> = ครัวกดว่าจะทำ/ทำเสร็จ ·
+      <b class="minus">ขายไป</b> = ออเดอร์จริงของวันส่งนั้น ·
+      <b class="fix">แก้ยอด</b> = กดแก้เลขในตู้ (ของหาย/นับใหม่/ทิ้ง — ระบบยังไม่ได้ถามเหตุผล)
+    </div>
+    <div id="tbl"><div class="empty">กำลังโหลด…</div></div>
+  </div>
+  <div class="card">
+    <h2>บันทึกทุกครั้งที่มีคนแตะตัวเลข</h2>
+    <div class="note">เรียงตามเวลา — ใช้ตามว่าใครทำอะไรตอนไหน</div>
+    <div id="logs"><div class="empty">กำลังโหลด…</div></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* 🕐 ยึดเวลาไทยเสมอ — เจ้าของเปิดจากอเมริกาได้ ถ้าใช้เวลาเครื่องจะเพี้ยนไป 1 วันทั้งหน้า */
+function bkkNow(){ return new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'})); }
+function iso(d){ const p=n=>String(n).padStart(2,'0'); return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
+function todayBkk(){ return iso(bkkNow()); }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function thDate(s){
+  if(!s) return '—';
+  const d=new Date(s+'T00:00:00');
+  const wd=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'][d.getDay()];
+  const mo=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][d.getMonth()];
+  return wd+' '+d.getDate()+' '+mo;
+}
+function hhmm(ts){
+  try{ return new Date(ts).toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'}); }
+  catch(e){ return String(ts).slice(11,16); }
+}
+
+const $d=document.getElementById('d');
+$d.value=todayBkk();
+function pickToday(){ $d.value=todayBkk(); load(); }
+function shiftDay(n){
+  const d=new Date($d.value+'T00:00:00'); d.setDate(d.getDate()+n); $d.value=iso(d); load();
+}
+$d.addEventListener('change', load);
+
+/* ⚠️ PostgREST คืนแค่ 1000 แถวถ้าไม่ขอเพิ่ม และไม่มี error ให้เห็น — ต้องไล่ทีละหน้าเสมอ */
+async function all(table, build){
+  const out=[]; const step=1000;
+  for(let from=0;;from+=step){
+    let q=build(sb.from(table)).range(from, from+step-1);
+    const {data,error}=await q;
+    if(error) throw error;
+    out.push(...(data||[]));
+    if(!data || data.length<step) break;
+  }
+  return out;
+}
+
+let MENUS={}, INCOMING={};
+
+async function load(){
+  const day=$d.value || todayBkk();
+  document.getElementById('hsub').textContent='กำลังโหลด…';
+  try{
+    /* อ่านทีละอย่าง ไม่ยิงพร้อมกัน — หน้านี้เปิดบนมือถือ/เน็ตร้าน ยิงพร้อมกันแล้วหลุดง่าย */
+    const menus = await all('menu_items', q=>q.select('id,code,name,stock_total,actual_stock,is_available'));
+    MENUS={}; menus.forEach(m=>MENUS[m.id]=m);
+
+    const kd = await sb.from('kitchen_data').select('data').eq('key','stock_incoming').limit(1);
+    INCOMING = (kd.data && kd.data[0] && kd.data[0].data) || {};
+
+    const logs = await all('activity_log', q=>q.select('created_at,actor,source,summary,detail')
+      .eq('action_type','stock')
+      .gte('created_at', day+'T00:00:00+07:00')
+      .lt('created_at',  day+'T23:59:59+07:00')
+      .order('created_at',{ascending:true}));
+
+    const ords = await all('orders', q=>q.select('id,order_number,delivery_date,status,source')
+      .eq('delivery_date', day));
+    const live = ords.filter(o=>o.status!=='cancelled' && o.source!=='parallel_test');
+    let items=[];
+    for(let i=0;i<live.length;i+=60){
+      const ids=live.slice(i,i+60).map(o=>o.id);
+      if(!ids.length) break;
+      items.push(...await all('order_items', q=>q.select('order_id,menu_item_id,menu_code,menu_name,quantity').in('order_id',ids)));
+    }
+    render(day, logs, items, live);
+    document.getElementById('hsub').textContent='ข้อมูลล่าสุด '+hhmm(new Date().toISOString())+' น. (เวลาไทย)';
+  }catch(e){
+    document.getElementById('hsub').textContent='โหลดไม่สำเร็จ';
+    document.getElementById('tbl').innerHTML='<div class="empty">โหลดไม่สำเร็จ<br><small>'+esc(String(e.message||e))+'</small></div>';
+  }
+}
+
+/* แยกประเภทเหตุการณ์จาก log
+   "เติมสต็อค"/"ทำเสร็จแล้ว" = ของเข้า · "แก้จำนวน" = แก้เลขในตู้ · อื่นๆ = เปิด/ปิดขาย */
+function kindOf(ev){
+  const e=String(ev||'');
+  if(/เติม|ทำเสร็จ/.test(e)) return 'add';
+  if(/แก้จำนวน|นับใหม่/.test(e)) return 'fix';
+  if(/จัดลงถุง|จัดของ/.test(e)) return 'pack';
+  return 'other';
+}
+
+function render(day, logs, items, ords){
+  // ── รวมยอดต่อเมนู ──
+  const rows={};
+  const touch=(id,code,name)=>{
+    const k=id||('code:'+code);
+    if(!rows[k]) rows[k]={id,code,name,add:0,sold:0,fix:0,events:[]};
+    return rows[k];
+  };
+  logs.forEach(l=>{
+    const d=l.detail||{}; const id=d.menu_id||null;
+    const m=id?MENUS[id]:null;
+    const r=touch(id, d.code||(m&&m.code)||'?', (m&&m.name)||'');
+    const k=kindOf(d.event);
+    const dReal=(Number(d.real_to)||0)-(Number(d.real_from)||0);
+    const dInc =(Number(d.inc_to) ||0)-(Number(d.inc_from) ||0);
+    if(k==='add')      r.add += Math.max(0, dInc) + Math.max(0, dReal);
+    else if(k==='fix') r.fix += dReal;
+    r.events.push({t:l.created_at, actor:l.actor, sum:l.summary, kind:k});
+  });
+  items.forEach(i=>{
+    const m=i.menu_item_id?MENUS[i.menu_item_id]:null;
+    const r=touch(i.menu_item_id, i.menu_code||(m&&m.code)||'?', i.menu_name||(m&&m.name)||'');
+    r.sold += (i.quantity||0);
+  });
+
+  const list=Object.values(rows).filter(r=>r.add||r.sold||r.fix||r.events.length);
+  list.sort((a,b)=> (b.add+b.sold+Math.abs(b.fix)) - (a.add+a.sold+Math.abs(a.fix)) );
+
+  // ── สรุปหัว ──
+  const tAdd=list.reduce((s,r)=>s+r.add,0), tSold=list.reduce((s,r)=>s+r.sold,0);
+  const tFix=list.reduce((s,r)=>s+(r.fix<0?-r.fix:0),0);
+  const isToday = day===todayBkk();
+  document.getElementById('dayNote').innerHTML =
+    '<b style="color:var(--tx);font-size:14px">'+esc(thDate(day))+'</b> '+
+    (isToday?'<span class="tag">วันนี้</span>':'<span class="tag">ย้อนหลัง</span>')+
+    ' · ออเดอร์วันส่งนี้ '+ords.length+' ใบ';
+  document.getElementById('sum').innerHTML =
+    '<div class="stat"><b class="plus">+'+tAdd+'</b><span>ครัวกดว่าทำเพิ่ม (กล่อง)</span></div>'+
+    '<div class="stat"><b class="minus">'+tSold+'</b><span>ลูกค้าสั่ง (กล่อง)</span></div>'+
+    '<div class="stat"><b class="fix">'+(tFix?('−'+tFix):'0')+'</b><span>หายจากการแก้ยอด (กล่อง)</span></div>'+
+    '<div class="stat"><b>'+logs.length+'</b><span>ครั้งที่มีคนแตะตัวเลข</span></div>';
+
+  // ── ตารางต่อเมนู ──
+  if(!list.length){
+    document.getElementById('tbl').innerHTML='<div class="empty">วันนี้ยังไม่มีความเคลื่อนไหวของสต็อค</div>';
+  }else{
+    let h='<table><thead><tr><th>เมนู</th><th class="n">ทำเพิ่ม</th><th class="n">ขายไป</th><th class="n">แก้ยอด</th><th>ใครแตะ</th></tr></thead><tbody>';
+    list.forEach(r=>{
+      const who=[...new Set(r.events.map(e=>e.actor).filter(Boolean))].join(', ');
+      h+='<tr>'
+        +'<td><span class="code">'+esc(r.code||'?')+'</span><div class="mname">'+esc((r.name||'').slice(0,40))+'</div></td>'
+        +'<td class="n">'+(r.add?'<span class="plus">+'+r.add+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
+        +'<td class="n">'+(r.sold?'<span class="minus">'+r.sold+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
+        +'<td class="n">'+(r.fix?'<span class="fix">'+(r.fix>0?'+':'')+r.fix+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
+        +'<td class="who">'+esc(who||'—')+'</td>'
+        +'</tr>';
+    });
+    h+='</tbody></table>';
+    document.getElementById('tbl').innerHTML=h;
+  }
+
+  // ── บันทึกเรียงเวลา ──
+  if(!logs.length){
+    document.getElementById('logs').innerHTML='<div class="empty">วันนี้ไม่มีใครแตะตัวเลขสต็อคเลย</div>';
+  }else{
+    let h='<table><thead><tr><th>เวลา</th><th>ใคร</th><th>ทำอะไร</th></tr></thead><tbody>';
+    logs.slice().reverse().forEach(l=>{
+      h+='<tr><td class="n" style="text-align:left">'+esc(hhmm(l.created_at))+'</td>'
+        +'<td class="who">'+esc(l.actor||'—')+'</td>'
+        +'<td style="font-size:13px">'+esc(l.summary||'')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    document.getElementById('logs').innerHTML=h;
+  }
+
+  renderAlerts();
+}
+
+/* ⚠️ กล่องเตือน — ตอบคำถามที่นัทถามในกลุ่มครัว "ทำไมของที่ลูกค้าสั่งได้ ถึงหมดทุกที"
+   ของ 2 แบบที่ทำให้หน้าร้านขายของที่ไม่มีในตู้:
+     (1) "กำลังเติม" = ครัวรับปากว่าจะทำ ลูกค้าซื้อได้ทันที — ถ้าไม่ได้ทำจริง ถึงวันส่งของไม่พอ
+     (2) ในตู้ 0 แต่ยังเปิดขายอยู่ = ขายจากของที่ยังไม่มีล้วนๆ
+   หน้านี้ไม่แก้อะไรให้ แค่ทำให้มองเห็น — การแก้อยู่ที่คนตัดสินใจ ไม่ใช่ให้ระบบเดาแทน */
+function renderAlerts(){
+  const inc=[];
+  Object.entries(INCOMING||{}).forEach(([id,v])=>{
+    if(!v || !v.n) return;
+    const m=MENUS[id]; if(!m) return;
+    inc.push({m, n:Number(v.n)||0, by:v.by||'', at:(v.at||'').slice(0,10)});
+  });
+  inc.sort((a,b)=>b.n-a.n);
+  const ghost = inc.filter(x=> (x.m.actual_stock||0) < x.n );
+
+  const selling0 = Object.values(MENUS).filter(m=>
+    m.is_available && m.stock_total!=null && m.stock_total>0 && (m.actual_stock||0)===0
+    && !inc.find(x=>x.m.id===m.id)
+  ).sort((a,b)=>(b.stock_total||0)-(a.stock_total||0));
+
+  let h='';
+  if(inc.length){
+    const tot=inc.reduce((s,x)=>s+x.n,0);
+    h+='<div class="card '+(ghost.length?'warnbox':'okbox')+'">'
+      +'<h2>🍳 ของที่ครัวรับปากว่าจะทำ — '+tot+' กล่อง</h2>'
+      +'<div class="note">ลูกค้าซื้อของพวกนี้ได้แล้วตั้งแต่ตอนนี้ ทั้งที่ยังไม่ได้ทำ · ถ้าไม่ได้ทำตามจำนวน ถึงวันส่งของจะไม่พอ</div>'
+      +'<table><thead><tr><th>เมนู</th><th class="n">รับปากไว้</th><th class="n">ในตู้จริง</th><th>ใครกรอก</th></tr></thead><tbody>';
+    inc.slice(0,15).forEach(x=>{
+      const short=(x.m.actual_stock||0) < x.n;
+      h+='<tr><td><span class="code">'+esc(x.m.code||'')+'</span><div class="mname">'+esc((x.m.name||'').slice(0,34))+'</div></td>'
+        +'<td class="n"><span class="plus">'+x.n+'</span></td>'
+        +'<td class="n">'+(short?'<span class="fix">'+(x.m.actual_stock||0)+'</span>':(x.m.actual_stock||0))+'</td>'
+        +'<td class="who">'+esc(x.by||'—')+'<div class="rowline">'+esc(x.at||'')+'</div></td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  if(selling0.length){
+    h+='<div class="card warnbox"><h2>🚨 ในตู้ไม่มีของ แต่หน้าร้านยังเปิดขาย — '+selling0.length+' เมนู</h2>'
+      +'<div class="note">เลข "ขายได้อีก" ยังค้างอยู่ทั้งที่นับของในตู้ได้ 0 · ถ้าลูกค้ากดสั่ง จะไม่มีของให้จัดจริง</div>'
+      +'<table><thead><tr><th>เมนู</th><th class="n">ลูกค้ายังสั่งได้อีก</th><th class="n">ในตู้</th></tr></thead><tbody>';
+    selling0.slice(0,15).forEach(m=>{
+      h+='<tr><td><span class="code">'+esc(m.code||'')+'</span><div class="mname">'+esc((m.name||'').slice(0,34))+'</div></td>'
+        +'<td class="n"><span class="fix">'+m.stock_total+'</span></td><td class="n">0</td></tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+  document.getElementById('alertBox').innerHTML=h;
+}
+
+load();
+</script>
+</body>
+</html>
