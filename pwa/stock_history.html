@@ -101,7 +101,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="note">
       <b class="plus">ทำเพิ่ม</b> = ครัวกดว่าจะทำ/ทำเสร็จ ·
       <b class="minus">ขายไป</b> = ออเดอร์จริงของวันส่งนั้น ·
-      <b class="fix">แก้ยอด</b> = กดแก้เลขในตู้ (ของหาย/นับใหม่/ทิ้ง — ระบบยังไม่ได้ถามเหตุผล)
+      <b class="fix">แก้ยอด</b> = กดแก้เลขในตู้ตรงๆ — <b class="fix">ติดลบ</b> คือของหายไปจากตู้ ·
+      <b class="plus">เป็นบวก</b> คือครัวเติมของผ่านปุ่มแก้จำนวน (คนละปุ่มกับ "กำลังเติม" แต่ผลเหมือนกัน)
+      · ระบบยังไม่ได้ถามเหตุผล จึงบอกได้แค่ว่าแก้ ไม่ได้บอกว่าทำไม
     </div>
     <div id="tbl"><div class="empty">กำลังโหลด…</div></div>
   </div>
@@ -255,7 +257,12 @@ function render(day, logs, items, ords){
         +'<td><span class="code">'+esc(r.code||'?')+'</span><div class="mname">'+esc((r.name||'').slice(0,40))+'</div></td>'
         +'<td class="n">'+(r.add?'<span class="plus">+'+r.add+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
         +'<td class="n">'+(r.sold?'<span class="minus">'+r.sold+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
-        +'<td class="n">'+(r.fix?'<span class="fix">'+(r.fix>0?'+':'')+r.fix+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
+        /* แก้ยอดขึ้นได้ทั้งบวกและลบ — ห้ามใช้สีแดงเหมือนกันหมด
+           ครัวหลายคนใช้ปุ่ม "แก้จำนวน" เติมของแทนช่อง "กำลังเติม" (เห็นจริง 25 ส.ค.: A12 +18, A13 +17)
+           ถ้าย้อมแดงทั้งคู่ = ของที่ครัวเพิ่งทำเพิ่ม จะอ่านเหมือนของหาย */
+        +'<td class="n">'+(r.fix
+            ? (r.fix>0 ? '<span class="plus">+'+r.fix+'</span>' : '<span class="fix">'+r.fix+'</span>')
+            : '<span style="color:var(--soft)">–</span>')+'</td>'
         +'<td class="who">'+esc(who||'—')+'</td>'
         +'</tr>';
     });
