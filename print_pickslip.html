@@ -159,6 +159,7 @@
   <span class="grow"></span>
   <span class="hint">SUNMI V2 Pro · 58 มม.</span>
   <button id="prd" title="ส่งเข้าหัวพิมพ์ในตัวเลย ไม่ผ่านหน้ากล่องพิมพ์ของ Chrome">🖨 ปริ้นตรง</button>
+  <button class="ghost" id="wt" title="เฝ้าออเดอร์ใหม่ เจอแล้วปริ้นเอง">👀 เฝ้าออเดอร์ใหม่</button>
   <button class="ghost" id="pr">ผ่านกล่องพิมพ์</button>
 </div>
 
@@ -173,6 +174,13 @@
   <button class="chip pickall" id="all">เลือกทั้งหมด</button>
   <button class="chip pickall" id="none">ไม่เลือกเลย</button>
   <span class="count" id="cnt">—</span>
+</div>
+
+<div class="bar2" id="wbar" style="display:none;background:#FFF7ED;border-color:#FDBA74">
+  <span class="lbl" style="color:#9A3412">👀 โหมดเฝ้าออเดอร์</span>
+  <span id="wmsg" style="font-size:12px;color:#9A3412">กำลังเริ่ม…</span>
+  <span class="grow"></span>
+  <span id="wcnt" style="font-size:12px;color:#9A3412"></span>
 </div>
 
 <div class="sheet" id="sheet"></div>
@@ -318,12 +326,12 @@ function slipToPng(slip, W){
 
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-document.getElementById('prd').onclick = async () => {
+async function printPicked(quiet){
   const btn = document.getElementById('prd');
   const picks = [...document.querySelectorAll('.pick')]
     .filter(p => !p.classList.contains('hide') && p.querySelector('.pk').checked)
     .map(p => p.nextElementSibling);
-  if (!picks.length) { alert('ยังไม่ได้เลือกใบไหนเลย'); return; }
+  if (!picks.length) { if(!quiet) alert('ยังไม่ได้เลือกใบไหนเลย'); return 0; }
 
   const W = DOTS[$w.value] || 384;
   const old = btn.textContent;
@@ -339,13 +347,109 @@ document.getElementById('prd').onclick = async () => {
     }
     btn.textContent = '✅ ส่งครบ ' + picks.length + ' ใบ';
     await sleep(2500);
+    return picks.length;
   } catch (e) {
-    alert('ส่งเข้าหัวพิมพ์ไม่สำเร็จ: ' + e.message + String.fromCharCode(10) +
+    if(!quiet) alert('ส่งเข้าหัวพิมพ์ไม่สำเร็จ: ' + e.message + String.fromCharCode(10) +
           'ลองใช้ปุ่ม "ผ่านกล่องพิมพ์" แทนได้');
+    return 0;
   } finally {
     btn.disabled = false; btn.textContent = old;
   }
-};
+}
+document.getElementById('prd').onclick = () => printPicked(false);
+
+/* ══════════════════════════════════════════════════════════════
+   👀 โหมดเฝ้าออเดอร์ใหม่ — มีออเดอร์เข้า กระดาษไหลออกเอง (นัทขอ 25 ส.ค. 2569
+   "ตอนนี้ลงแอป lineman พอมีออเดอร์กระดาษก็ไหลออกมาเองเลย")
+
+   ข้อจำกัดที่ต้องรู้: หน้าเว็บทำงานได้เฉพาะตอนเปิดค้างไว้ ต่างจากแอปเนทีฟที่รันเบื้องหลัง
+   → ต้องเปิดหน้านี้ทิ้งไว้บนเครื่อง POS และขอ wakeLock ไม่ให้จอดับ
+
+   กันพิมพ์มั่ว 3 ชั้น (สำคัญกว่าความสะดวก — กระดาษไหลรัวคือความเสียหายจริง):
+   ① เริ่มเฝ้า = ตั้งหมุดที่ออเดอร์ล่าสุด "ตอนนี้" → ของเก่าทั้งหมดไม่ถูกพิมพ์ย้อน
+   ② จำเลขใบที่พิมพ์ไปแล้วใน localStorage → เปิดหน้าใหม่/รีเฟรช ก็ไม่พิมพ์ซ้ำ
+   ③ เพดาน 5 ใบต่อรอบ — ถ้าจู่ๆ เจอเยอะผิดปกติ แปลว่าตรรกะหมุดพัง ให้หยุดแล้วเตือน
+      ไม่ใช่ไล่พิมพ์จนกระดาษหมดม้วน
+   ══════════════════════════════════════════════════════════════ */
+const WKEY = 'pickslip_printed_v1';
+let watchOn = false, watchTimer = null, watchBase = null, wakeLock = null;
+const printedSet = new Set(JSON.parse(localStorage.getItem(WKEY) || '[]'));
+function rememberPrinted(no){
+  printedSet.add(no);
+  const arr = [...printedSet].slice(-500);   // เก็บ 500 ใบล่าสุดพอ ไม่ให้บวมไปเรื่อยๆ
+  localStorage.setItem(WKEY, JSON.stringify(arr));
+}
+function wsay(m){ document.getElementById('wmsg').textContent = m; }
+function wclock(){ return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+async function watchTick(){
+  if (!watchOn) return;
+  try{
+    const r = await fetch(SB + 'orders?select=order_number,created_at,customer_name'
+      + '&created_at=gt.' + encodeURIComponent(watchBase)
+      + '&status=neq.cancelled&order=created_at.asc&limit=20', {headers:HDR});
+    if(!r.ok) throw new Error(await r.text());
+    const fresh = (await r.json()).filter(o => !printedSet.has(o.order_number));
+    if (!fresh.length){ wsay('ยังไม่มีออเดอร์ใหม่ · เช็คล่าสุด ' + wclock()); return; }
+
+    if (fresh.length > 5){
+      watchOn = false;
+      wsay('⚠️ เจอออเดอร์ใหม่ ' + fresh.length + ' ใบพร้อมกัน — หยุดไว้ก่อน กันพิมพ์รัว กดปุ่มเฝ้าใหม่ถ้าต้องการ');
+      document.getElementById('wt').textContent = '👀 เฝ้าออเดอร์ใหม่';
+      return;
+    }
+
+    const keepDate = $d.value, keepOrd = $o.value;
+    for (const o of fresh){
+      wsay('🖨 เจอใบใหม่ ' + o.order_number + ' (' + (o.customer_name||'') + ') กำลังปริ้น…');
+      $o.value = o.order_number;            // โหลดเฉพาะใบนี้ ใช้ทางเดิมทั้งหมด
+      await load();
+      document.querySelectorAll('.pick:not(.hide) .pk').forEach(c => c.checked = true);
+      updateCount();
+      await printPicked(true);
+      rememberPrinted(o.order_number);
+      watchBase = o.created_at;             // ขยับหมุดทีละใบ พังกลางคันก็ไม่พิมพ์ซ้ำของที่ผ่านไปแล้ว
+      document.getElementById('wcnt').textContent = 'ปริ้นไปแล้ว ' + printedSet.size + ' ใบ';
+    }
+    $o.value = keepOrd; $d.value = keepDate;
+    await load();                            // คืนหน้าจอกลับเป็นรายการของวันเดิม
+    wsay('พร้อม · เช็คล่าสุด ' + wclock());
+  }catch(e){
+    wsay('เช็คไม่สำเร็จ (' + wclock() + ') — จะลองใหม่รอบหน้า');
+  }
+}
+
+async function watchStart(){
+  /* หมุดเริ่มต้น = ออเดอร์ล่าสุดที่มีอยู่ "ตอนนี้" → ของเก่าไม่ถูกพิมพ์ย้อนหลังเด็ดขาด */
+  try{
+    const r = await fetch(SB + 'orders?select=created_at&order=created_at.desc&limit=1', {headers:HDR});
+    const j = await r.json();
+    watchBase = (j[0] && j[0].created_at) || new Date().toISOString();
+  }catch(e){ watchBase = new Date().toISOString(); }
+
+  watchOn = true;
+  document.getElementById('wbar').style.display = '';
+  document.getElementById('wt').textContent = '⏹ หยุดเฝ้า';
+  document.getElementById('wcnt').textContent = 'ปริ้นไปแล้ว ' + printedSet.size + ' ใบ';
+  wsay('เริ่มเฝ้าแล้ว · จะปริ้นเฉพาะใบที่เข้ามา "หลังจากนี้"');
+  try{ if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  watchTimer = setInterval(watchTick, 20000);   // เช็คทุก 20 วิ — คำสั่งเล็กมาก ไม่กิน Supabase
+  watchTick();
+}
+function watchStop(){
+  watchOn = false;
+  clearInterval(watchTimer); watchTimer = null;
+  document.getElementById('wt').textContent = '👀 เฝ้าออเดอร์ใหม่';
+  wsay('หยุดเฝ้าแล้ว');
+  try{ if (wakeLock) { wakeLock.release(); wakeLock = null; } }catch(e){}
+}
+document.getElementById('wt').onclick = () => watchOn ? watchStop() : watchStart();
+/* จอดับแล้วปลุกกลับมา ต้องขอ wakeLock ใหม่ ระบบไม่คืนให้เอง */
+document.addEventListener('visibilitychange', async () => {
+  if (watchOn && document.visibilityState === 'visible' && navigator.wakeLock && !wakeLock){
+    try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+});
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
@@ -542,6 +646,7 @@ load().then(() => {
   // รอ 1 เฟรม + 300ms ให้ฟอนต์ไทยกับ layout นิ่งก่อน ไม่งั้นบางเครื่องจับภาพตอนยังจัดหน้าไม่เสร็จ
   /* auto=1 = เด้งกล่องพิมพ์แบบเดิม (คอม/เครื่องทั่วไป)
      auto=direct (หรือ rawbt=1) = ยิงเข้าหัวพิมพ์ในตัวเลย สำหรับเครื่อง POS ที่ลง RawBT แล้ว */
+  if (qs.get('watch') === '1') setTimeout(watchStart, 500);
   const _auto   = qs.get('auto');
   const _direct = _auto === 'direct' || qs.get('rawbt') === '1';
   if ((_auto === '1' || _direct) && document.querySelectorAll('.slip').length) {
