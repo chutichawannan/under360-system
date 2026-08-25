@@ -158,7 +158,8 @@
   <button class="ghost" id="go">โหลด</button>
   <span class="grow"></span>
   <span class="hint">SUNMI V2 Pro · 58 มม.</span>
-  <button id="pr">🖨 ปริ้นที่เลือก</button>
+  <button id="prd" title="ส่งเข้าหัวพิมพ์ในตัวเลย ไม่ผ่านหน้ากล่องพิมพ์ของ Chrome">🖨 ปริ้นตรง</button>
+  <button class="ghost" id="pr">ผ่านกล่องพิมพ์</button>
 </div>
 
 <div class="bar2">
@@ -255,6 +256,96 @@ window.addEventListener('beforeprint', () => {
     p.nextElementSibling.classList.toggle('skip', !p.querySelector('.pk').checked));
 });
 document.getElementById('pr').onclick = () => window.print();
+
+/* ══════════════════════════════════════════════════════════════
+   🖨 ปริ้นตรง — ส่งเข้าหัวพิมพ์ในตัวของเครื่อง POS โดยไม่ผ่านกล่องพิมพ์ของ Chrome
+
+   ทำไมต้องมี (25 ส.ค. 2569 นัทเจอกับเครื่องจริง SUNMI V2 Pro):
+   ทางเดิมคือ window.print() → Android เปิดกล่องพิมพ์ → ครัวต้องเลือกเครื่องพิมพ์
+   + เปลี่ยนขนาดกระดาษจาก A4 เองทุกครั้ง และถ้าเครื่องไม่มีบริการพิมพ์ติดตั้งไว้
+   จะมีให้เลือกแค่ "บันทึกเป็น PDF" = พิมพ์ไม่ออกเลย
+
+   ทางนี้: วาดใบเป็นรูปขนาด 384 จุด (= ความกว้างพิมพ์จริงของกระดาษ 58 มม. ที่ 203dpi)
+   แล้วส่งให้แอป RawBT ผ่านลิงก์ rawbt:data:image/png;base64,... → มันพิมพ์ทันที
+   • ส่งเป็น "รูป" ไม่ใช่ตัวอักษร → ภาษาไทยออกครบ ไม่ต้องพึ่งชุดอักขระของหัวพิมพ์
+   • ไม่มีกล่องพิมพ์ ไม่มี A4 ให้พลาด
+   ⚠️ เครื่องต้องลงแอป RawBT + เพิ่มเครื่องพิมพ์ AIDL (woyou..jiuiv5) ไว้ก่อน
+      ปุ่ม "ผ่านกล่องพิมพ์" ยังอยู่ ใช้กับเครื่องอื่น/คอมได้เหมือนเดิม
+   ══════════════════════════════════════════════════════════════ */
+const DOTS = { '57': 384, '80': 576, '100': 800 };   // จุดตามความกว้างพิมพ์จริงของแต่ละกระดาษ
+
+function slipToPng(slip, W){
+  return new Promise((resolve, reject) => {
+    /* วาดที่ความกว้างจริงของหัวพิมพ์เลย (ไม่ใช่ย่อ-ขยายทีหลัง) ตัวหนังสือจะได้คม
+       CSS ของหน้านี้อ่านความกว้าง/ขนาดตัวอักษรจากตัวแปร 3 ตัว → เขียนทับ 3 ตัวนี้พอ */
+    const scale = W / 384;
+    const box = document.createElement('div');
+    box.setAttribute('style',
+      'position:fixed;left:-99999px;top:0;background:#fff;' +
+      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (21 * scale).toFixed(1) + 'px;');
+    const clone = slip.cloneNode(true);
+    clone.classList.remove('hide','skip');
+    clone.style.boxShadow = 'none';
+    box.appendChild(clone);
+    document.body.appendChild(box);
+    const H = Math.ceil(box.getBoundingClientRect().height) + 8;
+
+    const css = document.querySelector('style').textContent;
+    const inner = new XMLSerializer().serializeToString(clone);
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+        '<foreignObject width="100%" height="100%">' +
+          '<div xmlns="http://www.w3.org/1999/xhtml" style="' + box.getAttribute('style').replace(/position:fixed;left:-99999px;top:0;/, '') + '">' +
+            '<style>' + css + '</style>' + inner +
+          '</div>' +
+        '</foreignObject>' +
+      '</svg>';
+    document.body.removeChild(box);
+
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);   // หัวพิมพ์ไม่มีสีขาว พื้นโปร่งจะกลายเป็นดำ
+      x.drawImage(img, 0, 0);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('วาดใบเป็นรูปไม่สำเร็จ'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+document.getElementById('prd').onclick = async () => {
+  const btn = document.getElementById('prd');
+  const picks = [...document.querySelectorAll('.pick')]
+    .filter(p => !p.classList.contains('hide') && p.querySelector('.pk').checked)
+    .map(p => p.nextElementSibling);
+  if (!picks.length) { alert('ยังไม่ได้เลือกใบไหนเลย'); return; }
+
+  const W = DOTS[$w.value] || 384;
+  const old = btn.textContent;
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < picks.length; i++) {
+      btn.textContent = 'กำลังส่ง ' + (i + 1) + '/' + picks.length + '…';
+      const png = await slipToPng(picks[i], W);
+      /* rawbt: = ลิงก์ที่แอป RawBT รับไว้ · ถ้ายังไม่ได้ลงแอป เบราว์เซอร์จะพาไปหน้าโหลดเอง */
+      location.href = 'rawbt:' + png;
+      /* เว้นจังหวะให้แอปรับงานเสร็จก่อนยิงใบถัดไป ยิงรัวจะโดนกลืนหาย */
+      if (i < picks.length - 1) await sleep(2200);
+    }
+    btn.textContent = '✅ ส่งครบ ' + picks.length + ' ใบ';
+    await sleep(2500);
+  } catch (e) {
+    alert('ส่งเข้าหัวพิมพ์ไม่สำเร็จ: ' + e.message + String.fromCharCode(10) +
+          'ลองใช้ปุ่ม "ผ่านกล่องพิมพ์" แทนได้');
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+};
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
@@ -449,8 +540,14 @@ function slip(o, PKG){
 load().then(() => {
   // ?auto=1 = เปิดมาแล้วเด้งกล่องพิมพ์เลย ไม่ต้องกดปุ่มซ้ำ
   // รอ 1 เฟรม + 300ms ให้ฟอนต์ไทยกับ layout นิ่งก่อน ไม่งั้นบางเครื่องจับภาพตอนยังจัดหน้าไม่เสร็จ
-  if (qs.get('auto') === '1' && document.querySelectorAll('.slip').length) {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 300));
+  /* auto=1 = เด้งกล่องพิมพ์แบบเดิม (คอม/เครื่องทั่วไป)
+     auto=direct (หรือ rawbt=1) = ยิงเข้าหัวพิมพ์ในตัวเลย สำหรับเครื่อง POS ที่ลง RawBT แล้ว */
+  const _auto   = qs.get('auto');
+  const _direct = _auto === 'direct' || qs.get('rawbt') === '1';
+  if ((_auto === '1' || _direct) && document.querySelectorAll('.slip').length) {
+    requestAnimationFrame(() => setTimeout(() => {
+      if (_direct) document.getElementById('prd').click(); else window.print();
+    }, 300));
   }
 });
 </script>
