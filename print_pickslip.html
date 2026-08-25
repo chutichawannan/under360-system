@@ -122,7 +122,12 @@
   /* แถวย่อยของเซ็ต — บรรทัดที่ล้นต้องเยื้องตาม ไม่ใช่กองซ้ายสุดแบบใบ Hato */
   /* บรรทัดเมนูในเซ็ต = ของที่ครัวต้องหยิบจริง ต้องอ่านออกพอๆ กับบรรทัดหลัก
      เดิม 10px + น้ำหนัก 500 → จางที่สุดในใบ ทั้งที่เป็นข้อมูลที่ใช้ทำงานมากที่สุด */
-  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:1em; font-weight:600; }
+  /* ⚖️ ขนาดนี้คือจุดสมดุลที่วัดมาแล้ว ไม่ใช่ค่าที่เดา (ใบยาวสุด 17 รายการ บนกระดาษ 57 มม.)
+       ย่อย 10px ตายตัว (เดิม) = 14.7 ซม. แต่อ่านไม่ออก
+       ย่อย 1em เต็ม           = 22.3 ซม. อ่านง่ายแต่ยาวเป็นหางว่าว เปลืองกระดาษ 52%
+       ย่อย .85em + บรรทัดแน่น = 17.3 ซม. ← ตัวโตขึ้นเกือบเท่าตัว จ่ายกระดาษเพิ่มแค่ 2.6 ซม.
+     ถ้าจะขยับอีก ให้วัดความยาวใบซ้ำก่อนเสมอ — ครัวปริ้นวันละหลายสิบใบ ความยาวคือต้นทุนจริง */
+  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:.85em; font-weight:600; line-height:1.25; }
   .code{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-weight:800; }
   .dim{ color:#555; font-family:'IBM Plex Mono',ui-monospace,monospace; }
   .new{ font-size:.85em; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
@@ -219,7 +224,7 @@ function applyWidth(){
   document.documentElement.style.setProperty('--paper', w[0]+'mm');
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
   // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
-  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '13.5px' : '11.5px');
+  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '13px' : '11px');
   /* ฟีดกระดาษเปล่าท้ายใบ — เฉพาะกระดาษม้วนที่ต้องฉีกเอง
      ป้ายสติกเกอร์ 4 นิ้วมีขนาดตายตัว เพิ่มช่องว่างจะดันเนื้อหาล้นไปป้ายถัดไป */
   document.documentElement.style.setProperty('--feed', $w.value === '100' ? '0mm' : '10mm');
@@ -299,7 +304,7 @@ function slipToPng(slip, W){
     const box = document.createElement('div');
     box.setAttribute('style',
       'position:fixed;left:-99999px;top:0;background:#fff;' +
-      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (23 * scale).toFixed(1) + 'px;');
+      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (22 * scale).toFixed(1) + 'px;');
     const clone = slip.cloneNode(true);
     clone.classList.remove('hide','skip');
     clone.style.boxShadow = 'none';
