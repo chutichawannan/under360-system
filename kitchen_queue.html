@@ -999,6 +999,37 @@ function render(){
 
 // TAB 1: รายสินค้า aggregated
 var saveTimers={};
+
+/* ── ช่องค้นหาในแท็บรายสินค้า (นัทสั่ง 25 ส.ค. — หา BJ1 ในลิสต์ยาวไม่เจอ) ─────────
+   ⚠️ ตารางนี้โชว์เฉพาะเมนูที่ "มีออเดอร์ในวันที่เลือกดู" → ค้นไม่เจอมี 2 ความหมายคนละเรื่อง
+      (ก) ไม่มีเมนูนี้ในระบบเลย
+      (ข) มีเมนูอยู่ แต่วันที่ดูอยู่ไม่มีใครสั่ง  ← อันนี้คือคำตอบที่ครัว/นัทต้องการจริง
+   ถ้าตอบแค่ "ไม่เจอ" เฉยๆ คนอ่านจะเดาเองว่าเมนูหายจากระบบ = สร้างความเข้าใจผิดแทนที่จะแก้ */
+var prodQ="";
+function prodSearch(inp){ prodQ=inp.value||""; renderProd();
+  var f=document.getElementById("prodFind"); if(f){ f.focus(); try{f.setSelectionRange(f.value.length,f.value.length);}catch(e){} } }
+function prodHit(q,code,name,sub){
+  q=String(q||"").toLowerCase().trim(); if(!q) return true;
+  return String(code||"").toLowerCase().indexOf(q)>=0
+      || String(name||"").toLowerCase().indexOf(q)>=0
+      || String(sub ||"").toLowerCase().indexOf(q)>=0;
+}
+function prodMissHtml(q){
+  var hits=(allMenus||[]).filter(function(m){ return prodHit(q,m.code,m.name,m.subcode); }).slice(0,8);
+  if(!hits.length) return "<div style='text-align:center;padding:26px;color:var(--soft)'>ไม่มีเมนูชื่อนี้หรือรหัสนี้ในระบบ</div>";
+  var h="<div style='padding:12px;background:#FFF8E7;border-radius:10px;margin:8px'>"
+    +"<div style='font-size:13px;font-weight:800;color:var(--gold);margin-bottom:4px'>⚠️ มีเมนูนี้ในระบบ แต่ <u>ไม่มีใครสั่งในวันที่เลือกดู</u></div>";
+  hits.forEach(function(m){
+    var rem=(m.stock_total==null)?"∞":m.stock_total;
+    h+="<div style='display:flex;justify-content:space-between;gap:8px;padding:6px 0;border-top:1px solid var(--xsoft);font-size:12.5px'>"
+      +"<span><b>"+escH(getCodeDisplay(m.code,m.name))+"</b> "+escH(m.name||"")
+      +(m.is_available===false?" <span style='color:var(--r);font-weight:700'>(ปิดขายอยู่)</span>":"")+"</span>"
+      +"<span style='white-space:nowrap;color:var(--g);font-weight:700'>เหลือ "+rem+"</span></div>";
+  });
+  h+="<div style='font-size:11.5px;color:var(--soft);margin-top:8px'>อยากดูทุกวัน → กดปุ่ม <b>ทั้งหมด</b> ด้านบน</div></div>";
+  return h;
+}
+
 function renderProd(){
   var orders=filteredOrders();
   var tgt=getTargetDate();
@@ -1019,9 +1050,17 @@ function renderProd(){
     var mb=(allMenus||[]).find(function(x){return x.code===b.code;});
     return (subRankKQ(ma)-subRankKQ(mb)) || cmpCode(a.code,b.code);
   });
+  var rowsAll=rows;
+  if(prodQ) rows=rows.filter(function(r){
+    var m=(allMenus||[]).find(function(x){return (r.id&&x.id===r.id)||(r.code&&x.code===r.code);})||{};
+    return prodHit(prodQ,r.code,r.name,m.subcode);
+  });
   var unplanned=prodUnplanned(tgt);
-  if(!rows.length && !unplanned.rounds.length){
-    document.getElementById("prodView").innerHTML="<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
+  var findBox="<input class='stk-find' id='prodFind' placeholder='🔍 ค้นชื่อเมนู / รหัส / ชื่อเล่น...' value='"+escH(prodQ)+"' oninput='prodSearch(this)'>";
+  if(!rowsAll.length && !unplanned.rounds.length){
+    document.getElementById("prodView").innerHTML=findBox
+      +(prodQ?prodMissHtml(prodQ):"")
+      +"<div style='text-align:center;padding:40px;color:var(--soft)'>ไม่มีออเดอร์"+(tgt?" วันที่ "+fmtDate(tgt):"")+"</div>";
     renderMpQueue();
     return;
   }
@@ -1034,7 +1073,7 @@ function renderProd(){
         ผลจริงที่วัดได้: S149 เลือก "ทั้งหมด" ทำไว้ 5 · เลือก "พรุ่งนี้" ทำไว้ 3
         → ของในตู้ไม่ได้เปลี่ยน แต่ตัวเลขเปลี่ยนเพราะกดดูคนละวัน = ครัวเชื่อไม่ได้ */
   var omAll=stkOrderedMap();
-  var html=unplannedHtml(unplanned)+"<div class='prod-wrap'>"
+  var html=findBox+unplannedHtml(unplanned)+"<div class='prod-wrap'>"
     +"<div style='font-size:11.5px;color:var(--soft);padding:6px 10px;line-height:1.6'>"
     +"<b style='color:var(--gold)'>สั่ง</b> = ของวันที่เลือกดู · "
     +"<b style='color:var(--g)'>ทำไว้</b> / <b>เหลือ</b> = ของจริงในตู้ตอนนี้ (ไม่เปลี่ยนตามวันที่เลือก)</div>"
@@ -1063,9 +1102,12 @@ function renderProd(){
       +"</div>";
     if(r.id && stkWhoId===r.id) html+="<div class='pt-who'>"+stkWhoHtml({id:r.id})+"</div>";
   });
+  if(prodQ && !rows.length) html+=prodMissHtml(prodQ);
   var boxTotal=rows.reduce(function(s,r){return s+r.qty;},0);
   html+="<div style='padding:8px 12px;font-size:11px;color:var(--soft);border-top:1px solid var(--xsoft)'>"
-    +"รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ · <b style='color:var(--ink)'>"+boxTotal+" กล่อง</b>"
+    +(prodQ
+      ? "ค้น \""+escH(prodQ)+"\" เจอ "+rows.length+" จาก "+rowsAll.length+" รายการ · <b style='color:var(--ink)'>"+boxTotal+" กล่อง</b>"
+      : "รวม "+orders.length+" ออเดอร์ · "+rows.length+" รายการ · <b style='color:var(--ink)'>"+boxTotal+" กล่อง</b>")
     +"<span style='float:right;color:var(--g);font-weight:600;cursor:pointer' onclick='switchTab(3)'>📊 ตั้งสต็อคที่แท็บ \"ตั้งสต็อค\" →</span></div></div>";
   document.getElementById("prodView").innerHTML=html;
   renderMpQueue();
