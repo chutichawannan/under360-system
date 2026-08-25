@@ -373,7 +373,11 @@ Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit 
 
 ---
 
-## 🚀 Current Version: **u0.5.1 · a0.6 · f0.1 · r0.1 · k0.1 · niw0.1 · cc0.6 · pm0.1 · bug0.1 · doc v6.17**
+## 🚀 Current Version: **u0.6 · a0.6 · f0.1 · r0.1 · k0.1 · niw0.1 · cc0.6 · pm0.1 · bug0.1 · doc v6.18**
+
+> 🏁 **ห้อง U-track ปิดแล้ว 25 ส.ค. 2569 — ผู้รับช่วงคือห้อง `u-maintainer`**
+> ของค้างทั้งหมด (รอนัทเคาะ · ถามแล้วยังไม่ตอบ · ทำต่อได้เลย · กฎเหล็ก · กับดักที่โดนซ้ำๆ)
+> รวมไว้ที่ **[`docs/HANDOFF_U_FINAL_20260825.md`](docs/HANDOFF_U_FINAL_20260825.md)** — อ่านก่อนแตะโค้ดฝั่งระบบ
 
 # 🟢 LIVE แล้ว — ลูกค้าจริงใช้ LIFF ของเราตั้งแต่ **8 ส.ค. 2026 เวลา 13:57**
 
