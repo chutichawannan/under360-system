@@ -101,9 +101,9 @@ td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
     <div class="note">
       <b class="plus">ทำเพิ่ม</b> = ครัวกดว่าจะทำ/ทำเสร็จ ·
       <b class="minus">ขายไป</b> = ออเดอร์จริงของวันส่งนั้น ·
-      <b class="fix">แก้ยอด</b> = กดแก้เลขในตู้ตรงๆ — <b class="fix">ติดลบ</b> คือของหายไปจากตู้ ·
-      <b class="plus">เป็นบวก</b> คือครัวเติมของผ่านปุ่มแก้จำนวน (คนละปุ่มกับ "กำลังเติม" แต่ผลเหมือนกัน)
-      · ระบบยังไม่ได้ถามเหตุผล จึงบอกได้แค่ว่าแก้ ไม่ได้บอกว่าทำไม
+      <b>เลขในตู้ เช้า → ล่าสุด</b> = เลขก่อนถูกแตะครั้งแรกของวัน เทียบกับเลขล่าสุด
+      · ระหว่างวันมันขยับขึ้นลงได้หลายรอบ หน้านี้จึงโชว์ของจริง 2 ค่า ไม่เอามาบวกกัน
+      · ถ้าขึ้นว่า <b>"กด N ครั้ง"</b> แปลว่าเมนูนั้นถูกแก้ซ้ำหลายรอบ — มักไม่ใช่ของหาย แต่คือคนกำลังงงกับหน้าจอ
     </div>
     <div id="tbl"><div class="empty">กำลังโหลด…</div></div>
   </div>
@@ -207,9 +207,14 @@ function kindOf(ev){
 function render(day, logs, items, ords){
   // ── รวมยอดต่อเมนู ──
   const rows={};
+  /* 🐞 แก้ 26 ส.ค. 2569 — เดิมเอา "ส่วนต่างทุกครั้งที่มีคนกด" มาบวกกัน
+     พอเจอของจริง (โม๋ข่องกด S099 24 ครั้งใน 8 นาที เลขวิ่งกลับไปกลับมา 3→0→4→1→0)
+     ผลรวมออกมา −42 ทั้งที่ของไม่ได้หายสักกล่อง = ตัวเลขโกหกแบบเงียบ
+     → เก็บ "เลขก่อนถูกแตะครั้งแรกของวัน" กับ "เลขล่าสุด" แล้วโชว์ทั้งคู่
+       ให้คนอ่านเห็นของจริง ไม่ให้ระบบสรุปแทน */
   const touch=(id,code,name)=>{
     const k=id||('code:'+code);
-    if(!rows[k]) rows[k]={id,code,name,add:0,sold:0,fix:0,events:[]};
+    if(!rows[k]) rows[k]={id,code,name,add:0,sold:0,first:null,last:null,taps:0,events:[]};
     return rows[k];
   };
   logs.forEach(l=>{
@@ -219,8 +224,10 @@ function render(day, logs, items, ords){
     const k=kindOf(d.event);
     const dReal=(Number(d.real_to)||0)-(Number(d.real_from)||0);
     const dInc =(Number(d.inc_to) ||0)-(Number(d.inc_from) ||0);
-    if(k==='add')      r.add += Math.max(0, dInc) + Math.max(0, dReal);
-    else if(k==='fix') r.fix += dReal;
+    if(k==='add') r.add += Math.max(0, dInc) + Math.max(0, dReal);
+    if(d.real_from!=null && r.first===null) r.first = Number(d.real_from)||0;  // เลขในตู้ก่อนถูกแตะครั้งแรก
+    if(d.real_to!=null) r.last = Number(d.real_to)||0;                        // เลขล่าสุดของวัน
+    if(k!=='pack') r.taps++;                                                  // กดกี่ครั้ง — ถี่ผิดปกติ = หน้าจอทำให้งง
     r.events.push({t:l.created_at, actor:l.actor, sum:l.summary, kind:k});
   });
   items.forEach(i=>{
@@ -234,7 +241,8 @@ function render(day, logs, items, ords){
 
   // ── สรุปหัว ──
   const tAdd=list.reduce((s,r)=>s+r.add,0), tSold=list.reduce((s,r)=>s+r.sold,0);
-  const tFix=list.reduce((s,r)=>s+(r.fix<0?-r.fix:0),0);
+  const tTaps=list.reduce((s,r)=>s+(r.taps||0),0);
+  const busiest=list.slice().sort((a,b)=>(b.taps||0)-(a.taps||0))[0];
   const isToday = day===todayBkk();
   document.getElementById('dayNote').innerHTML =
     '<b style="color:var(--tx);font-size:14px">'+esc(thDate(day))+'</b> '+
@@ -243,26 +251,29 @@ function render(day, logs, items, ords){
   document.getElementById('sum').innerHTML =
     '<div class="stat"><b class="plus">+'+tAdd+'</b><span>ครัวกดว่าทำเพิ่ม (กล่อง)</span></div>'+
     '<div class="stat"><b class="minus">'+tSold+'</b><span>ลูกค้าสั่ง (กล่อง)</span></div>'+
-    '<div class="stat"><b class="fix">'+(tFix?('−'+tFix):'0')+'</b><span>หายจากการแก้ยอด (กล่อง)</span></div>'+
-    '<div class="stat"><b>'+logs.length+'</b><span>ครั้งที่มีคนแตะตัวเลข</span></div>';
+    '<div class="stat"><b>'+tTaps+'</b><span>ครั้งที่มีคนแตะตัวเลข</span></div>'+
+    (busiest && busiest.taps>=5
+      ? '<div class="stat"><b class="fix">'+busiest.taps+'</b><span>กดซ้ำมากสุด: '+esc(busiest.code||'')+' — ดูว่าหน้าจอทำให้งงไหม</span></div>'
+      : '');
 
   // ── ตารางต่อเมนู ──
   if(!list.length){
     document.getElementById('tbl').innerHTML='<div class="empty">วันนี้ยังไม่มีความเคลื่อนไหวของสต็อค</div>';
   }else{
-    let h='<table><thead><tr><th>เมนู</th><th class="n">ทำเพิ่ม</th><th class="n">ขายไป</th><th class="n">แก้ยอด</th><th>ใครแตะ</th></tr></thead><tbody>';
+    let h='<table><thead><tr><th>เมนู</th><th class="n">ทำเพิ่ม</th><th class="n">ขายไป</th><th class="n">เลขในตู้<br>เช้า → ล่าสุด</th><th>ใครแตะ</th></tr></thead><tbody>';
     list.forEach(r=>{
       const who=[...new Set(r.events.map(e=>e.actor).filter(Boolean))].join(', ');
       h+='<tr>'
         +'<td><span class="code">'+esc(r.code||'?')+'</span><div class="mname">'+esc((r.name||'').slice(0,40))+'</div></td>'
         +'<td class="n">'+(r.add?'<span class="plus">+'+r.add+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
         +'<td class="n">'+(r.sold?'<span class="minus">'+r.sold+'</span>':'<span style="color:var(--soft)">–</span>')+'</td>'
-        /* แก้ยอดขึ้นได้ทั้งบวกและลบ — ห้ามใช้สีแดงเหมือนกันหมด
-           ครัวหลายคนใช้ปุ่ม "แก้จำนวน" เติมของแทนช่อง "กำลังเติม" (เห็นจริง 25 ส.ค.: A12 +18, A13 +17)
-           ถ้าย้อมแดงทั้งคู่ = ของที่ครัวเพิ่งทำเพิ่ม จะอ่านเหมือนของหาย */
-        +'<td class="n">'+(r.fix
-            ? (r.fix>0 ? '<span class="plus">+'+r.fix+'</span>' : '<span class="fix">'+r.fix+'</span>')
-            : '<span style="color:var(--soft)">–</span>')+'</td>'
+        /* โชว์เลขจริง 2 ค่า ไม่สรุปแทนคนอ่าน — ของที่ขยับขึ้นลงหลายรอบระหว่างวัน
+           ถ้าเอามาบวกกัน จะได้ตัวเลขที่ไม่เคยเกิดขึ้นจริงสักครั้ง */
+        +'<td class="n">'+((r.first===null && r.last===null)
+            ? '<span style="color:var(--soft)">–</span>'
+            : (r.first===null?'?':r.first)+' → '
+              + '<b class="'+((r.last!=null && r.first!=null && r.last<r.first)?'fix':'plus')+'">'+(r.last===null?'?':r.last)+'</b>'
+              + (r.taps>=5?'<div class="rowline">กด '+r.taps+' ครั้ง</div>':''))+'</td>'
         +'<td class="who">'+esc(who||'—')+'</td>'
         +'</tr>';
     });
