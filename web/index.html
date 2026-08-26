@@ -22,18 +22,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta property="og:url" content="https://www.360foodbox.com/">
 <meta property="og:image" content="img/img23.jpg">
 
-<!-- ═══ Google Ads tag ═══
-  TODO (Claude Code): หลังสร้าง Conversion Action ใน Google Ads แล้ว
-  1) แทน AW-XXXXXXXXXX ด้วย Conversion ID จริง แล้วปลดคอมเมนต์ block นี้
-  2) แทน CONVERSION_LABEL ใน trackOrder() ด้านล่าง
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-XXXXXXXXXX"></script>
+<!-- ═══ Google Ads tag (06 Ads ส่งค่าจริงมา 26 ส.ค. 2026) ═══ -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-872118373"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'AW-XXXXXXXXXX');
+  gtag('config', 'AW-872118373');
 </script>
-═══════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -906,8 +902,7 @@ function orderNow(el){
   track('cta_click','index');
   try{
     if(typeof gtag === 'function'){
-      // TODO (Claude Code): แทน CONVERSION_LABEL หลังสร้าง conversion action
-      gtag('event','conversion',{ 'send_to':'AW-XXXXXXXXXX/CONVERSION_LABEL' });
+      gtag('event','conversion',{ 'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D' });
     }
   }catch(e){}
   window.location.href = u360Tracked(ORDER_URL);
