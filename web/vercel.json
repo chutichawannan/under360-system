@@ -140,6 +140,10 @@
     {
       "source": "/blog/:slug",
       "destination": "/blog.html?post=:slug"
+    },
+    {
+      "source": "/pack",
+      "destination": "/pack.html"
     }
   ]
 }
