@@ -4827,6 +4827,42 @@ function msgPickGroups(pts){
   return out2.reverse();
 }
 
+// ── 🛍️ ของลูกค้าคนนี้กินพื้นที่กี่ "ถุงหูหิ้ว" ────────────────────────────────
+// ตัวเลขจากนัทเอง (26 ส.ค. 2569): "1 ถุง มันจุได้ 7-8 กล่อง / 15-20 ถุงแพคกับข้าว"
+//   → รถมอเตอร์ไซค์ 1 คัน ≈ 3 ถุงหูหิ้ว
+// ⚠️ ตอนนี้ใช้ "แสดงให้เห็น" อย่างเดียว ยังไม่เอาไปห้ามจับกลุ่ม
+//    เพราะวัดแล้ว 26 ส.ค. ถ้าบังคับเพดาน 3 ถุง ค่าส่งขึ้น ฿144/วันทันที
+//    และยังไม่รู้ว่า "ของล้น" เป็นปัญหาจริงของแอดมินหรือเปล่า (แอดมินอาจแยกรอบเองอยู่แล้ว)
+//    → โชว์ตัวเลขก่อน เก็บ feedback จากของจริง แล้วค่อยตัดสินใจว่าจะบังคับไหม
+var MSG_BAG_CAP      = 3;    // ถุงต่อคัน — ปรับได้ ห้ามฝังตาย (นัทสั่ง: "messenger แต่ละคนไม่เหมือนกัน")
+var MSG_PER_BAG_BOX  = 8;    // ข้าวกล่อง/มื้อ ต่อ 1 ถุง
+var MSG_PER_BAG_PACK = 15;   // ซองแพ็คกับข้าว/โปรตีนแพค ต่อ 1 ถุง (นัทให้ช่วง 15-20 → ใช้ค่าต่ำเพื่อไม่ประเมินต่ำไป)
+var MSG_PACK_CATS    = ["pack_special","pack_regular"];
+// โหลดหมวดเมนูครั้งเดียวต่อการเปิดหน้า — ต้องรู้ว่าอันไหน "ซองแพ็ค" อันไหน "กล่องข้าว" เพราะจุถุงไม่เท่ากัน
+async function msgLoadCats(){
+  if(window.__msgCats) return window.__msgCats;
+  try{
+    var sb_=getSB(); if(!sb_){ window.__msgCats={}; return window.__msgCats; }
+    var r=await sb_.from("menu_items").select("code,category").limit(2000);
+    var map={}; (r.data||[]).forEach(function(m){ if(m.code) map[m.code]=m.category; });
+    window.__msgCats=map;
+  }catch(e){ window.__msgCats={}; }   // โหลดไม่ได้ = นับเป็นกล่องข้าวหมด (ประเมินถุงสูงไว้ก่อน ปลอดภัยกว่า)
+  return window.__msgCats;
+}
+function msgBagsOf(o){
+  var f=(o._food||[]);
+  if(!f.length) return 1;                       // ไม่รู้ว่ามีของอะไร = ถือว่า 1 ถุง (ไม่เข้าข้างตัวเอง)
+  var pack=0, box=0;
+  f.forEach(function(i){
+    var c=(window.__msgCats||{})[i.menu_code];
+    var isPack = c && MSG_PACK_CATS.indexOf(c)>=0;
+    var q=Number(i.quantity||1);
+    if(isPack) pack+=q; else box+=q;
+  });
+  var b=Math.ceil(box/MSG_PER_BAG_BOX)+Math.ceil(pack/MSG_PER_BAG_PACK);
+  return Math.max(1,b);
+}
+
 // ── 📍 เสิร์ชที่อยู่เติมหมุดให้อัตโนมัติ (นัทเคาะ 14 ส.ค. 2569) ──────────────────
 // ปัญหาเดิม: ลูกค้าไม่ปักหมุด → ใบนั้นถูกข้ามทั้งใบ (14 ส.ค. โดนไป 8/14 ใบ)
 //   แอดมินต้องไล่ทักลูกค้าทีละคน ทั้งที่ "ที่อยู่" กรอกมาครบอยู่แล้ว แค่ไม่มีพิกัด
@@ -4896,6 +4932,7 @@ async function msgPlanRoutes(){
   // 📍 เติมหมุดให้ใบที่ลูกค้าไม่ได้ปักก่อน — ไม่งั้นใบพวกนั้นถูกข้ามทั้งที่มีที่อยู่ครบ
   var pinned={filled:[],rough:[],failed:[]};
   try{ pinned=await msgAutoPin(box); }catch(e){ console.warn("เติมหมุดอัตโนมัติไม่สำเร็จ:",e); }
+  try{ await msgLoadCats(); }catch(e){}   // ต้องมีก่อนนับถุง
   // เอาเฉพาะงานที่ Lalamove/แมสรับได้จริง: มีพิกัด + ไม่ใช่นอกเขต + ยังไม่ส่ง
   // 🔴 ใบที่คิดไม่ได้ ต้องบอกว่า "ใบไหน เพราะอะไร" — เดิมบอกแค่ตัวเลข "ข้าม 5 ใบ" แล้วจบ
   //    = แอดมินไม่รู้ว่าต้องไปตามที่อยู่ใคร (นัทเจอเอง 6 ส.ค.) ใบที่ลูกค้าไม่ปักหมุดเลยหล่นทั้งวัน
@@ -4912,6 +4949,8 @@ async function msgPlanRoutes(){
     jobs.push({lat:Number(o.delivery_lat),lng:Number(o.delivery_lng),
                addr:o.delivery_address_text||o.delivery_address||"ปลายทาง",
                name:o.customer_name||"ลูกค้า", no:o.order_number||"—",
+               phone:o.customer_phone||"",        // แอดมินต้องกรอกเบอร์ผู้รับตอนจอง — ไม่มีในแผน = ต้องเปิดหาอีกหน้า
+               bags:msgBagsOf(o),                 // ของกินพื้นที่กี่ถุงหูหิ้ว (ดู msgBagsOf)
                slot:o.time_slot_label||o.time_slot||"ไม่ระบุ",
                win:msgWin(o.time_slot_label,o.time_slot)});
   });
@@ -5054,6 +5093,29 @@ async function msgShowCostHistory(){
   }catch(e){}
 }
 
+// ยุบที่อยู่หลายบรรทัดให้เหลือบรรทัดเดียว — ที่อยู่จาก LIFF มักมีขึ้นบรรทัดปนมา ทำให้แถวในแผนเบี้ยว
+function msgOneLine(s){ return String(s==null?"":s).replace(/[\r\n\t]+/g," ").replace(/ {2,}/g," ").trim(); }
+
+// 📋 ก๊อปทั้งรอบเรียงตามลำดับ — แอดมินเอาไปวางตอนกดจอง Lalamove ได้เลย ไม่ต้องไล่หาที่อยู่ทีละคน
+//    ใส่ทั้งพิกัดและที่อยู่ข้อความ เพราะยังไม่รู้ว่าแอดมินถนัดแบบไหน (ตั้งใจให้ของจริงเป็นคนตอบ)
+//    ⚠️ ลำดับในข้อความ = ลำดับที่ขอราคาไว้ ถ้าแอดมินสลับเอง ราคาจะไม่ตรงกับที่โชว์
+//       (เคยวัด: สลับผิดทางในรอบเดียวกัน ต่างกัน ฿17-174)
+function msgCopyTrip(i,btn){
+  var t=(window.__msgRows||[])[i]; if(!t) return;
+  var NL=String.fromCharCode(10);
+  var L=["รอบ "+(i+1)+" · "+(t.slot||"")+(t.cost!=null?" · "+fmtB(t.cost):"")];
+  t.order.forEach(function(p,k){
+    var ll=(p.lat!=null&&p.lng!=null)?(Number(p.lat).toFixed(6)+","+Number(p.lng).toFixed(6)):"-";
+    L.push((k+1)+") "+(p.name||"")+"  "+ll+"  "+(p.no||"")+(p.phone?"  โทร "+p.phone:"  (ไม่มีเบอร์)"));
+    L.push("   "+msgOneLine(p.addr));
+  });
+  var txt=L.join(NL);
+  var done=function(){ if(btn){ var o=btn.textContent; btn.textContent="✅ ก๊อปแล้ว"; setTimeout(function(){btn.textContent=o;},1500); } };
+  // เบราว์เซอร์เก่า/ไม่ใช่ https จะไม่มี clipboard API → เปิดกล่องให้เลือกเอง ดีกว่าเงียบแล้วไม่มีอะไรเกิดขึ้น
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done,function(){window.prompt("ก๊อปข้อความนี้",txt);});
+  else window.prompt("ก๊อปข้อความนี้",txt);
+}
+
 // 📍 สรุปผลการเสิร์ชที่อยู่ — ต้องบอกให้ชัดว่าหมุดไหน "ระบบเดาให้" ไม่ใช่ "ลูกค้าปักเอง"
 //    หมุดที่เสิร์ชได้แค่ระดับซอย/ถนน ดูบนจอเหมือนหมุดปกติทุกอย่าง = อันตรายถ้าไม่บอก
 function msgPinBox(p){
@@ -5083,6 +5145,7 @@ function msgRenderPlan(box,r){
     else t.order.forEach(function(p){ rows.push({slot:p.slot||t.slot,win:p.win||t.win,order:[p],cost:(p._solo!=null?p._solo:null),merge:false,save:0,_from:t}); });
   });
   rows.sort(function(a,b){ var aw=a.win||{s:99},bw=b.win||{s:99}; return (aw.s-bw.s)||((aw.e||0)-(bw.e||0)); });
+  window.__msgRows=rows;    // ให้ปุ่ม "📋 ก๊อป" หยิบข้อมูลรอบนั้นไปใช้
   var totalPlan=r.trips.reduce(function(s,t){return s+(t.cost||0);},0);
   var totalSolo=r.trips.reduce(function(s,t){return s+(t.soloOk?t.solo:(t.cost||0));},0);
   var saved=totalSolo-totalPlan;
@@ -5121,9 +5184,36 @@ function msgRenderPlan(box,r){
     h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
       +"<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline'>"
       +"<b style='color:#1F4D3A'>รอบ "+n+"</b> <span style='color:#6B7280;flex:1'>"+esc2(t.slot)+"</span>"
+      // 🛍️ ของทั้งรอบกินพื้นที่กี่ถุง — นัทให้ตัวเลข 26 ส.ค.: รถมอเตอร์ไซค์ ≈ 3 ถุงหูหิ้ว
+      //    โชว์อย่างเดียว ยังไม่เอาไปห้ามจับกลุ่ม — วัดแล้วถ้าบังคับเพดาน 3 ถุง ค่าส่งขึ้น ฿144/วันทันที
+      //    และยังไม่รู้ว่า "ของล้น" เป็นปัญหาจริงของแอดมินไหม (เขาอาจแยกรอบเองหน้างานอยู่แล้ว)
+      +(function(){
+          var bg=t.order.reduce(function(a,p){return a+(p.bags||1);},0);
+          var over=bg>MSG_BAG_CAP;
+          return "<span title='ประมาณจากจำนวนของ — 1 ถุงจุข้าว "+MSG_PER_BAG_BOX+" กล่อง หรือซองแพ็ค "+MSG_PER_BAG_PACK+" ซอง' "
+            +"style='font-family:var(--mono);font-size:11.5px;border-radius:6px;padding:2px 7px;margin-right:6px;"
+            +(over?"background:#FEF2F2;color:#B91C1C;font-weight:700":"background:#EBF3EF;color:#1F4D3A")+"'>"
+            +(over?"⚠️ ":"")+bg+"/"+MSG_BAG_CAP+" ถุง</span>";
+        })()
+      +"<button onclick='msgCopyTrip("+(n-1)+",this)' style='border:1px solid #D7DEDC;background:#fff;border-radius:7px;padding:2px 8px;font-size:11.5px;cursor:pointer;margin-right:6px'>📋 ก๊อป</button>"
       +"<span style='font-family:var(--mono);font-weight:700'>"+(t.cost!=null?fmtB(t.cost):"—")+"</span></div>"
       +"<div style='color:#374151;margin-top:2px'>"
-      +t.order.map(function(p,i){return (t.order.length>1?(i+1)+". ":"")+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
+      // ต้องมีครบ: ลำดับ · ชื่อ · พิกัด · ที่อยู่ · เบอร์ — ไม่งั้นแอดมินต้องเปิดอีกหน้าเพื่อกดจอง
+      // 📍 พิกัดเป็นตัวหลัก (ไม่มีวันสะกดผิด ซอยไม่เพี้ยน · Lalamove รับพิกัดตรงๆ) · ที่อยู่ข้อความไว้ยืนยันด้วยตา
+      +t.order.map(function(p,i){
+          var ll=(p.lat!=null&&p.lng!=null)?(Number(p.lat).toFixed(6)+","+Number(p.lng).toFixed(6)):"";
+          return "<div style='padding:4px 0;border-top:1px dashed #E5E7EB'>"
+            +"<b>"+(t.order.length>1?(i+1)+". ":"")+esc2(p.name)+"</b> "
+            +"<span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>"
+            +(p.bags?" <span style='font-size:10.5px;background:#EBF3EF;color:#1F4D3A;border-radius:5px;padding:1px 5px'>"+p.bags+" ถุง</span>":"")
+            +(ll?"<div style='font-family:var(--mono);font-size:11.5px'>📍 "+ll
+                 +" <a href='https://www.google.com/maps?q="+ll+"' target='_blank' style='color:#1D4ED8'>แผนที่</a></div>":"")
+            +"<div style='font-size:11.5px;color:#6B7280'>"+esc2(msgOneLine(p.addr).slice(0,70))+"</div>"
+            +(p.phone
+                ?"<div style='font-size:11.5px'>📞 <a href='tel:"+esc2(p.phone)+"' style='color:#1F4D3A;font-weight:600'>"+esc2(fmtPhone(p.phone))+"</a></div>"
+                :"<div style='font-size:11px;color:#B91C1C;font-weight:700'>⚠️ ไม่มีเบอร์ผู้รับ — คนขับโทรหาไม่ได้</div>")
+            +"</div>";
+        }).join("")
       +"</div>"
       +(t.save>15?"<div style='font-size:11px;color:#15803D;font-weight:700;margin-top:2px'>✅ รวมรอบแล้วประหยัด "+fmtB(t.save)+" (ยิงแยก "+fmtB(t.solo)+")</div>":"")
       +"</div>";
