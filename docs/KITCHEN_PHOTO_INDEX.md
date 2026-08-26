@@ -9,6 +9,8 @@
 > ⚠️ **20 ส.ค. ในตารางนี้ไม่ครบ** — ดึงแชทได้ครั้งละ 200 ข้อความ ย้อนไปได้ถึง 08:13 น. เท่านั้น
 > รอบก่อนหน้า (21 ส.ค.) นับได้ **12 เมนู 59 รูป** สำหรับวันที่ 20 · ที่หายจากตารางนี้คือช่วงเช้าก่อน 08:13 = **ปลากะพงผัดฉ่า · ลาบอกไก่ · สะโพกไก่ตุ๋นซีอิ๊วพริก · อกไก่คั่วพริกแห้งเสฉาน · หมูผัดกระเทียม** (รูปยังอยู่ใน Storage ครบ ไม่ได้หาย)
 
+> 🟡 **2026-08-20 — ยังไม่มีใครเปิดรูปดู ถือว่ายังไม่ verify** (23 กับ 26 ที่ตรวจละเอียดผิดทั้งคู่ → วันที่เหลือเชื่อไม่ได้จนกว่าจะมีคนดู)
+
 ## 📅 2026-08-20 — 7 เมนู · 37 รูป
 
 | # | ชื่อเมนู | จำนวนรูป | เปิดรูป |
@@ -41,6 +43,8 @@
 | 9 | บะหมี่ผักอกไก่ปรุงรสหมูแดงเห็ดหอม | 4 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554056587804775.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554056839463134.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554057460220041.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554058080977050.jpg) |
 | 10 | เส้นหมี่น้ำยาทูน่า(ไร้)กะทิอกไก่ | 7 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554056906047934.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554057762210354.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554089873801319.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554089555034368.jpg) · [5](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554090510811431.jpg) · [6](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554090192568457.jpg) · [7](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-23%2F628554090897211955.jpg) |
 
+> 🟡 **2026-08-24 — ยังไม่มีใครเปิดรูปดู ถือว่ายังไม่ verify** (23 กับ 26 ที่ตรวจละเอียดผิดทั้งคู่ → วันที่เหลือเชื่อไม่ได้จนกว่าจะมีคนดู)
+
 ## 📅 2026-08-24 — 10 เมนู · 54 รูป
 
 | # | ชื่อเมนู | จำนวนรูป | เปิดรูป |
@@ -55,6 +59,8 @@
 | 8 | ซีซ่าสลัดอกไก่ซูวี+โฟคาเซีย | 2 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682469515722894.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682469835277020.jpg) |
 | 9 | แซลมอนโปเกะโบล | 5 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682470154044056.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682470489588359.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682470808355157.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682471143899307.jpg) · [5](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682524881322597.jpg) |
 | 10 | เส้นหมี่คลุกอกไก่ฉีก | 6 | [1](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682525065347516.jpg) · [2](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682525552410846.jpg) · [3](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682525854138983.jpg) · [4](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-24%2F628682526038688444.jpg) · [5](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-25%2F628814875036222054.jpg) · [6](https://under360-system.vercel.app/api/kapan-read?key=kapan-pm-2026&file=C4b28600aa9f4c7a1a6f9746ae413a0e9%2F2026-08-25%2F628814875640725879.jpg) |
+
+> 🟡 **2026-08-25 — ยังไม่มีใครเปิดรูปดู ถือว่ายังไม่ verify** (23 กับ 26 ที่ตรวจละเอียดผิดทั้งคู่ → วันที่เหลือเชื่อไม่ได้จนกว่าจะมีคนดู)
 
 ## 📅 2026-08-25 — 3 เมนู · 16 รูป
 
