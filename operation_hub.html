@@ -2399,7 +2399,7 @@ async function openOrderDetail(id){
     var o=(ordRows||[]).find(function(x){return x.id===id;});
     if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
     if(!o){ body.innerHTML="ไม่พบออเดอร์"; return; }
-    ttl.textContent=(o.order_number||"ออเดอร์")+" · "+fmtB(o.total);
+    ttl.textContent=ordLabel(o)+" · "+fmtB(o.total);
     // ดึงรายการสินค้า + ข้อมูลสมาชิก + ประวัติซื้อ พร้อมกัน
     var itRes=await sb_.from("order_items").select("*").eq("order_id",id);
     var items=itRes.data||[];
@@ -2535,6 +2535,22 @@ async function openOrderDetail(id){
 /* ── ยกเลิก / กู้คืนออเดอร์ ─────────────────────────────────────────────────
    จดชื่อคนกดเสมอ — ยกเลิกใบของลูกค้าจริงต้องรู้ว่าใครสั่งยกเลิก
    และต้อง "อ่านกลับมาดู" หลังเขียนทุกครั้ง เพราะเคยเจอว่าคำสั่งผ่านแต่ข้อมูลไม่ขยับ */
+/* 🔖 เลขออเดอร์ + วันส่งจริง — ห้ามโชว์เลขลอยๆ ให้คนอ่าน
+   เลขฝัง "วันที่ตอนสร้างใบ" ไว้ในตัว (U-0828-xxx) แต่พอย้ายวันแล้วเลขไม่เปลี่ยนตาม
+   → คนเห็น U-0828-004 แล้วเข้าใจว่าส่ง 28 ทั้งที่ย้ายไป 31 แล้ว
+   วันนี้ (27 ส.ค. 2569) ทำให้ 3 ห้องอ่านวันผิดกันทั้งวัน ทั้งห้องระบบ ห้องฟ้า และแอดมิน
+   ⚠️ ห้ามแก้ตัวเลขให้ตรงวัน — เลขเป็นกุญแจที่ใบจัดของ สลิปโอนเงิน และประวัติอ้างถึง
+      เปลี่ยนเมื่อไหร่ = ตามของเก่าไม่เจอทั้งระบบ · แก้ที่ "การแสดงผล" เท่านั้น */
+function ordLabel(o){
+  if(!o) return "";
+  var num=o.order_number||"ออเดอร์";
+  var d=o.delivery_date||"";
+  if(!d) return num;
+  var mmdd=String(d).slice(5).replace("-","/");            // 2026-08-31 → 08/31
+  var inNum=String(num).match(/^[A-Z]+-(\d{2})(\d{2})-/); // เลขฝังวันไว้ไหม
+  var same=inNum && (inNum[1]+"/"+inNum[2])===mmdd;        // ตรงกันอยู่แล้ว = ไม่ต้องย้ำ
+  return same ? num : (num+" · ส่ง "+mmdd);
+}
 function odWho(){
   var n=""; try{ n=localStorage.getItem("lastNickname")||""; }catch(e){}
   if(!n){
@@ -2579,7 +2595,7 @@ async function odCancelOrder(id){
   if(!o) return alert("ไม่พบออเดอร์");
   var who=odWho(); if(!who) return;
   _cxCtx={id:id,o:o,who:who};
-  document.getElementById("cxWhat").innerHTML="<b>"+esc2(o.order_number||"")+"</b> · "+esc2(o.customer_name||"")
+  document.getElementById("cxWhat").innerHTML="<b>"+esc2(ordLabel(o))+"</b> · "+esc2(o.customer_name||"")
     +"<br>ยอด "+fmtB(o.total)+" · ส่ง "+esc2(o.delivery_date||"—")
     +"<br><span style='color:#6B7280'>คนกด: "+esc2(who)+"</span>";
   document.getElementById("cxReason").value="";
