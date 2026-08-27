@@ -5584,9 +5584,18 @@ function mpManageMoveDatePickerHtml(r) {
   </div>`;
 }
 
+/* 🔴 บั๊กที่ทำให้ของไปส่งผิดวัน (ลูกค้า VIP เจอเอง 26 ส.ค. 2569 — สแกนแล้วโดน 32 รอบ 6 คน)
+   เดิมตัวนี้อัปเดตแค่ mp_deliveries = "ตารางที่ลูกค้าเห็น"
+   แต่ครัว · หน้าแมส · หน้าออเดอร์ · ใบจัดของ ทุกจออ่านจากตาราง orders ทั้งหมด
+   → ลูกค้าเลื่อนวันเรียบร้อยในมือถือตัวเอง แต่ของยังไปส่งวันเดิม และไม่มีใครรู้ว่าเลื่อนไปแล้ว
+   ✅ ต้องย้าย "ทั้งสองฝั่ง" ให้จบในการกดครั้งเดียว
+   ⚠️ ยกเว้นใบที่มีของอย่างอื่นปนอยู่ (ใบแรกที่ซื้อเมนูเดี่ยวมาด้วย) — ย้ายทั้งใบจะลากของที่ลูกค้าไม่ได้ขอเลื่อนไปด้วย
+      เคสนั้นย้ายเฉพาะรอบ แล้วติดธงให้แอดมินจัดการ พร้อมบอกลูกค้าตรงๆ ว่าจะมีคนติดต่อกลับ */
 async function mpManageConfirmMoveDate(rowId) {
   if (!mpManageMoveDateSel) return;
   const newDate = mpManageMoveDateSel;
+  const row = (mpManageRows || []).find(x => x.id === rowId) || {};
+  const oldDate = row.delivery_date || '';
   const d = new Date(newDate + 'T00:00:00');
   const opensAt = new Date(d); opensAt.setDate(opensAt.getDate()-3);
   const deadline = new Date(d); deadline.setDate(deadline.getDate()-1);
@@ -5600,7 +5609,44 @@ async function mpManageConfirmMoveDate(rowId) {
       menu_items: [],   // ย้ายวัน = เมนูเดิมไม่เกี่ยวกับวันใหม่แล้ว ปล่อยว่างให้แอดมิน/ระบบ assign ใหม่ตามรอบวันนั้น
       customer_request: []
     }).eq('id', rowId);
-    toast('ย้ายวันส่งแล้ว ✓');
+
+    // ── ย้ายใบออเดอร์ของรอบนั้นตามไปด้วย ── (ถ้าไม่ทำ ครัวจะทำของตามวันเดิม)
+    let mixed = false, moved = false;
+    if (row.order_id) {
+      try {
+        const oq = await sb.from('orders').select('id,order_number,customer_name,delivery_date,notes,total').eq('id', row.order_id).maybeSingle();
+        const o = oq.data;
+        if (o && o.delivery_date !== newDate) {
+          /* ใบนี้มีของอื่นนอกจากรอบ Meal Plan ไหม — ดูจากรายการในใบ
+             ใบของรอบล้วนจะมีแต่บรรทัด MP-* (ยอด ฿0) ส่วนใบแรกมักมีเมนูเดี่ยวปนมาด้วย */
+          const itq = await sb.from('order_items').select('menu_code').eq('order_id', o.id).limit(200);
+          const codes = (itq.data || []).map(x => String(x.menu_code || ''));
+          mixed = codes.some(c => c && !/^MP-/i.test(c));
+          if (!mixed) {
+            const stamp = '[ลูกค้าเลื่อนรอบ ' + (oldDate||'?') + '→' + newDate + ']';
+            await sb.from('orders').update({
+              delivery_date: newDate,
+              notes: ((o.notes ? o.notes + ' ' : '') + stamp),
+              updated_at: new Date().toISOString()
+            }).eq('id', o.id);
+            moved = true;
+          }
+          // บันทึกไว้ให้ตามได้เสมอ ไม่ว่าจะย้ายใบได้หรือไม่
+          try {
+            await sb.from('activity_log').insert({
+              session_id: 'liff_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+              actor: (lineProfile && lineProfile.displayName) || o.customer_name || 'ลูกค้า',
+              source: 'liff', action_type: 'order_move',
+              summary: (o.order_number || 'ออเดอร์') + ' ' + (o.customer_name || '') + ' — ลูกค้าเลื่อนรอบ Meal Plan '
+                       + (oldDate||'?') + ' → ' + newDate + (mixed ? ' ⚠️ ใบมีของอื่นปน ยังไม่ได้ย้ายใบ รอแอดมิน' : ''),
+              detail: { order_id: o.id, order_number: o.order_number, from: oldDate, to: newDate,
+                        by: 'customer', via: 'mp_manage', round_no: row.round_no || null, order_moved: moved, mixed_order: mixed }
+            });
+          } catch(e) { console.warn('log mp move:', e); }
+        }
+      } catch(e) { console.error('ย้ายใบออเดอร์ตามรอบไม่สำเร็จ:', e); }
+    }
+    toast(mixed ? 'ย้ายวันแล้ว ✓ แอดมินจะติดต่อกลับเรื่องของที่สั่งมาด้วยกัน' : 'ย้ายวันส่งแล้ว ✓');
   } catch(e) {
     console.error(e);
     toast('ย้ายวันไม่สำเร็จ ลองใหม่อีกครั้ง');
