@@ -2326,7 +2326,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2351,6 +2351,17 @@ async function init() {
     const phoneInput = document.getElementById('recipient-phone-input');
     if (phoneInput && customer?.phone) phoneInput.value = customer.phone;
   } catch(e) { console.warn('Customer processing failed', e); }
+
+  /* 🏷️ แท็กแคมเปญชั่วคราว (ดูคำอธิบายเต็มที่ activeCampaignTag) — โหลดมากับ config ก้อนเดียวกัน
+     ไม่มีคีย์นี้ = ไม่มีอะไรเปลี่ยนเลยสักบรรทัด ของเดิมทำงานเหมือนเดิมทุกอย่าง */
+  try {
+    const cfgRows = val(cfgR).data || [];
+    const camp = cfgRows.find(r => r.key === CAMPAIGN_KEY);
+    const raw = camp && camp.data;
+    const size = raw ? JSON.stringify(raw).length : 0;
+    if (size > 400000) { console.warn('campaign_tags ใหญ่ผิดปกติ (' + size + ') — ข้ามไว้ก่อน กันหน้าสั่งของอืด'); }
+    else campaignTags = raw || {};
+  } catch(e) { campaignTags = {}; }
 
   // menu + สร้างลำดับหมวด (ไม่ hardcode — ใช้ทุก category ที่มีใน data)
   try {
@@ -4134,16 +4145,86 @@ function isNewMemberCustomer(){
    ⛔ ไม่ผูกกับเบอร์/ชื่อ — 20 ส.ค. เคยเดาตัวตนจากเบอร์แล้วข้อมูลไปหาลูกค้าผิดคน
       (658 เบอร์ผูกหลายชื่อ) → ต้องเป็นแถวที่แอดมินเลือกเองเท่านั้น */
 function isVipFriend(){ return !!(customer && (customer.customer_type||'')==='vip_friend'); }
+/* ══ 🏷️ แท็กแคมเปญชั่วคราว — ส่วนลดรายคนที่ "หมดอายุแล้วหลุดเอง" ══════════════
+   นัทสั่งเอง 27 ส.ค. 2569: "กลุ่มลูกค้าที่เราเหมือนติดแท็กเขา ค่าตรงนี้มันจะไม่ถาวร
+   พอหมดอายุก็ต้องดึงเขาออกจากค่านั้น"
+
+   ทำไมไม่ใช้ customer_type: ช่องนั้นมีช่องเดียวและถือป้าย 'vip_friend' ของเพื่อนนัทอยู่
+   (สิทธิ์ลด 10% + ส่งฟรี ที่กู้มาจากโน้ตแชท 2 ปี) — ทับเมื่อไหร่ = เพื่อนนัทเสียสิทธิ์ถาวร
+
+   ที่เก็บ: kitchen_data คีย์ 'campaign_tags' — ห้อง 05 เขียนเองได้ ไม่ต้องรัน SQL ไม่ต้องเรียกห้องนี้
+   {
+     "wk0829": {
+       "label": "ส่วนลดลูกค้าที่ได้รับข้อความ",     // ลูกค้าเห็นบรรทัดนี้ที่หน้าจ่ายเงิน
+       "discount": { "type":"fixed", "value":50, "min_order":500 },   // type: fixed | percent
+       "expires_at": "2026-09-06",                  // เลยวันนี้ = ไม่เข้าเงื่อนไขเอง ไม่ต้องมีใครไปถอด
+       "uids": ["U....", "....abc123def456"]        // ใส่ uid เต็ม หรือ "เลขท้าย ≥12 ตัว" ก็ได้
+     }
+   }
+
+   🔑 2 เรื่องที่ห้องนี้ตัดสินต่างจากที่ห้อง 05 เสนอ พร้อมเหตุผล:
+   1. **รองรับ "เลขท้าย uid" ด้วย ไม่ใช่ uid เต็มอย่างเดียว** — ลิสต์ 1,500 คนถ้าเก็บ uid เต็มคือ ~55KB
+      ที่ลูกค้า *ทุกคน* ต้องโหลดตอนเปิดแอป เพื่อคนกลุ่มเดียว · เก็บ 12 ตัวท้ายลดเหลือ ~20KB
+      และไม่ต้องวาง uid เต็มของลูกค้าไว้ในที่ที่ anon อ่านได้
+   2. **ไม่ทบกับเพื่อนนัท/tier — เลือกตัวที่ลูกค้าได้มากที่สุดตัวเดียว** ตามหลักเดิมของไฟล์นี้
+      (ของเดิมเขียนไว้ว่า "ให้เพื่อนนัทกินคนเดียว เพราะมากกว่าอยู่แล้ว" — ที่นี่ทำให้เป็นจริงเสมอ
+       แม้แคมเปญจะให้มากกว่า ลูกค้าก็ไม่เสียเปรียบ)
+      ส่วน WELCOME50 (สมาชิกใหม่) ยัง **ทบได้เหมือนเดิม** ไม่แตะพฤติกรรมเก่า
+   ⚠️ กันแอปช้า: ถ้าลิสต์ใหญ่ผิดปกติ (>400KB) จะข้ามทั้งก้อน ดีกว่าให้หน้าสั่งของอืดทั้งร้าน */
+const CAMPAIGN_KEY = 'campaign_tags';
+let campaignTags = {};
+
+/* หาแท็กที่ลูกค้าคนนี้ได้จริง ณ วันนี้ — คืน null ถ้าไม่มี/หมดอายุ/ยอดไม่ถึงขั้นต่ำ */
+function activeCampaignTag(sub){
+  try{
+    const uid = lineProfile && lineProfile.userId;
+    if(!uid || !campaignTags) return null;
+    const today = localYMD(new Date());
+    let best = null;
+    Object.keys(campaignTags).forEach(key => {
+      const t = campaignTags[key];
+      if(!t || !Array.isArray(t.uids) || !t.uids.length) return;
+      if(t.expires_at && String(t.expires_at) < today) return;          // ⏳ หมดอายุ = หลุดเอง
+      if(t.starts_at  && String(t.starts_at)  > today) return;          // ตั้งล่วงหน้าได้
+      /* จับคู่ได้ 2 แบบ: uid เต็ม หรือเลขท้าย (ต้อง ≥12 ตัว กันชนกันโดยบังเอิญ) */
+      const hit = t.uids.some(u => {
+        const v = String(u||'');
+        if(!v) return false;
+        return v === uid || (v.length >= 12 && uid.endsWith(v));
+      });
+      if(!hit) return;
+      const d = t.discount || {};
+      if(d.min_order && sub < Number(d.min_order)) return;              // ยอดไม่ถึงขั้นต่ำ
+      const type = (d.type === 'percent') ? 'percent' : 'fixed';
+      const value = Number(d.value) || 0;
+      if(value <= 0) return;
+      const amount = (type === 'fixed') ? value : Math.round(sub * value / 100);
+      if(!best || amount > best.amount)
+        best = { kind:'campaign', code:('CAMP-' + key).toUpperCase(), label:(t.label || 'ส่วนลดพิเศษสำหรับคุณ'),
+                 type, value, amount, tagKey:key };
+    });
+    return best;
+  }catch(e){ console.warn('campaign tag:', e); return null; }
+}
+
 function autoPromos(sub){
   const list = [];
   if(isNewMemberCustomer() && sub>=500)
     list.push({ kind:'welcome', code:'WELCOME50', label:'ส่วนลดสมาชิกใหม่ (ครบ ฿500)', type:'fixed',   value:50 });
-  /* เพื่อนนัท 10% กับ Wellness Warriors 5% ต้องไม่ทบกันเป็น 15%
-     ให้เพื่อนนัทกินคนเดียว (มากกว่าอยู่แล้ว) — ลูกค้าไม่เสียเปรียบ และเลขไม่เฟ้อ */
+  /* เพื่อนนัท 10% · Wellness Warriors 5% · แท็กแคมเปญ — ทั้ง 3 อยู่กลุ่มเดียวกัน ห้ามทบกันเอง
+     เลือกตัวที่ "ลูกค้าได้มากที่สุด" ตัวเดียว → ไม่มีเคส 15% และลูกค้าไม่เสียเปรียบไม่ว่าถือป้ายอะไร */
+  const cands = [];
   if(isVipFriend())
-    list.push({ kind:'vip',     code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',      type:'percent', value:10 });
+    cands.push({ kind:'vip',  code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',    type:'percent', value:10 });
   else if(customer && (customer.tier||'')==='Wellness Warriors')
-    list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
+    cands.push({ kind:'tier', code:'WW5',       label:'ส่วนลด 5% Wellness Warriors', type:'percent', value:5  });
+  const camp = activeCampaignTag(sub);
+  if(camp) cands.push(camp);
+  if(cands.length){
+    cands.forEach(c => { if(c.amount == null) c.amount = (c.type==='fixed') ? c.value : Math.round(sub * c.value/100); });
+    cands.sort((a,b) => b.amount - a.amount);
+    list.push(cands[0]);
+  }
   return list;
 }
 
