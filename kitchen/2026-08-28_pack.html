@@ -3,13 +3,13 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>[ร่าง] ใบจัดของ 28 ส.ค. — 15 ใบ · 102 กล่อง (+2 ของแถม)</title>
+<title>[ตัวจริง v3] ใบจัดของ 28 ส.ค. — 14 ใบ · 98 กล่อง (Meal Plan เท่านั้น)</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;700;800;900&family=Noto+Sans+Myanmar:wght@400;500;700;800&display=swap" rel="stylesheet">
 <style>
   :root{--ink:#1A2027;--soft:#6B7280;--line:#E5E7EB;
-    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--stk:#047857;--stkbg:#ECFDF5;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7;--ice:#0369A1;--icebg:#E0F2FE}
+    --lc:#1D4ED8;--lcbg:#EFF6FF;--hp:#7C3AED;--hpbg:#F5F3FF;--head:#0F766E;--red:#B91C1C;--redbg:#FDECEC;--yel:#92400E;--yelbg:#FEF3C7;--ice:#0369A1;--icebg:#E0F2FE}
   *{box-sizing:border-box}
   body{margin:0;background:#fff;color:var(--ink);font-family:"Noto Sans Thai","Noto Sans Myanmar",sans-serif;font-size:14px;line-height:1.35}
   .wrap{max-width:820px;margin:0 auto;padding:0 12px 40px}
@@ -18,7 +18,7 @@
   .lb.on{background:var(--head);color:#fff;border-color:var(--head)}
   h1{font-size:18px;font-weight:900;margin:10px 0 1px}
   .sub{color:var(--soft);font-size:12px;margin-bottom:8px}
-  .draft{background:#111827;color:#fff;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:800;margin-bottom:10px;text-align:center}
+  .draft{background:#065F46;color:#fff;border-radius:10px;padding:8px 12px;font-size:12.5px;font-weight:800;margin-bottom:10px;text-align:center}
   .vbanner{display:none;background:#FEF3C7;border:1px solid #FCD34D;color:#92400E;border-radius:10px;padding:9px 12px;font-size:12.5px;font-weight:700;margin:10px 0}
   .tools{display:flex;gap:6px;margin-bottom:10px}
   .tools button{flex:1;font-size:12px;font-weight:800;border:1px solid var(--line);background:#F9FAFB;color:var(--soft);border-radius:7px;padding:6px;cursor:pointer}
@@ -32,18 +32,17 @@
   .adminfold ul{margin:8px 0 0;padding-left:18px}
   .adminfold li{font-size:12.5px;font-weight:700;color:#78350F;margin:4px 0;line-height:1.35}
   .sec{font-size:12.5px;font-weight:900;margin:14px 0 5px}
-  .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}.sec.stk{color:var(--stk)}
+  .sec.lc{color:var(--lc)}.sec.hp{color:var(--hp)}
   .c{border:1px solid var(--line);border-radius:10px;margin-bottom:7px;overflow:hidden}
-  .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}.c.stk{border-color:#A7F3D0}
+  .c.lc{border-color:#BFDBFE}.c.hp{border-color:#DDD6FE}
   .ch{padding:6px 10px;display:flex;justify-content:space-between;gap:8px;align-items:center}
-  .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}.c.stk .ch{background:var(--stkbg)}
+  .c.lc .ch{background:var(--lcbg)}.c.hp .ch{background:var(--hpbg)}
   .ch .nm{font-weight:900;font-size:14.5px;line-height:1.2}
   .ch .pl{font-size:11.5px;font-weight:800;margin-top:1px}
-  .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}.c.stk .ch .pl{color:var(--stk)}
+  .c.lc .ch .pl{color:var(--lc)}.c.hp .ch .pl{color:var(--hp)}
   .ch .bx{flex:none;font-size:13px;font-weight:900;background:#fff;border-radius:999px;padding:4px 12px;white-space:nowrap}
   .note{background:var(--redbg);color:#7F1D1D;font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
-  .sub2{background:#F3F4F6;color:#374151;font-size:11.5px;font-weight:800;padding:4px 10px;border-top:1px solid var(--line)}
-  .gift{background:var(--yelbg);color:var(--yel);font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
+  .pay{background:var(--yelbg);color:var(--yel);font-size:12px;font-weight:800;padding:5px 10px;border-top:1px solid var(--line);line-height:1.3}
   .it{display:flex;gap:8px;padding:5px 10px;border-top:1px solid #F1F3F5;align-items:center;cursor:pointer;user-select:none}
   .it:hover{background:#FAFAFA}
   .it .bo{flex:none;width:18px;height:18px;border:2px solid #CBD5E1;border-radius:5px;display:flex;align-items:center;justify-content:center;font-weight:900;color:#fff;font-size:14px}
@@ -64,11 +63,11 @@
   <button class="lb" id="b_shn" onclick="setLang('shn')">ไทใหญ่ · တႆး</button>
   <button class="lb" id="b_my" onclick="setLang('my')">พม่า · မြန်မာ</button>
 </div>
-<div class="draft" data-i="draftbox">📝 ร่าง — ตัวจริงออกเช้าศุกร์ 08:35 หลังปิดยอด</div>
+<div class="draft" data-i="draftbox">✅ ตัวจริง v3 — แก้ 27 ส.ค. (ห้องคุมตีกลับ 3 แถวที่ถูกตัดผิด) — ครัวยึดใบนี้</div>
 <div class="vbanner" id="vbanner"></div>
 
 <h1>📦 <span data-i="title">ใบจัดของ — ศุกร์ 28 ส.ค.</span></h1>
-<div class="sub" data-i="sub">15 ใบ · 102 กล่อง (+2 ของแถม) — Meal Plan 9 ใบ 63 กล่อง · สต็อค/เซ็ต 6 ใบ 39 กล่อง — แตะติ๊กเมื่อจัดเสร็จ</div>
+<div class="sub" data-i="sub">14 ใบ · 98 กล่อง — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
 <div class="tools">
   <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
@@ -77,313 +76,132 @@
 <div class="bigred">
   <div class="t" data-i="r_t">🔴 ข้อห้ามที่ต้อง honor วันนี้</div>
   <ul>
-    <li data-i="r1">มิ้ม — ไม่ทานเต้าหู้/เครื่องใน/เลือด → ไม่มีเมนู 72 ในกล่อง (ตรวจอยู่แล้ว)</li>
-    <li data-i="r2">Moss (พรหมพงศ์) — ไม่ทานเนื้อวัว/ไม่ชอบซอสลุยสวน/ไม่ทานขิง</li>
-    <li data-i="r3">คุณแชมป์ (S♡methings) — ไม่ทานเนื้อวัว/ข้าวไรซ์เบอร์รี่/ฟัก/หอมแดง</li>
+    <li data-i="r1">มิ้ม — ไม่ทานเต้าหู้/เครื่องใน/เลือด → ไม่มีเมนู 72</li>
+    <li data-i="r2">Moss — ไม่ทานเนื้อวัว/ซอสลุยสวน/ขิง → วันนี้ไม่มีเมนูตรงกับ 2 อย่างนี้ ไม่ตัดออก</li>
+    <li data-i="r3">โอ๋ (LC+HP) — ไม่ทานทูน่า/เนื้อ/ไข่ต้ม/ของดิบ → ตัด 03/10 ออกเท่านั้น (07 ลาบแซลมอนทำสุก โอ๋กินได้ — นัทยืนยัน 27 ส.ค.) → ครบ 7 กล่องทั้ง 2 ใบ</li>
+    <li data-i="r4">อัญชลี — ไม่ทานเนื้อ/เต้าหู้ → ไม่มีเมนู 72 · 📌 ขอข้าวไรซ์เบอร์รี่แทนข้าวปกติทุกกล่อง</li>
   </ul>
 </div>
 
 <details class="adminfold">
   <summary data-i="fold_sum">▸ เรื่องค้างของแอดมิน (ครัวไม่ต้องอ่าน) <span class="more" data-i="fold_more">ดูเต็มที่ 360foodbox.com/fah</span></summary>
   <ul>
-    <li data-i="w1">🔴 ฝน / คุณแชมป์ — ฟ้าแก้เมนู mp_deliveries เป็นชุดวันนี้แล้ว 27 ส.ค. ยังไม่ตรวจซ้ำกับกิ๊ฟ</li>
-    <li data-i="w2">🟡 Jaa, Ji, Moss, มิ้ม, Kao-poon — mp_deliveries สถานะ "รอแอดมินตรวจ" (ฟ้าจ่ายล่วงหน้า) เมนูตรงชุดวันนี้แล้ว</li>
-    <li data-i="w3">🛑 กวาง Hyrox Influ (U-0828-006) — เมนูยังไม่ confirm (status scheduled) ไม่ได้อยู่ในใบวันนี้</li>
-    <li data-i="w4">🧾 คุณแชมป์ (U-0828-013) — 1 ออเดอร์ มีทั้ง Meal Plan 7 กล่อง + สต็อค 7 กล่อง + ของแถมซาลาเปา 2 ลูก — การ์ดเดียวกันด้านล่าง</li>
-    <li data-i="w5">⚠️ ตรวจซ้ำ 27 ส.ค. 18:00 — orders.delivery_date=28 ส.ค. มีแค่ 15 ใบเท่านั้น ไม่มี "โอ๋" เลย (โอ๋ส่งล่าสุด 26 ส.ค. คอร์สยังไม่ครบรอบใหม่) ถ้าเจอไฟล์ฉบับอื่นที่มีโอ๋/75 กล่อง = ดึงจาก mp_deliveries.delivery_date ตรงๆ ไม่ join orders → ชนกับดักแถวผีตามที่บรีฟเตือน อย่าใช้ตัวเลขนั้น</li>
+    <li data-i="w0">🔴 v2 เคยตัดคุณแชมป์เก่า/พจนา(TOY)/อัญชลี ออกไปผิด (เข้าใจผิดเรื่อง order.delivery_date ของคอร์สหลายรอบ) — ห้องคุม query ยืนยันทั้ง 3 แถวเป็นของจริง เอากลับเข้าใบแล้ว</li>
+    <li data-i="w1">✅ คุณแชมป์ได้ 2 ใบพรุ่งนี้จริง (14 กล่อง) = คอร์สเก่า r3/3 + คอร์สใหม่ r1/3 คนละใบ ไม่ซ้ำกันเอง</li>
+    <li data-i="w2">🟡 Kao-poon เลือกเองได้แค่ 5/7 → เติมให้ครบ · KT เดิมอยู่ในชุด 9 อยู่แล้ว ไม่ได้แตะ</li>
   </ul>
 </details>
 
-<div class="sec lc" data-i="secLC">🔵 MEAL PLAN — LC (2 ใบ · 14 กล่อง)</div>
-
-<div class="c lc">
-  <div class="ch"><div><div class="nm">Ji</div><div class="pl" data-i="plLC">LC weekly · รอบ 3/3</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordJi">U-0828-002</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-</div>
-
-<div class="c lc">
-  <div class="ch"><div><div class="nm">มิ้ม</div><div class="pl" data-i="plLC">LC weekly · รอบ 3/3</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordMim">U-0828-001</div>
-  <div class="note" data-i="noteMim">🔴 ไม่ทานเต้าหู้/เครื่องใน/เลือด — ไม่มีเมนู 72 อยู่แล้ว</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-</div>
-
-<div class="sec hp" data-i="secHP">🟣 MEAL PLAN — HP (7 ใบ · 49 กล่อง)</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">Jaa</div><div class="pl" data-i="plHPtrial">HP trial · รอบ 1/1</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordJaa">U-0828-008</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">คุณแชมป์ (S♡methings)</div><div class="pl" data-i="plHPweekly1">HP weekly · รอบ 1/3</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordChamp">U-0828-013</div>
-  <div class="note" data-i="noteChamp">🔴 ไม่ทานเนื้อวัว/ข้าวไรซ์เบอร์รี่/ฟัก/หอมแดง — ตัดเมนู 07,04 ออกแล้ว</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-  <div class="sub2" data-i="stockSameOrder">— สต็อค/เซ็ต ในออเดอร์เดียวกัน (7 กล่อง) —</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">8</span><span class="tx" data-i="lnS159"><b>S159</b> · ข้าวแกงจืดเห็ดหอมอกไก่สับวุ้นเส้น</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">9</span><span class="tx" data-i="lnS104"><b>S104</b> · เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู้ด</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">10</span><span class="tx" data-i="lnS133a"><b>S133</b> · ข้าวพะโล้ไข่ต้มหมูนุ่มขลุกขลิก</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">11</span><span class="tx" data-i="lnS133b"><b>S133</b> · ข้าวพะโล้ไข่ต้มหมูนุ่มขลุกขลิก</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">12</span><span class="tx" data-i="lnS051a"><b>S051</b> · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">13</span><span class="tx" data-i="lnS051b"><b>S051</b> · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">14</span><span class="tx" data-i="lnS099"><b>S099</b> · ข้าวปลากระพงนึ่งมะนาว</span></div>
-  <div class="gift" data-i="giftMC1">🎁 ของแถม — MC1 ซาลาเปาหมูแดงเจ ×2</div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">Moss (พรหมพงศ์)</div><div class="pl" data-i="plHPweekly3">HP weekly · รอบ 3/3</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordMoss">MP-0828-052</div>
-  <div class="note" data-i="noteMoss">🔴 ไม่ทานเนื้อวัว/ไม่ชอบซอสลุยสวน/ไม่ทานขิง</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">Kao-poon</div><div class="pl" data-i="plHPmonth2">HP monthly · รอบ 2/12</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordKao">U-0828-005</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">เฟิน (🦄FERNFERN🍀)</div><div class="pl" data-i="plHPmonth10">HP monthly · รอบ 10/12</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordFern">MP-0828-050</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">KT ♡🎈</div><div class="pl" data-i="plHPweekly3b">HP weekly · รอบ 3/3</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordKT">U-0828-004</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln72"><b>72</b> · ข้าวเต้าหู้ไข่ทรงเครื่อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln04"><b>04</b> · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-</div>
-
-<div class="c hp">
-  <div class="ch"><div><div class="nm">ฝน (Numfon 🌈)</div><div class="pl" data-i="plHPmonth4">HP monthly · รอบ 4/12</div></div><span class="bx">7 กล่อง</span></div>
-  <div class="sub2" data-i="ordFon">MP-0821-042</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx" data-i="ln06"><b>06</b> · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx" data-i="ln07"><b>07</b> · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx" data-i="ln22"><b>22</b> · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx" data-i="ln24"><b>24</b> · ปลาทูต้มมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx" data-i="ln03"><b>03</b> · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx" data-i="ln11"><b>11</b> · ทอดมันอกไก่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx" data-i="ln10"><b>10</b> · ยำไข่มะตูม</span></div>
-</div>
-
-<div class="sec stk" data-i="secSTK">🟢 สต็อค / เซ็ต (5 ใบ · 32 กล่อง — ไม่ใช่ Meal Plan)</div>
-
-<div class="c stk">
-  <div class="ch"><div><div class="nm">Miww</div><div class="pl" data-i="plStock">สต็อค</div></div><span class="bx">9 กล่อง</span></div>
-  <div class="sub2" data-i="ordMiww">U-0828-007</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx"><b>S149</b> · ข้าว+ต้มจับฉ่ายฟองเต้าหู้เห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx"><b>S183</b> · ข้าวอบสไตล์บ๊ะจ่างหมู</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx"><b>No14</b> · ข้าวหมกไก่ลีน</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx"><b>S099</b> · ข้าวปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx"><b>S071</b> · บะหมี่ผักอกไก่ปรุงรสหมูแดงเห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx"><b>S104</b> · เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู้ด</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx"><b>D099</b> · ปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">8</span><span class="tx"><b>D099</b> · ปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">9</span><span class="tx"><b>D159</b> · แกงจืดเห็ดหอมอกไก่สับวุ้นเส้น</span></div>
-</div>
-
-<div class="c stk">
-  <div class="ch"><div><div class="nm">pompam</div><div class="pl" data-i="plStock">สต็อค</div></div><span class="bx">12 กล่อง</span></div>
-  <div class="sub2" data-i="ordPompam">U-0828-011</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx"><b>S159</b> · ข้าวแกงจืดเห็ดหอมอกไก่สับวุ้นเส้น</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx"><b>S149</b> · ข้าว+ต้มจับฉ่ายฟองเต้าหู้เห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx"><b>S149</b> · ข้าว+ต้มจับฉ่ายฟองเต้าหู้เห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx"><b>S071</b> · บะหมี่ผักอกไก่ปรุงรสหมูแดงเห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx"><b>S051</b> · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">6</span><span class="tx"><b>No10</b> · โอมุไรซ์ซอสเดมิกราส</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">7</span><span class="tx"><b>No10</b> · โอมุไรซ์ซอสเดมิกราส</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">8</span><span class="tx"><b>S099</b> · ข้าวปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">9</span><span class="tx"><b>S099</b> · ข้าวปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">10</span><span class="tx"><b>No7</b> · ข้าวอบหน้าไก่กุนเชียง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">11</span><span class="tx"><b>No6</b> · ข้าวแฮมเบิร์กราดซอสแกงกะหรี่</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">12</span><span class="tx"><b>No3</b> · ข้าวสะโพกไก่ตุ๋นเกาลัด</span></div>
-</div>
-
-<div class="c stk">
-  <div class="ch"><div><div class="nm">ปาลิดา</div><div class="pl" data-i="plStock">สต็อค</div></div><span class="bx">5 กล่อง</span></div>
-  <div class="sub2" data-i="ordPalida">U-0828-009</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx"><b>D104</b> · เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู้ด</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx"><b>D099</b> · ปลากระพงนึ่งมะนาว</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx"><b>A3</b> · อกไก่ผัดแกงเขียวหวาน (ไร้กะทิ)</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx"><b>A11</b> · อกไก่พันผักกาดซีอิ๊วงา</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx"><b>A8</b> · น้ำตกอกไก่ย่าง</span></div>
-</div>
-
-<div class="c stk">
-  <div class="ch"><div><div class="nm">วีรภัทร์ วิริยะโกวิทยา</div><div class="pl" data-i="plStock">สต็อค</div></div><span class="bx">5 กล่อง</span></div>
-  <div class="sub2" data-i="ordWeer">U-0828-010</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx"><b>S071</b> · บะหมี่ผักอกไก่ปรุงรสหมูแดงเห็ดหอม</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">2</span><span class="tx"><b>S183</b> · ข้าวอบสไตล์บ๊ะจ่างหมู</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">3</span><span class="tx"><b>S051</b> · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">4</span><span class="tx"><b>No7</b> · ข้าวอบหน้าไก่กุนเชียง</span></div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">5</span><span class="tx"><b>No15</b> · ข้าวหมูแดงฉ่ำซอสไข่มะตูม</span></div>
-</div>
-
-<div class="c stk">
-  <div class="ch"><div><div class="nm">Kham Kham <span style="font-weight:700;font-size:11.5px">(อาหารเด็ก)</span></div><div class="pl" data-i="plStock">สต็อค</div></div><span class="bx">1 กล่อง</span></div>
-  <div class="sub2" data-i="ordKham">U-0828-012</div>
-  <div class="it" onclick="tg(this)"><span class="bo"></span><span class="no">1</span><span class="tx"><b>1A</b> · ข้าวตุ๋นผักโขมแครอทแสนรัก 6Oz (Stage1 6m+ บดละเอียด)</span></div>
-</div>
+<div id="app"></div>
 
 <div class="foot">
-  <b data-i="f1">รวม 102 กล่อง (+2 ของแถม)</b><span data-i="f1b"> — Meal Plan 63 (LC 14 · HP 49) · สต็อค/เซ็ต 39 (รวมของแชมป์ 7 กล่อง+2แถม ในการ์ด HP ด้านบน)</span><br>
+  <b data-i="f1">รวม 98 กล่อง — Meal Plan ทำสด เท่านั้น (LC 28 · HP 70)</b><br>
   <span data-i="f2">LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง</span><br>
-  <span data-i="f4">⚠️ ร่างจากข้อมูลสดคืน 27 ส.ค. — ใบตัวจริงออก 08:35 ศุกร์ ยึดใบนั้นเป็นหลัก</span>
+  <span data-i="f3">โอ๋และแชมป์ ได้คนละ 2 ใบ แยกกัน</span>
 </div>
-
 </div>
 
 <script>
-function tg(el){ el.classList.toggle('done'); el.querySelector('.bo').textContent = el.classList.contains('done') ? '✓' : ''; saveState(); }
-function saveState(){
-  var state = [];
-  document.querySelectorAll('.it').forEach(function(el,i){ state.push(el.classList.contains('done')?1:0); });
-  localStorage.setItem('pack_0828', JSON.stringify(state));
-}
-function loadState(){
-  var raw = localStorage.getItem('pack_0828');
-  if(!raw) return;
-  try{
-    var state = JSON.parse(raw);
-    document.querySelectorAll('.it').forEach(function(el,i){
-      if(state[i]){ el.classList.add('done'); el.querySelector('.bo').textContent='✓'; }
+// ── เมนู Meal Plan วันนี้ (9 ตัวเท่านั้น) ──
+var M = {
+ '03':{n:'ปลาทูน่าสเต๊ก+มันฝรั่งต้ม', p:'ทูน่า'},
+ '04':{n:'สันในหมูย่างโรสแมรี่+ไรซ์เบอร์รี่', p:'หมู'},
+ '06':{n:'หมูอบซอสกระเทียมพริกไทย', p:'หมู'},
+ '07':{n:'ลาบแซลมอน+ข้าวไรซ์เบอร์รี่', p:'แซลมอน'},
+ '10':{n:'ยำไข่มะตูม', p:'ไข่'},
+ '11':{n:'ทอดมันอกไก่', p:'อกไก่'},
+ '22':{n:'กุ้งผัดกระเทียมพริกไทย', p:'กุ้ง'},
+ '24':{n:'ปลาทูต้มมะนาว', p:'ปลาทู'},
+ '72':{n:'ข้าวเต้าหู้ไข่ทรงเครื่อง', p:'เต้าหู้/ไข่'}
+};
+// ── ลูกค้าจริง 14 ใบ (ยืนยันจาก mp_deliveries + order_items — ตัวจริง v3 27 ส.ค. หลังห้องคุมตีกลับ) ──
+var C = [
+ {g:'lc', n:'Ji', line:'U-0828-002 · 0893669351', box:7, items:['22','24','04','03','11','10','72']},
+ {g:'lc', n:'มิ้ม', line:'U-0828-001 · 0995969636', box:7, items:['06','07','22','04','03','11','10'],
+  note:'🔴 ไม่ทานเต้าหู้/เครื่องใน/เลือด — ไม่มีเมนู 72 ในกล่อง'},
+ {g:'lc', n:'อัญชลี (r2/3)', line:'U-0826-006 · 0869882595', box:7, items:['06','07','22','04','03','11','10'],
+  note:'🔴 ไม่ทานเนื้อ/เต้าหู้ — ไม่มีเมนู 72 · 📌 ทุกกล่องขอข้าวไรซ์เบอร์รี่แทนข้าวปกติ'},
+ {g:'lc', n:'โอ๋ — LC', line:'U-0821-015 · 0994639369', box:7, items:['04','06','07','11','22','24','72'],
+  note:'ไม่ทานทูน่า/เนื้อ/ไข่ต้ม/ของดิบ — ตัด 03/10 ออก · 07 ลาบแซลมอนทำสุก กินได้ (นัทยืนยัน 27 ส.ค.) — มีอีกใบ HP แยกต่างหาก'},
+ {g:'hp', n:'Jaa569', line:'U-0828-008 · 0839169463', box:7, items:['06','07','22','24','04','03','72']},
+ {g:'hp', n:'Kao-poon', line:'U-0828-005 · 0863075434', box:7, items:['10','11','24','04','06','07','22'],
+  note:'🟡 ลูกค้าเลือกเองได้แค่ 5/7 (เดดไลน์ผ่านแล้ว) — ฟ้าเติม 07,22 ให้ครบ 7'},
+ {g:'hp', n:'KT ♡🎈', line:'U-0828-004 · 0909719963', box:7, items:['10','11','72','06','04','07','22']},
+ {g:'hp', n:'Moss (พรหมพงศ์)', line:'MP-0828-052 · 0650539154', box:7, items:['06','07','22','24','04','10','72'],
+  note:'🔴 ไม่ทานเนื้อวัว/ซอสลุยสวน/ขิง — วันนี้ไม่มีเมนูตรงกับ 2 อย่างนี้ ไม่ตัดออก'},
+ {g:'hp', n:'เฟิน (🦄FERNFERN🍀)', line:'MP-0828-050 · 0942942249', box:7, items:['06','07','04','03','11','10','72']},
+ {g:'hp', n:'S♡methings (แชมป์ คอร์สใหม่ r1/3)', line:'U-0828-013 · 0831936666', box:7, items:['03','04','06','07','11','22','72'],
+  note:'🆕 คอร์สใหม่ round 1/3 สั่งวันนี้ 07:23 — จ่ายเมนูครบ 7'},
+ {g:'hp', n:'คุณแชมป์ (คอร์สเก่า r3/3)', line:'U-0824-004 · 0831936666', box:7, items:['06','07','22','24','04','10','72'],
+  note:'✅ คอร์สเก่ารอบสุดท้าย (round 3/3) — คนละใบกับ S♡methings ด้านบน มีลูกค้าคนเดียวกันได้ 2 ใบพรุ่งนี้จริง'},
+ {g:'hp', n:'พจนา / TOY (r3/3)', line:'U-0824-001 · 0817500978', box:7, items:['03','04','06','07','11','22','24']},
+ {g:'hp', n:'ฝน (Numfon 🌈)', line:'MP-0821-042 · 0817078047', box:7, items:['06','07','22','24','03','11','10']},
+ {g:'hp', n:'โอ๋ — HP', line:'U-0821-014 · 0994639369', box:7, items:['04','06','07','11','22','24','72'],
+  note:'ไม่ทานทูน่า/เนื้อ/ไข่ต้ม/ของดิบ — ตัด 03/10 ออก · 07 ลาบแซลมอนทำสุก กินได้ (นัทยืนยัน 27 ส.ค.) — มีอีกใบ LC แยกต่างหาก'}
+];
+var SEC = [
+  ['lc','■ LC — เนื้อ 120g · 4 คน · 28 กล่อง'],
+  ['hp','■ HP — เนื้อ 170g · 10 คน · 70 กล่อง']
+];
+var KEY = 'pack20260828v3';
+var done = (function(){ try{ return JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){ return {}; } })();
+function esc(s){return (s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function render(){
+  var h='';
+  SEC.forEach(function(sc){
+    var g=sc[0], list=[];
+    C.forEach(function(c,ci){ if(c.g===g) list.push([c,ci]); });
+    if(!list.length) return;
+    h += '<div class="sec '+g+'">'+esc(sc[1])+'</div>';
+    list.forEach(function(pair){
+      var c=pair[0], ci=pair[1];
+      h += '<div class="c '+c.g+'"><div class="ch"><div><div class="nm">'+esc(c.n)+'</div>'
+         + (c.line?'<div class="pl">'+esc(c.line)+'</div>':'')
+         + '</div><span class="bx">'+c.box+' กล่อง</span></div>';
+      if(c.note) h += '<div class="note">'+esc(c.note)+'</div>';
+      if(c.pay)  h += '<div class="pay">'+esc(c.pay)+'</div>';
+      if(c.items) c.items.forEach(function(code,ix){
+        var m=M[code], k=ci+'-'+ix+'-'+code, on=done[k]?' done':'';
+        h += '<div class="it'+on+'" onclick="tog(\'' + k + '\',this)"><span class="bo">✓</span><span class="no">'+code+'</span>'
+           + '<span class="tx">'+esc(m.n)+'<small>'+esc(m.p)+'</small></span></div>';
+      });
+      h += '</div>';
     });
-  }catch(e){}
+  });
+  document.getElementById('app').innerHTML=h;
 }
-function clearAll(){
-  document.querySelectorAll('.it').forEach(function(el){ el.classList.remove('done'); el.querySelector('.bo').textContent=''; });
-  localStorage.removeItem('pack_0828');
-}
-loadState();
+function tog(k,el){ done[k]=!done[k]; if(!done[k]) delete done[k]; try{localStorage.setItem(KEY,JSON.stringify(done));}catch(e){} el.classList.toggle('done'); }
+function clearAll(){ done={}; try{localStorage.removeItem(KEY);}catch(e){} render(); }
 
-const T = {
-  title:{th:'ใบจัดของ — ศุกร์ 28 ส.ค.', shn:'ၽိုၼ်ၶူတ်ႇၶွင် — ဝၼ်းသုၵ်း 28', my:'ပစ္စည်းစုသိမ်းစာရွက် — သောကြာနေ့ ၂၈'},
-  draftbox:{th:'📝 ร่าง — ตัวจริงออกเช้าศุกร์ 08:35 หลังปิดยอด', shn:'📝 ႁၢင်ႈ — ၽိုၼ်တႄႉ 08:35', my:'📝 မူကြမ်း — တကယ့်စာရွက် ၀၈:၃၅'},
-  sub:{th:'15 ใบ · 102 กล่อง (+2 ของแถม) — Meal Plan 9 ใบ 63 กล่อง · สต็อค/เซ็ต 6 ใบ 39 กล่อง', shn:'15 ၽိုၼ် · 102 ႁိပ်ႇ', my:'၁၅ စာရွက် · ၁၀၂ ဘူး'},
-  btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉၽဵတ်ႇ', my:'အားလုံးရှင်း'},
-  btnprint:{th:'🖨 พิมพ์', shn:'🖨 ႁိမ်း', my:'🖨 ပရင့်ထုတ်'},
+const UI = {
+  title:{th:'ใบจัดของ — ศุกร์ 28 ส.ค.', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းသုၵ်း 28', my:'ထုပ်ပိုးစာရွက် — သောကြာနေ့ ၂၈'},
+  draftbox:{th:'✅ ตัวจริง v3 — แก้ 27 ส.ค. (ห้องคุมตีกลับ 3 แถวที่ถูกตัดผิด) — ครัวยึดใบนี้', shn:'✅ v3', my:'✅ v3'},
+  sub:{th:'14 ใบ · 98 กล่อง — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ', shn:'14 ၽိုၼ် · 98 ႁိပ်ႇ', my:'၁၄ စောင် · ၉၈ ဘူး'},
+  btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
+  btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
   r_t:{th:'🔴 ข้อห้ามที่ต้อง honor วันนี้', shn:'🔴 ၶေႃႈႁၢမ်ႈဝၼ်းၼႆႉ', my:'🔴 ယနေ့ တားမြစ်ချက်'},
-  r1:{th:'มิ้ม — ไม่ทานเต้าหู้/เครื่องใน/เลือด → ไม่มีเมนู 72 ในกล่อง (ตรวจอยู่แล้ว)', shn:'Mim — ဢမ်ႇလႆႈ တဝ်ႇႁူႈ/လိူတ်ႈ → 72 ဢမ်ႇလႆႈ', my:'Mim — တို့ဟူး/သွေး → 72 မရ'},
-  r2:{th:'Moss (พรหมพงศ์) — ไม่ทานเนื้อวัว/ไม่ชอบซอสลุยสวน/ไม่ทานขิง', shn:'Moss — ဢမ်ႇလႆႈ ၼိူဝ်ႉဝူဝ်း/ၶိင်း', my:'Moss — အမဲသား/ချင်း မစားပါ'},
-  r3:{th:'คุณแชมป์ (S♡methings) — ไม่ทานเนื้อวัว/ข้าวไรซ์เบอร์รี่/ฟัก/หอมแดง', shn:'Champ — ဢမ်ႇလႆႈ ၼိူဝ်ႉဝူဝ်း/Riceberry', my:'Champ — အမဲသား/Riceberry မစားပါ'},
-  fold_sum:{th:'▸ เรื่องค้างของแอดมิน (ครัวไม่ต้องอ่าน)', shn:'▸ လွင်ႈၽၢႆႇတူင်ႇပွင်', my:'▸ Admin ကိစ္စ — မီးဖိုချောင်မဖတ်ရ'},
-  fold_more:{th:'ดูเต็มที่ 360foodbox.com/fah', shn:'ၸူးတူၺ်းတင်းသဵင်ႈ', my:'အပြည့်အစုံကြည့်ရန်'},
-  w1:{th:'🔴 ฝน / คุณแชมป์ — ฟ้าแก้เมนู mp_deliveries เป็นชุดวันนี้แล้ว 27 ส.ค. ยังไม่ตรวจซ้ำกับกิ๊ฟ', shn:'🔴 Fon/Champ — ၶႅၼ်ႈမႂ်ႇ', my:'🔴 Fon/Champ — အသစ်ပြင်'},
-  w2:{th:'🟡 Jaa, Ji, Moss, มิ้ม, Kao-poon — สถานะ "รอแอดมินตรวจ" เมนูตรงชุดวันนี้แล้ว', shn:'🟡 Jaa,Ji,Moss,Mim,Kao-poon', my:'🟡 Jaa,Ji,Moss,Mim,Kao-poon'},
-  w3:{th:'🛑 กวาง Hyrox Influ — เมนูยังไม่ confirm ไม่ได้อยู่ในใบวันนี้', shn:'🛑 Kwang Hyrox — ဢမ်ႇသႂ်ႇ', my:'🛑 Kwang Hyrox — မပါ'},
-  w4:{th:'🧾 คุณแชมป์ — 1 ออเดอร์ มี Meal Plan 7 + สต็อค 7 + ของแถม 2 การ์ดเดียวกันด้านบน', shn:'🧾 Champ — MP 7 + Stock 7 + ၶွင်ၾႅၢႇ 2', my:'🧾 Champ — MP 7 + Stock 7 + လက်ဆောင် 2'},
-  w5:{th:'⚠️ ตรวจซ้ำ 27 ส.ค. — orders.delivery_date=28 มีแค่ 15 ใบ ไม่มีโอ๋ — ถ้าเจอฉบับอื่นที่มี 75 กล่อง/โอ๋ = ชนกับดักแถวผี ห้ามใช้', shn:'⚠️ Oh — ဢမ်ႇမီး order 28', my:'⚠️ Oh — ၂၈ ရက် order မရှိ'},
-  secLC:{th:'🔵 MEAL PLAN — LC (2 ใบ · 14 กล่อง)', shn:'🔵 MEAL PLAN — LC (2 · 14)', my:'🔵 MEAL PLAN — LC (2 · 14)'},
-  secHP:{th:'🟣 MEAL PLAN — HP (7 ใบ · 49 กล่อง)', shn:'🟣 MEAL PLAN — HP (7 · 49)', my:'🟣 MEAL PLAN — HP (7 · 49)'},
-  secSTK:{th:'🟢 สต็อค / เซ็ต (5 ใบ · 32 กล่อง — ไม่ใช่ Meal Plan)', shn:'🟢 Stock (5 · 32)', my:'🟢 Stock (5 · 32)'},
-  plLC:{th:'LC weekly · รอบ 3/3', shn:'LC weekly · 3/3', my:'LC weekly · 3/3'},
-  plHPtrial:{th:'HP trial · รอบ 1/1', shn:'HP trial · 1/1', my:'HP trial · 1/1'},
-  plHPweekly1:{th:'HP weekly · รอบ 1/3', shn:'HP weekly · 1/3', my:'HP weekly · 1/3'},
-  plHPweekly3:{th:'HP weekly · รอบ 3/3', shn:'HP weekly · 3/3', my:'HP weekly · 3/3'},
-  plHPweekly3b:{th:'HP weekly · รอบ 3/3', shn:'HP weekly · 3/3', my:'HP weekly · 3/3'},
-  plHPmonth2:{th:'HP monthly · รอบ 2/12', shn:'HP monthly · 2/12', my:'HP monthly · 2/12'},
-  plHPmonth10:{th:'HP monthly · รอบ 10/12', shn:'HP monthly · 10/12', my:'HP monthly · 10/12'},
-  plHPmonth4:{th:'HP monthly · รอบ 4/12', shn:'HP monthly · 4/12', my:'HP monthly · 4/12'},
-  plStock:{th:'สต็อค', shn:'Stock', my:'Stock'},
-  ordJi:{th:'U-0828-002', shn:'U-0828-002', my:'U-0828-002'},
-  ordMim:{th:'U-0828-001', shn:'U-0828-001', my:'U-0828-001'},
-  ordJaa:{th:'U-0828-008', shn:'U-0828-008', my:'U-0828-008'},
-  ordChamp:{th:'U-0828-013', shn:'U-0828-013', my:'U-0828-013'},
-  ordMoss:{th:'MP-0828-052', shn:'MP-0828-052', my:'MP-0828-052'},
-  ordKao:{th:'U-0828-005', shn:'U-0828-005', my:'U-0828-005'},
-  ordFern:{th:'MP-0828-050', shn:'MP-0828-050', my:'MP-0828-050'},
-  ordKT:{th:'U-0828-004', shn:'U-0828-004', my:'U-0828-004'},
-  ordFon:{th:'MP-0821-042', shn:'MP-0821-042', my:'MP-0821-042'},
-  ordMiww:{th:'U-0828-007', shn:'U-0828-007', my:'U-0828-007'},
-  ordPompam:{th:'U-0828-011', shn:'U-0828-011', my:'U-0828-011'},
-  ordPalida:{th:'U-0828-009', shn:'U-0828-009', my:'U-0828-009'},
-  ordWeer:{th:'U-0828-010', shn:'U-0828-010', my:'U-0828-010'},
-  ordKham:{th:'U-0828-012', shn:'U-0828-012', my:'U-0828-012'},
-  noteMim:{th:'🔴 ไม่ทานเต้าหู้/เครื่องใน/เลือด — ไม่มีเมนู 72 อยู่แล้ว', shn:'🔴 Mim — 72 ဢမ်ႇလႆႈ', my:'🔴 Mim — 72 မရ'},
-  noteChamp:{th:'🔴 ไม่ทานเนื้อวัว/ข้าวไรซ์เบอร์รี่/ฟัก/หอมแดง — ตัดเมนู 07,04 ออกแล้ว', shn:'🔴 Champ — 07,04 ဢမ်ႇလႆႈ', my:'🔴 Champ — 07,04 မရ'},
-  noteMoss:{th:'🔴 ไม่ทานเนื้อวัว/ไม่ชอบซอสลุยสวน/ไม่ทานขิง', shn:'🔴 Moss — ၼိူဝ်ႉဝူဝ်း/ၶိင်း', my:'🔴 Moss — အမဲသား/ချင်း'},
-  stockSameOrder:{th:'— สต็อค/เซ็ต ในออเดอร์เดียวกัน (7 กล่อง) —', shn:'— Stock ၼႂ်းဢွင်ႇတိူဝ်ႇလဵဝ် (7) —', my:'— တူညီ Order ထဲက Stock (7) —'},
-  giftMC1:{th:'🎁 ของแถม — MC1 ซาลาเปาหมูแดงเจ ×2', shn:'🎁 ၶွင်ၾႅၢႇ — MC1 ×2', my:'🎁 လက်ဆောင် — MC1 ×2'},
-  ln22:{th:'22 · กุ้งผัดกระเทียมพริกไทย เห็ดออรินจิ', shn:'22 · ၵုင်းၽတ်ႉ ၵတိၼ်ႇ', my:'22 · ပုစွန်ကြော်'},
-  ln24:{th:'24 · ปลาทูต้มมะนาว', shn:'24 · ပလႃႇထူ ၸိူမ်းၼၢဝ်ႈ', my:'24 · ငါးသန္တာချက်'},
-  ln04:{th:'04 · สันในหมูย่างโรสแมรี่ + ไรซ์เบอร์รี่', shn:'04 · ၼိူဝ်ႉမူႇသၼ်ႇၶၢင်', my:'04 · ဝက်ကျောကုန်း'},
-  ln03:{th:'03 · ปลาทูน่าสเต๊ก + มันฝรั่งต้ม', shn:'03 · ပလႃႇတုၼ်ႇၼႃႇ', my:'03 · ငါးသလောက်'},
-  ln11:{th:'11 · ทอดมันอกไก่', shn:'11 · တွတ်ႇမၼ်ႇ ဢူၵ်ႉၵႆႇ', my:'11 · ကြက်ရင်သားကြော်'},
-  ln10:{th:'10 · ยำไข่มะตูม', shn:'10 · ယำ ၵႆႇမထူမ်', my:'10 · ကြက်ဥယမ်'},
-  ln72:{th:'72 · ข้าวเต้าหู้ไข่ทรงเครื่อง', shn:'72 · ၶဝ်ႈတဝ်ႇႁူႈ+ၵႆႇ', my:'72 · တို့ဟူး+ကြက်ဥ'},
-  ln06:{th:'06 · หมูอบซอสกระเทียมพริกไทย + ข้าวกล้อง', shn:'06 · ၼိူဝ်ႉမူႇဢူမ်ႉ', my:'06 · ဝက်သားကင်'},
-  ln07:{th:'07 · ลาบแซลมอน + ข้าวไรซ์เบอร์รี่', shn:'07 · ၵလိူပ်ႇ Salmon', my:'07 · ဆယ်လမွန်လာဘ်'},
-  lnS159:{th:'S159 · ข้าวแกงจืดเห็ดหอมอกไก่สับวุ้นเส้น', shn:'S159', my:'S159'},
-  lnS104:{th:'S104 · เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู้ด', shn:'S104', my:'S104'},
-  lnS133a:{th:'S133 · ข้าวพะโล้ไข่ต้มหมูนุ่มขลุกขลิก', shn:'S133', my:'S133'},
-  lnS133b:{th:'S133 · ข้าวพะโล้ไข่ต้มหมูนุ่มขลุกขลิก', shn:'S133', my:'S133'},
-  lnS051a:{th:'S051 · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง', shn:'S051', my:'S051'},
-  lnS051b:{th:'S051 · ข้าวผัดเบญจรงค์สะโพกไก่ย่าง', shn:'S051', my:'S051'},
-  lnS099:{th:'S099 · ข้าวปลากระพงนึ่งมะนาว', shn:'S099', my:'S099'},
-  f1:{th:'รวม 102 กล่อง (+2 ของแถม)', shn:'ႁူမ်ႈ 102 ႁိပ်ႇ', my:'စုစုပေါင်း ၁၀၂ ဘူး'},
-  f1b:{th:' — Meal Plan 63 (LC 14 · HP 49) · สต็อค/เซ็ต 39', shn:' — MP 63 · Stock 39', my:' — MP 63 · Stock 39'},
-  f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง', shn:'LC=120g · HP=170g', my:'LC=120g · HP=170g'},
-  f4:{th:'⚠️ ร่างจากข้อมูลสดคืน 27 ส.ค. — ใบตัวจริงออก 08:35 ศุกร์ ยึดใบนั้นเป็นหลัก', shn:'⚠️ ႁၢင်ႈ — ၽိုၼ်တႄႉ 08:35', my:'⚠️ မူကြမ်း — ၀၈:၃၅'}
+  r1:{th:'มิ้ม — ไม่ทานเต้าหู้/เครื่องใน/เลือด → ไม่มีเมนู 72 ในกล่อง', shn:'Mim — 72 ဢမ်ႇလႆႈ', my:'Mim — 72 မရ'},
+  r2:{th:'Moss — ไม่ทานเนื้อวัว/ซอสลุยสวน/ขิง → วันนี้ไม่มีเมนูตรงกับ 2 อย่างนี้ ไม่ตัดออก', shn:'Moss — ဢမ်ႇမီးလွင်ႈၽိတ်း', my:'Moss — ပြဿနာမရှိ'},
+  r3:{th:'โอ๋ (LC+HP) — ตัด 03/10 ออกเท่านั้น (07 ลาบแซลมอนทำสุก กินได้) → ครบ 7 กล่องทั้ง 2 ใบ', shn:'Oh — 03,10 ဢမ်ႇလႆႈ', my:'Oh — 03,10 မရ'},
+  r4:{th:'อัญชลี — ไม่ทานเนื้อ/เต้าหู้ → ไม่มีเมนู 72 · ขอข้าวไรซ์เบอร์รี่ทุกกล่อง', shn:'Anchalee — 72 ဢမ်ႇလႆႈ', my:'Anchalee — 72 မရ'},
+  fold_sum:{th:'▸ เรื่องค้างของแอดมิน (ครัวไม่ต้องอ่าน)', shn:'▸ Admin', my:'▸ Admin'},
+  fold_more:{th:'ดูเต็มที่ 360foodbox.com/fah', shn:'360foodbox.com/fah', my:'360foodbox.com/fah'},
+  w0:{th:'🔴 v2 ตัด 3 แถวผิด (เข้าใจผิดเรื่อง order.delivery_date ของคอร์สหลายรอบ) — เอากลับเข้าใบแล้ว', shn:'🔴 v2 ၽိတ်း', my:'🔴 v2 မှား'},
+  w1:{th:'✅ คุณแชมป์ได้ 2 ใบพรุ่งนี้จริง (14 กล่อง) — ไม่ซ้ำกันเอง', shn:'✅ Champ 2 ၽိုၼ်', my:'✅ Champ ၂ စောင်'},
+  w2:{th:'🟡 Kao-poon 5/7 → เติมครบ · KT ไม่ได้แตะ', shn:'🟡 Kao-poon', my:'🟡 Kao-poon'},
+  f1:{th:'รวม 98 กล่อง — Meal Plan ทำสด เท่านั้น (LC 28 · HP 70)', shn:'ႁူမ်ႈ 98 ႁိပ်ႇ', my:'စုစုပေါင်း ၉၈ ဘူး'},
+  f2:{th:'LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง', shn:'LC = 120g · HP = 170g', my:'LC = ၁၂၀g · HP = ၁၇၀g'},
+  f3:{th:'โอ๋และแชมป์ ได้คนละ 2 ใบ แยกกัน', shn:'Oh/Champ — 2 ၽိုၼ်', my:'Oh/Champ — ၂ စောင်'}
 };
 const V = { th:'', shn:'⚠️ ၽၢႆႇတႆး/မၢၼ်ႈ = ၶေႃႈမၢႆ AI — ႁႂ်ႈၵူၼ်းႁဵတ်းၵၢၼ်ၵူတ်ႇတူၺ်း · ⚠️ คำแปล AI ให้พนักงานตรวจ', my:'⚠️ မြန်မာ/တႆး = AI ဘာသာပြန် — ဝန်ထမ်းစစ်ပါ · ⚠️ คำแปล AI ให้พนักงานตรวจ' };
 function setLang(l){
-  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(T[k]&&T[k][l]!=null) e.textContent=T[k][l];});
+  document.querySelectorAll('[data-i]').forEach(function(e){var k=e.getAttribute('data-i'); if(UI[k]&&UI[k][l]!=null) e.textContent=UI[k][l];});
   ['th','shn','my'].forEach(function(x){document.getElementById('b_'+x).classList.toggle('on', x===l);});
   var b=document.getElementById('vbanner'); b.textContent=V[l]||''; b.style.display=l==='th'?'none':'block';
   document.documentElement.lang = l==='my'?'my':(l==='shn'?'shn':'th');
+  render();
 }
+render();
 </script>
 </body>
 </html>
