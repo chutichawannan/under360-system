@@ -2982,6 +2982,7 @@ async function dropCancelledOrderRows(rows){
   }catch(e){ return rows; }
 }
 async function loadMpPlanData(){
+  window._planRescueDrawn=false;   // ข้อมูลชุดใหม่ = ให้กู้รอบค้างได้อีกครั้ง
   var sb_=getSB();
   if(!sb_){ mpPlanRows=[]; renderLeftPanel(); _buildPlanTable(); return; }
   try{
@@ -3052,6 +3053,17 @@ async function loadMpOrderNumbers(){
     });
   }catch(e){ console.error("loadMpOrderNumbers:",e); }
   document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
+  /* ตารางถูกวาดก่อนที่ตัวจับคู่ใบจะเสร็จ (loadMpOrderNumbers ถูกเรียกท้ายสุด)
+     ถ้าเพิ่งรู้ว่ามีรอบค้างที่ต้องกู้ ต้องวาดใหม่อีกรอบ ไม่งั้นคอลัมน์นั้นไม่โผล่
+     flag กันวนซ้ำ — รีเซ็ตทุกครั้งที่โหลดข้อมูลใหม่ */
+  try{
+    var _t=today2();
+    var needRescue=mpPlanRows.some(function(r){
+      var om=mpOrderMap[r.id];
+      return r.delivery_date && r.delivery_date<_t && om && om.dateOff && om.dateOff>=_t;
+    });
+    if(needRescue && !window._planRescueDrawn){ window._planRescueDrawn=true; _buildPlanTable(); }
+  }catch(e){ console.warn("rescue rebuild:",e); }
   renderTicketBar();
 }
 
@@ -4306,9 +4318,34 @@ function _buildPlanTable(){
   var allDatesFull=Object.keys(dateSet).sort();
   // วันที่เลยมาแล้ว (< วันนี้) ไม่โชว์ในตารางหลักอีกต่อไป — เก็บไว้ดูย้อนหลังในส่วนประวัติด้านล่างแทน
   var todayStr=today2();
-  var pastDates=allDatesFull.filter(function(d){return d<todayStr;});
-  var upcoming=allDatesFull.filter(function(d){return d>=todayStr;});
+  /* 🚨 27 ส.ค. 2569 — กิ๊ฟ: "ของคุณกวางไม่ขึ้นในใบแพลนเมนูด้วยค่ะ"
+     ของเดิมซ่อนวันที่เลยไปแล้วทั้งหมด (ถูกแล้วโดยปกติ — ของที่ส่งไปแล้วไม่ใช่งานค้าง)
+     แต่กลายเป็นกับดักเมื่อ **รอบค้างอยู่ในอดีต ทั้งที่ใบออเดอร์ยังลงวันนี้/อนาคต**
+     = ของที่ยังต้องส่งจริง แต่ไม่มีช่องให้จัดเมนู และไม่มีอะไรเตือนจนถึงวันส่ง
+     → เคสแบบนี้ต้องดึงกลับขึ้นมาให้เห็น (ขาด อันตรายกว่าเกิน: เกิน=ทำทิ้ง · ขาด=ลูกค้าไม่ได้ของ) */
+  var rescued=allDatesFull.filter(function(d){
+    if(d>=todayStr) return false;
+    return subs.some(function(s2){ return s2.rows.some(function(r){
+      var om=mpOrderMap[r.id];
+      return r.delivery_date===d && om && om.dateOff && om.dateOff>=todayStr;
+    });});
+  });
+  var pastDates=allDatesFull.filter(function(d){return d<todayStr && rescued.indexOf(d)<0;});
+  var upcoming=rescued.concat(allDatesFull.filter(function(d){return d>=todayStr;})).sort();
   renderPlanHistory(pastDates,subs);
+  var rbar=document.getElementById("planRescueBar");
+  if(!rbar){
+    var host=document.getElementById("planSubHint");
+    if(host&&host.parentNode){ rbar=document.createElement("div"); rbar.id="planRescueBar";
+      rbar.style.cssText="margin:6px 0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5;display:none";
+      host.parentNode.insertBefore(rbar,host); }
+  }
+  if(rbar){
+    if(rescued.length){
+      rbar.style.display="block"; rbar.style.background="#FEE2E2"; rbar.style.color="#B91C1C"; rbar.style.border="1px solid #FCA5A5";
+      rbar.textContent="🚨 มี "+rescued.length+" วันที่รอบเลยกำหนดไปแล้ว แต่ใบออเดอร์ยังรอส่งอยู่ ("+rescued.join(", ")+") — ดึงกลับขึ้นมาให้แล้ว · จัดเมนูให้เรียบร้อย แล้วกดป้ายเหลืองเพื่อย้ายวันให้ตรงกับใบ";
+    } else rbar.style.display="none";
+  }
 
   /* N-65 · เลือกวันแล้วต้องเหลือ "คอลัมน์เดียว" ไม่ใช่แค่กรองแถว
      เดิมทุกวันขึ้นพร้อมกันเป็นสิบคอลัมน์ แอดมินบอกตรงๆ ว่า "ลายตา" */
