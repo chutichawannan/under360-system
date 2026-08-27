@@ -3094,6 +3094,30 @@ function renderTicketBar(){
   /* ใบมีอยู่ แต่ลงคนละวันกับรอบ = ครัว/แมสเห็นผิดวัน อันตรายพอๆ กับไม่มีใบ ต้องนับด้วย */
   var off=rows.filter(function(r){ var m=mpOrderMap[r.id]; return m&&m.dateOff; });
   bar.style.display="block";
+  /* ปุ่มเปิดใบครบทุกรอบ — โผล่เมื่อมีรอบที่ใช้ใบร่วมกับรอบอื่นจริงเท่านั้น */
+  try{
+    var shareCount=(function(){
+      var m={}, c=0, td=today2();
+      (mpPlanRows||[]).forEach(function(r){
+        if(!r.order_id||["cancelled","skipped","skip_requested"].indexOf(r.status)>=0) return;
+        if(!r.delivery_date||r.delivery_date<td) return;
+        m[r.order_id]=(m[r.order_id]||0)+1;
+      });
+      Object.keys(m).forEach(function(k){ if(m[k]>1) c+=(m[k]-1); });
+      return c;
+    })();
+    var sb2=document.getElementById("planShareBar");
+    if(!sb2&&bar&&bar.parentNode){ sb2=document.createElement("div"); sb2.id="planShareBar";
+      sb2.style.cssText="margin:6px 0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.6;display:none";
+      bar.parentNode.insertBefore(sb2,bar.nextSibling); }
+    if(sb2){
+      if(shareCount){
+        sb2.style.display="block"; sb2.style.background="#EFF6FF"; sb2.style.color="#1E40AF"; sb2.style.border="1px solid #BFDBFE";
+        sb2.innerHTML="🎫 มี <b>"+shareCount+" รอบ</b> ที่ยังใช้ใบออเดอร์ร่วมกับรอบอื่น — ครัวและแมสมองไม่เห็นรอบพวกนี้ "
+          +"<button onclick='planCreateMissingTickets()' style='margin-left:6px;border:none;background:#1E40AF;color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer'>เปิดใบให้ครบ</button>";
+      } else sb2.style.display="none";
+    }
+  }catch(e){ console.warn("share bar:",e); }
   if(!miss.length && off.length){
     bar.style.background="#FEF3C7"; bar.style.color="#92400E"; bar.style.border="1px solid #FCD34D";
     bar.textContent="⚠ มี "+off.length+" รอบที่ใบออเดอร์ลงคนละวันกับรอบ — ครัวและแมสจะเห็นผิดวัน · หาป้ายเหลือง \"⚠ ใบอยู่ ...\" แล้วกดเพื่อย้ายใบมาให้ตรง";
@@ -4018,6 +4042,19 @@ async function planCreateTicket(rowId, ev){
     +"\nรอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" · ส่ง "+(r.delivery_date||"—")+" · "+(r.box_count||7)+" กล่อง"
     +"\n\nใบนี้จะเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบ ครัวกับแมสถึงจะเห็นรอบนี้"
     +"\n\nคนกด: "+who)) return;
+  var res=await planCreateTicketCore(rowId, who);
+  await loadMpPlanData();
+  alert(res.ok
+    ? ("เปิดใบ "+res.num+" แล้ว\nครัวกับแมสจะเห็นรอบนี้แล้ว\n\n⚠️ ใบนี้ยอด ฿0 — ถ้าลูกค้ายังไม่ได้จ่ายรอบนี้ ต้องไปแก้ยอดที่หน้าออเดอร์")
+    : ("เปิดใบไม่สำเร็จ: "+res.why));
+}
+
+/* แกนการเปิดใบ — ไม่ถาม ไม่เด้ง alert เพื่อให้ปุ่มเปิดทีเดียวหลายรอบเรียกซ้ำได้
+   ⚠️ ตรรกะข้างในต้องเหมือนเดิมเป๊ะ ห้ามแตกเป็น 2 เวอร์ชัน ไม่งั้นใบที่เปิดทีละรอบ
+      กับใบที่เปิดทีเดียวหลายรอบจะหน้าตาไม่เหมือนกัน แล้วไล่ปัญหาทีหลังไม่ได้ */
+async function planCreateTicketCore(rowId, who){
+  var sb_=getSB(); if(!sb_) return {ok:false, why:"ต่อฐานข้อมูลไม่ได้"};
+  var r=getMpRow(rowId); if(!r) return {ok:false, why:"ไม่พบรอบนี้"};
   try{
     // หาใบของรอบก่อนหน้าไว้ก๊อปที่อยู่/เบอร์/ช่วงเวลา — ไม่ต้องให้แอดมินพิมพ์ใหม่
     var src=null;
@@ -4068,9 +4105,49 @@ async function planCreateTicket(rowId, ev){
       action_type:"kq_status",
       summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เปิดใบออเดอร์ให้ "+num+" ("+r.delivery_date+")",
       detail:{mp_id:rowId, order_id:ord.data.id, num:num, by:"oh_plan"} }); }catch(e){}
-    await loadMpPlanData();
-    alert("เปิดใบ "+num+" แล้ว\nครัวกับแมสจะเห็นรอบนี้แล้ว\n\n⚠️ ใบนี้ยอด ฿0 — ถ้าลูกค้ายังไม่ได้จ่ายรอบนี้ ต้องไปแก้ยอดที่หน้าออเดอร์");
-  }catch(e){ alert("เปิดใบไม่สำเร็จ: "+((e&&e.message)||e)); }
+    return {ok:true, num:num, id:ord.data.id};
+  }catch(e){ return {ok:false, why:((e&&e.message)||String(e))}; }
+}
+
+/* ── 🎫 เปิดใบให้ครบทุกรอบที่ยังใช้ใบร่วมกัน (ห้องฟ้าขอ · 27 ส.ค. 2569) ──────────
+   ทำไมต้องมี: 1 ใบมี "วันส่ง" ได้วันเดียว
+     ใบที่ถูกผูกกับหลายรอบ = รอบที่เหลือไม่มีใบของตัวเอง → ครัว/แมสมองไม่เห็น
+     ทั้งที่ลูกค้าจ่ายเงินมาครบแล้ว (ต้นตอของ "ลูกค้าจ่ายแล้วหลุด")
+   ของจริงตอนเขียน: 4 ใบถูกใช้ร่วมกัน 22 รอบ (โอ๋ 2 ใบ × 8 รอบ · อัญชลี 2 ใบ × 3 รอบ)
+   ⚠️ เว้นรอบแรกของแต่ละใบไว้เสมอ — ใบนั้นเป็นของรอบแรกอยู่แล้ว ถ้าเปิดใหม่ให้ด้วยจะได้ใบซ้ำ
+   ⚠️ ใบที่เปิดให้เป็นยอด ฿0 ทั้งหมด (เงินอยู่ที่ใบแรก) — ไม่ใช่การเก็บเงินเพิ่ม */
+async function planCreateMissingTickets(){
+  var who=odWho(); if(!who) return;
+  var today=today2();
+  var byOrder={};
+  (mpPlanRows||[]).forEach(function(r){
+    if(!r.order_id) return;
+    if(["cancelled","skipped","skip_requested"].indexOf(r.status)>=0) return;
+    if(!r.delivery_date || r.delivery_date<today) return;      // อดีตไม่ต้องเปิดใบย้อนหลัง
+    (byOrder[r.order_id]=byOrder[r.order_id]||[]).push(r);
+  });
+  var need=[];
+  Object.keys(byOrder).forEach(function(oid){
+    var list=byOrder[oid].slice().sort(function(a,b){ return String(a.delivery_date).localeCompare(String(b.delivery_date)); });
+    list.slice(1).forEach(function(r){ need.push(r); });        // ตัวแรกใช้ใบเดิม ที่เหลือต้องมีใบของตัวเอง
+  });
+  if(!need.length) return alert("ทุกรอบมีใบของตัวเองครบแล้ว ✅\nไม่มีอะไรต้องเปิดเพิ่ม");
+  var preview=need.slice(0,12).map(function(r){
+    return "· "+(r.customer_name||"ลูกค้า").slice(0,22)+" รอบ "+(r.round_no||"?")+" · ส่ง "+r.delivery_date;
+  }).join("\n");
+  if(!window.confirm("เปิดใบออเดอร์ให้ "+need.length+" รอบที่ยังใช้ใบร่วมกับรอบอื่น?\n\n"
+    +preview+(need.length>12?("\n· (และอีก "+(need.length-12)+" รอบ)"):"")
+    +"\n\nทุกใบเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบของตัวเอง ครัวกับแมสถึงจะเห็นรอบพวกนี้"
+    +"\n\nคนกด: "+who)) return;
+  var ok=[], fail=[];
+  for(var i=0;i<need.length;i++){
+    var res=await planCreateTicketCore(need[i].id, who);
+    if(res.ok) ok.push(res.num); else fail.push((need[i].customer_name||"?")+" รอบ "+need[i].round_no+": "+res.why);
+  }
+  await loadMpPlanData();
+  alert("เปิดใบสำเร็จ "+ok.length+" ใบ"+(fail.length?(" · ไม่สำเร็จ "+fail.length+" ใบ"):"")
+    +(ok.length?("\n\n"+ok.slice(0,10).join(", ")+(ok.length>10?" …":"")):"")
+    +(fail.length?("\n\n⚠️ ที่ไม่สำเร็จ:\n"+fail.slice(0,5).join("\n")):""));
 }
 
 async function planCancelRound(rowId, ev){
