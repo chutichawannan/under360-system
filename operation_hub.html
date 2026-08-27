@@ -4052,9 +4052,12 @@ async function planCreateTicket(rowId, ev){
 /* แกนการเปิดใบ — ไม่ถาม ไม่เด้ง alert เพื่อให้ปุ่มเปิดทีเดียวหลายรอบเรียกซ้ำได้
    ⚠️ ตรรกะข้างในต้องเหมือนเดิมเป๊ะ ห้ามแตกเป็น 2 เวอร์ชัน ไม่งั้นใบที่เปิดทีละรอบ
       กับใบที่เปิดทีเดียวหลายรอบจะหน้าตาไม่เหมือนกัน แล้วไล่ปัญหาทีหลังไม่ได้ */
-async function planCreateTicketCore(rowId, who){
+async function planCreateTicketCore(rowOrRow, who){
   var sb_=getSB(); if(!sb_) return {ok:false, why:"ต่อฐานข้อมูลไม่ได้"};
-  var r=getMpRow(rowId); if(!r) return {ok:false, why:"ไม่พบรอบนี้"};
+  /* รับได้ 2 แบบ: id ของแถว (หน้าแพลนเมนู) หรือตัวแถวเลย (หน้าสั่งแทนลูกค้า ซึ่งยังไม่มีตารางให้ค้น) */
+  var r=(rowOrRow&&typeof rowOrRow==="object")?rowOrRow:getMpRow(rowOrRow);
+  if(!r) return {ok:false, why:"ไม่พบรอบนี้"};
+  var rowId=r.id;
   try{
     // หาใบของรอบก่อนหน้าไว้ก๊อปที่อยู่/เบอร์/ช่วงเวลา — ไม่ต้องให้แอดมินพิมพ์ใหม่
     var src=null;
@@ -7094,7 +7097,7 @@ async function obSubmit(){
     });
     var planMsg='';
     if(planRows.length){
-      var pr=await sb_.from('mp_deliveries').insert(planRows);
+      var pr=await sb_.from('mp_deliveries').insert(planRows).select('id,round_no,total_rounds,delivery_date,customer_name,mp_type,mp_set,box_count,time_slot,time_slot_label,delivery_address,customer_id,line_uid,order_id');
       if(pr.error){
         planMsg=' · ⚠️ ไม่เข้าแพลนเมนู';
         /* ต้องเด้งให้เห็น ไม่ใช่ต่อท้ายข้อความ "บันทึกแล้ว" สีเขียว
@@ -7102,7 +7105,33 @@ async function obSubmit(){
            แต่จอยังขึ้นว่าบันทึกสำเร็จ → แอดมินไม่รู้ว่าลูกค้าหายจากหน้าแพลนเมนู */
         alert('⚠️ ออเดอร์บันทึกแล้ว แต่ยังไม่เข้าหน้า "แพลนเมนู"\n\n'
           +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
-      } else planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+      } else {
+        planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+        /* 🎫 เปิดใบให้รอบ 2..N ทันที — ไม่งั้นทุกรอบจะชี้ใบเดียวกัน
+           1 ใบมีวันส่งได้วันเดียว → รอบที่เหลือไม่มีใบของตัวเอง = ครัวกับแมสมองไม่เห็น
+           ฝั่งลูกค้าสั่งเอง (LIFF) เปิดใบครบทุกรอบมาตั้งแต่ 6 ส.ค. แล้ว — ประตูที่ยังรั่วคือหน้านี้
+           (เจอของค้างจริง 18 รอบตอน 27 ส.ค. · ถ้าไม่ปิดก๊อกตรงนี้ เดือนหน้าจะกลับมาอีกกอง)
+           ⚠️ best-effort: เปิดใบพลาดห้ามทำให้ออเดอร์ที่บันทึกไปแล้วล้ม — แค่บอกให้คนรู้ว่าต้องไปกดเอง */
+        try{
+          var madeRows=(pr.data||[]).slice().sort(function(a,b){
+            return String(a.delivery_date).localeCompare(String(b.delivery_date)); });
+          var extra=madeRows.filter(function(x){ return String(x.delivery_date)!==String(madeRows[0]&&madeRows[0].delivery_date); });
+          if(extra.length){
+            var whoT=(typeof state!=="undefined"&&state&&state.currentUser)||localStorage.getItem("lastNickname")||"แอดมิน";
+            var okN=0;
+            for(var ti=0; ti<extra.length; ti++){
+              var rr=await planCreateTicketCore(extra[ti], whoT);
+              if(rr&&rr.ok) okN++;
+            }
+            planMsg+=(okN===extra.length)
+              ? (' · 🎫 เปิดใบให้รอบถัดไปแล้ว '+okN+' ใบ')
+              : (' · ⚠️ เปิดใบรอบถัดไปได้ '+okN+'/'+extra.length+' ใบ — ที่เหลือกดเองที่หน้าแพลนเมนู (ปุ่ม "เปิดใบให้ครบ")');
+          }
+        }catch(e){
+          console.error('เปิดใบรอบถัดไปไม่สำเร็จ:',e);
+          planMsg+=' · ⚠️ ยังไม่ได้เปิดใบให้รอบถัดไป — ไปกดที่หน้าแพลนเมนู ปุ่ม "เปิดใบให้ครบ"';
+        }
+      }
     }
     /* 📍 เติมหมุดตั้งแต่ตอนเปิดใบ — อุดต้นทางของ "ใบไม่มีพิกัด"
        ข้อมูลจริง 10-14 ส.ค. 2569: ใบที่ไม่มีพิกัด 10 ใบ = **สั่งแทนลูกค้าทั้งหมด** (กิ๊ฟ 7 · เพอรี่ 3)
