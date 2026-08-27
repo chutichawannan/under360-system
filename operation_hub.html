@@ -3018,11 +3018,28 @@ async function loadMpOrderNumbers(){
       .in("delivery_date",dates).neq("status","cancelled").limit(2000);
     if(res.error) throw res.error;
     var os=res.data||[];
+    /* 🐞 27 ส.ค. 2569 — กิ๊ฟ: "ย้ายนานแล้ว แต่ยังขึ้นในใบสรุปครัวอยู่"
+       ของเดิมดึงใบ "เฉพาะวันที่มีรอบ" อย่างเดียว → ใบที่หลุดไปอยู่วันอื่นไม่ถูกดึงมาเลย
+       พอไม่ถูกดึงมา ระบบก็จับคู่ไม่ได้ → ตอนกดเลื่อน ใบไม่ถูกย้ายตาม → ค้างถาวร
+       ต้องตามใบด้วย order_id ที่รอบชี้ถึงตรงๆ ด้วย ไม่ว่าใบจะไปอยู่วันไหน */
+    try{
+      var known={}; os.forEach(function(o){ known[o.id]=1; });
+      var wanted=[]; mpPlanRows.forEach(function(r){ if(r.order_id&&!known[r.order_id]&&wanted.indexOf(r.order_id)<0) wanted.push(r.order_id); });
+      for(var wi=0; wi<wanted.length; wi+=60){
+        var chunk=wanted.slice(wi,wi+60);
+        var extra=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status,notes")
+          .in("id",chunk).neq("status","cancelled").limit(200);
+        if(!extra.error&&extra.data) os=os.concat(extra.data);
+      }
+    }catch(e){ console.warn("ตามใบที่อยู่คนละวันไม่สำเร็จ:",e); }
     var byId={}; os.forEach(function(o){ byId[o.id]=o; });
     // ⚠️ ต้องเช็ค order_id ก่อน — 35 แถวไม่มี line_uid/customer_id เลย ถ้าจับด้วยตัวตนอย่างเดียว
     //    จะขึ้น "ไม่มีใบ" หลอกแอดมินทั้งที่ใบมีอยู่ (ผมพลาดตรงนี้มาแล้วตอนนับ 6 ส.ค.)
     mpPlanRows.forEach(function(r){
-      var hit=(r.order_id&&byId[r.order_id]&&byId[r.order_id].delivery_date===r.delivery_date)?byId[r.order_id]:null;
+      /* ⚠️ ห้ามเอา "วันตรงกัน" มาเป็นเงื่อนไขของการจับคู่ — order_id คือความสัมพันธ์ วันคือสถานะ
+         ของเดิมเช็ควันด้วย = ใบที่หลุดวันไปแล้วจะกลายเป็น "ไม่มีใบ" แล้วไม่มีทางถูกย้ายกลับมาอีก
+         (วงจรที่ทำให้กิ๊ฟกดเลื่อนแล้วครัวยังเห็นวันเดิมค้างเป็นสัปดาห์) */
+      var hit=(r.order_id&&byId[r.order_id])?byId[r.order_id]:null;
       if(!hit) hit=os.find(function(o){
         return o.delivery_date===r.delivery_date &&
           ((r.line_uid&&o.line_uid===r.line_uid)||(r.customer_id&&o.customer_id===r.customer_id));
@@ -3030,7 +3047,8 @@ async function loadMpOrderNumbers(){
       /* 🔁 รอบที่ถูกเลื่อนมาแล้ว หน้าตาเหมือนรอบที่ไม่เคยถูกแตะเลย
          กิ๊ฟเลยแยกไม่ออกว่า "อันไหนย้ายมาแล้ว อันไหนคือของเดิมที่ยังค้าง"
          (นัทแจ้ง 23 ส.ค. — ตรวจแล้วข้อมูลถูกทุกจุด ปัญหาคือหน้าจอไม่บอก) */
-      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id,movedFrom:planMovedFrom(hit.notes)}:null;
+      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id,movedFrom:planMovedFrom(hit.notes),
+        dateOff:(hit.delivery_date&&hit.delivery_date!==r.delivery_date)?hit.delivery_date:null}:null;
     });
   }catch(e){ console.error("loadMpOrderNumbers:",e); }
   document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
@@ -3045,7 +3063,14 @@ function renderTicketBar(){
   var rows=mpPlanRows.filter(function(r){ return r.delivery_date && r.delivery_date>=todayStr; });
   if(!rows.length){ bar.style.display="none"; return; }
   var miss=rows.filter(function(r){ return !mpOrderMap[r.id]; });
+  /* ใบมีอยู่ แต่ลงคนละวันกับรอบ = ครัว/แมสเห็นผิดวัน อันตรายพอๆ กับไม่มีใบ ต้องนับด้วย */
+  var off=rows.filter(function(r){ var m=mpOrderMap[r.id]; return m&&m.dateOff; });
   bar.style.display="block";
+  if(!miss.length && off.length){
+    bar.style.background="#FEF3C7"; bar.style.color="#92400E"; bar.style.border="1px solid #FCD34D";
+    bar.textContent="⚠ มี "+off.length+" รอบที่ใบออเดอร์ลงคนละวันกับรอบ — ครัวและแมสจะเห็นผิดวัน · หาป้ายเหลือง \"⚠ ใบอยู่ ...\" แล้วกดเพื่อย้ายใบมาให้ตรง";
+    return;
+  }
   if(miss.length){
     bar.style.background="#FEE2E2"; bar.style.color="#B91C1C"; bar.style.border="1px solid #FCA5A5";
     bar.textContent="⚠ มี "+miss.length+" รอบยังไม่มีใบออเดอร์ (จาก "+rows.length+" รอบ) — ครัว/แมสมองไม่เห็นรอบพวกนี้ · หาป้ายแดง \"⚠ ไม่มีใบ · กดเปิด\" ในช่องของรอบนั้น แล้วกดเพื่อเปิดใบ";
@@ -3919,6 +3944,36 @@ async function planMoveRound(rowId, ev){
       +(om?("\nใบ "+om.num+" ขยับตามแล้ว"):"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
   }catch(e){ alert("เลื่อนวันไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
+/* ── 🔁 ย้าย "ใบออเดอร์" มาให้ตรงกับวันของรอบ (27 ส.ค. 2569) ────────────────
+   ใช้กับรอบที่เคยถูกเลื่อน แต่ใบค้างอยู่วันเดิมเพราะบั๊กการจับคู่ (แก้ที่ loadMpOrderNumbers แล้ว)
+   ⚠️ ไม่แตะเมนู — เมนูเป็นคนละเรื่อง ถ้าต้องล้างให้ใช้ปุ่มเลื่อนวันซึ่งมีกติกา 08:30 อยู่แล้ว */
+async function planSyncOrderDate(rowId, ev){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  var sb_=getSB(); if(!sb_) return;
+  var r=getMpRow(rowId); if(!r) return;
+  var om=mpOrderMap[rowId];
+  if(!om||!om.id||!om.dateOff){ alert("รอบนี้ใบตรงวันอยู่แล้ว"); return; }
+  var who=odWho(); if(!who) return;
+  if(!window.confirm("ย้ายใบ "+om.num+" จากวันที่ "+om.dateOff+" มาเป็น "+r.delivery_date+" ใช่ไหม?\n\n"
+    +(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+"\n\nครัวและแมสจะเห็นรอบนี้ในวันที่ถูกต้องทันที\n\nคนกด: "+who)) return;
+  try{
+    var stamp=" [ย้ายใบให้ตรงกับรอบ "+om.dateOff+"→"+r.delivery_date+" โดย "+who+"]";
+    var cur=await sb_.from("orders").select("notes").eq("id",om.id).maybeSingle();
+    var up=await sb_.from("orders").update({delivery_date:r.delivery_date,
+      notes:(((cur.data&&cur.data.notes)||"")+stamp), updated_at:new Date().toISOString()}).eq("id",om.id).select("id,delivery_date");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].delivery_date!==r.delivery_date)
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"order_move",
+      summary:(om.num||"ออเดอร์")+" "+(r.customer_name||"")+" — ย้ายใบให้ตรงกับรอบ "+om.dateOff+" → "+r.delivery_date,
+      detail:{order_id:om.id, order_number:om.num, from:om.dateOff, to:r.delivery_date, mp_id:rowId, by:"oh_plan_sync"} }); }catch(e){}
+    await loadMpPlanData();
+    alert("ย้ายใบ "+om.num+" มาวันที่ "+r.delivery_date+" แล้ว");
+  }catch(e){ alert("ย้ายใบไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+
 /* ── 🎫 เปิดใบออเดอร์ให้รอบที่ยังไม่มีใบ (ฟ้าจัดเป็นงานอันดับ 1 · 17 ส.ค. 2569) ──
    ปัญหา: ลูกค้าซื้อคอร์สจ่ายเงินครบแล้ว มีคิวรอบส่งในระบบ **แต่ไม่มีใบ `orders`**
      → หน้าออเดอร์ / หน้าแมส / หน้าครัว มองไม่เห็นรอบนั้นเลย
@@ -4128,8 +4183,11 @@ function renderPlanCell(rowId){
   var box=mpRowBoxCount(rowId);
   // N-28/N-27 · เลขใบต้นทาง + เตือนถ้ารอบนี้ยังไม่มีใบ (= ครัวกับแมสมองไม่เห็นรอบนี้เลย)
   var om=mpOrderMap[rowId];
+  var offTag = (om&&om.dateOff)
+    ? "<span onclick='planSyncOrderDate(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบออเดอร์ยังลงวัน "+esc2(om.dateOff)+" — ครัวและแมสจะเห็นรอบนี้ผิดวัน · กดเพื่อย้ายใบมาให้ตรง'>⚠ ใบอยู่ "+esc2(String(om.dateOff).slice(5))+" · กดย้าย</span>"
+    : "";
   var orderTag = (om===undefined) ? ""
-    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"+planMovedBadge(om)
+    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"+planMovedBadge(om)+offTag
          : "<span onclick='planCreateTicket(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — ครัว/แมสมองไม่เห็น · กดเพื่อเปิดใบให้เลย'>⚠ ไม่มีใบ · กดเปิด</span>";
   /* N-66 · เลื่อนวัน/ยกเลิกรอบ ทำได้จากหน้านี้เลย (กิ๊ฟขอ)
      เดิมมีแต่ที่หน้าออเดอร์ → แอดมินกำลังจัดเมนูอยู่ ต้องออกไปอีกหน้าแล้วหากลับมาใหม่ */
