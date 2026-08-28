@@ -106,7 +106,13 @@ shots.forEach((s, i) => { s.n = i + 1; });
 
 // ---------- โหมดเฉลย: โชว์สตรีมจริง ไม่ใช่การเดาของใคร ----------
 if (REVEAL) {
-  const lo = shots[0].ts, hi = shots[shots.length - 1].ts;
+  // 🪤 เดิมตัดหน้าต่างที่ "รูปใบสุดท้าย" → **ชื่อที่พิมพ์หลังรูปใบท้ายหายไปทั้งอัน**
+  //    เจอจริง 28 ส.ค.: `No8 ข้าวผัดสับปะรดแครนเบอร์รี่หมูลีน` พิมพ์ตามหลัง #70
+  //    ผมเลยรายงานว่า "จานสุดท้ายยังไม่มีชื่อ" ทั้งที่มีแล้ว — กะปันจับได้
+  //    → ยืดหน้าต่างออกหัวท้ายอย่างละ 30 นาที
+  const PAD = 30 * 60 * 1000;
+  const lo = new Date(new Date(shots[0].ts).getTime() - PAD).toISOString();
+  const hi = new Date(new Date(shots[shots.length - 1].ts).getTime() + PAD).toISOString();
   const win = parsed.filter(p => p.ts >= lo && p.ts <= hi);
   console.log('');
   console.log('🔓 เฉลย — **สตรีมแชทจริง** ของ ' + day + ' (ไม่ใช่ตารางที่ใครจับคู่ไว้)');
