@@ -140,6 +140,28 @@ footer{background:var(--soft);border-top:1px solid var(--hair);color:var(--muted
 footer a{color:var(--muted)}
 body{padding-bottom:0}
 body.hascart{padding-bottom:72px}
+.pack.hot{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+.pack .was{color:var(--muted);text-decoration:line-through;font-family:'Prompt';font-size:1.05rem;margin-top:6px}
+.pack .was+.pr{margin-top:0}
+.pack .promo{margin-top:8px;background:#FFF8E1;border:1px dashed #E6B800;border-radius:8px;padding:7px 10px;font-size:.9rem;color:#8A6D00}
+.pack .promo b{font-family:'Prompt';letter-spacing:.04em}
+/* ── u360-nav-fix (27 ส.ค.) — แถบบนพังบนมือถือ: ตัวหนังสือตกบรรทัดจนปุ่มบวมเป็นวงกลม ── */
+header .nav,header nav{flex-wrap:nowrap}
+header .nav a,header nav a,header .logo{white-space:nowrap}
+header .logo img{flex:none}
+/* ปุ่มบนแถบบนต้องเล็กกว่าปุ่มในเนื้อหา — ไม่กินกฎ .btn ที่ตั้งไว้สำหรับปุ่มใหญ่ */
+header .btn,header .btn-line,header a.btn-line{
+  padding:9px 16px!important;min-height:38px!important;height:38px;
+  font-size:.9rem!important;line-height:1;white-space:nowrap;flex:none;
+}
+@media(max-width:520px){
+  header .nav{gap:10px}
+  header .logo{font-size:.98rem!important}
+  header .logo img{width:28px;height:28px}
+  /* จอแคบมาก: ซ่อนลิงก์เมนู เหลือโลโก้ + ปุ่มสั่ง (ลิงก์ครบอยู่ท้ายหน้าแล้ว) */
+  header nav a:not(.btn):not(.btn-line){display:none}
+  header .btn,header .btn-line,header a.btn-line{padding:9px 14px!important;font-size:.86rem!important}
+}
 </style>
 </head>
 <body>
@@ -213,7 +235,7 @@ const SHOW_CART = true;
 /* 🎟️ โค้ดส่วนลดสำหรับคนที่เลือกไปสั่งทางไลน์
    ⚠️ รอ 06 Ads ส่งโค้ดจริง — ตอนนี้ยังไม่มีโค้ดในระบบ ห้ามโชว์เลขมั่ว
    ตั้งเป็น null = ซ่อนกล่องโค้ดทั้งกล่อง (ไม่หลอกลูกค้าว่ามีส่วนลดแล้วใช้ไม่ได้) */
-const LINE_PROMO_CODE = null;
+const LINE_PROMO_CODE = 'FBPACK';
 const LINE_PROMO_TEXT = 'ทักไลน์แล้วแจ้งว่ามาจากเว็บ รับส่วนลดพิเศษ';
 
 const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
@@ -221,6 +243,9 @@ const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJ
 const sb = supabase.createClient(SB_URL, SB_KEY);
 const ORDER_URL = 'https://liff.line.me/2011148232-oul66cEs?lid=2011148232-oul66cEs';
 const OA_URL = 'https://line.me/R/ti/p/@under360';
+/* u360-pack-promo — โปรที่แอด Facebook โฆษณาอยู่ (ตรวจกับ promo_codes ในระบบแล้วว่ามีจริง)
+   ⚠️ ถ้าโปรจบ: ตั้ง PACK_PROMO = null พอ — ราคาจะกลับเป็นปกติทั้งหน้าเอง ไม่ต้องไล่แก้หลายจุด */
+const PACK_PROMO = { match:/Protein Pack S/i, code:'FBPACK', off:120, min:1000 };
 const FEE_UPCOUNTRY = 200;          /* ตจว. — ตรงกับเพดานที่ร้านใช้จริง */
 const FREE_BKK_MIN  = 700;          /* กรุงเทพฯ ซื้อครบเท่านี้ส่งฟรี */
 const FEE_BKK       = 60;
@@ -387,7 +412,22 @@ function renderCart(){
     <p style="text-align:center;margin-top:14px"><a href="#" onclick="closeCart();return false" style="color:var(--muted);font-size:.92rem">เลือกเมนูเพิ่ม</a></p>`;
 }
 
-function goLine(){
+/* ③ เตือนโค้ดก่อนพาออก — ลูกค้าจำโค้ดจากแอดไม่ได้ ต้องเตือนตอนกำลังจะกด */
+function remindCode(next){
+  if(!LINE_PROMO_CODE){ next(); return; }
+  const el = document.getElementById('sheetBox');
+  if(!el){ next(); return; }
+  el.innerHTML = `<div class="ok">
+      <h3>อย่าลืมแจ้งโค้ดนะคะ</h3>
+      <p style="color:var(--muted);margin-top:4px">พิมพ์โค้ดนี้ตอนสั่งในไลน์ เพื่อรับส่วนลด</p>
+      <div class="codebox"><div class="cd">${LINE_PROMO_CODE}</div>
+        <div style="font-size:.9rem;color:#8A6D00;margin-top:4px">ลด ฿${PACK_PROMO?PACK_PROMO.off:0} · ใช้กับแพ็ค 21 แพ็คขึ้นไป</div></div>
+      <button class="btn btn-line" style="width:100%" id="goOn">เข้าใจแล้ว ไปสั่งเลย →</button>
+      <p style="margin-top:12px"><a href="#" onclick="renderCart();return false" style="color:var(--muted);font-size:.92rem">ย้อนกลับ</a></p>
+    </div>`;
+  document.getElementById('goOn').onclick = next;
+}
+function goLineNow(){
   try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'pack:cart-to-line'}); }catch(e){}
   track('cta_click','pack:cart-to-line');
   /* พกรายการที่เลือกไว้ไปด้วย เผื่อฝั่งแอปใช้ต่อได้ในอนาคต — ไม่ใส่ข้อมูลส่วนตัวลง URL */
@@ -396,6 +436,7 @@ function goLine(){
   if(items) url += (url.indexOf('?')>=0?'&':'?') + 'pack=' + encodeURIComponent(items.slice(0,180));
   window.location.href = url;
 }
+function goLine(){ remindCode(goLineNow); }
 
 async function submitWeb(){
   const name  = (document.getElementById('fName').value||'').trim();
@@ -498,12 +539,17 @@ async function loadPacks(){
       .sort((a,b) => (a.qty||0)-(b.qty||0));
     if(!packs.length){ el.closest('section').style.display='none'; return; }
     el.innerHTML = packs.map(p => `
-      <div class="pack">
+      ${(function(){
+        const promo = (PACK_PROMO && PACK_PROMO.match.test(p.name||'') && Number(p.base_price) >= PACK_PROMO.min) ? PACK_PROMO : null;
+        const now = promo ? Number(p.base_price) - promo.off : Number(p.base_price);
+        return `<div class="pack${promo?' hot':''}">
         <div class="nm">${esc(String(p.name).replace(/—.*$/,'').trim())}</div>
-        <div class="pr">฿${Number(p.base_price).toLocaleString('th-TH')}</div>
-        <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(p.base_price/p.qty)}</div>
+        ${promo ? `<div class="was">฿${Number(p.base_price).toLocaleString('th-TH')}</div>` : ''}
+        <div class="pr">฿${now.toLocaleString('th-TH')}</div>
+        <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(now/p.qty)}</div>
+        ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off}</div>` : ''}
         ${p.free_shipping ? '<div class="ff">ส่งฟรี</div>' : ''}
-      </div>`).join('') +
+      </div>`;})()}`).join('') +
       `<div class="pack" style="display:flex;flex-direction:column;justify-content:center;background:var(--soft)">
          <div class="nm">อยากได้แพ็คใหญ่?</div>
          <p style="color:var(--muted);font-size:.9375rem;margin:6px 0 12px">แพ็คใหญ่เลือกเมนูเองได้เหมือนกัน สั่งในแอปสะดวกกว่า</p>
