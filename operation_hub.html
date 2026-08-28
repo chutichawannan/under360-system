@@ -6967,6 +6967,8 @@ async function obSubmit(){
   if(!admin)return err('กรอกชื่อผู้กด (แอดมิน) ก่อน');
   if(!obCart.length)return err('ยังไม่มีรายการอาหาร');
   var date=document.getElementById('ob-date').value; if(!date)return err('เลือกวันส่ง');
+  /* ถ้าแอดมินเลือกให้ยึดวันจากป๊อปอัพเมนู ต้องย้ายวันส่งของใบตามไปด้วย ไม่งั้นกลับไปเป็นบั๊กเดิม */
+  var obFixOrderDate=null;
   var rname=(document.getElementById('ob-rname').value||'').trim();
   var rphone=(document.getElementById('ob-rphone').value||'').trim();
   var addr=(document.getElementById('ob-addr').value||'').trim();
@@ -7057,6 +7059,34 @@ async function obSubmit(){
       /* 📅 แอดมินเลือกวัน/ข้ามรอบไว้ในตัวเลือกเมนู = ใช้วันนั้นตรงๆ
          วันไม่พอจำนวนรอบ → ใช้เท่าที่มี แล้วนับ จ/พ/ศ ต่อจากวันสุดท้าย (เหมือนฝั่งลูกค้าเป๊ะ) */
       var chosen=(c.mpDays&&c.mpDays.length)?c.mpDays.slice(0,rounds):[];
+      /* 🔴 บั๊กที่ทำให้ลูกค้าตกจากใบครัว 2 วันซ้อน (กวาง U-0828-006 · ห้องฟ้าหาเจอ 28 ส.ค. 2569)
+         หน้านี้มีช่อง "วันส่ง" อยู่ 2 ที่ และเขียนลงคนละตาราง:
+           · ช่องวันส่งของออเดอร์ (date)      → orders.delivery_date      ← ครัว/แมส/ใบจัดของอ่านตัวนี้
+           · วันที่ติ๊กในป๊อปอัพเลือกเมนู (mpDays) → mp_deliveries.delivery_date ← หน้าแพลนเมนู/ใบครัวอ่านตัวนี้
+         ของเดิม: พอมี mpDays ปุ๊บ **รอบที่ 1 ถูกทับด้วย mpDays[0] ทันที** (คอมเมนต์เดิมเขียนว่า
+         "รอบแรกยึดวันที่แอดมินเลือกไว้ ไม่แตะ" — จริงเฉพาะตอนไม่มี mpDays)
+         → ใบลงวันหนึ่ง รอบลงอีกวันหนึ่ง **เงียบสนิท ไม่มีอะไรเตือน**
+         → เคสกวาง: ใบ 28 · รอบ 26 → ห้องฟ้าไม่เอาเข้าใบวันที่ 26 (เพราะออเดอร์บอก 28)
+            และวันที่ 28 ก็ไม่โผล่ (เพราะใบครัวดึงจากรอบของวันนั้น) = ตกร่องตรงกลาง ตกทั้ง 2 วัน
+         ✅ กติกาใหม่: ห้ามเขียน 2 ค่านี้ไม่ตรงกันเงียบๆ — ไม่ตรงเมื่อไหร่ ต้องให้คนเลือกก่อนบันทึก */
+      if(chosen.length && String(chosen[0])!==String(date)){
+        var keepOrderDate=window.confirm(
+          '⚠️ วันส่งไม่ตรงกัน 2 ที่\n\n'
+          +'· วันส่งบนออเดอร์: '+date+'\n'
+          +'· วันแรกที่ติ๊กในป๊อปอัพเมนู: '+chosen[0]+'\n\n'
+          +'ถ้าปล่อยไว้ ลูกค้าจะหายจากใบครัวทั้งสองวัน (เคยเกิดจริงกับลูกค้าอินฟลูมาแล้ว)\n\n'
+          +'กด "ตกลง" = ใช้วันส่งบนออเดอร์ ('+date+') · รอบแรกจะย้ายมาวันนี้\n'
+          +'กด "ยกเลิก" = ใช้วันในป๊อปอัพเมนู ('+chosen[0]+') · วันส่งของใบจะย้ายตามไปด้วย');
+        if(keepOrderDate){
+          /* ⚠️ ห้ามแค่เขียนทับ chosen[0]=date — ถ้าวันใบดันตรงกับวันถัดไปในลิสต์พอดี
+             จะได้ 2 รอบซ้อนวันเดียวกันทันที (เทสจับได้: ติ๊ก 26/28/31 + ใบ 28 → ได้ 28·28·31)
+             ที่ถูกคือ ตัดวันที่มาก่อนวันบนใบทิ้ง แล้วปล่อยให้ตัวเติมวันข้างล่างต่อ จ/พ/ศ ให้ครบรอบเอง */
+          chosen=chosen.filter(function(x){ return String(x)>=String(date); });
+          if(!chosen.length || String(chosen[0])!==String(date)) chosen.unshift(date);
+          chosen=chosen.filter(function(x,ix,a){ return a.indexOf(x)===ix; }).slice(0,rounds);
+        }
+        else { obFixOrderDate=chosen[0]; }
+      }
       if(chosen.length){
         var nd=new Date(chosen[chosen.length-1]+'T00:00:00');
         while(chosen.length<rounds){ nd.setDate(nd.getDate()+1); while(!isMWF(nd)) nd.setDate(nd.getDate()+1); chosen.push(ymd(nd)); }
@@ -7107,6 +7137,19 @@ async function obSubmit(){
           +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
       } else {
         planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+        /* ย้ายวันส่งของใบให้ตรงกับรอบแรก — ปิดช่องว่างที่ทำให้ลูกค้าตกจากใบครัว
+           ⚠️ ทำหลังบันทึกรอบสำเร็จเท่านั้น ถ้ารอบเขียนไม่ผ่านก็ไม่ควรขยับใบ */
+        if(obFixOrderDate && String(obFixOrderDate)!==String(date)){
+          try{
+            var fx=await sb_.from('orders').update({delivery_date:obFixOrderDate, updated_at:new Date().toISOString()}).eq('id',ord.data.id).select('id,delivery_date');
+            planMsg+=(!fx.error && fx.data && fx.data.length)
+              ? (' · 📅 ย้ายวันส่งของใบเป็น '+obFixOrderDate+' ให้ตรงกับรอบแรกแล้ว')
+              : ' · ⚠️ ย้ายวันส่งของใบไม่สำเร็จ — ไปแก้ที่หน้าออเดอร์ด้วย ไม่งั้นลูกค้าจะหายจากใบครัว';
+          }catch(e){
+            console.error('ย้ายวันใบไม่สำเร็จ:',e);
+            planMsg+=' · ⚠️ ย้ายวันส่งของใบไม่สำเร็จ — ไปแก้ที่หน้าออเดอร์ด้วย';
+          }
+        }
         /* 🎫 เปิดใบให้รอบ 2..N ทันที — ไม่งั้นทุกรอบจะชี้ใบเดียวกัน
            1 ใบมีวันส่งได้วันเดียว → รอบที่เหลือไม่มีใบของตัวเอง = ครัวกับแมสมองไม่เห็น
            ฝั่งลูกค้าสั่งเอง (LIFF) เปิดใบครบทุกรอบมาตั้งแต่ 6 ส.ค. แล้ว — ประตูที่ยังรั่วคือหน้านี้
