@@ -47,7 +47,7 @@ const q = async p => {
   if (!r.ok) { console.error('❌ query ล้มเหลว', r.status, await r.text()); process.exit(1); }
   return r.json();
 };
-const rowsAll = await q(`mp_deliveries?select=id,order_id,customer_name,mp_type,round_no,total_rounds,box_count,status&delivery_date=eq.${DATE}&limit=200`);
+const rowsAll = await q(`mp_deliveries?select=id,order_id,customer_name,mp_type,round_no,total_rounds,box_count,status,menu_items&delivery_date=eq.${DATE}&limit=200`);
 const rows = rowsAll.filter(r => r.status !== 'cancelled' && r.status !== 'skip_requested');
 
 console.log(`\n🔎 ตรวจใบวันที่ ${DATE}`);
@@ -71,10 +71,20 @@ if (noOrder.length) WARN(`${noOrder.length} แถวไม่มี order_id �
 if (C.length < rows.length) FAIL(`จำนวนใบไม่ครบ: DB ${rows.length} ใบ แต่ในใบมี ${C.length} ใบ`);
 
 // ---------- ข้อ 2: จำนวนเมนูของวันต้องไม่บาน ----------
+// 30 ส.ค. 2026: เจอเคสจริง — KT (รอบสุดท้ายของคอร์สที่ล็อกเมนูไว้ก่อนแพลนวันนั้นถูกเขียน) ถือ 7 โค้ด
+// ที่ไม่มีใครอื่นใช้เลย → เพดาน "เมนูรวม" ตรงๆ ล้มเหลวทั้งที่ไม่มีทางแก้ (ห้ามตัดคนออก/ห้ามยึดคอร์สคนอื่น)
+// รากปัญหา: เพดานเดิมนับ "โค้ดที่ใช้ทั้งวัน" รวมกับ "โค้ดเฉพาะของลูกค้ารายเดียว" เป็นก้อนเดียว
+// ทางแก้ถาวร: แยก "แกนที่ใช้ร่วมกัน ≥2 คน" (ตัวชี้วัดความซับซ้อนการผลิตจริง) ออกจาก "โค้ดเฉพาะรายคน"
+// (โค้ดเฉพาะรายคนถูกจับอยู่แล้วโดยข้อ 7 กล่องเดี่ยว — ไม่ต้องนับซ้ำสองที่)
 const pool = [...new Set(C.flatMap(c => c.items || []))].sort();
 console.log(`   เมนูที่ต้องผลิต: ${pool.length} ตัว — ${pool.join(',')}`);
-if (pool.length > MAX_MENUS_PER_DAY) {
-  FAIL(`เมนูบานเป็น ${pool.length} ตัว (เพดาน ${MAX_MENUS_PER_DAY}) — มีคนถือชุดเมนูของวันอื่นติดมา ต้องจัดใหม่จากชุดของวันนี้`);
+const custPerCode = {};
+C.forEach(c => { new Set(c.items || []).forEach(code => { custPerCode[code] = (custPerCode[code] || 0) + 1; }); });
+const corePool = pool.filter(code => custPerCode[code] > 1);
+if (corePool.length > MAX_MENUS_PER_DAY) {
+  FAIL(`แกนเมนูที่ใช้ร่วมกัน ≥2 คน บานเป็น ${corePool.length} ตัว (เพดาน ${MAX_MENUS_PER_DAY}) — มีคนถือชุดเมนูของวันอื่นติดมา ต้องจัดใหม่จากชุดของวันนี้`);
+} else if (pool.length > MAX_MENUS_PER_DAY) {
+  WARN(`เมนูรวม ${pool.length} ตัว เกินเพดาน ${MAX_MENUS_PER_DAY} แต่ที่ใช้ร่วมกันจริงมีแค่ ${corePool.length} ตัว — ส่วนเกิน ${pool.length - corePool.length} ตัวเป็นโค้ดเฉพาะของลูกค้ารายเดียว (ปกติมาจากคอร์สที่ล็อกเมนูไว้ก่อนแพลนวันนี้ถูกเขียน) — ตรวจกับ "กล่องเดี่ยว" ด้านล่างประกอบ`);
 }
 
 // ---------- ข้อ 3: จำนวนเมนู = จำนวนกล่อง ----------
@@ -86,11 +96,29 @@ for (const c of C) {
   }
 }
 
-// ---------- ข้อ 4: ห้ามเมนูซ้ำในใบเดียวกัน ----------
+// ---------- ข้อ 4: เมนูซ้ำในใบเดียวกัน ----------
+// 30 ส.ค. 2026: ลูกค้า self-service เลือกเอง 2 กล่องเมนูเดียวกันได้จริง (LIFF เขียนว่า "เลือกซ้ำได้")
+// แต่ "ลดเป็น WARN ทุกกรณี" = ปล่อยบั๊ก assign ซ้ำหลุดไปเงียบๆ ด้วย
+// → แยกให้ขาด: ซ้ำเพราะลูกค้าเลือก (DB มี qty>=2) = WARN · ซ้ำเพราะใบสร้างเอง (DB ไม่มี) = FAIL
+const dbQty = {};   // เลขออเดอร์ -> { code: qty รวมใน DB }
+for (const r of rows) {
+  const n = numOf[r.order_id]; if (!n) continue;
+  const m = (dbQty[n] = dbQty[n] || {});
+  (Array.isArray(r.menu_items) ? r.menu_items : []).forEach(i => {
+    const code = String(i.code || '').replace(/^(LC|HP|HX)/, '');
+    m[code] = (m[code] || 0) + (Number(i.qty) || 1);
+  });
+}
 for (const c of C) {
   const it = c.items || [];
-  const dup = it.filter((x, i) => it.indexOf(x) !== i);
-  if (dup.length) FAIL(`${c.n}: เมนูซ้ำในใบเดียวกัน → ${[...new Set(dup)].join(',')}`);
+  const dup = [...new Set(it.filter((x, i) => it.indexOf(x) !== i))];
+  if (!dup.length) continue;
+  const num = (String(c.line || '').match(/[A-Z]{1,3}-[0-9-]+/) || [''])[0];
+  const m = dbQty[num] || {};
+  const byCustomer = dup.filter(code => (m[code] || 0) >= 2);
+  const invented   = dup.filter(code => (m[code] || 0) < 2);
+  if (invented.length) FAIL(`${c.n}: เมนูซ้ำในใบที่ DB ไม่ได้สั่งซ้ำ → ${invented.join(',')} (ใบสร้างซ้ำเอง = บั๊ก)`);
+  if (byCustomer.length) WARN(`${c.n}: เมนูซ้ำ ${byCustomer.join(',')} — ลูกค้าเลือกซ้ำเอง (DB qty≥2) ถือว่าตั้งใจ`);
 }
 
 // ---------- ข้อ 5: box_count ในใบต้องตรง DB ----------
