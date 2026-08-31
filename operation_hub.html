@@ -788,11 +788,15 @@ body.counts-folded .count-grid{display:none}
               <option value="fixed">ลดเงินสด (บาท)</option>
               <option value="percent">ลดเปอร์เซ็นต์ (%)</option>
               <option value="free_shipping">ส่งฟรี</option>
+              <option value="flat_shipping">ค่าส่งเหมาจ่าย (จ่ายเท่านี้ตลอดสาย)</option>
             </select>
           </div>
           <div id="pc-val-wrap">
-            <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">มูลค่าส่วนลด</label>
+            <label id="pc-val-label" style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">มูลค่าส่วนลด</label>
             <input id="pc-value" type="number" placeholder="เช่น 50" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:14px;font-family:inherit">
+            <div id="pc-val-hint" style="display:none;font-size:11px;color:#B45309;background:#FEF3C7;border-radius:6px;padding:6px 8px;margin-top:5px;line-height:1.5">
+              ค่าส่งจริง ฿200 → ลูกค้าจ่าย <b>฿50</b> · ฿120 → <b>฿50</b> · <b>฿30 → จ่าย ฿30 ตามจริง</b> (ถูกกว่าอยู่แล้ว ไม่บวกขึ้น)
+            </div>
           </div>
           <div>
             <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">ยอดขั้นต่ำ (บาท)</label>
@@ -5462,7 +5466,7 @@ function msgRenderPlan(box,r){
 // ══════════════════════════════════════
 // 🎁 PROMO / COUPON MANAGEMENT
 // ══════════════════════════════════════
-var PROMO_TYPE_LABEL={fixed:"ลดเงินสด",percent:"ลด %",free_shipping:"ส่งฟรี"};
+var PROMO_TYPE_LABEL={fixed:"ลดเงินสด",percent:"ลด %",free_shipping:"ส่งฟรี",flat_shipping:"ค่าส่งเหมา"};
 var PROMO_SCOPE_LABEL={all:"ทั้งร้าน",sku:"เมนูที่เลือก",package:"แพคเกจที่เลือก",mp_offer:"มีลแพลนที่เลือก"};
 
 var editingPromoId=null; // uuid ของโค้ดที่กำลังแก้ไข — null = โหมดสร้างใหม่
@@ -5543,10 +5547,17 @@ async function editPromo(id){
 }
 
 // type=free_shipping → ซ่อนช่องมูลค่า (ไม่ต้องกรอก)
+// type=flat_shipping → ช่องเดิมเปลี่ยนความหมาย: ไม่ใช่ "ลดเท่าไหร่" แต่คือ "ลูกค้าจ่ายค่าส่งเท่าไหร่"
+//   ถ้าไม่เปลี่ยนป้าย แอดมินจะกรอก 150 คิดว่าลด ฿150 แต่ระบบจะคิดว่าเก็บค่าส่ง ฿150 = คนละเรื่องคนละทาง
 function updatePromoForm(){
   var t=document.getElementById("pc-type").value;
   var w=document.getElementById("pc-val-wrap");
   if(w)w.style.display=(t==="free_shipping")?"none":"block";
+  var lb=document.getElementById("pc-val-label"), inp=document.getElementById("pc-value"),
+      hint=document.getElementById("pc-val-hint");
+  if(lb)lb.textContent=(t==="flat_shipping")?"ค่าส่งที่ลูกค้าจ่าย (บาท)":"มูลค่าส่วนลด";
+  if(inp)inp.placeholder=(t==="flat_shipping")?"เช่น 50 = ค่าส่งเหลือ 50 ตลอดสาย":"เช่น 50";
+  if(hint)hint.style.display=(t==="flat_shipping")?"block":"none";
 }
 
 // ── 🎯 Promo scope picker (เมนู / แพคเกจ / มีลแพลน ที่โค้ดนี้ใช้ได้) ──
@@ -5775,7 +5786,10 @@ async function loadPromos(){
       var expired=p.expires_at&&p.expires_at<today;
       var usedUp=(p.usage_limit||0)>0&&(p.used_count||0)>=p.usage_limit;
       var live=p.is_active&&!expired&&!usedUp;
-      var valTxt=p.discount_type==="fixed"?("฿"+p.discount_value):p.discount_type==="percent"?(p.discount_value+"%"):"ส่งฟรี";
+      var valTxt=p.discount_type==="fixed"?("฿"+p.discount_value)
+                :p.discount_type==="percent"?(p.discount_value+"%")
+                :p.discount_type==="flat_shipping"?("฿"+p.discount_value+" ตลอดสาย")
+                :"ส่งฟรี";
       h+="<div style='background:#fff;border:1px solid var(--ink-xsoft);border-left:4px solid "+(live?"#1F9D55":"#CBD5E1")+";border-radius:10px;padding:12px 14px;margin-bottom:10px'>";
       h+="<div style='display:flex;justify-content:space-between;align-items:flex-start;gap:10px'>";
       h+="<div style='flex:1'>";

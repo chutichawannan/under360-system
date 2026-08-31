@@ -4436,6 +4436,10 @@ function computeOrder(){
     if(p.discount_type==='fixed')         itemDisc += p.discount_value;
     else if(p.discount_type==='percent')  itemDisc += Math.round(sub * p.discount_value/100);
     else if(p.discount_type==='free_shipping') shipDisc = fee; // ส่งฟรีเป็นได้แค่ฟรีทั้งหมด ไม่ทบซ้อน
+    /* ค่าส่งเหมาจ่าย — ลูกค้าจ่ายค่าส่งไม่เกิน discount_value (นัทเคาะ 27 ส.ค. 2569)
+       ส่วนลด = ส่วนที่เกินเพดานเท่านั้น · ค่าส่งถูกกว่าเพดานอยู่แล้ว = ไม่ลดอะไร (ไม่บวกขึ้นเด็ดขาด)
+       ใช้ Math.max เพราะอาจมีโค้ดส่งฟรีอยู่ด้วย — ลูกค้าต้องได้ตัวที่ดีกว่าเสมอ ไม่ใช่ตัวที่มาทีหลัง */
+    else if(p.discount_type==='flat_shipping') shipDisc = Math.max(shipDisc, Math.max(0, fee - (p.discount_value||0)));
   });
   /* ── 🔒 โปรอัตโนมัติต้องเคารพ stackable เหมือนโค้ดกรอกเอง (นัทสั่ง 18 ส.ค.) ──────
      นัทพูดเอง: "ห้ามให้ใครมาใช้โปรทับนะ ลดสูงสุด 120 บาท ไม่รวมค่าส่งด้วย"
@@ -4471,6 +4475,7 @@ function promoLabel(p){
   if(p.discount_type==='fixed')        return 'ลด ฿'+p.discount_value;
   if(p.discount_type==='percent')      return 'ลด '+p.discount_value+'%';
   if(p.discount_type==='free_shipping')return 'ส่งฟรี';
+  if(p.discount_type==='flat_shipping')return 'ค่าส่ง ฿'+p.discount_value;
   return '';
 }
 
