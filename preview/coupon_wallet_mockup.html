@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ม็อกอัพ — กระเป๋าคูปอง Under360</title>
+<style>
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:#EFEFEA;color:#1A1A1A;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+  font-size:15px;line-height:1.5;padding:16px 12px 70px}
+h1{font-size:19px;margin:0 0 3px}
+.sub{font-size:13px;color:#6B7280;margin-bottom:14px}
+.warn{background:#FEF9C3;border:1px solid #FDE68A;border-radius:10px;padding:10px 12px;font-size:12.5px;color:#713F12;margin-bottom:14px}
+
+/* แถบสลับฉาก */
+.steps{display:flex;gap:6px;overflow-x:auto;padding-bottom:8px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.step{flex:0 0 auto;background:#fff;border:1.5px solid #E5E5E1;border-radius:20px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#6B7280;cursor:pointer;white-space:nowrap}
+.step.on{background:#1F4D3A;border-color:#1F4D3A;color:#fff}
+
+/* จอมือถือจำลอง */
+.phone{max-width:390px;margin:0 auto;background:#F4F4F0;border:9px solid #23231F;border-radius:30px;overflow:hidden;box-shadow:0 8px 26px rgba(0,0,0,.16)}
+.bar{background:#fff;border-bottom:1px solid #E5E5E1;padding:11px 14px;font-size:14px;font-weight:800;display:flex;align-items:center;gap:8px}
+.bar .back{color:#6B7280;font-weight:400}
+.body{padding:12px;min-height:430px}
+.scene{display:none}
+.scene.on{display:block}
+
+/* คูปอง */
+.cp{display:flex;background:#fff;border:1px solid #E5E5E1;border-radius:12px;overflow:hidden;margin-bottom:9px;position:relative}
+.cp .left{background:linear-gradient(160deg,#1F4D3A,#2C6B4F);color:#fff;padding:12px 10px;min-width:92px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.cp .amt{font-size:19px;font-weight:900;line-height:1.1}
+.cp .amtsub{font-size:10px;opacity:.85;margin-top:2px}
+.cp .right{flex:1;padding:10px 11px;min-width:0}
+.cp .nm{font-size:13.5px;font-weight:800;margin-bottom:2px}
+.cp .cond{font-size:11.5px;color:#6B7280;line-height:1.45}
+.cp .exp{font-size:11px;color:#B45309;font-weight:700;margin-top:4px}
+.cp.dim{opacity:.55}
+.cp.dim .left{background:#9CA3AF}
+.cp .btn{margin-top:8px;width:100%;background:#1F4D3A;color:#fff;border:0;border-radius:8px;padding:8px;font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.cp .btn.sel{background:#B45309}
+.tick{position:absolute;right:9px;top:9px;font-size:16px}
+
+/* แถบชวนเก็บบนหน้าเมนู */
+.promo-bar{background:linear-gradient(100deg,#FEF3C7,#FDE68A);border:1px solid #FCD34D;border-radius:12px;padding:11px 12px;margin-bottom:11px;display:flex;align-items:center;gap:10px;cursor:pointer}
+.promo-bar .t{flex:1;font-size:13px;font-weight:800;color:#7C4A03}
+.promo-bar .t small{display:block;font-weight:600;font-size:11px;color:#92650B;margin-top:1px}
+.promo-bar .arrow{font-size:18px;color:#92650B}
+
+/* ของทั่วไปในจอ */
+.mock-row{background:#fff;border:1px solid #E5E5E1;border-radius:10px;padding:10px 12px;margin-bottom:8px;font-size:13px;color:#6B7280}
+.sum{background:#fff;border:1px solid #E5E5E1;border-radius:12px;padding:12px;margin-top:10px;font-size:13.5px}
+.sum .r{display:flex;justify-content:space-between;padding:3px 0}
+.sum .r.big{font-size:16px;font-weight:900;border-top:1px dashed #E5E5E1;margin-top:6px;padding-top:8px}
+.sum .r .g{color:#1F9D55;font-weight:700}
+.pick{width:100%;background:#fff;border:1.5px dashed #1F4D3A;border-radius:11px;padding:12px;font-size:13.5px;font-weight:800;color:#1F4D3A;font-family:inherit;cursor:pointer;text-align:left;display:flex;align-items:center;gap:8px}
+.pick .c{margin-left:auto;color:#6B7280;font-weight:600;font-size:12px}
+.tabs{display:flex;gap:6px;margin-bottom:10px}
+.tab{flex:1;text-align:center;background:#fff;border:1px solid #E5E5E1;border-radius:8px;padding:7px;font-size:12px;font-weight:700;color:#6B7280;cursor:pointer}
+.tab.on{background:#1F4D3A;border-color:#1F4D3A;color:#fff}
+.blocked{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:7px 9px;font-size:11.5px;color:#B91C1C;margin-top:6px;font-weight:600}
+.hintline{font-size:11.5px;color:#6B7280;margin:10px 2px 6px;line-height:1.5}
+.chatbox{background:#fff;border-radius:12px;padding:12px;font-size:13px;border:1px solid #E5E5E1}
+.chatbox .head{font-size:11px;color:#6B7280;margin-bottom:7px}
+.bubble{background:#DCF8C6;border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.55}
+.bubble .cta{display:block;margin-top:9px;background:#1F4D3A;color:#fff;text-align:center;border-radius:8px;padding:9px;font-weight:800;font-size:13px;text-decoration:none}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:20px;background:#1A1A1A;color:#fff;padding:11px 18px;border-radius:24px;font-size:13.5px;font-weight:700;opacity:0;transition:.25s;pointer-events:none;z-index:9}
+.toast.on{opacity:1}
+
+/* คำอธิบายใต้จอ */
+.exp-card{max-width:390px;margin:14px auto 0;background:#fff;border:1px solid #E5E5E1;border-radius:14px;padding:14px}
+.exp-card h2{font-size:15px;margin:0 0 8px}
+.exp-card ul{margin:0;padding-left:17px}
+.exp-card li{font-size:13px;color:#374151;margin-bottom:6px;line-height:1.55}
+.ask{max-width:390px;margin:12px auto 0;background:#FFF7ED;border:1px solid #FED7AA;border-radius:14px;padding:14px}
+.ask h2{font-size:15px;margin:0 0 8px;color:#9A3412}
+.ask ul{margin:0;padding-left:17px}
+.ask li{font-size:13px;color:#7C2D12;margin-bottom:8px;line-height:1.55}
+b.k{background:#FEF3C7;padding:0 4px;border-radius:4px}
+</style>
+</head>
+<body>
+
+<h1>🎫 กระเป๋าคูปอง — ม็อกอัพ</h1>
+<div class="sub">ยังไม่ใช่ของจริง · กดเล่นได้ทุกปุ่ม ไม่มีอะไรบันทึกลงระบบ</div>
+<div class="warn">
+  ดูว่า <b>กลไกถูกใจไหม · ปุ่มอยู่ถูกที่ไหม</b> — หน้าตา/สี ปรับทีหลังได้หมด<br>
+  แตะแถบด้านล่างเพื่อสลับดูทีละฉาก (4 ฉาก) หรือกดปุ่มในจอเดินตามลูกค้าก็ได้
+</div>
+
+<div class="steps">
+  <div class="step on" onclick="go(1,this)">① เห็นคูปอง</div>
+  <div class="step" onclick="go(2,this)">② กระเป๋า</div>
+  <div class="step" onclick="go(3,this)">③ ตอนจ่ายเงิน</div>
+  <div class="step" onclick="go(4,this)">④ เก็บจากบรอดแคสต์</div>
+</div>
+
+<div class="phone">
+  <div class="bar" id="barTitle">🥗 Under360</div>
+  <div class="body">
+
+    <!-- ① หน้าเมนู — จุดที่ลูกค้าเจอคูปอง -->
+    <div class="scene on" id="s1">
+      <div class="promo-bar" onclick="go(2)">
+        <div style="font-size:22px">🎫</div>
+        <div class="t">มีคูปองให้เก็บ <span id="s1n">4</span> ใบ<small>แตะเพื่อเก็บเข้ากระเป๋า — ใช้ตอนสั่งครั้งไหนก็ได้</small></div>
+        <div class="arrow">›</div>
+      </div>
+      <div class="mock-row">🔥 เมนูแนะนำประจำสัปดาห์</div>
+      <div class="mock-row">🍱 ข้าวกล่อง · แพ็คกับข้าว · Meal Plan</div>
+      <div class="mock-row">🥗 (รายการเมนูตามปกติ…)</div>
+      <div class="hintline">
+        แถบเหลืองอยู่ <b>บนสุดของหน้าเมนู</b> — เห็นทันทีที่เปิดแอป ไม่ต้องหา<br>
+        จำนวนใบนับเฉพาะคูปองที่ <b>คนนี้ยังไม่เก็บ</b> · เก็บครบแล้วแถบหายไปเอง
+      </div>
+    </div>
+
+    <!-- ② กระเป๋าคูปอง -->
+    <div class="scene" id="s2">
+      <div class="tabs">
+        <div class="tab on" onclick="wtab('use',this)">ใช้ได้ (<span id="cUse">0</span>)</div>
+        <div class="tab" onclick="wtab('new',this)">ยังไม่เก็บ (<span id="cNew">4</span>)</div>
+        <div class="tab" onclick="wtab('old',this)">ใช้แล้ว</div>
+      </div>
+      <div id="wallet"></div>
+      <div class="hintline" id="w-hint"></div>
+    </div>
+
+    <!-- ③ หน้าจ่ายเงิน -->
+    <div class="scene" id="s3">
+      <div class="mock-row">🛒 ในตะกร้า: Meal Plan LC 7 กล่อง — ฿1,399 · ค่าส่งจริง ฿120</div>
+      <button class="pick" onclick="openPicker()">🎫 <span id="pickTxt">เลือกคูปอง</span><span class="c" id="pickCnt"></span></button>
+      <div id="picker" style="display:none;margin-top:9px"></div>
+      <div class="sum">
+        <div class="r"><span>ค่าอาหาร</span><b>฿1,399</b></div>
+        <div class="r"><span>ค่าส่ง</span><b id="sFee">฿120</b></div>
+        <div class="r" id="sDiscRow" style="display:none"><span class="g" id="sDiscName">ส่วนลด</span><b class="g" id="sDisc">-฿0</b></div>
+        <div class="r big"><span>รวมจ่าย</span><span id="sTotal">฿1,519</span></div>
+      </div>
+      <div class="hintline">
+        คูปองที่ใช้กับตะกร้านี้ไม่ได้ <b>ไม่หายไป</b> — ยังเห็นอยู่แต่เป็นสีจาง พร้อมบอกเหตุผลว่าทำไม<br>
+        (ซ่อนทิ้ง = ลูกค้าคิดว่าคูปองหาย แล้วทักแอดมิน)
+      </div>
+    </div>
+
+    <!-- ④ เก็บจากบรอดแคสต์ -->
+    <div class="scene" id="s4">
+      <div class="chatbox">
+        <div class="head">LINE · Under360 Cleanfood</div>
+        <div class="bubble">
+          🎉 <b>ส่งท้ายเดือน — คูปองพิเศษ</b><br>
+          ลด ฿200 เมื่อสั่งครบ ฿1,200<br>
+          <span style="color:#6B7280;font-size:12px">เก็บไว้ก่อนได้ ใช้ตอนไหนก็ได้ถึง 15 ก.ย.</span>
+          <a class="cta" href="javascript:void(0)" onclick="grabFromChat()">🎫 กดเก็บคูปอง</a>
+        </div>
+      </div>
+      <div class="hintline">
+        กดจากแชท → เปิดแอปแล้ว <b>เข้ากระเป๋าให้อัตโนมัติ</b> ไม่ต้องจำโค้ด ไม่ต้องพิมพ์<br>
+        ปุ่มแบบเดียวกันนี้เอาไปแปะที่ <b>เว็บ · โฆษณา · การ์ดในกล่องอาหาร (QR)</b> ได้หมด<br>
+        <b>และระบบจะรู้ว่าคูปองใบนี้เก็บมาจากไหน</b> — วัดได้ว่าบรอดแคสต์ใบไหนทำเงินจริง
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="exp-card">
+  <h2>⚙️ กลไกโดยย่อ</h2>
+  <ul>
+    <li><b>คูปอง = โค้ดเดิมที่มีอยู่แล้ว</b> ไม่ได้สร้างระบบส่วนลดใหม่ — เงื่อนไขทุกอย่าง (ลดเท่าไหร่ · ขั้นต่ำ · ใช้กับอะไรได้ · ซ้อนได้ไหม) ยังตั้งที่หน้าโปรโมชั่นเดิมที่กิ๊ฟใช้อยู่</li>
+    <li><b>ที่เพิ่มเข้ามาคือ “ใครเก็บใบไหนไว้”</b> — ตารางเดียว จำแค่ 3 อย่าง: ใคร · โค้ดอะไร · เก็บมาจากไหน</li>
+    <li><b>เก็บได้ครั้งเดียวต่อคนต่อโค้ด</b> — กดรัวไม่ได้หลายใบ</li>
+    <li><b>เก็บแล้วยังไม่ผูกมัด</b> — ตอนจ่ายเงินยังเลือกได้ว่าจะใช้ใบไหน ไม่ใช้ก็ได้ ยังอยู่ในกระเป๋า</li>
+    <li><b>ของเดิมไม่หาย</b> — ช่องพิมพ์โค้ดเองยังอยู่เหมือนเดิม สำหรับโค้ดที่ให้เฉพาะบางคน</li>
+  </ul>
+</div>
+
+<div class="exp-card">
+  <h2>💡 ทำไมถึงน่าจะได้ผล (ตัวเลขจากระบบเราเอง)</h2>
+  <ul>
+    <li><b>FREESHIP</b> — โผล่เองที่หน้าจ่าย ไม่ต้องพิมพ์ → ใช้ไป <b>59 ครั้ง</b></li>
+    <li><b>UNDER50</b> ต้องพิมพ์เอง → 16 · <b>THANKS200</b> ต้องพิมพ์เอง → 9</li>
+    <li><b>MP15 · NEW200 · COMEBACK · FBPACK</b> ต้องพิมพ์เอง → <b>0 ทุกตัว</b></li>
+    <li>= ตัวแปรคือ <b>“ต้องพิมพ์ไหม”</b> ไม่ใช่ “ลดเยอะแค่ไหน” — คูปองเก็บได้คือการเอาการพิมพ์ออกจากทาง</li>
+  </ul>
+</div>
+
+<div class="ask">
+  <h2>❓ 3 เรื่องที่ต้องนัทเคาะก่อนผมลงมือ</h2>
+  <ul>
+    <li><b class="k">1. คูปองหมดอายุยังไง</b><br>
+      <b>ก.</b> วันตายตัวต่อโค้ด (ทุกใบหมด 15 ก.ย. เหมือนกัน) — ตรงกับระบบเดิม ทำได้เลย<br>
+      <b>ข.</b> นับจากวันที่เก็บ (เก็บวันนี้ = ใช้ได้ 7 วัน) — เร่งให้รีบใช้ แต่ต้องเพิ่มของใหม่<br>
+      <i>ผมแนะ ก. ก่อน</i> เพราะโค้ดปัจจุบันมีช่องวันหมดอายุอยู่แล้ว และคุมโปรง่ายกว่า</li>
+    <li><b class="k">2. ใครเห็นคูปองใบไหน</b><br>
+      ทุกคนเห็นเหมือนกันหมด · หรือแยกกลุ่ม (ลูกค้าใหม่เห็นใบหนึ่ง คนหายนานเห็นอีกใบ)<br>
+      <i>แยกกลุ่มได้ไม่ยาก</i> — ระบบรู้อยู่แล้วว่าใครซื้อครั้งแรก/ใครหายไปกี่เดือน</li>
+    <li><b class="k">3. เก็บได้ถึงเมื่อไหร่</b><br>
+      คูปองใบหนึ่งเปิดให้เก็บตลอด หรือจำกัดจำนวนคน (เช่น 100 คนแรก)</li>
+  </ul>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ม็อกอัพล้วน — ไม่ต่อฐานข้อมูล ไม่มีอะไรถูกบันทึก
+   โค้ดที่ใช้ในตัวอย่างอ้างอิงโค้ดจริงที่มีในระบบ จะได้เห็นภาพว่าของจริงหน้าตาแบบไหน
+   SHIP89 = ใช้ชนิด "ค่าส่งเหมาจ่าย" ที่เพิ่งขึ้น production 31 ส.ค. */
+var COUPONS=[
+  {id:'A',code:'THANKS200',amt:'฿200',amtsub:'ลดเงินสด',nm:'ขอบคุณลูกค้าประจำ',
+   cond:'สั่งครบ ฿1,200 ขึ้นไป · ใช้ได้ทุกเมนู',exp:'ใช้ได้ถึง 15 ก.ย.',min:1200,val:200,kind:'fixed'},
+  {id:'B',code:'MP15',amt:'15%',amtsub:'ลดทั้งบิล',nm:'ส่วนลด Meal Plan',
+   cond:'เฉพาะ Meal Plan · ไม่มีขั้นต่ำ',exp:'ใช้ได้ถึง 13 ก.ย.',min:0,val:0.15,kind:'percent'},
+  {id:'C',code:'SHIP89',amt:'฿89',amtsub:'ค่าส่งเหมา',nm:'ค่าส่งราคาเดียวตลอดสาย',
+   cond:'ค่าส่งเท่าไหร่ก็จ่าย ฿89 · ต่างจังหวัดคุ้มสุด',exp:'ใช้ได้ถึง 30 ก.ย.',min:0,val:89,kind:'flat_ship'},
+  {id:'D',code:'NEW200',amt:'฿200',amtsub:'ลดเงินสด',nm:'ลูกค้าใหม่',
+   cond:'เฉพาะออเดอร์แรก · สั่งครบ ฿1,500',exp:'ใช้ได้ถึง 7 ก.ย.',min:1500,val:200,kind:'fixed'}
+];
+var got=[], picked=null, wallettab='use';
+var SUB=1399, FEE=120;
+
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},1700);}
+
+function go(n,el){
+  var i;
+  var sc=document.querySelectorAll('.scene');
+  for(i=0;i<sc.length;i++)sc[i].classList.remove('on');
+  document.getElementById('s'+n).classList.add('on');
+  var st=document.querySelectorAll('.step');
+  for(i=0;i<st.length;i++)st[i].classList.toggle('on',i===n-1);
+  document.getElementById('barTitle').innerHTML =
+    n===1?'🥗 Under360':
+    n===2?'<span class="back">‹</span> 🎫 กระเป๋าคูปองของฉัน':
+    n===3?'<span class="back">‹</span> ยืนยันการสั่งซื้อ':'💬 LINE';
+  if(n===2)renderWallet();
+  if(n===3)renderPicker(true);
+}
+
+function wtab(t,el){
+  wallettab=t;
+  var tb=document.querySelectorAll('#s2 .tab');
+  for(var i=0;i<tb.length;i++)tb[i].classList.remove('on');
+  el.classList.add('on');
+  renderWallet();
+}
+
+function cpHtml(c,mode){
+  var h='<div class="cp'+(mode==='old'?' dim':'')+'">'
+   +'<div class="left"><div class="amt">'+c.amt+'</div><div class="amtsub">'+c.amtsub+'</div></div>'
+   +'<div class="right"><div class="nm">'+c.nm+'</div><div class="cond">'+c.cond+'</div>'
+   +'<div class="exp">⏳ '+c.exp+'</div>';
+  if(mode==='new')h+='<button class="btn" onclick="grab(\''+c.id+'\')">＋ เก็บคูปอง</button>';
+  if(mode==='use')h+='<div style="font-size:11px;color:#1F9D55;font-weight:700;margin-top:6px">✓ อยู่ในกระเป๋าแล้ว — จะโผล่ให้เลือกตอนจ่ายเงิน</div>';
+  return h+'</div></div>';
+}
+
+function renderWallet(){
+  var el=document.getElementById('wallet'), hint=document.getElementById('w-hint'), list='', h='', i;
+  if(wallettab==='new'){
+    var rest=[]; for(i=0;i<COUPONS.length;i++)if(got.indexOf(COUPONS[i].id)<0)rest.push(COUPONS[i]);
+    list = rest.length ? rest.map(function(c){return cpHtml(c,'new');}).join('')
+      : '<div style="text-align:center;color:#9CA3AF;padding:30px 0;font-size:13px">เก็บครบทุกใบแล้ว 🎉</div>';
+    h='ใบที่ยังไม่เก็บ — <b>กดเก็บไว้ก่อนได้</b> ยังไม่ต้องสั่งของตอนนี้';
+  }else if(wallettab==='use'){
+    var mine=[]; for(i=0;i<COUPONS.length;i++)if(got.indexOf(COUPONS[i].id)>=0)mine.push(COUPONS[i]);
+    list = mine.length ? mine.map(function(c){return cpHtml(c,'use');}).join('')
+      : '<div style="text-align:center;color:#9CA3AF;padding:30px 0;font-size:13px">ยังไม่มีคูปองในกระเป๋า<br><span style="font-size:12px">แตะแท็บ “ยังไม่เก็บ” เพื่อลองเก็บ</span></div>';
+    h='ใบที่เก็บไว้แล้ว — <b>จะโผล่ให้เลือกเองตอนจ่ายเงิน</b> ไม่ต้องจำโค้ด';
+  }else{
+    list='<div class="cp dim"><div class="left"><div class="amt">฿120</div><div class="amtsub">ลดเงินสด</div></div>'
+       +'<div class="right"><div class="nm">โปรสัปดาห์</div><div class="cond">ใช้กับออเดอร์ U-0831-023</div>'
+       +'<div class="exp" style="color:#6B7280">ใช้ไปแล้วเมื่อ 28 ส.ค.</div></div><div class="tick">✅</div></div>';
+    h='เก็บประวัติไว้ให้ดูย้อนหลัง — <b>ลูกค้าเห็นเองว่าเคยใช้ใบไหนกับออเดอร์อะไร</b> (แอดมินไม่ต้องตอบซ้ำ)';
+  }
+  el.innerHTML=list; hint.innerHTML=h;
+  document.getElementById('cUse').textContent=got.length;
+  document.getElementById('cNew').textContent=COUPONS.length-got.length;
+  document.getElementById('s1n').textContent=COUPONS.length-got.length;
+}
+
+function grab(id){
+  if(got.indexOf(id)>=0)return;
+  got.push(id); renderWallet(); toast('🎫 เก็บเข้ากระเป๋าแล้ว');
+}
+
+function grabFromChat(){
+  if(got.indexOf('A')<0)got.push('A');
+  toast('🎫 เก็บแล้ว — เปิดกระเป๋าดูได้เลย');
+  setTimeout(function(){
+    wallettab='use';
+    var tb=document.querySelectorAll('#s2 .tab');
+    for(var i=0;i<tb.length;i++)tb[i].classList.toggle('on',i===0);
+    go(2);
+  },900);
+}
+
+function openPicker(){
+  var p=document.getElementById('picker');
+  p.style.display = (p.style.display==='none') ? 'block' : 'none';
+  renderPicker();
+}
+
+function renderPicker(quiet){
+  var p=document.getElementById('picker'), i, mine=[];
+  for(i=0;i<COUPONS.length;i++)if(got.indexOf(COUPONS[i].id)>=0)mine.push(COUPONS[i]);
+  document.getElementById('pickCnt').textContent = mine.length ? ('มี '+mine.length+' ใบ') : 'ยังไม่มีคูปอง';
+  if(!quiet || p.style.display!=='none'){
+    p.innerHTML = mine.length ? mine.map(function(c){
+      var bad = (c.min>SUB) ? ('ยอดยังไม่ถึง ฿'+c.min.toLocaleString()+' — ซื้อเพิ่มอีก ฿'+(c.min-SUB).toLocaleString()+' ถึงจะใช้ได้') : '';
+      return '<div class="cp'+(bad?' dim':'')+'">'
+        +'<div class="left"><div class="amt">'+c.amt+'</div><div class="amtsub">'+c.amtsub+'</div></div>'
+        +'<div class="right"><div class="nm">'+c.nm+'</div><div class="cond">'+c.cond+'</div>'
+        +(bad ? '<div class="blocked">⚠️ '+bad+'</div>'
+              : '<button class="btn'+(picked===c.id?' sel':'')+'" onclick="usePick(\''+c.id+'\')">'
+                +(picked===c.id?'✓ กำลังใช้ใบนี้ (แตะเพื่อเอาออก)':'ใช้ใบนี้')+'</button>')
+        +'</div></div>';
+    }).join('') : '<div style="text-align:center;color:#9CA3AF;padding:16px;font-size:13px">ยังไม่มีคูปองในกระเป๋า — ไปเก็บที่ฉาก ① หรือ ② ก่อน</div>';
+  }
+  calc();
+}
+
+function usePick(id){ picked = (picked===id) ? null : id; renderPicker(); }
+
+function calc(){
+  var c=null, i;
+  for(i=0;i<COUPONS.length;i++)if(COUPONS[i].id===picked)c=COUPONS[i];
+  var disc=0, fee=FEE, name='ส่วนลด';
+  if(c){
+    name='ส่วนลด ('+c.code+')';
+    if(c.kind==='fixed')disc=c.val;
+    else if(c.kind==='percent')disc=Math.round(SUB*c.val);
+    else if(c.kind==='flat_ship'){ fee=Math.min(FEE,c.val); disc=FEE-fee; }
+  }
+  var itemDisc = (c && c.kind==='flat_ship') ? 0 : disc;
+  document.getElementById('sFee').textContent='฿'+fee.toLocaleString();
+  document.getElementById('sDiscRow').style.display = disc ? 'flex' : 'none';
+  document.getElementById('sDiscName').textContent = name + ((c&&c.kind==='flat_ship')?' — ค่าส่ง':'');
+  document.getElementById('sDisc').textContent='-฿'+disc.toLocaleString();
+  document.getElementById('sTotal').textContent='฿'+(SUB+fee-itemDisc).toLocaleString();
+  document.getElementById('pickTxt').textContent = c ? ('ใช้: '+c.code) : 'เลือกคูปอง';
+}
+
+renderWallet(); calc();
+</script>
+</body>
+</html>
