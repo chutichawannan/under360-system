@@ -139,7 +139,7 @@
     },
     {
       "source": "/blog/:slug",
-      "destination": "/blog.html?post=:slug"
+      "destination": "/api/post?slug=:slug"
     },
     {
       "source": "/pack",
