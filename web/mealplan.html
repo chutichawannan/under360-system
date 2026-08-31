@@ -166,6 +166,17 @@ footer a{color:rgba(250,246,236,.85)}
 .mpnote li{margin-top:8px;color:var(--muted)}
 .mpnote li b{color:var(--ink)}
 @media(max-width:600px){.mpgrid{grid-template-columns:1fr}.mpnote{padding:18px}}
+/* u360-mp-codes */
+.mpitem{position:relative;padding-top:34px}
+.mpitem .c{position:absolute;top:12px;left:16px;font-family:'Prompt';font-weight:600;font-size:.76rem;
+  letter-spacing:.06em;color:var(--green);background:#EDF6EF;border-radius:6px;padding:3px 8px}
+.mpcodes{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:-6px 0 16px;
+  background:var(--cream);border:1px solid #E8ECE5;border-radius:10px;padding:10px 14px}
+.mpcodes .lb{font-size:.84rem;color:var(--muted)}
+.mpcodes code{font-family:'Prompt';font-weight:500;font-size:.95rem;color:var(--ink);letter-spacing:.03em}
+.mpcodes .cp{border:1px solid #D7DED3;background:var(--paper);border-radius:8px;padding:5px 12px;
+  font-family:'Sarabun';font-size:.85rem;color:var(--ink);cursor:pointer}
+.mpcodes .cp:hover{border-color:var(--green);color:var(--green)}
 </style>
 <!-- Meta Pixel (m-track 20 ส.ค. 2026) -->
 <script>
@@ -543,15 +554,30 @@ function mpRenderBar(){
   if(on) on.scrollIntoView({block:'nearest', inline:'center'});
 }
 
+function mpCopyCodes(btn){
+  var el = document.getElementById('mpCodeStr'); if(!el) return;
+  var txt = MPCAL_DAY + ' — ' + el.textContent;
+  var done = function(){ btn.textContent = 'คัดลอกแล้ว'; setTimeout(function(){ btn.textContent = 'คัดลอก'; }, 1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){ navigator.clipboard.writeText(txt).then(done, function(){}); return; }
+  /* เครื่องเก่า/หน้าที่ไม่ใช่ https — ยังต้องคัดลอกได้ ไม่งั้นแอดมินใช้ไม่ได้ */
+  var t = document.createElement('textarea'); t.value = txt; document.body.appendChild(t);
+  t.select(); try{ document.execCommand('copy'); done(); }catch(e){} document.body.removeChild(t);
+}
+
 function mpRenderDay(){
   var list = MPCAL[MPCAL_DAY] || [], f = mpFmt(MPCAL_DAY), today = mpTodayTH();
   var when = MPCAL_DAY === today ? 'ส่งวันนี้' : (MPCAL_DAY > today ? 'กำลังจะถึง' : 'ผ่านมาแล้ว');
   document.getElementById('mpBody').innerHTML =
     '<div class="mphead"><h3>' + f.dow + ' ' + f.date + '</h3><span>' + when
       + ' · ครัวทำ ' + list.length + ' เมนู</span></div>'
+    /* u360-mp-codes — แถวโค้ดของทั้งวัน สำหรับคนในร้านที่คุยกันด้วยโค้ด ไม่ใช่ชื่อเมนู */
+    + (list.length ? '<div class="mpcodes"><span class="lb">โค้ดเมนูวันนี้</span>'
+        + '<code id="mpCodeStr">' + list.map(function(m){return mpEsc(m.no);}).join(', ') + '</code>'
+        + '<button type="button" class="cp" onclick="mpCopyCodes(this)">คัดลอก</button></div>' : '')
     + (list.length
         ? '<div class="mpgrid">' + list.map(function(m){
-            return '<div class="mpitem"><div class="n">' + mpEsc(m.name) + '</div>'
+            return '<div class="mpitem"><div class="c">' + mpEsc(m.no) + '</div>'
+                 + '<div class="n">' + mpEsc(m.name) + '</div>'
                  + (m.protein ? '<div class="p">' + mpEsc(m.protein) + '</div>' : '') + '</div>';
           }).join('') + '</div>'
         : '<div class="mpempty">วันนี้ยังไม่ได้ลงแพลนเมนู</div>');
