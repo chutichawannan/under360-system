@@ -3097,13 +3097,19 @@ function renderTicketBar(){
   /* ปุ่มเปิดใบครบทุกรอบ — โผล่เมื่อมีรอบที่ใช้ใบร่วมกับรอบอื่นจริงเท่านั้น */
   try{
     var shareCount=(function(){
-      var m={}, c=0, td=today2();
+      var td=today2(), byO={}, c=0;
       (mpPlanRows||[]).forEach(function(r){
         if(!r.order_id||["cancelled","skipped","skip_requested"].indexOf(r.status)>=0) return;
         if(!r.delivery_date||r.delivery_date<td) return;
-        m[r.order_id]=(m[r.order_id]||0)+1;
+        (byO[r.order_id]=byO[r.order_id]||[]).push(r);
       });
-      Object.keys(m).forEach(function(k){ if(m[k]>1) c+=(m[k]-1); });
+      Object.keys(byO).forEach(function(oid){
+        var om=null; for(var k=0;k<byO[oid].length&&!om;k++) om=mpOrderMap[byO[oid][k].id];
+        var od=(om&&om.dateOff)?om.dateOff:null;
+        if(!od){ var same=byO[oid].filter(function(r){ return mpOrderMap[r.id]&&!mpOrderMap[r.id].dateOff; }); od=same.length?same[0].delivery_date:null; }
+        var ds={}; byO[oid].forEach(function(r){ ds[r.delivery_date]=1; });
+        Object.keys(ds).forEach(function(d){ if(!od||d!==od) c++; });
+      });
       return c;
     })();
     var sb2=document.getElementById("planShareBar");
@@ -3113,7 +3119,7 @@ function renderTicketBar(){
     if(sb2){
       if(shareCount){
         sb2.style.display="block"; sb2.style.background="#EFF6FF"; sb2.style.color="#1E40AF"; sb2.style.border="1px solid #BFDBFE";
-        sb2.innerHTML="🎫 มี <b>"+shareCount+" รอบ</b> ที่ยังใช้ใบออเดอร์ร่วมกับรอบอื่น — ครัวและแมสมองไม่เห็นรอบพวกนี้ "
+        sb2.innerHTML="🎫 มี <b>"+shareCount+" วันส่ง</b> ที่ยังไม่มีใบออเดอร์เป็นของตัวเอง — ครัวและแมสมองไม่เห็นรอบพวกนี้ "
           +"<button onclick='planCreateMissingTickets()' style='margin-left:6px;border:none;background:#1E40AF;color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer'>เปิดใบให้ครบ</button>";
       } else sb2.style.display="none";
     }
@@ -4055,8 +4061,12 @@ async function planCreateTicket(rowId, ev){
 async function planCreateTicketCore(rowOrRow, who){
   var sb_=getSB(); if(!sb_) return {ok:false, why:"ต่อฐานข้อมูลไม่ได้"};
   /* รับได้ 2 แบบ: id ของแถว (หน้าแพลนเมนู) หรือตัวแถวเลย (หน้าสั่งแทนลูกค้า ซึ่งยังไม่มีตารางให้ค้น) */
-  var r=(rowOrRow&&typeof rowOrRow==="object")?rowOrRow:getMpRow(rowOrRow);
+  /* รับได้ 3 แบบ: id · แถวเดียว · หลายแถวที่ส่งวันเดียวกัน (ใช้ใบใบเดียวร่วมกัน)
+     หลายรอบวันเดียวกันต้องอยู่ใบเดียว ไม่งั้นครัวเห็นใบซ้ำของคนเดียวกันในวันเดียว */
+  var group=Array.isArray(rowOrRow)?rowOrRow.filter(Boolean):null;
+  var r=group?group[0]:((rowOrRow&&typeof rowOrRow==="object")?rowOrRow:getMpRow(rowOrRow));
   if(!r) return {ok:false, why:"ไม่พบรอบนี้"};
+  if(!group) group=[r];
   var rowId=r.id;
   try{
     // หาใบของรอบก่อนหน้าไว้ก๊อปที่อยู่/เบอร์/ช่วงเวลา — ไม่ต้องให้แอดมินพิมพ์ใหม่
@@ -4094,15 +4104,17 @@ async function planCreateTicketCore(rowOrRow, who){
     var ord=await sb_.from("orders").insert(payload).select().single();
     if(ord.error) throw ord.error;
     // บรรทัดหัวข้อแพลน — ให้หน้าครัว/รายงานจำแนกออกว่าเป็น Meal Plan รอบไหน
-    var code="MP-"+String(r.mp_type||"MP").toUpperCase()+"-R"+(r.round_no||1);
-    await sb_.from("order_items").insert([{
-      order_id:ord.data.id, menu_code:code,
-      menu_name:"Meal Plan "+String(r.mp_type||"").toUpperCase()+" · รอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" ("+(r.box_count||7)+" กล่อง)",
-      quantity:1, unit_price:0, subtotal:0,
-      notes:"meal_plan:"+String(r.mp_type||"mp")+":"+String(r.mp_set||"")+":round:"+(r.round_no||1)+"/"+(r.total_rounds||1)
-    }]);
-    // ผูกรอบเข้ากับใบใหม่ ไม่งั้นรอบถัดไปจะยังขึ้นว่าไม่มีใบ
-    await sb_.from("mp_deliveries").update({order_id:ord.data.id,updated_at:new Date().toISOString()}).eq("id",rowId);
+    /* 1 บรรทัดต่อ 1 รอบ — ลูกค้าที่สั่ง 2 คอร์สส่งวันเดียวกัน ครัวต้องเห็นทั้งคู่ในใบเดียว */
+    await sb_.from("order_items").insert(group.map(function(g){
+      return { order_id:ord.data.id,
+        menu_code:"MP-"+String(g.mp_type||"MP").toUpperCase()+"-R"+(g.round_no||1),
+        menu_name:"Meal Plan "+String(g.mp_type||"").toUpperCase()+" · รอบ "+(g.round_no||"?")+"/"+(g.total_rounds||"?")+" ("+(g.box_count||7)+" กล่อง)",
+        quantity:1, unit_price:0, subtotal:0,
+        notes:"meal_plan:"+String(g.mp_type||"mp")+":"+String(g.mp_set||"")+":round:"+(g.round_no||1)+"/"+(g.total_rounds||1) };
+    }));
+    // ผูกทุกรอบของวันนั้นเข้ากับใบใหม่ ไม่งั้นยังขึ้นว่าไม่มีใบ
+    await sb_.from("mp_deliveries").update({order_id:ord.data.id,updated_at:new Date().toISOString()})
+      .in("id", group.map(function(g){ return g.id; }));
     try{ await sb_.from("activity_log").insert({
       session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
       action_type:"kq_status",
@@ -4122,6 +4134,9 @@ async function planCreateTicketCore(rowOrRow, who){
 async function planCreateMissingTickets(){
   var who=odWho(); if(!who) return;
   var today=today2();
+  /* ⚠️ เกณฑ์ต้องดูที่ "วัน" ไม่ใช่ "ลำดับรอบ" (แก้ 31 ส.ค. หลังเจอ 2 เคสจริงตอนจะกด)
+       · รอบที่วันตรงกับใบอยู่แล้ว = ใช้ใบเดิม กี่รอบก็ได้ (ลูกค้าสั่ง 2 คอร์สส่งวันเดียวกันได้)
+       · รอบที่วันไม่ตรงกับใบ = ต้องมีใบของตัวเอง · รวมรอบวันเดียวกันไว้ใบเดียว */
   var byOrder={};
   (mpPlanRows||[]).forEach(function(r){
     if(!r.order_id) return;
@@ -4129,23 +4144,35 @@ async function planCreateMissingTickets(){
     if(!r.delivery_date || r.delivery_date<today) return;      // อดีตไม่ต้องเปิดใบย้อนหลัง
     (byOrder[r.order_id]=byOrder[r.order_id]||[]).push(r);
   });
-  var need=[];
+  var need=[];   // แต่ละสมาชิก = กลุ่มรอบของ "วันเดียวกัน" ที่ยังไม่มีใบเป็นของตัวเอง
   Object.keys(byOrder).forEach(function(oid){
-    var list=byOrder[oid].slice().sort(function(a,b){ return String(a.delivery_date).localeCompare(String(b.delivery_date)); });
-    list.slice(1).forEach(function(r){ need.push(r); });        // ตัวแรกใช้ใบเดิม ที่เหลือต้องมีใบของตัวเอง
+    var om=null;
+    for(var k=0;k<byOrder[oid].length && !om;k++) om=mpOrderMap[byOrder[oid][k].id];
+    var orderDate=(om&&om.dateOff)?om.dateOff:null;            // วันของใบจริง (ถ้าไม่ตรงกับรอบ)
+    if(!orderDate){                                            // ใบตรงกับรอบไหนสักรอบ = วันนั้นคือวันของใบ
+      var same=byOrder[oid].filter(function(r){ return mpOrderMap[r.id] && !mpOrderMap[r.id].dateOff; });
+      orderDate=same.length?same[0].delivery_date:null;
+    }
+    var byDate={};
+    byOrder[oid].forEach(function(r){ (byDate[r.delivery_date]=byDate[r.delivery_date]||[]).push(r); });
+    Object.keys(byDate).sort().forEach(function(d){
+      if(orderDate && d===orderDate) return;                   // วันนี้ใบเดิมครอบอยู่แล้ว
+      need.push(byDate[d]);
+    });
   });
   if(!need.length) return alert("ทุกรอบมีใบของตัวเองครบแล้ว ✅\nไม่มีอะไรต้องเปิดเพิ่ม");
-  var preview=need.slice(0,12).map(function(r){
-    return "· "+(r.customer_name||"ลูกค้า").slice(0,22)+" รอบ "+(r.round_no||"?")+" · ส่ง "+r.delivery_date;
+  var boxes=need.reduce(function(s2,g){ return s2+g.reduce(function(a,r){return a+(r.box_count||7);},0); },0);
+  var preview=need.slice(0,12).map(function(g){
+    return "· "+(g[0].customer_name||"ลูกค้า").slice(0,22)+" · ส่ง "+g[0].delivery_date+" · "+g.length+" รอบ";
   }).join("\n");
-  if(!window.confirm("เปิดใบออเดอร์ให้ "+need.length+" รอบที่ยังใช้ใบร่วมกับรอบอื่น?\n\n"
-    +preview+(need.length>12?("\n· (และอีก "+(need.length-12)+" รอบ)"):"")
-    +"\n\nทุกใบเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบของตัวเอง ครัวกับแมสถึงจะเห็นรอบพวกนี้"
+  if(!window.confirm("เปิดใบออเดอร์ใหม่ "+need.length+" ใบ (รวม "+boxes+" กล่อง)?\n\n"
+    +preview+(need.length>12?("\n· (และอีก "+(need.length-12)+" ใบ)"):"")
+    +"\n\nทุกใบเป็นยอด ฿0 (เงินอยู่ที่ใบแรกแล้ว)\nพอมีใบของตัวเอง ครัวกับแมสถึงจะเห็นรอบพวกนี้"
     +"\n\nคนกด: "+who)) return;
   var ok=[], fail=[];
   for(var i=0;i<need.length;i++){
-    var res=await planCreateTicketCore(need[i].id, who);
-    if(res.ok) ok.push(res.num); else fail.push((need[i].customer_name||"?")+" รอบ "+need[i].round_no+": "+res.why);
+    var res=await planCreateTicketCore(need[i], who);
+    if(res.ok) ok.push(res.num); else fail.push((need[i][0].customer_name||"?")+" "+need[i][0].delivery_date+": "+res.why);
   }
   await loadMpPlanData();
   alert("เปิดใบสำเร็จ "+ok.length+" ใบ"+(fail.length?(" · ไม่สำเร็จ "+fail.length+" ใบ"):"")
