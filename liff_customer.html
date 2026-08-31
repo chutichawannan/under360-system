@@ -580,9 +580,25 @@ body{background:#fff!important}
 .map-confirm-btns .btn-pin{background:var(--g);color:#fff;border:none;padding:13px;border-radius:12px;font-size:15px;font-weight:700;cursor:pointer;font-family:inherit;}
 .map-confirm-btns .btn-skip{background:#F5F5F5;color:#666;border:none;padding:12px;border-radius:12px;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;}
 
+
+/* 🧪 แถบโหมดทดสอบ — ต้องเห็นชัดตลอดเวลา ไม่งั้นเผลอคิดว่าลูกค้าเห็นของเดียวกัน */
+#betaBar{position:sticky;top:0;z-index:900;background:#7C2D12;color:#fff;
+  padding:7px 12px;font-size:11.5px;font-weight:700;line-height:1.45;display:none}
+#betaBar.on{display:block}
+#betaBar b{color:#FED7AA}
+#betaBar .uid{font-family:ui-monospace,monospace;font-size:10px;opacity:.85;word-break:break-all}
+#betaBar .off{float:right;background:rgba(255,255,255,.18);border:0;color:#fff;
+  border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:8px}
+.beta-tag{display:inline-block;background:#7C2D12;color:#fff;font-size:9.5px;font-weight:800;
+  border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:.3px}
 </style>
 </head>
 <body>
+<div id="betaBar">
+  <button class="off" onclick="betaOff()">ออกจากโหมด</button>
+  🧪 <b>โหมดทดสอบ</b> — ของที่มีป้าย <span class="beta-tag">ทดสอบ</span> ลูกค้าคนอื่น<b>ยังไม่เห็น</b>
+  <div class="uid" id="betaUid"></div>
+</div>
 
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
@@ -2317,6 +2333,7 @@ async function init() {
       if (!_opened) throw (_lastErr || new Error("liff.init ไม่ผ่านทุกประตู"));
       if (!liff.isLoggedIn()) { liff.login(); return; }
       lineProfile = await liff.getProfile();
+      betaInitLocal(); betaPaint();   // เข้าโหมดจากลิงก์ได้ทันที ไม่ต้องรอโหลด config
     }
   } catch(e) {
     if (CFG.DEV_MODE) { lineProfile = CFG.DEV_PROFILE; }
@@ -2326,7 +2343,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2362,6 +2379,13 @@ async function init() {
     if (size > 400000) { console.warn('campaign_tags ใหญ่ผิดปกติ (' + size + ') — ข้ามไว้ก่อน กันหน้าสั่งของอืด'); }
     else campaignTags = raw || {};
   } catch(e) { campaignTags = {}; }
+
+  /* 🧪 รายชื่อคนทดสอบ — ไม่มีคีย์นี้ = ไม่มีใครอยู่ในโหมด ของเดิมทำงานเหมือนเดิมทุกบรรทัด */
+  try {
+    const b = (val(cfgR).data || []).find(r => r.key === BETA_KEY);
+    betaCfg = (b && b.data) || null;
+  } catch(e) { betaCfg = null; }
+  betaPaint();
 
   // menu + สร้างลำดับหมวด (ไม่ hardcode — ใช้ทุก category ที่มีใน data)
   try {
@@ -4172,6 +4196,59 @@ function isVipFriend(){ return !!(customer && (customer.customer_type||'')==='vi
       ส่วน WELCOME50 (สมาชิกใหม่) ยัง **ทบได้เหมือนเดิม** ไม่แตะพฤติกรรมเก่า
    ⚠️ กันแอปช้า: ถ้าลิสต์ใหญ่ผิดปกติ (>400KB) จะข้ามทั้งก้อน ดีกว่าให้หน้าสั่งของอืดทั้งร้าน */
 const CAMPAIGN_KEY = 'campaign_tags';
+
+/* ══ 🧪 โหมดทดสอบ (นัทสั่ง 31 ส.ค. 2569) ═══════════════════════════════════
+   "ทำขึ้นมาแต่ยังไม่ต้องให้ลูกค้าเห็น — ฉันได้ลองเล่นเองของจริงก่อน จะได้บอกว่ามีบัคอะไร"
+
+   เข้าโหมด 2 ทาง:
+     ① เปิดลิงก์ที่มี ?beta=u360 ครั้งเดียว → จำไว้ในเครื่องนั้น (ไม่ต้องรู้ uid ตัวเอง)
+     ② uid อยู่ในรายชื่อที่ kitchen_data คีย์ 'beta_testers' → เปิดจากเครื่องไหนก็ติด
+
+   ปิดฟีเจอร์ทีละตัวได้จากคีย์เดียวกัน โดยไม่ต้องแก้โค้ด ไม่ต้อง deploy:
+     { "uids": ["Uccxxxx…"], "features": { "coupon_wallet": true, "protein_swap": false } }
+
+   ⚠️ นี่ไม่ใช่ระบบความปลอดภัย — โค้ดฝั่งเบราว์เซอร์เปิดดูได้ ใครเดารหัสถูกก็เข้าได้
+      ใช้กัน "ลูกค้าเห็นของที่ยังไม่เสร็จ" เท่านั้น ห้ามเอาไปกั้นข้อมูลที่เป็นความลับ */
+const BETA_KEY  = 'beta_testers';
+const BETA_PASS = 'u360';           // รหัสในลิงก์ ?beta=u360
+let betaCfg = null;                 // { uids:[], features:{} } — โหลดพร้อม config ก้อนเดียวกัน
+let betaLocal = false;              // เข้าโหมดจากลิงก์ในเครื่องนี้
+
+function betaInitLocal(){
+  try{
+    const p = new URLSearchParams(location.search).get('beta');
+    if (p === BETA_PASS) localStorage.setItem('u360_beta','1');
+    else if (p === 'off') localStorage.removeItem('u360_beta');
+    betaLocal = localStorage.getItem('u360_beta') === '1';
+  }catch(e){ betaLocal = false; }
+}
+function isBetaTester(){
+  if (betaLocal) return true;
+  const uid = lineProfile && lineProfile.userId;
+  return !!(uid && betaCfg && Array.isArray(betaCfg.uids) && betaCfg.uids.indexOf(uid) >= 0);
+}
+/* ห่อฟีเจอร์ใหม่ทุกตัวด้วยอันนี้ — ค่าเริ่มต้นคือ "เปิดให้คนทดสอบ" (ไม่ต้องไปตั้งอะไรก่อน)
+   ปิดเฉพาะตัวเมื่อจงใจใส่ false ในคีย์ beta_testers */
+function betaOn(feature){
+  if (!isBetaTester()) return false;
+  const fx = betaCfg && betaCfg.features;
+  return !(fx && fx[feature] === false);
+}
+function betaOff(){
+  try{ localStorage.removeItem('u360_beta'); }catch(e){}
+  location.href = location.pathname + '?beta=off';
+}
+function betaPaint(){
+  const bar = document.getElementById('betaBar'); if (!bar) return;
+  const on = isBetaTester();
+  bar.classList.toggle('on', on);
+  if (on){
+    const uid = (lineProfile && lineProfile.userId) || '(ยังไม่รู้ — เปิดผ่าน LINE ถึงจะเห็น)';
+    const el = document.getElementById('betaUid');
+    // โชว์ uid ไว้ให้ก๊อปไปใส่รายชื่อถาวร — จะได้ไม่ต้องเปิดลิงก์ ?beta= ทุกเครื่อง
+    if (el) el.textContent = 'รหัสไลน์ของเครื่องนี้: ' + uid;
+  }
+}
 let campaignTags = {};
 
 /* หาแท็กที่ลูกค้าคนนี้ได้จริง ณ วันนี้ — คืน null ถ้าไม่มี/หมดอายุ/ยอดไม่ถึงขั้นต่ำ */
