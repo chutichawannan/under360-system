@@ -57,7 +57,12 @@ module.exports = async function handler(req, res) {
   const url   = SITE + '/blog/' + encodeURIComponent(slug);
   const title = clip(p.title, 95);
   const desc  = clip(p.excerpt || p.title, 180);
-  const img   = p.cover_url ? String(p.cover_url) : FALLBACK_IMG;
+  /* 🔴 รูปปกในฐานข้อมูลเก็บเป็นพาธสัมพัทธ์ทั้ง 61 ตัว (เช็คแล้ว 31 ส.ค. — absolute 0 ตัว)
+     ตัวอ่านลิงก์ของ LINE/Facebook ดึงรูปจากพาธสัมพัทธ์ไม่ได้ ต้องเติมชื่อเว็บให้เต็มเสมอ */
+  const abs = u => !u ? FALLBACK_IMG
+    : /^https?:\/\//i.test(u) ? u
+    : SITE + '/' + String(u).replace(/^\/+/, '');
+  const img   = abs(p.cover_url);
 
   const head = `<title>${esc(title)} | Under360</title>
 <meta name="description" content="${esc(desc)}">
