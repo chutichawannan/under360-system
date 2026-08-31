@@ -2229,10 +2229,17 @@ async function insertOrderWithRetry(payload, mmdd, startNum){
 // ══════════════════════════════════════
 // 📅 PRE-ORDER / NEXT-WEEK HELPERS — v0.3.5
 // ══════════════════════════════════════
+/* วันที่ "วันนี้" ตามเวลาไทยเสมอ — ไม่พึ่งนาฬิกาเครื่อง
+   (เจ้าของร้านอยู่อเมริกา · ลูกค้าบางคนตั้งโซนเวลาเพี้ยน · ครัวคิดเป็นวันไทยอย่างเดียว) */
+function bkkToday(){
+  return new Date(Date.now() + 7*3600e3).toISOString().slice(0,10);
+}
 function isNextWeekItem(item) {
   if (!item || !item.available_from) return false;
-  const today = new Date(); today.setHours(0,0,0,0);
-  return new Date(item.available_from) > today;
+  // เทียบเป็นข้อความ YYYY-MM-DD ทั้งคู่ — ห้ามแปลงเป็น Date
+  // (new Date('2026-08-31') = เที่ยงคืน UTC ซึ่งยังอยู่ในอนาคตสำหรับคนไทยจนถึง 7 โมงเช้า
+  //  = เมนูที่ถึงวันขายแล้วถูกตัดสินว่ายังไม่ถึงวัน ทั้งวัน — นัทเจอกับ S5 เมื่อ 31 ส.ค. 2569)
+  return String(item.available_from).slice(0,10) > bkkToday();
 }
 
 /* N-50③: ลูกค้าเห็นเมนูล่วงหน้าได้ แต่ต้องรู้ว่าจะได้กินวันไหน
