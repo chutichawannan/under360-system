@@ -2297,6 +2297,8 @@ function startPresence(){
 }
 
 async function init() {
+  betaInitLocal(); betaPaint();   // 🧪 อ่านลิงก์ ?beta= ก่อนทุกอย่าง — แถบขึ้นแม้เปิดนอกแอป LINE
+
   // Init Supabase
   try {
     sb = supabase.createClient(CFG.SUPABASE_URL, CFG.SUPABASE_KEY);
