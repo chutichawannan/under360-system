@@ -26,6 +26,11 @@ for (const file of files) {
   while ((m = re.exec(html)) !== null) {
     const attrs = m[1] || '';
     if (/\bsrc\s*=/.test(attrs)) continue;   // ข้าม external <script src="...">
+    // ข้าม <script type="..."> ที่ไม่ใช่ JS — เช่น application/ld+json (schema.org), text/template, importmap
+    // (แก้ 31 ส.ค. 2026 · m-track: เดิมตรวจ JSON-LD เป็น JS แล้วขึ้น ❌ ทุกหน้าที่มี schema
+    //  → ทุกห้องเริ่มชินกับ ❌ แล้วมองข้าม = ของพังจริงจะไม่มีใครเห็น)
+    const type = (attrs.match(/\btype\s*=\s*["']?([^"'\s>]+)/i) || [])[1];
+    if (type && !/^(module|text\/javascript|application\/javascript)$/i.test(type)) continue;
     const code = m[2];
     if (!code.trim()) continue;
     idx++;

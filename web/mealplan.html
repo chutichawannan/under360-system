@@ -139,6 +139,33 @@ header{position:sticky;top:0;z-index:50;background:rgba(250,246,236,.92);backdro
 footer{background:#0E2718;color:rgba(250,246,236,.7);padding:32px 0 100px;font-size:.9rem;text-align:center}
 footer a{color:rgba(250,246,236,.85)}
 @media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+/* ── u360-menu-calendar ── */
+.mpcal{margin-top:26px}
+.mpbar{display:flex;gap:8px;overflow-x:auto;padding:4px 2px 14px;scrollbar-width:thin;-webkit-overflow-scrolling:touch}
+.mpbar::-webkit-scrollbar{height:5px}
+.mpbar::-webkit-scrollbar-thumb{background:#D8DED4;border-radius:99px}
+.mpload{color:var(--muted);font-size:.95rem;padding:8px 2px}
+.mpday{flex:none;border:1px solid #E2E7DE;background:var(--paper);border-radius:12px;padding:9px 14px;cursor:pointer;
+  font-family:'Prompt';font-weight:500;font-size:.92rem;color:var(--ink);line-height:1.35;text-align:center;transition:.15s;white-space:nowrap}
+.mpday small{display:block;font-family:'Sarabun';font-weight:400;font-size:.76rem;color:var(--muted)}
+.mpday:hover{border-color:var(--green)}
+.mpday.on{background:var(--green);border-color:var(--green);color:#fff}
+.mpday.on small{color:rgba(255,255,255,.85)}
+.mpday.past{opacity:.55}
+.mpgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:12px}
+.mpitem{background:var(--paper);border:1px solid #E8ECE5;border-radius:12px;padding:14px 16px}
+.mpitem .n{font-family:'Prompt';font-weight:500;font-size:1rem;line-height:1.45}
+.mpitem .p{font-size:.84rem;color:var(--muted);margin-top:5px}
+.mphead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin:6px 0 16px}
+.mphead h3{font-family:'Prompt';font-weight:600;font-size:1.25rem}
+.mphead span{color:var(--muted);font-size:.92rem}
+.mpempty{color:var(--muted);padding:18px 0}
+.mpnote{margin-top:26px;background:var(--cream);border:1px solid #E8ECE5;border-radius:14px;padding:20px 22px;font-size:.95rem}
+.mpnote b{font-family:'Prompt';font-weight:600}
+.mpnote ul{margin:10px 0 0;padding-left:20px}
+.mpnote li{margin-top:8px;color:var(--muted)}
+.mpnote li b{color:var(--ink)}
+@media(max-width:600px){.mpgrid{grid-template-columns:1fr}.mpnote{padding:18px}}
 </style>
 <!-- Meta Pixel (m-track 20 ส.ค. 2026) -->
 <script>
@@ -268,13 +295,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="index.html">
+    <a class="logo" href="/">
       <img src="/img/u360_logo.svg" alt="Under360 logo">
       Under360
     </a>
     <nav>
-      <a href="index.html">หน้าแรก</a>
-      <a href="blog.html">บทความ</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
+      <a href="/">หน้าแรก</a>
+      <a href="/blog">บทความ</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
     </nav>
   </div>
 </header>
@@ -365,6 +392,33 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 </section>
 
 <!-- HOW IT WORKS -->
+<!-- ═══ u360-menu-calendar — เมนูตามวันส่ง (ห้องฟ้าส่งข้อมูล · m ทำหน้า 31 ส.ค. 2026) ═══ -->
+<section id="menu-calendar">
+  <div class="wrap">
+    <span class="eyebrow">เมนูจริง ไม่ใช่ภาพตัวอย่าง</span>
+    <h2 class="sec">ครัวทำอะไรบ้าง ในแต่ละวันส่ง</h2>
+    <p>Meal Plan ปรุงสดใหม่เช้าวันส่ง — ครัวเดินรอบ <b>จันทร์ · พุธ · ศุกร์</b> เปิดดูได้ทั้งที่ผ่านมาแล้วและที่กำลังจะถึง</p>
+
+    <div class="mpcal">
+      <div class="mpbar" id="mpBar"><div class="mpload">กำลังโหลดแพลนเมนู…</div></div>
+      <div id="mpBody"></div>
+    </div>
+
+    <div class="mpnote">
+      <b>อ่านตารางนี้ยังไง</b>
+      <ul>
+        <li>รายการข้างบน = เมนูทั้งหมดที่ครัวทำในวันนั้น — <b>กล่องของคุณจะได้บางส่วนจากนี้</b> ครัวจัดให้ตามเป้าหมายของคุณ และตัดวัตถุดิบที่คุณแพ้ออกให้อัตโนมัติ</li>
+        <li>ทุกเมนูทำได้ทั้ง <b>โปรตีนสูง (HP · เนื้อ 170g)</b> และ <b>Low Carb (LC · เนื้อ 120g)</b> — เลือกสายที่ตรงกับเป้าหมาย</li>
+        <li>แพลนล่วงหน้าปรับได้ตามของสดที่เข้าครัวจริง หน้านี้จะอัปเดตตาม</li>
+      </ul>
+    </div>
+
+    <div style="text-align:center;margin-top:34px">
+      <a href="#" class="btn-line" onclick="return u360Order(this)">เริ่มทดลอง 7 กล่อง →</a>
+    </div>
+  </div>
+</section>
+
 <section style="background:var(--paper)">
   <div class="wrap">
     <p class="eyebrow">How it works</p>
@@ -416,7 +470,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <footer>
   <div class="wrap">
-    <b style="font-family:'Prompt';color:#fff">Under360</b> · โทร 064-173-6519 · <a href="index.html">หน้าแรก</a> · <a href="blog.html">บทความ</a>
+    <b style="font-family:'Prompt';color:#fff">Under360</b> · โทร 064-173-6519 · <a href="/">หน้าแรก</a> · <a href="/blog">บทความ</a>
   </div>
 </footer>
 
@@ -436,6 +490,83 @@ const OA_FOLLOW_URL = 'https://line.me/R/ti/p/@under360'; // แอดเพื�
 const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const sb = supabase.createClient(SB_URL, SB_KEY);
+
+/* ═══ u360-menu-calendar — โหลดแพลนเมนูรายวัน ═══
+   ลำดับแหล่งข้อมูล = เหมือน liff_customer.html เป๊ะ (ห้องฟ้าสั่งให้ใช้ทางเดียวกัน)
+   ① kitchen_data.mp_menu_plan (ของสด แอดมินแก้แล้วเปลี่ยนทันทีทั้ง LIFF และเว็บ)
+   ② ไฟล์สำรองที่ deploy ไปด้วย — แปลงจากตารางห้องฟ้า (scripts/m_build_mp_plan_json.mjs)
+   หาไม่เจอทั้งคู่ = ซ่อนส่วนนี้ทิ้งเงียบๆ ไม่ทำให้หน้าพัง */
+var MPCAL = {}, MPCAL_DAY = null;
+var MP_DOW = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+var MP_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+
+function mpEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+
+/* วันนี้ตามเวลาไทยเสมอ — คนดูอาจอยู่คนละโซนเวลากับครัว */
+function mpTodayTH(){
+  var d = new Date(Date.now() + (new Date().getTimezoneOffset()*60000) + 7*3600000);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+function mpFmt(iso){
+  var p = iso.split('-'), d = new Date(+p[0], +p[1]-1, +p[2]);
+  return { dow: MP_DOW[d.getDay()], date: (+p[2]) + ' ' + MP_MON[+p[1]-1] };
+}
+
+async function mpLoadPlan(){
+  try{
+    var r = await sb.from('kitchen_data').select('data').eq('key','mp_menu_plan').maybeSingle();
+    if(r && r.data && r.data.data && Object.keys(r.data.data).length) return r.data.data;
+  }catch(e){}
+  var urls = ['mp_plan.json','/mp_plan.json'];
+  for(var i=0;i<urls.length;i++){
+    try{
+      var j = await fetch(urls[i]).then(function(x){ return x.ok ? x.json() : null; });
+      if(j && j.plan && Object.keys(j.plan).length) return j.plan;
+    }catch(e){}
+  }
+  return {};
+}
+
+function mpRenderBar(){
+  var days = Object.keys(MPCAL).sort(), today = mpTodayTH();
+  document.getElementById('mpBar').innerHTML = days.map(function(k){
+    var f = mpFmt(k);
+    return '<button class="mpday'+(k===MPCAL_DAY?' on':'')+(k<today?' past':'')+'" data-d="'+k+'">'
+         + f.dow + '<small>' + f.date + '</small></button>';
+  }).join('');
+  Array.prototype.forEach.call(document.querySelectorAll('.mpday'), function(b){
+    b.onclick = function(){ MPCAL_DAY = b.dataset.d; mpRenderBar(); mpRenderDay();
+      b.scrollIntoView({behavior:'smooth', block:'nearest', inline:'center'}); };
+  });
+  var on = document.querySelector('.mpday.on');
+  if(on) on.scrollIntoView({block:'nearest', inline:'center'});
+}
+
+function mpRenderDay(){
+  var list = MPCAL[MPCAL_DAY] || [], f = mpFmt(MPCAL_DAY), today = mpTodayTH();
+  var when = MPCAL_DAY === today ? 'ส่งวันนี้' : (MPCAL_DAY > today ? 'กำลังจะถึง' : 'ผ่านมาแล้ว');
+  document.getElementById('mpBody').innerHTML =
+    '<div class="mphead"><h3>' + f.dow + ' ' + f.date + '</h3><span>' + when
+      + ' · ครัวทำ ' + list.length + ' เมนู</span></div>'
+    + (list.length
+        ? '<div class="mpgrid">' + list.map(function(m){
+            return '<div class="mpitem"><div class="n">' + mpEsc(m.name) + '</div>'
+                 + (m.protein ? '<div class="p">' + mpEsc(m.protein) + '</div>' : '') + '</div>';
+          }).join('') + '</div>'
+        : '<div class="mpempty">วันนี้ยังไม่ได้ลงแพลนเมนู</div>');
+}
+
+(async function mpInit(){
+  MPCAL = await mpLoadPlan();
+  var days = Object.keys(MPCAL).sort();
+  var sec = document.getElementById('menu-calendar');
+  if(!days.length){ if(sec) sec.style.display = 'none'; return; }
+  var today = mpTodayTH();
+  MPCAL_DAY = days.filter(function(k){ return k >= today; })[0] || days[days.length-1];
+  mpRenderBar(); mpRenderDay();
+})();
+
 
 /* UTM capture */
 (function(){
