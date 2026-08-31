@@ -1029,6 +1029,28 @@ function mpHasHyrox(){ return MP_SETS.some(s => s.isHx); }
 function mpPriceOf(s, t){ if(!s) return 0; return t==='lc' ? s.price_lc : s.price_hp; }
 function mpTypeLabel(t){ return t==='hp' ? 'High Protein' : t==='lc' ? 'Low Carb' : 'Hyrox'; }
 
+/* อ่านว่า "ใบนี้เป็น Meal Plan ประเภทไหน" จากแถวเซ็ตในใบเดียวกัน
+   ทำไมต้องมี: แถวกล่องเมนูรายวันเก็บ notes ว่า "meal_plan:box:r1/3"
+   — ในตัวมันเองไม่ได้บอกว่า HP/LC/Hyrox เลย ต้องไปดูแถวเซ็ตที่อยู่ใบเดียวกัน
+   คืน 'hp' | 'lc' | 'hyrox' | null (null = หาไม่เจอ เช่นใบรอบ 2 ที่มีแต่แถวกล่อง) */
+function mpTypeOfOrder(o){
+  // ชั้นที่ 1 — แถวเซ็ตในใบเดียวกัน (แม่นที่สุด เพราะระบบเขียนเอง)
+  for (const it of ((o && o.order_items) || [])) {
+    const m = String(it.notes || '').match(/^meal_plan:(hp|lc|hyrox):/);
+    if (m) return m[1];
+  }
+  /* ชั้นที่ 2 — ใบรอบ 2..N กับใบที่แอดมินเปิดให้ ไม่มีแถวเซ็ตติดมาด้วย
+     แต่มักเขียนประเภทไว้ในโน้ตของใบ ("Low Carb Program รายสัปดาห์ — รอบ 3/3")
+     หรือในชื่อรายการ ("HYROX SET 6 กล่อง") → กู้คืนได้อีก ~30 ใบ
+     ⚠️ จับเฉพาะคำเต็มที่กำกวมไม่ได้ — ไม่จับ "HP"/"LC" ลอยๆ เพราะโน้ตเป็นข้อความอิสระ */
+  const t = [String((o && o.notes) || '')]
+    .concat(((o && o.order_items) || []).map(i => String(i.menu_name || ''))).join(' | ');
+  if (/hyrox/i.test(t)) return 'hyrox';
+  if (/high\s*protein/i.test(t) || /meal\s*plan\s*hp\b/i.test(t)) return 'hp';
+  if (/low\s*carb/i.test(t)     || /meal\s*plan\s*lc\b/i.test(t)) return 'lc';
+  return null;   // หาไม่เจอจริงๆ = ขึ้น "Meal Plan" เฉยๆ ดีกว่าเดาผิด
+}
+
 async function loadMpOfferSets(){
   try{
     const { data, error } = await sb.from('mp_offer_sets').select('*').eq('is_active', true).order('display_order');
@@ -1289,6 +1311,7 @@ function addPkgToCart() {
     price:      pkgCurrentPrice(),
     qty:        1,
     items,
+    gifts: pkgGiftsOf(currentPkg.id),
     free_shipping: !!currentPkg.free_shipping
   });
   saveCart(); updateCartUI();
@@ -1326,6 +1349,24 @@ function pkgGroupEligible(g){
    (ไม่ต้องรัน SQL — แอดมินแก้ % / ขั้นต่ำ ได้ที่หน้า DB แท็บ 🏷️ บ่อเซล)          */
 const PKGCLR_KEY = 'pkg_clearance';
 let pkgClearance = {};
+
+/* ── 🎁 ของแถมติดเซ็ต ────────────────────────────────────────────────────────
+   นัทสั่ง 22 ส.ค. 2569 (เคสจริง: เซ็ตสารทจีน 8 เมนู แถมซาลาเปา 2 ลูก)
+   ปัญหาที่แก้: ของแถมที่เขียนไว้แค่ในคำโฆษณา **ไม่มีอะไรวิ่งเข้า order_items**
+                → หน้าครัวไม่เห็น → จัดของขาดทุกใบ แล้วไปโผล่ตอนลูกค้าทัก
+                (กลไกเดียวกับที่ทำให้โค้ดของแถม SALMON มีคนใช้ 0 คน — ต้องพึ่งคนจำ)
+   ที่เก็บ: kitchen_data คีย์ 'pkg_gifts' = { "<package id>": [ {code,name,qty} ] }
+   ⚠️ ไม่ต้องรัน SQL · แอดมิน/นิว ตั้งเองได้ที่หน้า DB แท็บแพคเกจ
+   ⚠️ ของแถม "ลูกค้าไม่ต้องกด" — ไม่ใช่กลุ่มการเลือก ไม่นับรวมโควตากล่อง ไม่คิดเงิน */
+const PKGGIFT_KEY = 'pkg_gifts';
+let pkgGifts = {};
+function pkgGiftsOf(pkgId){
+  const raw = pkgGifts[pkgId];
+  if(!Array.isArray(raw)) return [];
+  return raw.map(g => ({ code:String(g.code||'').trim(), name:String(g.name||g.code||'').trim(), qty:Math.max(1, Number(g.qty)||1) }))
+            .filter(g => g.code);
+}
+function giftLineText(list){ return (list||[]).map(g => g.name + (g.qty>1 ? ' ×'+g.qty : '')).join(' · '); }
 function pkgClr(pkg){
   const p = pkg || currentPkg;
   if (!p) return null;
@@ -1435,6 +1476,7 @@ function renderPkgSelectGrouped(){
       </div>
       ${_clr?`<div style="font-size:11.5px;color:#DC2626;background:#FEF2F2;border-radius:8px;padding:4px 8px;margin-top:4px;font-weight:700;">🏷️ เลือกอย่างน้อย ${_clr.min_items} อย่าง ลดทันที ${_clr.percent}% · เลือกเพิ่มได้ไม่จำกัด</div>`:''}
       ${currentPkg.delivery_rounds>1?`<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:4px 8px;margin-top:4px;">📦 เซ็ตนี้แบ่งส่ง ${currentPkg.delivery_rounds} รอบ${currentPkg.flexible_delivery?' · เลือกวันรับเองได้ตอนเช็คเอาท์':''}</div>`:''}
+      ${pkgGiftsOf(currentPkg.id).length?`<div style="font-size:12px;color:#92400E;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:8px;padding:5px 9px;margin-top:4px;font-weight:700;">🎁 แถมในเซ็ตนี้: ${h(giftLineText(pkgGiftsOf(currentPkg.id)))} <span style="font-weight:400;">— ไม่ต้องเลือก ใส่ให้อัตโนมัติ</span></div>`:''}
     </div>`;
   }
   const listEl=document.getElementById('pkg-mlist');
@@ -1529,6 +1571,7 @@ function addGroupedPkgToCart(){
     id:'pkg_'+currentPkg.id, type:'package', package_id:currentPkg.id,
     name:currentPkg.name, code:'SET-'+(currentPkg.size||''), base_price:currentPkg.base_price,
     price:pkgGroupedPrice(), qty:1, items,
+    gifts: pkgGiftsOf(currentPkg.id),
     delivery_rounds:(currentPkg.delivery_rounds||1), flexible_delivery:!!currentPkg.flexible_delivery,
     free_shipping:!!currentPkg.free_shipping
   });
@@ -2187,15 +2230,35 @@ function readyDateLabel(item) {
   return `${DAYS[d.getDay()]}ที่ ${d.getDate()} ${MONTHS[d.getMonth()]}`;
 }
 
+/* 🔒 วันแรกที่ส่งได้จริง = วันที่ช้าที่สุดของ available_from ในตะกร้า
+   เดิม renderDatePick คิดวันแรกจาก "เวลาตัดรอบ" อย่างเดียว ไม่เคยดู available_from เลย
+   → เมนูพรีออเดอร์ที่ยังไม่ถึงวันขาย ลูกค้าเลือกวันส่งก่อนหน้าได้ (เจอจริง ใบ U-0823-013
+     เมนูเริ่ม 24 ส.ค. แต่สั่งส่ง 23 ส.ค. ครัวต้องทำของที่ยังไม่ได้วางแผน) */
+function cartEarliestReadyDate(){
+  let latest = null;
+  for (const c of cart) {
+    const item = menuItems.find(m => m.id === c.id);
+    if (!item || !item.available_from) continue;
+    const ymd = String(item.available_from).slice(0,10);
+    if (!latest || ymd > latest) latest = ymd;
+  }
+  return latest;   // 'YYYY-MM-DD' หรือ null
+}
+
 function cartWeekType() {
-  // 'next' | 'current' | null
+  /* คืน 'next' ถ้าตะกร้า **มีเมนูพรีออเดอร์อยู่แม้แต่ชิ้นเดียว** ('current' = ของพร้อมส่งทั้งตะกร้า)
+     ⚠️ เดิมตอบตามเมนูชิ้นแรกที่เจอชิ้นเดียว — ใช้ได้ตอนที่ยังห้ามปนตะกร้า
+     พอ 24 ส.ค. 2569 เปิดให้ปนได้ ตะกร้า [เมนูปกติ, เมนูอาทิตย์หน้า] จะถูกตอบว่า
+     'current' ทั้งที่มีของพรีออเดอร์อยู่ → ใบสั่งจะติดธง delivery_week ผิด */
+  let seen = false;
   for (const c of cart) {
     if (c.type === 'package' || c.type === 'meal_plan') continue;
     const item = menuItems.find(m => m.id === c.id);
     if (!item) continue;
-    return isNextWeekItem(item) ? 'next' : 'current';
+    seen = true;
+    if (isNextWeekItem(item)) return 'next';
   }
-  return null;
+  return seen ? 'current' : null;
 }
 
 // ══════════════════════════════════════
@@ -2263,7 +2326,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2288,6 +2351,17 @@ async function init() {
     const phoneInput = document.getElementById('recipient-phone-input');
     if (phoneInput && customer?.phone) phoneInput.value = customer.phone;
   } catch(e) { console.warn('Customer processing failed', e); }
+
+  /* 🏷️ แท็กแคมเปญชั่วคราว (ดูคำอธิบายเต็มที่ activeCampaignTag) — โหลดมากับ config ก้อนเดียวกัน
+     ไม่มีคีย์นี้ = ไม่มีอะไรเปลี่ยนเลยสักบรรทัด ของเดิมทำงานเหมือนเดิมทุกอย่าง */
+  try {
+    const cfgRows = val(cfgR).data || [];
+    const camp = cfgRows.find(r => r.key === CAMPAIGN_KEY);
+    const raw = camp && camp.data;
+    const size = raw ? JSON.stringify(raw).length : 0;
+    if (size > 400000) { console.warn('campaign_tags ใหญ่ผิดปกติ (' + size + ') — ข้ามไว้ก่อน กันหน้าสั่งของอืด'); }
+    else campaignTags = raw || {};
+  } catch(e) { campaignTags = {}; }
 
   // menu + สร้างลำดับหมวด (ไม่ hardcode — ใช้ทุก category ที่มีใน data)
   try {
@@ -2325,6 +2399,7 @@ async function init() {
       });
     } catch(e) { salePctByCode = {}; }
     pkgClearance = (cfgMap[PKGCLR_KEY] && typeof cfgMap[PKGCLR_KEY]==='object') ? cfgMap[PKGCLR_KEY] : {};
+    pkgGifts     = (cfgMap[PKGGIFT_KEY] && typeof cfgMap[PKGGIFT_KEY]==='object') ? cfgMap[PKGGIFT_KEY] : {};
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
     const dbCats = (cfgMap.appConfig && Array.isArray(cfgMap.appConfig.categories)) ? cfgMap.appConfig.categories : [];
@@ -2656,6 +2731,9 @@ function refreshItemViews(){
 //      พอขึ้นสัปดาห์ใหม่ป้ายเลื่อนสถานะเอง ไม่ต้องมีใครไปไล่แก้ทุกวันจันทร์
 //   ⛔ เลิกใช้ระบบเติม x นำหน้า (xS3) แล้ว — วันที่บอกได้ตรงกว่าและไม่ต้อง maintain
 const WEEK_KEY = 'menu_special_weeks';   // kitchen_data — { "S103": "2026-08-03", ... }
+// สีแถบซ้ายของเมนูสัปดาห์หน้า — เปลี่ยนตามธีมของสัปดาห์นั้น แก้ที่นี่ที่เดียว
+//   22 ส.ค. 2026 นัทสั่งเปลี่ยนจากฟ้า #3B82F6 เป็นแดง ให้เข้าธีมสารทจีน
+const WEEK_ACCENT = '#C1272D';
 let menuWeeks = {};
 
 // เซ็ตที่ครัวเป็นคนจัดเมนูให้ (ต้องเข้าหน้า "แพลนเมนู" เหมือน Meal Plan)
@@ -2777,7 +2855,9 @@ function subcodeNo(m){
 // ⚠️ เดิมใช้ Math.max(0,ago) → สัปดาห์หน้ากับสัปดาห์นี้ได้อันดับเท่ากัน = เรียงปนกัน
 function weeklyRank(m){
   const a = weeksAgo(m);
-  if (a !== null) return a === 0 ? 0 : (a < 0 ? 0.5 : a);
+  // นัทสั่ง 22 ส.ค.: "เมนูพิเศษใหม่ล่าสุดจะอยู่บนสุดเสมอ"
+  //   สัปดาห์หน้า (พรีออเดอร์ a<0) = ใหม่สุด → บนสุด · แล้วสัปดาห์นี้ · แล้วรอบก่อน (ใหม่→เก่า)
+  if (a !== null) return a < 0 ? -1 : a;
   return (subcodeInfo(m) || (m && m.is_weekly_special)) ? 0 : 99;   // ยังไม่ติดแท็ก
 }
 function sortWeeklyFirst(list){
@@ -2861,7 +2941,7 @@ function renderMenu() {
       : qty===0
       ? `<button class="mi-v2-add" onclick="event.stopPropagation();addItem('${item.id}')">+</button>`
       : `<div class="mi-v2-qc"><button class="mi-v2-qb" onclick="event.stopPropagation();chgQty('${item.id}',-1)">−</button><span class="mi-v2-qn">${qty}</span><button class="mi-v2-qb plus" onclick="event.stopPropagation();chgQty('${item.id}',1)"${remaining<=0?' disabled style="opacity:.35"':''}>+</button></div>`;
-    return `<div class="mi-v2${isOut?' out-of-stock':''}" id="menu-item-${h(item.code||item.id)}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid #3B82F6;padding-left:9px;':''}">` +
+    return `<div class="mi-v2${isOut?' out-of-stock':''}" id="menu-item-${h(item.code||item.id)}" style="${isOut?'opacity:.6':''}${isNextWk?'border-left:3px solid '+WEEK_ACCENT+';padding-left:9px;':''}">` +
       img +
       `<div class="mi-v2-info"><div class="mi-v2-code">${codeLineHtml(item)}</div><div class="mi-v2-name" onclick="openMenuDetail('${item.id}')">${h(item.name)}</div><div class="mi-v2-tags">${tags}</div></div>` +
       `<div class="mi-v2-right">${priceBlockHtml(item)}${ctrl}</div></div>`;
@@ -2878,11 +2958,19 @@ function addItem(id) {
   const s = stockInfo(id);
   const ex = cart.find(c => c.id===id);
   if (!s.unlimited && s.remaining <= 0) { toast(stockBlockMsg(s)); return; }
-  // Week-type check: block mixed cart (A)
+  /* 🔴 เดิมบล็อกไม่ให้ปนเมนูอาทิตย์หน้ากับเมนูปกติ — "กรุณาสั่งแยกออเดอร์"
+     ลบออกแล้ว 24 ส.ค. 2569 (นัทสั่งด่วน · ลูกค้าจริงติดจนสั่งไม่ได้ กิ๊ฟรายงานเข้ามา)
+
+     ทำไมเคยต้องบล็อก: 1 ออเดอร์มีวันส่งเดียว ถ้าปนของที่ยังไม่ถึงวันขาย
+     ครัวจะต้องทำของที่ยังไม่ได้วางแผน (เคยเกิดจริง ใบ U-0823-013)
+
+     ทำไมไม่ต้องบล็อกแล้ว: cartEarliestReadyDate() + renderDatePick
+     **ดันวันแรกที่เลือกได้ไปถึงวันที่ของทุกชิ้นในตะกร้าพร้อมส่งอยู่แล้ว**
+     = ปนได้อย่างปลอดภัย ระบบเลือกวันที่ทุกอย่างพร้อมให้เอง
+     กำแพงนี้เลยเหลือแค่ "กันการขาย" ไม่ได้กันของผิดอีกต่อไป
+
+     ⛔ ถ้าจะเอากลับมา ต้องเอาตัวบังคับวันออกก่อน ไม่ใช่ใส่ทับกัน */
   const _isNext = isNextWeekItem(item);
-  const _cwt   = cartWeekType();
-  if (_cwt === 'current' && _isNext)  { toast('เมนูนี้ส่งอาทิตย์หน้า — กรุณาสั่งแยกออเดอร์'); return; }
-  if (_cwt === 'next' && !_isNext)    { toast('ตะกร้ามีเมนูอาทิตย์หน้าอยู่ — กรุณาสั่งแยกออเดอร์'); return; }
   if (ex) ex.qty++;
   else cart.push({ id:item.id, name:item.name, price:salePrice(item), code:item.code||'', qty:1 });
   saveCart(); refreshItemViews();
@@ -2989,10 +3077,13 @@ function renderCart() {
     return;
   }
   // Next-week notice banner
-  const _cwt = cartWeekType();
-  const weekBanner = _cwt === 'next'
+  /* ตะกร้าปนของพรีออเดอร์ได้แล้ว → ป้ายต้องบอก "วันแรกที่ส่งได้จริง"
+     ไม่ใช่ "ส่งอาทิตย์หน้า" ลอยๆ เพราะของในตะกร้าอาจพร้อมคนละวัน
+     ตัวเลขนี้มาจากที่เดียวกับที่ตัวเลือกวันส่งใช้ = พูดตรงกันเสมอ */
+  const _ready = cartEarliestReadyDate();
+  const weekBanner = _ready
     ? `<div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:10px;padding:10px 14px;margin-bottom:10px;font-size:13px;color:#1D4ED8;">
-        📅 <b>ออเดอร์นี้ส่งอาทิตย์หน้า</b> — ระบบจะเลือกวันส่งให้อัตโนมัติ
+        📅 <b>ตะกร้านี้เริ่มส่งได้ ${h(readyDateLabel({available_from:_ready}))}</b> — มีเมนูที่ยังไม่ถึงวันขาย ระบบเลือกวันส่งให้เองแล้ว
        </div>` : '';
   el.insertAdjacentHTML('afterbegin', weekBanner);
   const rows = cart.map(c => {
@@ -3030,6 +3121,7 @@ function renderCart() {
         <div style="flex:1;min-width:0;">
           <div class="citem-name" style="color:#7c4f10;">📦 ${h(c.name)}${c.free_shipping?' <span style="font-size:10px;font-weight:800;background:#D1FAE5;color:#065F46;padding:1px 7px;border-radius:8px;">🚚 ส่งฟรี</span>':''}</div>
           <div style="margin:6px 0 4px;">${ilist}</div>
+          ${(c.gifts||[]).length?`<div style="font-size:11.5px;color:#92400E;background:#FEF3C7;border-radius:7px;padding:3px 8px;margin:0 0 5px;font-weight:700;display:inline-block;">🎁 แถม ${h(giftLineText(c.gifts))}</div>`:''}
           <div class="citem-sub" style="color:#D98C2B;font-weight:700;">฿${c.price.toLocaleString()}</div>
         </div>
         <button onclick="removePkgFromCart('${c.id}')"
@@ -3150,6 +3242,22 @@ function renderDatePick() {
     startOffset = isOutOfProvince ? baseOffset + 1 : baseOffset;
   }
 
+  // 🔒 ของพรีออเดอร์: ดันวันแรกไปให้ถึงวันที่เมนูพร้อมขายจริง ห้ามเลือกก่อนหน้า
+  const _ready = cartEarliestReadyDate();
+  let readyBlocked = false;
+  if (_ready) {
+    const todayY = localYMD(now);
+    let off = 0;
+    while (off <= 60) {
+      const dd = new Date(now); dd.setDate(now.getDate() + off);
+      if (localYMD(dd) >= _ready) break;
+      off++;
+    }
+    if (off > startOffset) { startOffset = off; readyBlocked = true; }
+    if (selDate && selDate < _ready) selDate = null;   // ที่เลือกค้างไว้ก่อนหน้า = ล้างทิ้ง
+    void todayY;
+  }
+
   let spanDays = 7;   // เดิม 6 — เพิ่ม 1 ชดเชยวันเสาร์ที่ปิด ลูกค้าจะยังเห็นวันเลือกได้เท่าเดิม
 
   // วันที่เคยเลือกไว้ตกวันหยุดส่ง (เช่นเสาร์) → ล้างทิ้ง ไม่ให้ค้างแล้วสั่งผ่าน
@@ -3157,6 +3265,13 @@ function renderDatePick() {
 
   // Meal Plan ส่งเฉพาะ จ/พ/ศ — ถ้าวันที่เลือกไว้ไม่ตรง (เช่นสลับมาจากตะกร้าปกติ) ให้ล้างทิ้ง
   if(isMeal && selDate && !isMWF(new Date(selDate + 'T00:00:00').getDay())) selDate = null;
+
+  let readyNotice = '';
+  if (readyBlocked) {
+    const rd = new Date(_ready + 'T00:00:00');
+    readyNotice = `<div style="padding:6px 14px 4px;font-size:11px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;margin:0 14px 4px;line-height:1.5">
+      📅 <b>ในตะกร้ามีเมนูที่เริ่มส่งวันที่ ${rd.getDate()} ${MONTHS[rd.getMonth()]}</b> — วันก่อนหน้านั้นเลือกไม่ได้</div>`;
+  }
 
   let noticeHtml = (!isMeal && isPastCutoff)
     ? `<div style="padding:5px 14px 4px;font-size:11px;color:#92400E;background:#FEF3C7;border-radius:8px;margin:0 14px 4px;line-height:1.4">⏰ หลัง ${CUTOFF_HOUR}:00 น. — วันแรกที่สั่งได้คือมะรืนนี้</div>`
@@ -3174,7 +3289,7 @@ function renderDatePick() {
     if(why) noticeHtml += `<div style="padding:6px 14px 4px;font-size:11px;color:#B45309;background:#FFF7ED;border:1px solid #FED7AA;border-radius:8px;margin:0 14px 4px;line-height:1.5">
       🏵️ <b>${dd.getDate()} ${MONTHS[dd.getMonth()]} ร้านหยุด</b> — ${why} · วันนั้นเลือกไม่ได้ วันอื่นส่งปกติ</div>`;
   }
-  if(notice) notice.innerHTML = noticeHtml;
+  if(notice) notice.innerHTML = readyNotice + noticeHtml;
 
   let html = '';
   for(let i = startOffset; i <= startOffset + spanDays; i++){
@@ -3493,6 +3608,33 @@ async function submitOrder() {
   if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
   if (!selDate)      { toast('กรุณาเลือกวันจัดส่ง'); return; }
   if (!selSlot)      { toast('กรุณาเลือกช่วงเวลา'); return; }
+  /* 🔁 กันออเดอร์ขยะจากการ "สั่งใหม่แทนการแก้"
+     เคสจริง 23 ส.ค.: Leklucky สั่ง U-0824-015 ฿483 แล้ว 4 นาทีต่อมาสั่ง U-0824-016 ฿588
+     ใบแรกไม่จ่าย แต่ครัวจัดไปแล้วทั้ง 2 ใบ = เสียของจริง 5 กล่อง
+     ต้นเหตุ: สั่งไปแล้วอยากเปลี่ยน แต่แอปไม่มีทางให้แก้ → สั่งใหม่ทับ
+     เตือนตรงนี้ = ลูกค้าเคลียร์เอง ไม่ต้องผ่านแอดมิน (นัทสั่ง "อย่าให้เป็นหน้าที่แอดมินอย่างเดียว")
+     ⚠️ เตือนเฉพาะใบที่ "ยังไม่จ่าย" — ใบที่จ่ายแล้วอาจตั้งใจสั่งเพิ่มจริง ห้ามไปขวาง
+     ⚠️ เช็คพลาด = ปล่อยผ่าน ห้ามบล็อกการสั่งเด็ดขาด */
+  try{
+    if (lineProfile && lineProfile.userId) {
+      const dupQ = await sb.from('orders')
+        .select('order_number,total,payment_status,status')
+        .eq('line_uid', lineProfile.userId)
+        .eq('delivery_date', selDate)
+        .eq('payment_status', 'unpaid')
+        .neq('status', 'cancelled')
+        .limit(3);
+      const dups = (dupQ && dupQ.data) || [];
+      if (dups.length) {
+        const lines = dups.map(d => '• ' + d.order_number + ' — ฿' + Number(d.total||0).toLocaleString()).join('\n');
+        const ok = confirm(
+          'คุณมีออเดอร์ของวันนี้ที่ยังไม่ได้ชำระอยู่แล้ว\n\n' + lines +
+          '\n\nถ้าต้องการ "แก้ของเดิม" กรุณาทักแอดมินแทนการสั่งใหม่\n' +
+          'ถ้าต้องการสั่งเพิ่มอีกชุด กด ตกลง เพื่อไปต่อ');
+        if (!ok) return;   // ปุ่มยังไม่ถูกปิดใช้งาน ณ จุดนี้ (ปิดที่บรรทัดล่าง) จึงแค่ออกไปเฉยๆ
+      }
+    }
+  }catch(e){ /* เช็คไม่ได้ = ปล่อยผ่าน ห้ามให้การสั่งของพังเพราะตัวเตือน */ }
   /* 🔒 ด่านสุดท้ายก่อนสร้างออเดอร์ — ล็อกแค่ตอนโชว์ปุ่มไม่พอ
      ค่าที่ค้างใน selSlot จากตอนก่อนใส่ของทำสดลงตะกร้า จะรอดมาถึงตรงนี้ได้
      (บทเรียนเดียวกับเคสล็อกวัน: กันที่ UI อย่างเดียว = หลุดเสมอ) */
@@ -3595,13 +3737,19 @@ async function submitOrder() {
   // ───────────────────────────────────────────────────────────
 
   try {
+    /* 🔴 ต้องรวมแถวลูกค้า "ก่อน" คิดเงิน — เดิมคิดเงินก่อนแล้วค่อยรวม ห่างกันบรรทัดเดียวแต่ผลต่างกันมาก
+       เคสจริง (22 ส.ค.): ลูกค้าที่ถูกติดป้าย 👑 เพื่อนนัท ไว้แล้ว แต่ยังไม่เคยเปิดแอปผ่านไลน์
+       (แถวถูกคีย์ด้วยเบอร์ ยังไม่มี line_uid) → พอเปิดแอปครั้งแรกจะได้แถวใหม่ที่ยังไม่มีป้าย
+       → คิดเงินตอนนั้น = ไม่ได้ลด 10% ไม่ได้ส่งฟรี → ค่อยไปรวมแถวทีหลังตอนที่สายไปแล้ว
+       = ใบแรกจ่ายเต็ม ทั้งที่เป็นเพื่อนเจ้าของ (เรื่องเดียวกับที่ระบบตั้งใจจะเลิกให้แอดมินจำเอง)
+       ย้ายขึ้นมาก่อน = ป้าย/tier ที่ติดไว้มีผลตั้งแต่ใบแรก · ลูกค้าทั่วไปไม่มีอะไรเปลี่ยน */
+    // กันลูกค้าซ้ำ: ถ้าเบอร์นี้เป็นลูกค้าเดิม (migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า ใช้เป็น customer_id (เก็บประวัติ ไม่สร้างซ้ำ) · พลาด=ใช้ customer เดิม
+    customer = (await resolveCanonicalCustomer(recipientPhone, lineProfile.userId, lineProfile.displayName)) || customer;
     // 1. Create order — คิดยอดผ่าน computeOrder (ค่าส่ง + ส่วนลดคูปอง)
     const o = computeOrder();
     const deliveryFee = o.feeAfter;          // ค่าส่งหลังหักส่งฟรี (0 ถ้ายังไม่ปักหมุด)
     const grandTotal  = o.total;             // ยอดสุทธิ
-    const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5)
-    // กันลูกค้าซ้ำ: ถ้าเบอร์นี้เป็นลูกค้าเดิม (migrate/เคยสั่ง) → ผูก line_uid เข้าแถวเก่า ใช้เป็น customer_id (เก็บประวัติ ไม่สร้างซ้ำ) · พลาด=ใช้ customer เดิม
-    customer = (await resolveCanonicalCustomer(recipientPhone, lineProfile.userId, lineProfile.displayName)) || customer;
+    const allPromoCodes = [...appliedPromos.map(p=>p.code), ...((o.autoList||[]).map(a=>a.code))]; // โค้ดกรอกเอง + โปรอัตโนมัติ (WELCOME50/WW5/VIPFRIEND)
     const orderPayload = {
       order_number:    orderNum,
       customer_id:     customer?.id || null,
@@ -3713,6 +3861,16 @@ async function submitOrder() {
             menu_name: it.name, menu_code: it.sku,
             quantity: 1, unit_price: it.extra_price, subtotal: it.extra_price,
             notes: 'pkg:' + c.package_id + (chunks ? ':course:1/' + roundCount : '') });
+        });
+        /* 🎁 ของแถม — บรรทัดแยกของตัวเอง ราคา 0
+           ต้องเป็นแถวจริงใน order_items ไม่ใช่โน้ตท้ายใบ เพราะครัวอ่านทีละบรรทัด
+           แบ่งส่งหลายรอบ = แถมไปกับรอบแรกรอบเดียว (ของแถมต่อ 1 เซ็ต ไม่ใช่ต่อรอบ) */
+        (c.gifts||[]).forEach(g => {
+          const gm = menuItems.find(m => m.code === g.code);
+          items.push({ order_id: ord.id, menu_item_id: gm ? gm.id : null,
+            menu_name: g.name, menu_code: g.code,
+            quantity: g.qty, unit_price: 0, subtotal: 0,
+            notes: 'pkg:' + c.package_id + ':gift' });
         });
       } else if (c.type === 'meal_plan') {
         items.push({ order_id: ord.id, menu_item_id: null,
@@ -3987,16 +4145,86 @@ function isNewMemberCustomer(){
    ⛔ ไม่ผูกกับเบอร์/ชื่อ — 20 ส.ค. เคยเดาตัวตนจากเบอร์แล้วข้อมูลไปหาลูกค้าผิดคน
       (658 เบอร์ผูกหลายชื่อ) → ต้องเป็นแถวที่แอดมินเลือกเองเท่านั้น */
 function isVipFriend(){ return !!(customer && (customer.customer_type||'')==='vip_friend'); }
+/* ══ 🏷️ แท็กแคมเปญชั่วคราว — ส่วนลดรายคนที่ "หมดอายุแล้วหลุดเอง" ══════════════
+   นัทสั่งเอง 27 ส.ค. 2569: "กลุ่มลูกค้าที่เราเหมือนติดแท็กเขา ค่าตรงนี้มันจะไม่ถาวร
+   พอหมดอายุก็ต้องดึงเขาออกจากค่านั้น"
+
+   ทำไมไม่ใช้ customer_type: ช่องนั้นมีช่องเดียวและถือป้าย 'vip_friend' ของเพื่อนนัทอยู่
+   (สิทธิ์ลด 10% + ส่งฟรี ที่กู้มาจากโน้ตแชท 2 ปี) — ทับเมื่อไหร่ = เพื่อนนัทเสียสิทธิ์ถาวร
+
+   ที่เก็บ: kitchen_data คีย์ 'campaign_tags' — ห้อง 05 เขียนเองได้ ไม่ต้องรัน SQL ไม่ต้องเรียกห้องนี้
+   {
+     "wk0829": {
+       "label": "ส่วนลดลูกค้าที่ได้รับข้อความ",     // ลูกค้าเห็นบรรทัดนี้ที่หน้าจ่ายเงิน
+       "discount": { "type":"fixed", "value":50, "min_order":500 },   // type: fixed | percent
+       "expires_at": "2026-09-06",                  // เลยวันนี้ = ไม่เข้าเงื่อนไขเอง ไม่ต้องมีใครไปถอด
+       "uids": ["U....", "....abc123def456"]        // ใส่ uid เต็ม หรือ "เลขท้าย ≥12 ตัว" ก็ได้
+     }
+   }
+
+   🔑 2 เรื่องที่ห้องนี้ตัดสินต่างจากที่ห้อง 05 เสนอ พร้อมเหตุผล:
+   1. **รองรับ "เลขท้าย uid" ด้วย ไม่ใช่ uid เต็มอย่างเดียว** — ลิสต์ 1,500 คนถ้าเก็บ uid เต็มคือ ~55KB
+      ที่ลูกค้า *ทุกคน* ต้องโหลดตอนเปิดแอป เพื่อคนกลุ่มเดียว · เก็บ 12 ตัวท้ายลดเหลือ ~20KB
+      และไม่ต้องวาง uid เต็มของลูกค้าไว้ในที่ที่ anon อ่านได้
+   2. **ไม่ทบกับเพื่อนนัท/tier — เลือกตัวที่ลูกค้าได้มากที่สุดตัวเดียว** ตามหลักเดิมของไฟล์นี้
+      (ของเดิมเขียนไว้ว่า "ให้เพื่อนนัทกินคนเดียว เพราะมากกว่าอยู่แล้ว" — ที่นี่ทำให้เป็นจริงเสมอ
+       แม้แคมเปญจะให้มากกว่า ลูกค้าก็ไม่เสียเปรียบ)
+      ส่วน WELCOME50 (สมาชิกใหม่) ยัง **ทบได้เหมือนเดิม** ไม่แตะพฤติกรรมเก่า
+   ⚠️ กันแอปช้า: ถ้าลิสต์ใหญ่ผิดปกติ (>400KB) จะข้ามทั้งก้อน ดีกว่าให้หน้าสั่งของอืดทั้งร้าน */
+const CAMPAIGN_KEY = 'campaign_tags';
+let campaignTags = {};
+
+/* หาแท็กที่ลูกค้าคนนี้ได้จริง ณ วันนี้ — คืน null ถ้าไม่มี/หมดอายุ/ยอดไม่ถึงขั้นต่ำ */
+function activeCampaignTag(sub){
+  try{
+    const uid = lineProfile && lineProfile.userId;
+    if(!uid || !campaignTags) return null;
+    const today = localYMD(new Date());
+    let best = null;
+    Object.keys(campaignTags).forEach(key => {
+      const t = campaignTags[key];
+      if(!t || !Array.isArray(t.uids) || !t.uids.length) return;
+      if(t.expires_at && String(t.expires_at) < today) return;          // ⏳ หมดอายุ = หลุดเอง
+      if(t.starts_at  && String(t.starts_at)  > today) return;          // ตั้งล่วงหน้าได้
+      /* จับคู่ได้ 2 แบบ: uid เต็ม หรือเลขท้าย (ต้อง ≥12 ตัว กันชนกันโดยบังเอิญ) */
+      const hit = t.uids.some(u => {
+        const v = String(u||'');
+        if(!v) return false;
+        return v === uid || (v.length >= 12 && uid.endsWith(v));
+      });
+      if(!hit) return;
+      const d = t.discount || {};
+      if(d.min_order && sub < Number(d.min_order)) return;              // ยอดไม่ถึงขั้นต่ำ
+      const type = (d.type === 'percent') ? 'percent' : 'fixed';
+      const value = Number(d.value) || 0;
+      if(value <= 0) return;
+      const amount = (type === 'fixed') ? value : Math.round(sub * value / 100);
+      if(!best || amount > best.amount)
+        best = { kind:'campaign', code:('CAMP-' + key).toUpperCase(), label:(t.label || 'ส่วนลดพิเศษสำหรับคุณ'),
+                 type, value, amount, tagKey:key };
+    });
+    return best;
+  }catch(e){ console.warn('campaign tag:', e); return null; }
+}
+
 function autoPromos(sub){
   const list = [];
   if(isNewMemberCustomer() && sub>=500)
     list.push({ kind:'welcome', code:'WELCOME50', label:'ส่วนลดสมาชิกใหม่ (ครบ ฿500)', type:'fixed',   value:50 });
-  /* เพื่อนนัท 10% กับ Wellness Warriors 5% ต้องไม่ทบกันเป็น 15%
-     ให้เพื่อนนัทกินคนเดียว (มากกว่าอยู่แล้ว) — ลูกค้าไม่เสียเปรียบ และเลขไม่เฟ้อ */
+  /* เพื่อนนัท 10% · Wellness Warriors 5% · แท็กแคมเปญ — ทั้ง 3 อยู่กลุ่มเดียวกัน ห้ามทบกันเอง
+     เลือกตัวที่ "ลูกค้าได้มากที่สุด" ตัวเดียว → ไม่มีเคส 15% และลูกค้าไม่เสียเปรียบไม่ว่าถือป้ายอะไร */
+  const cands = [];
   if(isVipFriend())
-    list.push({ kind:'vip',     code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',      type:'percent', value:10 });
+    cands.push({ kind:'vip',  code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',    type:'percent', value:10 });
   else if(customer && (customer.tier||'')==='Wellness Warriors')
-    list.push({ kind:'tier',    code:'WW5',       label:'ส่วนลด 5% Wellness Warriors',   type:'percent', value:5  });
+    cands.push({ kind:'tier', code:'WW5',       label:'ส่วนลด 5% Wellness Warriors', type:'percent', value:5  });
+  const camp = activeCampaignTag(sub);
+  if(camp) cands.push(camp);
+  if(cands.length){
+    cands.forEach(c => { if(c.amount == null) c.amount = (c.type==='fixed') ? c.value : Math.round(sub * c.value/100); });
+    cands.sort((a,b) => b.amount - a.amount);
+    list.push(cands[0]);
+  }
   return list;
 }
 
@@ -5030,7 +5258,17 @@ function renderOrders(orders) {
           const _notes = i.notes || '';
           let _tag = '';
           if (_notes.startsWith('pkg:')) _tag = '📦 แพคเกจ';
-          else if (_notes.startsWith('meal_plan:')) _tag = _notes.includes(':hp:') ? '🥗 High Protein' : _notes.includes(':lc:') ? '🥗 Low Carb' : '🏋️ Hyrox';
+          else if (_notes.startsWith('meal_plan:')) {
+            /* 🔴 เดิม: ไม่เจอ ':hp:' และ ':lc:' → เหมาว่าเป็น Hyrox
+               ผลคือแถวกล่องเมนู ("meal_plan:box:r1/3") ซึ่งไม่มีประเภทอยู่ในตัวเอง
+               ถูกติดป้าย Hyrox หมด — 604 บรรทัดทั่วระบบ ทั้งที่ไม่มีลูกค้า Hyrox สักคน
+               เคสจริง: tarn ใบ U-0824-010 สั่ง LC แต่เมนูทั้ง 7 กล่องขึ้น "Hyrox"
+               (นัทเจอเอง 24 ส.ค. 2569 · ลูกค้าเปิดดูแล้วงงว่าสั่งอะไรไป)
+               ตอนนี้: แถวกล่องยืมประเภทจากแถวเซ็ตในใบเดียวกัน หาไม่เจอ = ไม่เดา */
+            const _m  = _notes.match(/^meal_plan:(hp|lc|hyrox):/);
+            const _mt = _m ? _m[1] : mpTypeOfOrder(o);
+            _tag = _mt === 'hp' ? '🥗 High Protein' : _mt === 'lc' ? '🥗 Low Carb' : _mt === 'hyrox' ? '🏋️ Hyrox' : '🥗 Meal Plan';
+          }
           else { const _mi = menuItems.find(m => m.code === i.menu_code); if (_mi && _mi.category) _tag = getCatLabel(_mi.category); }
           const _tagHtml = _tag ? `<span style="display:block;font-size:10px;font-weight:600;color:#1F4D3A;">${h(_tag)}</span>` : '';
           return `<div class="oline">${h(i.menu_name)} × ${i.quantity}${_tagHtml}<span class="oline-s">฿${(i.unit_price*i.quantity).toLocaleString()}</span></div>`;
@@ -5427,9 +5665,18 @@ function mpManageMoveDatePickerHtml(r) {
   </div>`;
 }
 
+/* 🔴 บั๊กที่ทำให้ของไปส่งผิดวัน (ลูกค้า VIP เจอเอง 26 ส.ค. 2569 — สแกนแล้วโดน 32 รอบ 6 คน)
+   เดิมตัวนี้อัปเดตแค่ mp_deliveries = "ตารางที่ลูกค้าเห็น"
+   แต่ครัว · หน้าแมส · หน้าออเดอร์ · ใบจัดของ ทุกจออ่านจากตาราง orders ทั้งหมด
+   → ลูกค้าเลื่อนวันเรียบร้อยในมือถือตัวเอง แต่ของยังไปส่งวันเดิม และไม่มีใครรู้ว่าเลื่อนไปแล้ว
+   ✅ ต้องย้าย "ทั้งสองฝั่ง" ให้จบในการกดครั้งเดียว
+   ⚠️ ยกเว้นใบที่มีของอย่างอื่นปนอยู่ (ใบแรกที่ซื้อเมนูเดี่ยวมาด้วย) — ย้ายทั้งใบจะลากของที่ลูกค้าไม่ได้ขอเลื่อนไปด้วย
+      เคสนั้นย้ายเฉพาะรอบ แล้วติดธงให้แอดมินจัดการ พร้อมบอกลูกค้าตรงๆ ว่าจะมีคนติดต่อกลับ */
 async function mpManageConfirmMoveDate(rowId) {
   if (!mpManageMoveDateSel) return;
   const newDate = mpManageMoveDateSel;
+  const row = (mpManageRows || []).find(x => x.id === rowId) || {};
+  const oldDate = row.delivery_date || '';
   const d = new Date(newDate + 'T00:00:00');
   const opensAt = new Date(d); opensAt.setDate(opensAt.getDate()-3);
   const deadline = new Date(d); deadline.setDate(deadline.getDate()-1);
@@ -5443,7 +5690,44 @@ async function mpManageConfirmMoveDate(rowId) {
       menu_items: [],   // ย้ายวัน = เมนูเดิมไม่เกี่ยวกับวันใหม่แล้ว ปล่อยว่างให้แอดมิน/ระบบ assign ใหม่ตามรอบวันนั้น
       customer_request: []
     }).eq('id', rowId);
-    toast('ย้ายวันส่งแล้ว ✓');
+
+    // ── ย้ายใบออเดอร์ของรอบนั้นตามไปด้วย ── (ถ้าไม่ทำ ครัวจะทำของตามวันเดิม)
+    let mixed = false, moved = false;
+    if (row.order_id) {
+      try {
+        const oq = await sb.from('orders').select('id,order_number,customer_name,delivery_date,notes,total').eq('id', row.order_id).maybeSingle();
+        const o = oq.data;
+        if (o && o.delivery_date !== newDate) {
+          /* ใบนี้มีของอื่นนอกจากรอบ Meal Plan ไหม — ดูจากรายการในใบ
+             ใบของรอบล้วนจะมีแต่บรรทัด MP-* (ยอด ฿0) ส่วนใบแรกมักมีเมนูเดี่ยวปนมาด้วย */
+          const itq = await sb.from('order_items').select('menu_code').eq('order_id', o.id).limit(200);
+          const codes = (itq.data || []).map(x => String(x.menu_code || ''));
+          mixed = codes.some(c => c && !/^MP-/i.test(c));
+          if (!mixed) {
+            const stamp = '[ลูกค้าเลื่อนรอบ ' + (oldDate||'?') + '→' + newDate + ']';
+            await sb.from('orders').update({
+              delivery_date: newDate,
+              notes: ((o.notes ? o.notes + ' ' : '') + stamp),
+              updated_at: new Date().toISOString()
+            }).eq('id', o.id);
+            moved = true;
+          }
+          // บันทึกไว้ให้ตามได้เสมอ ไม่ว่าจะย้ายใบได้หรือไม่
+          try {
+            await sb.from('activity_log').insert({
+              session_id: 'liff_' + Date.now() + '_' + Math.random().toString(36).slice(2,8),
+              actor: (lineProfile && lineProfile.displayName) || o.customer_name || 'ลูกค้า',
+              source: 'liff', action_type: 'order_move',
+              summary: (o.order_number || 'ออเดอร์') + ' ' + (o.customer_name || '') + ' — ลูกค้าเลื่อนรอบ Meal Plan '
+                       + (oldDate||'?') + ' → ' + newDate + (mixed ? ' ⚠️ ใบมีของอื่นปน ยังไม่ได้ย้ายใบ รอแอดมิน' : ''),
+              detail: { order_id: o.id, order_number: o.order_number, from: oldDate, to: newDate,
+                        by: 'customer', via: 'mp_manage', round_no: row.round_no || null, order_moved: moved, mixed_order: mixed }
+            });
+          } catch(e) { console.warn('log mp move:', e); }
+        }
+      } catch(e) { console.error('ย้ายใบออเดอร์ตามรอบไม่สำเร็จ:', e); }
+    }
+    toast(mixed ? 'ย้ายวันแล้ว ✓ แอดมินจะติดต่อกลับเรื่องของที่สั่งมาด้วยกัน' : 'ย้ายวันส่งแล้ว ✓');
   } catch(e) {
     console.error(e);
     toast('ย้ายวันไม่สำเร็จ ลองใหม่อีกครั้ง');

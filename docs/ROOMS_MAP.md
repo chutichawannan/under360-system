@@ -49,7 +49,8 @@
 
 | ห้อง | ถือไฟล์ | ขอบเขต |
 |---|---|---|
-| **u** (14 U-track final) | `liff_customer` · `operation_hub` · `kitchen_queue` · `main_database_v2` · `home_editor` | ระบบสั่ง/หลังบ้าน/ครัว ฝั่งโค้ด |
+| **u-maintainer** 🆕 | `liff_customer` · `operation_hub` · `kitchen_queue` · `main_database_v2` · `home_editor` · `print_pickslip` | ระบบสั่ง/หลังบ้าน/ครัว ฝั่งโค้ด — **รับช่วงจากห้อง u (ปิด 25 ส.ค. 2569)** · อ่าน `docs/HANDOFF_U_FINAL_20260825.md` ก่อน |
+| ~~**u** (14 U-track final)~~ | — | 🏁 **ปิดถาวร 25 ส.ค. 2569** ส่งไปไม่มีใครอ่าน → ใช้ `u-maintainer` |
 | **m** (02 M-track) | `web/` · `report.html` · blog | เว็บสาธารณะ · SEO · DNS cutover |
 | **f** (08 F-track) | `finance/` · `scripts/finance/` | P&L · ต้นทุน · **ตัวเลขยอดขายทุกตัวต้องผ่านห้องนี้** |
 | **k** (ครัวระบบจัดการและแปลภาษา) | `api/line-webhook.js` · `kitchen_console.html` | บอทกลุ่มครัว · แปลไทย↔พม่า |

@@ -893,8 +893,51 @@ let state = { ingredients: [], recipes: [], categories: [], suppliers: [], suppl
   openPkgId: null, editingPkgItems: {}, _pkgEditorInit: null, pkgMenuSearch: '',
   showActivityLog: false, dbMenuPageSize: 30,
   // ── 🏷️ บ่อเซล (sale pools) — เก็บที่ kitchen_data คีย์ 'sale_pools' (ไม่ต้องรัน SQL) ──
-  salePools: [], salePoolsLoaded: false, salePickPool: null, saleSearch: '', pkgClearance: {}
+  salePools: [], salePoolsLoaded: false, salePickPool: null, saleSearch: '', pkgClearance: {},
+  // ── 🎁 ของแถมติดเซ็ต — เก็บที่ kitchen_data คีย์ 'pkg_gifts' (ไม่ต้องรัน SQL) ──
+  pkgGifts: {}, editingGifts: []
 };
+const PKGGIFT_KEY = 'pkg_gifts';
+/* ของแถม = ของที่ "ลูกค้าไม่ต้องเลือก" แต่ต้องไปโผล่ในใบครัว
+   ก่อนมีอันนี้ ของแถมอยู่แค่ในคำโฆษณา → ครัวไม่เห็น → จัดของขาดทุกใบ
+   (เคสจริง: เซ็ตสารทจีน 8 เมนู แถมซาลาเปา 2 ลูก — นัทสั่งทำ 22 ส.ค. 2569) */
+async function loadPkgGifts(){
+  try{ const v = await getStored(PKGGIFT_KEY, true); state.pkgGifts = (v && typeof v==='object') ? v : {}; }
+  catch(e){ state.pkgGifts = {}; }
+}
+async function savePkgGifts(){
+  const ok = await setStored(PKGGIFT_KEY, state.pkgGifts, true);
+  if(!ok) alert('⚠️ บันทึกของแถมไม่สำเร็จ (ออฟไลน์?) — ลองใหม่อีกครั้ง');
+  return ok;
+}
+function giftsOfPkg(id){ const a = state.pkgGifts[id]; return Array.isArray(a) ? a : []; }
+
+/* กล่องตั้งของแถมในหน้าแก้แพค — ตั้งใจให้ "นิว/แอดมิน" ทำเองได้ ไม่ต้องเรียกโค้ด */
+function giftEditorHtml(pkg){
+  const list = state.editingGifts || [];
+  const chips = list.length ? list.map((g,i) =>
+    '<span style="display:inline-flex;align-items:center;gap:6px;background:#fff;border:1px solid #F5E4A8;border-radius:999px;padding:4px 6px 4px 11px;font-size:12.5px;font-weight:700;color:#92400E;margin:0 6px 6px 0;">'
+    + escapeHtml(g.name || g.code) + (Number(g.qty)>1 ? ' ×'+Number(g.qty) : '')
+    + '<button type="button" class="gift-del" data-i="'+i+'" style="border:none;background:#FEF3C7;color:#92400E;border-radius:50%;width:19px;height:19px;line-height:1;cursor:pointer;font-size:12px;">✕</button></span>'
+  ).join('') : '<span style="font-size:12.5px;color:var(--ink-soft);">ยังไม่มีของแถม</span>';
+  /* เลือกจากเมนูจริงเท่านั้น ห้ามพิมพ์เอง — พิมพ์รหัสผิดตัวเดียว ครัวได้บรรทัดที่หาของไม่เจอ
+     และเมนูที่ยังไม่มีในตาราง (เช่น ซาลาเปา) ต้องไปสร้างเป็นเมนูก่อน ถึงจะแถมได้ */
+  const opts = (state.recipes||[])
+    .filter(r => r && r.code)
+    .sort((a,b) => String(a.code).localeCompare(String(b.code)))
+    .map(r => '<option value="'+escapeHtml(r.code)+'">'+escapeHtml(r.code)+' — '+escapeHtml(r.name||'')+'</option>').join('');
+  return '<div style="border:1px dashed #D9A441;border-radius:10px;padding:12px;margin-top:12px;background:#FEF9E7;">'
+    + '<div style="font-size:13px;font-weight:700;color:#92400E;margin-bottom:8px;">🎁 ของแถมติดเซ็ต '
+    + '<span style="font-weight:400;color:var(--ink-soft);">(ลูกค้าไม่ต้องเลือก · ไม่คิดเงิน · ไม่นับรวมจำนวนกล่อง)</span></div>'
+    + '<div style="margin-bottom:9px;">' + chips + '</div>'
+    + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;">'
+    +   '<select class="gift-pick" style="flex:1;min-width:180px;padding:6px 8px;border:1px solid var(--line);border-radius:7px;font-size:12.5px;"><option value="">— เลือกเมนูที่จะแถม —</option>'+opts+'</select>'
+    +   '<input type="number" class="gift-qty" value="1" min="1" style="width:58px;padding:6px;border:1px solid var(--line);border-radius:7px;text-align:center;font-size:12.5px;">'
+    +   '<button type="button" class="btn btn-sm gift-add" style="padding:5px 12px;">+ เพิ่มของแถม</button>'
+    + '</div>'
+    + '<div style="font-size:11.5px;color:var(--ink-soft);margin-top:7px;line-height:1.6;">ของแถมจะไปโผล่เป็น<b>บรรทัดของตัวเองในใบครัว</b> ติดป้าย 🎁 · ถ้าเซ็ตแบ่งส่งหลายรอบ จะแถมไปกับ<b>รอบแรกรอบเดียว</b><br>⚠️ กด <b>บันทึกแพค</b> ด้านล่างถึงจะมีผลจริง</div>'
+    + '</div>';
+}
 
 // ── Storage Layer: Supabase (shared) + localStorage (private) ────────────
 // shared=true  → Supabase kitchen_data table
@@ -2409,6 +2452,7 @@ function renderPackageEditor(pkg){
       state.editingPkgItems[it.sku] = it.extra_price;
     });
     state.editingGroups = Array.isArray(pkg.groups) ? JSON.parse(JSON.stringify(pkg.groups)) : [];
+    state.editingGifts  = JSON.parse(JSON.stringify(giftsOfPkg(pkg.id)));
     state._pkgEditorInit = pkg.id;
     state.pkgMenuSearch  = '';
   }
@@ -2526,6 +2570,7 @@ function renderPackageEditor(pkg){
         <label style="font-size:12.5px;display:flex;align-items:center;gap:5px;">แบ่งส่ง <input type="number" class="pkg-f-rounds" value="${pkg.delivery_rounds||1}" min="1" style="width:50px;padding:5px;border:1px solid var(--line);border-radius:6px;text-align:center;"> รอบ</label>
         <label style="font-size:12.5px;display:flex;align-items:center;gap:6px;cursor:pointer;"><input type="checkbox" class="pkg-f-flexdeliv" ${pkg.flexible_delivery?'checked':''}> ลูกค้าเลือกวันส่งเองได้ (ของทำสต็อค)</label>
       </div>
+      ${giftEditorHtml(pkg)}
     </div>`;
 
   return `<div class="panel" style="background:#fdfbf6;">
@@ -2681,6 +2726,35 @@ function attachPackagesHandlers(){
   // ── กลุ่มการเลือก (เซ็ต/คอร์ส/บันเดิล): เพิ่ม/ลบ/สลับชนิด ──
   // N-34 (7 ส.ค. 2569): เดิมมีปุ่มเดียวอยู่มุมขวาบน แอดมินหาไม่เจอตอนเดโม่
   //   → ตอนที่ยังไม่มีกลุ่ม จะมีปุ่มใหญ่อีกตัวอยู่กลางกล่องเตือนด้วย (class เดียวกัน ทำงานเหมือนกัน)
+  document.querySelectorAll('.gift-add').forEach(btn => {
+    btn.onclick = () => {
+      const panel = btn.closest('.panel');
+      const sel = panel.querySelector('.gift-pick');
+      const code = (sel && sel.value || '').trim();
+      if(!code){ showToast('เลือกเมนูที่จะแถมก่อน'); return; }
+      const qty = Math.max(1, parseInt(panel.querySelector('.gift-qty')?.value)||1);
+      const mi = (state.recipes||[]).find(r => r.code === code);
+      /* เก็บชื่อไว้ด้วย ไม่ใช่เก็บแค่รหัส — เผื่อวันหลังเมนูถูกปิด/ลบ ใบเก่าจะได้ยังอ่านออกว่าแถมอะไร */
+      const list = state.editingGifts || (state.editingGifts = []);
+      const ex = list.find(g => g.code === code);
+      if(ex) ex.qty = Math.max(1, Number(ex.qty)||1) + qty;
+      else list.push({ code, name: (mi && mi.name) || code, qty });
+      // เก็บสถานะกลุ่ม/ราคาที่พิมพ์ค้างไว้ก่อน render ใหม่ ไม่งั้นที่กรอกอยู่หายหมด
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      render();
+    };
+  });
+  document.querySelectorAll('.gift-del').forEach(btn => {
+    btn.onclick = () => {
+      const panel = btn.closest('.panel');
+      const i = parseInt(btn.dataset.i);
+      if(!isNaN(i)) (state.editingGifts||[]).splice(i,1);
+      const pkg = state.packages.find(p => p.id === state.openPkgId);
+      syncPkgGroupsFromDOM(panel); syncPkgBaseFromDOM(panel, pkg);
+      render();
+    };
+  });
   document.querySelectorAll('.pkg-add-group').forEach(btn => {
     btn.onclick = () => {
       const panel = btn.closest('.panel');
@@ -2900,6 +2974,11 @@ function attachPackagesHandlers(){
           updated_at: new Date().toISOString()
         }).eq('id', pkgId);
         if(pkgErr) throw pkgErr;
+        /* 🎁 ของแถมเก็บคนละที่กับตารางแพค (kitchen_data) แต่ต้องบันทึกพร้อมกัน
+           ถ้าแยกปุ่ม แอดมินจะกดปุ่มเดียวแล้วนึกว่าครบ = ของแถมหายเงียบ */
+        state.pkgGifts[pkgId] = (state.editingGifts||[]).filter(g=>g&&g.code);
+        if(!state.pkgGifts[pkgId].length) delete state.pkgGifts[pkgId];
+        await savePkgGifts();
         // ⚠️ ท่า "ลบทิ้งแล้วใส่ใหม่" — ถ้าใส่พังหลังลบ = เมนูในแพคหายเกลี้ยง → เก็บของเดิมไว้กู้คืน (3 ส.ค. 2026)
         const prevItems = (state.pkgItems[pkgId]||[]).map(it=>({ package_id: pkgId, sku: it.sku, extra_price: it.extra_price||0 }));
         const { error: delErr } = await sb.from('package_items').delete().eq('package_id', pkgId);
@@ -2971,6 +3050,7 @@ async function init(){
 
   // ── 🏷️ บ่อเซล — โหลดแบบไม่บล็อก (อ่านไม่ได้ก็ไม่พังทั้งหน้า) แล้ว re-render ให้ป้าย -N% ขึ้น ──
   loadSalePools().then(()=>{ try{ render(); }catch(e){} });
+  loadPkgGifts().then(()=>{ try{ render(); }catch(e){} });   // 🎁 ของแถมติดเซ็ต
 
   // ── UNPACK CONFIG (with migration from old separate keys) ──────────────────
   let cats, sups, plan, appSettings, initFlags, mpData, mpDates;

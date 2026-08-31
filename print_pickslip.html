@@ -89,8 +89,11 @@
   }
   .in{ width:var(--ink); }
 
-  .shop{ text-align:center; font-weight:700; font-size:12px; margin-top:1mm; }
-  .ordno{ text-align:center; font-weight:800; font-size:15px; letter-spacing:.3px;
+  /* 📏 ทุกขนาดในใบต้องเป็น em (สัมพัทธ์กับ --fs) ห้ามเป็น px ตายตัว
+     เหตุ (นัทถ่ายใบจริงมาให้ดู 25 ส.ค. 2569): ตอนพิมพ์ผ่าน RawBT ตัวหลักถูกขยายเป็น 21px
+     แต่บรรทัดที่ตั้ง px ตายตัวไม่ขยายตาม → รายการเมนูย่อยเล็กกว่าครึ่ง อ่านไม่ออกทั้งใบ */
+  .shop{ text-align:center; font-weight:700; font-size:1.15em; margin-top:1mm; }
+  .ordno{ text-align:center; font-weight:800; font-size:1.45em; letter-spacing:.3px;
           font-family:'IBM Plex Mono',ui-monospace,monospace; margin:.5mm 0; }
 
   .dash{ border-top:1px dashed #000; margin:1.5mm 0; }
@@ -99,14 +102,14 @@
   .kv .k{ flex:0 0 15mm; white-space:nowrap; }   /* ห้าม label ตัดคำกลางคำแบบใบ Hato */
   .kv .v{ flex:1 1 auto; font-weight:600; word-break:break-word; }
 
-  .flag{ font-weight:800; font-size:11px; text-align:center; padding:1mm 0;
+  .flag{ font-weight:800; font-size:1.05em; text-align:center; padding:1mm 0;
          border-top:1px solid #000; border-bottom:1px solid #000; margin:1.5mm 0; }
 
   /* 🩺 ข้อจำกัดอาหาร — ต้องอ่านออกแม้พิมพ์ด้วยเครื่องความร้อนขาวดำ
      ใช้กรอบหนา 2 เส้น + ตัวหนา แทนการใช้สี (สีไม่ติดกระดาษความร้อน) */
   .diet{ border:2px solid #000; border-radius:1mm; padding:1.2mm 2mm; margin:1.5mm 0; }
-  .diet-al{ font-weight:900; font-size:12px; line-height:1.35; }
-  .diet-dl{ font-weight:700; font-size:11px; line-height:1.35; margin-top:.6mm; }
+  .diet-al{ font-weight:900; font-size:1.15em; line-height:1.35; }
+  .diet-dl{ font-weight:700; font-size:1.05em; line-height:1.35; margin-top:.6mm; }
   .thead{ display:flex; font-weight:700; border-bottom:1px solid #000; padding-bottom:.5mm; }
   .thead .q{ flex:0 0 7mm; }
   .thead .n{ flex:1 1 auto; }
@@ -117,16 +120,23 @@
   .line .n{ flex:1 1 auto; font-weight:700; }
   .line .p{ flex:0 0 12mm; text-align:right; }
   /* แถวย่อยของเซ็ต — บรรทัดที่ล้นต้องเยื้องตาม ไม่ใช่กองซ้ายสุดแบบใบ Hato */
-  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:10px; font-weight:500; }
+  /* บรรทัดเมนูในเซ็ต = ของที่ครัวต้องหยิบจริง ต้องอ่านออกพอๆ กับบรรทัดหลัก
+     เดิม 10px + น้ำหนัก 500 → จางที่สุดในใบ ทั้งที่เป็นข้อมูลที่ใช้ทำงานมากที่สุด */
+  /* ⚖️ ขนาดนี้คือจุดสมดุลที่วัดมาแล้ว ไม่ใช่ค่าที่เดา (ใบยาวสุด 17 รายการ บนกระดาษ 57 มม.)
+       ย่อย 10px ตายตัว (เดิม) = 14.7 ซม. แต่อ่านไม่ออก
+       ย่อย 1em เต็ม           = 22.3 ซม. อ่านง่ายแต่ยาวเป็นหางว่าว เปลืองกระดาษ 52%
+       ย่อย .85em + บรรทัดแน่น = 17.3 ซม. ← ตัวโตขึ้นเกือบเท่าตัว จ่ายกระดาษเพิ่มแค่ 2.6 ซม.
+     ถ้าจะขยับอีก ให้วัดความยาวใบซ้ำก่อนเสมอ — ครัวปริ้นวันละหลายสิบใบ ความยาวคือต้นทุนจริง */
+  .sub{ padding-left:3.5mm; text-indent:-1.5mm; font-size:.85em; font-weight:600; line-height:1.25; }
   .code{ font-family:'IBM Plex Mono',ui-monospace,monospace; font-weight:800; }
   .dim{ color:#555; font-family:'IBM Plex Mono',ui-monospace,monospace; }
-  .new{ font-size:8.5px; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
+  .new{ font-size:.85em; font-weight:800; border:1px solid #000; border-radius:1mm; padding:0 .8mm; margin-left:.8mm; }
   .brk{ border-bottom:1px dotted #999; }
 
   .tot{ display:flex; justify-content:space-between; padding:.4mm 0; }
-  .tot.b{ font-weight:800; font-size:12px; border-top:1px solid #000; margin-top:.8mm; padding-top:1mm; }
-  .note{ font-size:9.5px; margin-top:1.5mm; padding:1mm; border:1px dashed #000; }
-  .sign{ display:flex; gap:2mm; margin-top:3mm; font-size:9px; }
+  .tot.b{ font-weight:800; font-size:1.15em; border-top:1px solid #000; margin-top:.8mm; padding-top:1mm; }
+  .note{ font-size:.95em; margin-top:1.5mm; padding:1mm; border:1px dashed #000; }
+  .sign{ display:flex; gap:2mm; margin-top:3mm; font-size:.9em; }
   .sign div{ flex:1; border-top:1px solid #000; padding-top:.8mm; }
   .empty{ background:#fff; padding:22px; border-radius:10px; max-width:520px; text-align:center; color:#555; }
 
@@ -138,7 +148,8 @@
     body{ background:#fff; }
     .bar, .bar2, .pick{ display:none !important; }
     .sheet{ padding:0; gap:0; display:block; }
-    .slip{ box-shadow:none; page-break-after:always; break-after:page; }
+    /* padding-bottom = ช่องว่างให้ฉีกกระดาษ (ดู --feed ใน applyWidth) */
+    .slip{ box-shadow:none; page-break-after:always; break-after:page; padding-bottom:var(--feed,10mm); }
     .slip:last-child{ page-break-after:auto; break-after:auto; }
     /* ใบที่ไม่ได้ติ๊ก / ถูกกรองออก = ไม่ออกกระดาษ */
     .slip.hide, .slip.skip{ display:none !important; }
@@ -158,7 +169,9 @@
   <button class="ghost" id="go">โหลด</button>
   <span class="grow"></span>
   <span class="hint">SUNMI V2 Pro · 58 มม.</span>
-  <button id="pr">🖨 ปริ้นที่เลือก</button>
+  <button id="prd" title="ส่งเข้าหัวพิมพ์ในตัวเลย ไม่ผ่านหน้ากล่องพิมพ์ของ Chrome">🖨 ปริ้นตรง</button>
+  <button class="ghost" id="wt" title="เฝ้าออเดอร์ใหม่ เจอแล้วปริ้นเอง">👀 เฝ้าออเดอร์ใหม่</button>
+  <button class="ghost" id="pr">ผ่านกล่องพิมพ์</button>
 </div>
 
 <div class="bar2">
@@ -172,6 +185,13 @@
   <button class="chip pickall" id="all">เลือกทั้งหมด</button>
   <button class="chip pickall" id="none">ไม่เลือกเลย</button>
   <span class="count" id="cnt">—</span>
+</div>
+
+<div class="bar2" id="wbar" style="display:none;background:#FFF7ED;border-color:#FDBA74">
+  <span class="lbl" style="color:#9A3412">👀 โหมดเฝ้าออเดอร์</span>
+  <span id="wmsg" style="font-size:12px;color:#9A3412">กำลังเริ่ม…</span>
+  <span class="grow"></span>
+  <span id="wcnt" style="font-size:12px;color:#9A3412"></span>
 </div>
 
 <div class="sheet" id="sheet"></div>
@@ -204,7 +224,10 @@ function applyWidth(){
   document.documentElement.style.setProperty('--paper', w[0]+'mm');
   document.documentElement.style.setProperty('--ink',   w[1]+'mm');
   // ป้าย 4 นิ้วกว้างกว่า → ขยายตัวหนังสือให้อ่านง่ายขึ้น ไม่ต้องเพ่ง
-  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '12.5px' : '10.5px');
+  document.documentElement.style.setProperty('--fs', $w.value === '100' ? '13px' : '11px');
+  /* ฟีดกระดาษเปล่าท้ายใบ — เฉพาะกระดาษม้วนที่ต้องฉีกเอง
+     ป้ายสติกเกอร์ 4 นิ้วมีขนาดตายตัว เพิ่มช่องว่างจะดันเนื้อหาล้นไปป้ายถัดไป */
+  document.documentElement.style.setProperty('--feed', $w.value === '100' ? '0mm' : '10mm');
   /* บอกขนาดกระดาษให้เบราว์เซอร์เป็นตัวเลขจริง — ใส่ var() ใน @page ไม่ได้ (เงียบแล้วกลายเป็น A4)
      ต้องเขียนกฎใหม่ทุกครั้งที่เปลี่ยนขนาด ไม่ใช่ตั้งครั้งเดียวตอนโหลด */
   let st = document.getElementById('pageSizeRule');
@@ -255,6 +278,205 @@ window.addEventListener('beforeprint', () => {
     p.nextElementSibling.classList.toggle('skip', !p.querySelector('.pk').checked));
 });
 document.getElementById('pr').onclick = () => window.print();
+
+/* ══════════════════════════════════════════════════════════════
+   🖨 ปริ้นตรง — ส่งเข้าหัวพิมพ์ในตัวของเครื่อง POS โดยไม่ผ่านกล่องพิมพ์ของ Chrome
+
+   ทำไมต้องมี (25 ส.ค. 2569 นัทเจอกับเครื่องจริง SUNMI V2 Pro):
+   ทางเดิมคือ window.print() → Android เปิดกล่องพิมพ์ → ครัวต้องเลือกเครื่องพิมพ์
+   + เปลี่ยนขนาดกระดาษจาก A4 เองทุกครั้ง และถ้าเครื่องไม่มีบริการพิมพ์ติดตั้งไว้
+   จะมีให้เลือกแค่ "บันทึกเป็น PDF" = พิมพ์ไม่ออกเลย
+
+   ทางนี้: วาดใบเป็นรูปขนาด 384 จุด (= ความกว้างพิมพ์จริงของกระดาษ 58 มม. ที่ 203dpi)
+   แล้วส่งให้แอป RawBT ผ่านลิงก์ rawbt:data:image/png;base64,... → มันพิมพ์ทันที
+   • ส่งเป็น "รูป" ไม่ใช่ตัวอักษร → ภาษาไทยออกครบ ไม่ต้องพึ่งชุดอักขระของหัวพิมพ์
+   • ไม่มีกล่องพิมพ์ ไม่มี A4 ให้พลาด
+   ⚠️ เครื่องต้องลงแอป RawBT + เพิ่มเครื่องพิมพ์ AIDL (woyou..jiuiv5) ไว้ก่อน
+      ปุ่ม "ผ่านกล่องพิมพ์" ยังอยู่ ใช้กับเครื่องอื่น/คอมได้เหมือนเดิม
+   ══════════════════════════════════════════════════════════════ */
+const DOTS = { '57': 384, '80': 576, '100': 800 };   // จุดตามความกว้างพิมพ์จริงของแต่ละกระดาษ
+
+function slipToPng(slip, W){
+  return new Promise((resolve, reject) => {
+    /* วาดที่ความกว้างจริงของหัวพิมพ์เลย (ไม่ใช่ย่อ-ขยายทีหลัง) ตัวหนังสือจะได้คม
+       CSS ของหน้านี้อ่านความกว้าง/ขนาดตัวอักษรจากตัวแปร 3 ตัว → เขียนทับ 3 ตัวนี้พอ */
+    const scale = W / 384;
+    const box = document.createElement('div');
+    box.setAttribute('style',
+      'position:fixed;left:-99999px;top:0;background:#fff;' +
+      '--paper:' + W + 'px; --ink:' + W + 'px; --fs:' + (22 * scale).toFixed(1) + 'px;');
+    const clone = slip.cloneNode(true);
+    clone.classList.remove('hide','skip');
+    clone.style.boxShadow = 'none';
+    box.appendChild(clone);
+    document.body.appendChild(box);
+    /* 🧻 ฟีดกระดาษเปล่าท้ายใบ ~1 ซม. (นัทขอเอง 25 ส.ค. — บรรทัดสุดท้ายชนรอยฉีก)
+       หัวพิมพ์อยู่เหนือฟันฉีดประมาณ 1 ซม. ถ้าจบภาพตรงบรรทัดสุดท้ายพอดี
+       บรรทัดนั้นจะยังค้างอยู่ในตัวเครื่อง ฉีกแล้วโดนตัดคำ
+       203 dpi → 1 ซม. ≈ 80 จุด · คูณ scale ตามความกว้างกระดาษ */
+    const FEED = Math.round(80 * scale);
+    const H = Math.ceil(box.getBoundingClientRect().height) + 8 + FEED;
+
+    const css = document.querySelector('style').textContent;
+    const inner = new XMLSerializer().serializeToString(clone);
+    const svg =
+      '<svg xmlns="http://www.w3.org/2000/svg" width="' + W + '" height="' + H + '">' +
+        '<foreignObject width="100%" height="100%">' +
+          '<div xmlns="http://www.w3.org/1999/xhtml" style="' + box.getAttribute('style').replace(/position:fixed;left:-99999px;top:0;/, '') + '">' +
+            '<style>' + css + '</style>' + inner +
+          '</div>' +
+        '</foreignObject>' +
+      '</svg>';
+    document.body.removeChild(box);
+
+    const img = new Image();
+    img.onload = () => {
+      const c = document.createElement('canvas');
+      c.width = W; c.height = H;
+      const x = c.getContext('2d');
+      x.fillStyle = '#fff'; x.fillRect(0, 0, W, H);   // หัวพิมพ์ไม่มีสีขาว พื้นโปร่งจะกลายเป็นดำ
+      x.drawImage(img, 0, 0);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = () => reject(new Error('วาดใบเป็นรูปไม่สำเร็จ'));
+    img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
+  });
+}
+
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+async function printPicked(quiet){
+  const btn = document.getElementById('prd');
+  const picks = [...document.querySelectorAll('.pick')]
+    .filter(p => !p.classList.contains('hide') && p.querySelector('.pk').checked)
+    .map(p => p.nextElementSibling);
+  if (!picks.length) { if(!quiet) alert('ยังไม่ได้เลือกใบไหนเลย'); return 0; }
+
+  const W = DOTS[$w.value] || 384;
+  const old = btn.textContent;
+  btn.disabled = true;
+  try {
+    for (let i = 0; i < picks.length; i++) {
+      btn.textContent = 'กำลังส่ง ' + (i + 1) + '/' + picks.length + '…';
+      const png = await slipToPng(picks[i], W);
+      /* rawbt: = ลิงก์ที่แอป RawBT รับไว้ · ถ้ายังไม่ได้ลงแอป เบราว์เซอร์จะพาไปหน้าโหลดเอง */
+      location.href = 'rawbt:' + png;
+      /* เว้นจังหวะให้แอปรับงานเสร็จก่อนยิงใบถัดไป ยิงรัวจะโดนกลืนหาย */
+      if (i < picks.length - 1) await sleep(2200);
+    }
+    btn.textContent = '✅ ส่งครบ ' + picks.length + ' ใบ';
+    await sleep(2500);
+    return picks.length;
+  } catch (e) {
+    if(!quiet) alert('ส่งเข้าหัวพิมพ์ไม่สำเร็จ: ' + e.message + String.fromCharCode(10) +
+          'ลองใช้ปุ่ม "ผ่านกล่องพิมพ์" แทนได้');
+    return 0;
+  } finally {
+    btn.disabled = false; btn.textContent = old;
+  }
+}
+document.getElementById('prd').onclick = () => printPicked(false);
+
+/* ══════════════════════════════════════════════════════════════
+   👀 โหมดเฝ้าออเดอร์ใหม่ — มีออเดอร์เข้า กระดาษไหลออกเอง (นัทขอ 25 ส.ค. 2569
+   "ตอนนี้ลงแอป lineman พอมีออเดอร์กระดาษก็ไหลออกมาเองเลย")
+
+   ข้อจำกัดที่ต้องรู้: หน้าเว็บทำงานได้เฉพาะตอนเปิดค้างไว้ ต่างจากแอปเนทีฟที่รันเบื้องหลัง
+   → ต้องเปิดหน้านี้ทิ้งไว้บนเครื่อง POS และขอ wakeLock ไม่ให้จอดับ
+
+   กันพิมพ์มั่ว 3 ชั้น (สำคัญกว่าความสะดวก — กระดาษไหลรัวคือความเสียหายจริง):
+   ① เริ่มเฝ้า = ตั้งหมุดที่ออเดอร์ล่าสุด "ตอนนี้" → ของเก่าทั้งหมดไม่ถูกพิมพ์ย้อน
+   ② จำเลขใบที่พิมพ์ไปแล้วใน localStorage → เปิดหน้าใหม่/รีเฟรช ก็ไม่พิมพ์ซ้ำ
+   ③ เพดาน 5 ใบต่อรอบ — ถ้าจู่ๆ เจอเยอะผิดปกติ แปลว่าตรรกะหมุดพัง ให้หยุดแล้วเตือน
+      ไม่ใช่ไล่พิมพ์จนกระดาษหมดม้วน
+   ══════════════════════════════════════════════════════════════ */
+const WKEY = 'pickslip_printed_v1';
+let watchOn = false, watchTimer = null, watchBase = null, wakeLock = null;
+/* 🔒 กันรอบเช็คซ้อนกันเอง — 1 รอบใช้เวลาหลายวินาที (วาดรูป + เว้นจังหวะใบละ 2.2 วิ)
+   ถ้ามีใบใหม่ 3 ใบ รอบนั้นกินเวลาเกิน 20 วิ แล้วนาฬิกาจะยิงรอบใหม่ทับ
+   → 2 รอบเห็นใบเดียวกัน = กระดาษออกซ้ำ (เจอจริงตอนเทส 25 ส.ค. ออก 4 ครั้งจาก 2 ใบ) */
+let watchBusy = false;
+const printedSet = new Set(JSON.parse(localStorage.getItem(WKEY) || '[]'));
+function rememberPrinted(no){
+  printedSet.add(no);
+  const arr = [...printedSet].slice(-500);   // เก็บ 500 ใบล่าสุดพอ ไม่ให้บวมไปเรื่อยๆ
+  localStorage.setItem(WKEY, JSON.stringify(arr));
+}
+function wsay(m){ document.getElementById('wmsg').textContent = m; }
+function wclock(){ return new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}); }
+
+async function watchTick(){
+  if (!watchOn || watchBusy) return;
+  watchBusy = true;
+  try{
+    const r = await fetch(SB + 'orders?select=order_number,created_at,customer_name'
+      + '&created_at=gt.' + encodeURIComponent(watchBase)
+      + '&status=neq.cancelled&order=created_at.asc&limit=20', {headers:HDR});
+    if(!r.ok) throw new Error(await r.text());
+    const fresh = (await r.json()).filter(o => !printedSet.has(o.order_number));
+    if (!fresh.length){ wsay('ยังไม่มีออเดอร์ใหม่ · เช็คล่าสุด ' + wclock()); return; }
+
+    if (fresh.length > 5){
+      watchOn = false;
+      wsay('⚠️ เจอออเดอร์ใหม่ ' + fresh.length + ' ใบพร้อมกัน — หยุดไว้ก่อน กันพิมพ์รัว กดปุ่มเฝ้าใหม่ถ้าต้องการ');
+      document.getElementById('wt').textContent = '👀 เฝ้าออเดอร์ใหม่';
+      return;                                        // finally ข้างล่างปลด watchBusy ให้เอง
+    }
+
+    const keepDate = $d.value, keepOrd = $o.value;
+    for (const o of fresh){
+      if (printedSet.has(o.order_number)) continue;   // กันซ้ำอีกชั้น เผื่อถูกพิมพ์ไประหว่างรอบ
+      wsay('🖨 เจอใบใหม่ ' + o.order_number + ' (' + (o.customer_name||'') + ') กำลังปริ้น…');
+      $o.value = o.order_number;            // โหลดเฉพาะใบนี้ ใช้ทางเดิมทั้งหมด
+      await load();
+      document.querySelectorAll('.pick:not(.hide) .pk').forEach(c => c.checked = true);
+      updateCount();
+      await printPicked(true);
+      rememberPrinted(o.order_number);
+      watchBase = o.created_at;             // ขยับหมุดทีละใบ พังกลางคันก็ไม่พิมพ์ซ้ำของที่ผ่านไปแล้ว
+      document.getElementById('wcnt').textContent = 'ปริ้นไปแล้ว ' + printedSet.size + ' ใบ';
+    }
+    $o.value = keepOrd; $d.value = keepDate;
+    await load();                            // คืนหน้าจอกลับเป็นรายการของวันเดิม
+    wsay('พร้อม · เช็คล่าสุด ' + wclock());
+  }catch(e){
+    wsay('เช็คไม่สำเร็จ (' + wclock() + ') — จะลองใหม่รอบหน้า');
+  }finally{
+    watchBusy = false;
+  }
+}
+
+async function watchStart(){
+  /* หมุดเริ่มต้น = ออเดอร์ล่าสุดที่มีอยู่ "ตอนนี้" → ของเก่าไม่ถูกพิมพ์ย้อนหลังเด็ดขาด */
+  try{
+    const r = await fetch(SB + 'orders?select=created_at&order=created_at.desc&limit=1', {headers:HDR});
+    const j = await r.json();
+    watchBase = (j[0] && j[0].created_at) || new Date().toISOString();
+  }catch(e){ watchBase = new Date().toISOString(); }
+
+  watchOn = true;
+  document.getElementById('wbar').style.display = '';
+  document.getElementById('wt').textContent = '⏹ หยุดเฝ้า';
+  document.getElementById('wcnt').textContent = 'ปริ้นไปแล้ว ' + printedSet.size + ' ใบ';
+  wsay('เริ่มเฝ้าแล้ว · จะปริ้นเฉพาะใบที่เข้ามา "หลังจากนี้"');
+  try{ if (navigator.wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  watchTimer = setInterval(watchTick, 20000);   // เช็คทุก 20 วิ — คำสั่งเล็กมาก ไม่กิน Supabase
+  watchTick();
+}
+function watchStop(){
+  watchOn = false;
+  clearInterval(watchTimer); watchTimer = null;
+  document.getElementById('wt').textContent = '👀 เฝ้าออเดอร์ใหม่';
+  wsay('หยุดเฝ้าแล้ว');
+  try{ if (wakeLock) { wakeLock.release(); wakeLock = null; } }catch(e){}
+}
+document.getElementById('wt').onclick = () => watchOn ? watchStop() : watchStart();
+/* จอดับแล้วปลุกกลับมา ต้องขอ wakeLock ใหม่ ระบบไม่คืนให้เอง */
+document.addEventListener('visibilitychange', async () => {
+  if (watchOn && document.visibilityState === 'visible' && navigator.wakeLock && !wakeLock){
+    try{ wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+  }
+});
 document.getElementById('go').onclick = load;
 $o.addEventListener('keydown', e => { if(e.key==='Enter') load(); });
 
@@ -449,8 +671,15 @@ function slip(o, PKG){
 load().then(() => {
   // ?auto=1 = เปิดมาแล้วเด้งกล่องพิมพ์เลย ไม่ต้องกดปุ่มซ้ำ
   // รอ 1 เฟรม + 300ms ให้ฟอนต์ไทยกับ layout นิ่งก่อน ไม่งั้นบางเครื่องจับภาพตอนยังจัดหน้าไม่เสร็จ
-  if (qs.get('auto') === '1' && document.querySelectorAll('.slip').length) {
-    requestAnimationFrame(() => setTimeout(() => window.print(), 300));
+  /* auto=1 = เด้งกล่องพิมพ์แบบเดิม (คอม/เครื่องทั่วไป)
+     auto=direct (หรือ rawbt=1) = ยิงเข้าหัวพิมพ์ในตัวเลย สำหรับเครื่อง POS ที่ลง RawBT แล้ว */
+  if (qs.get('watch') === '1') setTimeout(watchStart, 500);
+  const _auto   = qs.get('auto');
+  const _direct = _auto === 'direct' || qs.get('rawbt') === '1';
+  if ((_auto === '1' || _direct) && document.querySelectorAll('.slip').length) {
+    requestAnimationFrame(() => setTimeout(() => {
+      if (_direct) document.getElementById('prd').click(); else window.print();
+    }, 300));
   }
 });
 </script>

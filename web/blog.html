@@ -14,7 +14,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>บทความสุขภาพ | Under360</title>
 <meta name="description" content="บทความความรู้เรื่องอาหารสุขภาพ โปรตีน โภชนาการ และการเลือกอาหารให้เข้ากับเป้าหมาย จากครัว Under360">
-<link rel="canonical" href="https://www.360foodbox.com/blog">
+<link rel="canonical" href="https://www.360foodbox.com/blog" id="canon">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -192,6 +192,23 @@ footer{background:var(--bg-soft)!important;color:var(--muted)!important;border-t
 
 /* ── ⑪ พื้นหลังสลับ: ตัดสีครีม ใช้เทาอ่อนแทน ── */
 .deliv,.facts,.alt-bg{background:var(--bg-soft)!important}
+/* ── u360-nav-fix (27 ส.ค.) — แถบบนพังบนมือถือ: ตัวหนังสือตกบรรทัดจนปุ่มบวมเป็นวงกลม ── */
+header .nav,header nav{flex-wrap:nowrap}
+header .nav a,header nav a,header .logo{white-space:nowrap}
+header .logo img{flex:none}
+/* ปุ่มบนแถบบนต้องเล็กกว่าปุ่มในเนื้อหา — ไม่กินกฎ .btn ที่ตั้งไว้สำหรับปุ่มใหญ่ */
+header .btn,header .btn-line,header a.btn-line{
+  padding:9px 16px!important;min-height:38px!important;height:38px;
+  font-size:.9rem!important;line-height:1;white-space:nowrap;flex:none;
+}
+@media(max-width:520px){
+  header .nav{gap:10px}
+  header .logo{font-size:.98rem!important}
+  header .logo img{width:28px;height:28px}
+  /* จอแคบมาก: ซ่อนลิงก์เมนู เหลือโลโก้ + ปุ่มสั่ง (ลิงก์ครบอยู่ท้ายหน้าแล้ว) */
+  header nav a:not(.btn):not(.btn-line){display:none}
+  header .btn,header .btn-line,header a.btn-line{padding:9px 14px!important;font-size:.86rem!important}
+}
 </style>
 </head>
 <body>
@@ -203,13 +220,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header>
   <div class="wrap nav" style="max-width:1080px">
-    <a class="logo" href="index.html">
-      <img src="img/img15.jpg" alt="Under360 logo">
+    <a class="logo" href="/index.html">
+      <img src="/img/u360_logo.svg" alt="Under360 logo">
       Under360
     </a>
     <nav>
-      <a href="index.html">หน้าแรก</a>
-      <a href="mealplan.html">Meal Plan</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
+      <a href="/index.html">หน้าแรก</a>
+      <a href="/mealplan.html">Meal Plan</a> · <a href="https://line.me/R/ti/p/@under360" rel="noopener">ติดตามข่าวสารและโปรโมชั่นทาง LINE</a>
     </nav>
   </div>
 </header>
@@ -228,7 +245,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ARTICLE VIEW -->
 <article id="articleView">
   <div class="wrap">
-    <a class="back" href="blog.html">← บทความทั้งหมด</a>
+    <a class="back" href="/blog.html">← บทความทั้งหมด</a>
     <h1 id="aTitle"></h1>
     <div class="meta" id="aMeta"></div>
     <div class="cover" id="aCover"></div>
@@ -242,14 +259,14 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
       <h3>อ่านจบแล้ว — ลองของจริงเลยไหม?</h3>
       <p>ข้าวกล่องเริ่ม ฿125 สั่งทีละกล่องก็ได้ · หรือ Meal Plan ทำสดรายวัน 2 สาย (HP · LC) ส่งฟรีทั่วกรุงเทพ<br><b style="color:#9FE3AE">สั่งเองได้ 24 ชม. ไม่ต้องรอแอดมินตอบ</b></p>
       <a class="btn-line" href="#" onclick="return orderNow(this)">สั่งใน LINE เลย</a>
-      <a href="mealplan.html" style="display:inline-block;margin-left:14px;color:rgba(250,246,236,.85);font-family:'Prompt';font-size:.93rem">ดู Meal Plan →</a>
+      <a href="/mealplan.html" style="display:inline-block;margin-left:14px;color:rgba(250,246,236,.85);font-family:'Prompt';font-size:.93rem">ดู Meal Plan →</a>
     </div>
   </div>
 </article>
 
 <footer>
   <div class="wrap">
-    <b style="font-family:'Prompt';color:#fff">Under360</b> · <a href="index.html">หน้าแรก</a> · <a href="mealplan.html">Meal Plan</a>
+    <b style="font-family:'Prompt';color:#fff">Under360</b> · <a href="/index.html">หน้าแรก</a> · <a href="/mealplan.html">Meal Plan</a>
   </div>
 </footer>
 
@@ -360,7 +377,11 @@ async function init(){
     const _new = LEGACY_MAP[_legacy.replace(/^\/+|\/+$/g,'')];
     if(_new){ location.replace('blog.html?post=' + encodeURIComponent(_new)); return; }
   }
-  const slug = new URLSearchParams(location.search).get('post');
+  /* u360-slug-from-path: เปิดผ่าน /blog/<slug> ได้ด้วย
+     rewrite ของ Vercel ไม่เปลี่ยน URL ในเบราว์เซอร์ -> location.search ว่าง
+     ถ้าอ่านแต่ ?post= จะเด้งไปหน้ารวมบทความแทนที่จะเปิดบทความ (เจอตอนเทส riceberry) */
+  const _mPath = location.pathname.match(/^\/blog\/(.+?)\/?$/);
+  const slug = new URLSearchParams(location.search).get('post') || (_mPath ? decodeURIComponent(_mPath[1]) : null);
   track('pageview', slug ? 'blog:'+slug : 'blog');
 
   /* ═══ presence heartbeat — นับคนออนไลน์ real-time (fire-and-forget) ═══ */
@@ -382,7 +403,7 @@ async function showList(){
       return;
     }
     box.innerHTML = data.map(p=>`
-      <a class="post-card" href="blog.html?post=${encodeURIComponent(p.slug)}">
+      <a class="post-card" href="/blog/${encodeURIComponent(p.slug)}">
         ${p.cover_url ? `<img class="post-cover" src="${esc(p.cover_url)}" alt="${esc(p.title)}" loading="lazy">` : ''}
         <h2>${esc(p.title)}</h2>
         ${p.excerpt ? `<p>${esc(p.excerpt)}</p>` : ''}
@@ -398,10 +419,21 @@ async function showArticle(slug){
   const art = document.getElementById('articleView');
   art.style.display = 'block';
   try{
-    const { data, error } = await sb.from('blog_posts')
-      .select('*').eq('slug', slug).eq('published', true).single();
+    /* u360-draft-preview: เปิดร่างที่ยังไม่เผยแพร่ได้ด้วย ?preview=1
+       ฐานข้อมูลเป็นตัวเดียวกันทั้ง preview และของจริง → "เปิดเฉพาะ preview" ทำไม่ได้
+       ทางนี้ให้เจ้าของอ่านร่างได้โดยไม่ต้องเผยแพร่จริง
+       ⚠️ หน้ารวมบทความยังกรอง published=true เหมือนเดิม → ร่างไม่หลุดไปโผล่ในลิสต์ */
+    let _q = sb.from('blog_posts').select('*').eq('slug', slug);
+    if(new URLSearchParams(location.search).get('preview') !== '1') _q = _q.eq('published', true);
+    const { data, error } = await _q.single();
     if(error || !data) throw error;
     document.title = data.title + ' | Under360';
+    /* u360-canonical-fix: เดิมทุกบทความประกาศ canonical เป็นหน้ารวมบล็อกหน้าเดียวกันหมด
+       = สั่ง Google ให้ยุบ 61 บทความรวมเป็นหน้าเดียว → ต้องชี้กลับมาที่ตัวเอง */
+    try{
+      var canon = document.getElementById('canon');
+      if(canon && data.slug) canon.href = 'https://www.360foodbox.com/blog/' + data.slug;
+    }catch(e){}
     document.getElementById('aTitle').textContent = data.title;
     document.getElementById('aMeta').textContent = fmtDate(data.created_at);
     if(data.cover_url){
@@ -422,7 +454,7 @@ async function showArticle(slug){
     document.head.appendChild(ld);
   }catch(e){
     document.getElementById('aTitle').textContent = 'ไม่พบบทความนี้';
-    document.getElementById('aContent').innerHTML = '<p>บทความอาจถูกย้ายหรือลบไปแล้ว <a href="blog.html">กลับไปหน้าบทความทั้งหมด</a></p>';
+    document.getElementById('aContent').innerHTML = '<p>บทความอาจถูกย้ายหรือลบไปแล้ว <a href="/blog.html">กลับไปหน้าบทความทั้งหมด</a></p>';
   }
 }
 

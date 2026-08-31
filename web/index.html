@@ -22,18 +22,14 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <meta property="og:url" content="https://www.360foodbox.com/">
 <meta property="og:image" content="img/img23.jpg">
 
-<!-- ═══ Google Ads tag ═══
-  TODO (Claude Code): หลังสร้าง Conversion Action ใน Google Ads แล้ว
-  1) แทน AW-XXXXXXXXXX ด้วย Conversion ID จริง แล้วปลดคอมเมนต์ block นี้
-  2) แทน CONVERSION_LABEL ใน trackOrder() ด้านล่าง
-<script async src="https://www.googletagmanager.com/gtag/js?id=AW-XXXXXXXXXX"></script>
+<!-- ═══ Google Ads tag (06 Ads ส่งค่าจริงมา 26 ส.ค. 2026) ═══ -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=AW-872118373"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
   gtag('js', new Date());
-  gtag('config', 'AW-XXXXXXXXXX');
+  gtag('config', 'AW-872118373');
 </script>
-═══════════════════ -->
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -482,6 +478,23 @@ summary{font-weight:600}
 
 /* ── ⑪ พื้นหลังสลับ: ตัดสีครีม ใช้เทาอ่อนแทน ── */
 .deliv,.facts,.alt-bg{background:var(--bg-soft)!important}
+/* ── u360-nav-fix (27 ส.ค.) — แถบบนพังบนมือถือ: ตัวหนังสือตกบรรทัดจนปุ่มบวมเป็นวงกลม ── */
+header .nav,header nav{flex-wrap:nowrap}
+header .nav a,header nav a,header .logo{white-space:nowrap}
+header .logo img{flex:none}
+/* ปุ่มบนแถบบนต้องเล็กกว่าปุ่มในเนื้อหา — ไม่กินกฎ .btn ที่ตั้งไว้สำหรับปุ่มใหญ่ */
+header .btn,header .btn-line,header a.btn-line{
+  padding:9px 16px!important;min-height:38px!important;height:38px;
+  font-size:.9rem!important;line-height:1;white-space:nowrap;flex:none;
+}
+@media(max-width:520px){
+  header .nav{gap:10px}
+  header .logo{font-size:.98rem!important}
+  header .logo img{width:28px;height:28px}
+  /* จอแคบมาก: ซ่อนลิงก์เมนู เหลือโลโก้ + ปุ่มสั่ง (ลิงก์ครบอยู่ท้ายหน้าแล้ว) */
+  header nav a:not(.btn):not(.btn-line){display:none}
+  header .btn,header .btn-line,header a.btn-line{padding:9px 14px!important;font-size:.86rem!important}
+}
 </style>
 </head>
 <body>
@@ -494,7 +507,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <header>
   <div class="wrap nav">
     <a class="logo" href="index.html">
-      <img src="img/img15.jpg" alt="Under360 logo">
+      <img src="/img/u360_logo.svg" alt="Under360 logo">
       Under360
     </a>
     <nav>
@@ -906,8 +919,7 @@ function orderNow(el){
   track('cta_click','index');
   try{
     if(typeof gtag === 'function'){
-      // TODO (Claude Code): แทน CONVERSION_LABEL หลังสร้าง conversion action
-      gtag('event','conversion',{ 'send_to':'AW-XXXXXXXXXX/CONVERSION_LABEL' });
+      gtag('event','conversion',{ 'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D' });
     }
   }catch(e){}
   window.location.href = u360Tracked(ORDER_URL);

@@ -1123,6 +1123,38 @@ body.counts-folded .count-grid{display:none}
   </div>
 </div>
 
+<!-- ❓ เหตุผลที่ยกเลิก (f-track ขอผ่าน CC · 22 ส.ค. 2026)
+     ทำไมต้องมี: โน้ตเดิมบอกแค่ "ใครกดยกเลิก" ไม่เคยบอก "ทำไม"
+     → ห้องการเงินตอบไม่ได้ว่าเดือนนี้เสียออเดอร์เพราะอะไร (ส.ค. ยกเลิก 12 ใบ · ใบที่ยกเลิกมีสัดส่วนค่าส่งสูงผิดปกติ แต่ยังฟันธงไม่ได้เพราะไม่มีเหตุผล)
+     เก็บเป็นข้อความรูปแบบตายตัวในโน้ต [เหตุผล: xxx] → รายงานนับได้เลย ไม่ต้องเพิ่มคอลัมน์/รัน SQL ใหม่ -->
+<div id="cxOverlay" onclick="if(event.target===this)cxClose()"
+  style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:4200;padding:16px;overflow:auto">
+  <div style="max-width:420px;margin:60px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.3)">
+    <div style="padding:13px 16px;background:#B91C1C;color:#fff;font-size:15px;font-weight:800">🗑️ ยกเลิกออเดอร์</div>
+    <div style="padding:16px;font-size:13px;line-height:1.7">
+      <div id="cxWhat" style="background:#FEF2F2;border-radius:10px;padding:10px 12px;margin-bottom:12px"></div>
+      <div style="font-weight:700;margin-bottom:6px">ยกเลิกเพราะอะไร? <span style="color:#B91C1C">*</span></div>
+      <select id="cxReason" onchange="document.getElementById('cxOther').style.display=(this.value==='อื่นๆ'?'':'none')"
+        style="width:100%;padding:10px;border:1px solid #D6DDD8;border-radius:9px;font-size:14px;font-family:inherit">
+        <option value="">— เลือกเหตุผล —</option>
+        <option>ลูกค้าเปลี่ยนใจ</option>
+        <option>ค่าส่งแพง</option>
+        <option>สั่งซ้ำ</option>
+        <option>ของหมด</option>
+        <option>อื่นๆ</option>
+      </select>
+      <input id="cxOther" placeholder="พิมพ์เหตุผลสั้นๆ" maxlength="60"
+        style="display:none;width:100%;margin-top:8px;padding:10px;border:1px solid #D6DDD8;border-radius:9px;font-size:14px;font-family:inherit">
+      <div style="color:#6B7280;font-size:12px;margin-top:10px">ใบนี้จะหายจากรายการออเดอร์ · หน้าครัว · แพลนเมนู · ใบทวงเงิน (กู้คืนได้ที่ปุ่ม "ใบที่ยกเลิก")</div>
+      <div id="cxErr" style="display:none;color:#B91C1C;font-size:12px;margin-top:8px"></div>
+      <div style="display:flex;gap:8px;margin-top:14px">
+        <button onclick="cxClose()" style="flex:1;padding:11px;border:1px solid #D6DDD8;background:#fff;border-radius:10px;font-size:14px;cursor:pointer;font-family:inherit">ไม่ยกเลิก</button>
+        <button id="cxGo" onclick="cxConfirm()" style="flex:1;padding:11px;border:none;background:#B91C1C;color:#fff;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit">ยืนยันยกเลิก</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ── SUPABASE: daily_menu_assignments ─────────────────────────────────────
@@ -2235,6 +2267,23 @@ function odMoveBadge(o){
   var byCust=/โดยลูกค้า/.test(String(o.notes||""));
   return "<span title='"+esc2(odMovedInfo(o))+"' style='font-size:10px;font-weight:700;color:#B45309;background:#FEF3C7;border-radius:7px;padding:1px 6px;margin-left:5px'>🔁 "+(byCust?"ลูกค้าเลื่อน":"เลื่อนแล้ว")+"</span>";
 }
+/* คืน "วันต้นทางของการเลื่อนครั้งล่าสุด" — โน้ตเก็บสะสมทุกครั้งที่เลื่อน
+   เช่น [08-19 → 08-24] [08-24 → 09-14]  →  ต้องได้ 2026-08-24 ไม่ใช่ 2026-08-19 */
+function planMovedFrom(notes){
+  var re = new RegExp("\\[เลื่อนวัน(?:ส่ง|โดยลูกค้า)\\s+([0-9-]+)\\s*→\\s*([0-9-]+)[^\\]]*\\]", "g");
+  var all = String(notes||"").match(re);
+  if(!all || !all.length) return "";
+  var last = all[all.length-1].match(/([0-9-]+)\s*→\s*([0-9-]+)/);
+  return last ? last[1] : "";
+}
+function planMovedBadge(om){
+  if(!om || !om.movedFrom) return "";
+  var d=String(om.movedFrom).slice(5).split("-");
+  var TH=["","ม.ค.","ก.พ.","มี.ค.","เม.ย.","พ.ค.","มิ.ย.","ก.ค.","ส.ค.","ก.ย.","ต.ค.","พ.ย.","ธ.ค."];
+  var label=(d.length===2)?(Number(d[1])+" "+(TH[Number(d[0])]||"")):om.movedFrom;
+  return "<span title='รอบนี้ถูกเลื่อนมาจาก "+esc2(om.movedFrom)+" — ไม่ใช่รอบที่ค้างอยู่' "
+    +"style='font-size:9.5px;font-weight:700;color:#B45309;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:4px;padding:0 4px;margin-left:4px'>🔁 เลื่อนมาจาก "+esc2(label)+"</span>";
+}
 function odMovedInfo(o){
   var m=String(o&&o.notes||"").match(/\[เลื่อนวัน(?:ส่ง|โดยลูกค้า)\s+([0-9-]+)\s*→\s*([0-9-]+)[^\]]*\]/);
   if(!m) return "";
@@ -2350,7 +2399,7 @@ async function openOrderDetail(id){
     var o=(ordRows||[]).find(function(x){return x.id===id;});
     if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
     if(!o){ body.innerHTML="ไม่พบออเดอร์"; return; }
-    ttl.textContent=(o.order_number||"ออเดอร์")+" · "+fmtB(o.total);
+    ttl.textContent=ordLabel(o)+" · "+fmtB(o.total);
     // ดึงรายการสินค้า + ข้อมูลสมาชิก + ประวัติซื้อ พร้อมกัน
     var itRes=await sb_.from("order_items").select("*").eq("order_id",id);
     var items=itRes.data||[];
@@ -2486,6 +2535,22 @@ async function openOrderDetail(id){
 /* ── ยกเลิก / กู้คืนออเดอร์ ─────────────────────────────────────────────────
    จดชื่อคนกดเสมอ — ยกเลิกใบของลูกค้าจริงต้องรู้ว่าใครสั่งยกเลิก
    และต้อง "อ่านกลับมาดู" หลังเขียนทุกครั้ง เพราะเคยเจอว่าคำสั่งผ่านแต่ข้อมูลไม่ขยับ */
+/* 🔖 เลขออเดอร์ + วันส่งจริง — ห้ามโชว์เลขลอยๆ ให้คนอ่าน
+   เลขฝัง "วันที่ตอนสร้างใบ" ไว้ในตัว (U-0828-xxx) แต่พอย้ายวันแล้วเลขไม่เปลี่ยนตาม
+   → คนเห็น U-0828-004 แล้วเข้าใจว่าส่ง 28 ทั้งที่ย้ายไป 31 แล้ว
+   วันนี้ (27 ส.ค. 2569) ทำให้ 3 ห้องอ่านวันผิดกันทั้งวัน ทั้งห้องระบบ ห้องฟ้า และแอดมิน
+   ⚠️ ห้ามแก้ตัวเลขให้ตรงวัน — เลขเป็นกุญแจที่ใบจัดของ สลิปโอนเงิน และประวัติอ้างถึง
+      เปลี่ยนเมื่อไหร่ = ตามของเก่าไม่เจอทั้งระบบ · แก้ที่ "การแสดงผล" เท่านั้น */
+function ordLabel(o){
+  if(!o) return "";
+  var num=o.order_number||"ออเดอร์";
+  var d=o.delivery_date||"";
+  if(!d) return num;
+  var mmdd=String(d).slice(5).replace("-","/");            // 2026-08-31 → 08/31
+  var inNum=String(num).match(/^[A-Z]+-(\d{2})(\d{2})-/); // เลขฝังวันไว้ไหม
+  var same=inNum && (inNum[1]+"/"+inNum[2])===mmdd;        // ตรงกันอยู่แล้ว = ไม่ต้องย้ำ
+  return same ? num : (num+" · ส่ง "+mmdd);
+}
 function odWho(){
   var n=""; try{ n=localStorage.getItem("lastNickname")||""; }catch(e){}
   if(!n){
@@ -2518,16 +2583,47 @@ async function odRestock(id, sign, label){
     return {menus:keys.length, ok:ok, boxes:box, label:label};
   }catch(e){ console.error("odRestock:",e); return null; }
 }
+/* ── ถามเหตุผลก่อน แล้วค่อยยกเลิกจริง ─────────────────────────────────────
+   เดิมเป็น window.confirm ล้วน → โน้ตบอกได้แค่ "ใครกด" ไม่เคยบอก "ทำไม"
+   บังคับเลือกเหตุผล ข้ามไม่ได้ — ถ้าปล่อยให้ข้ามได้ ทุกคนจะข้าม แล้วก็ได้ข้อมูลเปล่าเหมือนเดิม */
+var _cxCtx=null;
+function cxClose(){ var e=document.getElementById("cxOverlay"); if(e) e.style.display="none"; _cxCtx=null; }
 async function odCancelOrder(id){
   var sb_=getSB(); if(!sb_)return;
   var o=(ordRows||[]).find(function(x){return x.id===id;});
   if(!o){ var r0=await sb_.from("orders").select("*").eq("id",id).maybeSingle(); o=r0.data; }
   if(!o) return alert("ไม่พบออเดอร์");
   var who=odWho(); if(!who) return;
-  if(!window.confirm("ยกเลิกออเดอร์นี้?\n\n"+(o.order_number||"")+" · "+(o.customer_name||"")+"\nยอด "+fmtB(o.total)+" · ส่ง "+(o.delivery_date||"—")
-    +"\n\nใบนี้จะหายจากรายการออเดอร์ · หน้าครัว · แพลนเมนู · ใบทวงเงิน\n(กู้คืนได้ที่ปุ่ม \"ใบที่ยกเลิก\")\n\nคนกด: "+who)) return;
+  _cxCtx={id:id,o:o,who:who};
+  document.getElementById("cxWhat").innerHTML="<b>"+esc2(ordLabel(o))+"</b> · "+esc2(o.customer_name||"")
+    +"<br>ยอด "+fmtB(o.total)+" · ส่ง "+esc2(o.delivery_date||"—")
+    +"<br><span style='color:#6B7280'>คนกด: "+esc2(who)+"</span>";
+  document.getElementById("cxReason").value="";
+  document.getElementById("cxOther").value="";
+  document.getElementById("cxOther").style.display="none";
+  document.getElementById("cxErr").style.display="none";
+  var g=document.getElementById("cxGo"); g.disabled=false; g.textContent="ยืนยันยกเลิก";
+  document.getElementById("cxOverlay").style.display="";
+}
+async function cxConfirm(){
+  if(!_cxCtx) return;
+  var sel=document.getElementById("cxReason").value;
+  var other=(document.getElementById("cxOther").value||"").trim();
+  var reason = (sel==="อื่นๆ") ? other : sel;
+  var err=document.getElementById("cxErr");
+  if(!reason){ err.textContent = (sel==="อื่นๆ") ? "พิมพ์เหตุผลด้วยค่ะ" : "เลือกเหตุผลก่อนนะคะ"; err.style.display=""; return; }
+  var btn=document.getElementById("cxGo"); btn.disabled=true; btn.textContent="⏳ กำลังยกเลิก...";
+  var id=_cxCtx.id, o=_cxCtx.o, who=_cxCtx.who;
+  var sb_=getSB();
+  cxClose();
   try{
-    var stamp="[ยกเลิกโดย "+who+" "+today2()+"]";
+    /* รูปแบบตายตัว [เหตุผล: xxx] — ห้องการเงินนับจากโน้ตได้เลย ไม่ต้องรอคอลัมน์ใหม่
+       ตัดวงเล็บเหลี่ยมออกจากข้อความที่คนพิมพ์ ไม่งั้นตัวอ่านโน้ตจะตัดคำผิด */
+    var nob=function(t){ return String(t||"").split("[").join("").split("]").join(""); };
+    /* ⚠️ ชื่อคนกดก็ต้องตัดวงเล็บเหลี่ยมด้วย — เจอตอนเทส 23 ส.ค.: ชื่อที่มี ] ทำให้ตัวลบป้ายตอนกู้คืน
+       ตัดผิดตำแหน่ง แล้วเหลือเศษวันที่ค้างในโน้ตลูกค้า (บั๊กเดิม โผล่เฉพาะชื่อที่มีวงเล็บ) */
+    var safe=nob(reason).slice(0,60);
+    var stamp="[ยกเลิกโดย "+nob(who)+" "+today2()+"] [เหตุผล: "+safe+"]";
     var up=await sb_.from("orders").update({
       status:"cancelled",
       notes:String(o.notes||"").indexOf("[ยกเลิกโดย")>=0?o.notes:((o.notes?o.notes+" ":"")+stamp),
@@ -2556,7 +2652,7 @@ async function odClearCancelStamp(sb_,id){
     /* ⚠️ ต้องมี \ หน้า [ ] และ \s — เคยหลุดหายตอนเขียนไฟล์ผ่าน shell แล้วกลายเป็น
        character class ที่ไล่ลบตัวอักษรไทยทีละตัวออกจากโน้ตลูกค้า (เช่น "ห้อง 75 ตึกA")
        ของแบบนี้ไม่มีอะไรฟ้อง เห็นอีกทีคือข้อความลูกค้าแหว่งไปแล้ว */
-    var clean=n.replace(/\[ยกเลิกโดย[^\]]*\]/g,"").replace(/\s+/g," ").trim();
+    var clean=n.replace(/\[ยกเลิกโดย[^\]]*\]/g,"").replace(/\[เหตุผล:[^\]]*\]/g,"").replace(/\s+/g," ").trim();
     await sb_.from("orders").update({notes:clean||null}).eq("id",id);
   }catch(e){}
 }
@@ -2902,6 +2998,7 @@ async function dropCancelledOrderRows(rows){
   }catch(e){ return rows; }
 }
 async function loadMpPlanData(){
+  window._planRescueDrawn=false;   // ข้อมูลชุดใหม่ = ให้กู้รอบค้างได้อีกครั้ง
   var sb_=getSB();
   if(!sb_){ mpPlanRows=[]; renderLeftPanel(); _buildPlanTable(); return; }
   try{
@@ -2934,23 +3031,55 @@ async function loadMpOrderNumbers(){
   mpPlanRows.forEach(function(r){ if(r.delivery_date&&dates.indexOf(r.delivery_date)<0) dates.push(r.delivery_date); });
   if(!dates.length) return;
   try{
-    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status")
+    var res=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status,notes")
       .in("delivery_date",dates).neq("status","cancelled").limit(2000);
     if(res.error) throw res.error;
     var os=res.data||[];
+    /* 🐞 27 ส.ค. 2569 — กิ๊ฟ: "ย้ายนานแล้ว แต่ยังขึ้นในใบสรุปครัวอยู่"
+       ของเดิมดึงใบ "เฉพาะวันที่มีรอบ" อย่างเดียว → ใบที่หลุดไปอยู่วันอื่นไม่ถูกดึงมาเลย
+       พอไม่ถูกดึงมา ระบบก็จับคู่ไม่ได้ → ตอนกดเลื่อน ใบไม่ถูกย้ายตาม → ค้างถาวร
+       ต้องตามใบด้วย order_id ที่รอบชี้ถึงตรงๆ ด้วย ไม่ว่าใบจะไปอยู่วันไหน */
+    try{
+      var known={}; os.forEach(function(o){ known[o.id]=1; });
+      var wanted=[]; mpPlanRows.forEach(function(r){ if(r.order_id&&!known[r.order_id]&&wanted.indexOf(r.order_id)<0) wanted.push(r.order_id); });
+      for(var wi=0; wi<wanted.length; wi+=60){
+        var chunk=wanted.slice(wi,wi+60);
+        var extra=await sb_.from("orders").select("id,order_number,delivery_date,line_uid,customer_id,status,notes")
+          .in("id",chunk).neq("status","cancelled").limit(200);
+        if(!extra.error&&extra.data) os=os.concat(extra.data);
+      }
+    }catch(e){ console.warn("ตามใบที่อยู่คนละวันไม่สำเร็จ:",e); }
     var byId={}; os.forEach(function(o){ byId[o.id]=o; });
     // ⚠️ ต้องเช็ค order_id ก่อน — 35 แถวไม่มี line_uid/customer_id เลย ถ้าจับด้วยตัวตนอย่างเดียว
     //    จะขึ้น "ไม่มีใบ" หลอกแอดมินทั้งที่ใบมีอยู่ (ผมพลาดตรงนี้มาแล้วตอนนับ 6 ส.ค.)
     mpPlanRows.forEach(function(r){
-      var hit=(r.order_id&&byId[r.order_id]&&byId[r.order_id].delivery_date===r.delivery_date)?byId[r.order_id]:null;
+      /* ⚠️ ห้ามเอา "วันตรงกัน" มาเป็นเงื่อนไขของการจับคู่ — order_id คือความสัมพันธ์ วันคือสถานะ
+         ของเดิมเช็ควันด้วย = ใบที่หลุดวันไปแล้วจะกลายเป็น "ไม่มีใบ" แล้วไม่มีทางถูกย้ายกลับมาอีก
+         (วงจรที่ทำให้กิ๊ฟกดเลื่อนแล้วครัวยังเห็นวันเดิมค้างเป็นสัปดาห์) */
+      var hit=(r.order_id&&byId[r.order_id])?byId[r.order_id]:null;
       if(!hit) hit=os.find(function(o){
         return o.delivery_date===r.delivery_date &&
           ((r.line_uid&&o.line_uid===r.line_uid)||(r.customer_id&&o.customer_id===r.customer_id));
       });
-      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id}:null;
+      /* 🔁 รอบที่ถูกเลื่อนมาแล้ว หน้าตาเหมือนรอบที่ไม่เคยถูกแตะเลย
+         กิ๊ฟเลยแยกไม่ออกว่า "อันไหนย้ายมาแล้ว อันไหนคือของเดิมที่ยังค้าง"
+         (นัทแจ้ง 23 ส.ค. — ตรวจแล้วข้อมูลถูกทุกจุด ปัญหาคือหน้าจอไม่บอก) */
+      mpOrderMap[r.id]=hit?{num:hit.order_number,id:hit.id,movedFrom:planMovedFrom(hit.notes),
+        dateOff:(hit.delivery_date&&hit.delivery_date!==r.delivery_date)?hit.delivery_date:null}:null;
     });
   }catch(e){ console.error("loadMpOrderNumbers:",e); }
   document.querySelectorAll(".assign-cell").forEach(function(td){ renderPlanCell(td.dataset.rowid); });
+  /* ตารางถูกวาดก่อนที่ตัวจับคู่ใบจะเสร็จ (loadMpOrderNumbers ถูกเรียกท้ายสุด)
+     ถ้าเพิ่งรู้ว่ามีรอบค้างที่ต้องกู้ ต้องวาดใหม่อีกรอบ ไม่งั้นคอลัมน์นั้นไม่โผล่
+     flag กันวนซ้ำ — รีเซ็ตทุกครั้งที่โหลดข้อมูลใหม่ */
+  try{
+    var _t=today2();
+    var needRescue=mpPlanRows.some(function(r){
+      var om=mpOrderMap[r.id];
+      return r.delivery_date && r.delivery_date<_t && om && om.dateOff && om.dateOff>=_t;
+    });
+    if(needRescue && !window._planRescueDrawn){ window._planRescueDrawn=true; _buildPlanTable(); }
+  }catch(e){ console.warn("rescue rebuild:",e); }
   renderTicketBar();
 }
 
@@ -2962,7 +3091,38 @@ function renderTicketBar(){
   var rows=mpPlanRows.filter(function(r){ return r.delivery_date && r.delivery_date>=todayStr; });
   if(!rows.length){ bar.style.display="none"; return; }
   var miss=rows.filter(function(r){ return !mpOrderMap[r.id]; });
+  /* ใบมีอยู่ แต่ลงคนละวันกับรอบ = ครัว/แมสเห็นผิดวัน อันตรายพอๆ กับไม่มีใบ ต้องนับด้วย */
+  var off=rows.filter(function(r){ var m=mpOrderMap[r.id]; return m&&m.dateOff; });
   bar.style.display="block";
+  /* ปุ่มเปิดใบครบทุกรอบ — โผล่เมื่อมีรอบที่ใช้ใบร่วมกับรอบอื่นจริงเท่านั้น */
+  try{
+    var shareCount=(function(){
+      var m={}, c=0, td=today2();
+      (mpPlanRows||[]).forEach(function(r){
+        if(!r.order_id||["cancelled","skipped","skip_requested"].indexOf(r.status)>=0) return;
+        if(!r.delivery_date||r.delivery_date<td) return;
+        m[r.order_id]=(m[r.order_id]||0)+1;
+      });
+      Object.keys(m).forEach(function(k){ if(m[k]>1) c+=(m[k]-1); });
+      return c;
+    })();
+    var sb2=document.getElementById("planShareBar");
+    if(!sb2&&bar&&bar.parentNode){ sb2=document.createElement("div"); sb2.id="planShareBar";
+      sb2.style.cssText="margin:6px 0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.6;display:none";
+      bar.parentNode.insertBefore(sb2,bar.nextSibling); }
+    if(sb2){
+      if(shareCount){
+        sb2.style.display="block"; sb2.style.background="#EFF6FF"; sb2.style.color="#1E40AF"; sb2.style.border="1px solid #BFDBFE";
+        sb2.innerHTML="🎫 มี <b>"+shareCount+" รอบ</b> ที่ยังใช้ใบออเดอร์ร่วมกับรอบอื่น — ครัวและแมสมองไม่เห็นรอบพวกนี้ "
+          +"<button onclick='planCreateMissingTickets()' style='margin-left:6px;border:none;background:#1E40AF;color:#fff;border-radius:6px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer'>เปิดใบให้ครบ</button>";
+      } else sb2.style.display="none";
+    }
+  }catch(e){ console.warn("share bar:",e); }
+  if(!miss.length && off.length){
+    bar.style.background="#FEF3C7"; bar.style.color="#92400E"; bar.style.border="1px solid #FCD34D";
+    bar.textContent="⚠ มี "+off.length+" รอบที่ใบออเดอร์ลงคนละวันกับรอบ — ครัวและแมสจะเห็นผิดวัน · หาป้ายเหลือง \"⚠ ใบอยู่ ...\" แล้วกดเพื่อย้ายใบมาให้ตรง";
+    return;
+  }
   if(miss.length){
     bar.style.background="#FEE2E2"; bar.style.color="#B91C1C"; bar.style.border="1px solid #FCA5A5";
     bar.textContent="⚠ มี "+miss.length+" รอบยังไม่มีใบออเดอร์ (จาก "+rows.length+" รอบ) — ครัว/แมสมองไม่เห็นรอบพวกนี้ · หาป้ายแดง \"⚠ ไม่มีใบ · กดเปิด\" ในช่องของรอบนั้น แล้วกดเพื่อเปิดใบ";
@@ -3836,6 +3996,36 @@ async function planMoveRound(rowId, ev){
       +(om?("\nใบ "+om.num+" ขยับตามแล้ว"):"\n(รอบนี้ยังไม่มีใบออเดอร์)"));
   }catch(e){ alert("เลื่อนวันไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
+/* ── 🔁 ย้าย "ใบออเดอร์" มาให้ตรงกับวันของรอบ (27 ส.ค. 2569) ────────────────
+   ใช้กับรอบที่เคยถูกเลื่อน แต่ใบค้างอยู่วันเดิมเพราะบั๊กการจับคู่ (แก้ที่ loadMpOrderNumbers แล้ว)
+   ⚠️ ไม่แตะเมนู — เมนูเป็นคนละเรื่อง ถ้าต้องล้างให้ใช้ปุ่มเลื่อนวันซึ่งมีกติกา 08:30 อยู่แล้ว */
+async function planSyncOrderDate(rowId, ev){
+  if(ev){ ev.stopPropagation(); ev.preventDefault(); }
+  var sb_=getSB(); if(!sb_) return;
+  var r=getMpRow(rowId); if(!r) return;
+  var om=mpOrderMap[rowId];
+  if(!om||!om.id||!om.dateOff){ alert("รอบนี้ใบตรงวันอยู่แล้ว"); return; }
+  var who=odWho(); if(!who) return;
+  if(!window.confirm("ย้ายใบ "+om.num+" จากวันที่ "+om.dateOff+" มาเป็น "+r.delivery_date+" ใช่ไหม?\n\n"
+    +(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+"\n\nครัวและแมสจะเห็นรอบนี้ในวันที่ถูกต้องทันที\n\nคนกด: "+who)) return;
+  try{
+    var stamp=" [ย้ายใบให้ตรงกับรอบ "+om.dateOff+"→"+r.delivery_date+" โดย "+who+"]";
+    var cur=await sb_.from("orders").select("notes").eq("id",om.id).maybeSingle();
+    var up=await sb_.from("orders").update({delivery_date:r.delivery_date,
+      notes:(((cur.data&&cur.data.notes)||"")+stamp), updated_at:new Date().toISOString()}).eq("id",om.id).select("id,delivery_date");
+    if(up.error) throw up.error;
+    if(!up.data||!up.data.length||up.data[0].delivery_date!==r.delivery_date)
+      throw new Error("คำสั่งผ่านแต่ข้อมูลไม่เปลี่ยน — สิทธิ์อาจไม่พอ แจ้งห้องระบบ");
+    try{ await sb_.from("activity_log").insert({
+      session_id:"oh_"+Date.now()+"_"+Math.random().toString(36).slice(2,8), actor:who, source:"oh",
+      action_type:"order_move",
+      summary:(om.num||"ออเดอร์")+" "+(r.customer_name||"")+" — ย้ายใบให้ตรงกับรอบ "+om.dateOff+" → "+r.delivery_date,
+      detail:{order_id:om.id, order_number:om.num, from:om.dateOff, to:r.delivery_date, mp_id:rowId, by:"oh_plan_sync"} }); }catch(e){}
+    await loadMpPlanData();
+    alert("ย้ายใบ "+om.num+" มาวันที่ "+r.delivery_date+" แล้ว");
+  }catch(e){ alert("ย้ายใบไม่สำเร็จ: "+((e&&e.message)||e)); }
+}
+
 /* ── 🎫 เปิดใบออเดอร์ให้รอบที่ยังไม่มีใบ (ฟ้าจัดเป็นงานอันดับ 1 · 17 ส.ค. 2569) ──
    ปัญหา: ลูกค้าซื้อคอร์สจ่ายเงินครบแล้ว มีคิวรอบส่งในระบบ **แต่ไม่มีใบ `orders`**
      → หน้าออเดอร์ / หน้าแมส / หน้าครัว มองไม่เห็นรอบนั้นเลย
@@ -3852,6 +4042,22 @@ async function planCreateTicket(rowId, ev){
     +"\nรอบ "+(r.round_no||"?")+"/"+(r.total_rounds||"?")+" · ส่ง "+(r.delivery_date||"—")+" · "+(r.box_count||7)+" กล่อง"
     +"\n\nใบนี้จะเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบ ครัวกับแมสถึงจะเห็นรอบนี้"
     +"\n\nคนกด: "+who)) return;
+  var res=await planCreateTicketCore(rowId, who);
+  await loadMpPlanData();
+  alert(res.ok
+    ? ("เปิดใบ "+res.num+" แล้ว\nครัวกับแมสจะเห็นรอบนี้แล้ว\n\n⚠️ ใบนี้ยอด ฿0 — ถ้าลูกค้ายังไม่ได้จ่ายรอบนี้ ต้องไปแก้ยอดที่หน้าออเดอร์")
+    : ("เปิดใบไม่สำเร็จ: "+res.why));
+}
+
+/* แกนการเปิดใบ — ไม่ถาม ไม่เด้ง alert เพื่อให้ปุ่มเปิดทีเดียวหลายรอบเรียกซ้ำได้
+   ⚠️ ตรรกะข้างในต้องเหมือนเดิมเป๊ะ ห้ามแตกเป็น 2 เวอร์ชัน ไม่งั้นใบที่เปิดทีละรอบ
+      กับใบที่เปิดทีเดียวหลายรอบจะหน้าตาไม่เหมือนกัน แล้วไล่ปัญหาทีหลังไม่ได้ */
+async function planCreateTicketCore(rowOrRow, who){
+  var sb_=getSB(); if(!sb_) return {ok:false, why:"ต่อฐานข้อมูลไม่ได้"};
+  /* รับได้ 2 แบบ: id ของแถว (หน้าแพลนเมนู) หรือตัวแถวเลย (หน้าสั่งแทนลูกค้า ซึ่งยังไม่มีตารางให้ค้น) */
+  var r=(rowOrRow&&typeof rowOrRow==="object")?rowOrRow:getMpRow(rowOrRow);
+  if(!r) return {ok:false, why:"ไม่พบรอบนี้"};
+  var rowId=r.id;
   try{
     // หาใบของรอบก่อนหน้าไว้ก๊อปที่อยู่/เบอร์/ช่วงเวลา — ไม่ต้องให้แอดมินพิมพ์ใหม่
     var src=null;
@@ -3902,9 +4108,49 @@ async function planCreateTicket(rowId, ev){
       action_type:"kq_status",
       summary:(r.customer_name||"ลูกค้า")+" รอบ "+(r.round_no||"?")+" — เปิดใบออเดอร์ให้ "+num+" ("+r.delivery_date+")",
       detail:{mp_id:rowId, order_id:ord.data.id, num:num, by:"oh_plan"} }); }catch(e){}
-    await loadMpPlanData();
-    alert("เปิดใบ "+num+" แล้ว\nครัวกับแมสจะเห็นรอบนี้แล้ว\n\n⚠️ ใบนี้ยอด ฿0 — ถ้าลูกค้ายังไม่ได้จ่ายรอบนี้ ต้องไปแก้ยอดที่หน้าออเดอร์");
-  }catch(e){ alert("เปิดใบไม่สำเร็จ: "+((e&&e.message)||e)); }
+    return {ok:true, num:num, id:ord.data.id};
+  }catch(e){ return {ok:false, why:((e&&e.message)||String(e))}; }
+}
+
+/* ── 🎫 เปิดใบให้ครบทุกรอบที่ยังใช้ใบร่วมกัน (ห้องฟ้าขอ · 27 ส.ค. 2569) ──────────
+   ทำไมต้องมี: 1 ใบมี "วันส่ง" ได้วันเดียว
+     ใบที่ถูกผูกกับหลายรอบ = รอบที่เหลือไม่มีใบของตัวเอง → ครัว/แมสมองไม่เห็น
+     ทั้งที่ลูกค้าจ่ายเงินมาครบแล้ว (ต้นตอของ "ลูกค้าจ่ายแล้วหลุด")
+   ของจริงตอนเขียน: 4 ใบถูกใช้ร่วมกัน 22 รอบ (โอ๋ 2 ใบ × 8 รอบ · อัญชลี 2 ใบ × 3 รอบ)
+   ⚠️ เว้นรอบแรกของแต่ละใบไว้เสมอ — ใบนั้นเป็นของรอบแรกอยู่แล้ว ถ้าเปิดใหม่ให้ด้วยจะได้ใบซ้ำ
+   ⚠️ ใบที่เปิดให้เป็นยอด ฿0 ทั้งหมด (เงินอยู่ที่ใบแรก) — ไม่ใช่การเก็บเงินเพิ่ม */
+async function planCreateMissingTickets(){
+  var who=odWho(); if(!who) return;
+  var today=today2();
+  var byOrder={};
+  (mpPlanRows||[]).forEach(function(r){
+    if(!r.order_id) return;
+    if(["cancelled","skipped","skip_requested"].indexOf(r.status)>=0) return;
+    if(!r.delivery_date || r.delivery_date<today) return;      // อดีตไม่ต้องเปิดใบย้อนหลัง
+    (byOrder[r.order_id]=byOrder[r.order_id]||[]).push(r);
+  });
+  var need=[];
+  Object.keys(byOrder).forEach(function(oid){
+    var list=byOrder[oid].slice().sort(function(a,b){ return String(a.delivery_date).localeCompare(String(b.delivery_date)); });
+    list.slice(1).forEach(function(r){ need.push(r); });        // ตัวแรกใช้ใบเดิม ที่เหลือต้องมีใบของตัวเอง
+  });
+  if(!need.length) return alert("ทุกรอบมีใบของตัวเองครบแล้ว ✅\nไม่มีอะไรต้องเปิดเพิ่ม");
+  var preview=need.slice(0,12).map(function(r){
+    return "· "+(r.customer_name||"ลูกค้า").slice(0,22)+" รอบ "+(r.round_no||"?")+" · ส่ง "+r.delivery_date;
+  }).join("\n");
+  if(!window.confirm("เปิดใบออเดอร์ให้ "+need.length+" รอบที่ยังใช้ใบร่วมกับรอบอื่น?\n\n"
+    +preview+(need.length>12?("\n· (และอีก "+(need.length-12)+" รอบ)"):"")
+    +"\n\nทุกใบเป็นยอด ฿0 (เงินอยู่ที่ใบรอบแรกแล้ว)\nพอมีใบของตัวเอง ครัวกับแมสถึงจะเห็นรอบพวกนี้"
+    +"\n\nคนกด: "+who)) return;
+  var ok=[], fail=[];
+  for(var i=0;i<need.length;i++){
+    var res=await planCreateTicketCore(need[i].id, who);
+    if(res.ok) ok.push(res.num); else fail.push((need[i].customer_name||"?")+" รอบ "+need[i].round_no+": "+res.why);
+  }
+  await loadMpPlanData();
+  alert("เปิดใบสำเร็จ "+ok.length+" ใบ"+(fail.length?(" · ไม่สำเร็จ "+fail.length+" ใบ"):"")
+    +(ok.length?("\n\n"+ok.slice(0,10).join(", ")+(ok.length>10?" …":"")):"")
+    +(fail.length?("\n\n⚠️ ที่ไม่สำเร็จ:\n"+fail.slice(0,5).join("\n")):""));
 }
 
 async function planCancelRound(rowId, ev){
@@ -4045,8 +4291,11 @@ function renderPlanCell(rowId){
   var box=mpRowBoxCount(rowId);
   // N-28/N-27 · เลขใบต้นทาง + เตือนถ้ารอบนี้ยังไม่มีใบ (= ครัวกับแมสมองไม่เห็นรอบนี้เลย)
   var om=mpOrderMap[rowId];
+  var offTag = (om&&om.dateOff)
+    ? "<span onclick='planSyncOrderDate(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#92400E;background:#FEF3C7;border:1px solid #FCD34D;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบออเดอร์ยังลงวัน "+esc2(om.dateOff)+" — ครัวและแมสจะเห็นรอบนี้ผิดวัน · กดเพื่อย้ายใบมาให้ตรง'>⚠ ใบอยู่ "+esc2(String(om.dateOff).slice(5))+" · กดย้าย</span>"
+    : "";
   var orderTag = (om===undefined) ? ""
-    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"
+    : om ? "<span style='font-family:var(--mono);font-size:9.5px;color:#4B5563;background:#F3F4F6;border-radius:4px;padding:0 4px;margin-left:4px' title='ใบต้นทางของรอบนี้'>"+esc2(om.num)+"</span>"+planMovedBadge(om)+offTag
          : "<span onclick='planCreateTicket(\""+rowId+"\",event)' style='cursor:pointer;font-size:9.5px;font-weight:700;color:#B91C1C;background:#FEE2E2;border:1px solid #FCA5A5;border-radius:4px;padding:0 4px;margin-left:4px' title='ยังไม่มีใบออเดอร์ของรอบนี้ — ครัว/แมสมองไม่เห็น · กดเพื่อเปิดใบให้เลย'>⚠ ไม่มีใบ · กดเปิด</span>";
   /* N-66 · เลื่อนวัน/ยกเลิกรอบ ทำได้จากหน้านี้เลย (กิ๊ฟขอ)
      เดิมมีแต่ที่หน้าออเดอร์ → แอดมินกำลังจัดเมนูอยู่ ต้องออกไปอีกหน้าแล้วหากลับมาใหม่ */
@@ -4165,9 +4414,34 @@ function _buildPlanTable(){
   var allDatesFull=Object.keys(dateSet).sort();
   // วันที่เลยมาแล้ว (< วันนี้) ไม่โชว์ในตารางหลักอีกต่อไป — เก็บไว้ดูย้อนหลังในส่วนประวัติด้านล่างแทน
   var todayStr=today2();
-  var pastDates=allDatesFull.filter(function(d){return d<todayStr;});
-  var upcoming=allDatesFull.filter(function(d){return d>=todayStr;});
+  /* 🚨 27 ส.ค. 2569 — กิ๊ฟ: "ของคุณกวางไม่ขึ้นในใบแพลนเมนูด้วยค่ะ"
+     ของเดิมซ่อนวันที่เลยไปแล้วทั้งหมด (ถูกแล้วโดยปกติ — ของที่ส่งไปแล้วไม่ใช่งานค้าง)
+     แต่กลายเป็นกับดักเมื่อ **รอบค้างอยู่ในอดีต ทั้งที่ใบออเดอร์ยังลงวันนี้/อนาคต**
+     = ของที่ยังต้องส่งจริง แต่ไม่มีช่องให้จัดเมนู และไม่มีอะไรเตือนจนถึงวันส่ง
+     → เคสแบบนี้ต้องดึงกลับขึ้นมาให้เห็น (ขาด อันตรายกว่าเกิน: เกิน=ทำทิ้ง · ขาด=ลูกค้าไม่ได้ของ) */
+  var rescued=allDatesFull.filter(function(d){
+    if(d>=todayStr) return false;
+    return subs.some(function(s2){ return s2.rows.some(function(r){
+      var om=mpOrderMap[r.id];
+      return r.delivery_date===d && om && om.dateOff && om.dateOff>=todayStr;
+    });});
+  });
+  var pastDates=allDatesFull.filter(function(d){return d<todayStr && rescued.indexOf(d)<0;});
+  var upcoming=rescued.concat(allDatesFull.filter(function(d){return d>=todayStr;})).sort();
   renderPlanHistory(pastDates,subs);
+  var rbar=document.getElementById("planRescueBar");
+  if(!rbar){
+    var host=document.getElementById("planSubHint");
+    if(host&&host.parentNode){ rbar=document.createElement("div"); rbar.id="planRescueBar";
+      rbar.style.cssText="margin:6px 0;padding:8px 10px;border-radius:8px;font-size:12px;line-height:1.5;display:none";
+      host.parentNode.insertBefore(rbar,host); }
+  }
+  if(rbar){
+    if(rescued.length){
+      rbar.style.display="block"; rbar.style.background="#FEE2E2"; rbar.style.color="#B91C1C"; rbar.style.border="1px solid #FCA5A5";
+      rbar.textContent="🚨 มี "+rescued.length+" วันที่รอบเลยกำหนดไปแล้ว แต่ใบออเดอร์ยังรอส่งอยู่ ("+rescued.join(", ")+") — ดึงกลับขึ้นมาให้แล้ว · จัดเมนูให้เรียบร้อย แล้วกดป้ายเหลืองเพื่อย้ายวันให้ตรงกับใบ";
+    } else rbar.style.display="none";
+  }
 
   /* N-65 · เลือกวันแล้วต้องเหลือ "คอลัมน์เดียว" ไม่ใช่แค่กรองแถว
      เดิมทุกวันขึ้นพร้อมกันเป็นสิบคอลัมน์ แอดมินบอกตรงๆ ว่า "ลายตา" */
@@ -4744,6 +5018,42 @@ function msgPickGroups(pts){
   return out2.reverse();
 }
 
+// ── 🛍️ ของลูกค้าคนนี้กินพื้นที่กี่ "ถุงหูหิ้ว" ────────────────────────────────
+// ตัวเลขจากนัทเอง (26 ส.ค. 2569): "1 ถุง มันจุได้ 7-8 กล่อง / 15-20 ถุงแพคกับข้าว"
+//   → รถมอเตอร์ไซค์ 1 คัน ≈ 3 ถุงหูหิ้ว
+// ⚠️ ตอนนี้ใช้ "แสดงให้เห็น" อย่างเดียว ยังไม่เอาไปห้ามจับกลุ่ม
+//    เพราะวัดแล้ว 26 ส.ค. ถ้าบังคับเพดาน 3 ถุง ค่าส่งขึ้น ฿144/วันทันที
+//    และยังไม่รู้ว่า "ของล้น" เป็นปัญหาจริงของแอดมินหรือเปล่า (แอดมินอาจแยกรอบเองอยู่แล้ว)
+//    → โชว์ตัวเลขก่อน เก็บ feedback จากของจริง แล้วค่อยตัดสินใจว่าจะบังคับไหม
+var MSG_BAG_CAP      = 3;    // ถุงต่อคัน — ปรับได้ ห้ามฝังตาย (นัทสั่ง: "messenger แต่ละคนไม่เหมือนกัน")
+var MSG_PER_BAG_BOX  = 8;    // ข้าวกล่อง/มื้อ ต่อ 1 ถุง
+var MSG_PER_BAG_PACK = 15;   // ซองแพ็คกับข้าว/โปรตีนแพค ต่อ 1 ถุง (นัทให้ช่วง 15-20 → ใช้ค่าต่ำเพื่อไม่ประเมินต่ำไป)
+var MSG_PACK_CATS    = ["pack_special","pack_regular"];
+// โหลดหมวดเมนูครั้งเดียวต่อการเปิดหน้า — ต้องรู้ว่าอันไหน "ซองแพ็ค" อันไหน "กล่องข้าว" เพราะจุถุงไม่เท่ากัน
+async function msgLoadCats(){
+  if(window.__msgCats) return window.__msgCats;
+  try{
+    var sb_=getSB(); if(!sb_){ window.__msgCats={}; return window.__msgCats; }
+    var r=await sb_.from("menu_items").select("code,category").limit(2000);
+    var map={}; (r.data||[]).forEach(function(m){ if(m.code) map[m.code]=m.category; });
+    window.__msgCats=map;
+  }catch(e){ window.__msgCats={}; }   // โหลดไม่ได้ = นับเป็นกล่องข้าวหมด (ประเมินถุงสูงไว้ก่อน ปลอดภัยกว่า)
+  return window.__msgCats;
+}
+function msgBagsOf(o){
+  var f=(o._food||[]);
+  if(!f.length) return 1;                       // ไม่รู้ว่ามีของอะไร = ถือว่า 1 ถุง (ไม่เข้าข้างตัวเอง)
+  var pack=0, box=0;
+  f.forEach(function(i){
+    var c=(window.__msgCats||{})[i.menu_code];
+    var isPack = c && MSG_PACK_CATS.indexOf(c)>=0;
+    var q=Number(i.quantity||1);
+    if(isPack) pack+=q; else box+=q;
+  });
+  var b=Math.ceil(box/MSG_PER_BAG_BOX)+Math.ceil(pack/MSG_PER_BAG_PACK);
+  return Math.max(1,b);
+}
+
 // ── 📍 เสิร์ชที่อยู่เติมหมุดให้อัตโนมัติ (นัทเคาะ 14 ส.ค. 2569) ──────────────────
 // ปัญหาเดิม: ลูกค้าไม่ปักหมุด → ใบนั้นถูกข้ามทั้งใบ (14 ส.ค. โดนไป 8/14 ใบ)
 //   แอดมินต้องไล่ทักลูกค้าทีละคน ทั้งที่ "ที่อยู่" กรอกมาครบอยู่แล้ว แค่ไม่มีพิกัด
@@ -4813,6 +5123,7 @@ async function msgPlanRoutes(){
   // 📍 เติมหมุดให้ใบที่ลูกค้าไม่ได้ปักก่อน — ไม่งั้นใบพวกนั้นถูกข้ามทั้งที่มีที่อยู่ครบ
   var pinned={filled:[],rough:[],failed:[]};
   try{ pinned=await msgAutoPin(box); }catch(e){ console.warn("เติมหมุดอัตโนมัติไม่สำเร็จ:",e); }
+  try{ await msgLoadCats(); }catch(e){}   // ต้องมีก่อนนับถุง
   // เอาเฉพาะงานที่ Lalamove/แมสรับได้จริง: มีพิกัด + ไม่ใช่นอกเขต + ยังไม่ส่ง
   // 🔴 ใบที่คิดไม่ได้ ต้องบอกว่า "ใบไหน เพราะอะไร" — เดิมบอกแค่ตัวเลข "ข้าม 5 ใบ" แล้วจบ
   //    = แอดมินไม่รู้ว่าต้องไปตามที่อยู่ใคร (นัทเจอเอง 6 ส.ค.) ใบที่ลูกค้าไม่ปักหมุดเลยหล่นทั้งวัน
@@ -4829,6 +5140,8 @@ async function msgPlanRoutes(){
     jobs.push({lat:Number(o.delivery_lat),lng:Number(o.delivery_lng),
                addr:o.delivery_address_text||o.delivery_address||"ปลายทาง",
                name:o.customer_name||"ลูกค้า", no:o.order_number||"—",
+               phone:o.customer_phone||"",        // แอดมินต้องกรอกเบอร์ผู้รับตอนจอง — ไม่มีในแผน = ต้องเปิดหาอีกหน้า
+               bags:msgBagsOf(o),                 // ของกินพื้นที่กี่ถุงหูหิ้ว (ดู msgBagsOf)
                slot:o.time_slot_label||o.time_slot||"ไม่ระบุ",
                win:msgWin(o.time_slot_label,o.time_slot)});
   });
@@ -4971,6 +5284,29 @@ async function msgShowCostHistory(){
   }catch(e){}
 }
 
+// ยุบที่อยู่หลายบรรทัดให้เหลือบรรทัดเดียว — ที่อยู่จาก LIFF มักมีขึ้นบรรทัดปนมา ทำให้แถวในแผนเบี้ยว
+function msgOneLine(s){ return String(s==null?"":s).replace(/[\r\n\t]+/g," ").replace(/ {2,}/g," ").trim(); }
+
+// 📋 ก๊อปทั้งรอบเรียงตามลำดับ — แอดมินเอาไปวางตอนกดจอง Lalamove ได้เลย ไม่ต้องไล่หาที่อยู่ทีละคน
+//    ใส่ทั้งพิกัดและที่อยู่ข้อความ เพราะยังไม่รู้ว่าแอดมินถนัดแบบไหน (ตั้งใจให้ของจริงเป็นคนตอบ)
+//    ⚠️ ลำดับในข้อความ = ลำดับที่ขอราคาไว้ ถ้าแอดมินสลับเอง ราคาจะไม่ตรงกับที่โชว์
+//       (เคยวัด: สลับผิดทางในรอบเดียวกัน ต่างกัน ฿17-174)
+function msgCopyTrip(i,btn){
+  var t=(window.__msgRows||[])[i]; if(!t) return;
+  var NL=String.fromCharCode(10);
+  var L=["รอบ "+(i+1)+" · "+(t.slot||"")+(t.cost!=null?" · "+fmtB(t.cost):"")];
+  t.order.forEach(function(p,k){
+    var ll=(p.lat!=null&&p.lng!=null)?(Number(p.lat).toFixed(6)+","+Number(p.lng).toFixed(6)):"-";
+    L.push((k+1)+") "+(p.name||"")+"  "+ll+"  "+(p.no||"")+(p.phone?"  โทร "+p.phone:"  (ไม่มีเบอร์)"));
+    L.push("   "+msgOneLine(p.addr));
+  });
+  var txt=L.join(NL);
+  var done=function(){ if(btn){ var o=btn.textContent; btn.textContent="✅ ก๊อปแล้ว"; setTimeout(function(){btn.textContent=o;},1500); } };
+  // เบราว์เซอร์เก่า/ไม่ใช่ https จะไม่มี clipboard API → เปิดกล่องให้เลือกเอง ดีกว่าเงียบแล้วไม่มีอะไรเกิดขึ้น
+  if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(done,function(){window.prompt("ก๊อปข้อความนี้",txt);});
+  else window.prompt("ก๊อปข้อความนี้",txt);
+}
+
 // 📍 สรุปผลการเสิร์ชที่อยู่ — ต้องบอกให้ชัดว่าหมุดไหน "ระบบเดาให้" ไม่ใช่ "ลูกค้าปักเอง"
 //    หมุดที่เสิร์ชได้แค่ระดับซอย/ถนน ดูบนจอเหมือนหมุดปกติทุกอย่าง = อันตรายถ้าไม่บอก
 function msgPinBox(p){
@@ -5000,6 +5336,7 @@ function msgRenderPlan(box,r){
     else t.order.forEach(function(p){ rows.push({slot:p.slot||t.slot,win:p.win||t.win,order:[p],cost:(p._solo!=null?p._solo:null),merge:false,save:0,_from:t}); });
   });
   rows.sort(function(a,b){ var aw=a.win||{s:99},bw=b.win||{s:99}; return (aw.s-bw.s)||((aw.e||0)-(bw.e||0)); });
+  window.__msgRows=rows;    // ให้ปุ่ม "📋 ก๊อป" หยิบข้อมูลรอบนั้นไปใช้
   var totalPlan=r.trips.reduce(function(s,t){return s+(t.cost||0);},0);
   var totalSolo=r.trips.reduce(function(s,t){return s+(t.soloOk?t.solo:(t.cost||0));},0);
   var saved=totalSolo-totalPlan;
@@ -5038,9 +5375,36 @@ function msgRenderPlan(box,r){
     h+="<div style='margin-top:5px;background:#F7F8F6;border-radius:8px;padding:7px 9px;font-size:12px'>"
       +"<div style='display:flex;justify-content:space-between;gap:8px;align-items:baseline'>"
       +"<b style='color:#1F4D3A'>รอบ "+n+"</b> <span style='color:#6B7280;flex:1'>"+esc2(t.slot)+"</span>"
+      // 🛍️ ของทั้งรอบกินพื้นที่กี่ถุง — นัทให้ตัวเลข 26 ส.ค.: รถมอเตอร์ไซค์ ≈ 3 ถุงหูหิ้ว
+      //    โชว์อย่างเดียว ยังไม่เอาไปห้ามจับกลุ่ม — วัดแล้วถ้าบังคับเพดาน 3 ถุง ค่าส่งขึ้น ฿144/วันทันที
+      //    และยังไม่รู้ว่า "ของล้น" เป็นปัญหาจริงของแอดมินไหม (เขาอาจแยกรอบเองหน้างานอยู่แล้ว)
+      +(function(){
+          var bg=t.order.reduce(function(a,p){return a+(p.bags||1);},0);
+          var over=bg>MSG_BAG_CAP;
+          return "<span title='ประมาณจากจำนวนของ — 1 ถุงจุข้าว "+MSG_PER_BAG_BOX+" กล่อง หรือซองแพ็ค "+MSG_PER_BAG_PACK+" ซอง' "
+            +"style='font-family:var(--mono);font-size:11.5px;border-radius:6px;padding:2px 7px;margin-right:6px;"
+            +(over?"background:#FEF2F2;color:#B91C1C;font-weight:700":"background:#EBF3EF;color:#1F4D3A")+"'>"
+            +(over?"⚠️ ":"")+bg+"/"+MSG_BAG_CAP+" ถุง</span>";
+        })()
+      +"<button onclick='msgCopyTrip("+(n-1)+",this)' style='border:1px solid #D7DEDC;background:#fff;border-radius:7px;padding:2px 8px;font-size:11.5px;cursor:pointer;margin-right:6px'>📋 ก๊อป</button>"
       +"<span style='font-family:var(--mono);font-weight:700'>"+(t.cost!=null?fmtB(t.cost):"—")+"</span></div>"
       +"<div style='color:#374151;margin-top:2px'>"
-      +t.order.map(function(p,i){return (t.order.length>1?(i+1)+". ":"")+esc2(p.name)+" <span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>";}).join(" → ")
+      // ต้องมีครบ: ลำดับ · ชื่อ · พิกัด · ที่อยู่ · เบอร์ — ไม่งั้นแอดมินต้องเปิดอีกหน้าเพื่อกดจอง
+      // 📍 พิกัดเป็นตัวหลัก (ไม่มีวันสะกดผิด ซอยไม่เพี้ยน · Lalamove รับพิกัดตรงๆ) · ที่อยู่ข้อความไว้ยืนยันด้วยตา
+      +t.order.map(function(p,i){
+          var ll=(p.lat!=null&&p.lng!=null)?(Number(p.lat).toFixed(6)+","+Number(p.lng).toFixed(6)):"";
+          return "<div style='padding:4px 0;border-top:1px dashed #E5E7EB'>"
+            +"<b>"+(t.order.length>1?(i+1)+". ":"")+esc2(p.name)+"</b> "
+            +"<span style='font-family:var(--mono);font-size:11px;color:#6B7280'>"+esc2(p.no)+"</span>"
+            +(p.bags?" <span style='font-size:10.5px;background:#EBF3EF;color:#1F4D3A;border-radius:5px;padding:1px 5px'>"+p.bags+" ถุง</span>":"")
+            +(ll?"<div style='font-family:var(--mono);font-size:11.5px'>📍 "+ll
+                 +" <a href='https://www.google.com/maps?q="+ll+"' target='_blank' style='color:#1D4ED8'>แผนที่</a></div>":"")
+            +"<div style='font-size:11.5px;color:#6B7280'>"+esc2(msgOneLine(p.addr).slice(0,70))+"</div>"
+            +(p.phone
+                ?"<div style='font-size:11.5px'>📞 <a href='tel:"+esc2(p.phone)+"' style='color:#1F4D3A;font-weight:600'>"+esc2(fmtPhone(p.phone))+"</a></div>"
+                :"<div style='font-size:11px;color:#B91C1C;font-weight:700'>⚠️ ไม่มีเบอร์ผู้รับ — คนขับโทรหาไม่ได้</div>")
+            +"</div>";
+        }).join("")
       +"</div>"
       +(t.save>15?"<div style='font-size:11px;color:#15803D;font-weight:700;margin-top:2px'>✅ รวมรอบแล้วประหยัด "+fmtB(t.save)+" (ยิงแยก "+fmtB(t.solo)+")</div>":"")
       +"</div>";
@@ -6162,10 +6526,240 @@ function obRenderSets(){
   if(mw) mw.innerHTML=obMpSets.map(function(s,i){
     var sub=(s.boxes||0)+' กล่อง';
     if(s.price_hp===s.price_lc) return obChip('obAddMp('+i+',\'hyrox\')',s.label,sub,s.price_hp);
-    return obChip('obAddMp('+i+',\'hp\')','HP · '+s.label,sub+' · โปรตีนสูง',s.price_hp)
-         + obChip('obAddMp('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
+    /* กดแล้วเปิดตัวเลือกเมนูก่อน แบบเดียวกับที่ลูกค้าเห็นในแอป (นัทสั่ง 24 ส.ค.)
+       ในนั้นมีปุ่ม "ข้ามไปก่อน" ให้ใส่ตะกร้าเลย = พฤติกรรมเดิมยังใช้ได้ ไม่บังคับแอดมิน */
+    return obChip('obOpenMpPick('+i+',\'hp\')','HP · '+s.label,sub+' · โปรตีนสูง',s.price_hp)
+         + obChip('obOpenMpPick('+i+',\'lc\')','LC · '+s.label,sub+' · คุมคาร์บ',s.price_lc);
   }).join('')||'<span style="color:#9CA3AF;font-size:13px">ไม่มีชุด Meal Plan</span>';
 }
+/* ══════════════════════════════════════════════════════════════════════════════
+   🥗 เลือกเมนู Meal Plan ในหน้า "สั่งแทนลูกค้า" (นัทสั่ง 24 ส.ค. 2569)
+   นัทขอ: "ขอมีแบบนี้ในหน้าสั่งแทนลูกค้าให้แอดมินด้วยที" — แบบเดียวกับที่ลูกค้าเห็นในแอป
+
+   ทำไมสำคัญ: ลูกค้าที่โทร/ทักมาสั่ง ก็อยากเลือกเมนูเหมือนคนที่กดเอง
+   ถ้าแอดมินเลือกให้ไม่ได้ = ลูกค้ากลุ่มนี้โดนครัวจัดให้อย่างเดียวตลอดไป (เสียเปรียบโดยไม่รู้ตัว)
+
+   ⚠️ ต่างจากฝั่งลูกค้า 1 อย่าง: แอดมิน "ข้ามได้" — กดใส่ตะกร้าเลยโดยไม่เลือกเมนูก็ได้
+      เพราะบางทีลูกค้ายังไม่เคาะเมนู แต่ต้องเปิดใบไว้ก่อน (ครัวจัดให้ตามเดิม)
+   ══════════════════════════════════════════════════════════════════════════════ */
+var OB_PLAN={}, OB_PLANMENU={}, obPlanLoaded=false, obPlanLoading=false;
+var obMpPick=null;   // { setIdx, type, path, days[], sel{}, swap{}, selDay, offset, skipped[] }
+var OB_SEA_MAX=4;
+var OB_DAYS_TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
+var OB_MON_TH=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function obFmtDay(k){ var d=new Date(k+'T00:00:00'); return {w:OB_DAYS_TH[d.getDay()],d:d.getDate(),m:OB_MON_TH[d.getMonth()]}; }
+function obToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+function obIsBeef(m){ var p=String((m&&m.protein)||''); return /เนื้อ/.test(p) && !/เนื้อสัตว์/.test(p); }
+
+/* แพลนเมนูล่วงหน้า — แหล่งเดียวกับฝั่งลูกค้าเป๊ะ ไม่งั้น 2 หน้าจะโชว์เมนูคนละชุด */
+async function obLoadPlan(){
+  if(obPlanLoaded||obPlanLoading) return;
+  obPlanLoading=true;
+  try{
+    var sb_=getSB();
+    var r=await sb_.from('kitchen_data').select('data').eq('key','mp_menu_plan').maybeSingle();
+    if(r&&r.data&&r.data.data&&Object.keys(r.data.data).length) OB_PLAN=r.data.data;
+    else OB_PLAN=await fetch('preview/mp_plan_seed.json').then(function(x){return x.json();}).catch(function(){return {};});
+    var codes=[];
+    Object.keys(OB_PLAN).forEach(function(k){ (OB_PLAN[k]||[]).forEach(function(m){ codes.push('LC'+m.no); codes.push('HP'+m.no); }); });
+    if(codes.length){
+      var uniq=codes.filter(function(v,i,a){return a.indexOf(v)===i;});
+      var mr=await sb_.from('menu_items').select('code,name').in('code',uniq).limit(500);
+      (mr.data||[]).forEach(function(m){ OB_PLANMENU[m.code]=m; });
+    }
+  }catch(e){ /* โหลดไม่ได้ = ไม่มีปฏิทิน แต่ยังสั่งได้ ห้ามบล็อก */ }
+  obPlanLoading=false; obPlanLoaded=true;
+  if(obMpPick) obRenderMpPick();
+}
+
+function obMpSet(){ return obMpSets[obMpPick.setIdx]||{}; }
+function obMpBoxes(){ return Number(obMpSet().boxes)||0; }
+function obMpDaysNeeded(){ var b=obMpBoxes(); return b?Math.max(1,Math.round(b/7)):0; }
+function obMpPerDay(){ var b=obMpBoxes(),d=obMpDaysNeeded(); return d?Math.round(b/d):0; }
+function obFutureDays(){ var t=obToday(); return Object.keys(OB_PLAN).filter(function(k){return k>=t;}).sort(); }
+function obUsableDays(){ return obFutureDays().filter(function(k){return obMpPick.skipped.indexOf(k)<0;}); }
+function obMaxOffset(){ return Math.max(0, obUsableDays().length-obMpDaysNeeded()); }
+function obActiveDays(){
+  var all=obUsableDays(), need=obMpDaysNeeded(); if(!need) return [];
+  var off=Math.min(obMpPick.offset, Math.max(0, all.length-need));
+  return all.slice(off, off+need);
+}
+function obCountDay(k){ var p=obMpPick.sel[k]||{}; return Object.keys(p).reduce(function(s,n){return s+p[n];},0); }
+function obTotalPicked(){ return Object.keys(obMpPick.sel).reduce(function(s,k){return s+obCountDay(k);},0); }
+function obSeaPicked(){
+  var n=0;
+  Object.keys(obMpPick.sel).forEach(function(k){
+    var list=OB_PLAN[k]||[];
+    Object.keys(obMpPick.sel[k]).forEach(function(no){
+      var m=list.find(function(x){return x.no===no;}); if(m&&m.sea) n+=obMpPick.sel[k][no];
+    });
+  });
+  return n;
+}
+
+function obOpenMpPick(i,type){
+  obMpPick={ setIdx:i, type:type, path:'', days:[], sel:{}, swap:{}, selDay:'', offset:0, skipped:[] };
+  document.getElementById('obPickWrap').style.display='flex';
+  obLoadPlan();
+  obRenderMpPick();
+}
+function obCloseMpPick(){
+  document.getElementById('obPickWrap').style.display='none';
+  obMpPick=null;
+}
+function obMpSetPath(p){ obMpPick.path=p; obRenderMpPick(); }
+function obMpPickDay(k){ obMpPick.selDay=k; obRenderMpPick(); }
+function obMpShift(d){
+  var mo=obMaxOffset();
+  obMpPick.offset=Math.max(0,Math.min(mo,obMpPick.offset+d));
+  obMpPick.selDay=''; obRenderMpPick();
+}
+function obMpSkip(k,ev){
+  if(ev)ev.stopPropagation();
+  var i=obMpPick.skipped.indexOf(k);
+  if(i>=0) obMpPick.skipped.splice(i,1);
+  else{
+    if(obUsableDays().length<=obMpDaysNeeded()){ alert('ยังไม่มีวันสำรองพอให้ข้าม'); return; }
+    obMpPick.skipped.push(k);
+    delete obMpPick.sel[k];
+    Object.keys(obMpPick.swap).forEach(function(kk){ if(kk.indexOf(k+'|')===0) delete obMpPick.swap[kk]; });
+  }
+  obMpPick.selDay=''; obRenderMpPick();
+}
+function obMpChg(no,d){
+  var k=obMpPick.selDay; if(!k) return;
+  if(!obMpPick.sel[k]) obMpPick.sel[k]={};
+  var cur=obMpPick.sel[k][no]||0, next=cur+d;
+  if(next<0) return;
+  if(d>0){
+    if(obCountDay(k)>=obMpPerDay()) return;
+    var m=(OB_PLAN[k]||[]).find(function(x){return x.no===no;});
+    if(m&&m.sea&&obSeaPicked()>=OB_SEA_MAX) return;
+  }
+  if(next===0){ delete obMpPick.sel[k][no]; delete obMpPick.swap[k+'|'+no]; }
+  else obMpPick.sel[k][no]=next;
+  obRenderMpPick();
+}
+function obMpSwapBeef(k,no,ev){
+  if(ev)ev.stopPropagation();
+  var key=k+'|'+no;
+  if(obMpPick.swap[key]) delete obMpPick.swap[key]; else obMpPick.swap[key]=true;
+  obRenderMpPick();
+}
+
+function obRenderMpPick(){
+  var el=document.getElementById('obPickBody'); if(!el||!obMpPick) return;
+  var s=obMpSet();
+  var price=(obMpPick.type==='lc')?s.price_lc:s.price_hp;
+  var head='<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+    +'<div style="flex:1;min-width:0"><div style="font-weight:800;font-size:16px">'+obEsc(String(obMpPick.type).toUpperCase()+' · '+(s.label||''))+'</div>'
+    +'<div style="font-size:12.5px;color:#6B7280">'+(s.boxes||0)+' มื้อ · ส่ง '+obMpDaysNeeded()+' วัน · ฿'+Number(price||0).toLocaleString()+'</div></div>'
+    +'<button onclick="obCloseMpPick()" style="border:none;background:#F3F4F6;border-radius:9px;padding:7px 12px;cursor:pointer;font-size:13px">ปิด</button></div>';
+
+  var pathCard=function(k,emoji,t,sub){
+    var on=obMpPick.path===k;
+    return '<div onclick="obMpSetPath(\''+k+'\')" style="flex:1;min-width:0;border-radius:12px;padding:12px 8px;text-align:center;cursor:pointer;'
+      +'border:2px solid '+(on?'#1F4D3A':'#E5E7EB')+';background:'+(on?'#EBF3EF':'#fff')+'">'
+      +'<div style="font-size:22px">'+emoji+'</div><div style="font-size:13.5px;font-weight:800;color:'+(on?'#1F4D3A':'#111')+'">'+t+'</div>'
+      +'<div style="font-size:11px;color:#6B7280;margin-top:2px">'+sub+'</div></div>';
+  };
+  var paths='<div style="font-size:12.5px;font-weight:700;color:#6B7280;margin-bottom:7px">เมนูจะมายังไง</div>'
+    +'<div style="display:flex;gap:8px;margin-bottom:8px">'
+    +pathCard('auto','🎁','ให้ครัวจัดให้','ไม่ต้องเลือก')
+    +pathCard('pick','🖐️','เลือกเมนูเอง','กดเลือกทีละมื้อ')+'</div>';
+
+  var body='';
+  if(obMpPick.path){
+    if(!obPlanLoaded) body='<div style="padding:16px;text-align:center;color:#9CA3AF;font-size:13px">กำลังโหลดเมนู…</div>';
+    else{
+      var days=obActiveDays();
+      if(!days.length) body='<div style="background:#F7F7F4;border-radius:10px;padding:14px;text-align:center;color:#6B7280;font-size:13px;line-height:1.7">ยังไม่ได้วางเมนูของช่วงนี้<br><b>สั่งได้ตามปกติ</b> ครัวจะจัดเมนูให้ตอนถึงวันส่ง</div>';
+      else{
+        if(!obMpPick.selDay||days.indexOf(obMpPick.selDay)<0) obMpPick.selDay=days[0];
+        var mo=obMaxOffset(), f0=obFmtDay(days[0]);
+        var shift=mo>0?('<div style="display:flex;align-items:center;gap:7px;margin-bottom:8px">'
+          +'<button onclick="obMpShift(-1)" '+(obMpPick.offset<=0?'disabled':'')+' style="border:1.5px solid #E5E7EB;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer'+(obMpPick.offset<=0?';opacity:.4':'')+'">◀ เร็วขึ้น</button>'
+          +'<span style="flex:1;text-align:center;font-size:12.5px;color:#6B7280">เริ่มส่ง <b style="color:#111">'+f0.w+' '+f0.d+' '+f0.m+'</b></span>'
+          +'<button onclick="obMpShift(1)" '+(obMpPick.offset>=mo?'disabled':'')+' style="border:1.5px solid #E5E7EB;background:#fff;border-radius:8px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer'+(obMpPick.offset>=mo?';opacity:.4':'')+'">ช้าลง ▶</button></div>'):'';
+        var chips=days.map(function(k){
+          var f=obFmtDay(k), n=obCountDay(k), on=obMpPick.selDay===k;
+          return '<div onclick="obMpPickDay(\''+k+'\')" style="position:relative;flex:0 0 auto;min-width:54px;text-align:center;cursor:pointer;'
+            +'border:2px solid '+(on?'#1F4D3A':'#E5E7EB')+';background:'+(on?'#1F4D3A':'#fff')+';color:'+(on?'#fff':'#111')+';border-radius:11px;padding:7px 6px">'
+            +'<button onclick="obMpSkip(\''+k+'\',event)" title="ข้ามรอบส่งวันนี้" style="position:absolute;top:-7px;right:-7px;width:19px;height:19px;border-radius:50%;border:1.5px solid #E5E7EB;background:#fff;color:#9CA3AF;font-size:11px;line-height:1;padding:0;cursor:pointer">✕</button>'
+            +'<div style="font-size:10.5px;opacity:.75">'+f.w+'</div><div style="font-size:18px;font-weight:800;line-height:1.15">'+f.d+'</div>'
+            +'<div style="font-size:10px;opacity:.7">'+f.m+'</div>'
+            +(obMpPick.path==='pick'?'<div style="font-size:10px;font-weight:800;margin-top:2px">'+n+'/'+obMpPerDay()+'</div>':'')+'</div>';
+        }).join('');
+        var skipBar=obMpPick.skipped.length?('<div style="margin-top:7px;background:#FEF9E7;border:1px solid #F5E4A8;border-radius:8px;padding:7px 9px;font-size:12px;color:#8A6D1F">ข้ามไว้ '+obMpPick.skipped.length+' วัน — เลื่อนไปรับรอบถัดไปแทน</div>'):'';
+        var list=OB_PLAN[obMpPick.selDay]||[];
+        var fd=obFmtDay(obMpPick.selDay);
+        var menus='<div style="margin-top:10px;border:1px solid #E5E7EB;border-radius:11px;overflow:hidden">'
+          +'<div style="background:#F7F7F4;padding:8px 11px;display:flex;gap:8px;align-items:center">'
+          +'<span style="font-size:13px;font-weight:800">'+fd.w+' '+fd.d+' '+fd.m+'</span>'
+          +'<span style="flex:1;text-align:right;font-size:11.5px;color:#6B7280">'
+          +(obMpPick.path==='pick'?('เลือกได้ '+obMpPerDay()+' มื้อ · เลือกแล้ว '+obCountDay(obMpPick.selDay)):('ครัวทำ '+list.length+' เมนูวันนี้'))+'</span></div>';
+        if(!list.length) menus+='<div style="padding:14px;text-align:center;color:#9CA3AF;font-size:13px">วันนี้ยังไม่ได้วางเมนู</div>';
+        list.forEach(function(m){
+          var code=(obMpPick.type==='lc'?'LC':'HP')+m.no;
+          var nm=(OB_PLANMENU[code]&&OB_PLANMENU[code].name)||m.name||code;
+          var q=(obMpPick.sel[obMpPick.selDay]&&obMpPick.sel[obMpPick.selDay][m.no])||0;
+          var dayFull=obCountDay(obMpPick.selDay)>=obMpPerDay();
+          var seaFull=m.sea&&obSeaPicked()>=OB_SEA_MAX;
+          var ctrl=obMpPick.path==='pick'?('<div style="flex:0 0 auto;display:flex;align-items:center;gap:5px">'
+            +'<button onclick="obMpChg(\''+m.no+'\',-1)" '+(q?'':'disabled')+' style="width:28px;height:28px;border-radius:50%;border:1.5px solid #E5E7EB;background:#fff;font-size:16px;line-height:1;cursor:pointer'+(q?'':';opacity:.3')+'">−</button>'
+            +'<span style="min-width:15px;text-align:center;font-size:14px;font-weight:800">'+q+'</span>'
+            +'<button onclick="obMpChg(\''+m.no+'\',1)" '+((dayFull||seaFull)?'disabled':'')+' style="width:28px;height:28px;border-radius:50%;border:none;background:#1F4D3A;color:#fff;font-size:16px;line-height:1;cursor:pointer'+((dayFull||seaFull)?';opacity:.3':'')+'">+</button></div>'):'';
+          var sk=obMpPick.selDay+'|'+m.no, sw=!!obMpPick.swap[sk];
+          var swapBtn=(obMpPick.path==='pick'&&q>0&&obIsBeef(m))?('<div onclick="obMpSwapBeef(\''+obMpPick.selDay+'\',\''+m.no+'\',event)" style="margin-top:4px;display:inline-flex;gap:4px;cursor:pointer;border:1.5px solid '+(sw?'#1F4D3A':'#E5E7EB')+';background:'+(sw?'#EBF3EF':'#fff')+';border-radius:7px;padding:2px 7px;font-size:11px;font-weight:700;color:'+(sw?'#1F4D3A':'#6B7280')+'">'+(sw?'✓ เปลี่ยนเป็นหมูแล้ว':'🥩 ไม่ทานเนื้อ · ขอเปลี่ยนเป็นหมู')+'</div>'):'';
+          var tagBg=m.sea?'#E3F0FA':'#F0F4EE', tagFg=m.sea?'#1E5F8A':'#3F6B4F';
+          menus+='<div style="display:flex;align-items:center;gap:9px;padding:8px 11px;border-top:1px solid #F3F4F6;background:'+(q?'#F6FBF8':'#fff')+'">'
+            +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:600;line-height:1.35">'+obEsc(nm)+'</div>'
+            +'<span style="display:inline-block;margin-top:2px;font-size:10px;font-weight:700;border-radius:5px;padding:1px 6px;background:'+tagBg+';color:'+tagFg+'">'+(m.sea?'ทะเล':obEsc(String(m.protein||'').split(' ')[0]))+'</span>'
+            +swapBtn+'</div>'+ctrl+'</div>';
+        });
+        menus+='</div>';
+        var bar='';
+        if(obMpPick.path==='pick'){
+          var got=obTotalPicked(), tot=obMpBoxes(), sea=obSeaPicked();
+          bar='<div style="margin-top:9px;background:#F7F7F4;border-radius:10px;padding:9px 11px;font-size:12.5px">'
+            +'<b>เลือกแล้ว '+got+' / '+tot+' มื้อ</b>'
+            +'<span style="float:right;color:'+(got>=tot?'#1F4D3A':'#6B7280')+'">'+(got>=tot?'ครบแล้ว ✓':'เหลือ '+(tot-got))+'</span>'
+            +(sea?'<div style="margin-top:3px;font-size:11px;color:'+(sea>=OB_SEA_MAX?'#C9573F':'#9CA3AF')+'">เมนูทะเล '+sea+'/'+OB_SEA_MAX+'</div>':'')
+            +'<div style="margin-top:4px;font-size:11px;color:#9CA3AF">เลือกไม่ครบก็สั่งได้ — ที่เหลือครัวจัดให้</div></div>';
+        }
+        body='<div style="font-size:12.5px;font-weight:700;color:#6B7280;margin:12px 0 7px">'
+          +(obMpPick.path==='pick'?('เลือกเมนู — '+days.length+' วันส่ง'):('เมนูที่จะได้ — '+days.length+' วันส่ง'))+'</div>'
+          +shift+'<div style="display:flex;gap:7px;overflow-x:auto;padding:7px 2px 3px">'+chips+'</div>'+skipBar+menus+bar;
+      }
+    }
+  }
+
+  var got=obTotalPicked();
+  var cta='<button onclick="obMpConfirm()" '+(obMpPick.path?'':'disabled')+' style="width:100%;margin-top:12px;padding:13px;border:none;border-radius:11px;font-size:15px;font-weight:800;cursor:pointer;'
+    +(obMpPick.path?'background:#1F4D3A;color:#fff':'background:#E5E7EB;color:#9CA3AF')+'">'
+    +(obMpPick.path?('✅ ใส่ตะกร้า'+(got?' ('+got+' มื้อที่เลือก)':'')):'เลือกก่อนว่าจะให้ครัวจัดให้ หรือเลือกเอง')+'</button>'
+    /* ⚠️ ทางลัดของแอดมินโดยเฉพาะ — ลูกค้าโทรมาสั่งแต่ยังไม่เคาะเมนู ต้องเปิดใบไว้ก่อนได้ */
+    +'<button onclick="obMpQuickAdd()" style="width:100%;margin-top:7px;padding:10px;border:1.5px solid #E5E7EB;background:#fff;border-radius:10px;font-size:13px;font-weight:700;color:#6B7280;cursor:pointer">ข้ามไปก่อน — ใส่ตะกร้าเลย (ครัวจัดเมนูให้)</button>';
+
+  el.innerHTML=head+paths+body+cta;
+}
+
+/* ใส่ตะกร้าแบบไม่เลือกเมนู — เหมือนพฤติกรรมเดิมของหน้านี้เป๊ะ */
+function obMpQuickAdd(){
+  var i=obMpPick.setIdx, t=obMpPick.type;
+  obCloseMpPick();
+  obAddMpRaw(i,t,null);
+}
+function obMpConfirm(){
+  var days=obActiveDays();
+  var extra={ path:obMpPick.path, days:days,
+    picks:JSON.parse(JSON.stringify(obMpPick.sel)),
+    swap:Object.keys(obMpPick.swap), type:obMpPick.type };
+  var i=obMpPick.setIdx, t=obMpPick.type;
+  obCloseMpPick();
+  obAddMpRaw(i,t,extra);
+}
+
 /* ── 🧩 เซ็ตที่ต้องเลือกเมนู — บังคับเลือกก่อนเข้าตะกร้า (นัทเจอเองกับมือ 17 ส.ค. 2569) ──
    ปัญหา: หน้านี้ใส่เซ็ตลงตะกร้าได้เลยโดยไม่ต้องเลือกเมนู
      ผลจริงวันนี้: `U-0817-022` ชมพู่ + `U-0817-012` คุณแชมป์ = **Diet Set A 24 กล่องที่ครัวแพ็คไม่ได้**
@@ -6264,11 +6858,22 @@ function obPickConfirm(){
   obPushPkg(p,chosen);
   obClosePicker();
 }
-function obAddMp(i,type){
+function obAddMp(i,type){ obAddMpRaw(i,type,null); }
+function obAddMpRaw(i,type,extra){
   var s=obMpSets[i]; if(!s)return;
   var price=(type==='lc')?s.price_lc:s.price_hp;
-  obPush({kind:'mp',key:'mp:'+s.set_key+':'+type,setKey:s.set_key,mpType:type,
-          name:type.toUpperCase()+' · '+s.label,price:price||0,boxes:s.boxes||0,planType:type});
+  var item={kind:'mp',key:'mp:'+s.set_key+':'+type,setKey:s.set_key,mpType:type,
+          name:type.toUpperCase()+' · '+s.label,price:price||0,boxes:s.boxes||0,planType:type};
+  /* เมนูที่แอดมินเลือกให้ลูกค้า — เดินทางไปกับรายการในตะกร้า แล้วลงเป็นรอบส่งตอนบันทึก */
+  if(extra){
+    item.mpDays=extra.days; item.mpPicks=extra.picks; item.mpSwap=extra.swap; item.mpPath=extra.path;
+    /* คนละวันเริ่ม = คนละรายการ ไม่ยุบรวมกัน (ลูกค้าคนเดียวสั่ง 2 คอร์สคนละช่วงได้จริง) */
+    item.key='mp:'+s.set_key+':'+type+':'+((extra.days&&extra.days[0])||'');
+    var n=Object.keys(extra.picks||{}).reduce(function(a,k){ var p=extra.picks[k];
+      return a+Object.keys(p).reduce(function(b,x){return b+p[x];},0); },0);
+    if(n) item.name+=' · เลือกเมนูแล้ว '+n+' มื้อ';
+  }
+  obPush(item);
 }
 function obPush(item){
   var c=obCart.find(function(x){return x.key===item.key;});
@@ -6362,6 +6967,8 @@ async function obSubmit(){
   if(!admin)return err('กรอกชื่อผู้กด (แอดมิน) ก่อน');
   if(!obCart.length)return err('ยังไม่มีรายการอาหาร');
   var date=document.getElementById('ob-date').value; if(!date)return err('เลือกวันส่ง');
+  /* ถ้าแอดมินเลือกให้ยึดวันจากป๊อปอัพเมนู ต้องย้ายวันส่งของใบตามไปด้วย ไม่งั้นกลับไปเป็นบั๊กเดิม */
+  var obFixOrderDate=null;
   var rname=(document.getElementById('ob-rname').value||'').trim();
   var rphone=(document.getElementById('ob-rphone').value||'').trim();
   var addr=(document.getElementById('ob-addr').value||'').trim();
@@ -6449,11 +7056,63 @@ async function obSubmit(){
       var d=new Date(date+'T00:00:00');
       var isMWF=function(x){ return [1,3,5].indexOf(x.getDay())>=0; };
       var ymd=function(x){ return x.getFullYear()+'-'+String(x.getMonth()+1).padStart(2,'0')+'-'+String(x.getDate()).padStart(2,'0'); };
+      /* 📅 แอดมินเลือกวัน/ข้ามรอบไว้ในตัวเลือกเมนู = ใช้วันนั้นตรงๆ
+         วันไม่พอจำนวนรอบ → ใช้เท่าที่มี แล้วนับ จ/พ/ศ ต่อจากวันสุดท้าย (เหมือนฝั่งลูกค้าเป๊ะ) */
+      var chosen=(c.mpDays&&c.mpDays.length)?c.mpDays.slice(0,rounds):[];
+      /* 🔴 บั๊กที่ทำให้ลูกค้าตกจากใบครัว 2 วันซ้อน (กวาง U-0828-006 · ห้องฟ้าหาเจอ 28 ส.ค. 2569)
+         หน้านี้มีช่อง "วันส่ง" อยู่ 2 ที่ และเขียนลงคนละตาราง:
+           · ช่องวันส่งของออเดอร์ (date)      → orders.delivery_date      ← ครัว/แมส/ใบจัดของอ่านตัวนี้
+           · วันที่ติ๊กในป๊อปอัพเลือกเมนู (mpDays) → mp_deliveries.delivery_date ← หน้าแพลนเมนู/ใบครัวอ่านตัวนี้
+         ของเดิม: พอมี mpDays ปุ๊บ **รอบที่ 1 ถูกทับด้วย mpDays[0] ทันที** (คอมเมนต์เดิมเขียนว่า
+         "รอบแรกยึดวันที่แอดมินเลือกไว้ ไม่แตะ" — จริงเฉพาะตอนไม่มี mpDays)
+         → ใบลงวันหนึ่ง รอบลงอีกวันหนึ่ง **เงียบสนิท ไม่มีอะไรเตือน**
+         → เคสกวาง: ใบ 28 · รอบ 26 → ห้องฟ้าไม่เอาเข้าใบวันที่ 26 (เพราะออเดอร์บอก 28)
+            และวันที่ 28 ก็ไม่โผล่ (เพราะใบครัวดึงจากรอบของวันนั้น) = ตกร่องตรงกลาง ตกทั้ง 2 วัน
+         ✅ กติกาใหม่: ห้ามเขียน 2 ค่านี้ไม่ตรงกันเงียบๆ — ไม่ตรงเมื่อไหร่ ต้องให้คนเลือกก่อนบันทึก */
+      if(chosen.length && String(chosen[0])!==String(date)){
+        var keepOrderDate=window.confirm(
+          '⚠️ วันส่งไม่ตรงกัน 2 ที่\n\n'
+          +'· วันส่งบนออเดอร์: '+date+'\n'
+          +'· วันแรกที่ติ๊กในป๊อปอัพเมนู: '+chosen[0]+'\n\n'
+          +'ถ้าปล่อยไว้ ลูกค้าจะหายจากใบครัวทั้งสองวัน (เคยเกิดจริงกับลูกค้าอินฟลูมาแล้ว)\n\n'
+          +'กด "ตกลง" = ใช้วันส่งบนออเดอร์ ('+date+') · รอบแรกจะย้ายมาวันนี้\n'
+          +'กด "ยกเลิก" = ใช้วันในป๊อปอัพเมนู ('+chosen[0]+') · วันส่งของใบจะย้ายตามไปด้วย');
+        if(keepOrderDate){
+          /* ⚠️ ห้ามแค่เขียนทับ chosen[0]=date — ถ้าวันใบดันตรงกับวันถัดไปในลิสต์พอดี
+             จะได้ 2 รอบซ้อนวันเดียวกันทันที (เทสจับได้: ติ๊ก 26/28/31 + ใบ 28 → ได้ 28·28·31)
+             ที่ถูกคือ ตัดวันที่มาก่อนวันบนใบทิ้ง แล้วปล่อยให้ตัวเติมวันข้างล่างต่อ จ/พ/ศ ให้ครบรอบเอง */
+          chosen=chosen.filter(function(x){ return String(x)>=String(date); });
+          if(!chosen.length || String(chosen[0])!==String(date)) chosen.unshift(date);
+          chosen=chosen.filter(function(x,ix,a){ return a.indexOf(x)===ix; }).slice(0,rounds);
+        }
+        else { obFixOrderDate=chosen[0]; }
+      }
+      if(chosen.length){
+        var nd=new Date(chosen[chosen.length-1]+'T00:00:00');
+        while(chosen.length<rounds){ nd.setDate(nd.getDate()+1); while(!isMWF(nd)) nd.setDate(nd.getDate()+1); chosen.push(ymd(nd)); }
+      }
+      var swapSet=(c.mpSwap||[]);
+      var menuFor=function(dayKey){
+        var p=(c.mpPicks||{})[dayKey]; if(!p) return null;
+        var out=[];
+        Object.keys(p).forEach(function(no){
+          var code=(c.planType==='lc'?'LC':'HP')+no;
+          var src=(OB_PLAN[dayKey]||[]).find(function(x){return x.no===no;})||{};
+          var nm=(OB_PLANMENU[code]&&OB_PLANMENU[code].name)||src.name||code;
+          var row={code:code,name:nm,qty:p[no],by:'admin'};
+          /* 🥩 ขอเปลี่ยนเนื้อเป็นหมู ต้องติดไปกับตัวเมนู ไม่ใช่โน้ตท้ายใบ — ครัวอ่านทีละบรรทัด */
+          if(swapSet.indexOf(dayKey+'|'+no)>=0){ row.swap='หมู'; row.note='เปลี่ยนเป็นหมู'; }
+          out.push(row);
+        });
+        return out.length?out:null;
+      };
       for(var i=1;i<=rounds;i++){
+        var dd=chosen.length?chosen[i-1]:(i===1?date:ymd(d));
         planRows.push({ order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
           line_uid:(obCust&&obCust.line_uid)||null,
           mp_type:c.planType, mp_set:mpSet, round_no:i, total_rounds:rounds,
-          delivery_date: (i===1 ? date : ymd(d)),
+          menu_items: menuFor(dd),
+          delivery_date: dd,
           time_slot:slot, time_slot_label:slotLabels[slot]||'',
           delivery_address:addr||null, box_count:perRound, status:'scheduled' });
         // รอบถัดไป = วัน จ/พ/ศ ถัดไป (รอบแรกยึดวันที่แอดมินเลือกไว้ ไม่แตะ)
@@ -6468,7 +7127,7 @@ async function obSubmit(){
     });
     var planMsg='';
     if(planRows.length){
-      var pr=await sb_.from('mp_deliveries').insert(planRows);
+      var pr=await sb_.from('mp_deliveries').insert(planRows).select('id,round_no,total_rounds,delivery_date,customer_name,mp_type,mp_set,box_count,time_slot,time_slot_label,delivery_address,customer_id,line_uid,order_id');
       if(pr.error){
         planMsg=' · ⚠️ ไม่เข้าแพลนเมนู';
         /* ต้องเด้งให้เห็น ไม่ใช่ต่อท้ายข้อความ "บันทึกแล้ว" สีเขียว
@@ -6476,7 +7135,46 @@ async function obSubmit(){
            แต่จอยังขึ้นว่าบันทึกสำเร็จ → แอดมินไม่รู้ว่าลูกค้าหายจากหน้าแพลนเมนู */
         alert('⚠️ ออเดอร์บันทึกแล้ว แต่ยังไม่เข้าหน้า "แพลนเมนู"\n\n'
           +(pr.error.message||'')+'\n\nแปลว่าลูกค้ารายนี้จะไม่โผล่ให้เลือกเมนู — แจ้งห้องระบบด้วย');
-      } else planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+      } else {
+        planMsg=' · 📅 เข้าแพลนเมนูแล้ว '+planRows.length+' รายการ';
+        /* ย้ายวันส่งของใบให้ตรงกับรอบแรก — ปิดช่องว่างที่ทำให้ลูกค้าตกจากใบครัว
+           ⚠️ ทำหลังบันทึกรอบสำเร็จเท่านั้น ถ้ารอบเขียนไม่ผ่านก็ไม่ควรขยับใบ */
+        if(obFixOrderDate && String(obFixOrderDate)!==String(date)){
+          try{
+            var fx=await sb_.from('orders').update({delivery_date:obFixOrderDate, updated_at:new Date().toISOString()}).eq('id',ord.data.id).select('id,delivery_date');
+            planMsg+=(!fx.error && fx.data && fx.data.length)
+              ? (' · 📅 ย้ายวันส่งของใบเป็น '+obFixOrderDate+' ให้ตรงกับรอบแรกแล้ว')
+              : ' · ⚠️ ย้ายวันส่งของใบไม่สำเร็จ — ไปแก้ที่หน้าออเดอร์ด้วย ไม่งั้นลูกค้าจะหายจากใบครัว';
+          }catch(e){
+            console.error('ย้ายวันใบไม่สำเร็จ:',e);
+            planMsg+=' · ⚠️ ย้ายวันส่งของใบไม่สำเร็จ — ไปแก้ที่หน้าออเดอร์ด้วย';
+          }
+        }
+        /* 🎫 เปิดใบให้รอบ 2..N ทันที — ไม่งั้นทุกรอบจะชี้ใบเดียวกัน
+           1 ใบมีวันส่งได้วันเดียว → รอบที่เหลือไม่มีใบของตัวเอง = ครัวกับแมสมองไม่เห็น
+           ฝั่งลูกค้าสั่งเอง (LIFF) เปิดใบครบทุกรอบมาตั้งแต่ 6 ส.ค. แล้ว — ประตูที่ยังรั่วคือหน้านี้
+           (เจอของค้างจริง 18 รอบตอน 27 ส.ค. · ถ้าไม่ปิดก๊อกตรงนี้ เดือนหน้าจะกลับมาอีกกอง)
+           ⚠️ best-effort: เปิดใบพลาดห้ามทำให้ออเดอร์ที่บันทึกไปแล้วล้ม — แค่บอกให้คนรู้ว่าต้องไปกดเอง */
+        try{
+          var madeRows=(pr.data||[]).slice().sort(function(a,b){
+            return String(a.delivery_date).localeCompare(String(b.delivery_date)); });
+          var extra=madeRows.filter(function(x){ return String(x.delivery_date)!==String(madeRows[0]&&madeRows[0].delivery_date); });
+          if(extra.length){
+            var whoT=(typeof state!=="undefined"&&state&&state.currentUser)||localStorage.getItem("lastNickname")||"แอดมิน";
+            var okN=0;
+            for(var ti=0; ti<extra.length; ti++){
+              var rr=await planCreateTicketCore(extra[ti], whoT);
+              if(rr&&rr.ok) okN++;
+            }
+            planMsg+=(okN===extra.length)
+              ? (' · 🎫 เปิดใบให้รอบถัดไปแล้ว '+okN+' ใบ')
+              : (' · ⚠️ เปิดใบรอบถัดไปได้ '+okN+'/'+extra.length+' ใบ — ที่เหลือกดเองที่หน้าแพลนเมนู (ปุ่ม "เปิดใบให้ครบ")');
+          }
+        }catch(e){
+          console.error('เปิดใบรอบถัดไปไม่สำเร็จ:',e);
+          planMsg+=' · ⚠️ ยังไม่ได้เปิดใบให้รอบถัดไป — ไปกดที่หน้าแพลนเมนู ปุ่ม "เปิดใบให้ครบ"';
+        }
+      }
     }
     /* 📍 เติมหมุดตั้งแต่ตอนเปิดใบ — อุดต้นทางของ "ใบไม่มีพิกัด"
        ข้อมูลจริง 10-14 ส.ค. 2569: ใบที่ไม่มีพิกัด 10 ใบ = **สั่งแทนลูกค้าทั้งหมด** (กิ๊ฟ 7 · เพอรี่ 3)
