@@ -4418,10 +4418,16 @@ function autoPromos(sub){
   /* เพื่อนนัท 10% · Wellness Warriors 5% · แท็กแคมเปญ — ทั้ง 3 อยู่กลุ่มเดียวกัน ห้ามทบกันเอง
      เลือกตัวที่ "ลูกค้าได้มากที่สุด" ตัวเดียว → ไม่มีเคส 15% และลูกค้าไม่เสียเปรียบไม่ว่าถือป้ายอะไร */
   const cands = [];
+  /* ระดับสมาชิก (นัทเคาะ 1 ก.ย. 2569): Fit&Fabulous = สูงสุด 10% · Wellness Warriors = 5%
+     Healthy Habits / bronze = ระดับเริ่มต้น ไม่มีสิทธิพิเศษ
+     เขียนเป็นตารางเดียว จะได้เพิ่ม/แก้ระดับทีหลังโดยไม่ต้องไล่แก้ if ทีละอัน */
+  const TIER_DISCOUNT = { 'Fit&Fabulous':10, 'Wellness Warriors':5 };
+  const myTier = (customer && customer.tier) || '';
   if(isVipFriend())
-    cands.push({ kind:'vip',  code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท',    type:'percent', value:10 });
-  else if(customer && (customer.tier||'')==='Wellness Warriors')
-    cands.push({ kind:'tier', code:'WW5',       label:'ส่วนลด 5% Wellness Warriors', type:'percent', value:5  });
+    cands.push({ kind:'vip',  code:'VIPFRIEND', label:'ส่วนลด 10% เพื่อนคุณนัท', type:'percent', value:10 });
+  else if(TIER_DISCOUNT[myTier])
+    cands.push({ kind:'tier', code:'TIER'+TIER_DISCOUNT[myTier],
+                 label:'ส่วนลด '+TIER_DISCOUNT[myTier]+'% สมาชิก '+myTier, type:'percent', value:TIER_DISCOUNT[myTier] });
   const camp = activeCampaignTag(sub);
   if(camp) cands.push(camp);
   if(cands.length){

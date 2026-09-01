@@ -214,17 +214,31 @@ const SB_KEY="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 let sb=null,reorderCart=null;
 function getSB(){try{if(!sb&&typeof supabase!=="undefined")sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
 function fmtB(n){return "฿"+Number(n||0).toLocaleString();}
-const TIERS=[{id:1,label:"🥈 เทียร์ 1",cls:"t1",min:0,max:2999,disc:1},{id:2,label:"🥇 เทียร์ 2",cls:"t2",min:3000,max:9999,disc:3},{id:3,label:"💎 เทียร์ 3",cls:"t3",min:10000,max:24999,disc:5},{id:4,label:"👑 VIP",cls:"t4",min:25000,max:Infinity,disc:10}];
+/* ⚠️ แก้ 1 ก.ย. 2569 — ของเดิมโชว์ "เทียร์ 1-4" คิดจากแต้ม พร้อมส่วนลด 1/3/5/10%
+   ซึ่ง **ไม่มีอยู่จริงในระบบคิดเงินเลยสักตัว** (หน้าสั่งของดูจากชื่อระดับในคอลัมน์ tier)
+   ลูกค้าจึงเห็นตัวเลขที่ไม่เคยได้ และเห็นแถบความคืบหน้าที่ไม่ได้พาไปไหน
 
-function renderTier(pts){
-  const t=TIERS.find(x=>pts>=x.min&&pts<=x.max)||TIERS[0];
-  const next=TIERS.find(x=>x.min>t.min);
-  document.getElementById("ptsNum").textContent=pts.toLocaleString();
-  const b=document.getElementById("tierBadge");b.textContent=t.label;b.className="tier-badge "+t.cls;
-  const pct=next?Math.min(100,(pts-t.min)/(next.min-t.min)*100):100;
-  document.getElementById("pFill").style.width=pct+"%";
-  document.getElementById("pCur").textContent=pts.toLocaleString()+" แต้ม";
-  document.getElementById("pNxt").textContent=next?"ถัดไป: "+next.min.toLocaleString()+" แต้ม":"ระดับสูงสุด 👑";
+   ของจริงตามที่นัทเคาะ: Healthy Habits (เริ่มต้น ไม่มีสิทธิ์) → Wellness Warriors 5% → Fit&Fabulous 10%
+   ⚠️ ยังไม่มีระบบยอดสะสมสำหรับเลื่อนขั้น — เลื่อนด้วยมือเท่านั้น
+      จึงห้ามโชว์ "อีกกี่แต้มถึงขั้นถัดไป" เพราะสะสมไปก็ไม่มีอะไรเลื่อนให้ */
+const TIER_INFO = {
+  'Fit&Fabulous':      { label:'Fit&Fabulous',      cls:'t4', disc:10 },
+  'Wellness Warriors': { label:'Wellness Warriors', cls:'t3', disc:5  },
+  'Healthy Habits':    { label:'Healthy Habits',    cls:'t1', disc:0  }
+};
+const TIER_BASE = { label:'Healthy Habits', cls:'t1', disc:0 };   // bronze / ว่าง = ระดับเริ่มต้น
+
+function renderTier(pts, tierName){
+  const t = TIER_INFO[String(tierName||'').trim()] || TIER_BASE;
+  document.getElementById("ptsNum").textContent = pts.toLocaleString();
+  const b = document.getElementById("tierBadge");
+  b.textContent = t.label; b.className = "tier-badge " + t.cls;
+  // แถบความคืบหน้า: เต็มเมื่อมีสิทธิ์ส่วนลด · ว่างเมื่อยังเป็นระดับเริ่มต้น
+  document.getElementById("pFill").style.width = t.disc ? '100%' : '0%';
+  document.getElementById("pCur").textContent = pts.toLocaleString() + " แต้ม";
+  document.getElementById("pNxt").textContent = t.disc
+    ? ('รับส่วนลด ' + t.disc + '% อัตโนมัติทุกครั้งที่สั่ง')
+    : 'ยังไม่มีส่วนลดประจำระดับ';
 }
 
 // ════════════════════════════════════════════════════════════════
@@ -406,7 +420,7 @@ async function loadProfile(){
     if(sb_ && Object.keys(fill).length) sb_.from("customers").update(fill).eq("id",p.id).then(()=>{},()=>{});
   }catch(e){}
   if(!p.phone) showLinkOldBox();   // N-55 — แถวนี้ยังไม่มีเบอร์ = ผูกประวัติเก่าไม่ได้
-  renderTier(p.loyalty_points||0);
+  renderTier(p.loyalty_points||0, p.tier);
   // history
   renderHistory(p.orders||[]);
 }
