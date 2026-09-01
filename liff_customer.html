@@ -2506,7 +2506,7 @@ async function init() {
   /* 🎫 กระเป๋าคูปอง — โหลดหลังรู้แล้วว่าเป็นคนทดสอบไหม (ไม่ใช่คนทดสอบ = ไม่ยิง query เลย)
      ?collect=CODE มาจากปุ่มบนเว็บ/บรอดแคสต์/โฆษณา — เว็บไม่ได้เก็บเอง
      มันแค่ส่งต่อคำสั่งมา แล้วมาเก็บจริงตรงนี้ที่รู้แล้วว่าเป็น uid ไหน */
-  if (betaOn('coupon_wallet')) {
+  if (cwEnabled()) {
     await cwLoad();
     try {
       const want = (new URLSearchParams(location.search).get('collect')||'').trim().toUpperCase();
@@ -4617,6 +4617,10 @@ function renderSuggestedPromoChips(){
    (เคยเก็บรวมก้อนเดียว → สองคนกดพร้อมกันจะเขียนทับกัน แยกแถวแล้วต่างคนต่างเขียน)
    วันหมดอายุ/เงื่อนไข อ่านจาก promo_codes ตลอด ไม่ทำสำเนา — ข้อมูลชุดเดียวไม่มีทางขัดกัน */
 const CW_PREFIX = 'cw:';
+/* 🟢 เปิดให้ลูกค้าทุกคนแล้ว 1 ก.ย. 2569 (นัทสั่งหลังเทสผ่าน)
+   ถ้าวันหลังต้องปิดฉุกเฉิน เปลี่ยนบรรทัดล่างเป็น betaOn('coupon_wallet') = กลับไปเห็นเฉพาะคนทดสอบ
+   ⚠️ ไม่เกี่ยวกับตัวกรองโค้ด BETA — โค้ดทดสอบยังซ่อนจากลูกค้าเหมือนเดิม */
+function cwEnabled(){ return true; }
 let cwAll = null;      // คูปองที่เปิดให้เก็บ (promo_codes: is_active + show_suggested)
 let cwMine = [];       // [{code, at, src}] ของ uid นี้
 let cwTabNow = 'new';  // เปิดมาเจอ "มีให้เก็บ" ก่อน (นัทสั่ง 1 ก.ย.)
@@ -4641,7 +4645,7 @@ function cwOwned(){ const live = cwLive(); return cwMine.map(m => live.find(p =>
 function cwUncollected(){ return cwLive().filter(p => !cwHas(p.code)); }
 
 async function cwLoad(){
-  if(!betaOn('coupon_wallet')) return;
+  if(!cwEnabled()) return;
   try{
     const [pr, wr] = await Promise.allSettled([
       sb.from('promo_codes').select('*').eq('is_active', true).eq('show_suggested', true),
@@ -4655,7 +4659,7 @@ async function cwLoad(){
 }
 
 async function cwCollect(code, src){
-  if(!betaOn('coupon_wallet')) return false;
+  if(!cwEnabled()) return false;
   code = String(code||'').trim().toUpperCase();
   if(!code || !cwUid()) return false;
   if(cwHas(code)){ toast('คูปองนี้อยู่ในกระเป๋าอยู่แล้ว'); return false; }
@@ -4673,7 +4677,7 @@ async function cwCollect(code, src){
 
 /* วาดทุกจุดที่โชว์จำนวนคูปองพร้อมกัน — แถบหน้าเมนู · ปุ่มบนแถบบาร์ */
 function cwPaint(){
-  const on = betaOn('coupon_wallet');
+  const on = cwEnabled();
   const left = on ? cwUncollected().length : 0;
   const mine = on ? cwOwned().length : 0;
   const bar = document.getElementById('cw-bar');
@@ -4750,7 +4754,7 @@ function cwRenderList(){
 function cwRenderPick(){
   const wrap = document.getElementById('cw-pick-wrap');
   if(!wrap) return;
-  if(!betaOn('coupon_wallet')){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  if(!cwEnabled()){ wrap.style.display='none'; wrap.innerHTML=''; return; }
   const mine = cwOwned();
   if(!mine.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
   const using = cwPicked && mine.some(p => p.code === cwPicked);
