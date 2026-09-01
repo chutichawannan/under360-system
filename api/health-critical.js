@@ -69,7 +69,27 @@ module.exports = async (req, res) => {
   const ps = await page('/print_pickslip.html');
   add('ใบจัดของเปิดได้', ps.ok, 'HTTP ' + ps.status);
 
-  // ── 6. สัญญาณธุรกิจ (เตือนเบา ไม่ใช่แดง) ──
+  // ── 6. ปฏิทินเมนู Meal Plan ยังมีวันให้ลูกค้าเลือกไหม ──
+  //    (เพิ่ม 1 ก.ย. 2569 หลังเจอว่าเหลือ 2 วันโดยไม่มีอะไรฟ้อง)
+  try {
+    const r = await fetch(`${SB}/kitchen_data?key=eq.mp_menu_plan&select=data`, { headers: H });
+    const j = await r.json();
+    const plan = (Array.isArray(j) && j[0] && j[0].data) || {};
+    const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);   // วันไทย
+    const left = Object.keys(plan).filter(d => d > today).sort();
+    const last = left[left.length - 1];
+    const เหลือวัน = last ? Math.round((new Date(last) - new Date(today)) / 86400000) : 0;
+    if (!left.length)
+      add('ปฏิทินเมนู Meal Plan', false, 'ไม่มีวันให้ลูกค้าเลือกเลย — สั่ง Meal Plan ไม่ได้ ต้องให้ห้องฟ้าเติมแพลนด่วน');
+    else if (left.length <= 3)
+      add('ปฏิทินเมนู Meal Plan', false, 'เหลือแค่ ' + left.length + ' วัน (ถึง ' + last + ') — อีกไม่กี่วันลูกค้าจะสั่งไม่ได้');
+    else
+      add('ปฏิทินเมนู Meal Plan', เหลือวัน > 14,
+          left.length + ' วัน ถึง ' + last + (เหลือวัน <= 14 ? ' — อีก ' + เหลือวัน + ' วันหมด เริ่มทวงห้องฟ้าได้แล้ว' : ''),
+          เหลือวัน > 14 ? 'เหลือง' : 'เหลือง');
+  } catch (e) { add('ปฏิทินเมนู Meal Plan', false, String(e && e.message), 'เหลือง'); }
+
+  // ── 7. สัญญาณธุรกิจ (เตือนเบา ไม่ใช่แดง) ──
   try {
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
     const r = await fetch(`${SB}/orders?select=id&created_at=gte.${since}&limit=1`, { headers: { ...H, Prefer: 'count=exact' } });
