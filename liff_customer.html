@@ -591,6 +591,33 @@ body{background:#fff!important}
   border-radius:6px;padding:3px 9px;font-size:11px;font-weight:700;font-family:inherit;cursor:pointer;margin-left:8px}
 .beta-tag{display:inline-block;background:#7C2D12;color:#fff;font-size:9.5px;font-weight:800;
   border-radius:5px;padding:1px 5px;margin-left:5px;vertical-align:middle;letter-spacing:.3px}
+
+/* 🎫 กระเป๋าคูปอง */
+.cw-bar{display:none;align-items:center;gap:10px;margin:10px 14px 0;padding:11px 12px;cursor:pointer;
+  background:linear-gradient(100deg,#FEF3C7,#FDE68A);border:1px solid #FCD34D;border-radius:12px}
+.cw-bar.on{display:flex}
+.cw-bar .t{flex:1;font-size:13px;font-weight:800;color:#7C4A03;line-height:1.35}
+.cw-bar .t small{display:block;font-weight:600;font-size:11px;color:#92650B;margin-top:1px}
+.cw{display:flex;background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:9px}
+.cw .l{background:linear-gradient(160deg,#1F4D3A,#2C6B4F);color:#fff;padding:12px 10px;min-width:96px;
+  display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center}
+.cw .l b{font-size:19px;font-weight:900;line-height:1.1}
+.cw .l span{font-size:10px;opacity:.85;margin-top:2px}
+.cw .r{flex:1;padding:10px 11px;min-width:0}
+.cw .nm{font-size:13.5px;font-weight:800;margin-bottom:2px}
+.cw .cd{font-size:11.5px;color:var(--soft);line-height:1.45}
+.cw .ex{font-size:11px;color:#B45309;font-weight:700;margin-top:4px}
+.cw.dim{opacity:.55}
+.cw.dim .l{background:#9CA3AF}
+.cw .b{margin-top:8px;width:100%;background:var(--g);color:#fff;border:0;border-radius:8px;padding:8px;
+  font-size:12.5px;font-weight:800;font-family:inherit;cursor:pointer}
+.cw .b.sel{background:#B45309}
+.cw .no{background:#FEF2F2;border:1px solid #FECACA;border-radius:8px;padding:7px 9px;
+  font-size:11.5px;color:#B91C1C;margin-top:6px;font-weight:600}
+.cw-tabs{display:flex;gap:6px;margin:12px 14px 10px}
+.cw-tab{flex:1;text-align:center;background:#fff;border:1px solid var(--line);border-radius:8px;
+  padding:8px;font-size:12px;font-weight:700;color:var(--soft);cursor:pointer}
+.cw-tab.on{background:var(--g);border-color:var(--g);color:#fff}
 </style>
 </head>
 <body>
@@ -641,6 +668,12 @@ body{background:#fff!important}
   </div>
   <div class="scroll pb-nav">
     <div class="home-grid" id="homeGrid"></div>
+    <!-- 🎫 แถบชวนเก็บคูปอง (โหมดทดสอบ) — ขึ้นเฉพาะตอนมีใบที่ยังไม่ได้เก็บ -->
+    <div class="cw-bar" id="cw-bar" onclick="goWallet()">
+      <div style="font-size:22px">🎫</div>
+      <div class="t" id="cw-bar-t"></div>
+      <div style="font-size:18px;color:#92650B">›</div>
+    </div>
     <!-- แบนเนอร์อธิบาย Meal Plan — ลูกค้าใหม่ไม่รู้ว่าต่างจากข้าวกล่องยังไง -->
     <button class="mpx-banner" onclick="openMpx()">
       <span class="mpx-txt">
@@ -843,6 +876,8 @@ body{background:#fff!important}
 
     <!-- ═══ COUPON ═══ -->
     <div class="sec-head">คูปอง / โค้ดส่วนลด</div>
+    <!-- 🎫 คูปองในกระเป๋า (โหมดทดสอบ) — โผล่เหนือช่องพิมพ์โค้ด ของเดิมยังอยู่ครบ -->
+    <div id="cw-pick-wrap" style="padding:0 14px 8px;display:none"></div>
     <div id="promo-suggest-wrap" style="padding:0 14px 8px;display:none"></div>
     <div id="coupon-applied" style="display:none;padding:0 14px 4px"></div>
     <div id="coupon-wrap" style="padding:0 14px 4px">
@@ -954,6 +989,24 @@ body{background:#fff!important}
     <button class="btn-p" onclick="backToMenu()">สั่งเพิ่มอีกครั้ง</button>
     <div class="ok-sep"></div>
     <button class="btn-s" onclick="goOrders()">ดูออเดอร์ทั้งหมด</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════
+     SCREEN: กระเป๋าคูปอง (โหมดทดสอบ)
+══════════════════════════════════════ -->
+<div class="scr" id="s-wallet">
+  <div class="hdr">
+    <button class="hdr-back" onclick="goMenu()">←</button>
+    <div class="hdr-title">🎫 กระเป๋าคูปองของฉัน</div>
+  </div>
+  <div class="scroll pb-nav">
+    <div class="cw-tabs">
+      <div class="cw-tab on" id="cw-tab-use" onclick="cwTab('use')">ใช้ได้ (<span id="cw-n-use">0</span>)</div>
+      <div class="cw-tab" id="cw-tab-new" onclick="cwTab('new')">ยังไม่เก็บ (<span id="cw-n-new">0</span>)</div>
+    </div>
+    <div style="padding:0 14px" id="cw-list"></div>
+    <div style="padding:4px 16px 20px;font-size:11.5px;color:var(--soft);line-height:1.55" id="cw-hint"></div>
   </div>
 </div>
 
@@ -2395,6 +2448,17 @@ async function init() {
     betaCfg = (b && b.data) || null;
   } catch(e) { betaCfg = null; }
   betaPaint();
+
+  /* 🎫 กระเป๋าคูปอง — โหลดหลังรู้แล้วว่าเป็นคนทดสอบไหม (ไม่ใช่คนทดสอบ = ไม่ยิง query เลย)
+     ?collect=CODE มาจากปุ่มบนเว็บ/บรอดแคสต์/โฆษณา — เว็บไม่ได้เก็บเอง
+     มันแค่ส่งต่อคำสั่งมา แล้วมาเก็บจริงตรงนี้ที่รู้แล้วว่าเป็น uid ไหน */
+  if (betaOn('coupon_wallet')) {
+    await cwLoad();
+    try {
+      const want = (new URLSearchParams(location.search).get('collect')||'').trim().toUpperCase();
+      if (want) { await cwCollect(want, 'link'); goWallet(); }
+    } catch(e) { console.warn('เก็บคูปองจากลิงก์ไม่สำเร็จ', e); }
+  }
 
   // menu + สร้างลำดับหมวด (ไม่ hardcode — ใช้ทุก category ที่มีใน data)
   try {
@@ -4471,6 +4535,8 @@ function renderSuggestedPromoChips(){
   const today = localYMD(new Date());
   const sub = cartTotal();
   const eligible = suggestedPromos.filter(p => {
+    // 🧪 โค้ดขึ้นต้น BETA = ของที่ยังทดสอบอยู่ ห้ามโผล่หน้าลูกค้าจริงเด็ดขาด
+    if(/^BETA/i.test(p.code||'') && !betaOn('coupon_wallet')) return false;
     if(p.expires_at && p.expires_at < today) return false;
     if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit) return false;
     if((p.min_order||0) > sub) return false;
@@ -4486,6 +4552,169 @@ function renderSuggestedPromoChips(){
       return `<button onclick="tapSuggestedPromo('${p.id}')" style="border:1.5px solid ${active?'var(--g)':'rgba(0,0,0,.12)'};background:${active?'var(--gl)':'#fff'};color:${active?'var(--g)':'var(--ink)'};border-radius:10px;padding:6px 10px;font-size:12px;font-weight:700;cursor:pointer">${active?'✓ ':''}${h(p.code)} — ${h(promoLabel(p))}${p.stackable?' 🔗':''}</button>`;
     }).join('') +
     '</div>';
+}
+
+/* ══ 🎫 กระเป๋าคูปอง (โหมดทดสอบ · นัทสั่ง 30 ส.ค. 2569) ═══════════════════
+   คูปอง = โค้ดใน promo_codes เดิมทั้งหมด ไม่ได้สร้างระบบส่วนลดใหม่
+   เงื่อนไข (ลดเท่าไหร่ · ขั้นต่ำ · ใช้กับอะไร · ซ้อนได้ไหม · หมดอายุ) ยังอยู่ที่เดิมที่กิ๊ฟตั้ง
+   ที่เพิ่มมาคือ "ใครเก็บใบไหนไว้" อย่างเดียว
+
+   ⚠️ ที่เก็บชั่วคราว: kitchen_data คีย์ coupon_wallet_beta — ดูเหตุผลในหัวไฟล์ patch
+      ก่อนเปิดให้ลูกค้าจริงต้องย้ายไปตาราง coupon_wallet (scripts/sql_coupon_wallet.sql) */
+const CW_KEY = 'coupon_wallet_beta';
+let cwAll = null;      // คูปองทั้งหมดที่เปิดให้เก็บ (promo_codes ที่ is_active + show_suggested)
+let cwMine = [];       // [{code, at, src}] ของ uid นี้
+let cwTabNow = 'use';
+let cwPicked = null;   // โค้ดที่เลือกใช้อยู่ที่หน้าจ่าย (ยังไม่กดใช้จริง)
+
+function cwUid(){ return (lineProfile && lineProfile.userId) || ''; }
+function cwToday(){ return new Date(Date.now() + 7*3600e3).toISOString().slice(0,10); }  // วันไทยเสมอ
+
+/* คูปองที่ "ยังแจกอยู่" — ใช้เกณฑ์เดียวกับโค้ดแนะนำเดิม จะได้ไม่มี 2 มาตรฐาน */
+function cwLive(){
+  const today = cwToday();
+  return (cwAll||[]).filter(p => {
+    if(!p.is_active) return false;
+    if(/^BETA/i.test(p.code||'') && !betaOn('coupon_wallet')) return false;
+    if(p.expires_at && String(p.expires_at).slice(0,10) < today) return false;
+    if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit) return false;
+    return true;
+  });
+}
+function cwHas(code){ return cwMine.some(x => String(x.code).toUpperCase() === String(code).toUpperCase()); }
+function cwOwned(){ const live = cwLive(); return cwMine.map(m => live.find(p => p.code === m.code)).filter(Boolean); }
+function cwUncollected(){ return cwLive().filter(p => !cwHas(p.code)); }
+
+async function cwLoad(){
+  if(!betaOn('coupon_wallet')) return;
+  try{
+    const [pr, wr] = await Promise.allSettled([
+      sb.from('promo_codes').select('*').eq('is_active', true).eq('show_suggested', true),
+      sb.from('kitchen_data').select('data').eq('key', CW_KEY).maybeSingle()
+    ]);
+    cwAll  = (pr.status==='fulfilled' && pr.value.data) || [];
+    const w = (wr.status==='fulfilled' && wr.value.data && wr.value.data.data) || {};
+    cwMine = Array.isArray(w[cwUid()]) ? w[cwUid()] : [];
+  }catch(e){ console.warn('โหลดกระเป๋าคูปองไม่สำเร็จ', e); cwAll = cwAll||[]; }
+  cwPaintBar();
+}
+
+/* เก็บคูปอง — อ่านก้อนล่าสุดก่อนเขียนเสมอ กันทับของคนอื่นที่เพิ่งเก็บ
+   (ยังไม่กันได้ 100% ถ้ากดพร้อมกันเป๊ะ — อีกเหตุผลที่ต้องย้ายไปตารางจริงก่อนเปิดลูกค้า) */
+async function cwCollect(code, src){
+  if(!betaOn('coupon_wallet')) return false;
+  code = String(code||'').trim().toUpperCase();
+  if(!code || !cwUid()) return false;
+  if(cwHas(code)){ toast('🎫 คูปองนี้อยู่ในกระเป๋าอยู่แล้ว'); return false; }
+  if(!cwLive().some(p => p.code === code)){ toast('คูปองนี้หมดเวลาแจกแล้ว'); return false; }
+  try{
+    const cur = await sb.from('kitchen_data').select('data').eq('key', CW_KEY).maybeSingle();
+    const bag = (cur.data && cur.data.data) || {};
+    const list = Array.isArray(bag[cwUid()]) ? bag[cwUid()] : [];
+    if(!list.some(x => String(x.code).toUpperCase() === code)){
+      list.push({ code, at: new Date().toISOString(), src: src||'liff' });
+    }
+    bag[cwUid()] = list;
+    const up = await sb.from('kitchen_data').upsert({ key: CW_KEY, data: bag }, { onConflict:'key' });
+    if(up.error) throw up.error;
+    cwMine = list;
+    toast('🎫 เก็บเข้ากระเป๋าแล้ว');
+    cwPaintBar(); cwRenderList(); cwRenderPick();
+    return true;
+  }catch(e){ console.warn('เก็บคูปองไม่สำเร็จ', e); toast('เก็บคูปองไม่สำเร็จ ลองใหม่อีกครั้ง'); return false; }
+}
+
+function cwPaintBar(){
+  const bar = document.getElementById('cw-bar'), t = document.getElementById('cw-bar-t');
+  if(!bar || !t) return;
+  const left = betaOn('coupon_wallet') ? cwUncollected().length : 0;
+  bar.classList.toggle('on', left > 0);
+  if(left > 0) t.innerHTML = 'มีคูปองให้เก็บ ' + left + ' ใบ<small>แตะเพื่อเก็บเข้ากระเป๋า — ใช้ตอนสั่งครั้งไหนก็ได้</small>';
+}
+
+function goWallet(){ showScr('s-wallet'); cwRenderList(); }
+function cwTab(t){
+  cwTabNow = t;
+  document.getElementById('cw-tab-use').classList.toggle('on', t==='use');
+  document.getElementById('cw-tab-new').classList.toggle('on', t==='new');
+  cwRenderList();
+}
+
+function cwCard(p, mode, blocked){
+  const val = promoLabel(p);
+  const big = p.discount_type==='percent' ? (p.discount_value+'%')
+            : p.discount_type==='free_shipping' ? 'ฟรี'
+            : ('฿'+p.discount_value);
+  const sub = p.discount_type==='percent' ? 'ลดทั้งบิล'
+            : p.discount_type==='free_shipping' ? 'ค่าส่ง'
+            : p.discount_type==='flat_shipping' ? 'ค่าส่งเหมา' : 'ลดเงินสด';
+  const cond = [];
+  if((p.min_order||0) > 0) cond.push('สั่งครบ ฿'+Number(p.min_order).toLocaleString());
+  if(p.description) cond.push(h(p.description));
+  return '<div class="cw'+(blocked?' dim':'')+'">'
+    + '<div class="l"><b>'+h(big)+'</b><span>'+h(sub)+'</span></div>'
+    + '<div class="r"><div class="nm">'+h(p.code)+' — '+h(val)+'</div>'
+    + '<div class="cd">'+(cond.join(' · ')||'ใช้ได้กับทุกเมนู')+'</div>'
+    + (p.expires_at ? '<div class="ex">⏳ ใช้ได้ถึง '+h(String(p.expires_at).slice(0,10))+'</div>' : '')
+    + (blocked ? '<div class="no">⚠️ '+h(blocked)+'</div>' : '')
+    + (mode==='new' ? '<button class="b" onclick="cwCollect(\''+h(p.code)+'\',\'liff\')">＋ เก็บคูปอง</button>' : '')
+    + (mode==='pick' && !blocked ? '<button class="b'+(cwPicked===p.code?' sel':'')+'" onclick="cwUse(\''+h(p.code)+'\')">'
+        + (cwPicked===p.code ? '✓ กำลังใช้ใบนี้ (แตะเพื่อเอาออก)' : 'ใช้ใบนี้') + '</button>' : '')
+    + (mode==='use' ? '<div style="font-size:11px;color:var(--g);font-weight:700;margin-top:6px">✓ อยู่ในกระเป๋า — จะโผล่ให้เลือกตอนจ่ายเงิน</div>' : '')
+    + '</div></div>';
+}
+
+function cwRenderList(){
+  const el = document.getElementById('cw-list'), hint = document.getElementById('cw-hint');
+  if(!el) return;
+  const mine = cwOwned(), rest = cwUncollected();
+  const nu = document.getElementById('cw-n-use'), nn = document.getElementById('cw-n-new');
+  if(nu) nu.textContent = mine.length;
+  if(nn) nn.textContent = rest.length;
+  const list = (cwTabNow==='use') ? mine : rest;
+  const mode = (cwTabNow==='use') ? 'use' : 'new';
+  el.innerHTML = list.length
+    ? list.map(p => cwCard(p, mode, '')).join('')
+    : '<div style="text-align:center;color:var(--faint);padding:34px 0;font-size:13px">'
+      + (cwTabNow==='use' ? 'ยังไม่มีคูปองในกระเป๋า<br><span style="font-size:12px">แตะแท็บ “ยังไม่เก็บ” เพื่อเก็บ</span>' : 'เก็บครบทุกใบแล้ว 🎉')
+      + '</div>';
+  if(hint) hint.innerHTML = (cwTabNow==='use')
+    ? 'ใบที่เก็บไว้แล้ว — <b>จะโผล่ให้เลือกเองตอนจ่ายเงิน</b> ไม่ต้องจำโค้ด'
+    : 'ใบที่ยังไม่เก็บ — <b>กดเก็บไว้ก่อนได้</b> ยังไม่ต้องสั่งของตอนนี้';
+}
+
+/* หน้าจ่ายเงิน — ใบที่ใช้กับตะกร้านี้ไม่ได้ ต้องยังเห็นอยู่พร้อมเหตุผล
+   ซ่อนทิ้ง = ลูกค้าคิดว่าคูปองหาย แล้วทักแอดมิน (แพงกว่าเงินที่ประหยัดได้) */
+function cwRenderPick(){
+  const wrap = document.getElementById('cw-pick-wrap');
+  if(!wrap) return;
+  if(!betaOn('coupon_wallet')){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  const mine = cwOwned();
+  if(!mine.length){ wrap.style.display='none'; wrap.innerHTML=''; return; }
+  const sub = cartTotal();
+  wrap.style.display = 'block';
+  wrap.innerHTML = '<div style="font-size:11.5px;color:var(--soft);font-weight:600;margin-bottom:6px">'
+    + '🎫 คูปองในกระเป๋าของคุณ <span class="beta-tag">ทดสอบ</span></div>'
+    + mine.map(p => {
+        let bad = '';
+        if((p.min_order||0) > sub) bad = 'ยอดยังไม่ถึง ฿'+Number(p.min_order).toLocaleString()
+          + ' — ซื้อเพิ่มอีก ฿'+(Number(p.min_order)-sub).toLocaleString()+' ถึงจะใช้ได้';
+        else if(!cartMatchesPromoScope(p)) bad = 'ใช้กับของในตะกร้าตอนนี้ไม่ได้';
+        return cwCard(p, 'pick', bad);
+      }).join('');
+}
+
+/* กดใช้ = ส่งต่อให้ระบบโค้ดเดิมทุกอย่าง (applyPromo) ไม่ได้คิดส่วนลดเอง
+   → กติกาซ้อนโค้ด/ขั้นต่ำ/scope เป็นชุดเดียวกับที่ใช้อยู่ ไม่มีทางคิดเงินคนละแบบ */
+function cwUse(code){
+  if(cwPicked === code){
+    const p = appliedPromos.find(x => x.code === code);
+    cwPicked = null;
+    if(p) removePromo(p.id); else cwRenderPick();
+    return;
+  }
+  cwPicked = code;
+  applyPromo(code);
 }
 
 function tapSuggestedPromo(id){
@@ -4635,6 +4864,7 @@ function refreshCouponUI(){
     applied.innerHTML = '';
   }
   renderSuggestedPromoChips();
+  cwRenderPick();
 }
 
 // ── PAYMENT ACCOUNTS (ถัวเฉลี่ยรายไตรมาส) ────────────────
