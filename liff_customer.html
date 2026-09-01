@@ -4641,10 +4641,19 @@ const PROMO_LIMIT_KEY = 'promo_limits';
 let promoLimits = null;      // { CODE: {per_customer_days:N} }
 let cwRecentUses = null;     // [{codes:[...], at:'YYYY-MM-DD'}] ของลูกค้าคนนี้
 
+function cwLimitRule(code){
+  return (promoLimits && promoLimits[String(code||'').toUpperCase()]) || null;
+}
 function cwLimitDays(code){
-  const r = promoLimits && promoLimits[String(code||'').toUpperCase()];
+  const r = cwLimitRule(code);
   const d = r && Number(r.per_customer_days);
   return (d > 0) ? d : 0;
+}
+/* เคยใช้โค้ดนี้ไปแล้วหรือยัง (ไม่สนว่านานแค่ไหน) */
+function cwUsedBefore(code){
+  if(!Array.isArray(cwRecentUses)) return false;
+  const up = String(code).toUpperCase();
+  return cwRecentUses.some(u => u.codes.indexOf(up) >= 0);
 }
 /* คืน 'YYYY-MM-DD' ที่ใช้ได้อีกครั้ง — null = ใช้ได้เลย */
 function cwNextUseDate(code){
@@ -4659,6 +4668,9 @@ function cwNextUseDate(code){
   return (next > cwToday()) ? next : null;
 }
 function cwLimitMsg(code){
+  // ครั้งเดียวต่อคน — เช็คก่อนแบบนับวัน เพราะเข้มกว่า
+  const rule = cwLimitRule(code);
+  if(rule && rule.once_per_customer && cwUsedBefore(code)) return 'ใบนี้ใช้ได้คนละครั้งเดียว — คุณใช้ไปแล้ว';
   const next = cwNextUseDate(code);
   if(!next) return '';
   const days = cwLimitDays(code);
