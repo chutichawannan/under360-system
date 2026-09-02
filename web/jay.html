@@ -240,8 +240,9 @@ header .logo img,.nav .logo img{
 .sticky .btn-jay{box-shadow:none}
 /* ── u360-jay-tight — แก้ "โล่งจนไม่อยากเข้าต่อ" ── */
 .hero-grid{display:grid;grid-template-columns:1fr;gap:26px;align-items:center}
-.hero-pic{display:none}
+.hero-pic{display:block;margin-top:4px}
 .hero-pic img{width:100%;height:auto;border-radius:18px;box-shadow:0 14px 40px rgba(20,56,35,.16);display:block}
+@media(max-width:899px){.hero-pic{max-width:460px;margin:6px auto 0}}
 @media(min-width:900px){
   .hero-grid{grid-template-columns:1.05fr .95fr;gap:44px}
   .hero-pic{display:block}
