@@ -403,7 +403,7 @@ function refreshUI(){ renderBanner(); renderHome(); renderDash(); renderRoomList
 async function loadAll(manual){
   try{ refreshUI(); }catch(e){}
   // ตัวนับสดของการ์ดสรุปเช้าต้องรอ loadCore ก่อน (ต้องรู้เวลาสรุปล่าสุดถึงจะนับ "หลังจากนั้น" ได้)
-  const jobs=[ loadCore().then(loadBriefCounts), loadNiw(), loadCutover(), loadOOS() ];
+  const jobs=[ loadCore().then(loadBriefCounts), loadNiw(), loadCutover(), loadOOS(), loadJay() ];
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
   if(manual || !bizLoaded){ jobs.push(loadBiz().then(function(){ bizLoaded=true; })); }
   await Promise.allSettled(jobs);
@@ -664,6 +664,7 @@ function renderDash(){
   if(typeof dashUnlocked==="function" && !dashUnlocked()){ if(el0) el0.innerHTML=""; return; }
   let h='';
   h+=cardBiz();
+  h+=cardJay();
   h+=cardOOS();
   h+=cardNiw();
   h+=cardCutover();
@@ -1119,6 +1120,100 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
 /* ---------- ⛔ การ์ดสินค้าหมดสต็อก (ลูกค้าเห็นแต่สั่งไม่ได้ = เสียยอดเงียบ) ---------- */
 var oosData=null;
+/* ── 🌱 คอร์สเจ 2569 ───────────────────────────────────────────────────────
+   1 คอร์ส = ใบหลัก (ถือเงินเต็ม) + ใบรอบ 2-3 (ยอด 0)
+   จับคู่ด้วยเลขใบหลักที่เขียนใน notes ของใบรอบถัดไป ไม่ใช่ชื่อ/รหัสไลน์
+   เพราะคนเดียวจองให้ตัวเอง+ให้แม่ = 2 คอร์ส ต้องแยกกัน                        */
+var jayData=null;
+async function loadJay(){
+  try{
+    var pk=await sb.from('packages').select('id,size,name,base_price,is_active').like('size','JAY%');
+    var pkgs=(pk.data||[]).filter(function(p){ return p.is_active; });
+    if(!pkgs.length){ jayData=null; return; }                 // ไม่มีแพคเปิด = ไม่ต้องโชว์การ์ด
+    var ids={}; pkgs.forEach(function(p){ ids[p.id]=p; });
+    var ors=pkgs.map(function(p){ return 'notes.like.pkg:'+p.id+'*'; }).join(',');
+    var it=await sb.from('order_items').select('order_id,notes').or(ors).limit(4000);
+    var rows=it.data||[];
+    if(!rows.length){ jayData={pkgs:pkgs,courses:[],quota:null}; return; }
+    var oid={}; rows.forEach(function(r){ oid[r.order_id]=1; });
+    var arr=Object.keys(oid), orders=[];
+    for(var i=0;i<arr.length;i+=60){
+      var o=await sb.from('orders').select('id,order_number,customer_name,total,payment_status,status,delivery_date,notes,created_at')
+        .in('id',arr.slice(i,i+60));
+      orders=orders.concat(o.data||[]);
+    }
+    var byId={}; orders.forEach(function(o){ byId[o.id]=o; });
+    var meta={};
+    rows.forEach(function(r){
+      var m=/^pkg:([0-9a-fA-F-]+)(?::course:([0-9]+)[/]([0-9]+))?/.exec(r.notes||'');
+      if(!m) return;
+      var o=byId[r.order_id]; if(!o || o.status==='cancelled') return;   // ใบยกเลิกไม่นับ
+      if(!meta[r.order_id]) meta[r.order_id]={order:o,pkg:ids[m[1]]||null,round:+(m[2]||1),total:+(m[3]||1),boxes:0};
+      meta[r.order_id].boxes++;
+    });
+    var byNum={}; Object.keys(meta).forEach(function(k){ byNum[meta[k].order.order_number]=meta[k]; });
+    var courses=[], head={};
+    Object.keys(meta).forEach(function(k){
+      var e=meta[k]; if(e.round!==1) return;
+      var c={head:e.order,pkg:e.pkg,totalRounds:e.total,rounds:[{no:1,date:e.order.delivery_date,boxes:e.boxes}]};
+      courses.push(c); head[e.order.id]=c;
+    });
+    Object.keys(meta).forEach(function(k){
+      var e=meta[k]; if(e.round===1) return;
+      var m=/ออเดอร์[ ]+(U-[0-9]{4}-[0-9]{3})/.exec(e.order.notes||'');
+      var p=m?byNum[m[1]]:null, c=p?head[p.order.id]:null;
+      if(c) c.rounds.push({no:e.round,date:e.order.delivery_date,boxes:e.boxes});
+    });
+    courses.sort(function(a,b){ return (a.head.created_at||'')<(b.head.created_at||'')?-1:1; });
+    var q=await sb.from('kitchen_data').select('data').eq('key','pkg_quota').limit(1);
+    var qd=(q.data&&q.data[0]&&q.data[0].data)||{};
+    jayData={pkgs:pkgs,courses:courses,quota:qd};
+  }catch(e){ jayData=null; }
+}
+function cardJay(){
+  if(!jayData) return '';
+  var cs=jayData.courses, url=BASE+'/pwa/jay_orders.html';
+  if(!cs.length){
+    return '<div class="card"><h3>🌱 คอร์สเจ 2569 <span class="r">เปิดรับจองแล้ว</span></h3>'
+      +'<div class="muted">ยังไม่มีใครจอง</div>'
+      +'<div class="s" style="margin-top:6px"><a href="'+url+'" target="_blank">เปิดใบสรุปเต็ม →</a></div></div>';
+  }
+  var money=0, paid=0, due=0;
+  cs.forEach(function(c){
+    money+=(+c.head.total||0);
+    if(c.head.payment_status==='paid') paid++; else due++;
+  });
+  /* โควตา Early Bird — อ่านจากที่เดียวกับที่หน้าลูกค้าใช้ ตัวเลขจะได้ตรงกันเสมอ */
+  var ebLine='';
+  Object.keys(jayData.quota||{}).forEach(function(pid){
+    var q=jayData.quota[pid], lim=Number(q&&q.limit)||0; if(!lim) return;
+    var used=cs.filter(function(c){ return c.pkg && c.pkg.id===pid; }).length;
+    var left=Math.max(0,lim-used);
+    ebLine='<div class="s" style="margin-top:4px">🎟️ '+(q.label||'สิทธิ์พิเศษ')+' — เหลือ <b'
+      +(left<=10?' style="color:var(--r)"':'')+'>'+left+'</b> จาก '+lim+' สิทธิ์</div>';
+  });
+  /* รอบส่ง: ใบครบเท่าจำนวนคอร์สไหม — ขาดเมื่อไหร่คือมีคนไม่ได้ของ ต้องเห็นทันที */
+  var byR={};
+  cs.forEach(function(c){ c.rounds.forEach(function(r){
+    var k=r.no+'|'+r.date;
+    if(!byR[k]) byR[k]={no:r.no,date:r.date,bills:0,boxes:0};
+    byR[k].bills++; byR[k].boxes+=r.boxes;
+  }); });
+  var ks=Object.keys(byR).sort(function(a,b){ return byR[a].date<byR[b].date?-1:1; });
+  var rh='';
+  ks.forEach(function(k){
+    var r=byR[k], short=r.bills<cs.length;
+    rh+='<div class="s">· <b>รอบ '+r.no+'</b> '+r.date+' — '+r.bills+' ใบ · '+r.boxes+' กล่อง'
+      +(short?' <b style="color:var(--r)">ขาด '+(cs.length-r.bills)+' ใบ</b>':'')+'</div>';
+  });
+  return '<div class="card"><h3>🌱 คอร์สเจ 2569 <span class="r">'+cs.length+' คอร์ส</span></h3>'
+    +'<div><b style="font-size:18px">'+baht(money)+'</b> <span class="s">· จ่ายแล้ว '+paid
+    +' · ยังไม่ได้เงิน <b'+(due?' style="color:var(--r)"':'')+'>'+due+'</b></span></div>'
+    +ebLine
+    +'<div style="margin-top:6px">'+rh+'</div>'
+    +'<div class="s" style="margin-top:6px"><a href="'+url+'" target="_blank">เปิดใบสรุปเต็ม — ใครจองอะไรบ้าง →</a></div></div>';
+}
+
 async function loadOOS(){
   try{
     /* 3 คำขอไม่เกี่ยวกัน — ยิงพร้อมกัน ไม่ต้องต่อคิว */
