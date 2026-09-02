@@ -215,9 +215,17 @@ footer a{color:var(--muted);text-decoration:none;margin-right:16px}
 @media(max-width:640px){.rhead .q{margin-left:0}}
 /* โลโก้ธงเจ — ของจริงจากนัท (ไม่ใช่ emoji) */
 .jayhead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.jaylogo{width:52px;height:auto;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.14))}
+.jaylogo{width:76px;height:auto;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.14))}
 .jayhead .tag{margin-bottom:0}
-@media(max-width:600px){.jaylogo{width:42px}}
+@media(max-width:600px){.jaylogo{width:58px}}
+/* ── u360-logo-fix (2 ก.ย. 2026) — โลโก้เป็นภาพแนวนอน 2.4:1 ที่มีชื่อร้านอยู่ในตัว
+   ห้ามบังคับเป็นจัตุรัส/วงกลมอีก จะบีบจนอ่านไม่ออก ── */
+header .logo img,.nav .logo img{
+  width:auto!important;height:38px!important;border-radius:0!important;flex:none;display:block;
+}
+@media(max-width:520px){
+  header .logo img,.nav .logo img{height:30px!important}
+}
 </style>
 </head>
 <body>
@@ -226,7 +234,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <header>
   <div class="wrap nav">
-    <a class="logo" href="/"><img src="/img/u360_logo.svg" alt="Under360">Under360</a>
+    <a class="logo" href="/"><img src="/img/u360_logo.svg" alt="Under360"></a>
     <nav>
       <a href="/mealplan">Meal Plan</a>
       <a href="/blog">บทความ</a>
@@ -239,7 +247,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="hero">
   <div class="wrap">
     <div class="jayhead">
-      <img src="/img/jay/jay-logo.svg" alt="ธงเจ" class="jaylogo" width="52" height="81">
+      <img src="/img/jay/jay-logo.svg" alt="ธงเจ" class="jaylogo" width="76" height="119">
       <span class="tag">เทศกาลกินเจ 10 – 18 ตุลาคม 2569</span>
     </div>
     <h1>คอร์สอาหารเจ 30 เมนู ไม่ซ้ำสักมื้อ</h1>

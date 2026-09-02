@@ -507,9 +507,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <header>
   <div class="wrap nav">
     <a class="logo" href="/">
-      <img src="/img/u360_logo.svg" alt="Under360 logo">
-      Under360
-    </a>
+      <img src="/img/u360_logo.svg" alt="Under360 logo"></a>
     <nav>
       <a href="/mealplan">Meal Plan</a>
       <a class="hide-m" href="#products">สินค้าทั้งหมด</a>
@@ -523,7 +521,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ═══ u360-jay-banner v2 (m · 2 ก.ย. 2026 · นัทสั่งให้เป็นธีมเจ + โชว์ส่วนลด) ═══
      ลบทั้งก้อนนี้เมื่อครบ 50 คอร์ส · หายเองหลัง 18 ต.ค. 2026 (กันลืมถอด) -->
 <a class="jaybar" id="jayBar" href="/jay?utm_source=web&utm_medium=banner&utm_campaign=jay2026" hidden>
-  <img class="seal" src="/img/jay/jay-logo.svg" alt="ธงเจ" width="30" height="47">
+  <img class="seal" src="/img/jay/jay-logo.svg" alt="ธงเจ" width="46" height="72">
   <span class="txt">
     <b style="font-size:1.03rem!important">เปิดจองคอร์สอาหารเจ 2569</b>
     <small style="font-size:.86rem!important">30 กล่อง · 30 เมนูไม่ซ้ำ · ส่งถึงบ้าน 3 รอบ</small>
@@ -540,7 +538,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 .jaybar{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
   background:linear-gradient(90deg,#FFD400,#FFC400 55%,#FFB800);color:#3A2A00;
   text-decoration:none;padding:11px 20px;border-bottom:2px solid #E0A800;line-height:1.35}
-.jaybar .seal{width:30px;height:auto;flex:none;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.18))}
+.jaybar .seal{width:46px;height:auto;flex:none;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.2))}
 .jaybar .txt b{display:block;font-family:'Prompt',sans-serif;font-weight:700;font-size:1.03rem!important}
 .jaybar .txt small{display:block;font-size:.85rem!important;opacity:.78}
 .jaybar .price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
@@ -555,13 +553,21 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 @media(max-width:760px){
   /* มือถือ: ห้ามสูงจนดันเนื้อหาหลักตกจอ — เคยวัดได้ 114px แล้วสูงเกินไป */
   .jaybar{gap:10px;padding:9px 14px}
-  .jaybar .seal{width:26px}
+  .jaybar .seal{width:36px}
   .jaybar .txt b{font-size:.96rem!important}
   .jaybar .txt small{display:none}
   .jaybar .price em{font-size:1.62rem!important}
   .jaybar .go{display:none}   /* ทั้งแถบกดได้อยู่แล้ว */
 }
 @media(max-width:400px){.jaybar .price s{display:none}}
+/* ── u360-logo-fix (2 ก.ย. 2026) — โลโก้เป็นภาพแนวนอน 2.4:1 ที่มีชื่อร้านอยู่ในตัว
+   ห้ามบังคับเป็นจัตุรัส/วงกลมอีก จะบีบจนอ่านไม่ออก ── */
+header .logo img,.nav .logo img{
+  width:auto!important;height:38px!important;border-radius:0!important;flex:none;display:block;
+}
+@media(max-width:520px){
+  header .logo img,.nav .logo img{height:30px!important}
+}
 </style>
 <script>
 /* โชว์เฉพาะช่วงที่ยังขายอยู่ — ผ่าน 18 ต.ค. 2026 แล้วหายเอง ไม่ต้องรอใครมาถอด */
