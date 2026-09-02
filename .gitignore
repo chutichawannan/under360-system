@@ -27,3 +27,4 @@ download/
 
 # snapshot ชีทแอดมิน (ข้อมูลลูกค้า — ไม่ push)
 snapshots/
+.env.ads
