@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#1F4D3A">
+<title>นับของเหลือ — Under360</title>
+<link rel="manifest" href="manifest-k.webmanifest">
+<style>
+/* ═══ หน้านับของเหลือในครัว (u-maintainer · 1-2 ก.ย. 2569) ═══
+   ที่มาของหน้านี้ — นัทพูดเอง 22 ส.ค.: "เรามีคนช่วยสั่งของแล้ว แต่เรายังไม่มีคนจดของเหลือเลย"
+
+   บทเรียนจากรอบที่นัทจดมือส่งมาเอง 22 ส.ค. (27 รายการ):
+     13 รายการ (48%) **ตีความไม่ได้** เพราะไม่มีหน่วย — "เห็ดออรินจิ 200" คือกรัมหรือแพ็ค
+     "หัวไชเท้า 3 ลูก กิโลกรัมละ 800" ยังเถียงกันไม่จบว่าราคาหรือน้ำหนัก
+   → หน้านี้จึง **ล็อกหน่วยไว้ ไม่มีช่องให้พิมพ์หน่วยเอง** (กรัมทั้งหมด · ไข่เป็นฟอง ตามที่นัทสั่ง)
+     ข้อมูลที่กรอกจากหน้านี้เอาไปคำนวณต่อได้ทันที ไม่ต้องมานั่งตีความทีหลัง
+
+   คนที่ใช้จริงคือครัว ซึ่ง **อ่านไทยได้ 2 ใน 6 คน** → พึ่งอีโมจิ + ตัวเลขใหญ่ + ปุ่มกด
+   ไม่พึ่งตัวหนังสือ และไม่มีอะไรให้พิมพ์นอกจากตัวเลข */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{--g:#1F4D3A;--gl:#E8F0EC;--bg:#F4F4F0;--line:#E5E5E1;--soft:#6B7280;--am:#D98C2B;--r:#C9573F}
+body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding-bottom:96px}
+.hdr{position:sticky;top:0;z-index:20;background:var(--g);color:#fff;padding:12px 14px 10px}
+.hdr h1{margin:0;font-size:17px;font-weight:800;letter-spacing:-.3px}
+.hdr .sub{font-size:11.5px;opacity:.85;margin-top:2px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding:10px 12px 4px;-webkit-overflow-scrolling:touch}
+.tab{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:20px;padding:8px 13px;
+  font-size:12.5px;font-weight:700;color:var(--soft);white-space:nowrap}
+.tab.on{background:var(--g);border-color:var(--g);color:#fff}
+.tab .n{display:inline-block;min-width:17px;margin-left:5px;background:rgba(0,0,0,.08);border-radius:9px;
+  padding:0 5px;font-size:11px}
+.tab.on .n{background:rgba(255,255,255,.22)}
+.wrap{padding:6px 12px}
+.grp{font-size:12px;font-weight:800;color:var(--soft);margin:14px 2px 8px;letter-spacing:.2px}
+.row{display:flex;align-items:center;gap:10px;background:#fff;border:1px solid var(--line);
+  border-radius:13px;padding:10px 11px;margin-bottom:8px}
+.row.done{border-color:var(--g);background:#FAFCFB}
+.emo{width:38px;height:38px;flex-shrink:0;border-radius:11px;background:var(--gl);
+  display:flex;align-items:center;justify-content:center;font-size:20px}
+.nm{flex:1;min-width:0}
+.nm b{display:block;font-size:14px;font-weight:700;letter-spacing:-.2px}
+.nm span{font-size:11px;color:var(--soft)}
+.inp{width:92px;flex-shrink:0;text-align:right;font-size:19px;font-weight:800;font-family:inherit;
+  border:1.5px solid var(--line);border-radius:10px;padding:9px 8px;background:#fff}
+.inp:focus{outline:none;border-color:var(--g)}
+.unit{width:34px;flex-shrink:0;font-size:12px;font-weight:700;color:var(--soft);text-align:left}
+.quick{display:flex;gap:6px;padding:0 0 10px 48px;margin-top:-4px}
+.qb{background:#fff;border:1px solid var(--line);border-radius:8px;padding:5px 10px;font-size:12px;
+  font-weight:700;color:var(--g);font-family:inherit}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-top:1px solid var(--line);
+  padding:10px 12px calc(10px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center}
+.bar .st{flex:1;font-size:12px;color:var(--soft);line-height:1.4}
+.bar .st b{color:#1A1A1A;font-size:14px}
+.save{background:var(--g);color:#fff;border:0;border-radius:12px;padding:13px 20px;font-size:14.5px;
+  font-weight:800;font-family:inherit}
+.save:disabled{background:#C9CDC9}
+.note{margin:16px 12px 0;background:#FEF9C3;border:1px solid #FDE68A;border-radius:11px;
+  padding:11px 13px;font-size:12px;color:#713F12;line-height:1.6}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:86px;background:#1A1A1A;color:#fff;
+  padding:11px 18px;border-radius:22px;font-size:13.5px;font-weight:700;opacity:0;transition:.25s;
+  pointer-events:none;z-index:40}
+.toast.on{opacity:1}
+.last{font-size:11px;color:var(--soft);padding:2px 14px 0}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <h1>นับของเหลือ</h1>
+  <div class="sub" id="hsub">กำลังโหลด…</div>
+</div>
+<div class="last" id="lastLine"></div>
+<div class="tabs" id="tabs"></div>
+<div class="wrap" id="list"></div>
+
+<div class="note">
+  <b>นับเป็นกรัมทั้งหมด</b> (ไข่นับเป็นฟอง) — ไม่ต้องเลือกหน่วย ไม่ต้องพิมพ์อะไรนอกจากตัวเลข<br>
+  <b>ของที่ไม่ได้นับ = เว้นว่างไว้</b> ระบบจะไม่แตะค่าเดิมของมัน · ใส่ <b>0</b> เท่านั้นที่แปลว่า "หมดแล้ว"
+</div>
+
+<div class="bar">
+  <div class="st" id="stat">—</div>
+  <button class="save" id="saveBtn" onclick="save()" disabled>บันทึก</button>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* อ่าน/เขียนผ่าน anon key เหมือนหน้าอื่นในบ้านนี้ — หน้านี้ไม่มีข้อมูลลูกค้าเลย มีแต่ตัวเลขของในครัว */
+var SB='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
+var KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+var H={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
+var LIST=null, ING=null, VAL={}, TAB=0, LAST=null;
+
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
+function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},1800);}
+/* วันไทยเสมอ — เจ้าของร้านอยู่คนละโซนเวลา ถ้าใช้นาฬิกาเครื่องจะได้วันคนละวันกับครัว */
+function bkkToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+function bkkNow(){ return new Date(Date.now()+7*3600e3).toISOString().replace('T',' ').slice(0,16); }
+
+async function get(q){ var r=await fetch(SB+'/'+q,{headers:H}); return r.json(); }
+
+async function load(){
+  try{
+    var a=await get('kitchen_data?key=eq.stock_count_list&select=data');
+    LIST=(a[0]&&a[0].data)||null;
+    if(!LIST||!LIST.groups){ document.getElementById('hsub').textContent='ยังไม่มีลิสต์ของที่ต้องนับ'; return; }
+    var b=await get('kitchen_data?key=eq.ingredients&select=data');
+    ING=(b[0]&&b[0].data)||[];
+    var c=await get('kitchen_data?key=like.stock_count:*&select=key,data&order=key.desc&limit=1');
+    LAST=(c&&c[0])||null;
+    render();
+  }catch(e){ document.getElementById('hsub').textContent='โหลดไม่สำเร็จ — ลองรีเฟรช'; }
+}
+
+function counted(){ var n=0; for(var k in VAL){ if(VAL[k]!=='' && VAL[k]!=null) n++; } return n; }
+function total(){ return LIST.groups.reduce(function(s,g){return s+g.items.length;},0); }
+
+function render(){
+  var g=LIST.groups;
+  document.getElementById('hsub').textContent = 'วันที่ ' + bkkToday() + ' · ' + total() + ' รายการ';
+  if(LAST){
+    var d=String(LAST.key).replace('stock_count:','');
+    var who=(LAST.data&&LAST.data.by)||'';
+    document.getElementById('lastLine').textContent='นับครั้งล่าสุด: '+d+(who?(' โดย '+who):'');
+  }
+  document.getElementById('tabs').innerHTML = g.map(function(x,i){
+    var done=x.items.filter(function(it){return VAL[it.key]!=='' && VAL[it.key]!=null;}).length;
+    return '<div class="tab'+(i===TAB?' on':'')+'" onclick="setTab('+i+')">'+esc(x.emoji||'')+' '+esc(x.name)
+      +'<span class="n">'+done+'/'+x.items.length+'</span></div>';
+  }).join('');
+  var cur=g[TAB]||{items:[]};
+  document.getElementById('list').innerHTML='<div class="grp">'+esc(cur.emoji||'')+' '+esc(cur.name)+'</div>'
+    + cur.items.map(function(it){
+      var v=VAL[it.key];
+      var has=(v!=='' && v!=null);
+      /* ของที่ผูกกับคลังไว้ จะเขียนค่ากลับเข้าคลังตอนบันทึก · ที่ไม่ผูกก็ยังนับได้
+         (คลังวัตถุดิบ 302 รายการไม่ครบของที่ซื้อจริง — ไม่ให้ข้อมูลที่ไม่ครบมาบล็อกการนับ) */
+      return '<div class="row'+(has?' done':'')+'">'
+        +'<div class="emo">'+esc(it.emoji||'📦')+'</div>'
+        +'<div class="nm"><b>'+esc(it.name)+'</b>'+(it.ing_id?'':'<span>ยังไม่มีในคลังวัตถุดิบ</span>')+'</div>'
+        +'<input class="inp" type="number" inputmode="numeric" min="0" placeholder="—" value="'+(has?v:'')+'"'
+        +' onfocus="this.select()" oninput="setVal(\''+it.key+'\',this.value)">'
+        +'<div class="unit">'+esc(it.unit==='ฟอง'?'ฟอง':'กรัม')+'</div></div>'
+        +'<div class="quick">'
+        +['+100','+500','+1000'].map(function(q){
+            return '<button class="qb" onclick="bump(\''+it.key+'\','+q.slice(1)+')">'+q+'</button>';
+          }).join('')
+        +'<button class="qb" onclick="setVal(\''+it.key+'\',0,1)">หมด (0)</button>'
+        +(has?'<button class="qb" onclick="clr(\''+it.key+'\')">ล้าง</button>':'')
+        +'</div>';
+    }).join('');
+  var n=counted();
+  document.getElementById('stat').innerHTML='นับแล้ว <b>'+n+'</b> / '+total()+' รายการ';
+  document.getElementById('saveBtn').disabled = n===0;
+}
+function setTab(i){ TAB=i; render(); window.scrollTo(0,0); }
+function setVal(k,v,redraw){ VAL[k]=(v===''?'':Math.max(0,Number(v)||0)); if(redraw) render(); else quiet(); }
+function bump(k,n){ VAL[k]=(Number(VAL[k])||0)+n; render(); }
+function clr(k){ delete VAL[k]; render(); }
+/* อัปเดตตัวเลขบนแถบ/แท็บโดยไม่วาดใหม่ทั้งหน้า — ไม่งั้นคีย์บอร์ดเด้งปิดทุกครั้งที่พิมพ์ */
+function quiet(){
+  var n=counted();
+  document.getElementById('stat').innerHTML='นับแล้ว <b>'+n+'</b> / '+total()+' รายการ';
+  document.getElementById('saveBtn').disabled = n===0;
+  var tabs=document.querySelectorAll('.tab .n');
+  LIST.groups.forEach(function(x,i){
+    if(!tabs[i]) return;
+    var d=x.items.filter(function(it){return VAL[it.key]!=='' && VAL[it.key]!=null;}).length;
+    tabs[i].textContent=d+'/'+x.items.length;
+  });
+}
+
+async function save(){
+  var btn=document.getElementById('saveBtn');
+  btn.disabled=true; btn.textContent='กำลังบันทึก…';
+  try{
+    var who = localStorage.getItem('lastNickname') || '';
+    if(!who){ who=(window.prompt('ใครเป็นคนนับรอบนี้ (พิมพ์ชื่อเล่น)','')||'').trim();
+              if(who) localStorage.setItem('lastNickname',who); }
+    var rows=[], byId={};
+    LIST.groups.forEach(function(g){ g.items.forEach(function(it){
+      var v=VAL[it.key];
+      if(v==='' || v==null) return;                       // ไม่ได้นับ = ไม่แตะค่าเดิม
+      rows.push({ name:it.name, qty:Number(v), unit:it.unit||'g', ing_id:it.ing_id||null });
+      if(it.ing_id) byId[it.ing_id]=Number(v);
+    });});
+    if(!rows.length){ toast('ยังไม่ได้กรอกอะไรเลย'); btn.disabled=false; btn.textContent='บันทึก'; return; }
+
+    /* ① เก็บรอบนับไว้เป็นประวัติ — ห้ามทับรอบเก่า ต้องเทียบข้ามรอบได้ถึงจะรู้ว่าของไหนเหลือประจำ */
+    var key='stock_count:'+bkkToday();
+    var r1=await fetch(SB+'/kitchen_data',{method:'POST',headers:Object.assign({},H,{Prefer:'resolution=merge-duplicates'}),
+      body:JSON.stringify({key:key,data:{date:bkkToday(),at:bkkNow(),by:who,items:rows}})});
+    if(!r1.ok) throw new Error('บันทึกรอบนับไม่สำเร็จ');
+
+    /* ② เขียนค่ากลับเข้าคลังวัตถุดิบ → หน้าแพลนซื้อของคำนวณ "ต้องซื้อเพิ่ม" ได้ทันที
+          อ่านคลังสดก่อนเขียนเสมอ กันทับของที่คนอื่นเพิ่งแก้ */
+    var n2=0;
+    if(Object.keys(byId).length){
+      var cur=await get('kitchen_data?key=eq.ingredients&select=data');
+      var ing=(cur[0]&&cur[0].data)||[];
+      ing.forEach(function(i){ if(byId[i.id]!=null){ i.stock=byId[i.id]; n2++; } });
+      var r2=await fetch(SB+'/kitchen_data?key=eq.ingredients',{method:'PATCH',headers:H,body:JSON.stringify({data:ing})});
+      if(!r2.ok) throw new Error('อัปเดตคลังวัตถุดิบไม่สำเร็จ');
+    }
+
+    /* ③ ลงสมุดกิจกรรม — ให้ตามได้ว่าใครนับ เมื่อไหร่ กี่รายการ */
+    fetch(SB+'/activity_log',{method:'POST',headers:H,body:JSON.stringify({
+      session_id:'count_'+Date.now(), actor:who||'ครัว', source:'k', action_type:'stock',
+      summary:'นับของเหลือ '+rows.length+' รายการ ('+bkkToday()+')',
+      detail:{count:rows.length, updated_ingredients:n2, by:who, items:rows.slice(0,60)}
+    })}).catch(function(){});
+
+    toast('บันทึกแล้ว ' + rows.length + ' รายการ' + (n2?(' · อัปเดตคลัง '+n2):''));
+    LAST={key:key,data:{by:who}};
+    setTimeout(function(){ render(); },300);
+  }catch(e){
+    toast('บันทึกไม่สำเร็จ — ลองใหม่อีกครั้ง');
+  }
+  btn.disabled=false; btn.textContent='บันทึก';
+}
+load();
+</script>
+</body>
+</html>
