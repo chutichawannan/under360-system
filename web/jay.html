@@ -124,11 +124,6 @@ header .btn-line{padding:9px 16px!important;height:38px;font-size:.9rem!importan
 .hero .cta{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .hero .note{font-size:.9rem;color:var(--muted)}
 
-/* ── ตัวเลขความน่าเชื่อถือ ── */
-.proof{background:var(--deep);color:#fff}
-.proof .g{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;text-align:center}
-.proof b{display:block;font-family:'Prompt';font-weight:700;font-size:2.3rem;line-height:1.1}
-.proof span{font-size:.94rem;opacity:.85}
 
 /* ── ราคา ── */
 .plans{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:16px;margin-top:26px}
@@ -199,11 +194,25 @@ footer a{color:var(--muted);text-decoration:none;margin-right:16px}
 @media(max-width:720px){
   .hero h1{font-size:2.05rem}
   h2.sec{font-size:1.55rem}
-  .proof .g{grid-template-columns:1fr;gap:22px}
   header nav a:not(.btn-line){display:none}
   header .logo{font-size:1rem}
   section{padding:44px 0}
 }
+/* ── u360-jay-rounds ── */
+.rblock{margin-top:26px;background:var(--paper);border:1px solid var(--hair);border-radius:16px;overflow:hidden}
+.rhead{background:var(--deep);color:#fff;padding:16px 20px;display:flex;flex-wrap:wrap;
+  align-items:baseline;gap:6px 14px}
+.rhead .n{font-family:'Prompt';font-weight:700;font-size:1.15rem}
+.rhead .s{font-family:'Prompt';font-weight:600;font-size:1rem;opacity:.95}
+.rhead .e{font-size:.92rem;opacity:.82}
+.rhead .q{margin-left:auto;background:rgba(255,255,255,.18);border-radius:999px;
+  padding:4px 13px;font-family:'Prompt';font-weight:600;font-size:.88rem}
+.rlist{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:0}
+.rlist .m{display:flex;gap:11px;align-items:flex-start;padding:13px 18px;border-top:1px solid var(--hair);border-radius:0}
+.rlist .m .i{font-family:'Prompt';font-weight:600;font-size:.8rem;color:var(--green);
+  background:#EDF7EE;border-radius:6px;padding:2px 8px;flex:none;margin-top:3px}
+.rlist .m .t{font-size:.97rem;line-height:1.5}
+@media(max-width:640px){.rhead .q{margin-left:0}}
 </style>
 </head>
 <body>
@@ -241,14 +250,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
-<!-- ═══ ตัวเลขที่พิสูจน์แล้ว ═══ -->
-<section class="proof">
-  <div class="wrap g">
-    <div><b>8</b><span>ปีที่ทำคอร์สเจ</span></div>
-    <div><b>30</b><span>เมนูใหม่ทุกปี</span></div>
-    <div><b>3 ปี</b><span>ลูกค้าบางคนสั่งติดกัน</span></div>
-  </div>
-</section>
 
 <!-- ═══ โปรตีน ═══ -->
 <section>
@@ -358,14 +359,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </section>
 
-<!-- ═══ เมนู ═══ -->
-<section style="background:var(--soft);border-top:1px solid var(--hair)">
+<!-- ═══ เมนู แยกตามรอบส่ง (u360-jay-rounds) ═══ -->
+<section id="menus" style="background:var(--soft);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)">
   <div class="wrap">
     <span class="eyebrow">เมนูทั้งหมด</span>
-    <h2 class="sec">30 เมนู ไม่ซ้ำสักมื้อ</h2>
-    <p class="lead">เมนูปี 2569 เคาะครบแล้ว — 20 เมนูที่ลูกค้าให้คะแนนดีจากปีก่อน บวกของใหม่อีก 10 เมนู</p>
-    <div class="menugrid" id="menuGrid"></div>
-    <p class="foot">⭐ = เมนูที่ครัวตั้งใจให้เป็นตัวชูโรงของคอร์สปีนี้ · ครัวจัดเมนูลงแต่ละรอบส่งให้เอง โดยเรียงให้มื้อท้ายรอบเป็นเมนูที่เก็บได้ดี</p>
+    <h2 class="sec">30 เมนู ไม่ซ้ำสักมื้อ — รู้ล่วงหน้าว่าได้กินอะไร</h2>
+    <p class="lead">แต่ละรอบส่งมาเป็นชุด พร้อมบอกว่าทานวันไหน — ไม่ต้องเดา ไม่ต้องรอลุ้น</p>
+    <div id="roundList"></div>
+    <p class="foot">⭐ = เมนูที่ครัวตั้งใจให้เป็นตัวชูโรงของคอร์สปีนี้ ·
+      ลำดับเมนูภายในรอบครัวอาจสลับได้ตามวัตถุดิบที่ได้ในวันนั้น แต่ <b>ได้ครบทุกเมนูตามรอบแน่นอน</b></p>
   </div>
 </section>
 
@@ -437,49 +439,137 @@ const sb = supabase.createClient(SB_URL, SB_KEY);
 
 const ORDER_URL = 'https://liff.line.me/2011148232-oul66cEs?lid=2011148232-oul66cEs';
 
-/* ═══ เมนู 30 ตัว — ล็อกแล้ว 1 ก.ย. 2026 (docs/BRIEF_J2026.md)
-   เลขข้อคงไว้ตามลิสต์ต้นทาง เพื่อให้สาวกลับไปหาสูตร/ต้นทุนได้
-   ⚠️ แก้เมนูที่นี่จุดเดียว — อย่าไปแก้ในหลายที่ ═══ */
-const JAY_MENUS = [
-  'หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่',
-  'เห็ดแชมปิญองผัดพริกเหลืองโหระพา',
-  'เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ',
-  'พาสต้าครีมซอสเห็ดแชมปิญอง',
-  'เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง',
-  'ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น',
-  'ข้าวอบธัญพืช เกาลัด',
-  'เบนโตะเจ ผักรวม 4 ช่อง',
-  'ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง',
-  'ผักกาดพันเต้าหู้เห็ดหอม ราดซีอิ๊วงา',
-  'เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส',
-  'ปอเปี๊ยะทอด (ย่าง) เวียดนาม',
-  'ข้าวยำเกาหลี เครื่องแน่นจุก',
-  'โอเด้งฟองเต้าหู้บุก',
-  'โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส',
-  'ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย',
-  'หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป',
-  'ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้',
-  'เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ',
-  'แอสพารากัสอบเนย ซอสเห็ดเข็มทองถั่วลิสง มันอบ',
-  'เส้นหมี่ก๋วยเตี๋ยวหลอด เห็ดหอมเต้าหู้ทรงเครื่อง',
-  'ข้าวผัดกิมจิ เต้าหู้ย่าง',
-  'ข้าวเห็ดออรินจิอบเนยถั่ว',
-  'ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ',
-  'ข้าวเต้าหู้ย่างซอสเทริยากิ + ซุปมิโสะ',
-  'ข้าวอบสาหร่ายเต้าหู้ย่าง สไตล์ญี่ปุ่น',
-  { name:'ข้าวหมูสับเจตุ๋นเห็ดหอม สไตล์ไต้หวัน (Lu Rou Fan) + ผักดองไต้หวัน', star:true },
-  'เกี๊ยวแห้งเห็ด + น้ำจิ้มซีฟู๊ดเจ',
-  'ข้าวเต้าหู้ผัดพริกไทยดำเห็ดฟาง',
-  'ข้าวแกงเผ็ดเห็ดรวมฟองเต้าหู้'
+/* ═══ เมนู 30 ตัว แยกตามรอบส่ง — ล็อกแล้ว (docs/J2026_MENU_DATA.csv จากห้องเจ)
+   สร้างด้วย: node scripts/m_jay_v2.mjs  ← แพลนเปลี่ยนเมื่อไหร่ แก้ CSV แล้วรันใหม่ อย่าแก้มือตรงนี้ ═══ */
+const JAY_ROUNDS = [
+ {
+  "n": 1,
+  "ship": "พฤหัส 8 ต.ค.",
+  "eat": "ทานวัน ศ 9 – อา 11 ต.ค.",
+  "items": [
+   {
+    "name": "หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่"
+   },
+   {
+    "name": "ข้าวหมูสับเจตุ๋นเห็ดหอม สไตล์ไต้หวัน (Lu Rou Fan) + ผักดองไต้หวัน",
+    "star": 1
+   },
+   {
+    "name": "ข้าวเห็ดแชมปิญองผัดพริกเหลืองโหระพา"
+   },
+   {
+    "name": "เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง"
+   },
+   {
+    "name": "เบนโตะเจ ผักรวม 4 ช่อง"
+   },
+   {
+    "name": "เส้นหมี่ก๋วยเตี๋ยวหลอด เห็ดหอมเต้าหู้ทรงเครื่อง"
+   },
+   {
+    "name": "ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น"
+   },
+   {
+    "name": "ข้าวยำเกาหลี เครื่องแน่นจุก"
+   },
+   {
+    "name": "ข้าวแกงเผ็ดเห็ดรวม ฟองเต้าหู้"
+   }
+  ]
+ },
+ {
+  "n": 2,
+  "ship": "อาทิตย์ 11 ต.ค.",
+  "eat": "ทานวัน จ 12 – พฤ 15 ต.ค.",
+  "items": [
+   {
+    "name": "เกี๊ยวแห้งเห็ด + น้ำจิ้มซีฟู๊ดเจ"
+   },
+   {
+    "name": "โอเด้งฟองเต้าหู้ เต้าหู้แข็ง"
+   },
+   {
+    "name": "พาสต้าครีมซอสเห็ดแชมปิญอง"
+   },
+   {
+    "name": "เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ"
+   },
+   {
+    "name": "ข้าวเต้าหู้ย่างซอสเทริยากิ + ซุปมิโสะ"
+   },
+   {
+    "name": "เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ"
+   },
+   {
+    "name": "หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป"
+   },
+   {
+    "name": "ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง"
+   },
+   {
+    "name": "ข้าวอบสาหร่าย เต้าหู้ย่างสไตล์ญี่ปุ่น"
+   },
+   {
+    "name": "ข้าวผัดกิมจิ เต้าหู้ย่าง"
+   },
+   {
+    "name": "ข้าวเต้าหู้ผัดพริกไทยดำ เห็ดฟาง"
+   },
+   {
+    "name": "ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ"
+   }
+  ]
+ },
+ {
+  "n": 3,
+  "ship": "พฤหัส 15 ต.ค.",
+  "eat": "ทานวัน ศ 16 – อา 18 ต.ค.",
+  "items": [
+   {
+    "name": "ปอเปี๊ยะทอด (ย่าง) เวียดนาม"
+   },
+   {
+    "name": "เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส"
+   },
+   {
+    "name": "โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส"
+   },
+   {
+    "name": "แอสพารากัสอบ ซอสเห็ดเข็มทองถั่วลิสง + มันอบ"
+   },
+   {
+    "name": "ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย"
+   },
+   {
+    "name": "ผักกาดพันเต้าหู้เห็ดหอม ราดซีอิ๊วงา"
+   },
+   {
+    "name": "ข้าวอบธัญพืช เกาลัด"
+   },
+   {
+    "name": "ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้"
+   },
+   {
+    "name": "ข้าวผัดเห็ดออรินจิ ซอสเนยถั่ว + เต้าหู้ย่าง"
+   }
+  ]
+ }
 ];
 
 function jEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 
-document.getElementById('menuGrid').innerHTML = JAY_MENUS.map(function(m, i){
-  var o = (typeof m === 'string') ? { name:m } : m;
-  return '<div class="m"><div class="i">' + (i+1) + '</div><div class="t">'
-       + jEsc(o.name) + (o.star ? ' <span class="star">⭐</span>' : '') + '</div></div>';
+document.getElementById('roundList').innerHTML = JAY_ROUNDS.map(function(r){
+  return '<div class="rblock">'
+    + '<div class="rhead"><span class="n">รอบ ' + r.n + '</span>'
+    + '<span class="s">ส่ง ' + jEsc(r.ship) + '</span>'
+    + '<span class="e">' + jEsc(r.eat) + '</span>'
+    + '<span class="q">' + r.items.length + ' กล่อง</span></div>'
+    + '<div class="rlist">' + r.items.map(function(m, i){
+        return '<div class="m"><div class="i">' + (i+1) + '</div><div class="t">'
+             + jEsc(m.name) + (m.star ? ' <span style="color:var(--gold)">⭐</span>' : '')
+             + '</div></div>';
+      }).join('') + '</div></div>';
 }).join('');
 
 /* ═══ ที่มาของลูกค้า: เก็บให้ครบ + ส่งต่อไปปลายทาง (ยกชุดเดียวกับ index/pack) ═══ */
