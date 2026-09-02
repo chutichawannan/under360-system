@@ -3341,14 +3341,34 @@ function isClosedYMD(ymd){
    เช่นเซ็ต Hyrox ที่ทำส่งวันเดียวก่อนแข่ง — ลูกค้าเลือกวันเองไม่ได้
    ⚠️ ของนี้แอดมินตั้งได้มาตั้งแต่ 8 ส.ค. แต่ **ฝั่งลูกค้าไม่เคยอ่านเลยสักบรรทัด**
       = ตั้งวันไว้แล้วลูกค้ายังเลือกวันไหนก็ได้ · ครัวได้ออเดอร์ผิดวันโดยไม่มีอะไรเตือน */
+/* ค่าที่แอดมินตั้งอาจเป็นวันเดียว (เซ็ตส่งครั้งเดียว) หรือหลายวัน (เซ็ตแบ่งรอบ เช่นคอร์สเจ)
+   คืนเป็น array เสมอ ['วันรอบ1','วันรอบ2',...] เพื่อให้ที่เรียกใช้ไม่ต้องแยก 2 กรณี */
+function pkgFixedList(pkgId){
+  const v = pkgFixedDates[pkgId];
+  if (!v) return null;
+  const arr = Array.isArray(v) ? v.filter(Boolean) : [v];
+  return arr.length ? arr : null;
+}
+/* วันของ "รอบแรก" — ตัวที่หน้าจอเลือกวันใช้ล็อก (ของเดิมทำงานเหมือนเดิมทุกอย่าง) */
 function cartFixedDate(){
   let found = null;
   cart.forEach(c => {
     if (c.type !== 'package' || !c.package_id) return;
-    const d = pkgFixedDates[c.package_id];
+    const arr = pkgFixedList(c.package_id);
+    const d = arr && arr[0];
     if (d && (!found || d < found)) found = d;      // ชนกันหลายเซ็ต = ยึดวันที่เร็วที่สุด
   });
   return found;
+}
+/* วันของรอบ 2..N ที่ถูกล็อกไว้ — null = ไม่ได้ล็อก ให้ลูกค้าเลือกเองเหมือนเดิม */
+function cartFixedRounds(){
+  let best = null;
+  cart.forEach(c => {
+    if (c.type !== 'package' || !c.package_id || (c.delivery_rounds||1) <= 1) return;
+    const arr = pkgFixedList(c.package_id);
+    if (arr && arr.length > 1 && (!best || arr.length > best.length)) best = arr;
+  });
+  return best;
 }
 
 function renderDatePick() {
@@ -3495,7 +3515,12 @@ function renderRoundSplit(){
   const setName=ms.map(c=>c.name).join(', ');
   const totalBoxes=ms.reduce((s,c)=>s+((c.items||[]).length),0);
   // วันแต่ละรอบต้องเพิ่มขึ้นเสมอ (รอบ r > รอบ r-1) — default = รอบก่อนหน้า +7 วัน · แก้ค่าที่ก่อน/เท่ารอบก่อนหน้าให้ถูก
-  if(!setDeliverOnce && selDate){
+  /* เซ็ตที่แอดมินล็อกวันไว้ (คอร์สเจ: 8 / 11 / 15 ต.ค.) → ใช้วันนั้นตรง ๆ
+     ห้ามใช้ default +7 วัน เพราะรอบเจห่างกันแค่ 3-4 วัน จะได้วันผิดทั้งชุด */
+  const lockedRounds = cartFixedRounds();
+  if(!setDeliverOnce && lockedRounds){
+    extraRoundDates = lockedRounds.slice(1, N);
+  } else if(!setDeliverOnce && selDate){
     for(let i=0;i<N-1;i++){
       const prev = i===0 ? selDate : extraRoundDates[i-1];
       if(!extraRoundDates[i] || extraRoundDates[i] <= prev) extraRoundDates[i]=defaultRoundDate(prev,1);
@@ -3537,14 +3562,27 @@ function renderRoundSplit(){
     }
     for(let r=2;r<=N;r++){
       const idx=r-2;
-      html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ (ต้องหลังรอบ ${r-1})</span></div>`
-        +roundMenuHtml(r)
-        +`<div class="dscroll" id="rdpick-${idx}"></div>`;
+      if(lockedRounds){
+        /* วันล็อกไว้แล้ว — โชว์อย่างเดียว ไม่มีปฏิทินให้กด (ลูกค้าเลือกเองไม่ได้ตามที่นัทสั่ง) */
+        const d=extraRoundDates[idx];
+        html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— ส่ง ${d?fmtDate(d):'—'}</span></div>`
+          +roundMenuHtml(r);
+      } else {
+        html+=`<div style="font-size:12.5px;color:#1F4D3A;font-weight:700;padding:12px 2px 4px;">รอบ ${r}${chunkPreview?` · ${chunkPreview[r-1]} กล่อง`:''} <span style="font-weight:600;color:#6B7280;">— เลือกวันรับ (ต้องหลังรอบ ${r-1})</span></div>`
+          +roundMenuHtml(r)
+          +`<div class="dscroll" id="rdpick-${idx}"></div>`;
+      }
+    }
+    if(lockedRounds){
+      /* นัทสั่งเอง 2 ก.ย.: "ใส่ * ไว้ว่า หากเปลี่ยนวันรับอาหารให้แจ้งแอดมิน"
+         คนเลื่อนวันให้ลูกค้าคือแอดมิน (ปุ่มเลื่อนวันในหน้าออเดอร์ ย้ายให้ครบทุกที่ในคลิกเดียว) */
+      html+=`<div style="font-size:12px;color:#7C4A03;background:#FEF9C3;border:1px solid #FDE68A;border-radius:9px;padding:9px 11px;margin:10px 2px 2px;line-height:1.55;">
+        <b>* วันส่งของคอร์สนี้กำหนดไว้แล้ว</b> — ถ้าไม่สะดวกรับวันไหน <b>แจ้งแอดมินได้เลย</b> เราเลื่อนให้</div>`;
     }
   }
   html+=`</div>`;
   el.innerHTML=html;
-  if(!setDeliverOnce){ for(let r=2;r<=N;r++) renderRoundDatePicker(r-2); }
+  if(!setDeliverOnce && !lockedRounds){ for(let r=2;r<=N;r++) renderRoundDatePicker(r-2); }
 }
 function renderRoundDatePicker(idx){
   const el=document.getElementById('rdpick-'+idx); if(!el) return;
