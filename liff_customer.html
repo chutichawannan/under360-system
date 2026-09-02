@@ -1520,6 +1520,39 @@ function pkgGroupedPrice(){
   Object.values(pkgGroupSel).forEach(sel=>Object.entries(sel||{}).forEach(([sku,q])=>{ sur += (q||0)*pkgSurcharge(sku); }));
   return (currentPkg.base_price||0) + sur;
 }
+/* แถบบอกวันส่งของคอร์สที่ล็อกวันไว้ — โชว์ตั้งแต่หน้าเลือกเมนู ไม่ต้องรอถึงเช็คเอาท์
+   นัทสั่งเอง: "มีปฏิทินวันที่ให้ว่าจะรับได้แค่วันนี้วันนี้วันนี้เท่านั้น
+                + ดอกจันตัวเล็ก ๆ ว่าหากต้องการเปลี่ยนวันให้แจ้ง admin" */
+function pkgRoundsBanner(){
+  const dates = pkgFixedList(currentPkg.id);
+  const boxes = pkgFixedBoxes(currentPkg.id);
+  if(!dates || dates.length < 2){
+    return `<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:4px 8px;margin-top:4px;">📦 เซ็ตนี้แบ่งส่ง ${currentPkg.delivery_rounds} รอบ${currentPkg.flexible_delivery?' · เลือกวันรับเองได้ตอนเช็คเอาท์':''}</div>`;
+  }
+  const rows = dates.map((d,i)=>`<div style="display:flex;justify-content:space-between;gap:8px;padding:2px 0;">
+      <span style="font-weight:700;">รอบ ${i+1} · ${fmtDate(d)}</span>
+      <span style="color:#1D4ED8;font-weight:700;">${boxes?boxes[i]+' กล่อง':''}</span>
+    </div>`).join('');
+  return `<div style="font-size:12px;color:#1E3A8A;background:#EFF6FF;border:1px solid #BFDBFE;border-radius:9px;padding:7px 10px;margin-top:5px;line-height:1.5;">
+    <div style="font-weight:800;margin-bottom:3px;">🚚 วันรับของ ${dates.length} รอบ — กำหนดไว้แล้ว</div>
+    ${rows}
+    <div style="font-size:11px;color:#64748B;margin-top:4px;">* หากต้องการเปลี่ยนวันรับ แจ้งแอดมินได้เลย</div>
+  </div>`;
+}
+/* ปุ่ม "เลือกทั้งชุด" — ใส่เมนูของรอบนั้นให้ครบทีเดียว (ข้ามตัวที่ของหมด) */
+function pkgFillGroup(gi){
+  const g=(currentPkg.groups||[])[gi]; if(!g) return;
+  const want=g.count||1;
+  pkgGroupSel[gi]={};
+  let got=0, skipped=0;
+  pkgGroupEligible(g).forEach(mi=>{
+    if(got>=want) return;
+    if(pkgStockLeft(mi.code).left<=0){ skipped++; return; }   // ของหมด = ข้าม ไม่ใช่ใส่แล้วครัวไม่มีของ
+    pkgGroupSel[gi][mi.code]=1; got++;
+  });
+  renderPkgSelect();
+  if(skipped) toast('ใส่ให้ '+got+'/'+want+' กล่อง — บางเมนูของหมด เลือกเพิ่มเองได้');
+}
 function allGroupsFilled(){
   const clr = pkgClr();
   if (clr) return pkgSelTotal() >= clr.min_items;   // clearance = "อย่างน้อย N" ไม่ใช่ "ครบเป๊ะ"
@@ -1598,7 +1631,7 @@ function renderPkgSelectGrouped(){
         <span style="font-size:14px;font-weight:800;color:#D98C2B;">${_clr&&_gross>0?`<span style="font-size:12px;color:#9CA3AF;text-decoration:line-through;font-weight:600;margin-right:6px;">฿${_gross.toLocaleString()}</span>`:''}฿${pkgGroupedPrice().toLocaleString()}</span>
       </div>
       ${_clr?`<div style="font-size:11.5px;color:#DC2626;background:#FEF2F2;border-radius:8px;padding:4px 8px;margin-top:4px;font-weight:700;">🏷️ เลือกอย่างน้อย ${_clr.min_items} อย่าง ลดทันที ${_clr.percent}% · เลือกเพิ่มได้ไม่จำกัด</div>`:''}
-      ${currentPkg.delivery_rounds>1?`<div style="font-size:11.5px;color:#1D4ED8;background:#EFF6FF;border-radius:8px;padding:4px 8px;margin-top:4px;">📦 เซ็ตนี้แบ่งส่ง ${currentPkg.delivery_rounds} รอบ${currentPkg.flexible_delivery?' · เลือกวันรับเองได้ตอนเช็คเอาท์':''}</div>`:''}
+      ${currentPkg.delivery_rounds>1?pkgRoundsBanner():''}
       ${pkgGiftsOf(currentPkg.id).length?`<div style="font-size:12px;color:#92400E;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:8px;padding:5px 9px;margin-top:4px;font-weight:700;">🎁 แถมในเซ็ตนี้: ${h(giftLineText(pkgGiftsOf(currentPkg.id)))} <span style="font-weight:400;">— ไม่ต้องเลือก ใส่ให้อัตโนมัติ</span></div>`:''}
     </div>`;
   }
@@ -1612,9 +1645,13 @@ function renderPkgSelectGrouped(){
     /* เรียง/ติดป้ายแบบเดียวกับหน้าเมนูหลัก — ลูกค้าคอร์สเลือกเมนูตรงนี้ ถ้าไม่บอกว่าเมนูไหนรอบไหน
        จะเห็นของ 2 สัปดาห์ปนกันโดยไม่รู้ตัว (16 ส.ค. มีของรอบ 10-16 กับ 17-23 ขายพร้อมกันจริง) */
     const eligible=sortWeeklyFirst(pkgGroupEligible(g).filter(mi=>!q || (mi.name||'').toLowerCase().includes(q) || (mi.code||'').toLowerCase().includes(q)));
-    html+=`<div style="padding:10px 14px 6px;background:#F7F5EF;border-top:1px solid #ECEAE3;">
+    /* เมนูในกลุ่มเท่ากับจำนวนกล่องพอดี (คอร์สเจ: รอบ 1 มี 9 เมนู 9 กล่อง) → มีปุ่มลัด
+       ลูกค้าไม่ต้องกดทีละเมนู 30 ครั้ง กดชุดเดียวแล้วค่อยแก้เฉพาะตัวที่ไม่กิน */
+    const _canAll = !_clr && (g.count||1) > 1 && eligible.length === (g.count||1) && selN < (g.count||1);
+    html+=`<div style="padding:10px 14px 6px;background:#F7F5EF;border-top:1px solid #ECEAE3;display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
       <span style="font-size:13px;font-weight:800;color:#1F4D3A;">${h(g.label||('กลุ่ม '+(gi+1)))}</span>
-      <span style="font-size:12px;color:${(_clr? selN>=_clr.min_items : selN>=(g.count||1))?'#1F4D3A':'#D98C2B'};font-weight:700;margin-left:6px;">${_clr?`เลือกแล้ว ${selN}`:`${selN}/${g.count||1}`}</span>
+      <span style="font-size:12px;color:${(_clr? selN>=_clr.min_items : selN>=(g.count||1))?'#1F4D3A':'#D98C2B'};font-weight:700;">${_clr?`เลือกแล้ว ${selN}`:`${selN}/${g.count||1}`}</span>
+      ${_canAll?`<button onclick="pkgFillGroup(${gi})" style="margin-left:auto;font-size:11.5px;font-weight:800;color:#1F4D3A;background:#fff;border:1.5px solid #1F4D3A;border-radius:8px;padding:4px 10px;">เลือกทั้งชุด</button>`:''}
     </div>`;
     if(!eligible.length){ html+=`<div style="padding:12px 14px;color:#6B7280;font-size:13px;">— ไม่มีเมนูในกลุ่มนี้ —</div>`; return; }
     eligible.forEach(mi=>{
@@ -3358,6 +3395,15 @@ function pkgFixedList(pkgId){
 function pkgFixedBoxes(pkgId){
   const raw = pkgFixedRaw(pkgId);
   if (!raw || raw.length < 2) return null;
+  /* แหล่งความจริงอันดับแรก = กลุ่มการเลือก (ลูกค้าเลือกเมนูตามกลุ่มไปแล้ว
+     ถ้าแบ่งกล่องไม่ตรงกลุ่ม เมนูจะตกไปผิดรอบทั้งชุด)
+     pkg_fixed_dates ใช้เป็นตัวสำรอง เผื่อเซ็ตที่ไม่ได้แบ่งกลุ่มตามรอบ */
+  const pk = (packages||[]).find(p => p.id === pkgId);
+  const gs = pk && Array.isArray(pk.groups) ? pk.groups : null;
+  if (gs && gs.length === raw.length){
+    const gn = gs.map(g => Number(g.count)||0);
+    if (gn.every(x => x > 0)) return gn;
+  }
   const ns = raw.map(x => (x && typeof x === 'object') ? Number(x.n) : NaN);
   return ns.every(x => x > 0) ? ns : null;
 }
