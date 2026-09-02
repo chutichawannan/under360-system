@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+# หน้าหลังบ้าน — ห้ามเก็บเข้าดัชนี (ตัวเลขค่าแอด/ยอดขาย = ความลับทางธุรกิจ)
+# ชื่อลิงก์ลับไม่ใช่ความปลอดภัย นี่เป็นแค่ชั้นแรก ชั้นจริงคือ noindex + โทเค็นอยู่ฝั่ง server
+Disallow: /ads
+Disallow: /ads.html
+Disallow: /api/
+Disallow: /preview
+Disallow: /preview.html
+Disallow: /kidneycare.html
+Disallow: /web_dashboard.html
+Disallow: /blog_admin.html
+Disallow: /import_blog.html
+

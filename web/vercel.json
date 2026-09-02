@@ -152,6 +152,10 @@
     {
       "source": "/preview",
       "destination": "/preview.html"
+    },
+    {
+      "source": "/ads",
+      "destination": "/ads.html"
     }
   ]
 }
