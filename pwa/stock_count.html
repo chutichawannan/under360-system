@@ -40,18 +40,20 @@ body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,Blink
 .card.has{border-color:var(--g);box-shadow:0 0 0 1.5px var(--g)}
 .ph{width:100%;aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;
   font-size:44px;overflow:hidden}
-.ph img{width:100%;height:100%;object-fit:contain;padding:6px}
-.nm{padding:7px 9px 0;font-size:13px;font-weight:700;line-height:1.3;min-height:36px;
+.ph img{width:100%;height:100%;object-fit:contain;padding:4px}
+.nm{padding:2px 9px 0;font-size:13px;font-weight:700;line-height:1.3;min-height:34px;
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.val{padding:2px 9px 7px;font-size:19px;font-weight:800;color:var(--g);line-height:1.1}
+.val{padding:1px 9px 6px;font-size:19px;font-weight:800;color:var(--g);line-height:1.1}
 .val.none{color:#C4C7C4;font-weight:600;font-size:15px}
 .val small{font-size:11px;color:var(--soft);font-weight:600;margin-left:2px}
-.btns{margin-top:auto;padding:0 7px 7px;display:grid;grid-template-columns:1fr 1fr;gap:5px}
-.b{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:9px 0;
-  font-size:13.5px;font-weight:800;font-family:inherit;color:#1A1A1A}
+/* ปุ่มทั้ง 4 อยู่บรรทัดเดียว (นัทสั่ง) — การ์ดสั้นลง เห็นของมากขึ้นต่อจอ */
+.btns{margin-top:auto;padding:0 6px 7px;display:grid;grid-template-columns:repeat(4,1fr);gap:4px}
+.b{border:1.5px solid var(--line);background:#fff;border-radius:8px;padding:9px 0;
+  font-size:11.5px;font-weight:800;font-family:inherit;color:#1A1A1A;letter-spacing:-.3px}
 .b.up{border-color:#BFD8CC;color:var(--g);background:var(--gl)}
 .b.dn{border-color:#EED8D3;color:var(--r);background:#FDF3F1}
-.b.wide{grid-column:1/-1;font-size:12.5px;padding:8px 0;border-color:var(--line);color:var(--soft);background:#fff}
+/* พิมพ์เองย้ายไปเป็นดินสอท้ายชื่อ — ประหยัดอีกบรรทัด */
+.pen{display:inline-block;font-size:12px;opacity:.45;margin-left:3px;vertical-align:middle}
 
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
   padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center}
@@ -80,7 +82,7 @@ body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,Blink
 <div id="list"></div>
 
 <div class="note">
-  กด <b>+100 / +500</b> จนครบจำนวนที่นับได้ · กดเกินใช้ <b>−100 / −500</b> ลดลง · แตะ <b>พิมพ์เอง</b> ถ้าอยากใส่ตัวเลขตรง ๆ<br>
+  กด <b>+100 / +500</b> จนครบจำนวนที่นับได้ · กดเกินใช้ <b>−100 / −500</b> ลดลง · แตะ<b>ชื่อของ ✏️</b> เพื่อพิมพ์ตัวเลขเอง<br>
   ทั้งหมดนับเป็น<b>กรัม</b> (ไข่นับเป็นฟอง) · ของที่ไม่ได้นับ <b>ปล่อยว่างไว้</b> · ใส่ <b>0</b> เท่านั้นที่แปลว่าหมด
 </div>
 
@@ -137,14 +139,13 @@ function render(){
       : esc(cur.emoji||'📦');
     return '<div class="card'+(has?' has':'')+'" id="cd-'+it.key+'">'
       + '<div class="ph">'+pic+'</div>'
-      + '<div class="nm">'+esc(it.name)+'</div>'
+      + '<div class="nm" onclick="ask(\''+it.key+'\')">'+esc(it.name)+'<span class="pen">✏️</span></div>'
       + '<div class="val'+(has?'':' none')+'" id="v-'+it.key+'">'+(has?(v+'<small>'+unit+'</small>'):'ยังไม่นับ')+'</div>'
       + '<div class="btns">'
+      +   '<button class="b dn" onclick="bump(\''+it.key+'\',-500)">−500</button>'
       +   '<button class="b dn" onclick="bump(\''+it.key+'\',-100)">−100</button>'
       +   '<button class="b up" onclick="bump(\''+it.key+'\',100)">+100</button>'
-      +   '<button class="b dn" onclick="bump(\''+it.key+'\',-500)">−500</button>'
       +   '<button class="b up" onclick="bump(\''+it.key+'\',500)">+500</button>'
-      +   '<button class="b wide" onclick="ask(\''+it.key+'\')">พิมพ์เอง / หมด</button>'
       + '</div></div>';
   }).join('')+'</div>';
   quiet();
