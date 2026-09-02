@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>คอร์สเจ 2569 — สรุปการจอง</title>
+<link rel="icon" href="../favicon.ico">
+<meta name="theme-color" content="#1F4D3A">
+<style>
+:root{--g:#1F4D3A;--o:#D98C2B;--line:#E5E5E1;--soft:#6B7280;--bg:#F7F5EF}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:#1A1A1A;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;
+  padding-bottom:40px}
+.top{position:sticky;top:0;z-index:20;background:var(--g);color:#fff;padding:12px 14px 10px}
+.top h1{margin:0;font-size:17px;font-weight:800}
+.top .sub{font-size:11.5px;opacity:.8;margin-top:2px}
+.tabs{display:flex;gap:6px;margin-top:10px;overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tab{flex-shrink:0;border:1.5px solid rgba(255,255,255,.35);background:transparent;color:#fff;
+  border-radius:999px;padding:5px 13px;font-size:12.5px;font-weight:700;font-family:inherit}
+.tab.on{background:#fff;color:var(--g);border-color:#fff}
+.wrap{padding:12px 12px 0;max-width:900px;margin:0 auto}
+.cards{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.kpi .n{font-size:23px;font-weight:800;color:var(--g);line-height:1.1}
+.kpi .l{font-size:11.5px;color:var(--soft);margin-top:2px;font-weight:600}
+.kpi.warn .n{color:#DC2626}
+.sec{margin-top:14px}
+.sec h2{font-size:13.5px;font-weight:800;color:var(--g);margin:0 0 7px}
+.box{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.row{display:flex;align-items:center;gap:9px;padding:9px 12px;border-bottom:1px solid #F0F0EE;font-size:13px}
+.row:last-child{border-bottom:0}
+.row .grow{flex:1;min-width:0}
+.row .num{font-weight:800;color:var(--g);flex-shrink:0}
+.mut{color:var(--soft);font-size:11.5px}
+.tag{display:inline-block;font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 6px;white-space:nowrap}
+.t-paid{background:#D1FAE5;color:#065F46}
+.t-due{background:#FEE2E2;color:#991B1B}
+.t-chk{background:#FEF3C7;color:#92400E}
+.t-eb{background:#FFEDD5;color:#9A3412}
+.cus{background:#fff;border:1px solid var(--line);border-radius:12px;margin-bottom:8px;overflow:hidden}
+.cus-h{padding:10px 12px;display:flex;gap:9px;align-items:flex-start;cursor:pointer}
+.cus-h .grow{flex:1;min-width:0}
+.cus-h .nm{font-size:14px;font-weight:800;line-height:1.25}
+.cus-b{display:none;border-top:1px solid #F0F0EE;background:#FCFCFA;padding:4px 0}
+.cus.open .cus-b{display:block}
+.rnd{padding:7px 12px}
+.rnd b{font-size:12px;color:var(--g)}
+.rnd ul{margin:4px 0 0;padding-left:17px;font-size:12px;color:#374151;line-height:1.65}
+.miss{color:#DC2626;font-weight:700}
+.empty{padding:26px 14px;text-align:center;color:var(--soft);font-size:13px}
+#lock{position:fixed;inset:0;background:var(--g);z-index:99;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:12px;color:#fff}
+#lock.off{display:none}
+#pin{width:150px;text-align:center;font-size:26px;letter-spacing:9px;padding:9px;border-radius:11px;
+  border:0;font-family:inherit;font-weight:800}
+</style>
+</head>
+<body>
+
+<div id="lock">
+  <div style="font-size:15px;font-weight:700">คอร์สเจ 2569 — สรุปการจอง</div>
+  <input id="pin" type="tel" inputmode="numeric" maxlength="4" placeholder="····">
+  <div id="pinerr" style="font-size:12.5px;color:#FCA5A5;height:16px"></div>
+</div>
+
+<div class="top">
+  <h1>🌱 คอร์สเจ 2569 — สรุปการจอง</h1>
+  <div class="sub" id="sub">กำลังโหลด…</div>
+  <div class="tabs">
+    <button class="tab on" data-v="sum">ภาพรวม</button>
+    <button class="tab" data-v="menu">เมนูที่ถูกจอง</button>
+    <button class="tab" data-v="cus">รายชื่อลูกค้า</button>
+  </div>
+</div>
+
+<div class="wrap" id="body"><div class="empty">กำลังโหลด…</div></div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════
+   หน้าสรุปคอร์สเจ — นัทสั่งตรง 2 ก.ย. 2569
+   "ลูกค้าคอร์สเจ เราจะหลุดไม่ได้เลย ... อยากได้หน้าที่นับจำนวนคอร์สของลูกค้า
+    บอกว่าคนนั้นจองมาเมื่อไหร่เวลาไหน รับวันไหนบ้าง รับเมนูอะไร"
+
+   🔴 กฎจากบรีฟห้องเจ — ห้ามสร้างตารางสรุป/ตัวนับแยกเด็ดขาด
+      ทุกตัวเลขคำนวณสดจาก orders + order_items ตอนเปิดหน้า
+      ที่มาเดียวกับ KQ และหน้าออเดอร์ OH → เลขต่างกันเมื่อไหร่ = มีอันนึงผิด ไล่หาได้
+      (ต้นตอ "ยอดไม่ตรง" ที่เจอมาตลอด คือมีที่เก็บซ้ำสองที่)
+
+   ⚠️ กับดักที่รู้แล้ว: PostgREST คืนแค่ 1,000 แถวเงียบ ๆ → ทุก query ไล่หน้าให้ครบ
+   ══════════════════════════════════════════════════════════════════════ */
+var SB  = "https://zdartbvhbvqlwzwyyiia.supabase.co";
+var KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+var EB_LIMIT = 50;                      /* Early Bird 50 คนแรก */
+var view = "sum";
+var DATA = null;
+
+function hdr(){ return { apikey:KEY, Authorization:"Bearer " + KEY }; }
+function api(path){
+  return fetch(SB + "/rest/v1/" + path, { headers:hdr() })
+    .then(function(r){ if(!r.ok) throw new Error(r.status + " " + path); return r.json(); });
+}
+/* ไล่หน้าให้ครบเสมอ — ไม่งั้นพอมีคนจองเกิน 1,000 แถว ของจะหายเงียบ */
+function apiAll(path){
+  var out = [], size = 1000;
+  function step(from){
+    var url = SB + "/rest/v1/" + path + (path.indexOf("?") < 0 ? "?" : "&") + "limit=" + size + "&offset=" + from;
+    return fetch(url, { headers:hdr() })
+      .then(function(r){ if(!r.ok) throw new Error(r.status + " " + path); return r.json(); })
+      .then(function(rows){
+        out = out.concat(rows);
+        return rows.length < size ? out : step(from + size);
+      });
+  }
+  return step(0);
+}
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){
+    return { "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;" }[c];
+  });
+}
+function baht(n){ return "฿" + Math.round(n || 0).toLocaleString(); }
+
+/* เวลาไทยเสมอ — นัทอยู่ PST ถ้าใช้เวลาเครื่องจะเห็นวันเพี้ยนไป 1 วัน */
+var TH = { timeZone:"Asia/Bangkok" };
+function fmtDT(iso){
+  if(!iso) return "—";
+  var d = new Date(iso);
+  return d.toLocaleDateString("th-TH", Object.assign({ day:"numeric", month:"short" }, TH))
+       + " " + d.toLocaleTimeString("th-TH", Object.assign({ hour:"2-digit", minute:"2-digit" }, TH)) + " น.";
+}
+function fmtD(ymd){
+  if(!ymd) return "—";
+  var p = String(ymd).split("-");
+  var d = new Date(Date.UTC(+p[0], +p[1] - 1, +p[2]));
+  return d.toLocaleDateString("th-TH", { timeZone:"UTC", weekday:"short", day:"numeric", month:"short" });
+}
+
+/* ── โหลดข้อมูล ────────────────────────────────────────────────────── */
+function loadAll(){
+  var pkgs, items, orders;
+  api("packages?select=id,name,size,base_price&size=like.JAY*")
+  .then(function(p){
+    pkgs = p;
+    if(!pkgs.length) throw new Error("ยังไม่มีแพคเกจคอร์สเจในระบบ");
+    var ors = pkgs.map(function(x){ return "notes.like.pkg:" + x.id + "*"; }).join(",");
+    return apiAll("order_items?select=order_id,menu_code,menu_name,quantity,notes&or=(" + ors + ")");
+  })
+  .then(function(it){
+    items = it;
+    var seen = {}, ids = [];
+    it.forEach(function(x){ if(!seen[x.order_id]){ seen[x.order_id] = 1; ids.push(x.order_id); } });
+    if(!ids.length){ orders = []; return; }
+    /* ยิงทีละก้อน — URL ยาวเกินจะโดน 414 เงียบ ๆ */
+    var chunks = [], i;
+    for(i = 0; i < ids.length; i += 60) chunks.push(ids.slice(i, i + 60));
+    return Promise.all(chunks.map(function(c){
+      return apiAll("orders?select=id,order_number,customer_name,line_display_name,customer_phone,"
+        + "delivery_date,delivery_address,total,payment_status,status,notes,created_at,time_slot_label"
+        + "&id=in.(" + c.join(",") + ")");
+    })).then(function(parts){ orders = [].concat.apply([], parts); });
+  })
+  .then(function(){
+    DATA = build(pkgs, items, orders || []);
+    render();
+  })
+  .catch(function(e){
+    document.getElementById("body").innerHTML =
+      '<div class="empty">โหลดไม่สำเร็จ<br><span class="mut">' + esc(e.message) + "</span></div>";
+    document.getElementById("sub").textContent = "โหลดไม่สำเร็จ";
+  });
+}
+
+/* ── ประกอบเป็น "คอร์ส" ────────────────────────────────────────────────
+   1 คอร์ส = ใบหลัก (ถือเงินเต็ม) + ใบรอบ 2..N (ยอด 0)
+   จับคู่ด้วยเลขใบหลักที่เขียนอยู่ใน notes ของใบรอบถัดไป
+   ("จ่ายรวมกับออเดอร์ U-1008-001") — แม่นกว่าจับด้วยรหัสไลน์
+   เพราะคนเดียวจองให้ตัวเอง + ให้แม่ = 2 คอร์ส ต้องแยกกัน                  */
+function build(pkgs, items, orders){
+  var pkgById = {}; pkgs.forEach(function(p){ pkgById[p.id] = p; });
+  var ordById = {}; orders.forEach(function(o){ ordById[o.id] = o; });
+
+  var byOrder = {};
+  items.forEach(function(it){
+    var m = /^pkg:([0-9a-fA-F-]+)(?::course:(\d+)\/(\d+))?/.exec(it.notes || "");
+    if(!m) return;
+    var o = ordById[it.order_id]; if(!o) return;
+    var k = it.order_id;
+    if(!byOrder[k]){
+      byOrder[k] = { order:o, pkg:pkgById[m[1]] || null, round:+(m[2] || 1), total:+(m[3] || 1), items:[] };
+    }
+    var q = Math.max(1, +it.quantity || 1);
+    for(var i = 0; i < q; i++) byOrder[k].items.push({ code:it.menu_code, name:it.menu_name });
+  });
+
+  var courses = [], orphan = [], byNum = {}, byHeadId = {};
+  Object.keys(byOrder).forEach(function(k){ byNum[byOrder[k].order.order_number] = byOrder[k]; });
+
+  Object.keys(byOrder).forEach(function(k){
+    var e = byOrder[k];
+    if(e.round !== 1) return;                       /* ใบรอบถัดไป ไปเกาะใบหลัก */
+    var c = {
+      head:e.order, pkg:e.pkg, totalRounds:e.total,
+      rounds:[{ no:1, order:e.order, items:e.items }],
+      boxes:e.items.length
+    };
+    courses.push(c);
+    byHeadId[e.order.id] = c;
+  });
+  Object.keys(byOrder).forEach(function(k){
+    var e = byOrder[k];
+    if(e.round === 1) return;
+    var m = /ออเดอร์\s+(U-\d{4}-\d{3})/.exec(e.order.notes || "");
+    var parent = m ? byNum[m[1]] : null;
+    var c = parent ? byHeadId[parent.order.id] : null;
+    if(!c){ orphan.push(e); return; }               /* ใบรอบที่หาต้นทางไม่เจอ = ต้องมีคนไปดู */
+    c.rounds.push({ no:e.round, order:e.order, items:e.items });
+    c.boxes += e.items.length;
+  });
+  courses.forEach(function(c){ c.rounds.sort(function(a, b){ return a.no - b.no; }); });
+  courses.sort(function(a, b){ return (a.head.created_at || "") < (b.head.created_at || "") ? -1 : 1; });
+  courses.forEach(function(c, i){ c.seq = i + 1; });   /* ลำดับการจอง = ตัวตัดสิทธิ์ Early Bird */
+  return { pkgs:pkgs, courses:courses, orphan:orphan };
+}
+
+/* ── ตัวช่วยอ่านสถานะ ─────────────────────────────────────────────── */
+function payTag(o){
+  var p = o.payment_status || "unpaid";
+  if(p === "paid")           return '<span class="tag t-paid">โอนแล้ว</span>';
+  if(p === "pending_review") return '<span class="tag t-chk">รอตรวจสลิป</span>';
+  return '<span class="tag t-due">ค้างจ่าย</span>';
+}
+function isEB(c){ return !!(c.pkg && c.pkg.size === "JAY-EB"); }
+function kpi(n, l, warn){
+  return '<div class="kpi' + (warn ? " warn" : "") + '"><div class="n">' + n + '</div><div class="l">' + l + "</div></div>";
+}
+
+/* ── หน้า 1: ภาพรวม ───────────────────────────────────────────────── */
+function viewSum(d){
+  var cs = d.courses;
+  var paid = cs.filter(function(c){ return c.head.payment_status === "paid"; });
+  var chk  = cs.filter(function(c){ return c.head.payment_status === "pending_review"; });
+  var due  = cs.filter(function(c){ return (c.head.payment_status || "unpaid") === "unpaid"; });
+  var money = cs.reduce(function(s, c){ return s + (+c.head.total || 0); }, 0);
+  var dueMoney = due.concat(chk).reduce(function(s, c){ return s + (+c.head.total || 0); }, 0);
+  var eb = cs.filter(isEB).length;
+
+  var h = '<div class="cards">'
+    + kpi(cs.length, "คอร์สที่จองแล้ว")
+    + kpi(baht(money), "ยอดรวม")
+    + kpi(paid.length, "จ่ายแล้ว")
+    + kpi(due.length + chk.length, "ยังไม่ได้เงิน" + (dueMoney ? " · " + baht(dueMoney) : ""), (due.length + chk.length) > 0)
+    + "</div>";
+
+  h += '<div class="sec"><h2>🎟️ Early Bird</h2><div class="box">'
+    + '<div class="row"><div class="grow">ใช้สิทธิ์ไปแล้ว</div><div class="num">' + eb + " / " + EB_LIMIT + "</div></div>"
+    + '<div class="row"><div class="grow">เหลือ</div><div class="num" style="color:'
+    + ((EB_LIMIT - eb) <= 5 ? "#DC2626" : "#1F4D3A") + '">' + Math.max(0, EB_LIMIT - eb) + " สิทธิ์</div></div>"
+    + '<div class="row"><div class="grow mut">ราคาปกติ (ไม่ใช่ EB)</div><div class="num">' + (cs.length - eb) + " คอร์ส</div></div>"
+    + "</div></div>";
+
+  /* รอบส่ง — นับจากใบจริงในแต่ละรอบ ไม่ใช่คูณจำนวนคอร์ส
+     ถ้าเลขไม่เท่ากับจำนวนคอร์ส แปลว่ามีใบรอบไหนหายไป ต้องเห็นทันที
+     (นัทกลัวเรื่องนี้เป็นพิเศษ: "ลูกค้าคอร์สเจ เราจะหลุดไม่ได้เลย") */
+  var byRound = {};
+  cs.forEach(function(c){
+    c.rounds.forEach(function(r){
+      var k = r.order.delivery_date + "|" + r.no;
+      if(!byRound[k]) byRound[k] = { date:r.order.delivery_date, no:r.no, bills:0, boxes:0 };
+      byRound[k].bills++;
+      byRound[k].boxes += r.items.length;
+    });
+  });
+  var rs = Object.keys(byRound).map(function(k){ return byRound[k]; })
+             .sort(function(a, b){ return a.date < b.date ? -1 : 1; });
+  h += '<div class="sec"><h2>🚚 รอบส่ง</h2><div class="box">';
+  if(!rs.length) h += '<div class="empty">ยังไม่มีใบส่ง</div>';
+  rs.forEach(function(r){
+    var short = r.bills < cs.length;
+    h += '<div class="row"><div class="grow"><b>รอบ ' + r.no + "</b> · " + fmtD(r.date)
+      + (short ? ' <span class="miss">— ขาด ' + (cs.length - r.bills) + " ใบ</span>" : "")
+      + '<div class="mut">' + r.boxes + " กล่อง</div></div>"
+      + '<div class="num">' + r.bills + " ใบ</div></div>";
+  });
+  h += "</div></div>";
+
+  if(d.orphan.length){
+    h += '<div class="sec"><h2>⚠️ ใบที่หาคอร์สต้นทางไม่เจอ</h2><div class="box">';
+    d.orphan.forEach(function(e){
+      h += '<div class="row"><div class="grow">' + esc(e.order.order_number) + " · " + esc(e.order.customer_name || "—")
+        + '<div class="mut">รอบ ' + e.round + " · ส่ง " + fmtD(e.order.delivery_date) + "</div></div></div>";
+    });
+    h += '</div><div class="mut" style="padding:6px 2px">ใบพวกนี้ครัวเห็นปกติ แต่หน้านี้จับคู่กับคอร์สไม่ได้ — เช็คว่าแอดมินเปิดใบเองหรือเปล่า</div></div>';
+  }
+  return h;
+}
+
+/* ── หน้า 2: เมนูที่ถูกจอง (ครัวใช้ตัวนี้) ─────────────────────────── */
+function viewMenu(d){
+  var byR = {};
+  d.courses.forEach(function(c){
+    c.rounds.forEach(function(r){
+      var k = r.no + "|" + r.order.delivery_date;
+      if(!byR[k]) byR[k] = { no:r.no, date:r.order.delivery_date, m:{} };
+      r.items.forEach(function(it){
+        var key = (it.code || "") + "|" + (it.name || "");
+        byR[k].m[key] = (byR[k].m[key] || 0) + 1;
+      });
+    });
+  });
+  var ks = Object.keys(byR).sort(function(a, b){ return byR[a].date < byR[b].date ? -1 : 1; });
+  if(!ks.length) return '<div class="empty">ยังไม่มีใครจอง</div>';
+  var h = "";
+  ks.forEach(function(k){
+    var g = byR[k];
+    var rows = Object.keys(g.m).map(function(key){
+      var p = key.split("|");
+      return { code:p[0], name:p[1], n:g.m[key] };
+    }).sort(function(a, b){ return a.code < b.code ? -1 : 1; });
+    var tot = rows.reduce(function(s, x){ return s + x.n; }, 0);
+    h += '<div class="sec"><h2>รอบ ' + g.no + " · ส่ง " + fmtD(g.date)
+       + ' <span class="mut" style="font-weight:600">รวม ' + tot + ' กล่อง</span></h2><div class="box">';
+    rows.forEach(function(x){
+      h += '<div class="row"><div class="grow"><b>' + esc(x.code) + "</b> " + esc(x.name) + "</div>"
+        + '<div class="num">' + x.n + "</div></div>";
+    });
+    h += "</div></div>";
+  });
+  return h;
+}
+
+/* ── หน้า 3: รายชื่อลูกค้า ────────────────────────────────────────── */
+function viewCus(d){
+  if(!d.courses.length) return '<div class="empty">ยังไม่มีใครจอง</div>';
+  var h = "";
+  d.courses.forEach(function(c, i){
+    var o = c.head;
+    var short = c.rounds.length < c.totalRounds;
+    h += '<div class="cus" id="c' + i + '"><div class="cus-h" onclick="tog(' + i + ')">'
+      + '<div class="num" style="min-width:22px">' + c.seq + "</div>"
+      + '<div class="grow"><div class="nm">' + esc(o.customer_name || o.line_display_name || "—")
+      + (isEB(c) ? ' <span class="tag t-eb">Early Bird</span>' : "") + "</div>"
+      + '<div class="mut">' + esc(o.order_number) + " · จอง " + fmtDT(o.created_at) + "</div>"
+      + '<div class="mut">' + esc(o.customer_phone || "ไม่มีเบอร์") + " · " + c.boxes + " กล่อง"
+      + (short ? ' <span class="miss">· มีใบส่งแค่ ' + c.rounds.length + "/" + c.totalRounds + " รอบ</span>" : "")
+      + "</div></div>"
+      + '<div style="text-align:right;flex-shrink:0"><div style="font-weight:800">' + baht(o.total) + "</div>"
+      + '<div style="margin-top:3px">' + payTag(o) + "</div></div></div>";
+
+    h += '<div class="cus-b">';
+    c.rounds.forEach(function(r){
+      h += '<div class="rnd"><b>รอบ ' + r.no + " · รับ " + fmtD(r.order.delivery_date) + "</b>"
+        + (r.order.time_slot_label ? ' <span class="mut">' + esc(r.order.time_slot_label) + "</span>" : "")
+        + ' <span class="mut">(' + esc(r.order.order_number) + " · " + r.items.length + " กล่อง)</span><ul>"
+        + r.items.map(function(it){ return "<li>" + esc(it.code) + " " + esc(it.name) + "</li>"; }).join("")
+        + "</ul></div>";
+    });
+    if(o.delivery_address) h += '<div class="rnd mut">📍 ' + esc(o.delivery_address) + "</div>";
+    h += "</div></div>";
+  });
+  return h;
+}
+function tog(i){ document.getElementById("c" + i).classList.toggle("open"); }
+
+function render(){
+  if(!DATA) return;
+  var d = DATA;
+  document.getElementById("sub").textContent =
+    d.courses.length + " คอร์ส · อัปเดต "
+    + new Date().toLocaleTimeString("th-TH", Object.assign({ hour:"2-digit", minute:"2-digit" }, TH))
+    + " น. (เวลาไทย)";
+  document.getElementById("body").innerHTML =
+    view === "sum" ? viewSum(d) : view === "menu" ? viewMenu(d) : viewCus(d);
+}
+Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(b){
+  b.addEventListener("click", function(){
+    view = b.getAttribute("data-v");
+    Array.prototype.forEach.call(document.querySelectorAll(".tab"), function(x){ x.classList.toggle("on", x === b); });
+    render();
+  });
+});
+
+/* ── PIN ล็อกหน้า — คีย์เดียวกับหน้าออเดอร์ล่วงหน้า จะได้ไม่ต้องกรอกซ้ำ
+   กันคนหลงเข้า ไม่ใช่ระบบความปลอดภัยจริง (โค้ดฝั่งเบราว์เซอร์เปิดดูได้) ── */
+var PIN = "0360", PIN_KEY = "u360_orders_pin";
+var lockEl = document.getElementById("lock");
+function unlock(){ lockEl.classList.add("off"); loadAll(); }
+if(localStorage.getItem(PIN_KEY) === PIN){ unlock(); }
+else {
+  var pinIn = document.getElementById("pin");
+  setTimeout(function(){ try{ pinIn.focus(); }catch(e){} }, 200);
+  pinIn.addEventListener("input", function(){
+    var v = pinIn.value.replace(/[^0-9]/g, "");
+    pinIn.value = v;
+    if(v.length < 4){ document.getElementById("pinerr").textContent = ""; return; }
+    if(v === PIN){ try{ localStorage.setItem(PIN_KEY, PIN); }catch(e){} unlock(); }
+    else { document.getElementById("pinerr").textContent = "รหัสไม่ถูก"; pinIn.value = ""; }
+  });
+}
+</script>
+</body>
+</html>
