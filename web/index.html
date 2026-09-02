@@ -527,11 +527,10 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <small style="font-size:.86rem!important">30 กล่อง · 30 เมนูไม่ซ้ำ · ส่งถึงบ้าน 3 รอบ</small>
   </span>
   <span class="price">
-    <s style="font-size:1.15rem!important">฿4,490</s>
+    <span class="was"><small>ซื้อแยกรายกล่อง</small><s style="font-size:1.05rem!important">฿4,970</s></span>
     <em style="font-size:2rem!important">฿4,190</em>
-    <i style="font-size:.88rem!important">ประหยัด ฿300</i>
   </span>
-  <span class="go" style="font-size:.95rem!important">จองเลย →</span>
+  <span class="go" style="font-size:.95rem!important">สั่งจองคอร์สเจเลย →</span>
 </a>
 <style>
 /* ธีมเทศกาลเจ: เหลือง-แดง — ให้ต่างจากสีเขียวของแบรนด์ จะได้สะดุดตาว่าเป็นของพิเศษตามเทศกาล */
@@ -541,12 +540,13 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 .jaybar .seal{width:46px;height:auto;flex:none;display:block;filter:drop-shadow(0 1px 3px rgba(0,0,0,.2))}
 .jaybar .txt b{display:block;font-family:'Prompt',sans-serif;font-weight:700;font-size:1.03rem!important}
 .jaybar .txt small{display:block;font-size:.85rem!important;opacity:.78}
-.jaybar .price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.jaybar .price{display:flex;align-items:center;gap:10px;flex-wrap:nowrap}
+.jaybar .price .was{display:flex;flex-direction:column;line-height:1.1}
+.jaybar .price .was small{font-size:.66rem!important;opacity:.7;letter-spacing:.02em}
+.jaybar .price s{color:#8A6A00;opacity:.8;text-decoration-thickness:2px}
 .jaybar .price s{color:#8A6A00;opacity:.8;font-size:1.15rem!important;text-decoration-thickness:2px}
 .jaybar .price em{font-family:'Prompt',sans-serif;font-style:normal;font-weight:700;
   font-size:2rem!important;color:#B71C1C;letter-spacing:-.02em;line-height:1}
-.jaybar .price i{font-style:normal;background:#D32F2F;color:#fff;border-radius:999px;
-  padding:4px 12px;font-family:'Prompt',sans-serif;font-weight:700;font-size:.88rem!important}
 .jaybar .go{font-family:'Prompt',sans-serif;font-weight:700;font-size:.95rem!important;
   background:#3A2A00;color:#FFD400;border-radius:999px;padding:8px 18px}
 .jaybar:hover{filter:brightness(1.04)}
@@ -559,19 +559,18 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   .jaybar .txt b{font-size:.9rem!important;display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .jaybar .txt small{display:none}
   .jaybar .price{flex:none;gap:5px;align-items:baseline}
-  .jaybar .price s{display:none}          /* จอแคบ โชว์ราคาลดพอ ไม่งั้นเบียดจนอ่านไม่ออก */
+  .jaybar .price .was small{display:none}   /* จอแคบ เหลือแค่ตัวเลขขีดฆ่า */
   .jaybar .price em{font-size:1.4rem!important}
-  .jaybar .price i{padding:2px 8px;font-size:.72rem!important}
-  .jaybar .go{display:none}               /* ทั้งแถบกดได้อยู่แล้ว */
+    .jaybar .go{display:none}               /* ทั้งแถบกดได้อยู่แล้ว */
 }
 @media(max-width:400px){.jaybar .price s{display:none}}
 /* ── u360-logo-fix (2 ก.ย. 2026) — โลโก้เป็นภาพแนวนอน 2.4:1 ที่มีชื่อร้านอยู่ในตัว
    ห้ามบังคับเป็นจัตุรัส/วงกลมอีก จะบีบจนอ่านไม่ออก ── */
 header .logo img,.nav .logo img{
-  width:auto!important;height:38px!important;border-radius:0!important;flex:none;display:block;
+  width:auto!important;height:48px!important;border-radius:0!important;flex:none;display:block;
 }
 @media(max-width:520px){
-  header .logo img,.nav .logo img{height:30px!important}
+  header .logo img,.nav .logo img{height:38px!important}
 }
 </style>
 <script>
@@ -890,6 +889,177 @@ header .logo img,.nav .logo img{
     </a>
   </div>
 </section>
+
+<!-- ═══ u360-jay-calendar — ปฏิทินเมนูคอร์สเจรายรอบส่ง (นัทสั่งแทรก 2 ก.ย.)
+     หายเองหลัง 18 ต.ค. 2569 พร้อมแบนเนอร์ · ลบทั้งก้อนได้เมื่อจบเทศกาล ═══ -->
+<section id="jaycal" hidden>
+  <div class="wrap">
+    <div class="jc-head">
+      <img src="/img/jay/jay-logo.svg" alt="ธงเจ" width="64" height="100">
+      <div>
+        <h2 class="sec">คอร์สเจ 2569 — ได้กินอะไรบ้าง</h2>
+        <p>30 กล่อง ไม่ซ้ำสักมื้อ ส่งถึงบ้าน 3 รอบ · เทศกาล 10 – 18 ตุลาคม</p>
+      </div>
+    </div>
+    <div class="jc-rounds" id="jcRounds"></div>
+    <div style="text-align:center;margin-top:26px">
+      <a class="jc-btn" href="/jay?utm_source=web&utm_medium=homesection&utm_campaign=jay2026">ดูรายละเอียดคอร์สเจ →</a>
+    </div>
+  </div>
+</section>
+<style>
+#jaycal{padding:52px 0;background:linear-gradient(180deg,#FFFBE8,#FFF7D6)}
+.jc-head{display:flex;align-items:center;gap:18px;margin-bottom:24px}
+.jc-head img{width:64px;height:auto;flex:none}
+.jc-head p{color:var(--muted,#6B7280);margin-top:4px}
+.jc-rounds{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:14px}
+.jc-r{background:#fff;border:1px solid #EDE3BD;border-radius:14px;overflow:hidden}
+.jc-r summary{list-style:none;cursor:pointer;padding:14px 16px;background:#FFF3C4;
+  display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.jc-r summary::-webkit-details-marker{display:none}
+.jc-r summary .n{font-family:'Prompt',sans-serif;font-weight:700;font-size:1.02rem!important;color:#7A5A00}
+.jc-r summary .d{font-size:.9rem!important;color:#8A6A00}
+.jc-r summary .q{margin-left:auto;font-family:'Prompt',sans-serif;font-weight:600;font-size:.84rem!important;
+  background:#7A5A00;color:#FFD400;border-radius:999px;padding:3px 11px}
+.jc-r ol{margin:0;padding:10px 16px 14px 34px}
+.jc-r li{font-size:.94rem!important;line-height:1.5;margin-top:5px;color:#3A3A33}
+.jc-btn{display:inline-block;background:#7A5A00;color:#FFD400!important;text-decoration:none;
+  font-family:'Prompt',sans-serif;font-weight:700;font-size:1rem!important;padding:14px 30px;border-radius:999px}
+.jc-btn:hover{background:#5E4600}
+@media(max-width:600px){.jc-head img{width:52px}.jc-head{gap:14px}}
+</style>
+<script>
+(function(){
+  var END = new Date('2026-10-19T00:00:00+07:00').getTime();
+  if(Date.now() >= END) return;              /* จบเทศกาลแล้ว ไม่ต้องโชว์ */
+  const JAY_ROUNDS = [
+ {
+  "n": 1,
+  "ship": "พฤหัส 8 ต.ค.",
+  "eat": "ทานวัน ศ 9 – อา 11 ต.ค.",
+  "items": [
+   {
+    "name": "หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่"
+   },
+   {
+    "name": "ข้าวหมูสับเจตุ๋นเห็ดหอม สไตล์ไต้หวัน (Lu Rou Fan) + ผักดองไต้หวัน",
+    "star": 1
+   },
+   {
+    "name": "ข้าวเห็ดแชมปิญองผัดพริกเหลืองโหระพา"
+   },
+   {
+    "name": "เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง"
+   },
+   {
+    "name": "เบนโตะเจ ผักรวม 4 ช่อง"
+   },
+   {
+    "name": "เส้นหมี่ก๋วยเตี๋ยวหลอด เห็ดหอมเต้าหู้ทรงเครื่อง"
+   },
+   {
+    "name": "ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น"
+   },
+   {
+    "name": "ข้าวยำเกาหลี เครื่องแน่นจุก"
+   },
+   {
+    "name": "ข้าวแกงเผ็ดเห็ดรวม ฟองเต้าหู้"
+   }
+  ]
+ },
+ {
+  "n": 2,
+  "ship": "อาทิตย์ 11 ต.ค.",
+  "eat": "ทานวัน จ 12 – พฤ 15 ต.ค.",
+  "items": [
+   {
+    "name": "เกี๊ยวแห้งเห็ด + น้ำจิ้มซีฟู๊ดเจ"
+   },
+   {
+    "name": "โอเด้งฟองเต้าหู้ เต้าหู้แข็ง"
+   },
+   {
+    "name": "พาสต้าครีมซอสเห็ดแชมปิญอง"
+   },
+   {
+    "name": "เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ"
+   },
+   {
+    "name": "ข้าวเต้าหู้ย่างซอสเทริยากิ + ซุปมิโสะ"
+   },
+   {
+    "name": "เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ"
+   },
+   {
+    "name": "หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป"
+   },
+   {
+    "name": "ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง"
+   },
+   {
+    "name": "ข้าวอบสาหร่าย เต้าหู้ย่างสไตล์ญี่ปุ่น"
+   },
+   {
+    "name": "ข้าวผัดกิมจิ เต้าหู้ย่าง"
+   },
+   {
+    "name": "ข้าวเต้าหู้ผัดพริกไทยดำ เห็ดฟาง"
+   },
+   {
+    "name": "ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ"
+   }
+  ]
+ },
+ {
+  "n": 3,
+  "ship": "พฤหัส 15 ต.ค.",
+  "eat": "ทานวัน ศ 16 – อา 18 ต.ค.",
+  "items": [
+   {
+    "name": "ปอเปี๊ยะทอด (ย่าง) เวียดนาม"
+   },
+   {
+    "name": "เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส"
+   },
+   {
+    "name": "โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส"
+   },
+   {
+    "name": "แอสพารากัสอบ ซอสเห็ดเข็มทองถั่วลิสง + มันอบ"
+   },
+   {
+    "name": "ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย"
+   },
+   {
+    "name": "ผักกาดพันเต้าหู้เห็ดหอม ราดซีอิ๊วงา"
+   },
+   {
+    "name": "ข้าวอบธัญพืช เกาลัด"
+   },
+   {
+    "name": "ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้"
+   },
+   {
+    "name": "ข้าวผัดเห็ดออรินจิ ซอสเนยถั่ว + เต้าหู้ย่าง"
+   }
+  ]
+ }
+];
+  var esc = function(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+  document.getElementById('jcRounds').innerHTML = JAY_ROUNDS.map(function(r, i){
+    return '<details class="jc-r"' + (i===0 ? ' open' : '') + '>'
+      + '<summary><span class="n">รอบ ' + r.n + '</span>'
+      + '<span class="d">ส่ง ' + esc(r.ship) + '</span>'
+      + '<span class="q">' + r.items.length + ' กล่อง</span></summary>'
+      + '<ol>' + r.items.map(function(m){
+          return '<li>' + esc(m.name) + (m.star ? ' ⭐' : '') + '</li>'; }).join('') + '</ol>'
+      + '</details>';
+  }).join('');
+  document.getElementById('jaycal').hidden = false;
+})();
+</script>
 
 <footer>
   <div class="wrap">

@@ -112,15 +112,18 @@ header .btn-line{padding:9px 16px!important;height:38px;font-size:.9rem!importan
 
 /* ── หัวเรื่อง ── */
 .hero{background:linear-gradient(160deg,#F2F9F3,#FFFFFF 62%);border-bottom:1px solid var(--hair);
-  padding:56px 0 60px}
+  padding:30px 0 52px}
+@media(max-width:600px){.hero{padding:20px 0 40px}}
 .hero .tag{display:inline-flex;align-items:center;gap:8px;background:var(--goldbg);color:#8A6A00;
   border:1px solid #F0DFA8;border-radius:999px;padding:7px 16px;font-family:'Prompt';
   font-weight:600;font-size:.9rem;margin-bottom:18px}
 .hero h1{font-size:2.6rem;max-width:16ch}
 .hero p.sub{margin-top:14px;font-size:1.12rem;color:var(--muted);max-width:52ch}
-.facts{display:flex;flex-wrap:wrap;gap:10px;margin-top:26px}
-.facts span{background:var(--soft);border:1px solid var(--hair);border-radius:999px;
-  padding:8px 15px;font-size:.93rem;font-family:'Prompt';font-weight:500}
+.facts{list-style:none;margin-top:24px;display:grid;gap:9px;max-width:44ch}
+.facts li{position:relative;padding-left:26px;font-size:1rem;color:var(--muted)}
+.facts li b{color:var(--ink);font-family:'Prompt';font-weight:600}
+.facts li::before{content:'';position:absolute;left:6px;top:.62em;width:8px;height:8px;
+  border-radius:50%;background:var(--green)}
 .hero .cta{margin-top:30px;display:flex;flex-wrap:wrap;gap:12px;align-items:center}
 .hero .note{font-size:.9rem;color:var(--muted)}
 
@@ -214,18 +217,32 @@ footer a{color:var(--muted);text-decoration:none;margin-right:16px}
 .rlist .m .t{font-size:.97rem;line-height:1.5}
 @media(max-width:640px){.rhead .q{margin-left:0}}
 /* โลโก้ธงเจ — ของจริงจากนัท (ไม่ใช่ emoji) */
-.jayhead{display:flex;align-items:center;gap:14px;margin-bottom:18px}
-.jaylogo{width:76px;height:auto;flex:none;filter:drop-shadow(0 2px 6px rgba(0,0,0,.14))}
-.jayhead .tag{margin-bottom:0}
-@media(max-width:600px){.jaylogo{width:58px}}
+.jayhead{display:flex;align-items:center;gap:18px;margin-bottom:22px}
+.jaylogo{width:104px;height:auto;flex:none;filter:drop-shadow(0 3px 10px rgba(0,0,0,.16))}
+.jaydate{line-height:1.2}
+.jaydate .k{display:block;font-family:'Prompt';font-weight:600;font-size:.8rem;letter-spacing:.16em;
+  text-transform:uppercase;color:var(--muted)}
+.jaydate strong{display:block;font-family:'Prompt';font-weight:700;font-size:1.7rem;
+  color:var(--deep);letter-spacing:-.02em;margin-top:2px}
+.jaydate .y{display:block;font-family:'Prompt';font-weight:600;font-size:1rem;color:var(--green)}
+@media(max-width:600px){
+  .jaylogo{width:76px}
+  .jayhead{gap:14px;margin-bottom:18px}
+  .jaydate strong{font-size:1.32rem}
+}
 /* ── u360-logo-fix (2 ก.ย. 2026) — โลโก้เป็นภาพแนวนอน 2.4:1 ที่มีชื่อร้านอยู่ในตัว
    ห้ามบังคับเป็นจัตุรัส/วงกลมอีก จะบีบจนอ่านไม่ออก ── */
 header .logo img,.nav .logo img{
-  width:auto!important;height:38px!important;border-radius:0!important;flex:none;display:block;
+  width:auto!important;height:48px!important;border-radius:0!important;flex:none;display:block;
 }
 @media(max-width:520px){
-  header .logo img,.nav .logo img{height:30px!important}
+  header .logo img,.nav .logo img{height:38px!important}
 }
+/* ปุ่มจองคอร์สเจ — สีเหลืองเข้าธีมเทศกาล (นัทสั่ง) ไม่ใช่เขียว LINE เหมือนหน้าอื่น */
+.btn-jay{background:linear-gradient(180deg,#FFD400,#FFC000)!important;color:#3A2A00!important;
+  box-shadow:0 4px 14px rgba(224,168,0,.42)}
+.btn-jay:hover{background:linear-gradient(180deg,#FFDE33,#FFCA1A)!important;color:#3A2A00!important}
+.sticky .btn-jay{box-shadow:none}
 </style>
 </head>
 <body>
@@ -238,7 +255,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
     <nav>
       <a href="/mealplan">Meal Plan</a>
       <a href="/blog">บทความ</a>
-      <a href="#" class="btn-line" onclick="return jayOrder(this,'nav')">จองคอร์สเจ</a>
+      <a href="#" class="btn-line btn-jay" onclick="return jayOrder(this,'nav')">จองคอร์สเจ</a>
     </nav>
   </div>
 </header>
@@ -247,20 +264,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <div class="hero">
   <div class="wrap">
     <div class="jayhead">
-      <img src="/img/jay/jay-logo.svg" alt="ธงเจ" class="jaylogo" width="76" height="119">
-      <span class="tag">เทศกาลกินเจ 10 – 18 ตุลาคม 2569</span>
+      <img src="/img/jay/jay-logo.svg" alt="ธงเจ" class="jaylogo" width="104" height="163">
+      <div class="jaydate">
+        <span class="k">เทศกาลกินเจ</span>
+        <strong>10 – 18 ตุลาคม</strong>
+        <span class="y">2569</span>
+      </div>
     </div>
     <h1>คอร์สอาหารเจ 30 เมนู ไม่ซ้ำสักมื้อ</h1>
     <p class="sub">กินเจครบ 10 วัน โดยไม่ต้องคิดเองสักมื้อ — ครัวทำสด แล้วส่งถึงบ้านให้ 3 รอบ</p>
-    <div class="facts">
-      <span>30 กล่อง</span>
-      <span>3 มื้อต่อวัน</span>
-      <span>ส่งถึงบ้าน 3 รอบ</span>
-      <span>โปรตีน 25g* ต่อกล่อง</span>
-      <span>ส่งทั่วไทย</span>
-    </div>
+    <ul class="facts">
+      <li><b>30 กล่อง</b> ครบทั้งเทศกาล</li>
+      <li><b>3 มื้อต่อวัน</b> เช้า กลางวัน เย็น</li>
+      <li><b>ส่งถึงบ้าน 3 รอบ</b> ไม่ต้องรอรับทุกวัน</li>
+      <li><b>โปรตีน 25g*</b> ต่อกล่อง</li>
+      <li><b>ส่งทั่วไทย</b> ต่างจังหวัดราคาเดียวกัน</li>
+    </ul>
     <div class="cta">
-      <a href="#" class="btn-line" onclick="return jayOrder(this,'hero')">จองคอร์สเจ — Early Bird 4,190.-</a>
+      <a href="#" class="btn-line btn-jay" onclick="return jayOrder(this,'hero')">จองคอร์สเจ — Early Bird 4,190.-</a>
       <span class="note">จำกัด 50 คอร์สแรก</span>
     </div>
   </div>
@@ -430,7 +451,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="wrap">
     <h2>ปีนี้ไม่ต้องคิดเองสักมื้อ</h2>
     <p>30 กล่อง 30 เมนู ส่งถึงบ้านครบทั้งเทศกาล</p>
-    <a href="#" class="btn-line" onclick="return jayOrder(this,'final')">จองคอร์สเจ 2569 →</a>
+    <a href="#" class="btn-line btn-jay" onclick="return jayOrder(this,'final')">จองคอร์สเจ 2569 →</a>
     <p style="font-size:.9rem;margin-top:14px">Early Bird ฿4,190 · จำกัด 50 คอร์สแรก</p>
   </div>
 </section>
@@ -444,7 +465,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <div class="sticky">
   <div class="p">฿4,190 <small>Early Bird · 50 คอร์สแรก</small></div>
-  <a href="#" class="btn-line" onclick="return jayOrder(this,'sticky')">จองคอร์สเจ</a>
+  <a href="#" class="btn-line btn-jay" onclick="return jayOrder(this,'sticky')">จองคอร์สเจ</a>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
