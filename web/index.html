@@ -520,29 +520,50 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </header>
 
-<!-- ═══ u360-jay-banner (m · 2 ก.ย. 2026) — ลบทั้งก้อนนี้เมื่อครบ 50 คอร์ส ═══
-     หายเองอัตโนมัติหลัง 18 ต.ค. 2026 (กันลืมถอด) -->
+<!-- ═══ u360-jay-banner v2 (m · 2 ก.ย. 2026 · นัทสั่งให้เป็นธีมเจ + โชว์ส่วนลด) ═══
+     ลบทั้งก้อนนี้เมื่อครบ 50 คอร์ส · หายเองหลัง 18 ต.ค. 2026 (กันลืมถอด) -->
 <a class="jaybar" id="jayBar" href="/jay?utm_source=web&utm_medium=banner&utm_campaign=jay2026" hidden>
-  <span class="l">🌱 เปิดจองคอร์สอาหารเจ 2569 แล้ว</span>
-  <span class="c">Early Bird ฿4,190 — จำกัด 50 คอร์สแรก</span>
-  <span class="g">ดูรายละเอียด →</span>
+  <span class="seal" style="font-size:1.35rem!important">齋</span>
+  <span class="txt">
+    <b style="font-size:1.03rem!important">เปิดจองคอร์สอาหารเจ 2569</b>
+    <small style="font-size:.86rem!important">30 กล่อง · 30 เมนูไม่ซ้ำ · ส่งถึงบ้าน 3 รอบ</small>
+  </span>
+  <span class="price">
+    <s style="font-size:1.15rem!important">฿4,490</s>
+    <em style="font-size:2rem!important">฿4,190</em>
+    <i style="font-size:.88rem!important">ประหยัด ฿300</i>
+  </span>
+  <span class="go" style="font-size:.95rem!important">จองเลย →</span>
 </a>
 <style>
-.jaybar{display:flex;align-items:center;justify-content:center;gap:8px 18px;flex-wrap:wrap;
-  background:linear-gradient(90deg,#1F7A4D,#2E9E5B);color:#fff;text-decoration:none;
-  padding:13px 20px;text-align:center;line-height:1.45}
-.jaybar .l{font-family:'Prompt',sans-serif;font-weight:600;font-size:1rem}
-.jaybar .c{font-size:.94rem;opacity:.94}
-.jaybar .g{font-family:'Prompt',sans-serif;font-weight:600;font-size:.94rem;
-  background:rgba(255,255,255,.16);border-radius:999px;padding:5px 14px}
-.jaybar:hover{filter:brightness(1.06)}
-@media(max-width:640px){
-  /* มือถือ: แถบบนสุดต้องไม่ดันเนื้อหาหลักตกจอ — วัดแล้ว 3 บรรทัด = 114px สูงเกินไป */
-  .jaybar{gap:2px 10px;padding:9px 14px;flex-direction:column}
-  .jaybar .l{font-size:.92rem}
-  .jaybar .c{font-size:.83rem}
-  .jaybar .g{display:none}   /* ทั้งแถบกดได้อยู่แล้ว ไม่ต้องมีปุ่มซ้ำ */
+/* ธีมเทศกาลเจ: เหลือง-แดง — ให้ต่างจากสีเขียวของแบรนด์ จะได้สะดุดตาว่าเป็นของพิเศษตามเทศกาล */
+.jaybar{display:flex;align-items:center;justify-content:center;gap:16px;flex-wrap:wrap;
+  background:linear-gradient(90deg,#FFD400,#FFC400 55%,#FFB800);color:#3A2A00;
+  text-decoration:none;padding:11px 20px;border-bottom:2px solid #E0A800;line-height:1.35}
+.jaybar .seal{display:inline-flex;align-items:center;justify-content:center;width:38px;height:38px;
+  background:#D32F2F;color:#fff;border-radius:9px;font-size:1.35rem;font-weight:700;flex:none;
+  box-shadow:0 2px 0 rgba(0,0,0,.18)}
+.jaybar .txt b{display:block;font-family:'Prompt',sans-serif;font-weight:700;font-size:1.03rem!important}
+.jaybar .txt small{display:block;font-size:.85rem!important;opacity:.78}
+.jaybar .price{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.jaybar .price s{color:#8A6A00;opacity:.8;font-size:1.15rem!important;text-decoration-thickness:2px}
+.jaybar .price em{font-family:'Prompt',sans-serif;font-style:normal;font-weight:700;
+  font-size:2rem!important;color:#B71C1C;letter-spacing:-.02em;line-height:1}
+.jaybar .price i{font-style:normal;background:#D32F2F;color:#fff;border-radius:999px;
+  padding:4px 12px;font-family:'Prompt',sans-serif;font-weight:700;font-size:.88rem!important}
+.jaybar .go{font-family:'Prompt',sans-serif;font-weight:700;font-size:.95rem!important;
+  background:#3A2A00;color:#FFD400;border-radius:999px;padding:8px 18px}
+.jaybar:hover{filter:brightness(1.04)}
+@media(max-width:760px){
+  /* มือถือ: ห้ามสูงจนดันเนื้อหาหลักตกจอ — เคยวัดได้ 114px แล้วสูงเกินไป */
+  .jaybar{gap:10px;padding:9px 14px}
+  .jaybar .seal{width:32px;height:32px;font-size:1.15rem;border-radius:8px}
+  .jaybar .txt b{font-size:.96rem!important}
+  .jaybar .txt small{display:none}
+  .jaybar .price em{font-size:1.62rem!important}
+  .jaybar .go{display:none}   /* ทั้งแถบกดได้อยู่แล้ว */
 }
+@media(max-width:400px){.jaybar .price s{display:none}}
 </style>
 <script>
 /* โชว์เฉพาะช่วงที่ยังขายอยู่ — ผ่าน 18 ต.ค. 2026 แล้วหายเอง ไม่ต้องรอใครมาถอด */
@@ -550,7 +571,20 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   var JAY_BANNER = true;                 /* ครบ 50 คอร์สก่อนกำหนด → ตั้ง false */
   var END = new Date('2026-10-19T00:00:00+07:00').getTime();
   if(JAY_BANNER && Date.now() < END){
-    var b = document.getElementById('jayBar'); if(b) b.hidden = false;
+    var b = document.getElementById('jayBar');
+    if(b){
+      b.hidden = false;
+      /* จอแคบต้องย่อลง — inline style ทับ media query ได้ เลยต้องย่อด้วยสคริปต์แทน */
+      var fit = function(){
+        var small = window.innerWidth <= 760;
+        var set = function(sel, v){ var e = b.querySelector(sel); if(e) e.style.setProperty('font-size', v, 'important'); };
+        set('.seal',    small ? '1.15rem' : '1.35rem');
+        set('.txt b',   small ? '.96rem'  : '1.03rem');
+        set('.price s', small ? '1rem'    : '1.15rem');
+        set('.price em',small ? '1.62rem' : '2rem');
+      };
+      fit(); window.addEventListener('resize', fit);
+    }
   }
 })();
 </script>
