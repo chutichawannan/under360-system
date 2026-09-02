@@ -453,6 +453,24 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </div>
 
+<!-- ═══ เมนู แยกตามรอบส่ง (u360-jay-rounds) ═══ -->
+<section id="menus" style="background:var(--soft);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)">
+  <div class="wrap">
+    <span class="eyebrow">เมนูทั้งหมด</span>
+    <h2 class="sec">30 เมนู ไม่ซ้ำสักมื้อ — รู้ล่วงหน้าว่าได้กินอะไร</h2>
+    <p class="lead">แต่ละรอบส่งมาเป็นชุด พร้อมบอกว่าทานวันไหน — ไม่ต้องเดา ไม่ต้องรอลุ้น</p>
+    <!-- u360-jay-carousel -->
+    <div class="rcar">
+      <button class="rnav prev" type="button" aria-label="รอบก่อนหน้า" onclick="rSlide(-1)">‹</button>
+      <div id="roundList" class="rtrack"></div>
+      <button class="rnav next" type="button" aria-label="รอบถัดไป" onclick="rSlide(1)">›</button>
+    </div>
+    <div class="rdots" id="rDots"></div>
+    <p class="foot">⭐ = เมนูที่ครัวตั้งใจให้เป็นตัวชูโรงของคอร์สปีนี้ ·
+      ลำดับเมนูภายในรอบครัวอาจสลับได้ตามวัตถุดิบที่ได้ในวันนั้น แต่ <b>ได้ครบทุกเมนูตามรอบแน่นอน</b></p>
+  </div>
+</section>
+
 <!-- ═══ โปรตีน ═══ -->
 <section>
   <div class="wrap">
@@ -561,23 +579,6 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   </div>
 </section>
 
-<!-- ═══ เมนู แยกตามรอบส่ง (u360-jay-rounds) ═══ -->
-<section id="menus" style="background:var(--soft);border-top:1px solid var(--hair);border-bottom:1px solid var(--hair)">
-  <div class="wrap">
-    <span class="eyebrow">เมนูทั้งหมด</span>
-    <h2 class="sec">30 เมนู ไม่ซ้ำสักมื้อ — รู้ล่วงหน้าว่าได้กินอะไร</h2>
-    <p class="lead">แต่ละรอบส่งมาเป็นชุด พร้อมบอกว่าทานวันไหน — ไม่ต้องเดา ไม่ต้องรอลุ้น</p>
-    <!-- u360-jay-carousel -->
-    <div class="rcar">
-      <button class="rnav prev" type="button" aria-label="รอบก่อนหน้า" onclick="rSlide(-1)">‹</button>
-      <div id="roundList" class="rtrack"></div>
-      <button class="rnav next" type="button" aria-label="รอบถัดไป" onclick="rSlide(1)">›</button>
-    </div>
-    <div class="rdots" id="rDots"></div>
-    <p class="foot">⭐ = เมนูที่ครัวตั้งใจให้เป็นตัวชูโรงของคอร์สปีนี้ ·
-      ลำดับเมนูภายในรอบครัวอาจสลับได้ตามวัตถุดิบที่ได้ในวันนั้น แต่ <b>ได้ครบทุกเมนูตามรอบแน่นอน</b></p>
-  </div>
-</section>
 
 <!-- ═══ FAQ ═══ -->
 <section class="faq">
