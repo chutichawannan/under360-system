@@ -3667,6 +3667,8 @@ function renderRoundSplit(){
   /* เซ็ตที่แอดมินล็อกวันไว้ (คอร์สเจ: 8 / 11 / 15 ต.ค.) → ใช้วันนั้นตรง ๆ
      ห้ามใช้ default +7 วัน เพราะรอบเจห่างกันแค่ 3-4 วัน จะได้วันผิดทั้งชุด */
   const lockedRounds = cartFixedRounds();
+  /* ล็อกวันไว้ = ทำสดคนละวัน รวบส่งรอบเดียวไม่ได้ (นัทสั่ง 2 ก.ย.) */
+  if(lockedRounds && setDeliverOnce) setDeliverOnce = false;
   if(!setDeliverOnce && lockedRounds){
     extraRoundDates = lockedRounds.slice(1, N);
   } else if(!setDeliverOnce && selDate){
@@ -3698,10 +3700,12 @@ function renderRoundSplit(){
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px 14px;">
         <div style="font-size:13.5px;font-weight:800;color:#1D4ED8;">📦 เซ็ตแบ่งส่ง ${N} รอบ</div>
         <div style="font-size:11.5px;color:#3B4A66;margin-top:2px;line-height:1.4;">${h(setName)} · รวม ${totalBoxes} กล่อง · จ่ายครั้งเดียว แบ่งจัดส่งตามวันด้านล่าง</div>
-        <label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:700;color:#1A1A1A;cursor:pointer;">
+        ${lockedRounds
+          ? `<div style="font-size:12px;color:#3B4A66;margin-top:8px;line-height:1.5;">อาหารทำสดตามวันผลิตของแต่ละรอบ — <b>รับรวดเดียวไม่ได้</b></div>`
+          : `<label style="display:flex;align-items:center;gap:8px;margin-top:10px;font-size:13px;font-weight:700;color:#1A1A1A;cursor:pointer;">
           <input type="checkbox" ${setDeliverOnce?'checked':''} onchange="toggleSetDeliverOnce(this.checked)" style="width:18px;height:18px;accent-color:#1D4ED8;flex-shrink:0;">
           รับทั้งหมดรวดเดียว (ส่งครั้งเดียว ${totalBoxes} กล่อง)
-        </label>
+        </label>`}
       </div>`;
   if(setDeliverOnce){
     html+=`<div style="font-size:12px;color:#6B7280;padding:8px 2px 2px;line-height:1.4;">จะจัดส่งทั้งหมด ${totalBoxes} กล่องในวันเดียว ตามวันที่เลือกด้านบน (รอบ 1)</div>`;
@@ -3760,7 +3764,10 @@ function renderRoundDatePicker(idx){
   el.innerHTML=html;
 }
 function pickRoundDate(idx,key){ extraRoundDates[idx]=key; renderRoundSplit(); }
-function toggleSetDeliverOnce(v){ setDeliverOnce=!!v; renderRoundSplit(); }
+function toggleSetDeliverOnce(v){
+  if(cartFixedRounds()){ setDeliverOnce=false; renderRoundSplit(); return; }   // เซ็ตล็อกวัน = ปิดตายไม่ว่าใครสั่ง
+  setDeliverOnce=!!v; renderRoundSplit();
+}
 
 // ══════════════════════════════════════
 // ⏰ TIME PICKER
