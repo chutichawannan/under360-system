@@ -1,0 +1,1088 @@
+[
+ {
+  "name": "สันในหมู",
+  "sku": "10406",
+  "sources": [
+   "freshket",
+   "go",
+   "buyer"
+  ],
+  "count": 96
+ },
+ {
+  "name": "อกไก่ติดหนัง",
+  "sku": "31112",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 90
+ },
+ {
+  "name": "สะโพกไก่",
+  "sku": "10426",
+  "sources": [
+   "freshket",
+   "go",
+   "buyer"
+  ],
+  "count": 51
+ },
+ {
+  "name": "อโวคาโดพันธุ์แฮสสุก (นำเข้า)",
+  "sku": "47851",
+  "sources": [
+   "freshket"
+  ],
+  "count": 48
+ },
+ {
+  "name": "หน่อไม้ฝรั่ง",
+  "sku": "33919",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 40
+ },
+ {
+  "name": "พริกยักษ์ คละสี",
+  "sku": "34095",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 38
+ },
+ {
+  "name": "โหระพา",
+  "sku": "26190",
+  "sources": [
+   "freshket",
+   "go",
+   "buyer"
+  ],
+  "count": 29
+ },
+ {
+  "name": "เต้าหู้ขาวก้อนแข็ง",
+  "sku": "12363",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 27
+ },
+ {
+  "name": "มะเขือเปราะ",
+  "sku": "33825",
+  "sources": [
+   "freshket",
+   "ของเหลือ",
+   "buyer"
+  ],
+  "count": 27
+ },
+ {
+  "name": "ผักกวางตุ้งไต้หวัน (ไทย)",
+  "sku": "48170",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 25
+ },
+ {
+  "name": "น้ำมันรำข้าว ตราคิง",
+  "sku": "15873",
+  "sources": [
+   "freshket"
+  ],
+  "count": 24
+ },
+ {
+  "name": "ถั่วฝักยาวเส้นผอมเรียว",
+  "sku": "26214",
+  "sources": [
+   "freshket"
+  ],
+  "count": 24
+ },
+ {
+  "name": "แผ่นเกี๊ยวจีน ตราเส้นเงิน",
+  "sku": "35143",
+  "sources": [
+   "freshket"
+  ],
+  "count": 24
+ },
+ {
+  "name": "แตงกวาญี่ปุ่น",
+  "sku": "25977",
+  "sources": [
+   "freshket",
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 20
+ },
+ {
+  "name": "มะเขือเทศท้อ",
+  "sku": "33082",
+  "sources": [
+   "freshket",
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 16
+ },
+ {
+  "name": "มันฝรั่ง",
+  "sku": "33385",
+  "sources": [
+   "freshket",
+   "go"
+  ],
+  "count": 15
+ },
+ {
+  "name": "หอมหัวใหญ่",
+  "sku": "33990",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ยอดคะน้าฮ่องกง",
+  "sku": "35743",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ฟักทองญี่ปุ่น",
+  "sku": "35449",
+  "sources": [
+   "freshket",
+   "ของเหลือ"
+  ],
+  "count": 13
+ },
+ {
+  "name": "มะเขือเทศราชินีไทย",
+  "sku": "33738",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "กะหล่ำปลี",
+  "sku": "9659",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ฟักทองไทย",
+  "sku": "33083",
+  "sources": [
+   "freshket",
+   "ของเหลือ"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ตำลึง คัดสวย",
+  "sku": "12360",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "มันเทศสีม่วง",
+  "sku": "47822",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "นมยูเอชที รสจืด ตราโฟร์โมสต์",
+  "sku": "10033",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "สับปะรดปัตตาเวีย",
+  "sku": "45977",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ถั่วงอก ตราไผ่คู่",
+  "sku": "9686",
+  "sources": [
+   "freshket",
+   "buyer"
+  ],
+  "count": 13
+ },
+ {
+  "name": "ผักคอส (นำเข้า)",
+  "sku": "26208",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ผงทำข้าวหมกไก่ ตราโลโบ",
+  "sku": "36463",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "พริกยักษ์แดง",
+  "sku": "31094",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ทูน่าสเต็ก ในน้ำเกลือ ตราซีเล็คฟิตต์",
+  "sku": "44297",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "วุ้นเส้นแห้ง ตราต้นสน",
+  "sku": "10257",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "สาลี่น้ำผึ้ง",
+  "sku": "45120",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "บีทรูท",
+  "sku": "35905",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "มะละกอฮอลแลนด์สุก",
+  "sku": "30955",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ลูกพรุนอบแห้งพรีเมียม ตราเฮอริเทจ",
+  "sku": "11872",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ทูน่าแซนวิชในน้ำเกลือ ตราซีเล็คฟิตต์",
+  "sku": "46102",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ไข่ไก่ เบอร์ 4 ไม่มีฝา",
+  "sku": "41480",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "สาหร่ายทะเลย่าง ตราทาเบรุ",
+  "sku": "16909",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ซูกินีไทย",
+  "sku": "33717",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "กะทิขวด ตราเรียลไทย",
+  "sku": "50155",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "น้ำพริกเผา สูตร 1 ตราฉั่วฮะเส็ง",
+  "sku": "17183",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ซี่โครงหมูหั่นชิ้น",
+  "sku": "10408",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ผักบุ้งจีน คัดสวย",
+  "sku": "23655",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ข้าวโพดอ่อนเปลือย",
+  "sku": "29243",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ผักโขมไทย คัดสวย",
+  "sku": "20149",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "พริกไทยอ่อน คัดสวย",
+  "sku": "20143",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ข่าแก่ คัดสวย",
+  "sku": "23635",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "ต้นหอมไทย",
+  "sku": "26188",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "พริกชี้ฟ้าเหลือง (เด็ดก้าน)",
+  "sku": "32345",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "น้ำยาล้างจาน กลิ่นมะนาว ตราเซพแพ็ค",
+  "sku": "32173",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "พริกชี้ฟ้าเขียว คัดสวย",
+  "sku": "23659",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "เครื่องแกงกะหรี่สูตรเผ็ดกลาง ตราเอสแอนด์บี",
+  "sku": "20407",
+  "sources": [
+   "freshket"
+  ],
+  "count": 12
+ },
+ {
+  "name": "แครอท",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 7
+ },
+ {
+  "name": "เห็ดออรินจิ",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 7
+ },
+ {
+  "name": "อกไก่",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 5
+ },
+ {
+  "name": "ดอกกะหล่ำ",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 5
+ },
+ {
+  "name": "พริกขี้หนูสวน",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 5
+ },
+ {
+  "name": "มันหวาน",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 5
+ },
+ {
+  "name": "พริกขี้หนูแดง",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 5
+ },
+ {
+  "name": "ไข่ไก่ ตั้ง",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 4
+ },
+ {
+  "name": "กระเทียม",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 4
+ },
+ {
+  "name": "เลมอน ลูก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 4
+ },
+ {
+  "name": "เนื้อบด",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 4
+ },
+ {
+  "name": "มะเขือเทศราชินี",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 4
+ },
+ {
+  "name": "บล็อกโคลี่",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 4
+ },
+ {
+  "name": "ผักกาดขาว",
+  "sku": "35236",
+  "sources": [
+   "go",
+   "ของเหลือ",
+   "buyer"
+  ],
+  "count": 4
+ },
+ {
+  "name": "หอมใหญ่",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 3
+ },
+ {
+  "name": "ปูอัด",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 3
+ },
+ {
+  "name": "หอมแดงไทย",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 3
+ },
+ {
+  "name": "มะเขือเทศ",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 3
+ },
+ {
+  "name": "หอมแดง",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 3
+ },
+ {
+  "name": "ใบกระเพรา",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 3
+ },
+ {
+  "name": "พริกชี้ฟ้าแดง",
+  "sku": "",
+  "sources": [
+   "go",
+   "ของเหลือ"
+  ],
+  "count": 3
+ },
+ {
+  "name": "ผักคอสนอก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ต้นหอม เล็ก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ราชินี",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ข้าวโพดอ่อน ครึ่งโล",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "กระดูกหมู",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "สาลี่",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "พริกหนุ่ม",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ผักชีไทย",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "เส้นแก้ว",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "หอมแขก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ปลาทูนึ่ง",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ถั่วฝักยาว ครึ่งโล",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "สับปะรด ลูก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "มะระ ลูก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "กะเพรา",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "tabasco",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "โยเกิร์ต",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "น้ำมันรำข้าวคิง",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ผักชี",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "สะระแหน่",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ต้นหอม",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "เส้นบุก",
+  "sku": "",
+  "sources": [
+   "go"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ขิงแก่",
+  "sku": "29288",
+  "sources": [
+   "ของเหลือ",
+   "buyer"
+  ],
+  "count": 2
+ },
+ {
+  "name": "อโวคาโดพันธุ์แฮชสุก (นำเข้า)",
+  "sku": "47851",
+  "sources": [
+   "buyer"
+  ],
+  "count": 2
+ },
+ {
+  "name": "ซูกินี่ไทย",
+  "sku": "33717",
+  "sources": [
+   "buyer"
+  ],
+  "count": 2
+ },
+ {
+  "name": "เชเลอรีนอก",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ผักกาดแก้ว",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "กวางตุ้งฮ่องเต้",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ถั่วฝักยาว",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "เห็ดชิเมจิขาว",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ผักคอส",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "มะระ",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ต้นหอมญี่ปุ่น",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "กระชาย",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "พริกไทยสด",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "สาระแหน่",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ผักชีลาว",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "พริกหวาน",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "หัวไชเท้า",
+  "sku": "",
+  "sources": [
+   "ของเหลือ"
+  ],
+  "count": 1
+ },
+ {
+  "name": "น้ำมันรำข้าว คู่ครัว",
+  "sku": "15873",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "พริกขี้หนูเขียว คัดสวย",
+  "sku": "23659",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "เครื่องแกงกะหรี่สูตรผัดกลาง ตราอเนสแอนด์บี",
+  "sku": "20407",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "เพนเน่ พาสต้า พาสต้ารูปหลอดปลายตัดเฉียง ตราซาน เรโม เบอร์ 18 ·",
+  "sku": "22755",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ครีมวีขาว ออแกนิค ตราวีนิลไลฟ์",
+  "sku": "35170",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "พริกเกาหลีแบบป่นหยาบ สำหรับทำกิมจิ",
+  "sku": "18051",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ผงชาข้าวหมกไก่ ตราไดโบ",
+  "sku": "36463",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ข้าวโพดอ่อนติดหมวด คัดสวย",
+  "sku": "9661",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ฟิลาห์ พลัส ซีรีทาหอมสมุนไพรอ่อนหวาน",
+  "sku": "43905",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ข้าว กข43 ตรานัตรไลท์",
+  "sku": "39024",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ใบตองกล้วยน้ำว้า",
+  "sku": "47518",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "กุ้งแห้งจืด",
+  "sku": "12878",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ถั่วงอกเรียวยาว",
+  "sku": "33073",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "ยอดมะพร้าวอ่อน",
+  "sku": "36295",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "กะเพรา บ้าน",
+  "sku": "42434",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "น้ำพริกแกงส้มแบบเอเชียต ตราร้านเจ๊ปุ๊",
+  "sku": "12381",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "มะระจีน คัดสวย",
+  "sku": "11496",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ },
+ {
+  "name": "คอส (น้ำซ้า)",
+  "sku": "26207",
+  "sources": [
+   "buyer"
+  ],
+  "count": 1
+ }
+]
