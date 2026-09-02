@@ -148,6 +148,10 @@
     {
       "source": "/jay",
       "destination": "/jay.html"
+    },
+    {
+      "source": "/preview",
+      "destination": "/preview.html"
     }
   ]
 }
