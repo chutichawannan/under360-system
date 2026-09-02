@@ -7,67 +7,51 @@
 <title>นับของเหลือ — Under360</title>
 <link rel="manifest" href="manifest-k.webmanifest">
 <style>
-/* ═══ หน้านับของเหลือ — รอบ 3 (u-maintainer · 2 ก.ย. 2569) ═══
-   นัทสั่ง: "interface ui ux ต้องง่ายกว่านี้ แบ่งเป็นตาราง 3-4 ช่อง
-            และมี +100 +500 -100 -500 อยู่ดีกว่า"
+/* ═══ หน้านับของเหลือ — รอบ 4 (u-maintainer · 2 ก.ย. 2569) ═══
+   นัทสั่ง: "เอาปุ่ม 100 500 อยู่ข้างล่างกรอบรูปไปเลย interface เหมือนของ go wholesale ไปเลย
+            ภาพสินค้าเขาใหญ่กว่าเราได้ยังไง"
 
-   ทำไมเป็นตารางช่องแล้วแตะขยาย (ไม่ใช่ยัดปุ่ม 4 ปุ่มในทุกช่อง):
-     130 รายการ × 4 ปุ่ม = 520 ปุ่มบนจอเดียว — กดผิดง่าย หาของยาก
-     แบบนี้ตาไล่รูปทีละช่องได้เร็ว (3 ช่องต่อแถว = เห็น ~12 อย่างต่อจอ)
-     แตะช่องไหน ปุ่มค่อยกางออกเฉพาะช่องนั้น = มีปุ่มใหญ่ให้กดทีละอย่าง ไม่พลาด
+   → ทำตามการ์ดของ GO เป๊ะ: รูปใหญ่เต็มความกว้างการ์ด → ชื่อ → ตัวเลข → ปุ่มใต้สุด
+   → 2 ช่องบนมือถือ (รูปได้ใหญ่จริง + ปุ่ม 4 ปุ่มกดไม่พลาด) · จอกว้างขึ้นเป็น 3-4 ช่องเอง
+     (3 ช่องบนมือถือ = การ์ดกว้าง 110px = รูปเล็กกว่า GO และปุ่มเล็กจนกดพลาด)
 
-   คนที่ใช้จริงคือครัว อ่านไทยได้ 2 ใน 6 คน → พึ่งรูป + ตัวเลข + ปุ่ม ไม่พึ่งตัวหนังสือ
+   คนที่ใช้จริงคือครัว อ่านไทยได้ 2 ใน 6 คน → พึ่งรูป + ตัวเลข + ปุ่ม
    หน่วยล็อกไว้ (กรัม · ไข่เป็นฟอง) ไม่มีช่องให้พิมพ์หน่วยเอง
    — บทเรียนจากรอบที่นัทจดมือ 22 ส.ค.: 13/27 รายการตีความไม่ได้เพราะไม่มีหน่วย */
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 :root{--g:#1F4D3A;--gl:#E8F0EC;--bg:#F4F4F0;--line:#E5E5E1;--soft:#6B7280;--r:#C9573F}
-body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding-bottom:88px}
-.hdr{position:sticky;top:0;z-index:30;background:var(--g);color:#fff;padding:11px 14px 9px}
-.hdr h1{margin:0;font-size:16.5px;font-weight:800;letter-spacing:-.3px}
+body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding-bottom:86px}
+.hdr{position:sticky;top:0;z-index:30;background:var(--g);color:#fff;padding:10px 14px 8px}
+.hdr h1{margin:0;font-size:16px;font-weight:800;letter-spacing:-.3px}
 .hdr .sub{font-size:11px;opacity:.85;margin-top:2px}
-.tabs{position:sticky;top:53px;z-index:29;display:flex;gap:6px;overflow-x:auto;padding:8px 12px;
+.tabs{position:sticky;top:50px;z-index:29;display:flex;gap:6px;overflow-x:auto;padding:8px 12px;
   background:var(--bg);-webkit-overflow-scrolling:touch;border-bottom:1px solid var(--line)}
 .tab{flex:0 0 auto;background:#fff;border:1px solid var(--line);border-radius:18px;padding:7px 12px;
   font-size:12.5px;font-weight:700;color:var(--soft);white-space:nowrap}
 .tab.on{background:var(--g);border-color:var(--g);color:#fff}
 .tab .n{margin-left:5px;font-size:11px;opacity:.75}
 
-/* ตาราง 3 ช่อง — จอกว้างขึ้นเป็น 4 ช่องเอง */
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:10px 10px 4px}
-@media(min-width:520px){ .grid{grid-template-columns:repeat(4,1fr)} }
-.cell{background:#fff;border:1.5px solid var(--line);border-radius:13px;padding:7px 6px 8px;
-  display:flex;flex-direction:column;align-items:center;gap:5px;min-height:112px;overflow:hidden}
-.cell.has{border-color:var(--g);background:#F6FBF8}
-.cell.open{grid-column:1/-1;flex-direction:row;align-items:center;gap:12px;padding:12px;min-height:0}
-.pic{width:52px;height:52px;flex-shrink:0;border-radius:10px;background:var(--gl);object-fit:cover;
-  display:flex;align-items:center;justify-content:center;font-size:24px}
-img.pic{background:#fff}
-.cell.open .pic{width:62px;height:62px}
-.nm{font-size:11.5px;font-weight:600;line-height:1.25;text-align:center;
+/* การ์ดแบบ GO Wholesale — รูปใหญ่เต็มการ์ด ปุ่มอยู่ใต้สุด */
+.grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:10px}
+@media(min-width:480px){ .grid{grid-template-columns:repeat(3,1fr)} }
+@media(min-width:760px){ .grid{grid-template-columns:repeat(4,1fr)} }
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden;
+  display:flex;flex-direction:column}
+.card.has{border-color:var(--g);box-shadow:0 0 0 1.5px var(--g)}
+.ph{width:100%;aspect-ratio:1/1;background:#fff;display:flex;align-items:center;justify-content:center;
+  font-size:44px;overflow:hidden}
+.ph img{width:100%;height:100%;object-fit:contain;padding:6px}
+.nm{padding:7px 9px 0;font-size:13px;font-weight:700;line-height:1.3;min-height:36px;
   overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
-.cell.open .nm{flex:1;text-align:left;font-size:15px;font-weight:800;-webkit-line-clamp:2}
-.val{font-size:15px;font-weight:800;color:var(--g);line-height:1}
-.val.none{color:#C4C7C4;font-weight:600}
-.cell.open .val{font-size:26px}
-.vu{font-size:10px;color:var(--soft);font-weight:600;margin-left:2px}
-
-/* แผงปุ่มตอนแตะ — ปุ่มใหญ่ กดทีละอย่าง ไม่พลาด */
-.pad{display:none;grid-column:1/-1;background:#fff;border:1.5px solid var(--g);border-top:0;
-  border-radius:0 0 13px 13px;margin:-8px 10px 8px;padding:10px 12px 12px}
-.pad.on{display:block}
-.pad .row{display:flex;gap:7px;margin-bottom:8px}
-.pb{flex:1;border:1.5px solid var(--line);background:#fff;border-radius:10px;padding:13px 0;
-  font-size:15px;font-weight:800;font-family:inherit;color:#1A1A1A}
-.pb.up{border-color:#BFD8CC;color:var(--g);background:var(--gl)}
-.pb.dn{border-color:#EED8D3;color:var(--r);background:#FDF3F1}
-.pad .row2{display:flex;gap:7px;align-items:center}
-.tin{flex:1;text-align:center;font-size:22px;font-weight:800;font-family:inherit;
-  border:1.5px solid var(--line);border-radius:10px;padding:10px;background:#fff}
-.tin:focus{outline:none;border-color:var(--g)}
-.zero{flex-shrink:0;background:#FDF3F1;border:1.5px solid #EED8D3;color:var(--r);border-radius:10px;
-  padding:11px 14px;font-size:13px;font-weight:800;font-family:inherit}
-.ok{flex-shrink:0;background:var(--g);color:#fff;border:0;border-radius:10px;padding:12px 20px;
-  font-size:14px;font-weight:800;font-family:inherit}
+.val{padding:2px 9px 7px;font-size:19px;font-weight:800;color:var(--g);line-height:1.1}
+.val.none{color:#C4C7C4;font-weight:600;font-size:15px}
+.val small{font-size:11px;color:var(--soft);font-weight:600;margin-left:2px}
+.btns{margin-top:auto;padding:0 7px 7px;display:grid;grid-template-columns:1fr 1fr;gap:5px}
+.b{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:9px 0;
+  font-size:13.5px;font-weight:800;font-family:inherit;color:#1A1A1A}
+.b.up{border-color:#BFD8CC;color:var(--g);background:var(--gl)}
+.b.dn{border-color:#EED8D3;color:var(--r);background:#FDF3F1}
+.b.wide{grid-column:1/-1;font-size:12.5px;padding:8px 0;border-color:var(--line);color:var(--soft);background:#fff}
 
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
   padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center}
@@ -76,9 +60,9 @@ img.pic{background:#fff}
 .save{background:var(--g);color:#fff;border:0;border-radius:11px;padding:12px 18px;font-size:14px;
   font-weight:800;font-family:inherit}
 .save:disabled{background:#C9CDC9}
-.note{margin:6px 12px 12px;background:#FEF9C3;border:1px solid #FDE68A;border-radius:10px;
-  padding:10px 12px;font-size:11.5px;color:#713F12;line-height:1.55}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:80px;background:#1A1A1A;color:#fff;
+.note{margin:2px 12px 10px;background:#FEF9C3;border:1px solid #FDE68A;border-radius:10px;
+  padding:9px 12px;font-size:11.5px;color:#713F12;line-height:1.55}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:78px;background:#1A1A1A;color:#fff;
   padding:10px 17px;border-radius:20px;font-size:13px;font-weight:700;opacity:0;transition:.25s;
   pointer-events:none;z-index:50}
 .toast.on{opacity:1}
@@ -96,8 +80,8 @@ img.pic{background:#fff}
 <div id="list"></div>
 
 <div class="note">
-  <b>แตะรูปของ</b> → กดปุ่ม <b>+100 / +500</b> จนครบ แล้วแตะ <b>เสร็จ</b> · กดเกินใช้ <b>−100 / −500</b> ลดลงได้<br>
-  ทั้งหมดนับเป็น<b>กรัม</b> (ไข่นับเป็นฟอง) · ของที่ไม่ได้นับ <b>เว้นว่างไว้</b> · ใส่ <b>0</b> เท่านั้นที่แปลว่าหมด
+  กด <b>+100 / +500</b> จนครบจำนวนที่นับได้ · กดเกินใช้ <b>−100 / −500</b> ลดลง · แตะ <b>พิมพ์เอง</b> ถ้าอยากใส่ตัวเลขตรง ๆ<br>
+  ทั้งหมดนับเป็น<b>กรัม</b> (ไข่นับเป็นฟอง) · ของที่ไม่ได้นับ <b>ปล่อยว่างไว้</b> · ใส่ <b>0</b> เท่านั้นที่แปลว่าหมด
 </div>
 
 <div class="bar">
@@ -110,7 +94,7 @@ img.pic{background:#fff}
 var SB='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 var KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 var H={apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json'};
-var LIST=null, VAL={}, TAB=0, OPEN=null, LAST=null;
+var LIST=null, VAL={}, TAB=0, LAST=null;
 
 function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
 function toast(t){var e=document.getElementById('toast');e.textContent=t;e.classList.add('on');setTimeout(function(){e.classList.remove('on');},1700);}
@@ -144,56 +128,47 @@ function render(){
       +'<span class="n">'+doneIn(g)+'/'+g.items.length+'</span></div>';
   }).join('');
   var cur=LIST.groups[TAB]||{items:[]};
-  var html='<div class="grid">';
-  cur.items.forEach(function(it){
-    var v=VAL[it.key], has=(v!=='' && v!=null), isOpen=(OPEN===it.key);
-    /* รูปวัตถุดิบ — ตรวจมาทีละรูปแล้วว่าตรงของจริง · ตัวที่ยังไม่มีใช้อีโมจิของกลุ่มไปก่อน
-       รูปพังเมื่อไหร่ตกกลับเป็นอีโมจิเอง ไม่ปล่อยกรอบว่าง */
+  document.getElementById('list').innerHTML='<div class="grid">'+cur.items.map(function(it){
+    var v=VAL[it.key], has=(v!=='' && v!=null), unit=(it.unit==='ฟอง'?'ฟอง':'ก.');
+    /* รูปวัตถุดิบจาก GO Wholesale — ตรวจชื่อสินค้าทีละตัวแล้วตัดที่ไม่ตรงออก
+       รูปพังเมื่อไหร่ตกกลับเป็นอีโมจิของกลุ่ม ไม่ปล่อยกรอบว่าง */
     var pic = it.img
-      ? '<img class="pic" src="'+esc(it.img)+'" loading="lazy" alt="" onerror="this.outerHTML=\'<div class=&quot;pic&quot;>'+esc(cur.emoji||'📦')+'</div>\'">'
-      : '<div class="pic">'+esc(cur.emoji||'📦')+'</div>';
-    var unit=(it.unit==='ฟอง'?'ฟอง':'ก.');
-    html+='<div class="cell'+(has?' has':'')+(isOpen?' open':'')+'" onclick="openCell(\''+it.key+'\')">'
-      + pic
+      ? '<img src="'+esc(it.img)+'" loading="lazy" alt="" onerror="this.parentNode.textContent=\''+esc(cur.emoji||'📦')+'\'">'
+      : esc(cur.emoji||'📦');
+    return '<div class="card'+(has?' has':'')+'" id="cd-'+it.key+'">'
+      + '<div class="ph">'+pic+'</div>'
       + '<div class="nm">'+esc(it.name)+'</div>'
-      + '<div class="val'+(has?'':' none')+'">'+(has?(v+'<span class="vu">'+unit+'</span>'):'—')+'</div>'
-      + '</div>';
-    if(isOpen){
-      html+='<div class="pad on" onclick="event.stopPropagation()">'
-        + '<div class="row">'
-        +   '<button class="pb dn" onclick="bump(\''+it.key+'\',-500)">−500</button>'
-        +   '<button class="pb dn" onclick="bump(\''+it.key+'\',-100)">−100</button>'
-        +   '<button class="pb up" onclick="bump(\''+it.key+'\',100)">+100</button>'
-        +   '<button class="pb up" onclick="bump(\''+it.key+'\',500)">+500</button>'
-        + '</div>'
-        + '<div class="row2">'
-        +   '<button class="zero" onclick="setVal(\''+it.key+'\',0)">หมด</button>'
-        +   '<input class="tin" id="tin" type="number" inputmode="numeric" min="0" placeholder="พิมพ์เอง"'
-        +     ' value="'+(has?v:'')+'" onfocus="this.select()" oninput="typed(\''+it.key+'\',this.value)">'
-        +   '<button class="ok" onclick="closeCell()">เสร็จ</button>'
-        + '</div></div>';
-    }
-  });
-  html+='</div>';
-  document.getElementById('list').innerHTML=html;
+      + '<div class="val'+(has?'':' none')+'" id="v-'+it.key+'">'+(has?(v+'<small>'+unit+'</small>'):'ยังไม่นับ')+'</div>'
+      + '<div class="btns">'
+      +   '<button class="b dn" onclick="bump(\''+it.key+'\',-100)">−100</button>'
+      +   '<button class="b up" onclick="bump(\''+it.key+'\',100)">+100</button>'
+      +   '<button class="b dn" onclick="bump(\''+it.key+'\',-500)">−500</button>'
+      +   '<button class="b up" onclick="bump(\''+it.key+'\',500)">+500</button>'
+      +   '<button class="b wide" onclick="ask(\''+it.key+'\')">พิมพ์เอง / หมด</button>'
+      + '</div></div>';
+  }).join('')+'</div>';
   quiet();
 }
-function setTab(i){ TAB=i; OPEN=null; render(); window.scrollTo(0,0); }
-function openCell(k){ OPEN=(OPEN===k?null:k); render();
-  if(OPEN){ var el=document.querySelector('.cell.open'); if(el) el.scrollIntoView({block:'center',behavior:'smooth'}); } }
-function closeCell(){ OPEN=null; render(); }
-function bump(k,n){
-  var cur=Number(VAL[k])||0;
-  VAL[k]=Math.max(0,cur+n);
-  var t=document.getElementById('tin'); if(t) t.value=VAL[k];
-  var box=document.querySelector('.cell.open .val');
-  if(box) box.innerHTML=VAL[k]+'<span class="vu">ก.</span>';
-  var cell=document.querySelector('.cell.open'); if(cell) cell.classList.add('has');
+function setTab(i){ TAB=i; render(); window.scrollTo(0,0); }
+/* กดปุ่มแล้วอัปเดตเฉพาะการ์ดนั้น ไม่วาดใหม่ทั้งหน้า — หน้าไม่กระตุก ตำแหน่งไม่เด้ง */
+function paintCell(k){
+  var it=null;
+  LIST.groups.forEach(function(g){ g.items.forEach(function(x){ if(x.key===k) it=x; }); });
+  var v=VAL[k], has=(v!=='' && v!=null), unit=(it&&it.unit==='ฟอง'?'ฟอง':'ก.');
+  var el=document.getElementById('v-'+k), card=document.getElementById('cd-'+k);
+  if(el){ el.innerHTML = has ? (v+'<small>'+unit+'</small>') : 'ยังไม่นับ'; el.className='val'+(has?'':' none'); }
+  if(card) card.classList.toggle('has', has);
   quiet();
 }
-function setVal(k,v){ VAL[k]=v; render(); }
-function typed(k,v){ VAL[k]=(v===''?'':Math.max(0,Number(v)||0)); quiet(); }
-/* อัปเดตแค่ตัวเลขสรุป ไม่วาดใหม่ทั้งหน้า — ไม่งั้นคีย์บอร์ดเด้งปิดทุกครั้งที่พิมพ์ */
+function bump(k,n){ VAL[k]=Math.max(0,(Number(VAL[k])||0)+n); paintCell(k); }
+function ask(k){
+  var cur=(VAL[k]==null||VAL[k]==='')?'':VAL[k];
+  var s=window.prompt('ใส่จำนวนที่นับได้ (กรัม) — ใส่ 0 = หมด · เว้นว่าง = ยังไม่นับ', cur);
+  if(s===null) return;
+  s=String(s).trim();
+  if(s===''){ delete VAL[k]; } else { VAL[k]=Math.max(0,Number(s)||0); }
+  paintCell(k);
+}
 function quiet(){
   var n=counted();
   document.getElementById('stat').innerHTML='นับแล้ว <b>'+n+'</b> / '+total()+' รายการ';
@@ -240,7 +215,7 @@ async function save(){
 
     toast('บันทึกแล้ว '+rows.length+' รายการ');
     LAST={key:'stock_count:'+bkkToday(),data:{by:who}};
-    OPEN=null; setTimeout(render,300);
+    setTimeout(render,300);
   }catch(e){ toast('บันทึกไม่สำเร็จ — ลองใหม่อีกครั้ง'); }
   btn.disabled=false; btn.textContent='บันทึก';
 }
