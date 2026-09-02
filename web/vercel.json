@@ -144,6 +144,10 @@
     {
       "source": "/pack",
       "destination": "/pack.html"
+    },
+    {
+      "source": "/jay",
+      "destination": "/jay.html"
     }
   ]
 }
