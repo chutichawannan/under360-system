@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- หน้าเครื่องมือภายใน ไม่ใช่หน้าขาย — ห้ามให้ Google เก็บ -->
+<meta name="robots" content="noindex,nofollow">
+<title>พรีวิวมือถือ — Under360</title>
+<link rel="icon" href="/img/u360_logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--ink:#14171A;--muted:#6B7280;--hair:#E3E6E1;--green:#40B549;--bg:#EEF0EC}
+body{font-family:'Sarabun',sans-serif;background:var(--bg);color:var(--ink);font-size:15px}
+
+.top{position:sticky;top:0;z-index:20;background:#fff;border-bottom:1px solid var(--hair);
+  padding:12px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.top h1{font-family:'Prompt';font-weight:700;font-size:1.05rem;margin-right:auto}
+.top .grp{display:flex;gap:6px;align-items:center;background:#F4F6F3;border-radius:999px;padding:4px}
+.top button{border:none;background:transparent;font-family:'Prompt';font-weight:600;font-size:.86rem;
+  padding:7px 14px;border-radius:999px;cursor:pointer;color:var(--muted)}
+.top button.on{background:var(--green);color:#fff}
+.top button:not(.on):hover{background:#E7EBE5;color:var(--ink)}
+.top .lbl{font-size:.82rem;color:var(--muted);font-family:'Prompt';font-weight:600;
+  letter-spacing:.08em;text-transform:uppercase}
+
+.rail{display:flex;gap:22px;padding:22px 18px 40px;overflow-x:auto;align-items:flex-start;
+  -webkit-overflow-scrolling:touch}
+.card{flex:none;display:flex;flex-direction:column;gap:9px}
+.card .bar{display:flex;align-items:center;gap:9px}
+.card .nm{font-family:'Prompt';font-weight:600;font-size:.95rem}
+.card .pt{font-size:.8rem;color:var(--muted)}
+.card a.open{margin-left:auto;font-size:.8rem;color:var(--green);text-decoration:none;
+  font-family:'Prompt';font-weight:600}
+
+/* กรอบมือถือ — ทำให้เห็นขอบจอชัดๆ จะได้รู้ว่าอะไรหลุดขอบ */
+.phone{background:#1A1D1A;border-radius:34px;padding:10px;box-shadow:0 12px 32px rgba(0,0,0,.18)}
+.phone .screen{position:relative;background:#fff;border-radius:26px;overflow:hidden}
+.phone iframe{border:0;display:block;background:#fff}
+.notch{position:absolute;top:0;left:50%;transform:translateX(-50%);width:110px;height:22px;
+  background:#1A1D1A;border-radius:0 0 14px 14px;z-index:3;pointer-events:none}
+.card.hidenotch .notch{display:none}
+
+.hint{padding:0 18px 30px;color:var(--muted);font-size:.9rem;max-width:900px}
+.hint b{font-family:'Prompt';font-weight:600;color:var(--ink)}
+.hint ul{margin:8px 0 0;padding-left:20px}
+.hint li{margin-top:5px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>📱 พรีวิวมือถือ</h1>
+
+  <span class="lbl">ขนาดจอ</span>
+  <div class="grp" id="sizes"></div>
+
+  <span class="lbl">ความยาว</span>
+  <div class="grp" id="heights"></div>
+
+  <div class="grp">
+    <button onclick="reloadAll()">โหลดใหม่ทุกหน้า</button>
+    <button onclick="toggleNotch()" id="notchBtn" class="on">ติ่งจอ</button>
+  </div>
+</div>
+
+<div class="rail" id="rail"></div>
+
+<div class="hint">
+  <b>วิธีใช้</b>
+  <ul>
+    <li>เลื่อนซ้าย-ขวาเพื่อดูหน้าอื่น · เลื่อนในกรอบมือถือได้เหมือนจับมือถือจริง</li>
+    <li>สลับขนาดจอเพื่อหาจุดที่พัง — <b>360px คือจอแคบสุดที่ต้องรอด</b> (Android รุ่นเล็ก)</li>
+    <li>กด "เปิดเต็ม" เพื่อเปิดหน้านั้นในแท็บใหม่</li>
+    <li>เห็นอะไรไม่สวย บอกมาว่า <b>หน้าไหน · จุดไหน</b> เดี๋ยวแก้ให้</li>
+  </ul>
+</div>
+
+<script>
+/* หน้าเว็บทั้งหมดที่ลูกค้าเห็นจริง — เพิ่มหน้าใหม่ที่นี่จุดเดียว */
+const PAGES = [
+  { nm:'หน้าแรก',        path:'/' },
+  { nm:'คอร์สเจ 2569',   path:'/jay' },
+  { nm:'Meal Plan',      path:'/mealplan' },
+  { nm:'แพ็คกับข้าว',    path:'/pack' },
+  { nm:'บทความ',         path:'/blog' },
+  { nm:'ตัวอย่างบทความ', path:'/blog/riceberry-pros-cons' }
+];
+
+/* ขนาดที่ใช้จริงในไทย — 360 คือตัวที่พังบ่อยสุด เลยเอาไว้ตัวแรก */
+const SIZES = [
+  { k:'360', w:360, note:'Android เล็ก' },
+  { k:'390', w:390, note:'iPhone 14/15' },
+  { k:'414', w:414, note:'iPhone Plus' },
+  { k:'768', w:768, note:'แท็บเล็ต' }
+];
+const HEIGHTS = [
+  { k:'สั้น', h:640 },
+  { k:'ปกติ', h:844 },
+  { k:'ยาว', h:1100 }
+];
+
+let W = 390, H = 844, NOTCH = true;
+
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+function chips(el, list, key, cur, fn){
+  el.innerHTML = list.map(x =>
+    '<button data-v="'+x[key]+'" class="'+(x[key]===cur?'on':'')+'">'+esc(x.k)+'</button>'
+  ).join('');
+  [...el.querySelectorAll('button')].forEach(b => b.onclick = () => fn(Number(b.dataset.v)));
+}
+
+function render(){
+  document.getElementById('rail').innerHTML = PAGES.map((p,i) =>
+    '<div class="card'+(NOTCH?'':' hidenotch')+'">'
+    + '<div class="bar"><span class="nm">'+esc(p.nm)+'</span>'
+    + '<span class="pt">'+esc(p.path)+'</span>'
+    + '<a class="open" href="'+esc(p.path)+'" target="_blank" rel="noopener">เปิดเต็ม ↗</a></div>'
+    + '<div class="phone"><div class="screen" style="width:'+W+'px;height:'+H+'px">'
+    + '<div class="notch"></div>'
+    + '<iframe id="fr'+i+'" src="'+esc(p.path)+'" width="'+W+'" height="'+H+'" loading="lazy"></iframe>'
+    + '</div></div></div>'
+  ).join('');
+  chips(document.getElementById('sizes'),   SIZES,   'w', W, v => { W = v; render(); });
+  chips(document.getElementById('heights'), HEIGHTS, 'h', H, v => { H = v; render(); });
+}
+
+function reloadAll(){
+  PAGES.forEach((p,i) => {
+    const f = document.getElementById('fr'+i);
+    if(f) f.src = p.path + (p.path.indexOf('?')>=0 ? '&' : '?') + 'v=' + Date.now();
+  });
+}
+function toggleNotch(){
+  NOTCH = !NOTCH;
+  document.getElementById('notchBtn').className = NOTCH ? 'on' : '';
+  [...document.querySelectorAll('.card')].forEach(c => c.classList.toggle('hidenotch', !NOTCH));
+}
+
+render();
+</script>
+</body>
+</html>
