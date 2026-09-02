@@ -1296,6 +1296,13 @@ function renderPkgBand() {
 }
 
 function openPackage(pkgId) {
+  /* เต็มโควตาแล้วสลับให้เองตั้งแต่ตอนเปิด — ลูกค้าไม่เจอหน้าตายว่า "ปิดรับแล้ว" */
+  const _want = pkgId, _use = pkgResolveId(pkgId);
+  if (_use !== _want){
+    const q = pkgQuotaOf(_want), np = packages.find(p => p.id === _use);
+    toast((q && q.label ? q.label : 'สิทธิ์พิเศษ') + ' เต็มแล้ว — เปลี่ยนเป็นราคาปกติ ฿' + ((np && np.base_price) || 0).toLocaleString());
+    pkgId = _use;
+  }
   currentPkg = packages.find(p => p.id === pkgId);
   if (!currentPkg) return;
   pkgSelection = {};
@@ -1483,6 +1490,54 @@ let pkgClearance = {};
    ⚠️ ของแถม "ลูกค้าไม่ต้องกด" — ไม่ใช่กลุ่มการเลือก ไม่นับรวมโควตากล่อง ไม่คิดเงิน */
 const PKGGIFT_KEY = 'pkg_gifts';
 let pkgGifts = {};
+
+/* ── 🎟️ โควตาแพค (Early Bird N คนแรก) ─────────────────────────────────────
+   ดูหัวคอมเมนต์ไฟล์ patch — ตั้งที่ kitchen_data 'pkg_quota' ไม่ต้องรัน SQL */
+const PKGQUOTA_KEY = 'pkg_quota';
+let pkgQuota = {};      // { pkgId: {limit, fallback, label} }
+let pkgSold  = {};      // { pkgId: จำนวนคอร์สที่ขายไปแล้ว } — นับสดตอนเปิดแอป
+function pkgQuotaOf(pkgId){
+  const q = pkgQuota[pkgId];
+  if(!q || !(Number(q.limit) > 0)) return null;
+  return { limit:Number(q.limit), fallback:q.fallback || '', label:q.label || '' };
+}
+/* เหลือกี่สิทธิ์ — null = แพคนี้ไม่ได้จำกัดจำนวน */
+function pkgQuotaLeft(pkgId){
+  const q = pkgQuotaOf(pkgId);
+  if(!q) return null;
+  return Math.max(0, q.limit - (pkgSold[pkgId] || 0));
+}
+function pkgQuotaFull(pkgId){ const l = pkgQuotaLeft(pkgId); return l !== null && l <= 0; }
+/* แพคที่ควรใช้จริง — เต็มแล้วสลับไปตัวราคาปกติเอง (ลูกค้าไม่เจอทางตัน) */
+function pkgResolveId(pkgId){
+  const q = pkgQuotaOf(pkgId);
+  if(!q || !pkgQuotaFull(pkgId)) return pkgId;
+  return (q.fallback && packages.some(p => p.id === q.fallback)) ? q.fallback : pkgId;
+}
+/* นับสดจากออเดอร์จริง · 1 คอร์ส = 1 สิทธิ์ · ใบที่ยกเลิกไม่นับ */
+async function loadPkgSold(){
+  const ids = Object.keys(pkgQuota || {});
+  for (const id of ids){
+    try{
+      const r = await sb.from('order_items').select('order_id,notes')
+        .like('notes', 'pkg:' + id + '%').limit(3000);
+      const cand = new Set();
+      (r.data || []).forEach(x => {
+        const m = /^pkg:[0-9a-fA-F-]+(?::course:([0-9]+)[/])?/.exec(x.notes || '');
+        if (m && m[1] && m[1] !== '1') return;      // ใบรอบ 2-3 ของคอร์สเดิม ไม่นับซ้ำ
+        cand.add(x.order_id);
+      });
+      if (!cand.size) { pkgSold[id] = 0; continue; }
+      const arr = [...cand];
+      let alive = 0;
+      for (let i = 0; i < arr.length; i += 60){
+        const o = await sb.from('orders').select('id,status').in('id', arr.slice(i, i + 60));
+        alive += (o.data || []).filter(x => x.status !== 'cancelled').length;
+      }
+      pkgSold[id] = alive;
+    }catch(e){ /* นับไม่ได้ = ไม่ปิดกั้นการขาย (เต็มจริงยังมีด่านตอนกดสั่ง) */ }
+  }
+}
 function pkgGiftsOf(pkgId){
   const raw = pkgGifts[pkgId];
   if(!Array.isArray(raw)) return [];
@@ -1519,6 +1574,18 @@ function pkgGroupedPrice(){
   let sur=0;
   Object.values(pkgGroupSel).forEach(sel=>Object.entries(sel||{}).forEach(([sku,q])=>{ sur += (q||0)*pkgSurcharge(sku); }));
   return (currentPkg.base_price||0) + sur;
+}
+/* แถบนับสิทธิ์ที่เหลือ — ตัวเลขจริงจากออเดอร์ ไม่ใช่ตัวเลขปลุกใจ
+   ถ้าเหลือน้อยจะเป็นสีแดง (เร่งตัดสินใจ แต่ไม่โกหก) */
+function pkgQuotaBanner(){
+  const left = pkgQuotaLeft(currentPkg.id);
+  if (left === null) return '';
+  const q = pkgQuotaOf(currentPkg.id);
+  const hot = left <= 10;
+  return `<div style="font-size:12.5px;font-weight:800;border-radius:9px;padding:6px 10px;margin-top:5px;
+      background:${hot?'#FEF2F2':'#FFF7ED'};color:${hot?'#B91C1C':'#9A3412'};border:1px solid ${hot?'#FECACA':'#FED7AA'};">
+      🎟️ ${h(q.label || 'สิทธิ์พิเศษ')} เหลืออีก ${left} จาก ${q.limit} สิทธิ์${hot?' — ใกล้เต็มแล้ว':''}
+    </div>`;
 }
 /* แถบบอกวันส่งของคอร์สที่ล็อกวันไว้ — โชว์ตั้งแต่หน้าเลือกเมนู ไม่ต้องรอถึงเช็คเอาท์
    นัทสั่งเอง: "มีปฏิทินวันที่ให้ว่าจะรับได้แค่วันนี้วันนี้วันนี้เท่านั้น
@@ -1631,6 +1698,7 @@ function renderPkgSelectGrouped(){
         <span style="font-size:14px;font-weight:800;color:#D98C2B;">${_clr&&_gross>0?`<span style="font-size:12px;color:#9CA3AF;text-decoration:line-through;font-weight:600;margin-right:6px;">฿${_gross.toLocaleString()}</span>`:''}฿${pkgGroupedPrice().toLocaleString()}</span>
       </div>
       ${_clr?`<div style="font-size:11.5px;color:#DC2626;background:#FEF2F2;border-radius:8px;padding:4px 8px;margin-top:4px;font-weight:700;">🏷️ เลือกอย่างน้อย ${_clr.min_items} อย่าง ลดทันที ${_clr.percent}% · เลือกเพิ่มได้ไม่จำกัด</div>`:''}
+      ${pkgQuotaBanner()}
       ${currentPkg.delivery_rounds>1?pkgRoundsBanner():''}
       ${pkgGiftsOf(currentPkg.id).length?`<div style="font-size:12px;color:#92400E;background:#FEF3C7;border:1px solid #F5E4A8;border-radius:8px;padding:5px 9px;margin-top:4px;font-weight:700;">🎁 แถมในเซ็ตนี้: ${h(giftLineText(pkgGiftsOf(currentPkg.id)))} <span style="font-weight:400;">— ไม่ต้องเลือก ใส่ให้อัตโนมัติ</span></div>`:''}
     </div>`;
@@ -1702,6 +1770,11 @@ function renderPkgSelectGrouped(){
 }
 function addGroupedPkgToCart(){
   if(!allGroupsFilled()){ toast('กรุณาเลือกให้ครบทุกกลุ่ม'); return; }
+  /* เผื่อเปิดหน้าค้างไว้นานแล้วสิทธิ์เพิ่งหมด — เช็คสดอีกรอบก่อนเข้าตะกร้า */
+  if(pkgQuotaFull(currentPkg.id)){
+    const alt = pkgResolveId(currentPkg.id);
+    if(alt !== currentPkg.id){ openPackage(alt); return; }
+  }
   /* ด่านสุดท้ายก่อนเข้าตะกร้า — เผื่อสต็อกเปลี่ยนระหว่างที่ลูกค้ากำลังเลือกอยู่
      (ครัวกรอกเลขใหม่ หรือมีคนอื่นสั่งตัดไปก่อน) ปล่อยผ่าน = ครัวเจอของไม่มีตอนเปิดใบ */
   const over=[];
@@ -2496,7 +2569,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2588,6 +2661,8 @@ async function init() {
     } catch(e) { salePctByCode = {}; }
     pkgClearance = (cfgMap[PKGCLR_KEY] && typeof cfgMap[PKGCLR_KEY]==='object') ? cfgMap[PKGCLR_KEY] : {};
     pkgGifts     = (cfgMap[PKGGIFT_KEY] && typeof cfgMap[PKGGIFT_KEY]==='object') ? cfgMap[PKGGIFT_KEY] : {};
+    pkgQuota     = (cfgMap[PKGQUOTA_KEY] && typeof cfgMap[PKGQUOTA_KEY]==='object') ? cfgMap[PKGQUOTA_KEY] : {};
+    if (Object.keys(pkgQuota).length) loadPkgSold();   // ไม่ await — ไม่ให้ตัวนับถ่วงหน้าแรก
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
     const dbCats = (cfgMap.appConfig && Array.isArray(cfgMap.appConfig.categories)) ? cfgMap.appConfig.categories : [];
@@ -3303,7 +3378,7 @@ function renderCart() {
         else _grp.set(k, { it, n:1 });
       });
       const ilist = [..._grp.values()].map(({it,n}) =>
-        `<div style="font-size:11.5px;color:#6B7280;line-height:1.8;">· ${h(it.name)}${n>1?` <b style="color:#374151;">×${n}</b>`:''}${it.extra_price>0?` <span style="color:#D97706;font-weight:700;">+฿${it.extra_price}${n>1?'/กล่อง':''}</span>`:''}</div>`
+        `<div style="font-size:11.5px;color:#6B7280;line-height:1.8;">· <b style="color:#1F4D3A;font-family:monospace;">${h(subCode(it.sku||''))}</b> ${h(it.name)}${n>1?` <b style="color:#374151;">×${n}</b>`:''}${it.extra_price>0?` <span style="color:#D97706;font-weight:700;">+฿${it.extra_price}${n>1?'/กล่อง':''}</span>`:''}</div>`
       ).join('');
       return `<div class="citem" style="border-left:4px solid #D98C2B;align-items:flex-start;flex-wrap:wrap;gap:8px;">
         <div style="flex:1;min-width:0;">
@@ -3609,13 +3684,15 @@ function renderRoundSplit(){
      ระบบแบ่งให้เท่าๆ กันตามลำดับที่เลือกอยู่แล้ว (splitSetItems) แค่ไม่เคยเอามาแสดง
      ⚠️ นี่คือ "บอกให้รู้" เฉยๆ — เรื่องให้ลูกค้าเลือกเองว่าอะไรไปรอบไหน (N-38) นัทยังไม่เคาะ ยังไม่ทำ */
   const chunkMenus = ms.length===1 ? splitSetItems(ms[0].items||[],N,lockedBoxes) : null;
+  /* เดิมพ่นชื่อเมนูทั้งรอบต่อกันเป็นพรืด — ลูกค้าเพิ่งติ๊กเลือกเองมาหยก ๆ ไม่ต้องทวนอีก
+     เหลือแค่รหัสสั้น ๆ ไว้เช็คว่าของอยู่ถูกรอบ (นัทสั่ง 2 ก.ย.) */
   const roundMenuHtml = (r)=>{
     if(!chunkMenus || !chunkMenus[r-1] || !chunkMenus[r-1].length) return '';
     const cnt={};
-    chunkMenus[r-1].forEach(it=>{ const n=(it&&(it.name||it.code))||'—'; cnt[n]=(cnt[n]||0)+1; });
-    const names=Object.keys(cnt).map(n=>h(n)+(cnt[n]>1?' <b>×'+cnt[n]+'</b>':''));
-    return '<div style="font-size:11.5px;color:#3B4A66;background:#F7F8FA;border-radius:8px;padding:6px 10px;margin:0 2px 4px;line-height:1.6;">'
-      + names.join(' · ') + '</div>';
+    chunkMenus[r-1].forEach(it=>{ const c=subCode((it&&it.sku)||'')||'—'; cnt[c]=(cnt[c]||0)+1; });
+    const codes=Object.keys(cnt).map(c=>h(c)+(cnt[c]>1?'<b>×'+cnt[c]+'</b>':''));
+    return '<div style="font-size:11px;color:#6B7280;font-family:monospace;padding:1px 2px 5px;line-height:1.7;">'
+      + codes.join(' · ') + '</div>';
   };
   let html=`<div style="padding:10px 14px 0;">
       <div style="background:#EFF6FF;border:1px solid #BFDBFE;border-radius:12px;padding:12px 14px;">
