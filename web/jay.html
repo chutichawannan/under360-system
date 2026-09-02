@@ -347,15 +347,16 @@ header .btn-jay,header .btn-line{box-shadow:none!important}
   /* จอกว้าง รูปอยู่คอลัมน์ขวา ไม่ต้องเว้นบน */
   .hero-pic{margin-top:0}
 }
+@media(max-width:899px){
+  /* ระยะมาจากที่เดียว — ไม่งั้น gap ของ grid บวกซ้อนกับ margin ของรูป กลายเป็น 2 เท่า */
+  .hero-grid{gap:0}
+}
 @media(max-width:600px){
-  /* จอแคบ: ย่อโลโก้กับตัวหนังสือลงให้วันที่อยู่บรรทัดเดียวได้จริง */
+  /* จอแคบ: ย่อโลโก้กับตัวหนังสือ ให้วันที่อยู่บรรทัดเดียวได้จริง
+     แต่ระยะห่างยังใช้สเกลเดียวกับจอใหญ่ 8/16/24/32 ไม่ตั้งชุดที่สอง */
   .jayhead{gap:12px}
   .jaylogo{width:44px}
   .jaydate{font-size:.86rem}
-  .hero p.sub{margin-top:14px!important}
-  .facts{margin-top:20px!important}
-  .hero .cta{margin-top:20px!important}
-  .hero-pic{margin-top:26px}
 }
 </style>
 </head>
