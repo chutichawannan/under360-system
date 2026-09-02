@@ -54,6 +54,10 @@ body{margin:0;background:var(--bg);color:#1A1A1A;font-family:-apple-system,Blink
 .b.dn{border-color:#EED8D3;color:var(--r);background:#FDF3F1}
 /* พิมพ์เองย้ายไปเป็นดินสอท้ายชื่อ — ประหยัดอีกบรรทัด */
 .pen{display:inline-block;font-size:12px;opacity:.45;margin-left:3px;vertical-align:middle}
+/* ช่องพิมพ์ในการ์ด — แทนกล่อง prompt ที่ต้องกด OK ทุกครั้ง */
+.tin{width:calc(100% - 18px);margin:0 9px 6px;font-size:18px;font-weight:800;font-family:inherit;
+  border:1.5px solid var(--g);border-radius:8px;padding:5px 8px;background:#fff;color:#1A1A1A}
+.tin:focus{outline:none}
 
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:40;background:#fff;border-top:1px solid var(--line);
   padding:9px 12px calc(9px + env(safe-area-inset-bottom));display:flex;gap:10px;align-items:center}
@@ -141,6 +145,7 @@ function render(){
       + '<div class="ph">'+pic+'</div>'
       + '<div class="nm" onclick="ask(\''+it.key+'\')">'+esc(it.name)+'<span class="pen">✏️</span></div>'
       + '<div class="val'+(has?'':' none')+'" id="v-'+it.key+'">'+(has?(v+'<small>'+unit+'</small>'):'ยังไม่นับ')+'</div>'
+      + '<input class="tin" id="t-'+it.key+'" type="number" inputmode="numeric" min="0" placeholder="กรัม" style="display:none">'
       + '<div class="btns">'
       +   '<button class="b dn" onclick="bump(\''+it.key+'\',-500)">−500</button>'
       +   '<button class="b dn" onclick="bump(\''+it.key+'\',-100)">−100</button>'
@@ -162,13 +167,21 @@ function paintCell(k){
   quiet();
 }
 function bump(k,n){ VAL[k]=Math.max(0,(Number(VAL[k])||0)+n); paintCell(k); }
+/* กดดินสอ = ช่องตัวเลขโผล่ในการ์ดพร้อมคีย์บอร์ด · Enter หรือแตะที่อื่น = จบ
+   ไม่มีกล่องเด้ง ไม่ต้องกด OK (นัทสั่ง 2 ก.ย.: "เปลืองเวลากด") */
 function ask(k){
-  var cur=(VAL[k]==null||VAL[k]==='')?'':VAL[k];
-  var s=window.prompt('ใส่จำนวนที่นับได้ (กรัม) — ใส่ 0 = หมด · เว้นว่าง = ยังไม่นับ', cur);
-  if(s===null) return;
-  s=String(s).trim();
-  if(s===''){ delete VAL[k]; } else { VAL[k]=Math.max(0,Number(s)||0); }
-  paintCell(k);
+  var val=document.getElementById('v-'+k), inp=document.getElementById('t-'+k);
+  if(!val||!inp) return;
+  inp.value=(VAL[k]==null||VAL[k]==='')?'':VAL[k];
+  val.style.display='none'; inp.style.display='block';
+  inp.oninput=function(){ VAL[k]=(this.value===''?'':Math.max(0,Number(this.value)||0)); quiet(); };
+  inp.onkeydown=function(e){ if(e.key==='Enter') this.blur(); };
+  inp.onblur=function(){
+    if(VAL[k]==='' || VAL[k]==null) delete VAL[k];
+    inp.style.display='none'; val.style.display='';
+    paintCell(k);
+  };
+  inp.focus(); inp.select();
 }
 function quiet(){
   var n=counted();
