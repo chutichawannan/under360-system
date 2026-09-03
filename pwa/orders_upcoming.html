@@ -73,6 +73,11 @@ main{padding:16px 14px 0}
 .c2{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 .chip{font-size:12px;border-radius:8px;padding:3px 8px;background:var(--panel2);border:1px solid var(--line);color:var(--soft)}
 .chip.hp{color:var(--hp);border-color:#2B4A6B}
+/* ป้ายคอร์สบนหัวการ์ด (ยังไม่กาง) — ลูกค้าที่สั่ง 2 คอร์สคู่กันต้องแยกออกทันที */
+.tag{font-size:11px;font-weight:800;border-radius:6px;padding:1px 6px;flex-shrink:0;
+  background:var(--panel2);border:1px solid var(--line);color:var(--soft)}
+.tag.hp{color:var(--hp);border-color:#2B4A6B}
+.tag.lc{color:var(--lc);border-color:#6B5622}
 .chip.lc{color:var(--lc);border-color:#6B5622}
 .chip.paid{color:var(--g);border-color:var(--g-dim)}
 .chip.unpaid{color:var(--warn);border-color:#5C2B2B}
@@ -340,6 +345,14 @@ function grp(title, list){
     + list.map(card).join("") + '</div>';
 }
 
+/* ป้ายคอร์สบนหัวการ์ด — โชว์เฉพาะ HP/LC เพราะนั่นคือตัวที่ทำให้คนสับสนว่าใบซ้ำ
+   (เซ็ต/สต็อคไม่เคยมีปัญหานี้ ไม่ต้องรกหน้าจอ) */
+function headTag(c){
+  if(c.hp && c.lc) return '<span class="tag">HP+LC</span>';
+  if(c.hp) return '<span class="tag hp">HP</span>';
+  if(c.lc) return '<span class="tag lc">LC</span>';
+  return '';
+}
 function card(o){
   var c = o._c;
   var name = o.customer_name || o.line_display_name || "(ไม่ระบุชื่อ)";
@@ -364,6 +377,7 @@ function card(o){
   // การ์ดปิดไว้ = ชื่อ · จำนวนกล่อง · เบอร์ เท่านั้น — แตะแล้วค่อยกางรายละเอียด
   return '<div class="card">'
     + '<div class="c1"><div class="cname">'+esc(name)+'</div>'
+    + headTag(c)
     + '<div class="cbox">'+(c.boxes||0)+' กล่อง</div></div>'
     + '<div class="c3"><a class="tel" href="tel:'+esc((o.customer_phone||"").replace(/[^0-9+]/g,""))+'">'+esc(fmtPhone(o.customer_phone))+'</a>'
     + '<span class="more">แตะดูเมนู</span></div>'
