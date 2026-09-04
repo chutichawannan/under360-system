@@ -4905,6 +4905,22 @@ async function resolveCanonicalCustomer(phone, uid, lineName){
 // โค้ดที่จำกัดเฉพาะสินค้า (scope_type!=='all') ใช้ได้ก็ต่อเมื่อตะกร้ามีสินค้านั้นอยู่จริง (include)
 // หรือตะกร้าต้องไม่มีสินค้านั้นเลย (exclude — v0.4.14 "ทุกอย่างยกเว้นที่เลือก")
 // scope_value เทียบกับ cart item ตาม type: sku→c.code, package→c.package_id, mp_offer→c.mp_set
+/* เทียบ scope ของคูปอง Meal Plan กับของในตะกร้า
+     'trial'      → ชุดทดลองทุกแบบ (ค่าเดิม ใช้ได้เหมือนเดิม)
+     'trial:hp'   → ชุดทดลองเฉพาะ High Protein
+     'trial:lc'   → ชุดทดลองเฉพาะ Low Carb
+   มีไว้เพราะ 2 ชุดราคาต่างกัน ถ้าแยกด้วยยอดขั้นต่ำอย่างเดียว
+   ชุดที่แพงกว่าจะใช้โค้ดของชุดถูกได้ แล้วลูกค้าได้ส่วนลดน้อยกว่าที่โฆษณา */
+function mpScopeHit(scopeValue, c){
+  const set  = String(c.mp_set||'').toLowerCase();
+  const type = String(c.mp_type||'').toLowerCase();
+  return (scopeValue||[]).some(v => {
+    const parts = String(v||'').toLowerCase().split(':');
+    const wantSet = parts[0], wantType = parts[1];
+    if(wantSet !== set) return false;
+    return wantType ? (wantType === type) : true;   // ไม่ระบุชนิด = ได้ทุกชนิดเหมือนเดิม
+  });
+}
 function cartMatchesPromoScope(p){
   const scopeType = p.scope_type || 'all';
   if(scopeType === 'all') return true;
@@ -4912,7 +4928,7 @@ function cartMatchesPromoScope(p){
   const matches = c => {
     if(scopeType === 'sku')      return !c.type && scopeValue.includes(c.code);
     if(scopeType === 'package')  return c.type === 'package' && scopeValue.includes(c.package_id);
-    if(scopeType === 'mp_offer') return c.type === 'meal_plan' && scopeValue.includes(c.mp_set);
+    if(scopeType === 'mp_offer') return c.type === 'meal_plan' && mpScopeHit(scopeValue, c);
     return false;
   };
   if(p.scope_mode === 'exclude'){
