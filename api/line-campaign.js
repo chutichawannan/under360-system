@@ -14,11 +14,18 @@
 //   audience_create  { name, uids[] }              → { audienceGroupId }
 //   audience_status  { audienceGroupId }           → สถานะพร้อมยิงหรือยัง
 //   narrowcast       { audienceGroupId, messages } → ยิงจริง
+//   push_test        { messages }                  → ยิงทดสอบหาเจ้าของคนเดียว (ปลายทางฝังในไฟล์)
 //   quota            {}                            → เช็คโควตาข้อความคงเหลือ
 //
 // ⚠️ ยิงจริง = ลูกค้าได้รับทันที ย้อนไม่ได้ — เรียกเมื่อเจ้าของสั่งเท่านั้น
 
 const { getLineToken } = require('./_line_token.js');
+
+/* 🔒 ปลายทางของ push_test — ฝังตายไว้ในโค้ด ห้ามรับจากคำขอ
+      กุญแจหลุดก็กวนได้แค่คนในลิสต์นี้ ส่งหาลูกค้าไม่ได้ */
+const TEST_UIDS = {
+  nut: 'U1e6056034671878fcb8d536c7ef7333e',   // นัท (เจ้าของ)
+};
 
 const SB = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const ANON = process.env.SUPABASE_ANON_KEY ||
@@ -125,6 +132,27 @@ module.exports = async (req, res) => {
         requestId: r.json && r.json.requestId,
         acceptedRequestId: (r.json && r.json['x-line-accepted-request-id']) || null,
         detail: r.json,
+      }));
+    }
+
+    /* ยิงทดสอบหาเจ้าของ — ใช้ก่อนยิงจริงทุกครั้งที่มีรูป/ปุ่ม/ลิงก์ในข้อความ
+       ตัวข้อความรับมาเต็มรูปแบบเหมือน narrowcast จะได้เทสของชิ้นเดียวกับที่จะยิงจริง */
+    if (a === 'push_test') {
+      if (!Array.isArray(body.messages) || !body.messages.length)
+        return res.status(400).end(JSON.stringify({ ok: false, error: 'ต้องมี messages' }));
+      if (body.messages.length > 5)
+        return res.status(400).end(JSON.stringify({ ok: false, error: 'LINE รับได้สูงสุด 5 ข้อความต่อครั้ง' }));
+      /* รับได้แค่ชื่อในลิสต์ · ส่ง uid มาเองไม่มีผล (ค่า default = เจ้าของ) */
+      const who = String(body.to || 'nut');
+      const uid = TEST_UIDS[who];
+      if (!uid) return res.status(400).end(JSON.stringify({
+        ok: false, error: 'ปลายทางนี้ไม่ได้อยู่ในลิสต์ทดสอบ', allowed: Object.keys(TEST_UIDS) }));
+      const r = await line(token, '/v2/bot/message/push', {
+        to: uid, messages: body.messages, notificationDisabled: false,
+      });
+      return res.status(200).end(JSON.stringify({
+        ok: r.ok, status: r.status, to: who,
+        sentAt: new Date().toISOString(), detail: r.json,
       }));
     }
 
