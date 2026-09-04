@@ -1561,6 +1561,38 @@ function pkgGiftsOf(pkgId){
             .filter(g => g.code);
 }
 function giftLineText(list){ return (list||[]).map(g => g.name + (g.qty>1 ? ' ×'+g.qty : '')).join(' · '); }
+
+/* ── 🎁 ของแถมตามยอดรวมออเดอร์ ────────────────────────────────────────────
+   ดูหัวคอมเมนต์ไฟล์ patch · ตั้งที่ kitchen_data 'order_gifts' */
+const ORDERGIFT_KEY = 'order_gifts';
+let orderGifts = {};
+/* โปรที่ยังไม่หมดอายุ เรียงจากยอดน้อยไปมาก */
+function orderGiftRules(){
+  const today = localYMD(new Date());
+  return Object.keys(orderGifts||{}).map(k => {
+    const r = orderGifts[k] || {};
+    const items = (Array.isArray(r.items) ? r.items : [])
+      .map(g => ({ code:String(g.code||'').trim(), name:String(g.name||g.code||'').trim(), qty:Math.max(1, Number(g.qty)||1) }))
+      .filter(g => g.code);
+    return { key:k, label:String(r.label||''), min:Math.max(0, Number(r.min_order)||0),
+             expires:r.expires_at||'', items };
+  }).filter(r => r.items.length && r.min > 0 && (!r.expires || r.expires >= today))
+    .sort((a,b) => a.min - b.min);
+}
+/* ของแถมที่ "ได้แล้ว" จากยอดตอนนี้ — รวมทุกโปรที่ถึงยอด */
+function orderGiftsEarned(){
+  const sub = cartTotal();
+  const out = [];
+  orderGiftRules().forEach(r => { if(sub >= r.min) r.items.forEach(g => out.push(Object.assign({ rule:r.key }, g))); });
+  return out;
+}
+/* โปรถัดไปที่ใกล้ได้ — ไว้บอกลูกค้าว่าอีกเท่าไหร่ถึงได้ของฟรี */
+function orderGiftNext(){
+  const sub = cartTotal();
+  if(sub <= 0) return null;
+  const r = orderGiftRules().filter(x => sub < x.min)[0];
+  return r ? { need: r.min - sub, rule: r } : null;
+}
 function pkgClr(pkg){
   const p = pkg || currentPkg;
   if (!p) return null;
@@ -2586,7 +2618,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY];
   const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
@@ -2693,6 +2725,7 @@ async function init() {
     pkgClearance = (cfgMap[PKGCLR_KEY] && typeof cfgMap[PKGCLR_KEY]==='object') ? cfgMap[PKGCLR_KEY] : {};
     pkgGifts     = (cfgMap[PKGGIFT_KEY] && typeof cfgMap[PKGGIFT_KEY]==='object') ? cfgMap[PKGGIFT_KEY] : {};
     pkgQuota     = (cfgMap[PKGQUOTA_KEY] && typeof cfgMap[PKGQUOTA_KEY]==='object') ? cfgMap[PKGQUOTA_KEY] : {};
+    orderGifts   = (cfgMap[ORDERGIFT_KEY] && typeof cfgMap[ORDERGIFT_KEY]==='object') ? cfgMap[ORDERGIFT_KEY] : {};
     if (Object.keys(pkgQuota).length) loadPkgSold();   // ไม่ await — ไม่ให้ตัวนับถ่วงหน้าแรก
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
@@ -3446,11 +3479,27 @@ function renderCart() {
       <div class="citem-tot">฿${(c.price*c.qty).toLocaleString()}</div>
     </div>`;
   }).join('');
-  el.innerHTML = rows + `
+  el.innerHTML = rows + orderGiftHtml() + `
     <div class="cart-total-row">
       <div class="cart-total-l">ยอดรวมสินค้า</div>
       <div class="cart-total-v">฿${cartTotal().toLocaleString()}</div>
     </div>`;
+}
+
+/* กล่องของแถมท้ายตะกร้า — ได้แล้วขึ้นเขียว · ใกล้ได้บอกว่าขาดอีกเท่าไหร่
+   (ตัวหลังคือตัวที่ทำให้ลูกค้าเติมของอีกชิ้น — ไม่ใช่ของประดับ) */
+function orderGiftHtml(){
+  const got = orderGiftsEarned();
+  if(got.length){
+    return `<div style="margin:8px 0 0;padding:9px 12px;background:#ECFDF5;border:1px solid #A7F3D0;border-radius:10px;font-size:12.5px;color:#065F46;font-weight:700;line-height:1.5;">
+      🎁 ได้ฟรี ${h(giftLineText(got))} <span style="font-weight:500;">— ใส่ให้อัตโนมัติ ไม่ต้องกดอะไร</span></div>`;
+  }
+  const nx = orderGiftNext();
+  if(nx){
+    return `<div style="margin:8px 0 0;padding:9px 12px;background:#FFFBEB;border:1px solid #FDE68A;border-radius:10px;font-size:12.5px;color:#92400E;font-weight:700;line-height:1.5;">
+      อีก ฿${nx.need.toLocaleString()} รับฟรี ${h(giftLineText(nx.rule.items))}</div>`;
+  }
+  return '';
 }
 
 // ══════════════════════════════════════
@@ -4265,6 +4314,15 @@ async function submitOrder() {
           menu_name: c.name, menu_code: c.code,
           quantity: c.qty, unit_price: c.price, subtotal: c.price * c.qty, notes: '' });
       }
+    });
+    /* 🎁 ของแถมตามยอดรวม — แถวจริงราคา 0 ครัวจะได้เห็นในใบ
+       ต้องคิดจากยอดตอนกดสั่ง ไม่ใช่ตอนเปิดหน้า (ลูกค้าอาจเพิ่ม/ลบของหลังเปิดหน้ามานาน) */
+    orderGiftsEarned().forEach(g => {
+      const gm = menuItems.find(m => m.code === g.code);
+      items.push({ order_id: ord.id, menu_item_id: gm ? gm.id : null,
+        menu_name: g.name, menu_code: g.code,
+        quantity: g.qty, unit_price: 0, subtotal: 0,
+        notes: 'gift:order:' + g.rule });
     });
     const { error: iErr } = await sb.from('order_items').insert(items);
     if (iErr) throw iErr;
