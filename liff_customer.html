@@ -2636,8 +2636,22 @@ async function init() {
   if (cwEnabled()) {
     await cwLoad();
     try {
-      const want = (new URLSearchParams(location.search).get('collect')||'').trim().toUpperCase();
-      if (want) { await cwCollect(want, 'link'); goWallet(); }   // เก็บจากลิงก์แล้วพาไปดูในกระเป๋าเลย
+      /* รับได้ทั้ง ?collect=A (แบบเดิม) และ ?collect=A,B (แคมเปญที่มีคูปองคู่ เช่น LC/HP)
+         เก็บทีละใบต่อเนื่อง — ยิงพร้อมกันจะเขียนทับกันเองเหลือใบเดียว */
+      const raw = (new URLSearchParams(location.search).get('collect')||'').trim().toUpperCase();
+      const wants = raw.split(',').map(x => x.trim()).filter(Boolean).slice(0, 5);
+      if (wants.length === 1) {
+        await cwCollect(wants[0], 'link');            // ใบเดียว = พฤติกรรมเดิมเป๊ะ
+        goWallet();
+      } else if (wants.length > 1) {
+        let got = 0;
+        for (const w of wants) {
+          try { if (await cwCollect(w, 'link', true)) got++; }   // ใบนึงพลาด ห้ามให้ใบอื่นหยุด
+          catch(e){ console.warn('เก็บคูปอง ' + w + ' ไม่สำเร็จ', e); }
+        }
+        toast(got ? ('เก็บคูปองแล้ว ' + got + ' ใบ') : 'คูปองอยู่ในกระเป๋าอยู่แล้ว');
+        goWallet();
+      }
     } catch(e) { console.warn('เก็บคูปองจากลิงก์ไม่สำเร็จ', e); }
   }
 
@@ -4942,21 +4956,22 @@ async function cwLoad(){
   cwPaint();
 }
 
-async function cwCollect(code, src){
+async function cwCollect(code, src, quiet){
+  const say = (m) => { if(!quiet) toast(m); };
   if(!cwEnabled()) return false;
   code = String(code||'').trim().toUpperCase();
   if(!code || !cwUid()) return false;
-  if(cwHas(code)){ toast('คูปองนี้อยู่ในกระเป๋าอยู่แล้ว'); return false; }
-  if(!cwLive().some(p => p.code === code)){ toast('คูปองนี้หมดเวลาแจกแล้ว'); return false; }
+  if(cwHas(code)){ say('คูปองนี้อยู่ในกระเป๋าอยู่แล้ว'); return false; }
+  if(!cwLive().some(p => p.code === code)){ say('คูปองนี้หมดเวลาแจกแล้ว'); return false; }
   const next = cwMine.concat([{ code, at: new Date().toISOString(), src: src||'liff' }]);
   try{
     const up = await sb.from('kitchen_data').upsert({ key: CW_PREFIX + cwUid(), data: next }, { onConflict:'key' });
     if(up.error) throw up.error;
     cwMine = next;
-    toast('เก็บคูปองแล้ว');
+    say('เก็บคูปองแล้ว');
     cwPaint(); cwRenderList(); cwRenderPick();
     return true;
-  }catch(e){ console.warn('เก็บคูปองไม่สำเร็จ', e); toast('เก็บคูปองไม่สำเร็จ ลองใหม่อีกครั้ง'); return false; }
+  }catch(e){ console.warn('เก็บคูปองไม่สำเร็จ', e); say('เก็บคูปองไม่สำเร็จ ลองใหม่อีกครั้ง'); return false; }
 }
 
 /* วาดทุกจุดที่โชว์จำนวนคูปองพร้อมกัน — แถบหน้าเมนู · ปุ่มบนแถบบาร์ */
