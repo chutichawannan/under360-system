@@ -13,7 +13,8 @@
 // action ที่รองรับ:
 //   audience_create  { name, uids[] }              → { audienceGroupId }
 //   audience_status  { audienceGroupId }           → สถานะพร้อมยิงหรือยัง
-//   narrowcast       { audienceGroupId, messages } → ยิงจริง
+//   narrowcast       { audienceGroupId, messages } → ยิงจริง (กลุ่มเดียว)
+//                    { recipient, messages }       → ยิงจริง (ผสม/ยกเว้นกลุ่มได้)
 //   push_test        { messages }                  → ยิงทดสอบหาเจ้าของคนเดียว (ปลายทางฝังในไฟล์)
 //   quota            {}                            → เช็คโควตาข้อความคงเหลือ
 //
@@ -48,6 +49,38 @@ async function line(token, path, body, method = 'POST') {
   const text = await r.text();
   let json; try { json = JSON.parse(text); } catch { json = { raw: text.slice(0, 400) }; }
   return { status: r.status, ok: r.ok, json };
+}
+
+function checkRecipient(r, path) {
+  path = path || 'recipient';
+  if (!r || typeof r !== 'object' || Array.isArray(r)) return path + ' ต้องเป็น object';
+  if (r.type === 'audience') {
+    const id = Number(r.audienceGroupId);
+    if (!id || !isFinite(id)) return path + '.audienceGroupId ต้องเป็นตัวเลข';
+    return null;
+  }
+  if (r.type === 'operator') {
+    const keys = ['and', 'or', 'not'].filter(k => r[k] !== undefined);
+    if (keys.length !== 1) return path + ' ต้องมี and / or / not อย่างใดอย่างหนึ่ง';
+    const k = keys[0];
+    if (k === 'not') return checkRecipient(r.not, path + '.not');
+    if (!Array.isArray(r[k]) || !r[k].length) return path + '.' + k + ' ต้องเป็น array ที่ไม่ว่าง';
+    for (let i = 0; i < r[k].length; i++) {
+      const bad = checkRecipient(r[k][i], path + '.' + k + '[' + i + ']');
+      if (bad) return bad;
+    }
+    return null;
+  }
+  return path + '.type ต้องเป็น audience หรือ operator';
+}
+/* เก็บ id ของทุกกลุ่มที่ถูกอ้างถึง ไว้ไปถามจำนวนคน */
+function audienceIdsOf(r, out) {
+  out = out || [];
+  if (!r || typeof r !== 'object') return out;
+  if (r.type === 'audience') { out.push(Number(r.audienceGroupId)); return out; }
+  ['and', 'or'].forEach(k => Array.isArray(r[k]) && r[k].forEach(x => audienceIdsOf(x, out)));
+  if (r.not) audienceIdsOf(r.not, out);
+  return out;
 }
 
 module.exports = async (req, res) => {
@@ -117,12 +150,34 @@ module.exports = async (req, res) => {
     }
 
     if (a === 'narrowcast') {
-      if (!body.audienceGroupId) return res.status(400).end(JSON.stringify({ ok: false, error: 'ต้องมี audienceGroupId' }));
       if (!Array.isArray(body.messages) || !body.messages.length)
         return res.status(400).end(JSON.stringify({ ok: false, error: 'ต้องมี messages' }));
+
+      /* ส่ง recipient มาเอง = ผสม/ยกเว้นกลุ่มได้ · ไม่ส่ง = กลุ่มเดียวแบบเดิม
+         🔴 รูปแบบผิด = ตอบ 400 ห้าม fallback ไปยิงทั้งกลุ่ม (ยิงเกินแก้ไม่ได้) */
+      let recipient;
+      if (body.recipient !== undefined) {
+        const bad = checkRecipient(body.recipient);
+        if (bad) return res.status(400).end(JSON.stringify({ ok: false, error: 'recipient ไม่ถูกต้อง: ' + bad }));
+        recipient = body.recipient;
+      } else {
+        if (!body.audienceGroupId) return res.status(400).end(JSON.stringify({ ok: false, error: 'ต้องมี audienceGroupId หรือ recipient' }));
+        recipient = { type: 'audience', audienceGroupId: Number(body.audienceGroupId) };
+      }
+
+      /* จำนวนคนของแต่ละกลุ่มที่อ้างถึง — ไว้ให้คนยิงจดลง event log
+         ⚠️ เป็นยอดต่อกลุ่ม ยังไม่ได้หักคนที่ซ้อนกัน · ยอดจริงดูที่ narrowcast_status หลังยิง */
+      const groups = [];
+      for (const gid of Array.from(new Set(audienceIdsOf(recipient)))) {
+        const gi = await line(token, '/v2/bot/audienceGroup/' + gid, null, 'GET');
+        groups.push({ audienceGroupId: gid,
+          count: (gi.json && gi.json.audienceGroup && gi.json.audienceGroup.audienceCount) || null,
+          name: (gi.json && gi.json.audienceGroup && gi.json.audienceGroup.description) || null });
+      }
+
       const r = await line(token, '/v2/bot/message/narrowcast', {
         messages: body.messages,
-        recipient: { type: 'audience', audienceGroupId: Number(body.audienceGroupId) },
+        recipient,
         filter: { demographic: null },
         limit: { upToRemainingQuota: true },
         notificationDisabled: false,
@@ -131,6 +186,8 @@ module.exports = async (req, res) => {
         ok: r.ok, status: r.status,
         requestId: r.json && r.json.requestId,
         acceptedRequestId: (r.json && r.json['x-line-accepted-request-id']) || null,
+        groups,                       // จำนวนคนต่อกลุ่ม (ยังไม่หักที่ซ้อนกัน)
+        note: 'ยอดจริงหลังหักคนซ้อน ดูที่ action narrowcast_status พร้อม requestId',
         detail: r.json,
       }));
     }
