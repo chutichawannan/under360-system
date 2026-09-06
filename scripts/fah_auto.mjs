@@ -59,6 +59,10 @@ say('\n① จ่ายเมนูรอบที่ยังว่าง');   
 say('\n② บังคับจำนวนเมนูต่อวัน');        say(node('scripts/fah_enforce_nine.mjs', w).trim().split('\n').slice(-1)[0]);
 say('\n③ sync เมนูเข้าหน้าครัว');       say(node('scripts/fah_sync_order_items.mjs', w).trim().split('\n').slice(-1)[0]);
 
+say('
+③b เมนูที่ลูกค้าเห็นใน LIFF ให้ตรงกับครัว');  say(node('scripts/fah_sync_liff_plan.mjs', w).trim().split('
+').slice(-1)[0]);
+
 // ---------- 4 ทำใบ ----------
 say('\n④ ทำใบงานครัว');
 const built = node('scripts/fah_build_sheet.mjs', [DATE]);
