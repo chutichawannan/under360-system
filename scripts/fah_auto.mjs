@@ -103,6 +103,11 @@ else {
   else { run('git', ['push', '-q', 'origin', 'HEAD:main'], { cwd: WT, env: { ...process.env, HOTFIX: '1' } }); say('   ✅ ขึ้น main แล้ว'); }
 }
 
+// ---------- 7b เช็คลิสต์รวม: ทุกหน้าที่คนเห็นต้องพูดตรงกัน ----------
+say('');
+const vf = node('scripts/fah_verify_all.mjs');
+say(vf.split('|SPLIT|').join('').split(String.fromCharCode(10)).filter(l => /❌|🟡|✅ ผ่านครบ|ตรวจ /.test(l)).join(String.fromCharCode(10)));
+
 // ---------- 8 สรุป ----------
 if (!existsSync(`${ROOT}/kitchen`)) mkdirSync(`${ROOT}/kitchen`);
 writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));

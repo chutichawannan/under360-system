@@ -17,8 +17,13 @@ const FROM = '2026-08-21', TO = '2026-10-05';
 const DOW = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
 const MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
-const rows = (await q(`mp_deliveries?select=delivery_date,status,menu_items&delivery_date=gte.${FROM}&delivery_date=lte.${TO}&limit=500`))
-  .filter(r => r.status !== 'cancelled' && r.status !== 'skip_requested' && Array.isArray(r.menu_items) && r.menu_items.length);
+// 🔑 อ่านจากที่เดียวกับ LIFF — ลูกค้าต้องเห็นเหมือนกันทุกหน้า (นัทสั่ง 6 ก.ย. 2026)
+const kd = await q("kitchen_data?select=data&key=eq.mp_menu_plan");
+const wrap = kd[0]?.data || {};
+const liff = wrap.data || wrap;
+const rows = Object.entries(liff)
+  .filter(([d]) => d >= FROM && d <= TO)
+  .map(([d, list]) => ({ delivery_date: d, status: 'ok', menu_items: (list || []).map(x => ({ code: 'LC' + x.no, name: x.name })) }));
 const codes = [...new Set(rows.flatMap(r => r.menu_items.map(i => String(i.code))))];
 const mi = [];
 for (let i = 0; i < codes.length; i += 60) mi.push(...await q(`menu_items?select=code,name&code=in.(${codes.slice(i, i + 60).join(',')})&limit=200`));
