@@ -1691,20 +1691,34 @@ function thaiToday2(){ return new Date(Date.now()+7*3600e3).toISOString().slice(
    ⚠️ ยอดที่ลูกค้าเห็น (stock_total) ไม่ขยับจากการย้ายนี้ — แค่ย้ายกระเป๋า
       ถ้าครัวไม่ได้ทำจริง ต้องมาแก้ "มีของจริง" ลงเอง ระบบเดาแทนไม่ได้ */
 var _needRollover=false;
+/* ยังไม่ถึงวันที่เมนูนี้เริ่มส่งได้ = ยังไม่ถึงวันทำ ห้ามนับเป็นของที่มีอยู่จริง
+   (ของสัปดาห์หน้าตั้ง "กำลังเติม" ไว้ล่วงหน้าได้ ต้องรอถึงวันจริงก่อน) */
+function stkNotYetProduced(m){
+  var af = m && m.available_from ? String(m.available_from).slice(0,10) : "";
+  return !!af && af > thaiToday2();
+}
 async function stkRolloverDay(){
   _needRollover=false;
-  var today=thaiToday2(), ids=[];
+  var today=thaiToday2(), ids=[], skipped=0;
   for(var k in stockIncoming){
     var r=stockIncoming[k];
-    if(r && r.n && String(r.at||"").slice(0,10) < today) ids.push(k);
+    if(!(r && r.n && String(r.at||"").slice(0,10) < today)) continue;
+    var mm=(allMenus||[]).find(function(x){return x.id===k;});
+    /* 🔴 ของที่ยังไม่ถึงวันผลิต ปล่อยค้างไว้ตามเดิม ไม่ย้าย ไม่ลบ
+       เคยย้ายทั้งหมด → ครัวเห็นว่ามีของแล้วทั้งที่ยังไม่ได้ทำ (6 ก.ย. 2569 โดนไป 17 เมนู) */
+    if(mm && stkNotYetProduced(mm)){ skipped++; continue; }
+    ids.push(k);
   }
+  if(skipped) console.log("ปิดวัน: ข้ามของที่ยังไม่ถึงวันผลิต "+skipped+" เมนู");
   if(!ids.length) return;
   for(var i=0;i<ids.length;i++){
     var m=(allMenus||[]).find(function(x){return x.id===ids[i];});
     if(!m){ delete stockIncoming[ids[i]]; continue; }
     var ordered=stkOrderedMap()[m.id]||0;
     var inc=stkIncOf(m.id), real=stkRealOf(m,ordered);
-    var keeper=kqCurrentUser; kqCurrentUser=kqCurrentUser||"ระบบ (ปิดวัน)";
+    /* ชื่อผู้ทำต้องเป็นระบบเสมอ — เดิมถ้ามีชื่อครัวค้างอยู่จะสวมชื่อคนนั้นลง log
+       แล้วคนมาไล่ทีหลังจะเข้าใจว่าครัวเป็นคนกด = โทษผิดคน */
+    var keeper=kqCurrentUser; kqCurrentUser="ระบบ (ปิดวัน)";
     await stkCommit(m, real+inc, 0, "ปิดวันอัตโนมัติ");
     kqCurrentUser=keeper;
   }
