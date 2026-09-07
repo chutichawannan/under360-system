@@ -107,6 +107,20 @@ if (next) {
   }
   const idx = existsSync('kitchen/index.html') ? readFileSync('kitchen/index.html', 'utf8') : '';
   if (!idx.includes(next)) FAIL(`⑤ หน้ารวมครัว /k ไม่มีลิงก์ของ ${next} — ครัวหาใบไม่เจอ`);
+
+  // ⑤b หน้า /k: ห้ามลิงก์ซ้ำ · ชื่อวันไทยต้องตรงกับวันที่ในลิงก์
+  // (7 ก.ย. 2026 เคยขึ้น "ศุกร์ 4 ก.ย." ซ้ำ 3 คู่ เพราะก๊อปบล็อกเดิมแล้วลืมแก้ชื่อวัน — นัทจับได้เอง)
+  const DOWv = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+  const MONv = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+  const seen = new Set();
+  for (const mm of idx.matchAll(/href="(\d{4}-\d{2}-\d{2})(_pack)?\.html"><span class="d">([^<—]*)—/g)) {
+    const key = mm[1] + (mm[2] || '');
+    if (seen.has(key)) FAIL(`⑤ หน้ารวมครัว /k: **ลิงก์ซ้ำ** ${key}.html`);
+    seen.add(key);
+    const dd = new Date(mm[1] + 'T00:00:00Z');
+    const want = `${DOWv[dd.getUTCDay()]} ${dd.getUTCDate()} ${MONv[dd.getUTCMonth()]}`;
+    if (mm[3].trim() !== want) FAIL(`⑤ หน้ารวมครัว /k: ลิงก์ ${mm[1]} เขียนชื่อวันว่า "${mm[3].trim()}" ที่ถูกคือ "${want}" — ครัวกดผิดใบ`);
+  }
 }
 
 // ---------- ⑥ ไฟล์สคริปต์ทุกตัวต้อง parse ผ่าน ----------

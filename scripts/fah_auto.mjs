@@ -73,7 +73,7 @@ const built = node('scripts/fah_build_sheet.mjs', [DATE]);
 say(built.trim().split('\n').filter(Boolean).slice(-3).join('\n'));
 if (/ไม่มีรอบส่งเลย/.test(built)) { say('\n⏹️ วันนี้ไม่มีคิว — จบ ไม่ต้องทำใบ'); process.exit(0); }
 
-say(node('scripts/fah_update_kitchen_index.mjs', [DATE]).trim());
+say(node('scripts/fah_update_kitchen_index.mjs').trim());
 
 // ---------- 5 ตรวจ ----------
 say('\n⑤ ด่านตรวจ');
