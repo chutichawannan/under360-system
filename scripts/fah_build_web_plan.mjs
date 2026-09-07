@@ -13,7 +13,7 @@ const U = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const K = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const q = async p => (await fetch(`${U}/rest/v1/${p}`, { headers: { apikey: K, Authorization: 'Bearer ' + K } })).json();
 
-const FROM = '2026-08-21', TO = '2026-10-05';
+let FROM, TO;   // กำหนดจากข้อมูลจริง ไม่ล็อกวันตายตัว (เคยล็อกไว้ 5 ต.ค. แล้วพอมีคิว 12 ต.ค. เว็บไม่มี)
 const DOW = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
 const MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 
@@ -21,6 +21,8 @@ const MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','ม�
 const kd = await q("kitchen_data?select=data&key=eq.mp_menu_plan");
 const wrap = kd[0]?.data || {};
 const liff = wrap.data || wrap;
+FROM = Object.keys(liff).sort()[0] || '2026-08-21';
+TO = Object.keys(liff).sort().slice(-1)[0] || FROM;
 const rows = Object.entries(liff)
   .filter(([d]) => d >= FROM && d <= TO)
   .map(([d, list]) => ({ delivery_date: d, status: 'ok', menu_items: (list || []).map(x => ({ code: 'LC' + x.no, name: x.name })) }));

@@ -42,8 +42,14 @@ if (!DATE) {
   // ⚠️ nowTH เป็น timestamp ที่บวก 7 ชม.ไว้แล้ว — ห้ามใช้ getDay() กับมัน (จะบวกโซนซ้ำ วันเพี้ยน 1 วัน)
   //    ต้องอ่านวันในสัปดาห์จากสตริงวันที่ด้วย getUTCDay() แทน
   const dow = ds => new Date(ds + 'T00:00:00Z').getUTCDay();   // จ=1 พ=3 ศ=5
-  let cur = nowTH.toISOString().slice(0, 10);
-  for (let i = 1; i <= 8; i++) {
+  const todayTH = nowTH.toISOString().slice(0, 10);
+  const hourTH = Number(nowTH.toISOString().slice(11, 13));
+  // 🔴 ถ้า "วันนี้" เป็นวันผลิต และยังไม่บ่าย → เป้าหมายคือ **วันนี้** ไม่ใช่รอบหน้า
+  //    (7 ก.ย. 2026 รอบ 08:35 เคยไปทำใบวันพุธแทนวันจันทร์ที่ครัวกำลังจะทำ — นัทจับได้เอง)
+  //    หลังบ่าย 2 = ครัววันนี้ทำเสร็จแล้ว ค่อยขยับไปเตรียมรอบหน้า
+  let cur = null;
+  if ([1, 3, 5].includes(dow(todayTH)) && hourTH < 14) cur = todayTH;
+  if (!cur) for (let i = 1; i <= 8; i++) {
     const t = new Date(nowTH.getTime() + i * 86400000).toISOString().slice(0, 10);
     if ([1, 3, 5].includes(dow(t))) { cur = t; break; }
   }
