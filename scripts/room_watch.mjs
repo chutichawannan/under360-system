@@ -23,7 +23,8 @@ if (!rooms.length) { console.error('ใช้: node scripts/room_watch.mjs <ห�
 const EVERY_MS = Number(process.env.WATCH_EVERY_MS || 10000);
 const F = `.scratch/room_watch_${rooms[0]}_last.txt`;
 fs.mkdirSync('.scratch', { recursive: true });
-let last = fs.existsSync(F) ? fs.readFileSync(F, 'utf8').trim() : new Date().toISOString();
+// เปิดครั้งแรก (ยังไม่มีไฟล์จำตำแหน่ง) → ย้อนดู 60 นาที กันจดหมายที่มาก่อน poller เกิดหล่นหาย
+let last = fs.existsSync(F) ? fs.readFileSync(F, 'utf8').trim() : new Date(Date.now() - 60 * 60000).toISOString();
 
 const isMe = s => me.some(m => (s || '').toLowerCase().includes(m));
 const roomFilter = rooms.length === 1 ? `room=eq.${encodeURIComponent(rooms[0])}` : `room=in.(${rooms.map(encodeURIComponent).join(',')})`;
