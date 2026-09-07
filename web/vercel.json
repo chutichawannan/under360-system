@@ -156,6 +156,10 @@
     {
       "source": "/ads",
       "destination": "/ads.html"
+    },
+    {
+      "source": "/home2",
+      "destination": "/home2.html"
     }
   ]
 }

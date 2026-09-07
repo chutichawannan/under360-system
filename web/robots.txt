@@ -7,6 +7,8 @@ Disallow: /ads
 Disallow: /ads.html
 Disallow: /api/
 Disallow: /preview
+Disallow: /home2
+Disallow: /home2.html
 Disallow: /preview.html
 Disallow: /kidneycare.html
 Disallow: /web_dashboard.html
