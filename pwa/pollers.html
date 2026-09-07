@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>สถานะ poller ทุกห้อง</title>
+<style>
+  :root{--ok:#1f8f4e;--warn:#c77b00;--bad:#c0392b;--mute:#8a8a8a;--bg:#fafaf7;--card:#fff;--line:#e6e4dd;--ink:#1c1c1c}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding:16px}
+  h1{font-size:20px;font-weight:500;margin:0 0 4px}
+  .sub{color:var(--mute);font-size:13px;margin-bottom:14px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 12px 10px;display:flex;flex-direction:column;gap:4px}
+  .room{font-weight:500;font-size:16px}
+  .st{display:flex;align-items:center;gap:6px;font-size:13px}
+  .dot{width:10px;height:10px;border-radius:50%;flex:none}
+  .ok .dot{background:var(--ok)} .warn .dot{background:var(--warn)} .bad .dot{background:var(--bad)} .none .dot{background:var(--mute)}
+  .ok .st{color:var(--ok)} .warn .st{color:var(--warn)} .bad .st{color:var(--bad)} .none .st{color:var(--mute)}
+  .ago{font-size:12px;color:var(--mute)}
+  .sum{display:flex;gap:14px;margin:0 0 14px;font-size:14px}
+  .sum b{font-weight:500}
+  .foot{margin-top:18px;font-size:12px;color:var(--mute)}
+  code{background:#f0efe9;padding:1px 5px;border-radius:4px;font-size:12px}
+</style>
+</head>
+<body>
+<h1>สถานะ poller ทุกห้อง</h1>
+<div class="sub" id="upd">กำลังโหลด…</div>
+<div class="sum" id="sum"></div>
+<div class="grid" id="grid"></div>
+<div class="foot">
+  🟢 เต้นอยู่ (ไม่เกิน 2 นาที) · 🟡 เงียบ 2-10 นาที · 🔴 หายไปเกิน 10 นาที = ห้องปิด/poller ตาย · ⚪ ยังไม่เคยเปิด<br>
+  เปิด poller ห้องไหน: พิมพ์ประโยคจาก <code>docs/POLLER.md</code> ในห้องนั้น · หน้านี้รีเฟรชเองทุก 30 วิ
+</div>
+<script>
+const URL_='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+// ห้องที่ควรมี poller เรียงตามความถี่ใช้งาน
+const ROOMS=[
+  ['pm','พี่ปืน (PM)'],['secretary','เลขา'],['u-maintainer','U'],['kapan','กะปัน'],
+  ['niw','นิว'],['05','05 LINE OA'],['k','ครัว'],['fah','ฟ้า'],['cc','CC'],
+  ['06','06 Ads'],['tiang','เตียง'],['keng','พี่เก่ง'],['f','การเงิน'],['m','M เว็บ'],['buyer','buyer'],['bug','bug'],['eath','เอิธ']
+];
+function ago(ms){const s=Math.round(ms/1000);if(s<60)return s+' วิ';const m=Math.round(s/60);if(m<60)return m+' นาที';const h=Math.round(m/60);if(h<48)return h+' ชม.';return Math.round(h/24)+' วัน'}
+async function load(){
+  let rows=[];
+  try{const r=await fetch(URL_+'/live_presence?select=page,last_seen&area=eq.poller&limit=100',{headers:{apikey:KEY}});rows=await r.json();if(!Array.isArray(rows))rows=[]}catch(e){}
+  // กะปันใช้ poller ตัวเดิม (kapan_watch) ยังไม่เต้นหัวใจ — ถือว่ามีตลอด แต่ตรวจไม่ได้
+  const seen={};rows.forEach(x=>seen[x.page]=new Date(x.last_seen).getTime());
+  const now=Date.now();let ok=0,warn=0,bad=0,none=0;
+  const g=document.getElementById('grid');g.innerHTML='';
+  for(const [room,label] of ROOMS){
+    const t=seen[room];let cls,txt,agoTxt='';
+    if(room==='kapan'&&!t){cls='ok';txt='เต้นอยู่ (ตัวเดิม)';agoTxt='ตรวจไม่ได้ · ใช้ kapan_watch';ok++}
+    else if(!t){cls='none';txt='ยังไม่เคยเปิด';none++}
+    else{const d=now-t;agoTxt='ล่าสุด '+ago(d)+'ที่แล้ว';if(d<120000){cls='ok';txt='เต้นอยู่';ok++}else if(d<600000){cls='warn';txt='เงียบ';warn++}else{cls='bad';txt='หายไป';bad++}}
+    const el=document.createElement('div');el.className='card '+cls;
+    el.innerHTML='<div class="room">'+label+'</div><div class="st"><span class="dot"></span>'+txt+'</div><div class="ago">'+agoTxt+'</div>';
+    g.appendChild(el);
+  }
+  document.getElementById('sum').innerHTML='<span>🟢 <b>'+ok+'</b></span><span>🟡 <b>'+warn+'</b></span><span>🔴 <b>'+bad+'</b></span><span>⚪ <b>'+none+'</b></span>';
+  document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. (เวลาไทย)';
+}
+load();setInterval(load,30000);
+</script>
+</body>
+</html>
