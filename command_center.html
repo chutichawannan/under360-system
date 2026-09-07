@@ -311,6 +311,12 @@ const svg=(k)=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strok
 /* ── ลิงก์หน้าแรก แบ่ง 3 แถบตามคนใช้ (นัทสั่ง 11 ส.ค.) ──────────────────────
    ครัว / แอดมิน / อื่นๆ — แตะแถบข้างบนเพื่อสลับ จะได้ไม่เจอลิงก์ยาวเป็นพรืด */
 const TABS=[
+  {id:'nut', label:'นัท', groups:[
+    {grp:'อ่านที่เดียว', items:[
+      {ic:'check',t:'เคาะ',d:'เรื่องที่รอนัทตอบ — ย่อยแล้ว ไม่เกิน 5',u:BASE+'/pwa/nut.html'},
+      {ic:'trend',t:'สถานะ poller',d:'ห้องไหนยังหายใจ',u:BASE+'/pwa/pollers.html'},
+    ]},
+  ]},
   {id:'kitchen', label:'ครัว', groups:[
     {grp:'ใช้ทุกวัน', items:[
       {ic:'print',t:'ใบจัดของ — พิมพ์',d:'เปิดมาเป็นออเดอร์ของวันนี้',u:BASE+'/print_pickslip.html'},

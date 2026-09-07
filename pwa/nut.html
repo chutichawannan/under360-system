@@ -3,66 +3,70 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>ช่องนัท — รอเคาะ · ขออนุมัติ · สรุป</title>
+<title>เคาะ</title>
 <style>
-  :root{--red:#c0392b;--yel:#c77b00;--blu:#2f6fb3;--grn:#1f8f4e;--mute:#8a8a8a;--bg:#fafaf7;--card:#fff;--line:#e6e4dd;--ink:#1c1c1c}
+  :root{--bg:#fbfaf7;--ink:#222;--mute:#9a9a94;--line:#ebe9e2;--card:#fff}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding:14px;max-width:760px;margin:0 auto}
-  h1{font-size:20px;font-weight:500;margin:0 0 2px}
-  .sub{color:var(--mute);font-size:13px;margin-bottom:12px}
-  h2{font-size:15px;font-weight:500;margin:18px 0 8px;display:flex;align-items:center;gap:8px}
-  h2 .n{font-size:12px;color:var(--mute);font-weight:400}
-  .card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--mute);border-radius:0 12px 12px 0;padding:10px 12px;margin-bottom:8px}
-  .card.red{border-left-color:var(--red)} .card.yel{border-left-color:var(--yel)} .card.blu{border-left-color:var(--blu)} .card.grn{border-left-color:var(--grn);opacity:.7} .card.top{border-left-color:var(--red);background:#fff8f6;font-size:16px}
-  .meta{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px}
-  .meta b{font-weight:500;color:var(--ink)}
-  .txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
-  .empty{color:var(--mute);font-size:14px;padding:8px 0}
-  .foot{margin-top:20px;font-size:12px;color:var(--mute)}
-  code{background:#f0efe9;padding:1px 5px;border-radius:4px;font-size:12px}
-  details{margin-top:10px} summary{cursor:pointer;color:var(--mute);font-size:13px}
+  body{margin:0;background:var(--bg);color:var(--ink);font:17px/1.6 system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;padding:28px 18px 60px;max-width:560px;margin:0 auto}
+  .top{color:var(--mute);font-size:13px;margin-bottom:26px}
+  .item{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px 18px 16px;margin-bottom:14px}
+  .q{font-size:17px;font-weight:500;margin:0 0 6px}
+  .d{font-size:14px;color:#666;margin:0 0 10px;white-space:pre-wrap}
+  .a{font-size:14px;color:var(--mute)}
+  .n{display:inline-block;width:22px;height:22px;border-radius:50%;background:#eee9df;color:#6b6250;font-size:12px;text-align:center;line-height:22px;margin-right:8px;vertical-align:1px}
+  .zero{color:var(--mute);text-align:center;padding:60px 0;font-size:16px}
+  .more{margin-top:34px;color:var(--mute);font-size:13px}
+  details{margin-top:8px} summary{cursor:pointer;color:var(--mute);font-size:13px;list-style:none} summary::-webkit-details-marker{display:none}
+  .raw{font-size:13px;color:#777;border-left:2px solid var(--line);padding:6px 10px;margin:8px 0;white-space:pre-wrap;word-break:break-word}
 </style>
 </head>
 <body>
-<h1>ช่องนัท</h1>
-<div class="sub" id="upd">กำลังโหลด…</div>
-
-<h2>🎯 เคาะวันนี้ <span class="n" id="n-top"></span></h2><div id="top"></div>
-<details><summary>📥 ของดิบจากห้อง — 🔴 ขออนุมัติ / 🟡 รอเคาะ <span id="n-raw"></span></summary><div id="red"></div><div id="yel"></div></details>
-<details><summary>📝 สรุปหลังคุย 24 ชม. <span id="n-blu"></span></summary><div id="blu"></div></details>
-<details><summary>✅ ตอบแล้ว / ปิดแล้ว</summary><div id="grn"></div></details>
-
-<div class="foot">
-  ห้องโพสต์เองที่ <code>session_messages room=nut</code> — กติกาเต็ม <code>docs/NUT_FEED.md</code> · ตอบได้ในห้องนั้นหรือบอกพี่ปืน · รีเฟรชเองทุก 30 วิ
+<div class="top" id="upd"> </div>
+<div id="list"></div>
+<div class="more">
+  <details><summary>ของดิบจากห้อง <span id="n-raw"></span></summary><div id="raw"></div></details>
+  <details><summary>สรุปหลังคุย 24 ชม. <span id="n-blu"></span></summary><div id="blu"></div></details>
+  <details><summary>ตอบแล้ว</summary><div id="grn"></div></details>
 </div>
 <script>
 const URL_='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
-function th(iso){return new Date(iso).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
-function ago(iso){const s=Math.round((Date.now()-new Date(iso))/1000);if(s<3600)return Math.max(1,Math.round(s/60))+' นาที';if(s<86400)return Math.round(s/3600)+' ชม.';return Math.round(s/86400)+' วัน'}
-function kind(t){t=(t||'').trimStart();if(t.startsWith('✅'))return 'grn';if(t.startsWith('🎯'))return 'top';if(t.startsWith('🔴'))return 'red';if(t.startsWith('🟡'))return 'yel';if(t.startsWith('📝'))return 'blu';return 'yel'}
+function kind(t){t=(t||'').trimStart();if(t.startsWith('✅'))return 'grn';if(t.startsWith('🎯'))return 'top';if(t.startsWith('📝'))return 'blu';return 'raw'}
 function subj(t){const p=(t||'').split('|').map(s=>s.trim());return p.length>=3?(p[1]+'|'+p[2]).toLowerCase():(t||'').slice(0,60).toLowerCase()}
+function topId(t){const m=(t||'').match(/🎯\s*(\d+)/);return m?m[1]:''}
+function card(r){
+  const lines=(r.text||'').split('\n').map(s=>s.trim()).filter(Boolean);
+  const first=lines[0].replace(/^🎯\s*\d+\s*[·:]\s*/,'');
+  const ans=lines.find(l=>/^ตอบ/.test(l))||'';
+  const mid=lines.slice(1).filter(l=>l!==ans).join('\n');
+  const el=document.createElement('div');el.className='item';
+  el.innerHTML='<div class="q"><span class="n">'+topId(r.text)+'</span><span></span></div>'+(mid?'<div class="d"></div>':'')+(ans?'<div class="a"></div>':'');
+  el.querySelector('.q span:last-child').textContent=first;
+  if(mid)el.querySelector('.d').textContent=mid;
+  if(ans)el.querySelector('.a').textContent=ans;
+  return el;
+}
+function rawCard(r){const el=document.createElement('div');el.className='raw';el.textContent=(r.sender||'?')+' · '+(r.text||'');return el}
 async function load(){
   let rows=[];
-  try{const r=await fetch(URL_+'/session_messages?select=id,created_at,sender,text&room=eq.nut&order=created_at.desc&limit=300',{headers:{apikey:KEY}});rows=await r.json();if(!Array.isArray(rows))rows=[]}catch(e){}
+  try{const rs=await fetch(URL_+'/session_messages?select=id,created_at,sender,text&room=eq.nut&order=created_at.desc&limit=300',{headers:{apikey:KEY}});rows=await rs.json();if(!Array.isArray(rows))rows=[]}catch(e){}
   const closed=new Set(rows.filter(r=>kind(r.text)==='grn').map(r=>subj(r.text)));
-  const box={top:[],red:[],yel:[],blu:[],grn:[]};
-  const dayAgo=Date.now()-86400000;
+  const closedTop=new Set(rows.filter(r=>kind(r.text)==='grn').map(r=>topId(r.text)).filter(Boolean));
+  const box={top:[],raw:[],blu:[],grn:[]};const dayAgo=Date.now()-86400000;
   for(const r of rows){const k=kind(r.text);
     if(k==='grn'){box.grn.push(r);continue}
-    if(closed.has(subj(r.text))){box.grn.push(r);continue}
+    if(k==='top'&&closedTop.has(topId(r.text))){box.grn.push(r);continue}
+    if(k==='raw'&&closed.has(subj(r.text))){box.grn.push(r);continue}
     if(k==='blu'&&new Date(r.created_at)<dayAgo){box.grn.push(r);continue}
     box[k].push(r)}
-  box.top.sort((a,b)=>a.created_at<b.created_at?-1:1);
-  for(const k of ['top','red','yel','blu','grn']){
-    const el=document.getElementById(k);el.innerHTML='';
-    if(!box[k].length){el.innerHTML='<div class="empty">— ว่าง —</div>'}
-    for(const r of box[k]){const d=document.createElement('div');d.className='card '+k;
-      d.innerHTML='<div class="meta"><b>'+(r.sender||'?')+'</b><span>'+th(r.created_at)+'</span><span>'+ago(r.created_at)+'ที่แล้ว</span></div><div class="txt"></div>';
-      d.querySelector('.txt').textContent=r.text||'';el.appendChild(d)}
-    const n=document.getElementById('n-'+k);if(n)n.textContent=box[k].length?box[k].length+' เรื่อง':''}
-  document.getElementById('n-raw').textContent=(box.red.length+box.yel.length)?'('+(box.red.length+box.yel.length)+')':'';document.getElementById('n-blu').textContent=box.blu.length?'('+box.blu.length+')':'';
-  document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. · อ่านแค่ 🎯 พอ — ที่เหลือพี่ปืนดู';
+  box.top.sort((a,b)=>Number(topId(a.text))-Number(topId(b.text)));
+  const list=document.getElementById('list');list.innerHTML='';
+  if(!box.top.length)list.innerHTML='<div class="zero">ไม่มีอะไรรอนัทตอนนี้</div>';
+  box.top.forEach(r=>list.appendChild(card(r)));
+  for(const k of ['raw','blu','grn']){const el=document.getElementById(k);el.innerHTML='';box[k].forEach(r=>el.appendChild(rawCard(r)))}
+  document.getElementById('n-raw').textContent=box.raw.length?'('+box.raw.length+')':'';
+  document.getElementById('n-blu').textContent=box.blu.length?'('+box.blu.length+')':'';
+  document.getElementById('upd').textContent=(box.top.length?box.top.length+' เรื่องรอนัท':'ว่าง')+' · '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok',hour:'2-digit',minute:'2-digit'})+' น.';
 }
 load();setInterval(load,30000);
 </script>
