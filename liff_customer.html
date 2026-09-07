@@ -7,6 +7,17 @@
 <title>Under360 — สั่งอาหาร</title>
 <link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
+<!-- 📊 Meta Pixel — ตัวเดียวกับหน้าเว็บ (web/jay.html) เพื่อให้เป็นบัญชีเดียวกัน
+     มีไว้ให้ Meta รู้ว่า "ใครซื้อจริง" ไม่ใช่แค่ "ใครคลิก" · ส่งแค่ยอดเงิน ไม่ส่งข้อมูลลูกค้า -->
+<script>
+!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;
+n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;
+t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,
+document,'script','https://connect.facebook.net/en_US/fbevents.js');
+fbq('init','949287485825587');
+fbq('track','PageView');
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U&libraries=places&language=th&region=TH"></script>
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -2834,6 +2845,18 @@ function showErr(msg) {
    เก็บแค่ "หน้าไหน/กดอะไร" เท่านั้น **ไม่เก็บชื่อ เบอร์ ที่อยู่ หรือ line_uid**
    ยิงแบบ fire-and-forget · พังก็เงียบ ห้ามให้การเก็บสถิติไปขวางการสั่งของลูกค้าเด็ดขาด */
 let _trkLast = '';
+/* จำเลขออเดอร์ที่ส่งให้ Meta แล้ว — กันนับยอดซ้ำถ้าโค้ดถูกเรียกซ้ำด้วยเหตุใดก็ตาม
+   (Meta ตัดซ้ำจาก eventID ให้อีกชั้นอยู่แล้ว นี่คือชั้นที่สอง)
+   เก็บ 50 ใบล่าสุดพอ ไม่ให้ localStorage บวมสะสม */
+const FBQ_KEY = 'u360_fbq_purchase';
+function fbqSeen(){
+  try{ const a = JSON.parse(localStorage.getItem(FBQ_KEY) || '[]'); return Array.isArray(a) ? a : []; }
+  catch(e){ return []; }
+}
+function fbqSent(num){ return fbqSeen().indexOf(num) >= 0; }
+function fbqMark(num){
+  try{ localStorage.setItem(FBQ_KEY, JSON.stringify(fbqSeen().concat([num]).slice(-50))); }catch(e){}
+}
 function trk(event, page){
   try{
     const k = event + '|' + page;
@@ -4588,6 +4611,15 @@ async function submitOrder() {
     appliedPromos = []; refreshCouponUI();
     if (btn) { btn.disabled = false; btn.textContent = 'ยืนยันและสั่งอาหาร'; } // ปลดล็อกปุ่มไว้ให้สั่งรอบต่อไปได้
     trk('cta_click', 'liff:สั่งสำเร็จ');   // ปลายทางที่อยากรู้ที่สุด — เทียบกับคนที่เข้าตะกร้าแล้วหายไป
+    /* 📊 บอก Meta ว่าซื้อจริงแล้ว — ตัวที่ทำให้สั่งแอดหา "คนที่ชอบซื้อ" ได้ (ห้อง 06 ขอ · นัทสั่ง 7 ก.ย.)
+       ส่งแค่ยอดเงิน + สกุลเงิน + เลขออเดอร์ (ใช้กันนับซ้ำ) ไม่มีข้อมูลลูกค้าออกไปสักตัว
+       ล้มก็ไม่กระทบลูกค้า — ห่อ try ไว้ทั้งก้อน ออเดอร์บันทึกไปแล้วก่อนถึงบรรทัดนี้ */
+    try{
+      if(window.fbq && orderNum && !fbqSent(orderNum)){
+        fbq('track','Purchase', { value: grandTotal, currency: 'THB' }, { eventID: orderNum });
+        fbqMark(orderNum);
+      }
+    }catch(e){ console.warn('ส่งยอดให้ Meta ไม่สำเร็จ (ไม่กระทบออเดอร์):', e); }
     showScr('s-ok');
     try{ maybeAskBirthday(); }catch(e){}   // 🎂 ถามวันเกิดหลังสั่งเสร็จ (ไม่ให้อะไรพลาดตรงนี้ไปกระทบใบที่สั่งไปแล้ว)
     /* 📩 เด้งใบยืนยันเข้าแชท LINE ของลูกค้าทันที (นัทสั่ง 14 ส.ค. 2569)
