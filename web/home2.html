@@ -92,6 +92,16 @@ img{max-width:100%;display:block}
 .day li{font-size:.94rem; color:rgba(251,249,244,.74); line-height:1.5}
 .day .more{font-size:.88rem; color:rgba(251,249,244,.45); margin-top:.4rem}
 .board .fallback{padding-block:var(--s3); color:rgba(251,249,244,.6)}
+/* จอแคบ: วัดของจริงแล้วเรียงลงมาทำให้ส่วนเปิดสูง 1,477px = ต้องเลื่อน 4 จอกว่าจะถึงปุ่มสั่ง
+   → เปลี่ยนเป็นปัดข้างทีละวัน ตารางยังครบ 3 วัน แต่กินความสูงแค่วันเดียว */
+@media(max-width:44rem){
+  .days{display:flex; gap:1px; overflow-x:auto; scroll-snap-type:x mandatory;
+    -webkit-overflow-scrolling:touch; scrollbar-width:none}
+  .days::-webkit-scrollbar{display:none}
+  .day{flex:0 0 82%; scroll-snap-align:start; padding-right:var(--s3)}
+  .board .cap::after{content:"ปัดดูวันถัดไป"; font-size:.85rem}
+  .board .cap>span:last-child{display:none}
+}
 
 .act{display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:center; margin-top:var(--s5)}
 .go{display:inline-block; background:var(--yolk); color:var(--wok); text-decoration:none;
