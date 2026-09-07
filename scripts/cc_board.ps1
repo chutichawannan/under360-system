@@ -56,3 +56,10 @@ if ($msgs) {
 Write-Output "=== กติกา 2 ข้อ ==="
 Write-Output "1. ก่อนลงมืองานใหม่ -> จองใน work_claims (task/room/files) · เจอคนจองแล้ว = ไม่ทำ"
 Write-Output "2. ปิดงานต้องมี evidence จาก DB/ไฟล์จริง (นับได้/เปิดดูได้) ไม่ใช่คำบอกเล่า แล้วค่อยขีด TODO.md"
+
+# poller ของห้อง (นัทเคาะ 7 ก.ย.) — บอกว่าห้องไหนเต้นอยู่ ถ้าห้องตัวเองไม่อยู่ในนี้ = พิมพ์ /poller
+$hb = Get-Rows 'live_presence?select=page,last_seen&area=eq.poller&order=last_seen.desc&limit=40'
+$alive = @()
+if ($hb) { foreach ($p in $hb) { try { if (([DateTime]::UtcNow - [DateTime]::Parse($p.last_seen).ToUniversalTime()).TotalMinutes -lt 10) { $alive += $p.page } } catch {} } }
+Write-Output ("=== poller เต้นอยู่: {0} ===" -f $(if ($alive.Count) { ($alive -join ' · ') } else { 'ไม่มีเลย' }))
+Write-Output "ห้องคุณไม่อยู่ในรายการ = poller ยังไม่เปิด -> รัน /poller ก่อนทำอย่างอื่น (relaunch แอปแล้ว poller ตายทุกห้อง)"
