@@ -1,6 +1,6 @@
 // ============================================================
 //  กะปันอ่านแชทกลุ่ม — ให้ห้องเลขาอ่านได้ผ่านเซิร์ฟเวอร์เท่านั้น
-//  GET /api/kapan-read?key=...&group=...&limit=30&since=ISO
+//  GET /api/kapan-read?key=...&group=...&limit=30&since=ISO&until=ISO
 //  🔒 ตาราง line_group_messages ปิดไม่ให้ anon อ่าน (กันแชทรั่วผ่านหน้าเว็บ)
 //     ที่นี่อ่านด้วย service role ฝั่งเซิร์ฟเวอร์ + ต้องมี key ถึงเรียกได้
 // ============================================================
@@ -32,10 +32,13 @@ export default async function handler(req, res) {
   const limit = Math.min(parseInt(u.searchParams.get('limit') || '30', 10), 200);
   const group = u.searchParams.get('group');
   const since = u.searchParams.get('since');
+  // ไล่หน้าย้อนหลัง — เรียงใหม่→เก่า + เพดาน 200 ทำให้ since อย่างเดียวย้อนไกลไม่ได้
+  const until = u.searchParams.get('until') || u.searchParams.get('before');
 
   let q = `${SB}/line_group_messages?select=created_at,line_ts,group_id,display_name,text,text_th,src_lang,is_bot_reply&order=created_at.desc&limit=${limit}`;
   if (group) q += `&group_id=eq.${encodeURIComponent(group)}`;
   if (since) q += `&created_at=gt.${encodeURIComponent(since)}`;
+  if (until) q += `&created_at=lt.${encodeURIComponent(until)}`;
 
   try {
     const r = await fetch(q, { headers: { apikey: SRV, Authorization: 'Bearer ' + SRV } });
