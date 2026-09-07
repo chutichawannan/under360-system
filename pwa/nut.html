@@ -53,6 +53,7 @@ async function load(){
     if(closed.has(subj(r.text))){box.grn.push(r);continue}
     if(k==='blu'&&new Date(r.created_at)<dayAgo){box.grn.push(r);continue}
     box[k].push(r)}
+  box.top.sort((a,b)=>a.created_at<b.created_at?-1:1);
   for(const k of ['top','red','yel','blu','grn']){
     const el=document.getElementById(k);el.innerHTML='';
     if(!box[k].length){el.innerHTML='<div class="empty">— ว่าง —</div>'}
