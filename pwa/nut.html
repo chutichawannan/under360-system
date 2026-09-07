@@ -13,7 +13,7 @@
   h2{font-size:15px;font-weight:500;margin:18px 0 8px;display:flex;align-items:center;gap:8px}
   h2 .n{font-size:12px;color:var(--mute);font-weight:400}
   .card{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--mute);border-radius:0 12px 12px 0;padding:10px 12px;margin-bottom:8px}
-  .card.red{border-left-color:var(--red)} .card.yel{border-left-color:var(--yel)} .card.blu{border-left-color:var(--blu)} .card.grn{border-left-color:var(--grn);opacity:.7}
+  .card.red{border-left-color:var(--red)} .card.yel{border-left-color:var(--yel)} .card.blu{border-left-color:var(--blu)} .card.grn{border-left-color:var(--grn);opacity:.7} .card.top{border-left-color:var(--red);background:#fff8f6;font-size:16px}
   .meta{font-size:12px;color:var(--mute);display:flex;gap:10px;flex-wrap:wrap;margin-bottom:4px}
   .meta b{font-weight:500;color:var(--ink)}
   .txt{white-space:pre-wrap;word-break:break-word;font-size:15px}
@@ -27,9 +27,9 @@
 <h1>ช่องนัท</h1>
 <div class="sub" id="upd">กำลังโหลด…</div>
 
-<h2>🔴 ขออนุมัติ <span class="n" id="n-red"></span></h2><div id="red"></div>
-<h2>🟡 รอเคาะ <span class="n" id="n-yel"></span></h2><div id="yel"></div>
-<h2>📝 สรุปหลังคุย (24 ชม.) <span class="n" id="n-blu"></span></h2><div id="blu"></div>
+<h2>🎯 เคาะวันนี้ <span class="n" id="n-top"></span></h2><div id="top"></div>
+<details><summary>📥 ของดิบจากห้อง — 🔴 ขออนุมัติ / 🟡 รอเคาะ <span id="n-raw"></span></summary><div id="red"></div><div id="yel"></div></details>
+<details><summary>📝 สรุปหลังคุย 24 ชม. <span id="n-blu"></span></summary><div id="blu"></div></details>
 <details><summary>✅ ตอบแล้ว / ปิดแล้ว</summary><div id="grn"></div></details>
 
 <div class="foot">
@@ -40,27 +40,28 @@ const URL_='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 function th(iso){return new Date(iso).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}
 function ago(iso){const s=Math.round((Date.now()-new Date(iso))/1000);if(s<3600)return Math.max(1,Math.round(s/60))+' นาที';if(s<86400)return Math.round(s/3600)+' ชม.';return Math.round(s/86400)+' วัน'}
-function kind(t){t=(t||'').trimStart();if(t.startsWith('✅'))return 'grn';if(t.startsWith('🔴'))return 'red';if(t.startsWith('🟡'))return 'yel';if(t.startsWith('📝'))return 'blu';return 'yel'}
+function kind(t){t=(t||'').trimStart();if(t.startsWith('✅'))return 'grn';if(t.startsWith('🎯'))return 'top';if(t.startsWith('🔴'))return 'red';if(t.startsWith('🟡'))return 'yel';if(t.startsWith('📝'))return 'blu';return 'yel'}
 function subj(t){const p=(t||'').split('|').map(s=>s.trim());return p.length>=3?(p[1]+'|'+p[2]).toLowerCase():(t||'').slice(0,60).toLowerCase()}
 async function load(){
   let rows=[];
   try{const r=await fetch(URL_+'/session_messages?select=id,created_at,sender,text&room=eq.nut&order=created_at.desc&limit=300',{headers:{apikey:KEY}});rows=await r.json();if(!Array.isArray(rows))rows=[]}catch(e){}
   const closed=new Set(rows.filter(r=>kind(r.text)==='grn').map(r=>subj(r.text)));
-  const box={red:[],yel:[],blu:[],grn:[]};
+  const box={top:[],red:[],yel:[],blu:[],grn:[]};
   const dayAgo=Date.now()-86400000;
   for(const r of rows){const k=kind(r.text);
     if(k==='grn'){box.grn.push(r);continue}
     if(closed.has(subj(r.text))){box.grn.push(r);continue}
     if(k==='blu'&&new Date(r.created_at)<dayAgo){box.grn.push(r);continue}
     box[k].push(r)}
-  for(const k of ['red','yel','blu','grn']){
+  for(const k of ['top','red','yel','blu','grn']){
     const el=document.getElementById(k);el.innerHTML='';
     if(!box[k].length){el.innerHTML='<div class="empty">— ว่าง —</div>'}
     for(const r of box[k]){const d=document.createElement('div');d.className='card '+k;
       d.innerHTML='<div class="meta"><b>'+(r.sender||'?')+'</b><span>'+th(r.created_at)+'</span><span>'+ago(r.created_at)+'ที่แล้ว</span></div><div class="txt"></div>';
       d.querySelector('.txt').textContent=r.text||'';el.appendChild(d)}
     const n=document.getElementById('n-'+k);if(n)n.textContent=box[k].length?box[k].length+' เรื่อง':''}
-  document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. · เรื่องเปิด '+(box.red.length+box.yel.length)+' · สรุปใหม่ '+box.blu.length;
+  document.getElementById('n-raw').textContent=(box.red.length+box.yel.length)?'('+(box.red.length+box.yel.length)+')':'';document.getElementById('n-blu').textContent=box.blu.length?'('+box.blu.length+')':'';
+  document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. · อ่านแค่ 🎯 พอ — ที่เหลือพี่ปืนดู';
 }
 load();setInterval(load,30000);
 </script>
