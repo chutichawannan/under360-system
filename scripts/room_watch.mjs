@@ -28,8 +28,24 @@ let last = fs.existsSync(F) ? fs.readFileSync(F, 'utf8').trim() : new Date().toI
 const isMe = s => me.some(m => (s || '').toLowerCase().includes(m));
 const roomFilter = rooms.length === 1 ? `room=eq.${encodeURIComponent(rooms[0])}` : `room=in.(${rooms.map(encodeURIComponent).join(',')})`;
 
+// เต้นหัวใจลง live_presence (sid=poller:<ห้อง>) ทุก 30 วิ → หน้า /pwa/pollers.html โชว์ว่าห้องไหนยังหายใจ
+const HB_MS = 30000;
+let lastHb = 0;
+async function heartbeat() {
+  if (Date.now() - lastHb < HB_MS) return;
+  lastHb = Date.now();
+  try {
+    await fetch(`${U}/live_presence?on_conflict=sid`, {
+      method: 'POST',
+      headers: { ...H, 'Content-Type': 'application/json', Prefer: 'resolution=merge-duplicates,return=minimal' },
+      body: JSON.stringify({ sid: `poller:${rooms[0]}`, area: 'poller', page: rooms[0], last_seen: new Date().toISOString() }),
+    });
+  } catch (e) {}
+}
+
 console.log(`👂 poller ห้อง ${rooms.join('/')} เริ่มแล้ว · เช็คทุก ${EVERY_MS / 1000} วิ · นับจาก ${last}`);
 for (;;) {
+  await heartbeat();
   try {
     const q = `${U}/session_messages?${roomFilter}&created_at=gt.${encodeURIComponent(last)}&select=created_at,sender,text&order=created_at.asc&limit=10`;
     const rows = await fetch(q, { headers: H }).then(r => r.json());
