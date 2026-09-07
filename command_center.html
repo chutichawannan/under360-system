@@ -805,10 +805,13 @@ function cardProgress(){
 }
 
 function cardLinks(){
+  // แถบ 'นัท' โชว์เฉพาะโหมดผู้บริหาร (นัทสั่ง 7 ก.ย. — ซ่อนเข้าล็อกอิน)
+  const tabs=TABS.filter(t=>t.id!=='nut'||dashUnlocked());
+  if(!tabs.find(t=>t.id===activeTab)) activeTab=tabs[0].id;
   let h='<div class="tabbar">';
-  for(const t of TABS) h+=`<button class="tab${t.id===activeTab?' on':''}" onclick="setTab('${t.id}')">${esc(t.label)}</button>`;
+  for(const t of tabs) h+=`<button class="tab${t.id===activeTab?' on':''}" onclick="setTab('${t.id}')">${esc(t.label)}</button>`;
   h+='</div>';
-  const tab=TABS.find(t=>t.id===activeTab)||TABS[0];
+  const tab=tabs.find(t=>t.id===activeTab)||tabs[0];
   for(const g of tab.groups){
     h+=`<div class="dgrp">${esc(g.grp)}</div>`;
     for(const it of g.items)
