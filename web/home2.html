@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- ยังเป็นตัวลองออกแบบ ไม่ใช่หน้าจริง — ห้ามให้ Google เก็บ -->
+<meta name="robots" content="noindex,nofollow">
+<title>Under360 — ครัวที่ทำอาหารให้คุณทุกจันทร์ พุธ ศุกร์</title>
+<meta name="description" content="ครัวของเราเองในกรุงเทพ ทำอาหารสดทุกเช้าวันส่ง แล้วส่งถึงบ้าน เปิดดูได้เลยว่าสัปดาห์นี้ครัวทำอะไร">
+<link rel="icon" href="/img/u360_logo.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anuphan:wght@400;500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+
+<style>
+/* ═══════════════════════════════════════════════════════════════
+   Under360 — ตัวลองออกแบบหน้าแรก (m-track 7 ก.ย. 2026)
+   ทำตามสกิล frontend-design ของ Anthropic
+
+   แนวคิด: "ครัวที่เปิดให้ดู"
+   เว็บอาหารสุขภาพทุกเจ้าขายคำว่า "คลีน/สุขภาพดี" เหมือนกันหมด
+   สิ่งที่ร้านนี้มีแต่คนอื่นไม่มีคือ **ครัวของตัวเองที่เดินตามจังหวะจริง จ/พ/ศ**
+   → hero จึงไม่ใช่รูปอาหารจัดสวย แต่เป็น "ตารางครัวสัปดาห์นี้" ที่ดึงจากข้อมูลจริง
+     ลอกไม่ได้ เพราะคนที่ไม่มีครัวของตัวเองจะไม่มีอะไรมาใส่
+
+   ⛔ ตั้งใจเลี่ยงลักษณะที่สกิลระบุว่าเป็นร่องรอยงาน AI (เว็บเดิมเราติดเกือบครบ):
+     · ป้าย ALL-CAPS เหนือหัวข้อ        · ข้อความคั่นด้วย ·
+     · ลูกศร → ท้ายปุ่ม                 · หัวข้อแบบ "คำ — ส่วนขยาย"
+     · การ์ดมนรัศมีเดียวกันทุกใบ + เงาเทาอ่อนใต้ทุกใบ
+     · ดำอมน้ำเงิน #0B0B0B · ครีม #F4F1EA คู่ส้มดินเผา
+     · เอฟเฟกต์ค่อยๆ เลื่อนขึ้นทุก section
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── โทเคน ────────────────────────────────────────────────────
+   สี 4 ค่า มาจากของจริงในครัว ไม่ใช่จานสีเว็บ:
+   กระทะรมควัน / ข้าวสวย / ใบตองแก่ / ไข่แดง                     */
+:root{
+  --wok:#23241F;      /* ดำอมมะกอก — พื้นหลังส่วนเปิด */
+  --rice:#FBF9F4;     /* พื้นหน้าหลัก */
+  --leaf:#2F5D3A;     /* เขียวใบตองแก่ — ตัวอักษรเน้นและปุ่มบนพื้นสว่าง */
+  --yolk:#E8B33C;     /* ไข่แดง — สีเน้นสีเดียวของทั้งหน้า ใช้ให้น้อย */
+
+  --ink:#23241F;
+  --ink-2:#5C6055;    /* ตัวหนังสือรอง */
+  --rule:#DEDACE;     /* เส้นคั่น สีเดียวกับข้าวแต่เข้มขึ้น */
+
+  /* สเกลระยะห่างชุดเดียวทั้งหน้า — เว็บเดิมพังเพราะทุกจุดใช้ค่าคนละอย่าง */
+  --s1:.5rem; --s2:1rem; --s3:1.5rem; --s4:2.25rem; --s5:3.5rem; --s6:5.5rem;
+
+  --measure:34rem;    /* ความยาวบรรทัดไม่เกิน ~68 ตัวอักษร */
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  font-family:'IBM Plex Sans Thai',system-ui,sans-serif;
+  font-size:1.0625rem; line-height:1.75; color:var(--ink);
+  background:var(--rice); -webkit-font-smoothing:antialiased;
+}
+h1,h2,h3,.num{font-family:'Anuphan',system-ui,sans-serif; font-weight:600; line-height:1.22}
+a{color:inherit}
+img{max-width:100%;display:block}
+
+.col{width:min(100% - 2.5rem, 64rem); margin-inline:auto}
+.narrow{max-width:var(--measure)}
+
+/* ── ส่วนเปิด: ตารางครัว ──────────────────────────────────── */
+.open{background:var(--wok); color:var(--rice); padding-block:var(--s4) var(--s5)}
+.brandbar{display:flex; align-items:center; justify-content:space-between; gap:var(--s2);
+  padding-block:var(--s1) var(--s5)}
+.brandbar img{height:38px; width:auto}
+.brandbar nav{display:flex; gap:var(--s3); font-size:.95rem}
+.brandbar nav a{text-decoration:none; color:rgba(251,249,244,.72)}
+.brandbar nav a:hover{color:var(--rice)}
+
+.open h1{font-size:clamp(2.1rem, 7vw, 3.4rem); font-weight:700; letter-spacing:-.02em;
+  max-width:18ch; text-wrap:balance}
+.open h1 em{font-style:normal; color:var(--yolk)}
+.open .said{margin-top:var(--s3); max-width:var(--measure);
+  font-size:1.1rem; color:rgba(251,249,244,.76)}
+
+/* ตารางครัว — ตัวชูโรงของหน้านี้ ทุ่มความโดดเด่นไว้ที่เดียว */
+.board{margin-top:var(--s5); border-top:1px solid rgba(251,249,244,.22)}
+.board .cap{display:flex; justify-content:space-between; align-items:baseline; gap:var(--s2);
+  padding-block:var(--s2); font-size:.95rem; color:rgba(251,249,244,.6)}
+.days{display:grid; gap:1px; background:rgba(251,249,244,.14);
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr))}
+.day{background:var(--wok); padding:var(--s3) var(--s2) var(--s3) 0}
+.day .when{font-family:'Anuphan'; font-weight:600; font-size:1.15rem; color:var(--rice)}
+.day .state{font-size:.85rem; color:var(--yolk); margin-top:2px}
+.day ul{list-style:none; margin-top:var(--s2); display:grid; gap:.4rem}
+.day li{font-size:.94rem; color:rgba(251,249,244,.74); line-height:1.5}
+.day .more{font-size:.88rem; color:rgba(251,249,244,.45); margin-top:.4rem}
+.board .fallback{padding-block:var(--s3); color:rgba(251,249,244,.6)}
+
+.act{display:flex; flex-wrap:wrap; gap:var(--s2) var(--s3); align-items:center; margin-top:var(--s5)}
+.go{display:inline-block; background:var(--yolk); color:var(--wok); text-decoration:none;
+  font-family:'Anuphan'; font-weight:600; font-size:1.05rem; padding:.9rem 1.8rem; border-radius:2px}
+.go:hover{background:#F2C356}
+.act .aside{font-size:.95rem; color:rgba(251,249,244,.6)}
+.act .aside a{color:rgba(251,249,244,.85)}
+
+/* ── ส่วนเนื้อหาบนพื้นสว่าง ───────────────────────────────── */
+.band{padding-block:var(--s6)}
+.band h2{font-size:clamp(1.5rem, 4vw, 2.05rem); max-width:22ch; text-wrap:balance}
+.band .lede{margin-top:var(--s2); max-width:var(--measure); color:var(--ink-2)}
+
+/* สามทาง — ไม่ใช่การ์ด แต่เป็นรายการที่คั่นด้วยเส้น
+   เส้นคั่นบอกว่า "นี่คือของคนละแบบ" ไม่ได้ใส่เพื่อความสวย */
+.routes{margin-top:var(--s4); border-top:1px solid var(--rule)}
+.route{display:grid; gap:var(--s1) var(--s4); padding-block:var(--s3);
+  border-bottom:1px solid var(--rule); grid-template-columns:1fr}
+.route h3{font-size:1.2rem}
+.route p{color:var(--ink-2); max-width:var(--measure)}
+.route .price{font-family:'Anuphan'; font-weight:600; color:var(--leaf); white-space:nowrap}
+.route .who{font-size:.92rem; color:var(--ink-2); margin-top:.2rem}
+@media(min-width:44rem){
+  .route{grid-template-columns:1fr auto; align-items:start}
+  .route .price{grid-row:1; grid-column:2; text-align:right; font-size:1.15rem}
+  .route p,.route .who{grid-column:1}
+}
+
+/* ทำไมถึงต่าง — ข้อเท็จจริงเรียงเป็นบรรทัด ไม่ใช่ไอคอนในกล่อง */
+.facts{margin-top:var(--s4); display:grid; gap:var(--s3)}
+.fact{display:grid; grid-template-columns:auto 1fr; gap:var(--s2); align-items:baseline}
+.fact .num{font-size:1.6rem; color:var(--leaf); font-weight:700; font-variant-numeric:tabular-nums}
+.fact b{font-weight:600}
+.fact span{color:var(--ink-2)}
+
+/* คำของเจ้าของร้าน — ให้รู้สึกว่ามีคนจริงอยู่หลังร้าน */
+.owner{background:var(--wok); color:var(--rice); padding-block:var(--s5)}
+.owner blockquote{font-family:'Anuphan'; font-weight:500;
+  font-size:clamp(1.25rem, 3.4vw, 1.7rem); line-height:1.5; max-width:28ch}
+.owner cite{display:block; font-style:normal; margin-top:var(--s3);
+  font-size:.95rem; color:rgba(251,249,244,.58)}
+
+/* บทความ */
+.reads{margin-top:var(--s4); display:grid; gap:0; border-top:1px solid var(--rule)}
+.read{display:block; text-decoration:none; padding-block:var(--s3);
+  border-bottom:1px solid var(--rule)}
+.read h3{font-size:1.1rem; font-weight:500; max-width:var(--measure)}
+.read p{margin-top:.35rem; font-size:.95rem; color:var(--ink-2); max-width:var(--measure)}
+.read:hover h3{color:var(--leaf)}
+
+/* คำถาม */
+.qa{margin-top:var(--s4); border-top:1px solid var(--rule)}
+.qa details{border-bottom:1px solid var(--rule)}
+.qa summary{cursor:pointer; list-style:none; padding-block:var(--s3);
+  font-family:'Anuphan'; font-weight:500; font-size:1.08rem;
+  display:flex; justify-content:space-between; gap:var(--s2)}
+.qa summary::-webkit-details-marker{display:none}
+.qa summary::after{content:'+'; color:var(--leaf); font-weight:400; font-size:1.4rem; line-height:1}
+.qa details[open] summary::after{content:'–'}
+.qa .a{padding-bottom:var(--s3); color:var(--ink-2); max-width:var(--measure)}
+
+/* ปิดท้าย */
+.last{background:var(--leaf); color:var(--rice); padding-block:var(--s5)}
+.last h2{font-size:clamp(1.6rem, 4.5vw, 2.3rem); max-width:20ch; text-wrap:balance}
+.last .go{margin-top:var(--s4); background:var(--yolk); color:var(--wok)}
+.last .fine{margin-top:var(--s2); font-size:.92rem; color:rgba(251,249,244,.72)}
+
+footer{padding-block:var(--s4); border-top:1px solid var(--rule); font-size:.92rem; color:var(--ink-2)}
+footer nav{display:flex; gap:var(--s3); flex-wrap:wrap; margin-bottom:var(--s2)}
+footer a{text-decoration:none}
+footer a:hover{color:var(--leaf)}
+
+:focus-visible{outline:2px solid var(--yolk); outline-offset:3px}
+@media (prefers-reduced-motion:no-preference){
+  /* จังหวะเคลื่อนไหวจุดเดียวของทั้งหน้า: ตารางครัวไล่ขึ้นตอนเปิด */
+  .day{animation:rise .5s cubic-bezier(.2,.7,.3,1) backwards}
+  .day:nth-child(2){animation-delay:.07s}
+  .day:nth-child(3){animation-delay:.14s}
+  @keyframes rise{from{opacity:0; transform:translateY(10px)}}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══ ส่วนเปิด — ครัวสัปดาห์นี้ ═══ -->
+<header class="open">
+  <div class="col">
+    <div class="brandbar">
+      <a href="/" aria-label="Under360 หน้าแรก"><img src="/img/u360_logo.svg" alt="Under360"></a>
+      <nav>
+        <a href="/mealplan">คอร์สอาหาร</a>
+        <a href="/blog">บทความ</a>
+      </nav>
+    </div>
+
+    <h1>ครัวเราทำอาหารให้คุณ <em>ทุกจันทร์ พุธ ศุกร์</em></h1>
+    <p class="said">ทำสดเช้าวันส่ง ส่งถึงบ้านตอนบ่าย เราทำแบบนี้มา 10 ปี
+      ข้างล่างคือสิ่งที่ครัวกำลังจะทำจริงๆ ไม่ใช่ภาพตัวอย่าง</p>
+
+    <section class="board" aria-label="ตารางครัวรอบถัดไป">
+      <div class="cap">
+        <span>รอบส่งถัดไป</span>
+        <span id="asof"></span>
+      </div>
+      <div class="days" id="days">
+        <p class="fallback">กำลังเปิดตารางครัว</p>
+      </div>
+    </section>
+
+    <div class="act">
+      <a class="go" href="#" id="cta1">สั่งอาหารในไลน์</a>
+      <span class="aside">หรือ <a href="/mealplan">ดูคอร์สรายสัปดาห์</a> ก่อนก็ได้</span>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ สามทางที่เลือกได้ ═══ -->
+<section class="band">
+  <div class="col">
+    <h2>เลือกได้ว่าจะให้ครัวดูแลแค่ไหน</h2>
+    <p class="lede">ไม่ต้องสมัครคอร์สก็สั่งได้ เริ่มจากกล่องเดียวก่อนก็ได้
+      แล้วค่อยขยับเมื่อรู้ว่าชอบอะไร</p>
+
+    <div class="routes">
+      <article class="route">
+        <h3>สั่งทีละกล่อง</h3>
+        <p class="who">อยากลองก่อน หรือกินไม่ประจำ</p>
+        <p>เลือกเมนูเอง เลือกวันส่งเอง เพราะเป็นของที่ครัวทำเก็บไว้ล่วงหน้า</p>
+        <span class="price">เริ่ม 125 บาท</span>
+      </article>
+
+      <article class="route">
+        <h3>คอร์สทำสด</h3>
+        <p class="who">อยากให้จบ ไม่ต้องคิดเมนูเอง</p>
+        <p>ครัวทำสดเช้าวันส่งแล้วจัดเมนูให้ตามเป้าหมายของคุณ
+          ตัดของที่คุณแพ้ออกให้อัตโนมัติ มีสายโปรตีนสูงและสายคุมคาร์บ</p>
+        <span class="price">7 กล่อง 1,399 บาท</span>
+      </article>
+
+      <article class="route">
+        <h3>แพ็คกับข้าวแช่แข็ง</h3>
+        <p class="who">อยู่ต่างจังหวัด หรืออยากตุนไว้</p>
+        <p>ปรุงเสร็จแช่แข็งทันที ส่งได้ทั่วประเทศ เก็บไว้กินวันไหนก็ได้</p>
+        <span class="price">ส่งทั่วไทย</span>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ข้อเท็จจริง ═══ -->
+<section class="band" style="padding-top:0">
+  <div class="col">
+    <h2>สิ่งที่เราทำต่างจากที่อื่น</h2>
+    <div class="facts">
+      <div class="fact"><span class="num">10</span>
+        <p><b>ปีที่ครัวนี้เปิดทุกวัน</b> <span>ครัวเป็นของเราเอง ไม่ได้จ้างใครผลิต
+          เราจึงแก้สูตรได้เองเมื่อลูกค้าบอกว่าอะไรไม่อร่อย</span></p></div>
+
+      <div class="fact"><span class="num">170</span>
+        <p><b>กรัมของโปรตีนดิบในสายโปรตีนสูง</b> <span>สายคุมคาร์บอยู่ที่ 120 กรัม
+          เราชั่งจริงก่อนปรุง ไม่ได้ประมาณเอา</span></p></div>
+
+      <div class="fact"><span class="num">24</span>
+        <p><b>ชั่วโมงที่สั่งเองได้</b> <span>เลือกเมนู คิดค่าส่ง จ่ายเงิน จบในแอป
+          ไม่ต้องทักแล้วรอแอดมินตอบ</span></p></div>
+
+      <div class="fact"><span class="num">5</span>
+        <p><b>กรัม คือเพดานน้ำมันรำข้าวต่อเมนู</b> <span>และกว่า 90% ของเมนูมีโซเดียมต่ำกว่าอาหารตามสั่งทั่วไป
+          เราคุมให้พอดี ไม่ได้ตัดทิ้งจนไม่อร่อย</span></p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ คำของเจ้าของร้าน ═══ -->
+<section class="owner">
+  <div class="col">
+    <blockquote>เราเคยทำคลีนสายแข็ง อกไก่อย่างเดียว
+      แล้วพบว่าไม่มีใครกินแบบนั้นได้ทุกวันจริง รวมทั้งเราเอง</blockquote>
+    <cite>นัทกับพลอย เจ้าของร้าน</cite>
+  </div>
+</section>
+
+<!-- ═══ บทความ ═══ -->
+<section class="band">
+  <div class="col">
+    <h2>เขียนจากสิ่งที่ลูกค้าถามจริง</h2>
+    <p class="lede">พลอยเป็นคนเขียนเอง อ้างอิงงานวิจัย ไม่ได้เขียนเพื่อขายของ</p>
+    <div class="reads" id="reads"></div>
+    <p style="margin-top:var(--s3)"><a href="/blog" style="color:var(--leaf)">อ่านบทความทั้งหมด</a></p>
+  </div>
+</section>
+
+<!-- ═══ คำถาม ═══ -->
+<section class="band" style="padding-top:0">
+  <div class="col">
+    <h2>เรื่องที่คนถามก่อนสั่ง</h2>
+    <div class="qa">
+      <details open><summary>ค่าส่งเท่าไหร่</summary>
+        <p class="a">กรุงเทพส่วนใหญ่เริ่มที่ 20 บาท และหลายพื้นที่ส่งฟรี
+          คอร์สทำสดส่งฟรีทุกแพ็คไม่มีขั้นต่ำ ต่างจังหวัดคิดตามระยะ
+          ระบบคิดให้ตอนสั่ง ไม่ต้องทักถาม</p></details>
+
+      <details><summary>คอร์สทำสดส่งวันไหน</summary>
+        <p class="a">จันทร์ พุธ ศุกร์ ช่วงบ่าย ครัวจัดรอบส่งเอง
+          เพราะทำสดเช้าวันส่ง ถ้าวันไหนรับไม่สะดวก แจ้งไว้ล่วงหน้าได้</p></details>
+
+      <details><summary>เลือกเมนูเองได้ไหม</summary>
+        <p class="a">เมนูที่ทำเก็บไว้ล่วงหน้าเลือกเองได้ทั้งเมนูและวันส่ง
+          ส่วนคอร์สทำสดครัวจัดให้ตามเป้าหมายของคุณ และตัดของที่แพ้ออกให้
+          แจ้งไว้ตอนสมัครได้เลยว่ากินอะไรไม่ได้</p></details>
+
+      <details><summary>ไม่เคยสั่งเลย เริ่มยังไงดี</summary>
+        <p class="a">สั่งกล่องเดียวมาลองก่อนก็ได้ ไม่ต้องสมัครคอร์ส
+          ถ้าถูกปากค่อยขยับเป็นคอร์ส คนส่วนใหญ่เริ่มแบบนี้</p></details>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ปิดท้าย ═══ -->
+<section class="last">
+  <div class="col">
+    <h2>บอกเป้าหมายมา เดี๋ยวครัวจัดให้</h2>
+    <a class="go" href="#" id="cta2">สั่งอาหารในไลน์</a>
+    <p class="fine">สั่งได้ตลอด 24 ชั่วโมง ไม่ต้องรอใครตอบ</p>
+  </div>
+</section>
+
+<footer>
+  <div class="col">
+    <nav>
+      <a href="/mealplan">คอร์สอาหาร</a>
+      <a href="/blog">บทความ</a>
+      <a href="/pack">แพ็คกับข้าว</a>
+    </nav>
+    <p>Under360 ครัวอาหารสุขภาพในกรุงเทพ ส่งถึงบ้านทั่วกรุงเทพและต่างจังหวัด</p>
+  </div>
+</footer>
+
+<script>
+/* ที่มาของลูกค้า — ยกชุดเดียวกับหน้าอื่น ต้องพกติดไปถึง LINE ไม่งั้นวัดผลไม่ได้ */
+const ORDER_URL = 'https://liff.line.me/2011148232-oul66cEs?lid=2011148232-oul66cEs';
+(function(){
+  try{
+    var p = new URLSearchParams(location.search);
+    var old = {}; try{ old = JSON.parse(localStorage.getItem('u360_utm')||'{}')||{}; }catch(e){}
+    var fbclid = p.get('fbclid') || '';
+    var src = p.get('utm_source') || (fbclid ? 'fb' : '');
+    if(src){
+      localStorage.setItem('u360_utm', JSON.stringify({
+        source:src, medium:p.get('utm_medium')||(fbclid?'paid':'')||old.medium||'',
+        campaign:p.get('utm_campaign')||old.campaign||'', content:p.get('utm_content')||old.content||'',
+        fbclid:fbclid||old.fbclid||'', ts:Date.now() }));
+    }
+  }catch(e){}
+})();
+function tracked(base){
+  try{
+    var q = new URLSearchParams(location.search), st = {};
+    try{ st = JSON.parse(localStorage.getItem('u360_utm')||'{}')||{}; }catch(e){}
+    var out = new URLSearchParams();
+    [['utm_source','source'],['utm_medium','medium'],['utm_campaign','campaign'],
+     ['utm_content','content'],['fbclid','fbclid']].forEach(function(k){
+      var v = (q.get(k[0]) || st[k[1]] || '').toString().trim();
+      if(v) out.set(k[0], v.slice(0,80));
+    });
+    var s = out.toString();
+    return s ? base + (base.indexOf('?')>=0?'&':'?') + s : base;
+  }catch(e){ return base; }
+}
+['cta1','cta2'].forEach(function(id){
+  var el = document.getElementById(id); if(!el) return;
+  el.addEventListener('click', function(e){ e.preventDefault(); location.href = tracked(ORDER_URL); });
+});
+
+/* ── ตารางครัว ──────────────────────────────────────────────
+   ใช้แหล่งเดียวกับหน้า /mealplan และแอปลูกค้า
+   หาไม่เจอ = ซ่อนทิ้งเงียบๆ ไม่ใช่โชว์กล่องพัง */
+var DOW = ['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัสบดี','ศุกร์','เสาร์'];
+var MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){
+  return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
+function todayTH(){
+  var d = new Date(Date.now() + (new Date().getTimezoneOffset()*6e4) + 7*36e5);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+(function(){
+  fetch('/mp_plan.json').then(function(r){ return r.ok ? r.json() : null; }).then(function(j){
+    var box = document.getElementById('days');
+    var plan = j && j.plan;
+    if(!plan){ document.querySelector('.board').style.display='none'; return; }
+    var t = todayTH();
+    var next = Object.keys(plan).sort().filter(function(k){ return k >= t; }).slice(0,3);
+    if(!next.length){ document.querySelector('.board').style.display='none'; return; }
+
+    box.innerHTML = next.map(function(k, i){
+      var p = k.split('-'), d = new Date(+p[0], +p[1]-1, +p[2]);
+      var items = (plan[k]||[]).slice(0,4);
+      var rest = (plan[k]||[]).length - items.length;
+      return '<div class="day">'
+        + '<div class="when">' + DOW[d.getDay()] + ' ' + (+p[2]) + ' ' + MON[+p[1]-1] + '</div>'
+        + '<div class="state">' + (i===0 ? (k===t ? 'ครัวทำวันนี้' : 'รอบถัดไป') : 'ทำวันนั้น') + '</div>'
+        + '<ul>' + items.map(function(m){ return '<li>' + esc(m.name) + '</li>'; }).join('') + '</ul>'
+        + (rest > 0 ? '<p class="more">และอีก ' + rest + ' เมนูในวันเดียวกัน</p>' : '')
+        + '</div>';
+    }).join('');
+
+    var f = next[0].split('-');
+    document.getElementById('asof').textContent =
+      'ครัวลงแพลนไว้ถึง ' + (function(){ var l = Object.keys(plan).sort().pop().split('-');
+        return (+l[2]) + ' ' + MON[+l[1]-1]; })();
+  }).catch(function(){ document.querySelector('.board').style.display='none'; });
+})();
+
+/* ── บทความล่าสุด ── */
+(function(){
+  var SB='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/blog_posts';
+  var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+  fetch(SB+'?select=slug,title,excerpt&published=eq.true&order=created_at.desc&limit=3',
+        {headers:{apikey:K,Authorization:'Bearer '+K}})
+    .then(function(r){ return r.json(); })
+    .then(function(a){
+      if(!a || !a.length) return;
+      document.getElementById('reads').innerHTML = a.map(function(p){
+        return '<a class="read" href="/blog/' + encodeURIComponent(p.slug) + '">'
+          + '<h3>' + esc(p.title) + '</h3>'
+          + '<p>' + esc((p.excerpt||'').slice(0,110)) + '</p></a>';
+      }).join('');
+    }).catch(function(){});
+})();
+</script>
+</body>
+</html>
