@@ -29,6 +29,7 @@
 <div class="sub" id="upd">กำลังโหลด…</div>
 <div class="sum" id="sum"></div>
 <div class="grid" id="grid"></div>
+<div class="foot" id="paused" style="margin-top:14px"></div>
 <div class="foot">
   🟢 เต้นอยู่ (ไม่เกิน 2 นาที) · 🟡 เงียบ 2-10 นาที · 🔴 หายไปเกิน 10 นาที = ห้องปิด/poller ตาย · ⚪ ยังไม่เคยเปิด<br>
   เปิด poller ห้องไหน: พิมพ์ประโยคจาก <code>docs/POLLER.md</code> ในห้องนั้น · หน้านี้รีเฟรชเองทุก 30 วิ
@@ -39,9 +40,10 @@ const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6
 // ห้องที่ควรมี poller เรียงตามความถี่ใช้งาน
 const ROOMS=[
   ['pm','พี่ปืน (PM)'],['secretary','เลขา'],['u-maintainer','U'],['kapan','กะปัน'],
-  ['เจ2569','เจ 2026'],['niw','นิว'],['05','05 LINE OA'],['k','ครัว'],['fah','ฟ้า'],['cc','CC'],
-  ['06','06 Ads'],['tiang','เตียง'],['keng','พี่เก่ง'],['f','การเงิน'],['m','M เว็บ'],['buyer','buyer'],['bug','bug'],['eath','เอิธ']
+  ['เจ2569','เจ 2026'],['niw','นิว'],['05','05 LINE OA'],['06','06 Ads'],['m','M เว็บ'],['fah','ฟ้า'],['cc','CC'],['tiang','เตียง'],['eath','เอิธ']
 ];
+// ห้องพัก — นัทเคาะ 7 ก.ย.: ยังไม่ได้ทำงานตอนนี้ ไม่ต้องมี poller ไม่ต้องนับเป็น ⚪
+const PAUSED=[['k','ครัว'],['keng','พี่เก่ง'],['f','การเงิน'],['buyer','buyer'],['bug','bug']];
 function ago(ms){const s=Math.round(ms/1000);if(s<60)return s+' วิ';const m=Math.round(s/60);if(m<60)return m+' นาที';const h=Math.round(m/60);if(h<48)return h+' ชม.';return Math.round(h/24)+' วัน'}
 async function load(){
   let rows=[];
@@ -59,6 +61,7 @@ async function load(){
     el.innerHTML='<div class="room">'+label+'</div><div class="st"><span class="dot"></span>'+txt+'</div><div class="ago">'+agoTxt+'</div>';
     g.appendChild(el);
   }
+  const pz=PAUSED.map(([r,l])=>seen[r]&&(now-seen[r])<600000?l+' 🟢':l).join(' · ');document.getElementById('paused').textContent='พัก (ไม่ต้องมี poller): '+pz;
   document.getElementById('sum').innerHTML='<span>🟢 <b>'+ok+'</b></span><span>🟡 <b>'+warn+'</b></span><span>🔴 <b>'+bad+'</b></span><span>⚪ <b>'+none+'</b></span>';
   document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. (เวลาไทย)';
 }
