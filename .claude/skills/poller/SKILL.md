@@ -1,5 +1,5 @@
 ---
-name: under360-poller
+name: poller
 description: เปิด poller ของห้องตัวเอง (ตัวเฝ้ากล่องจดหมายบนบอร์ด session_messages) — ใช้เมื่อนัทพิมพ์ "/poller" หรือ "เปิด poller" หรือหลัง relaunch แอป · ห้องดูชื่อตัวเองแล้วรัน scripts/room_watch.mjs ด้วย Monitor persistent · ห้ามถามกลับว่าห้องไหน ให้ดูจากตารางในสกิล
 ---
 
