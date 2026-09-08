@@ -102,6 +102,13 @@ say('\n⑥ วัตถุดิบที่ต้องหาล่วงหน
 const ing = node('scripts/fah_check_special_ingredients.mjs', ['10']);
 say(ing.split('\n').filter(l => /📅|🥑|🌯|🍠|🧺|✅ ไม่มี/.test(l)).join('\n'));
 
+// ---------- 6b ทำนายเวลาเสร็จ + เตือนวันที่จะทะลุเพดาน 16:00 ----------
+// เกณฑ์นัท 8 ก.ย. 2026 (ผ่านเลขา): ครัวเสร็จช้าสุดไม่เกิน 16:00 · จัดของ +3 ชม. = ตอกออกไม่เกิน 19:00
+say('');
+say('⑥b ทำนายเวลาเสร็จ');
+const pf = node('scripts/fah_predict_finish.mjs', ['--write']).split(String.fromCharCode(10));
+say(pf.filter(l => /กล่อง ·|🔴|เพดานกำลังผลิต/.test(l)).join(String.fromCharCode(10)));
+
 // ---------- 7 push ----------
 node('scripts/fah_build_web_plan.mjs');
 if (DRY) { say('\n[ดูอย่างเดียว] ไม่ push'); }
@@ -109,7 +116,7 @@ else {
   say('\n⑦ push ขึ้น main');
   run('git', ['fetch', '-q', 'origin'], { cwd: WT });
   run('git', ['reset', '-q', '--hard', 'origin/main'], { cwd: WT });
-  for (const f of [`kitchen/${DATE}.html`, `kitchen/${DATE}_pack.html`, 'kitchen/index.html', 'docs/FAH_MENU_PLAN_FOR_WEB.md'])
+  for (const f of [`kitchen/${DATE}.html`, `kitchen/${DATE}_pack.html`, 'kitchen/index.html', 'docs/FAH_MENU_PLAN_FOR_WEB.md', 'docs/MP_FINISH_TIMES.md'])
     if (existsSync(`${ROOT}/${f}`)) copyFileSync(`${ROOT}/${f}`, `${WT}/${f}`);
   run('git', ['add', '-A'], { cwd: WT });
   const msg = `ใบครัว ${DATE} (อัตโนมัติ ${stamp})\n\nCo-Authored-By: Claude Opus 5 <noreply@anthropic.com>`;
