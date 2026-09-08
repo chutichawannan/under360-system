@@ -354,6 +354,13 @@
       .dish-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:16px 12px; }
       .dish p { font-size:13px; }
     }
+    /* ── u360-offer-hook — คำชวนจองเหนือราคา (นัทขอ 8 ก.ย.) ── */
+    .offer-hook { display:inline-flex; align-items:center; gap:9px; margin:0 0 11px;
+                  font-size:15px; font-weight:500; color:var(--green); line-height:1.5; }
+    .offer-hook::before { content:""; width:9px; height:9px; border-radius:3px;
+                          background:#f3cf39; flex-shrink:0; }
+    @media (max-width:700px) { .offer-hook { font-size:min(15px, 3.3vw); gap:7px; margin-bottom:9px; }
+                               .offer-hook::before { width:7px; height:7px; } }
 </style>
 </head>
 <body>
@@ -374,6 +381,7 @@
           <p class="intro">30 เมนู ครบ 10 วัน<br>ส่งถึงบ้าน 3 รอบ</p>
           <p class="dates muted">9–18 ตุลาคม 2569 รวมวันล้างท้อง</p>
           <div class="offer">
+            <p class="offer-hook"><!-- u360-offer-hook -->จองก่อน ได้ราคาพิเศษ</p>
             <p class="price">Early Bird <strong>฿4,190</strong></p>
             <p class="offer-note muted">ราคาปกติ ฿4,490 · จำกัด 50 คอร์สแรก</p>
             <div class="actions">
