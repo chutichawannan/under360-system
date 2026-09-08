@@ -538,10 +538,28 @@ function jayTracked(base){
    ผลคือ กดเปิดแท็บใหม่ / กดค้างแล้วก๊อปลิงก์ / คลิกกลาง = ได้ของเปล่า
    และถ้า JS ไม่ทำงานสักเหตุผล ปุ่มจองตาย = ขายไม่ได้ทั้งหน้า
    → ใส่ลิงก์จริงลงไปตั้งแต่โหลด แล้วยังคง handler ไว้ยิงพิกเซลก่อนออกจากหน้า */
+/* u360-track — บันทึกสถิติของเราเอง (คนละตัวกับพิกเซล Meta/Google)
+   ยิงแบบไม่รอผล ไม่บล็อกหน้า และกลืน error ทุกกรณี — สถิติต้องไม่ทำให้ลูกค้าสั่งของไม่ได้ */
+function u360track(event){
+  try{
+    var u={}; try{ u=JSON.parse(localStorage.getItem('u360_utm')||'{}')||{}; }catch(e){}
+    fetch('https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/web_events',{
+      method:'POST', keepalive:true,
+      headers:{'Content-Type':'application/json',
+        apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8'},
+      body:JSON.stringify({event:event, page:'jay',
+        utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+        referrer:document.referrer||null, ua:(navigator.userAgent||'').slice(0,200)})
+    }).then(function(){},function(){});
+  }catch(e){}
+}
+u360track('pageview');
+
 [].slice.call(document.querySelectorAll('[data-order]')).forEach(function(el,i){
   try{ el.href=jayTracked(ORDER_URL); }catch(e){}
   el.addEventListener('click',function(e){
     e.preventDefault();
+    try{ u360track('cta_click'); }catch(e){}
     try{ if(window.fbq) fbq('track','Lead',{content_name:'jay2026'}); }catch(e){}
     try{ if(window.gtag) gtag('event','conversion',{send_to:'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D'}); }catch(e){}
     location.href=jayTracked(ORDER_URL);
