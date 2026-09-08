@@ -59,6 +59,15 @@ const stamp = nowTH.toISOString().slice(0, 16).replace('T', ' ');
 say(`🤖 ห้องฟ้า — รันอัตโนมัติ ${stamp} (เวลาไทย)${DRY ? '  [ดูอย่างเดียว]' : ''}`);
 say(`🎯 วันผลิตเป้าหมาย: ${DATE}`);
 
+// ---------- 0 ดึงไฟล์ที่ห้องอื่นอาจแก้ จาก origin/main ลงมาก่อน ----------
+// ⚠️ โฟลเดอร์หลักตามหลัง origin/main ได้หลาย commit โดยไม่มีอะไรเตือน (พี่ปืนเตือน 8 ก.ย. 2026 · โดนมาแล้ว 2 ครั้ง)
+//    ถ้าไม่ดึงลงมาก่อน เราจะ push ทับงานห้องอื่นด้วยไฟล์เก่าในเครื่อง
+run('git', ['fetch', '-q', 'origin'], { cwd: WT });
+run('git', ['reset', '-q', '--hard', 'origin/main'], { cwd: WT });
+for (const f of ['kitchen/index.html']) {
+  if (existsSync(`${WT}/${f}`)) copyFileSync(`${WT}/${f}`, `${ROOT}/${f}`);
+}
+
 // ---------- 1-3 เตรียมข้อมูล ----------
 const w = DRY ? [] : ['--write'];
 say('\n① จ่ายเมนูรอบที่ยังว่าง');       say(node('scripts/fah_assign_menus.mjs', w).trim().split('\n').slice(-1)[0]);
