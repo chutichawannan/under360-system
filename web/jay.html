@@ -485,19 +485,20 @@ function jayTracked(base){
     location.href=jayTracked(ORDER_URL);
   });
 });
-/* แถบล่าง: โผล่เมื่อปุ่มจองใบแรกเลื่อนพ้นจอ · ซ่อนตอนถึงปุ่มจองใบท้าย (ไม่ให้ซ้อนกัน) */
+/* แถบล่าง: โผล่เมื่อปุ่มจองใบแรกพ้นจอ · ซ่อนเมื่อปุ่มใบท้ายโผล่ (ไม่ให้ซ้อนกัน)
+   ใช้ตัวสังเกตตำแหน่ง (IntersectionObserver) แทนการดัก scroll
+   เพราะ scroll event มีเบราว์เซอร์/บริบทที่ไม่ยิง (เจอเองตอนเทส) แล้วแถบจะไม่โผล่เลย
+   ตัวนี้เบราว์เซอร์แจ้งเองเมื่อของเข้า-ออกจอ ไม่ต้องรอ event และกินแรงน้อยกว่า */
 (function(){
   var bar=document.getElementById('stickybar'); if(!bar) return;
   var first=document.querySelector('.hero [data-order]');
   var last=document.querySelector('.booking [data-order]');
-  if(!first) return;
+  if(!first||!('IntersectionObserver' in window)) return;
   bar.removeAttribute('hidden');
-  function upd(){
-    var pastFirst=first.getBoundingClientRect().bottom<0;
-    var atLast=last ? last.getBoundingClientRect().top<window.innerHeight : false;
-    bar.classList.toggle('on', pastFirst && !atLast);
-  }
-  addEventListener('scroll',upd,{passive:true}); addEventListener('resize',upd); upd();
+  var firstOut=false, lastIn=false;
+  function upd(){ bar.classList.toggle('on', firstOut && !lastIn); }
+  new IntersectionObserver(function(es){ firstOut=!es[0].isIntersecting; upd(); }).observe(first);
+  if(last) new IntersectionObserver(function(es){ lastIn=es[0].isIntersecting; upd(); }).observe(last);
 })();
 
 </script>
