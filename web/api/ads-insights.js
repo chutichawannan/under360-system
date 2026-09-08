@@ -34,8 +34,7 @@ module.exports = async function handler(req, res) {
      รหัสอยู่ใน env ฝั่ง server เท่านั้น หน้าเว็บไม่เคยรู้ค่าจริง
      ADS_PIN ไม่ได้ตั้ง → ใช้รหัสประจำบ้านเดียวกับหน้า pwa เพื่อให้ใช้งานได้ทันที */
   const PIN = process.env.ADS_PIN || '0360';
-  const given = (req.headers && (req.headers['x-ads-pin'] || req.headers['X-Ads-Pin']))
-             || (req.query && req.query.pin) || '';
+  const given = (req.headers && (req.headers['x-ads-pin'] || req.headers['X-Ads-Pin'])) || '';
   if (String(given) !== String(PIN)) {
     res.statusCode = 401;
     return res.end(JSON.stringify({ error: 'locked', note: 'ต้องใส่รหัสก่อนดูข้อมูล' }));
