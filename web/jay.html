@@ -275,6 +275,23 @@
     .gift-pic { margin:0; }
     .gift-pic img { width:100%; height:auto; display:block; border-radius:14px; border:1px solid var(--line); }
     @media (max-width:700px) { #gift { grid-template-columns:1fr; gap:22px; padding:32px 0 36px; } }
+    /* ── u360-sticky-cta ── */
+    #stickybar { display:none; }
+    @media (max-width:700px) {
+      #stickybar { position:fixed; left:0; right:0; bottom:0; z-index:50;
+        display:flex; align-items:center; justify-content:space-between; gap:14px;
+        padding:10px 16px calc(10px + env(safe-area-inset-bottom));
+        background:rgba(255,255,255,.97); border-top:1px solid var(--line);
+        box-shadow:0 -2px 14px rgba(0,0,0,.06);
+        transform:translateY(102%); transition:transform .22s ease; }
+      #stickybar[hidden] { display:flex; }          /* คุมด้วย .on ไม่ใช่ hidden จะได้มีอนิเมชัน */
+      #stickybar.on { transform:translateY(0); }
+      #stickybar b { display:block; font-size:19px; color:var(--green); font-weight:600; line-height:1.3; }
+      #stickybar span { display:block; font-size:11px; color:var(--muted); line-height:1.4; }
+      #stickybar .button { min-height:46px; padding:10px 22px; flex-shrink:0; }
+      body { padding-bottom:74px; }                  /* กันแถบบังบรรทัดสุดท้าย */
+    }
+    @media (prefers-reduced-motion:reduce) { #stickybar { transition:none; } }
 </style>
 </head>
 <body>
@@ -410,6 +427,15 @@
     <footer><a class="brand" href="/">Under360</a><p>คอร์สอาหารเจ 2569 · 9–18 ตุลาคม รวมวันล้างท้อง</p></footer>
   </div>
 
+<!-- ═══ u360-sticky-cta — แถบจองติดขอบล่าง เฉพาะมือถือ ═══ -->
+<div id="stickybar" hidden>
+  <div>
+    <b>฿4,190</b>
+    <span>Early Bird · 50 คอร์สแรก</span>
+  </div>
+  <a class="button" href="#" data-order="1">จองคอร์สเจ</a>
+</div>
+
 <script>
 /* ═══ ต่อปุ่มจองเข้า LINE + พกที่มาของลูกค้าไปด้วย (ชุดเดียวกับหน้าอื่นทั้งเว็บ)
    ⚠️ ต้องพก utm ไปถึง LINE ไม่งั้นวัดไม่ได้ว่าแอดตัวไหนทำเงิน
@@ -459,6 +485,21 @@ function jayTracked(base){
     location.href=jayTracked(ORDER_URL);
   });
 });
+/* แถบล่าง: โผล่เมื่อปุ่มจองใบแรกเลื่อนพ้นจอ · ซ่อนตอนถึงปุ่มจองใบท้าย (ไม่ให้ซ้อนกัน) */
+(function(){
+  var bar=document.getElementById('stickybar'); if(!bar) return;
+  var first=document.querySelector('.hero [data-order]');
+  var last=document.querySelector('.booking [data-order]');
+  if(!first) return;
+  bar.removeAttribute('hidden');
+  function upd(){
+    var pastFirst=first.getBoundingClientRect().bottom<0;
+    var atLast=last ? last.getBoundingClientRect().top<window.innerHeight : false;
+    bar.classList.toggle('on', pastFirst && !atLast);
+  }
+  addEventListener('scroll',upd,{passive:true}); addEventListener('resize',upd); upd();
+})();
+
 </script>
 </body>
 </html>
