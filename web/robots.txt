@@ -8,6 +8,8 @@ Disallow: /ads.html
 Disallow: /api/
 Disallow: /preview
 Disallow: /home2
+Disallow: /jay-v5
+Disallow: /jay_v5.html
 Disallow: /home2.html
 Disallow: /preview.html
 Disallow: /kidneycare.html
