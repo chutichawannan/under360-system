@@ -111,7 +111,8 @@ module.exports = async function handler(req, res) {
   /* ── ② ออเดอร์จริงในช่วงเดียวกัน — นับที่ server ไม่ส่งแถวลงเบราว์เซอร์ ──
      🏆 นี่คือตัวชี้ขาดที่ Meta บอกเองไม่ได้ เพราะเราปิดการขายในไลน์ */
   try {
-    const q = SB + '/rest/v1/orders?select=total,source_campaign'
+    /* u360-ads-only — นับเฉพาะออเดอร์ที่มาจากแอดที่เสียเงินจริง */
+    const q = SB + '/rest/v1/orders?select=total,source_campaign,source_content'
             + '&created_at=gte.' + since + 'T00:00:00'
             + '&total=gt.0&limit=2000';
     const r = await fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
@@ -121,16 +122,26 @@ module.exports = async function handler(req, res) {
       let matched = 0, revenue = 0;
       for (const o of rows) {
         const c = (o.source_campaign || '').trim();
-        if (!c) continue;
+        /* 🔴 ห้ามใช้ "มีที่มาอะไรก็ได้" เป็นเงื่อนไข — ig/social, web, broadcast เข้าหมด
+           ของแอดที่เสียเงินจะขึ้นต้นด้วย fb/paid/ เสมอ (utm_source=fb + utm_medium=paid) */
+        if (c.indexOf('fb/paid/') !== 0) continue;
         byC[c] = byC[c] || { orders: 0, revenue: 0 };
         byC[c].orders++; byC[c].revenue += +o.total || 0;
         matched++; revenue += +o.total || 0;
+        /* เก็บรหัสชิ้นงานไว้จับคู่รายแถว — จาก source_content ถ้ามี ไม่มีก็ท้าย campaign */
+        const code = (o.source_content || '').trim() || (c.split('/').pop().split('-').pop() || '');
+        if (code) { byC['#' + code] = byC['#' + code] || { orders: 0, revenue: 0 };
+                    byC['#' + code].orders++; byC['#' + code].revenue += +o.total || 0; }
       }
       out.orders = { matched, revenue: +revenue.toFixed(2), byCampaign: byC, scanned: rows.length };
-      /* ผูกออเดอร์เข้ากับชิ้นงาน — จับจากชื่อแคมเปญที่ตรงกัน */
+
+      /* ผูกออเดอร์เข้ากับชิ้นงานด้วย "รหัสชิ้นงาน" ไม่ใช่ชื่อแคมเปญ
+         ชื่อแอดคือ "b1 · green" → รหัสคือ b1 · ต้องตรงตัวเท่านั้น ไม่ใช้ includes */
       for (const a of out.ads) {
-        const hit = Object.keys(byC).find(c => a.campaign && (a.campaign.includes(c) || c.includes(a.campaign)));
-        a.orders = hit ? byC[hit].orders : 0;
+        const code = String(a.ad || '').trim().split(/[\s·]+/)[0].toLowerCase();
+        const hit = code && byC['#' + code];
+        a.orders = hit ? hit.orders : 0;
+        a.revenue = hit ? +hit.revenue.toFixed(2) : 0;
         a.costPerOrder = a.orders ? +(a.spend / a.orders).toFixed(2) : null;
       }
     }

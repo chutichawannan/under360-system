@@ -178,7 +178,7 @@ function render(d){
     + card('ใช้ทั้งช่วง', baht(t.spend), d.since + ' → ' + d.until)
     + card('คลิกทั้งช่วง', Number(t.clicks||0).toLocaleString('th-TH'), '')
     + card('ต่อ 1 ออเดอร์จริง', cpo!=null ? baht(cpo) : '—',
-        o.matched ? (o.matched + ' ออเดอร์ที่ติดที่มา · ยอด ' + baht(o.revenue)) : 'ยังไม่มีออเดอร์ที่ติดที่มาในช่วงนี้', true);
+        o.matched ? (o.matched + ' ออเดอร์จากแอด · ยอด ' + baht(o.revenue)) : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้ (ออเดอร์จากช่องทางอื่นไม่นับ)', true);
 
   if(!d.ads || !d.ads.length){
     body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน</div>';
