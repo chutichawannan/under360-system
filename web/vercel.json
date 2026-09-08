@@ -168,6 +168,10 @@
     {
       "source": "/jay-v4",
       "destination": "/jay_v4.html"
+    },
+    {
+      "source": "/kol",
+      "destination": "/kol.html"
     }
   ]
 }

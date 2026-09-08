@@ -1,0 +1,222 @@
+<!-- หน้าเครื่องมือ KOL/อินฟลูฯ สำหรับพลอย (M-track · 8 ก.ย. 2026)
+     ① สร้างลิงก์ประจำตัวให้อินฟลูฯ แต่ละคน  ② ดูว่าใครทำผลงานได้จริงแค่ไหน
+
+     ทำไมใช้ utm_campaign เป็นตัวระบุตัวคน (ไม่ใช่ utm_content):
+       ตาราง web_events **ไม่มีคอลัมน์ utm_content** (เช็คแล้ว) → ถ้าใส่ใน content จะนับคลิกไม่ได้
+       ส่วน utm_campaign ไปโผล่ทั้งใน web_events และ orders.source_campaign = นับได้ทั้ง 2 ฝั่ง
+     รูปแบบที่ลงใน orders.source_campaign คือ  kol/influencer/<ชื่อ>  (ยืนยันจากออเดอร์จริงที่มีอยู่)
+
+     ⚠️ หน้านี้ใช้ภายใน — ใส่ noindex + กันไว้ใน robots.txt แล้ว -->
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>ลิงก์อินฟลูเอนเซอร์ · Under360</title>
+<link rel="icon" href="/img/jay/jay-logo.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root { color-scheme:light; --green:#237849; --ink:#24392e; --muted:#737b76;
+          --line:#e5eae6; --soft:#f7f9f7; --warn:#8A6A00; --warnbg:#FFF8E5; }
+  * { box-sizing:border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font-family:Kanit,sans-serif;
+         font-size:16px; line-height:1.7; -webkit-font-smoothing:antialiased; }
+  .wrap { width:min(880px, calc(100% - 32px)); margin-inline:auto; }
+  header { padding:22px 0 6px; }
+  .brand { font-size:22px; font-weight:600; color:var(--green); }
+  h1 { font-size:26px; font-weight:600; margin:14px 0 6px; letter-spacing:-.4px; }
+  .sub { color:var(--muted); font-size:15px; margin:0 0 24px; }
+  section { border-top:1px solid var(--line); padding:24px 0 30px; }
+  h2 { font-size:19px; font-weight:600; margin:0 0 4px; }
+  .note { color:var(--muted); font-size:14px; margin:0 0 16px; }
+  label { display:block; font-size:14px; font-weight:500; margin:14px 0 6px; }
+  input, select { width:100%; font-family:inherit; font-size:16px; padding:12px 14px;
+                  border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); }
+  input:focus, select:focus { outline:2px solid var(--green); outline-offset:1px; }
+  .out { margin-top:18px; background:var(--soft); border:1px solid var(--line);
+         border-radius:12px; padding:14px; }
+  .out code { display:block; word-break:break-all; font-family:ui-monospace,Menlo,monospace;
+              font-size:13px; line-height:1.65; color:var(--ink); }
+  .btn { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:46px;
+         padding:11px 22px; background:var(--green); color:#fff; border:1px solid var(--green);
+         border-radius:10px; font:inherit; font-weight:500; cursor:pointer; }
+  .btn:hover { background:#1b603a; }
+  .btn.ghost { background:#fff; color:var(--green); }
+  .row { display:flex; gap:10px; flex-wrap:wrap; margin-top:12px; }
+  table { width:100%; border-collapse:collapse; font-size:14px; }
+  th, td { text-align:left; padding:11px 8px; border-bottom:1px solid var(--line); }
+  th { font-weight:500; color:var(--muted); font-size:13px; }
+  td.n, th.n { text-align:right; white-space:nowrap; }
+  tbody tr:hover { background:var(--soft); }
+  .who { font-weight:500; }
+  .money { color:var(--green); font-weight:500; }
+  .empty { color:var(--muted); font-size:15px; padding:22px 0; }
+  .warn { background:var(--warnbg); border:1px solid #F0DFA8; color:var(--warn);
+          border-radius:10px; padding:12px 14px; font-size:14px; margin-top:14px; }
+  .steps { padding-left:20px; margin:10px 0 0; }
+  .steps li { padding-bottom:7px; font-size:15px; }
+  footer { padding:26px 0 40px; color:var(--muted); font-size:13px; border-top:1px solid var(--line); }
+  @media (max-width:600px) {
+    h1 { font-size:22px; } h2 { font-size:17px; }
+    th, td { padding:10px 5px; font-size:13px; }
+    .hide-s { display:none; }
+  }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="brand">Under360</div>
+    <h1>ลิงก์อินฟลูเอนเซอร์</h1>
+    <p class="sub">สร้างลิงก์ประจำตัวให้แต่ละคน แล้วดูว่าใครพาลูกค้ามาได้จริง</p>
+  </header>
+
+  <!-- ═══ ① สร้างลิงก์ ═══ -->
+  <section>
+    <h2>① สร้างลิงก์ให้อินฟลูฯ</h2>
+    <p class="note">กรอกชื่อ/ไอจีของเขา แล้วก๊อปลิงก์ไปให้ใช้ — ห้ามใช้ลิงก์ซ้ำกันคนละคน ไม่งั้นแยกไม่ออก</p>
+
+    <label for="who">ชื่อหรือไอจีของอินฟลูฯ</label>
+    <input id="who" placeholder="เช่น meiji_27anorma หรือ พี่หนิง" autocomplete="off">
+
+    <label for="dest">ให้เขาลิงก์ไปหน้าไหน</label>
+    <select id="dest">
+      <option value="/mealplan">Meal Plan (คอร์สรายสัปดาห์/เดือน)</option>
+      <option value="/jay">คอร์สอาหารเจ 2569</option>
+      <option value="/pack">แพ็คกับข้าว</option>
+      <option value="/">หน้าแรก</option>
+    </select>
+
+    <div class="out">
+      <code id="link">—</code>
+      <div class="row">
+        <button class="btn" id="copy">ก๊อปลิงก์</button>
+        <button class="btn ghost" id="open">เปิดดูก่อน</button>
+      </div>
+    </div>
+    <div class="warn" id="warn" hidden></div>
+
+    <p class="note" style="margin-top:18px"><b>บอกอินฟลูฯ ว่า:</b> ให้วางลิงก์นี้ในไบโอ / สตอรี่ / ช่องลิงก์ของโพสต์
+      — ถ้าเขาพิมพ์ที่อยู่เว็บเองโดยไม่ใช้ลิงก์นี้ <b>ระบบจะนับไม่ได้</b></p>
+  </section>
+
+  <!-- ═══ ② ผลงาน ═══ -->
+  <section>
+    <h2>② ใครทำผลงานได้แค่ไหน</h2>
+    <p class="note" id="range">กำลังโหลด…</p>
+    <table>
+      <thead><tr>
+        <th>อินฟลูฯ</th>
+        <th class="n">คนเข้าเว็บ</th>
+        <th class="n hide-s">กดสั่ง</th>
+        <th class="n">ออเดอร์</th>
+        <th class="n">ยอดขาย</th>
+      </tr></thead>
+      <tbody id="rows"></tbody>
+    </table>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+
+  <footer>
+    ตัวเลขนับจากคนที่กดผ่านลิงก์ประจำตัวเท่านั้น · ออเดอร์ที่ลูกค้าทักแอดมินเองโดยไม่ผ่านลิงก์ จะไม่ขึ้นในตารางนี้
+  </footer>
+</div>
+
+<script>
+const SB  = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const SITE = 'https://www.360foodbox.com';
+
+/* ── ① สร้างลิงก์ ──
+   LIFF กรองอักขระด้วย [^A-Za-z0-9._-] ตอนเก็บที่มา
+   ถ้าปล่อยชื่อไทย/ช่องว่างไป ค่าจะถูกตัดทิ้งบางส่วนแล้วแยกคนไม่ออก
+   → แปลงเป็นรหัสปลอดภัยตั้งแต่ตอนสร้างลิงก์ และบอกให้เห็นว่าแปลงเป็นอะไร */
+const el = id => document.getElementById(id);
+function slug(s) {
+  const raw = (s || '').trim().replace(/^@+/, '');
+  const safe = raw.toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9._-]/g, '');
+  return { raw, safe };
+}
+function build() {
+  const { raw, safe } = slug(el('who').value);
+  const w = el('warn');
+  if (!raw) { el('link').textContent = '—'; w.hidden = true; return ''; }
+  if (!safe) {
+    el('link').textContent = '—';
+    w.hidden = false;
+    w.textContent = 'ชื่อนี้เป็นภาษาไทยล้วน ระบบเก็บไม่ได้ — พิมพ์เป็นอังกฤษหรือไอจีของเขาแทน เช่น pnaning';
+    return '';
+  }
+  w.hidden = (safe === raw.toLowerCase());
+  if (!w.hidden) w.textContent = 'ระบบจะบันทึกชื่อนี้เป็น "' + safe + '" (ตัดอักขระที่เก็บไม่ได้ออก)';
+  const u = SITE + el('dest').value
+          + '?utm_source=kol&utm_medium=influencer&utm_campaign=' + encodeURIComponent(safe);
+  el('link').textContent = u;
+  return u;
+}
+el('who').addEventListener('input', build);
+el('dest').addEventListener('change', build);
+el('copy').addEventListener('click', async () => {
+  const u = build(); if (!u) return;
+  try { await navigator.clipboard.writeText(u); el('copy').textContent = 'ก๊อปแล้ว ✓';
+        setTimeout(() => el('copy').textContent = 'ก๊อปลิงก์', 1600); }
+  catch (e) { /* บางเบราว์เซอร์บนมือถือไม่ให้ก๊อปอัตโนมัติ — ให้เลือกข้อความเอาเอง */
+    const r = document.createRange(); r.selectNode(el('link'));
+    getSelection().removeAllRanges(); getSelection().addRange(r);
+    el('copy').textContent = 'กดค้างแล้วก๊อป'; }
+});
+el('open').addEventListener('click', () => { const u = build(); if (u) open(u, '_blank'); });
+
+/* ── ② ผลงาน ── */
+const q = async (path) => {
+  const r = await fetch(SB + '/rest/v1/' + path, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
+  if (!r.ok) throw new Error(path.split('?')[0] + ' → ' + r.status);
+  return r.json();
+};
+const baht = n => '฿' + Math.round(n).toLocaleString('th-TH');
+
+(async function load() {
+  const since = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+  try {
+    /* คนเข้าเว็บ + กดสั่ง มาจาก web_events · ออเดอร์จริงมาจาก orders
+       ทั้งคู่ใส่ limit ไว้เสมอ — Supabase คืนแค่ 1000 แถวถ้าไม่ใส่ แล้วตัวเลขจะขาดแบบเงียบ */
+    const [ev, od] = await Promise.all([
+      q('web_events?select=event,utm_campaign,created_at&utm_source=eq.kol&created_at=gte.' + since + '&limit=5000'),
+      q('orders?select=total,source_campaign,created_at&source_campaign=like.kol/*&created_at=gte.' + since + '&limit=5000'),
+    ]);
+
+    const t = {};
+    const get = k => (t[k] = t[k] || { views: 0, cta: 0, orders: 0, baht: 0 });
+    for (const e of ev) {
+      const k = e.utm_campaign || '(ไม่ระบุชื่อ)';
+      if (e.event === 'cta_click') get(k).cta++; else get(k).views++;
+    }
+    for (const o of od) {
+      /* source_campaign เก็บเป็น kol/influencer/<ชื่อ> — เอาท่อนสุดท้าย */
+      const k = String(o.source_campaign).split('/').pop() || '(ไม่ระบุชื่อ)';
+      get(k).orders++; get(k).baht += Number(o.total) || 0;
+    }
+
+    const list = Object.entries(t).sort((a, b) => b[1].baht - a[1].baht || b[1].views - a[1].views);
+    el('range').textContent = '90 วันล่าสุด · อินฟลูฯ ที่มีความเคลื่อนไหว ' + list.length + ' คน';
+
+    if (!list.length) {
+      el('empty').hidden = false;
+      el('empty').textContent = 'ยังไม่มีข้อมูล — พอมีคนกดผ่านลิงก์ที่สร้างข้างบน ตัวเลขจะขึ้นเองที่นี่';
+      return;
+    }
+    el('rows').innerHTML = list.map(([k, v]) => '<tr>'
+      + '<td class="who">' + k.replace(/[<>&]/g, '') + '</td>'
+      + '<td class="n">' + v.views.toLocaleString('th-TH') + '</td>'
+      + '<td class="n hide-s">' + v.cta.toLocaleString('th-TH') + '</td>'
+      + '<td class="n">' + v.orders.toLocaleString('th-TH') + '</td>'
+      + '<td class="n money">' + (v.baht ? baht(v.baht) : '—') + '</td>'
+      + '</tr>').join('');
+  } catch (err) {
+    el('range').textContent = '';
+    el('empty').hidden = false;
+    el('empty').textContent = 'โหลดข้อมูลไม่สำเร็จ (' + err.message + ') — ลองรีเฟรชอีกครั้ง';
+  }
+})();
+
+build();
+</script>
