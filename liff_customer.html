@@ -2597,6 +2597,9 @@ function cartWeekType() {
 // 🚀 INIT
 // ══════════════════════════════════════
 let hasUtensilColumn = false;
+/* orders.source_content มีหรือยัง — ยังไม่มีก็ขายได้ตามปกติ แค่ไม่รู้ว่ามาจากชิ้นงานไหน
+   นัทรัน: alter table orders add column if not exists source_content text; */
+let hasSourceContentColumn = false;
 let hasPaymentStatusColumn = false;   // มีคอลัมน์ orders.payment_status ไหม (รัน SQL แล้วถึงส่ง)
 
 // 📡 Live presence heartbeat — m-track dashboard นับคนเปิดแอป real-time
@@ -2662,8 +2665,9 @@ async function init() {
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
   const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY];
-  const [utR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
-    sb.from('orders').select('want_utensils').limit(1),                                        // capability: มีคอลัมน์ want_utensils ไหม
+  const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
+    sb.from('orders').select('want_utensils').limit(1),
+    sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
     sb.from('customers').upsert({ line_uid: lineProfile.userId }, { onConflict:'line_uid' }).select().single(),
     sb.from('menu_items').select('*').eq('is_available', true).order('sort_order'),
     sb.from('kitchen_data').select('key,data').in('key', CFG_KEYS),
@@ -2674,6 +2678,7 @@ async function init() {
 
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
+  hasSourceContentColumn = !val(scR).error;   // ยังไม่รัน SQL = false → ไม่ยัดลง payload
   hasPaymentStatusColumn = !val(payR).error;
   customerOrderCount = (ocR.status==='fulfilled' && typeof ocR.value.count==='number') ? ocR.value.count : null; // นับออเดอร์เก่า → guard โปรลูกค้าใหม่
 
@@ -4301,6 +4306,10 @@ async function submitOrder() {
     try{
       const _utm = utmTag();
       if(_utm) orderPayload.source_campaign = _utm;
+      /* ชิ้นงานโฆษณา — ใส่เฉพาะตอนที่คอลัมน์มีจริง (เช็คตอนเปิดแอป)
+         ยังไม่ได้รัน SQL = ข้ามไปเงียบ ๆ ออเดอร์ไม่พัง */
+      const _con = utmContent();
+      if(_con && hasSourceContentColumn) orderPayload.source_content = _con;
     }catch(e){ /* พลาดตรงนี้ = แค่ไม่รู้ที่มา ห้ามบล็อกการสั่ง */ }
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
@@ -4880,7 +4889,8 @@ function utmRead(){
     const p = new URLSearchParams(location.search);
     // ① จาก URL ของ LIFF เอง — มาก่อนเสมอ เพราะเป็นของสดที่สุด
     if(p.get('utm_source')){
-      const u = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'), ts:Date.now() };
+      const u = { source:p.get('utm_source'), medium:p.get('utm_medium'), campaign:p.get('utm_campaign'),
+                  content:p.get('utm_content'), ts:Date.now() };
       try{ localStorage.setItem('u360_utm', JSON.stringify(u)); }catch(e){}
       return u;
     }
@@ -4893,6 +4903,13 @@ function utmRead(){
 }
 /* แปลงเป็นสตริงสั้นๆ ที่ query ด้วย like ได้ เช่น "fb/cpc/mealplan-aug"
    เก็บเป็นข้อความไม่ใช่ jsonb เพราะรายงาน/ตัวกรองที่มีอยู่อ่านคอลัมน์นี้เป็นข้อความอยู่แล้ว */
+/* ชิ้นงานโฆษณา (utm_content) — เก็บแยกจาก campaign
+   06 ใช้แยกว่ารูปไหน/กลุ่มไหนได้ผล เช่น a1 a2 a3 b1 b2 b3 */
+function utmContent(){
+  const u = utmRead(); if(!u || !u.content) return null;
+  const v = String(u.content).trim().replace(/[^A-Za-z0-9._-]/g,'').slice(0,40);
+  return v || null;
+}
 function utmTag(){
   const u = utmRead(); if(!u || !u.source) return null;
   const clean = v => String(v||'').trim().replace(/[^A-Za-z0-9._\-]/g,'').slice(0,40);
