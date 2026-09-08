@@ -62,7 +62,7 @@ function nextWeekLabel(){
 function thumb(u,w){
   if(!u) return "";
   return u.includes("/object/public/")
-    ? u.replace("/object/public/","/render/image/public/")+"?width="+w+"&quality=80"
+    ? u.replace("/object/public/","/render/image/public/")+"?width="+w+"&resize=contain&quality=80"
     : u;
 }
 

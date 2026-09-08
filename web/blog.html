@@ -536,7 +536,7 @@ async function loadRelated(post){
     : 'เมนูขายดีจากครัวเรา — สั่งทีละกล่องก็ได้ ไม่ต้องสมัครคอร์ส';
   /* ⚠️ ชื่อไฟล์รูป ≠ รหัสเมนู (เจอมาแล้ว D201 ใช้ไฟล์ S063.jpg) → ใช้ URL จริงจาก DB เสมอ
      แล้วสลับเป็น endpoint ย่อรูปเพื่อให้โหลดไว */
-  const thumb = m => String(m.image_urls[0]).replace('/object/public/', '/render/image/public/') + '?width=340&quality=72';
+  const thumb = m => String(m.image_urls[0]).replace('/object/public/', '/render/image/public/') + '?width=340&resize=contain&quality=72';
   grid.innerHTML = picked.map(m => `
     <a class="rel-card" href="#" onclick="return orderNow(this)">
       <div class="ph"><img src="${thumb(m)}" alt="${esc(m.name)}" loading="lazy"

@@ -155,7 +155,7 @@ function weekLabel(offsetWeeks){
 }
 function thumb(u,w){
   return u&&u.includes("/object/public/")
-    ? u.replace("/object/public/","/render/image/public/")+"?width="+w+"&quality=82" : (u||"");
+    ? u.replace("/object/public/","/render/image/public/")+"?width="+w+"&resize=contain&quality=82" : (u||"");
 }
 function nutLine(x){
   const k=x.kcal||x.calories||0;

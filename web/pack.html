@@ -16,7 +16,7 @@ j=d.createElement(s),dl=l!='dataLayer'?'&l='+l:'';j.async=true;j.src=
 <link rel="canonical" href="https://www.360foodbox.com/pack">
 <meta property="og:title" content="แพ็คกับข้าวฟรีซแพ็ค — เลือกเมนูเอง เริ่ม 70 บาท | Under360">
 <meta property="og:description" content="20 เมนูให้เลือกเอง ปรุงเสร็จแช่แข็งทันที ส่งทั่วไทย อุ่นแล้วกินได้เลย">
-<meta property="og:image" content="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/A1.jpg?width=1200">
+<meta property="og:image" content="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/A1.jpg?width=1200&resize=contain">
 <meta property="og:type" content="website">
 <link rel="icon" href="/img/u360_logo.svg" type="image/svg+xml">
 <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@500;600;700&family=Sarabun:wght@400;500;700&display=swap" rel="stylesheet">
@@ -319,7 +319,7 @@ function orderNow(el){
 
 /* ═══ แคตตาล็อก ═══ */
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const thumb = (u,w) => String(u||'').replace('/object/public/','/render/image/public/') + '?width=' + w + '&quality=72';
+const thumb = (u,w) => String(u||'').replace('/object/public/','/render/image/public/') + '?width=' + w + '&resize=contain&quality=72';
 let ITEMS = [];
 const cart = new Map();   /* code -> qty */
 
