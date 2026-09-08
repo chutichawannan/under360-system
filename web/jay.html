@@ -446,7 +446,12 @@ function jayTracked(base){
     return s ? base+(base.indexOf('?')>=0?'&':'?')+s : base;
   }catch(e){ return base; }
 }
+/* u360-real-href — เดิมปุ่มเป็น href="#" แล้วให้ JS พาไปตอนคลิก
+   ผลคือ กดเปิดแท็บใหม่ / กดค้างแล้วก๊อปลิงก์ / คลิกกลาง = ได้ของเปล่า
+   และถ้า JS ไม่ทำงานสักเหตุผล ปุ่มจองตาย = ขายไม่ได้ทั้งหน้า
+   → ใส่ลิงก์จริงลงไปตั้งแต่โหลด แล้วยังคง handler ไว้ยิงพิกเซลก่อนออกจากหน้า */
 [].slice.call(document.querySelectorAll('[data-order]')).forEach(function(el,i){
+  try{ el.href=jayTracked(ORDER_URL); }catch(e){}
   el.addEventListener('click',function(e){
     e.preventDefault();
     try{ if(window.fbq) fbq('track','Lead',{content_name:'jay2026'}); }catch(e){}
