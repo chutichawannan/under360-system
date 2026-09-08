@@ -19,6 +19,10 @@
   ],
   "rewrites": [
     {
+      "source": "/hq",
+      "destination": "/pwa/hq.html"
+    },
+    {
       "source": "/k",
       "destination": "/pwa/app-k.html"
     },

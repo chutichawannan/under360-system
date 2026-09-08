@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<!-- ห้ามให้ Google เก็บหน้านี้ — เป็นสารบัญทางเข้าหลังบ้านทั้งหมด เก็บไปคือแจกแผนที่ -->
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>โถงบ้าน Under360</title>
+<!--
+  ════════════════════════════════════════════════════════════
+  โถงบ้าน — ทางเข้ากลางของหลังบ้าน (นัทสั่ง 8 ก.ย. 2569 ผ่าน PM)
+
+  ทำไมต้องมี: นัทต้องจำลิงก์ vercel ยาว ๆ ทีละหน้า
+  ตอนนี้จำที่เดียว → 360foodbox.com/hq แล้วกดต่อเอา
+
+  กติกาหน้านี้:
+   · ไม่มีข้อมูลลูกค้า ไม่ต่อฐานข้อมูล — เป็นแค่ป้ายบอกทาง
+   · ทุกปุ่มคือหน้าที่มีอยู่จริงแล้ว ไม่ได้สร้างของใหม่
+   · ด่านรหัส (gate.js) คุมอยู่ ไม่งั้นสารบัญนี้เองจะกลายเป็นกุญแจให้คนนอก
+  ════════════════════════════════════════════════════════════
+-->
+<script src="/gate.js"></script>
+<style>
+  :root{
+    --bg:#0E1A15; --card:#16261F; --line:#24382E;
+    --fg:#E9F2EC; --dim:#8FA79A; --acc:#4ADE80; --warn:#FBBF24;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;
+    padding:18px 14px calc(34px + env(safe-area-inset-bottom))}
+  header{display:flex;align-items:baseline;gap:10px;margin:4px 2px 18px}
+  h1{font-size:21px;margin:0;font-weight:800;letter-spacing:-.3px}
+  .sub{font-size:12px;color:var(--dim)}
+  h2{font-size:12px;color:var(--dim);font-weight:700;margin:22px 4px 9px;
+     text-transform:none;letter-spacing:.4px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(148px,1fr));gap:9px}
+  a.t{display:flex;flex-direction:column;gap:3px;text-decoration:none;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:13px;
+    padding:13px 13px 12px;transition:border-color .12s,transform .08s}
+  a.t:active{transform:scale(.975)}
+  a.t:hover{border-color:var(--acc)}
+  .ic{font-size:20px;line-height:1.1}
+  .nm{font-weight:700;font-size:14px;line-height:1.3}
+  .ds{font-size:11px;color:var(--dim);line-height:1.45}
+  .pin{border-color:#2F5C43;background:#152A1F}
+  footer{margin-top:26px;padding:12px 4px 0;border-top:1px solid var(--line);
+    font-size:11px;color:var(--dim);line-height:1.7}
+  footer b{color:var(--warn);font-weight:700}
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🏠 โถงบ้าน</h1>
+  <span class="sub">Under360 · หลังบ้าน</span>
+</header>
+
+<!-- เรียงตาม "ใครเปิดบ่อยสุด" ไม่ได้เรียงตามความสำคัญของระบบ
+     นัทเปิด 4 อันแรกแทบทุกวัน จึงอยู่บนสุดและไม่ต้องเลื่อน -->
+<h2>เปิดบ่อย</h2>
+<div class="grid">
+  <a class="t pin" href="/cc"><span class="ic">🎛️</span><span class="nm">ศูนย์รวม</span><span class="ds">ภาพรวมทุกห้อง ยอดขาย งานวันนี้</span></a>
+  <a class="t pin" href="/o"><span class="ic">📅</span><span class="nm">ออเดอร์ล่วงหน้า</span><span class="ds">ใครรับวันไหน กี่กล่อง</span></a>
+  <a class="t pin" href="/oh"><span class="ic">🗂️</span><span class="nm">หน้าแอดมิน</span><span class="ds">ออเดอร์ ลูกค้า โปรโมชั่น แพลนเมนู</span></a>
+  <a class="t pin" href="/money"><span class="ic">💰</span><span class="nm">ยอดค้างจ่าย</span><span class="ds">ใครยังไม่โอน</span></a>
+</div>
+
+<h2>ครัว</h2>
+<div class="grid">
+  <a class="t" href="/k"><span class="ic">🍳</span><span class="nm">หน้ารวมครัว</span><span class="ds">ทางเข้าของครัว ไอคอนล้วน</span></a>
+  <a class="t" href="/kq"><span class="ic">📋</span><span class="nm">คิวครัว</span><span class="ds">ออเดอร์วันนี้ กดสถานะ</span></a>
+  <a class="t" href="/pwa/checklist.html"><span class="ic">✅</span><span class="nm">ใบงานรายวัน</span><span class="ds">งานครัวประจำวัน</span></a>
+  <a class="t" href="/pwa/stock_count.html"><span class="ic">🔢</span><span class="nm">นับสต็อก</span><span class="ds">นับของจริงในตู้</span></a>
+  <a class="t" href="/print_pickslip.html"><span class="ic">🖨️</span><span class="nm">ใบจัดของ</span><span class="ds">ปริ้นสลิปเทอร์มอล</span></a>
+  <a class="t" href="/kitchen_console.html"><span class="ic">💬</span><span class="nm">คุยกับครัว</span><span class="ds">แชทกลุ่มครัว แปลไทย-พม่า</span></a>
+</div>
+
+<h2>ของ &amp; เมนู</h2>
+<div class="grid">
+  <a class="t" href="/db"><span class="ic">🥗</span><span class="nm">ฐานข้อมูลเมนู</span><span class="ds">เมนู สูตร วัตถุดิบ แพคเกจ</span></a>
+  <a class="t" href="/home_editor.html"><span class="ic">🏠</span><span class="nm">จัดหน้าแรก</span><span class="ds">การ์ดที่ลูกค้าเห็นในแอป</span></a>
+  <a class="t" href="/pwa/ingredient_prices.html"><span class="ic">🏷️</span><span class="nm">ราคาวัตถุดิบ</span><span class="ds">ของขึ้นราคาไหม</span></a>
+  <a class="t" href="/pwa/stock_history.html"><span class="ic">📈</span><span class="nm">ประวัติสต็อก</span><span class="ds">ของหายไปไหน ใครแก้</span></a>
+</div>
+
+<h2>ส่งของ &amp; ลูกค้า</h2>
+<div class="grid">
+  <a class="t" href="/pwa/dispatch.html"><span class="ic">🛵</span><span class="nm">แผนส่งของ</span><span class="ds">จัดรอบ แบ่งเขต</span></a>
+  <a class="t" href="/customer.html"><span class="ic">👥</span><span class="nm">ข้อมูลลูกค้า</span><span class="ds">ประวัติสั่ง แต้ม</span></a>
+  <a class="t" href="/pwa/jay_orders.html"><span class="ic">🥬</span><span class="nm">คอร์สเจ</span><span class="ds">ใครจอง รับวันไหน เมนูอะไร</span></a>
+  <a class="t" href="/report.html"><span class="ic">📊</span><span class="nm">รายงาน</span><span class="ds">ยอดขาย</span></a>
+</div>
+
+<h2>ระบบ</h2>
+<div class="grid">
+  <a class="t" href="/watchdog"><span class="ic">🐕</span><span class="nm">ตัวเฝ้าระบบ</span><span class="ds">อะไรพังบ้าง</span></a>
+  <a class="t" href="/pwa/pollers.html"><span class="ic">👂</span><span class="nm">ห้องไหนตื่นอยู่</span><span class="ds">poller ของแต่ละห้อง</span></a>
+  <a class="t" href="/pwa/nut.html"><span class="ic">📬</span><span class="nm">ช่องนัท</span><span class="ds">เรื่องที่รอนัทเคาะ</span></a>
+  <a class="t" href="/pwa/fah.html"><span class="ic">🌤️</span><span class="nm">น้องฟ้า</span><span class="ds">ใบงานครัวที่ฟ้าทำ</span></a>
+</div>
+
+<h2>หน้าลูกค้า (ของจริง)</h2>
+<div class="grid">
+  <a class="t" href="/liff_customer.html"><span class="ic">📱</span><span class="nm">แอปสั่งอาหาร</span><span class="ds">หน้าที่ลูกค้าเห็น — ไม่มีด่านรหัส</span></a>
+  <a class="t" href="https://360foodbox.com" target="_blank" rel="noopener"><span class="ic">🌐</span><span class="nm">เว็บร้าน</span><span class="ds">360foodbox.com</span></a>
+</div>
+
+<footer>
+  หน้านี้เป็นแค่ป้ายบอกทาง ไม่มีข้อมูลลูกค้าอยู่ในตัวมันเอง<br>
+  ใส่รหัสครั้งเดียวต่อเครื่อง แล้วทุกหน้าหลังบ้านจะจำให้ ไม่ถามซ้ำ<br>
+  <b>ด่านนี้กันคนหลงเข้าและกัน Google เก็บหน้า — ยังไม่ใช่กำแพงกันคนตั้งใจ</b>
+</footer>
+
+</body>
+</html>

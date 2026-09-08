@@ -45,6 +45,7 @@ Disallow: /docs/
 Disallow: /finance/
 
 # ลิงก์สั้นที่ชี้ไปหลังบ้าน (rewrites ใน vercel.json)
+Disallow: /hq
 Disallow: /oh
 Disallow: /o
 Disallow: /kq
