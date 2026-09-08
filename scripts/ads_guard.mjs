@@ -1,0 +1,86 @@
+// ยามเฝ้าแอด — รันโดย Windows Task Scheduler 08:00 / 20:00 (ไม่ใช้สมอง ไม่เปลือง token)
+// ดึงตัวเลขจาก Meta + นับคนเข้า /jay + ออเดอร์จาก DB → ตัดสินว่าปกติหรือ 🔴 → โพสต์ลงบอร์ด room=06
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const ROOT = path.join(HERE, '..');
+
+const env = Object.fromEntries(fs.readFileSync(path.join(ROOT, '.env.ads'), 'utf8')
+  .split(/\r?\n/).filter(Boolean).map(l => { const i = l.indexOf('='); return [l.slice(0, i), l.slice(i + 1)]; }));
+const T = env.META_TOKEN, ACC = env.META_AD_ACCOUNT;
+
+const SB = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
+const KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const H = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+
+const thai = () => new Date(Date.now() + 7 * 3600e3).toISOString().slice(0, 10);
+// วันเริ่มยิงจริง — แก้บรรทัดเดียวเมื่อเลื่อน ประตูทุกบานขยับตามเอง
+// (ตอนนี้ยังไม่เริ่ม เพราะติดยืนยันตัวตนผู้ลงโฆษณาที่ facebook.com/id/hub)
+const START = '2026-09-07';
+const NAME_MATCH = /jay2026/i;
+
+// ประตูตรวจ — นับเป็น "วันที่ N นับจากวันเริ่ม" ตามที่พี่ปืนสั่ง: เลื่อนวันเริ่ม ไม่เทงบชดเชย
+const dayAfterStart = (n) =>
+  new Date(new Date(START + 'T00:00:00Z').getTime() + n * 864e5).toISOString().slice(0, 10);
+
+const GATES = [
+  { day: 8,  need: 'คนเข้าหน้าคอร์สเจ ≥100', check: d => d.visits >= 100 },
+  { day: 15, need: 'คนกดไป LINE ≥30',        check: d => d.leads >= 30 },
+  { day: 21, need: 'จองจริง ≥2 คอร์ส',        check: d => d.orders >= 2 },
+  { day: 26, need: 'จองจริง ≥6 คอร์ส',        check: d => d.orders >= 6 },
+].map(g => ({ ...g, date: dayAfterStart(g.day) }));
+const count = async (q) => {
+  const r = await fetch(`${SB}/${q}`, { headers: { ...H, Prefer: 'count=exact', Range: '0-0' } });
+  return +((r.headers.get('content-range') || '0-0/0').split('/')[1] || 0);
+};
+
+const post = (text) => fetch(`${SB}/session_messages`, {
+  method: 'POST', headers: { ...H, 'Content-Type': 'application/json', Prefer: 'return=minimal' },
+  body: JSON.stringify({ room: '06', sender: 'ยามเฝ้าแอด', role: 'assistant', text }),
+});
+
+try {
+  const today = thai();
+  // ── Meta: ยอดใช้จ่ายรายชิ้นงาน ตั้งแต่เริ่มแคมเปญ
+  const url = `https://graph.facebook.com/v21.0/${ACC}/insights?level=ad`
+    + `&time_range=${encodeURIComponent(JSON.stringify({ since: START, until: today }))}`
+    + `&fields=campaign_name,ad_name,spend,impressions,reach,frequency,clicks,cpc,ctr`
+    + `&limit=100&access_token=${T}`;
+  const meta = await fetch(url).then(r => r.json());
+  if (meta.error) throw new Error('Meta: ' + meta.error.message);
+  const ads = (meta.data || []).filter(a => NAME_MATCH.test(a.campaign_name || ''));
+  const spend = ads.reduce((s, a) => s + (+a.spend || 0), 0);
+  const clicks = ads.reduce((s, a) => s + (+a.clicks || 0), 0);
+  const cpc = clicks ? spend / clicks : 0;
+
+  // ── DB: คนเข้าหน้า /jay · คนกดไป LINE · ออเดอร์จากแอด
+  const visits = await count(`web_events?select=id&page=like.*jay*&created_at=gte.${START}`);
+  const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&created_at=gte.${START}`);
+  const orders = await count(`orders?select=id&source_campaign=like.*jay*&total=gt.0`);
+  const d = { spend, clicks, cpc, visits, leads, orders };
+
+  // ── ตัดสิน
+  const flags = [];
+  if (spend > 500 && visits === 0) flags.push(`ใช้เงินไป ฿${spend.toFixed(0)} แต่ยังไม่มีใครเข้าหน้า /jay เลย`);
+  if (clicks >= 30 && cpc > 15) flags.push(`ค่าคลิกแพงผิดปกติ ฿${cpc.toFixed(2)} (เพดาน ฿15)`);
+  for (const g of GATES) if (today >= g.date && !g.check(d)) flags.push(`ไม่ผ่านประตู ${g.date}: ต้องได้ ${g.need}`);
+
+  const body = [
+    `${flags.length ? '🔴' : '✅'} [ยามเฝ้าแอด · ${today}] แคมเปญเจ jay2026`,
+    '',
+    `ใช้เงินสะสม **฿${spend.toFixed(2)}** · คลิก ${clicks} · ต่อคลิก ฿${cpc.toFixed(2)}`,
+    `คนเข้า /jay **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
+    ads.length ? '' : '_(ยังไม่มีชิ้นงานที่วิ่งอยู่ในแคมเปญนี้)_',
+    ...ads.map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
+    ...(flags.length ? ['', '## 🔴 ชนกฎ — ห้อง 06 ต้องตัดสินใจ', ...flags.map(f => `- ${f}`),
+      '', '**กติกา:** ปิดแล้วหยุด รายงานนัท ขออนุญาตก่อนเปิดใหม่ (ads-close-then-stop)'] : []),
+  ].filter(l => l !== '').join('\n');
+
+  const r = await post(body);
+  console.log((flags.length ? 'FLAG' : 'OK') + ' posted ' + r.status + ' | spend=' + spend.toFixed(2) + ' visits=' + visits + ' orders=' + orders);
+} catch (e) {
+  await post(`🔴 [ยามเฝ้าแอด · ${thai()}] **ตัวเฝ้าแอดรันไม่ผ่าน** — ${e.message}\n\nแปลว่า**ตอนนี้ไม่มีใครเฝ้าแอดอยู่** ห้อง 06 ต้องเช็คมือ`);
+  console.error('ERR', e.message);
+  process.exit(1);
+}
