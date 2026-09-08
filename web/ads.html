@@ -138,7 +138,7 @@ function renderRanges(){
 
 function load(){
   document.getElementById('foot').textContent = 'กำลังโหลด…';
-  fetch('/api/ads-insights?days=' + DAYS, { cache:'no-store' }, {headers:{"x-ads-pin": u360pin()}})
+  fetch('/api/ads-insights?days=' + DAYS, { cache:'no-store', headers:{'x-ads-pin': u360pin()} })
     .then(function(r){ return r.json(); })
     .then(render)
     .catch(function(){ document.getElementById('body').innerHTML =
@@ -219,7 +219,10 @@ function card(k, v, s, hero){
 }
 
 renderRanges();
-load();
+/* รอปลดล็อกก่อนค่อยโหลด — ยิงก่อนมีรหัสจะได้ 401 แล้วหน้าค้างที่คำว่า locked
+   ถ้าปลดไปแล้วตั้งแต่ครั้งก่อน (จำรหัสไว้) ประตูจะถูกถอดก่อนบรรทัดนี้ทำงาน เลยโหลดได้เลย */
+if (document.getElementById('adsgate')) document.addEventListener('u360-unlocked', load);
+else load();
 setInterval(load, 5 * 60 * 1000);   /* Meta หน่วง 15 นาทีอยู่แล้ว รีเฟรชถี่กว่านี้ไม่มีประโยชน์ */
 </script>
 </body>
