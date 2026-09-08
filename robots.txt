@@ -1,0 +1,55 @@
+# under360-system.vercel.app = ที่อยู่ของหน้าหลังบ้านทั้งหมด
+# นัทสั่งเอง 8 ก.ย. 2569 ผ่าน PM — "ปฏิบัติการบ้านสองชั้น เฟส 1"
+#
+# ทำไม: แอดเจเริ่มยิงจริง 8 ก.ย. = กำลังพาคนแปลกหน้าและบอตเข้าเว็บ
+#       ถ้าตัวเลขยอดขาย/ค่าโฆษณาโผล่ Google = คู่แข่ง 42 รายในชีทเราอ่านได้หมด
+#
+# ⚠️ นี่คือ "ขอ" ไม่ใช่ "บังคับ" — บอตที่ไม่เคารพ robots ยังเข้าได้
+#    ตัวบังคับจริงคือ meta noindex ในแต่ละหน้า (ใส่คู่กันไว้แล้ว)
+#    และทั้งคู่ไม่ได้กันคนที่มีลิงก์อยู่แล้ว — นั่นคือหน้าที่ของด่านรหัส
+
+User-agent: *
+
+# หน้าลูกค้า — ให้เก็บได้ตามปกติ (ห้ามปิด)
+Allow: /liff_customer.html
+Allow: /landing.html
+
+# หลังบ้าน — ห้ามเก็บทั้งหมด
+Disallow: /operation_hub.html
+Disallow: /main_database_v2.html
+Disallow: /kitchen_queue.html
+Disallow: /kitchen_console.html
+Disallow: /kitchen_display.html
+Disallow: /command_center.html
+Disallow: /report.html
+Disallow: /customer.html
+Disallow: /home_editor.html
+Disallow: /admin_panel.html
+Disallow: /batch_photo_upload.html
+Disallow: /print_pickslip.html
+Disallow: /print_slip.html
+Disallow: /payment.html
+Disallow: /checkout.html
+Disallow: /k.html
+Disallow: /liff_profile.html
+Disallow: /liff_register.html
+
+# ทั้งโฟลเดอร์
+Disallow: /pwa/
+Disallow: /kitchen/
+Disallow: /rnd/
+Disallow: /preview/
+Disallow: /api/
+Disallow: /scripts/
+Disallow: /docs/
+Disallow: /finance/
+
+# ลิงก์สั้นที่ชี้ไปหลังบ้าน (rewrites ใน vercel.json)
+Disallow: /oh
+Disallow: /o
+Disallow: /kq
+Disallow: /db
+Disallow: /cc
+Disallow: /k
+Disallow: /money
+Disallow: /watchdog
