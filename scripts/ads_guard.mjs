@@ -45,7 +45,7 @@ try {
   // ── Meta: ยอดใช้จ่ายรายชิ้นงาน ตั้งแต่เริ่มแคมเปญ
   const url = `https://graph.facebook.com/v21.0/${ACC}/insights?level=ad`
     + `&time_range=${encodeURIComponent(JSON.stringify({ since: START, until: today }))}`
-    + `&fields=campaign_name,ad_name,spend,impressions,reach,frequency,clicks,cpc,ctr`
+    + `&fields=campaign_name,ad_name,spend,impressions,reach,frequency,clicks,cpc,ctr,inline_link_clicks`
     + `&limit=100&access_token=${T}`;
   const meta = await fetch(url).then(r => r.json());
   if (meta.error) throw new Error('Meta: ' + meta.error.message);
@@ -53,16 +53,23 @@ try {
   const spend = ads.reduce((s, a) => s + (+a.spend || 0), 0);
   const clicks = ads.reduce((s, a) => s + (+a.clicks || 0), 0);
   const cpc = clicks ? spend / clicks : 0;
+  // คลิกที่ "ไปเว็บจริง" ตามที่ Meta นับ — ใช้เป็นตัวสอบทานตัวนับฝั่งเรา
+  const metaLinkClicks = ads.reduce((s, a) => s + (+a.inline_link_clicks || 0), 0);
 
   // ── DB: คนเข้าหน้า /jay · คนกดไป LINE · ออเดอร์จากแอด
-  const visits = await count(`web_events?select=id&page=like.*jay*&created_at=gte.${START}`);
-  const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&created_at=gte.${START}`);
+  const visits = await count(`web_events?select=id&page=like.*jay*&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
+  const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
   const orders = await count(`orders?select=id&source_campaign=like.*jay*&total=gt.0`);
-  const d = { spend, clicks, cpc, visits, leads, orders };
+  const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
 
   // ── ตัดสิน
   const flags = [];
-  if (spend > 500 && visits === 0) flags.push(`ใช้เงินไป ฿${spend.toFixed(0)} แต่ยังไม่มีใครเข้าหน้า /jay เลย`);
+  // 🔑 แยก "แอดไม่มีคน" ออกจาก "ตัวนับพัง" — 8 ก.ย. ตัวนับหน้า /jay หายไป 4.5 ชม. โดยไม่มีอะไรแดง
+  if (metaLinkClicks >= 10 && visits === 0)
+    flags.push(`Meta บอกมีคนกดไปเว็บ ${metaLinkClicks} ครั้ง แต่ตัวนับเราได้ 0 → **ตัวนับหน้า /jay น่าจะพัง ไม่ใช่แอดไม่มีคน** (แจ้งห้อง M)`);
+  else if (metaLinkClicks >= 20 && visits < metaLinkClicks * 0.3)
+    flags.push(`คนกดไปเว็บ ${metaLinkClicks} แต่ตัวนับเราได้แค่ ${visits} — ห่างเกินปกติ เช็คว่าตัวนับครบไหม`);
+  if (spend > 500 && metaLinkClicks === 0) flags.push(`ใช้เงินไป ฿${spend.toFixed(0)} แต่ยังไม่มีใครกดไปเว็บเลยสักคน`);
   if (clicks >= 30 && cpc > 15) flags.push(`ค่าคลิกแพงผิดปกติ ฿${cpc.toFixed(2)} (เพดาน ฿15)`);
   for (const g of GATES) if (today >= g.date && !g.check(d)) flags.push(`ไม่ผ่านประตู ${g.date}: ต้องได้ ${g.need}`);
 
@@ -70,7 +77,7 @@ try {
     `${flags.length ? '🔴' : '✅'} [ยามเฝ้าแอด · ${today}] แคมเปญเจ jay2026`,
     '',
     `ใช้เงินสะสม **฿${spend.toFixed(2)}** · คลิก ${clicks} · ต่อคลิก ฿${cpc.toFixed(2)}`,
-    `คนเข้า /jay **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
+    `คนกดไปเว็บ (Meta นับ) **${metaLinkClicks}** · คนเข้า /jay (เรานับ) **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
     ads.length ? '' : '_(ยังไม่มีชิ้นงานที่วิ่งอยู่ในแคมเปญนี้)_',
     ...ads.map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
     ...(flags.length ? ['', '## 🔴 ชนกฎ — ห้อง 06 ต้องตัดสินใจ', ...flags.map(f => `- ${f}`),
