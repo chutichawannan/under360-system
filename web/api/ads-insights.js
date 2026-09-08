@@ -30,6 +30,17 @@ module.exports = async function handler(req, res) {
   /* หน้าหลังบ้าน ห้ามให้ Google เก็บผลลัพธ์ */
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
+  /* ═══ u360-ads-gate — ตรวจรหัสก่อนคืนข้อมูล (06 ขอ 8 ก.ย.) ═══
+     รหัสอยู่ใน env ฝั่ง server เท่านั้น หน้าเว็บไม่เคยรู้ค่าจริง
+     ADS_PIN ไม่ได้ตั้ง → ใช้รหัสประจำบ้านเดียวกับหน้า pwa เพื่อให้ใช้งานได้ทันที */
+  const PIN = process.env.ADS_PIN || '0360';
+  const given = (req.headers && (req.headers['x-ads-pin'] || req.headers['X-Ads-Pin']))
+             || (req.query && req.query.pin) || '';
+  if (String(given) !== String(PIN)) {
+    res.statusCode = 401;
+    return res.end(JSON.stringify({ error: 'locked', note: 'ต้องใส่รหัสก่อนดูข้อมูล' }));
+  }
+
   const T   = process.env.META_TOKEN;
   const ACC = process.env.META_AD_ACCOUNT;
   const days = Math.min(90, Math.max(1, parseInt((req.query && req.query.days) || '7', 10) || 7));

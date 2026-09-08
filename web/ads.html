@@ -56,6 +56,16 @@ tr.bad td{background:var(--redbg)}
 .msg code{background:var(--soft);border:1px solid var(--hair);border-radius:6px;padding:2px 7px;font-size:.9em}
 .msg ol{margin:10px 0 0 20px} .msg li{margin-top:6px;color:var(--muted)}
 footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
+  /* ── u360-ads-gate ── */
+  #adsgate { position:fixed; inset:0; z-index:200; display:grid; place-items:center;
+             background:#10221A; color:#fff; text-align:center; padding:24px;
+             font-family:inherit; }
+  #adsgate h2 { font-size:20px; margin:0 0 6px; font-weight:600; }
+  #adsgate p { color:#9DB3A8; font-size:14px; margin:0 0 18px; }
+  #adsgate input { width:190px; font-size:26px; text-align:center; letter-spacing:8px;
+                   padding:12px; border-radius:12px; border:1px solid #2B4238;
+                   background:#16281F; color:#fff; font-family:inherit; }
+  #adsgate .err { color:#F0A08F; font-size:13px; margin-top:10px; min-height:18px; }
 </style>
 </head>
 <body>
@@ -77,6 +87,38 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
 
 <footer><div class="wrap" id="foot">กำลังโหลด…</div></footer>
 
+<div id="adsgate">
+  <div>
+    <h2>ใส่รหัสเพื่อดูตัวเลขโฆษณา</h2>
+    <p>หน้านี้มีค่าใช้จ่ายโฆษณาจริง</p>
+    <input id="adspin" type="tel" inputmode="numeric" maxlength="4" autocomplete="off" aria-label="รหัสผ่าน">
+    <div class="err" id="adspinerr"></div>
+  </div>
+</div>
+<script>
+/* u360-ads-gate — หน้าเว็บไม่รู้ค่ารหัสจริง แค่ส่งไปให้ server ตรวจ
+   จำไว้ในเครื่องเพื่อไม่ต้องพิมพ์ซ้ำทุกครั้ง */
+var U360PIN = '';
+function u360pin(){ return U360PIN; }
+(function(){
+  try{ U360PIN = localStorage.getItem('u360_ads_pin') || ''; }catch(e){}
+  var gate=document.getElementById('adsgate'), inp=document.getElementById('adspin'), err=document.getElementById('adspinerr');
+  function tryPin(p){
+    return fetch('/api/ads-insights?days=1', {headers:{'x-ads-pin':p}}).then(function(r){ return r.status !== 401; });
+  }
+  function unlock(){ gate.remove(); document.dispatchEvent(new Event('u360-unlocked')); }
+  if (U360PIN) { tryPin(U360PIN).then(function(ok){ if(ok) unlock(); else { U360PIN=''; inp.focus(); } }); }
+  else setTimeout(function(){ inp.focus(); }, 100);
+  inp.addEventListener('input', function(){
+    if (inp.value.length < 4) { err.textContent=''; return; }
+    var p = inp.value;
+    tryPin(p).then(function(ok){
+      if (ok) { U360PIN = p; try{ localStorage.setItem('u360_ads_pin', p); }catch(e){} unlock(); }
+      else { err.textContent = 'รหัสไม่ถูก'; inp.value=''; }
+    });
+  });
+})();
+</script>
 <script>
 var DAYS = 7;
 var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
@@ -96,7 +138,7 @@ function renderRanges(){
 
 function load(){
   document.getElementById('foot').textContent = 'กำลังโหลด…';
-  fetch('/api/ads-insights?days=' + DAYS, { cache:'no-store' })
+  fetch('/api/ads-insights?days=' + DAYS, { cache:'no-store' }, {headers:{"x-ads-pin": u360pin()}})
     .then(function(r){ return r.json(); })
     .then(render)
     .catch(function(){ document.getElementById('body').innerHTML =
