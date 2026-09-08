@@ -45,6 +45,7 @@
   src="https://www.facebook.com/tr?id=949287485825587&ev=PageView&noscript=1" alt=""></noscript>
 
   <!-- u360-v5-fix (8 ก.ย.) — แก้ลิงก์เมนู + ทำให้เบาลง -->
+  <!-- u360-fold-content -->
   <title>คอร์สอาหารเจ 2569 | Under360</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -407,6 +408,11 @@ function jayTracked(base){
       if(v) out.set(k[0],v.slice(0,80));
     });
     if(!out.get('utm_campaign')) out.set('utm_campaign','jay2026');
+    /* u360-fold-content — LIFF ทิ้ง utm_content (เก็บแค่ source/medium/campaign)
+       ถ้าไม่พับเข้า campaign ชิ้นงานทุกใบจะกลายเป็น fb/paid/jay2026 เหมือนกันหมด แยกไม่ออก
+       ตัวคั่นใช้ - เท่านั้น เพราะ LIFF กรองด้วย [^A-Za-z0-9._-] */
+    var ct=(out.get('utm_content')||'').replace(/[^A-Za-z0-9._-]/g,'').slice(0,24);
+    if(ct) out.set('utm_campaign', out.get('utm_campaign')+'-'+ct);
     var s=out.toString();
     return s ? base+(base.indexOf('?')>=0?'&':'?')+s : base;
   }catch(e){ return base; }
