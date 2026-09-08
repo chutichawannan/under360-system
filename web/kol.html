@@ -180,7 +180,7 @@ const baht = n => '฿' + Math.round(n).toLocaleString('th-TH');
     /* คนเข้าเว็บ + กดสั่ง มาจาก web_events · ออเดอร์จริงมาจาก orders
        ทั้งคู่ใส่ limit ไว้เสมอ — Supabase คืนแค่ 1000 แถวถ้าไม่ใส่ แล้วตัวเลขจะขาดแบบเงียบ */
     const [ev, od] = await Promise.all([
-      q('web_events?select=event,utm_campaign,created_at&utm_source=eq.kol&created_at=gte.' + since + '&limit=5000'),
+      q('web_events?select=event,utm_campaign,created_at&utm_source=eq.kol&utm_campaign=not.like.zz-test*&utm_campaign=not.like.*selftest*&created_at=gte.' + since + '&limit=5000'),
       q('orders?select=total,source_campaign,created_at&source_campaign=like.kol/*&created_at=gte.' + since + '&limit=5000'),
     ]);
 
