@@ -968,6 +968,9 @@ body{background:#fff!important}
     </div>
     <div class="divider"></div>
 
+    <!-- 💳 แถบเขย่งยอด — โผล่เฉพาะตอนใกล้ถึงเกณฑ์รูดบัตร ไม่ได้ตั้งเกณฑ์ = ไม่เคยโผล่ -->
+    <div id="card-nudge" style="display:none;padding:0 14px 10px"></div>
+
     <!-- ═══ ORDER TOTAL ═══ -->
     <div class="order-total">
       <div class="ot-row"><span class="ot-l">ยอดสินค้า</span><span class="ot-v" id="cart-sub">฿0</span></div>
@@ -1599,6 +1602,24 @@ function giftLineText(list){ return (list||[]).map(g => g.name + (g.qty>1 ? ' ×
 /* ── 🎁 ของแถมตามยอดรวมออเดอร์ ────────────────────────────────────────────
    ดูหัวคอมเมนต์ไฟล์ patch · ตั้งที่ kitchen_data 'order_gifts' */
 const ORDERGIFT_KEY = 'order_gifts';
+
+/* 💳 เพดานยอดที่รูดบัตรได้ — "ตัวเขย่งยอด" (พี่ปืนส่งมา 8 ก.ย. · นัทคุยไว้ก่อนหน้า)
+   นัทอยากให้คนที่ยังรูดไม่ได้ "ซื้อติดไม้ติดมือเพิ่มให้ยอดถึง" — โบนบรอธ ซาลาเปา ของกินเล่น
+   เกณฑ์ชนิดของอย่างเดียวเขย่งไม่ได้ เพราะคนซื้อกล่องเดี่ยวรูดไม่ได้ตลอดไปไม่ว่าซื้อเท่าไหร่
+
+   ตั้งที่ kitchen_data คีย์ 'card_min_total' — ไม่ต้องแก้โค้ด ไม่ต้อง deploy
+     ตัวเลขเฉย ๆ            1500
+     หรือแบบละเอียด          { "min": 1500, "hint_within": 500 }
+   ไม่มีคีย์นี้ = ปิด = เกณฑ์ชนิดของล้วนเหมือนเดิมทุกบรรทัด */
+const CARDMIN_KEY = 'card_min_total';
+let cardMinCfg = null;
+const cardMinTotal  = () => { const v = cardMinCfg; if(!v) return 0;
+  return Number(typeof v === 'object' ? v.min : v) || 0; };
+const cardHintWithin = () => { const v = cardMinCfg; if(!v) return 0;
+  const w = (typeof v === 'object' && v.hint_within != null) ? Number(v.hint_within) : 0;
+  /* ไม่ได้ตั้งช่วงเตือนไว้ = เตือนเมื่อเหลือไม่เกิน 1 ใน 3 ของเพดาน
+     (ห่างกว่านั้นบอกไปก็ไม่มีใครเติม กลายเป็นเสียงรบกวนตอนกำลังจะจ่ายเงิน) */
+  return w > 0 ? w : Math.round(cardMinTotal() / 3); };
 let orderGifts = {};
 /* โปรที่ยังไม่หมดอายุ เรียงจากยอดน้อยไปมาก */
 /* รสที่ลูกค้าเลือกไว้ — คีย์ 'รหัสโปร:ลำดับรายการ' · ไม่เลือก = ใช้ default */
@@ -2687,7 +2708,7 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY];
+  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
   const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),
     sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
@@ -2732,6 +2753,12 @@ async function init() {
     betaCfg = (b && b.data) || null;
   } catch(e) { betaCfg = null; }
   betaPaint();
+
+  /* 💳 เพดานยอดรูดบัตร — ไม่มีคีย์ = ปิด ของเดิมทำงานเหมือนเดิม */
+  try {
+    const cm = (val(cfgR).data || []).find(r => r.key === CARDMIN_KEY);
+    cardMinCfg = (cm && cm.data) || null;
+  } catch(e) { cardMinCfg = null; }
 
   /* 🎫 กระเป๋าคูปอง — โหลดหลังรู้แล้วว่าเป็นคนทดสอบไหม (ไม่ใช่คนทดสอบ = ไม่ยิง query เลย)
      ?collect=CODE มาจากปุ่มบนเว็บ/บรอดแคสต์/โฆษณา — เว็บไม่ได้เก็บเอง
@@ -4153,12 +4180,92 @@ let omiseJsLoading = null;
    ตั้งเพดานตรงไหนก็จะได้ชุดทดลอง (ที่นัทบอกว่าไม่เอา) ติดมาเสมอ */
 function cardEligible(){
   try{
-    return (cart||[]).some(function(c){
+    const byType = (cart||[]).some(function(c){
       if(c.type === 'package') return true;                       // เซ็ต/แพค/คอร์สเจ — รูดได้หมด
       if(c.type === 'meal_plan') return c.mp_set !== 'trial';      // มีลแพลน ยกเว้นชุดทดลอง
       return false;                                                // กล่องเดี่ยว — ไม่เปิด
     });
+    if(byType) return true;
+    /* ทางที่สอง: ยอดถึงเพดานที่ตั้งไว้ — นี่คือทางที่ทำให้ "เขย่งยอด" เกิดขึ้นได้
+       ไม่ได้ตั้งเพดาน = ทางนี้ปิด เหลือเกณฑ์ชนิดของล้วนเหมือนเดิม */
+    const min = cardMinTotal();
+    return min > 0 && cartTotal() >= min;
   }catch(e){ return false; }
+}
+
+/* เหลืออีกเท่าไหร่ถึงจะรูดบัตรได้ — 0 = ถึงแล้วหรือทางนี้ปิดอยู่ */
+function cardGap(){
+  try{
+    const min = cardMinTotal();
+    if(!(min > 0)) return 0;
+    if(cardEligible()) return 0;
+    const gap = min - cartTotal();
+    return gap > 0 ? gap : 0;
+  }catch(e){ return 0; }
+}
+
+/* ของชิ้นเล็กที่เติมแล้วยอดถึงพอดี — คัดจากเมนูที่ "ขายได้จริงตอนนี้" เท่านั้น
+   ตั้งใจไม่ฮาร์ดโค้ดชื่อของ (โบนบรอธ/ซาลาเปา) เพราะของหมดสต็อกเมื่อไหร่
+   คำแนะนำจะกลายเป็นทางตัน — ลูกค้ากดแล้วเติมไม่ได้ แย่กว่าไม่แนะนำเลย */
+function cardNudgePicks(gap){
+  try{
+    /* ลำดับที่ 1: รายการที่แอดมินเลือกเอง (ตั้ง "suggest" เป็นรหัสเมนูใน card_min_total)
+       ลำดับที่ 2: ของในหมวดเดียวกับที่อยู่ในตะกร้าอยู่แล้ว — คนซื้อข้าวกล่องได้ข้าวกล่อง
+                   คนซื้อมีลแพลนไม่โดนแนะอาหารเด็ก (เมนูถูกสุดในร้าน ฿65 คือหมวดอาหารเด็ก) */
+    const wanted = (cardMinCfg && typeof cardMinCfg === 'object' && Array.isArray(cardMinCfg.suggest))
+      ? cardMinCfg.suggest.map(function(x){ return String(x).toUpperCase(); }) : null;
+    const cartCats = new Set((cart||[]).map(function(c){
+      const m = (menuItems||[]).find(function(x){ return x.id === c.id; });
+      return (m && m.category) || c.category;   // ของในตะกร้าบางชนิดหาใน menuItems ไม่เจอ
+    }).filter(Boolean));
+
+    const pool = (menuItems||[]).filter(function(m){
+      if(!m || m.is_available === false) return false;
+      if(typeof isMealPlanMenu === 'function' && isMealPlanMenu(m)) return false;   // มีลแพลนไม่ใช่ของกดเติม
+      if(typeof stockInfo === 'function'){
+        const st = stockInfo(m.id);
+        if(st && !st.unlimited && st.remaining <= 0) return false;                  // ของหมด = แนะไปก็กดไม่ได้
+      }
+      const p = Number(m.price||0);
+      if(!(p > 0 && p <= gap * 1.6)) return false;   // เผื่อเกินนิดหน่อย ไม่งั้นบางช่วงไม่มีอะไรแนะเลย
+      if(wanted) return wanted.indexOf(String(m.code||'').toUpperCase()) >= 0;
+      return cartCats.size ? cartCats.has(m.category) : false;
+    });
+
+    /* เรียงตาม "เติมแล้วใกล้เกณฑ์ที่สุด" — ของที่พาข้ามเส้นพอดีมาก่อน ของที่ยังไม่ถึงตามหลัง */
+    pool.sort(function(a,b){
+      const pa = Number(a.price), pb = Number(b.price);
+      const da = pa >= gap ? pa - gap : 100000 + (gap - pa);
+      const db = pb >= gap ? pb - gap : 100000 + (gap - pb);
+      return da - db;
+    });
+    return pool.slice(0,3);
+  }catch(e){ return []; }
+}
+
+/* แถบ "อีก ฿xxx รูดบัตรได้" — ถ้าลูกค้าไม่รู้ว่าต้องเติมเท่าไหร่ การเขย่งยอดจะไม่เกิดเลย */
+function renderCardNudge(){
+  const box = document.getElementById('card-nudge');
+  if(!box) return;
+  const gap = cardGap();
+  if(!gap || gap > cardHintWithin() || !omisePublicKey){ box.style.display='none'; box.innerHTML=''; return; }
+  const picks = cardNudgePicks(gap);
+  box.style.display = '';
+  box.innerHTML =
+    '<div style="padding:12px 14px;background:#FFF8E9;border:1px solid #F0D9A6;border-radius:12px">'
+    + '<div style="font-size:13px;font-weight:800;color:#8A6A1F">💳 อีก ฿' + gap.toLocaleString() + ' จ่ายด้วยบัตรได้</div>'
+    + (picks.length
+        ? '<div style="font-size:11.5px;color:#8A6A1F;opacity:.85;margin-top:3px">แตะเพิ่มของชิ้นเล็กได้เลย</div>'
+          + '<div style="display:flex;gap:7px;flex-wrap:wrap;margin-top:9px">'
+          + picks.map(function(m){
+              return '<button type="button" onclick="addItem(' + JSON.stringify(String(m.id)) + ');renderCardNudge();"'
+                + ' style="background:#fff;border:1px solid #E4CE9A;border-radius:20px;padding:8px 13px;'
+                + 'font-family:inherit;font-size:12.5px;font-weight:700;color:#6B5314;cursor:pointer">'
+                + h(m.name) + ' +฿' + Number(m.price).toLocaleString() + '</button>';
+            }).join('')
+          + '</div>'
+        : '')
+    + '</div>';
 }
 
 /* ถามเซิร์ฟเวอร์ว่ากุญแจพร้อมหรือยัง — ยังไม่พร้อมก็ไม่โชว์ปุ่มบัตร
@@ -5955,6 +6062,7 @@ function updateQRAmount(){
 }
 
 function updateCartTotals(){
+  try{ renderCardNudge(); refreshPayMethods(); }catch(e){}   // 💳 ยอดเปลี่ยน = สิทธิ์รูดบัตรกับแถบเขย่งยอดเปลี่ยนตาม
   const o=computeOrder();
   const subEl=document.getElementById('cart-sub');
   const feeEl=document.getElementById('cart-fee');
