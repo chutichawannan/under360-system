@@ -409,7 +409,7 @@ function refreshUI(){ renderBanner(); renderHome(); renderDash(); renderRoomList
 async function loadAll(manual){
   try{ refreshUI(); }catch(e){}
   // ตัวนับสดของการ์ดสรุปเช้าต้องรอ loadCore ก่อน (ต้องรู้เวลาสรุปล่าสุดถึงจะนับ "หลังจากนั้น" ได้)
-  const jobs=[ loadCore().then(loadBriefCounts), loadNiw(), loadCutover(), loadOOS(), loadJay() ];
+  const jobs=[ loadCore().then(loadBriefCounts), loadNiw(), loadCutover(), loadOOS(), loadJay(), loadPoller() ];
   // หนัก (query ออเดอร์): โหลดครั้งแรก + ตอนกดรีเฟรชเท่านั้น — ไม่ poll กันเปลือง Supabase
   if(manual || !bizLoaded){ jobs.push(loadBiz().then(function(){ bizLoaded=true; })); }
   await Promise.allSettled(jobs);
@@ -1126,6 +1126,32 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
 // ใช้ใน command_center.html:  const r = await niwWeeklySpecialWatch(sb, { mode: 'stocked' });
 
+
+
+/* ---------- 👂 สถานะ poller (บรรทัดเดียว) — นัทขอ 8 ก.ย. ให้อยู่ในแดชบอร์ดฝั่งเจ้าของ ---------- */
+var POLLER_ROOMS=[['pm','พี่ปืน'],['secretary','เลขา'],['u-maintainer','U'],['kapan','กะปัน'],['เจ2569','เจ'],['niw','นิว'],['05','05'],['06','06'],['m','M'],['fah','ฟ้า'],['cc','CC'],['tiang','เตียง'],['eath','เอิธ']];
+var pollerHb=null;
+function loadPoller(){
+  return fetch(SB_URL+'/rest/v1/live_presence?select=page,last_seen&area=eq.poller&limit=100',{headers:{apikey:SB_KEY}})
+    .then(function(r){return r.json()}).then(function(rows){
+      pollerHb={}; if(Array.isArray(rows)) rows.forEach(function(x){pollerHb[x.page]=new Date(x.last_seen).getTime()});
+    }).catch(function(){pollerHb={}});
+}
+function cardPoller(){
+  if(!pollerHb) return '<div class="card"><h3>👂 ห้องที่เปิดอยู่</h3><div class="muted">กำลังโหลด…</div></div>';
+  var now=Date.now(), on=[], off=[];
+  POLLER_ROOMS.forEach(function(p){
+    var t=pollerHb[p[0]];
+    if(p[0]==='kapan'&&!t){on.push(p[1]);return}
+    if(t&&(now-t)<600000) on.push(p[1]); else if(t) off.push(p[1]+' (หลุด)'); else off.push(p[1]);
+  });
+  var line=on.length?on.join(' · '):'ไม่มีห้องไหนเปิดเลย';
+  var h='<div class="card"><h3>👂 ห้องที่เปิดอยู่ <span class="r">'+on.length+'/'+POLLER_ROOMS.length+'</span></h3>';
+  h+='<div style="font-size:13px;line-height:1.7"><span style="color:#1f8f4e">●</span> '+esc(line)+'</div>';
+  if(off.length) h+='<div class="muted" style="font-size:12px;margin-top:4px">ยังไม่เปิด: '+esc(off.join(' · '))+' — พิมพ์ /poller ในห้องนั้น</div>';
+  h+='</div>';
+  return h;
+}
 
 /* ---------- ⛔ การ์ดสินค้าหมดสต็อก (ลูกค้าเห็นแต่สั่งไม่ได้ = เสียยอดเงียบ) ---------- */
 var oosData=null;
