@@ -108,6 +108,16 @@
     });
   }
 
-  if (document.body) start();
-  else document.addEventListener('DOMContentLoaded', start);
+  /* ตาข่ายกันจอดำ: ไม่ว่าเกิดอะไรขึ้น 6 วิแล้วยังไม่ได้คำตอบ = เปิดหน้าให้ทำงานต่อ
+     ครัวเน็ตอืดเป็นเรื่องปกติ ปล่อยให้ยืนงงหน้าจอเปล่าไม่ได้ */
+  setTimeout(function () {
+    if (document.getElementById('u360-gate-hide') && !document.getElementById('u360-gate')) reveal();
+  }, 6000);
+
+  function boot() {
+    /* ด่านพังเอง (เบราว์เซอร์เก่าไม่มี fetch ฯลฯ) ต้องไม่ลากหน้าทั้งหน้าตายไปด้วย */
+    try { start(); } catch (e) { reveal(); }
+  }
+  if (document.body) boot();
+  else document.addEventListener('DOMContentLoaded', boot);
 })();

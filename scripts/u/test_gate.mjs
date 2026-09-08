@@ -68,5 +68,10 @@ console.log(NL+'⑤ API พัง ต้องไม่ล็อกทั้ง�
   t('เน็ตล่ม = ไม่ตัดสิน ปล่อยผ่าน', await run('ล่ม'), null);
 }
 
+console.log(NL+'⑥ 🖤 ห้ามจอดำค้าง — เคสที่ทำครัวยืนงงหน้าจอเปล่า');
+t('ด่านพังเอง = เปิดหน้าให้ใช้ต่อ', g.includes('catch (e) { reveal(); }'), true);
+t('มีตาข่ายเวลา กันคำขอค้างไม่ตอบ', g.includes('}, 6000);'), true);
+t('ตาข่ายไม่ไปลบจอกรอกรหัสทิ้ง', g.includes("!document.getElementById('u360-gate')"), true);
+
 console.log(NL+(fail?'❌':'✅')+' ผ่าน '+ok+' · ตก '+fail);
 process.exit(fail?1:0);
