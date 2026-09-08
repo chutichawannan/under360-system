@@ -9,6 +9,8 @@ Disallow: /api/
 Disallow: /preview
 Disallow: /home2
 Disallow: /jay-v5
+Disallow: /jay-v4
+Disallow: /jay_v4.html
 Disallow: /jay_v5.html
 Disallow: /home2.html
 Disallow: /preview.html
