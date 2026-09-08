@@ -27,6 +27,8 @@ fbq('track','PageView');
 /* ═══════════ RESET + ROOT ═══════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 html{-webkit-text-size-adjust:100%}
+.pm-btn{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:13px 8px;border:1.5px solid rgba(0,0,0,.12);background:#fff;border-radius:12px;font-family:inherit;font-size:13.5px;font-weight:700;color:var(--ink2);cursor:pointer;transition:border-color .12s,background .12s}
+.pm-btn.on{border-color:var(--g);background:#EBF3EF;color:var(--g)}
 body{font-family:'Sarabun',sans-serif;background:#F4F4F0;color:#1A1A1A;min-height:100vh;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 button{cursor:pointer;border:none;background:none;font-family:inherit;font-size:inherit;-webkit-tap-highlight-color:transparent}
 input,textarea{font-family:inherit}
@@ -889,6 +891,27 @@ body{background:#fff!important}
          และที่แย่กว่า: ช่องแนบสลิปอยู่ในกล่อง "โอนเงิน" เท่านั้น
          → ลูกค้าที่เลือก QR (94 ใบใน ส.ค.) ไม่มีที่แนบสลิปเลย ต้องไปทักแอดมินทางไลน์
          ตอนนี้โชว์ QR + เลขบัญชี + ช่องแนบสลิป รวดเดียว ไม่ต้องเลือกอะไรก่อน -->
+    <!-- 💳 เลือกวิธีจ่าย — โผล่เฉพาะออเดอร์ก้อนใหญ่ (นัทเคาะ 7 ก.ย. 2569)
+         ออเดอร์เล็กไม่โชว์เลย เพราะค่าธรรมเนียม 2.57% ที่ร้านออกให้ กินกำไรกล่องเดี่ยวหมด
+         ถ้าไม่โผล่ = ทางโอนเดิมเป๊ะ ๆ ไม่มีอะไรเปลี่ยน -->
+    <div id="paymethod-wrap" style="display:none;padding:0 0 12px">
+      <div style="display:flex;gap:8px">
+        <button type="button" id="pm-transfer" class="pm-btn" onclick="setPayMethod('transfer')">
+          <span style="font-size:17px">📱</span><span>โอน / พร้อมเพย์</span></button>
+        <button type="button" id="pm-card" class="pm-btn" onclick="setPayMethod('card')">
+          <span style="font-size:17px">💳</span><span>บัตรเครดิต</span></button>
+      </div>
+    </div>
+    <!-- กล่องบัตร — ขึ้นแทนที่ QR/สลิป เมื่อเลือกจ่ายบัตร -->
+    <div id="pp-card" style="display:none;padding:16px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:12px;margin-bottom:10px">
+      <div style="font-size:13px;font-weight:700;margin-bottom:6px">จ่ายด้วยบัตรเครดิต / เดบิต</div>
+      <div style="font-size:12px;color:var(--soft);line-height:1.7">
+        ตัดบัตรทันที ไม่ต้องแนบสลิป · รับ Visa · Mastercard · JCB<br>
+        <!-- บอกตรงนี้เพราะ "กลัวเลขบัตรรั่ว" คือเหตุผลอันดับหนึ่งที่คนไม่กล้ากรอก -->
+        ข้อมูลบัตรส่งตรงถึงผู้ให้บริการชำระเงิน <b>ทางร้านไม่เห็นและไม่เก็บเลขบัตร</b><br>
+        <span style="color:var(--soft)">กดยืนยันแล้วช่องกรอกบัตรจะเด้งขึ้นมา</span>
+      </div>
+    </div>
     <div class="qr-box on" id="pp-qr">
       <!-- N-09 · QR พร้อมเพย์จริงจากแอปธนาคาร (นัทส่งมา 6 ส.ค. 2569) — เดิมเป็นกรอบประ 📱 สแกนไม่ได้
            รูปมาจาก Storage ไม่ฝังในไฟล์ → เปลี่ยนบัญชีทีหลังแค่อัปรูปทับ ไม่ต้องแก้โค้ด -->
@@ -2931,6 +2954,7 @@ function goCart() {
   updateCartTotals();
   loadSuggestedPromosIfNeeded().then(renderSuggestedPromoChips);
   loadPaymentAccount(); // เลือกบัญชีรับเงินที่ถัวเฉลี่ยแล้ว
+  refreshPayMethods();  // 💳 ตะกร้าเปลี่ยน สิทธิ์รูดบัตรก็เปลี่ยน — เช็คใหม่ทุกครั้งที่เปิดหน้านี้
   // Google Maps: try immediately, retry if not loaded
   if (typeof google !== 'undefined') {
     setTimeout(initCusMap, 100);
@@ -4114,6 +4138,111 @@ function mapConfirmUseGPS(){
 // ══════════════════════════════════════
 // 📤 SUBMIT ORDER
 // ══════════════════════════════════════
+/* ══════════════════════════════════════════════════════════════
+   💳 จ่ายด้วยบัตร — นัทเคาะ 7 ก.ย. 2569
+   "ร้านออกค่าธรรมเนียมให้ · ให้รูดได้เฉพาะออเดอร์ก้อนใหญ่
+    เช่น มีลแพลน (ไม่รวมเซ็ตทดลอง) และคอร์สเจ ส่วนพวก set จริง ๆ ก็อยากให้รูดได้"
+   ══════════════════════════════════════════════════════════════ */
+/* payMethod ใช้ตัวเดิมของหน้า (ประกาศอยู่ในบล็อก GOOGLE MAPS)
+   ของเดิมรับ 'qr' | 'transfer' — ตรงนี้เพิ่ม 'card' เข้าไปเป็นค่าที่สาม */
+let omisePublicKey = null;           // ได้มาจากเซิร์ฟเวอร์ตอนเปิดหน้าจ่าย
+let omiseJsLoading = null;
+
+/* ใครรูดได้บ้าง — ตั้งใจตัดสินจาก "ของในตะกร้า" ไม่ใช่ "ยอดเงิน"
+   เพราะเกณฑ์ยอดเงินตอบโจทย์นัทไม่ได้: ชุดทดลอง HP ฿1,699 แพงกว่า Diet Set A ฿1,350
+   ตั้งเพดานตรงไหนก็จะได้ชุดทดลอง (ที่นัทบอกว่าไม่เอา) ติดมาเสมอ */
+function cardEligible(){
+  try{
+    return (cart||[]).some(function(c){
+      if(c.type === 'package') return true;                       // เซ็ต/แพค/คอร์สเจ — รูดได้หมด
+      if(c.type === 'meal_plan') return c.mp_set !== 'trial';      // มีลแพลน ยกเว้นชุดทดลอง
+      return false;                                                // กล่องเดี่ยว — ไม่เปิด
+    });
+  }catch(e){ return false; }
+}
+
+/* ถามเซิร์ฟเวอร์ว่ากุญแจพร้อมหรือยัง — ยังไม่พร้อมก็ไม่โชว์ปุ่มบัตร
+   ดีกว่าโชว์ปุ่มแล้วลูกค้ากดไปเจอ error (เสียความเชื่อใจตอนกำลังจะจ่ายเงิน) */
+async function omiseReady(){
+  if(omisePublicKey !== null) return !!omisePublicKey;
+  try{
+    const r = await fetch('/api/omise-charge', { cache:'no-store' });
+    const j = await r.json();
+    omisePublicKey = (j && j.ok && j.public_key) ? j.public_key : '';
+  }catch(e){ omisePublicKey = ''; }
+  return !!omisePublicKey;
+}
+
+function setPayMethod(m){
+  payMethod = m;
+  /* ไฟล์นี้ไม่มี el() ตัวกลาง — el ที่เห็นตามที่ต่าง ๆ เป็นตัวแปรในฟังก์ชันนั้น ๆ */
+  const pick = (id)=>document.getElementById(id);
+  const on  = (id,v)=>{ const e=pick(id); if(e) e.classList.toggle('on', v); };
+  const show= (id,v)=>{ const e=pick(id); if(e) e.style.display = v ? '' : 'none'; };
+  on('pm-transfer', m==='transfer'); on('pm-card', m==='card');
+  show('pp-qr',       m!=='card');
+  show('pp-transfer', m!=='card');
+  show('pp-card',     m==='card');
+}
+
+/* เรียกทุกครั้งที่เปิดหน้าจ่าย — ตะกร้าเปลี่ยนแล้วสิทธิ์รูดบัตรอาจเปลี่ยนตาม */
+async function refreshPayMethods(){
+  const wrap = document.getElementById('paymethod-wrap');
+  if(!wrap) return;
+  const okCart = cardEligible();
+  const okKey  = okCart ? await omiseReady() : false;
+  wrap.style.display = (okCart && okKey) ? 'block' : 'none';
+  /* ตะกร้าเปลี่ยนจนรูดไม่ได้แล้ว ต้องดีดกลับทางโอน ไม่งั้นค้างอยู่โหมดบัตรที่หายไป */
+  if(!(okCart && okKey) && payMethod === 'card') setPayMethod('transfer');
+  else setPayMethod(payMethod);
+}
+
+function loadOmiseJs(){
+  if(window.OmiseCard) return Promise.resolve(true);
+  if(omiseJsLoading) return omiseJsLoading;
+  omiseJsLoading = new Promise(function(res){
+    const t = document.createElement('script');
+    t.src = 'https://cdn.omise.co/omise.js';
+    t.onload  = function(){ res(!!window.OmiseCard); };
+    t.onerror = function(){ res(false); };
+    document.head.appendChild(t);
+    setTimeout(function(){ res(!!window.OmiseCard); }, 12000);   // เน็ตอืดต้องไม่ค้างตลอดกาล
+  });
+  return omiseJsLoading;
+}
+
+/* เปิดช่องกรอกบัตรแล้วรอผล — คืน token ถ้าได้ / null ถ้าลูกค้าปิดหน้าต่างหรือโหลดไม่ขึ้น
+   ⚠️ เลขบัตรอยู่ในหน้าต่างของ Omise ล้วน ๆ โค้ดเราไม่แตะเลย */
+async function askCardToken(amountBaht){
+  const ready = await loadOmiseJs();
+  if(!ready || !window.OmiseCard) return { token:null, why:'โหลดหน้าจ่ายบัตรไม่ขึ้น' };
+  return new Promise(function(resolve){
+    let settled = false;
+    OmiseCard.configure({ publicKey: omisePublicKey, currency:'THB', frameLabel:'Under360', submitLabel:'จ่ายเงิน' });
+    OmiseCard.open({
+      amount: Math.round(amountBaht*100),
+      currency: 'THB',
+      defaultPaymentMethod: 'credit_card',
+      onCreateTokenSuccess: function(nonce){ settled = true; resolve({ token:String(nonce||''), why:null }); },
+      onFormClosed: function(){ if(!settled) resolve({ token:null, why:'ปิดหน้าต่างก่อนจ่าย' }); },
+    });
+  });
+}
+
+/* ตัดบัตรจริง — ยอดที่ตัดเอาจากฐานข้อมูลฝั่งเซิร์ฟเวอร์ ไม่ใช่ตัวเลขที่ส่งจากตรงนี้ */
+async function chargeCard(orderNumber, amountBaht){
+  const got = await askCardToken(amountBaht);
+  if(!got.token) return { ok:false, error: got.why || 'ยังไม่ได้กรอกบัตร' };
+  try{
+    const r = await fetch('/api/omise-charge', {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ order_number: orderNumber, token: got.token }),
+    });
+    const j = await r.json();
+    return (j && j.ok) ? { ok:true, charge_id:j.charge_id } : { ok:false, error:(j && j.error) || 'ตัดบัตรไม่สำเร็จ' };
+  }catch(e){ return { ok:false, error:'ต่อระบบจ่ายเงินไม่ได้' }; }
+}
+
 async function submitOrder() {
   // Validate before proceeding
   if (!cart.length)  { toast('กรุณาเลือกสินค้าก่อน'); return; }
@@ -4614,6 +4743,26 @@ async function submitOrder() {
     if (okMpBtn) okMpBtn.style.display = cart.some(c => c.type === 'meal_plan') ? 'block' : 'none';
     document.getElementById('ok-detail').innerHTML =
       `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(selDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}${mpLines}`;
+    /* 💳 ตัดบัตร — ทำ "หลัง" บันทึกออเดอร์ลงฐานข้อมูลเรียบร้อยแล้วเสมอ
+       ตัดไม่ผ่าน = ออเดอร์ยังอยู่ครบ ลูกค้าโอนแทนได้ ไม่มีใครสั่งของไม่ได้เพราะบัตรมีปัญหา
+       (ถ้าสลับลำดับ ตัดเงินก่อนสร้างใบ วันที่ระบบสะดุดจะกลายเป็น "เก็บเงินแล้วไม่มีออเดอร์") */
+    if (payMethod === 'card') {
+      if (btn) { btn.disabled = true; btn.textContent = 'กำลังเปิดหน้าจ่ายบัตร…'; }
+      let pay = { ok:false, error:'ไม่ทราบสาเหตุ' };
+      try { pay = await chargeCard(orderNum, grandTotal); }
+      catch(e){ pay = { ok:false, error:'ต่อระบบจ่ายเงินไม่ได้' }; }
+      const okBox = document.getElementById('ok-detail');
+      if (okBox) {
+        okBox.innerHTML += pay.ok
+          ? '<div style="margin-top:10px;padding:10px 12px;background:#EBF3EF;border-radius:10px;color:#1F4D3A;font-weight:700">'
+            + '✅ ได้รับเงินเรียบร้อยแล้ว</div>'
+          /* ต้องบอกให้ชัดว่า "ยังไม่มีการตัดเงิน" — ไม่งั้นลูกค้าจะกลัวว่าโดนตัดไปแล้วแต่ของไม่มา
+             แล้วโทรหาแอดมิน หรือแย่กว่านั้นคือจ่ายซ้ำ */
+          : '<div style="margin-top:10px;padding:10px 12px;background:#FEF2F2;border-radius:10px;color:#B91C1C;line-height:1.6">'
+            + '⚠️ ยังไม่มีการตัดเงิน (' + h(pay.error || '') + ')<br>'
+            + 'ออเดอร์บันทึกไว้แล้ว โอนผ่านพร้อมเพย์แทนได้ที่หน้าออเดอร์ของฉัน</div>';
+      }
+    }
     cart = []; saveCart(); updateCartUI();
     selDate = null; selSlot = null; distKm = null;
     setDeliverOnce = false; extraRoundDates = [];
