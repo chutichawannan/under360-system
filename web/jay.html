@@ -44,6 +44,8 @@
 
   <!-- u360-v5-fix (8 ก.ย.) — แก้ลิงก์เมนู + ทำให้เบาลง -->
   <!-- u360-fold-content -->
+  <!-- u360-jay-catalog (8 ก.ย.) — แคตตาล็อกเมนู 30 รายการ · รูปจริง 19 -->
+  <!-- u360-mobile-fix (8 ก.ย.) — รูปตัวชูอยู่ข้างหัวเรื่อง + รูปเมนู 3 คอลัมน์ -->
   <title>คอร์สอาหารเจ 2569 | Under360</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -292,6 +294,51 @@
       body { padding-bottom:74px; }                  /* กันแถบบังบรรทัดสุดท้าย */
     }
     @media (prefers-reduced-motion:reduce) { #stickybar { transition:none; } }
+    /* ── u360-jay-catalog ── */
+    .dish-grid { list-style:none; display:grid; align-items:start; grid-template-columns:repeat(4,minmax(0,1fr));
+                 gap:26px 22px; padding:0; margin:0; }
+    .dish img { width:100%; height:auto; aspect-ratio:1/1; object-fit:cover; object-position:center 45%;
+                border-radius:14px; border:1px solid var(--line); display:block; background:#fff; }
+    .dish p { margin:11px 0 0; font-size:14px; line-height:1.6; }
+    .dish-rest { margin-top:30px; padding-top:22px; border-top:1px solid var(--line); }
+    .dish-rest h4 { margin:0 0 12px; font-size:15px; font-weight:600; color:var(--muted); }
+    .dish-rest ul { list-style:none; padding:0; margin:0; columns:2; column-gap:40px; }
+    .dish-rest li { break-inside:avoid; padding:0 0 9px; font-size:14px; line-height:1.7; }
+    @media (max-width:1000px) { .dish-grid { grid-template-columns:repeat(3,minmax(0,1fr)); gap:22px 18px; } }
+    @media (max-width:700px)  { .dish-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:20px 14px; }
+                                .dish p { font-size:13px; }
+                                .dish-rest ul { columns:1; } }
+    /* ── u360-mobile-fix (นัทสั่ง 8 ก.ย. จากเครื่องจริง) ── */
+    @media (max-width:700px) {
+      /* ① รูปตัวชูอยู่ข้างหัวเรื่อง — เดิมกองเต็มความกว้างอยู่ใต้ กินพื้นที่ทั้งจอ */
+      /* .hero > div ถูกยุบ (display:contents) เพื่อให้ลูกทุกชิ้นวางบนกริดของ .hero เอง
+         ไม่งั้นรูปจะเป็นก้อนเดียวอยู่ "ใต้" ข้อความทั้งหมด ไม่ใช่ "ข้าง" หัวเรื่อง
+         ต้องระบุแถว/คอลัมน์ให้ครบทุกชิ้น — ปล่อยให้จัดเองแล้วรูปไปแทรกแถวแรกคอลัมน์ซ้าย */
+      .hero { grid-template-columns:1.04fr .96fr; gap:0 15px; padding:20px 0 32px;
+              grid-template-rows:auto auto auto auto auto; }
+      .hero > div { display:contents; }
+      .hero > div > .eyebrow { grid-column:1; grid-row:1; }
+      .hero > div > h1       { grid-column:1; grid-row:2; }
+      .hero > div > .intro   { grid-column:1; grid-row:3; }
+      .hero > div > .dates   { grid-column:1; grid-row:4; }
+      /* ราคา+ปุ่ม เต็มความกว้างใต้ 2 คอลัมน์ — อยู่ในคอลัมน์แคบแล้วปุ่มถูกบีบจนตกบรรทัด */
+      .hero > div > .offer   { grid-column:1 / -1; grid-row:5; margin-top:20px; }
+      .hero-photo { grid-column:2; grid-row:1 / 5; align-self:center; }
+      .hero-photo .food { aspect-ratio:3/4; object-fit:cover; }
+      h1 { font-size:33px; line-height:1.3; letter-spacing:-.8px; margin:0 0 12px; }
+      .eyebrow { margin-bottom:12px; font-size:12px; }
+      .eyebrow::before { width:8px; height:8px; }
+      .intro { font-size:16px; line-height:1.55; margin:0 0 8px; }
+      .dates { font-size:11px; }
+      .price strong { font-size:26px; }
+      .actions { gap:18px; }
+
+      /* ② รูปเมนู 3 คอลัมน์ */
+      .gallery { grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin-top:20px; }
+      .gallery figure:last-child { width:100%; justify-self:auto; }
+      .gallery .food { aspect-ratio:1/1; object-fit:cover; border-radius:10px; }
+      .gallery figcaption { display:none; }       /* 3 คอลัมน์บนจอมือถือ ตัวอักษรใต้รูปแคบจนอ่านไม่ออก */
+    }
 </style>
 </head>
 <body>
@@ -354,42 +401,34 @@
             <label for="pick-2"><span>รอบ 2</span><strong>11 ต.ค.</strong><span>12 กล่อง · ทาน 12–15 ต.ค.</span></label>
             <label for="pick-3"><span>รอบ 3</span><strong>15 ต.ค.</strong><span>9 กล่อง · ทาน 16–18 ต.ค.</span></label>
           </div>
-          <section class="round-panel panel-1" aria-labelledby="round-title-1"><div class="round-caption"><h3 id="round-title-1">เมนูรอบแรก</h3><p>ส่ง 8 ต.ค. · สำหรับทาน 9–11 ต.ค.</p></div><ol class="minimal-dishes">
-              <li>หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่</li>
-              <li>ข้าวหมูสับเจตุ๋นเห็ดหอม สไตล์ไต้หวัน (Lu Rou Fan) + ผักดองไต้หวัน <span class="signature" aria-label="เมนูเด่น">★</span></li>
-              <li>ข้าวเห็ดแชมปิญองผัดพริกเหลืองโหระพา</li>
-              <li>เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง</li>
-              <li>เบนโตะเจ ผักรวม 4 ช่อง</li>
-              <li>เส้นหมี่ก๋วยเตี๋ยวหลอด เห็ดหอมเต้าหู้ทรงเครื่อง</li>
-              <li>ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น</li>
-              <li>ข้าวยำเกาหลี เครื่องแน่นจุก</li>
-              <li>ข้าวแกงเผ็ดเห็ดรวม ฟองเต้าหู้</li>
-            </ol></section>
-          <section class="round-panel panel-2" aria-labelledby="round-title-2"><div class="round-caption"><h3 id="round-title-2">เมนูรอบที่ 2</h3><p>ส่ง 11 ต.ค. · สำหรับทาน 12–15 ต.ค.</p></div><ol class="minimal-dishes">
-              <li>เกี๊ยวแห้งเห็ด + น้ำจิ้มซีฟู้ดเจ</li>
-              <li>โอเด้งฟองเต้าหู้ เต้าหู้แข็ง</li>
-              <li>พาสต้าครีมซอสเห็ดแชมปิญอง</li>
-              <li>เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ</li>
-              <li>ข้าวเต้าหู้ย่างซอสเทริยากิ + ซุปมิโสะ</li>
-              <li>เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ</li>
-              <li>หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป</li>
-              <li>ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง</li>
-              <li>ข้าวอบสาหร่าย เต้าหู้ย่างสไตล์ญี่ปุ่น</li>
-              <li>ข้าวผัดกิมจิ เต้าหู้ย่าง</li>
-              <li>ข้าวเต้าหู้ผัดพริกไทยดำ เห็ดฟาง</li>
-              <li>ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ</li>
-            </ol></section>
-          <section class="round-panel panel-3" aria-labelledby="round-title-3"><div class="round-caption"><h3 id="round-title-3">เมนูรอบที่ 3</h3><p>ส่ง 15 ต.ค. · สำหรับทาน 16–18 ต.ค.</p></div><ol class="minimal-dishes">
-              <li>ปอเปี๊ยะทอด (ย่าง) เวียดนาม</li>
-              <li>เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส</li>
-              <li>โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส</li>
-              <li>แอสพารากัสอบ ซอสเห็ดเข็มทองถั่วลิสง + มันอบ</li>
-              <li>ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย</li>
-              <li>ผักกาดพันเต้าหู้เห็ดหอม ราดซีอิ๊วงา</li>
-              <li>ข้าวอบธัญพืช เกาลัด</li>
-              <li>ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้</li>
-              <li>ข้าวผัดเห็ดออรินจิ ซอสเนยถั่ว + เต้าหู้ย่าง</li>
-            </ol></section>        </div>
+          <section class="round-panel panel-1" aria-labelledby="round-title-1"><div class="round-caption"><h3 id="round-title-1">เมนูรอบแรก</h3><p>ส่ง 8 ต.ค. · สำหรับทาน 9–11 ต.ค.</p></div><ol class="dish-grid">
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J01.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J01.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J01.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1086" height="1448" loading="lazy" decoding="async" alt="หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่"><p>หมูสับเจปั้นก้อน ราดซอสลุยสวน + เส้นหมี่</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J04.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J04.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J04.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง"><p>เครปมันม่วง เต้าหู้ผัดไชโป้วทรงเครื่อง</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J05.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J05.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J05.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="เบนโตะเจ ผักรวม 4 ช่อง"><p>เบนโตะเจ ผักรวม 4 ช่อง</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J07.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J07.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J07.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1086" height="1448" loading="lazy" decoding="async" alt="ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น"><p>ข้าวเต้าหู้ทอดยัดไส้วุ้นเส้น ต้มซีอิ๊วญี่ปุ่น</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J08.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J08.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J08.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="ข้าวยำเกาหลี เครื่องแน่นจุก"><p>ข้าวยำเกาหลี เครื่องแน่นจุก</p></li>
+              </ol>
+              <div class="dish-rest"><h4>อีก 4 เมนูในรอบนี้</h4><ul><li>ข้าวหมูสับเจตุ๋นเห็ดหอม สไตล์ไต้หวัน (Lu Rou Fan) + ผักดองไต้หวัน <span class="signature" aria-label="เมนูเด่น">★</span></li><li>ข้าวเห็ดแชมปิญองผัดพริกเหลืองโหระพา</li><li>เส้นหมี่ก๋วยเตี๋ยวหลอด เห็ดหอมเต้าหู้ทรงเครื่อง</li><li>ข้าวแกงเผ็ดเห็ดรวม ฟองเต้าหู้</li></ul></div></section>
+          <section class="round-panel panel-2" aria-labelledby="round-title-2"><div class="round-caption"><h3 id="round-title-2">เมนูรอบที่ 2</h3><p>ส่ง 11 ต.ค. · สำหรับทาน 12–15 ต.ค.</p></div><ol class="dish-grid">
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J11.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J11.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J11.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1537" height="1023" loading="lazy" decoding="async" alt="โอเด้งฟองเต้าหู้ เต้าหู้แข็ง"><p>โอเด้งฟองเต้าหู้ เต้าหู้แข็ง</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J12.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J12.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J12.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="พาสต้าครีมซอสเห็ดแชมปิญอง"><p>พาสต้าครีมซอสเห็ดแชมปิญอง</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J13.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J13.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J13.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1024" height="1536" loading="lazy" decoding="async" alt="เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ"><p>เพนเน่หมูสับจำแลง ผัดซอสมะเขือเทศ</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J15.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J15.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J15.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1024" height="1536" loading="lazy" decoding="async" alt="เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ"><p>เส้นหมี่ผักลูกชิ้นเห็ดต้มยำ</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J16.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J16.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J16.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1086" height="1448" loading="lazy" decoding="async" alt="หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป"><p>หมี่คลุก + ลูกชิ้นแคะเจ พร้อมซุป</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J17.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J17.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J17.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1122" height="1402" loading="lazy" decoding="async" alt="ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง"><p>ข้าวคลุกคีนัว สเต็กเต้าหู้ผักย่าง</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J18.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J18.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J18.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1445" height="1089" loading="lazy" decoding="async" alt="ข้าวอบสาหร่าย เต้าหู้ย่างสไตล์ญี่ปุ่น"><p>ข้าวอบสาหร่าย เต้าหู้ย่างสไตล์ญี่ปุ่น</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J21.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J21.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J21.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1445" height="1088" loading="lazy" decoding="async" alt="ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ"><p>ข้าวผัดต้มยำหมูสับเจ เต้าหู้ย่างสไลด์ ราดซอสต้มยำ</p></li>
+              </ol>
+              <div class="dish-rest"><h4>อีก 4 เมนูในรอบนี้</h4><ul><li>เกี๊ยวแห้งเห็ด + น้ำจิ้มซีฟู้ดเจ</li><li>ข้าวเต้าหู้ย่างซอสเทริยากิ + ซุปมิโสะ</li><li>ข้าวผัดกิมจิ เต้าหู้ย่าง</li><li>ข้าวเต้าหู้ผัดพริกไทยดำ เห็ดฟาง</li></ul></div></section>
+          <section class="round-panel panel-3" aria-labelledby="round-title-3"><div class="round-caption"><h3 id="round-title-3">เมนูรอบที่ 3</h3><p>ส่ง 15 ต.ค. · สำหรับทาน 16–18 ต.ค.</p></div><ol class="dish-grid">
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J22.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J22.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J22.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1086" height="1448" loading="lazy" decoding="async" alt="ปอเปี๊ยะทอด (ย่าง) เวียดนาม"><p>ปอเปี๊ยะทอด (ย่าง) เวียดนาม</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J23.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J23.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J23.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส"><p>เฟรนฟรายมันหวาน + เบอร์เกอร์แพลนท์เบส</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J24.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J24.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J24.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1024" height="1536" loading="lazy" decoding="async" alt="โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส"><p>โรลเต้าหู้อโวคาโด พีนัตบัตเตอร์ซอส</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J25.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J25.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J25.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1086" height="1448" loading="lazy" decoding="async" alt="แอสพารากัสอบ ซอสเห็ดเข็มทองถั่วลิสง + มันอบ"><p>แอสพารากัสอบ ซอสเห็ดเข็มทองถั่วลิสง + มันอบ</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J26.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J26.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J26.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1536" height="1024" loading="lazy" decoding="async" alt="ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย"><p>ข้าวปั้นแฮมเบิร์กเจ ห่อสาหร่าย</p></li>
+                <li class="dish"><img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J29.png?width=560&quality=72" srcset="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J29.png?width=340&quality=72 340w, https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/render/image/public/menu-images/jay-v5/menu/J29.png?width=560&quality=72 560w" sizes="(max-width:700px) 44vw, 260px" width="1024" height="1536" loading="lazy" decoding="async" alt="ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้"><p>ผัดมันฝรั่งเส้นบุก ฟองเต้าหู้</p></li>
+              </ol>
+              <div class="dish-rest"><h4>อีก 3 เมนูในรอบนี้</h4><ul><li>ผักกาดพันเต้าหู้เห็ดหอม ราดซีอิ๊วงา</li><li>ข้าวอบธัญพืช เกาลัด</li><li>ข้าวผัดเห็ดออรินจิ ซอสเนยถั่ว + เต้าหู้ย่าง</li></ul></div></section>        </div>
         <p class="plan-note">ลำดับเมนูอาจสลับภายในรอบ แต่ได้รับครบทุกเมนู · ★ เมนูเด่นของคอร์ส</p>
         <p class="plan-note">วันที่แสดงเป็นวันส่งจากครัว · ต่างจังหวัดถึงช้ากว่า 1 วัน ราคาเดียวกัน</p>
       </section>
