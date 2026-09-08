@@ -160,6 +160,10 @@
     {
       "source": "/home2",
       "destination": "/home2.html"
+    },
+    {
+      "source": "/jay-v5",
+      "destination": "/jay_v5.html"
     }
   ]
 }
