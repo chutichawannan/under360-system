@@ -73,5 +73,24 @@ t('ด่านพังเอง = เปิดหน้าให้ใช้�
 t('มีตาข่ายเวลา กันคำขอค้างไม่ตอบ', g.includes('}, 6000);'), true);
 t('ตาข่ายไม่ไปลบจอกรอกรหัสทิ้ง', g.includes("!document.getElementById('u360-gate')"), true);
 
+console.log(NL+'⑦ 🙋 ปุ่มขอรหัส — เพราะ 8 ก.ย. อูเจอจอล็อกแล้วไม่รู้ว่าต้องถามใคร');
+t('จอด่านมีปุ่มขอรหัส', g.includes('u360-gate-ask'), true);
+t('ปุ่มมีไอคอนนำ ไม่ใช่ตัวหนังสือล้วน', g.includes('🙋'), true);
+t('🔒 ไม่มีรหัสจริงโผล่บนจอด่าน', /['+q+'"]0360['+q+'"]/.test(g), false);
+t('บอกด้วยว่ากดมาจากหน้าไหน', g.includes('location.pathname'), true);
+t('ส่งไม่ได้ = บอกทางสำรอง ไม่ปล่อยเงียบ', g.includes('ถามหัวหน้าในไลน์'), true);
+t('กดแล้วกันกดรัว', g.includes('ask.disabled = true'), true);
+t('แต่ไม่ล็อกปุ่มถาวร (เผื่อรอบแรกไม่มีใครเห็น)', g.includes('ask.disabled = false'), true);
+
+{
+  const h = read('api/gate-help.js');
+  t('ข้อความตายตัว คนกดพิมพ์เข้ามาไม่ได้', h.includes('มีคนกดขอรหัสเข้าแอป'), true);
+  t('ชื่อหน้ากรองด้วยรายการที่อนุญาต', h.includes('PAGES[u.searchParams.get'), true);
+  t('ไม่มีรหัสจริงอยู่ในตัวส่งข้อความ', /['+q+'"]0360['+q+'"]/.test(h), false);
+  t('ส่ง 2 ทาง เผื่อทางนึงไม่ได้ตั้งค่า', h.includes('toKitchenGroup') && h.includes('toKapanBoard'), true);
+  t('ถึงสักทาง = สำเร็จ', h.includes('const ok = '), true);
+  t('มีตัวหน่วงกันสแปม', h.includes('COOLDOWN_MS'), true);
+}
+
 console.log(NL+(fail?'❌':'✅')+' ผ่าน '+ok+' · ตก '+fail);
 process.exit(fail?1:0);

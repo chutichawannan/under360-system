@@ -77,12 +77,42 @@
       '<input id="u360-gate-pin" type="tel" inputmode="numeric" maxlength="4" placeholder="····" ' +
       'style="width:170px;text-align:center;font-size:30px;letter-spacing:10px;padding:10px;' +
       'border:0;border-radius:12px;font-family:inherit;font-weight:800">' +
-      '<div id="u360-gate-err" style="font-size:13px;color:#FCA5A5;height:18px"></div>';
+      '<div id="u360-gate-err" style="font-size:13px;color:#FCA5A5;height:18px"></div>' +
+      /* ปุ่มขอความช่วยเหลือ — ทางออกของคนที่ไม่รู้รหัส จะได้ไม่ต้องวิ่งไปหานัท
+         คำน้อยที่สุดเท่าที่สื่อได้ + ไอคอนนำ (ครัวอ่านไทยได้ 2/6 คน) */
+      '<button id="u360-gate-ask" type="button" ' +
+      'style="margin-top:6px;background:#1F3A2C;color:#CFE9D9;border:1px solid #2F5C43;' +
+      'border-radius:22px;padding:11px 20px;font-size:15px;font-family:inherit;font-weight:700;' +
+      'display:flex;align-items:center;gap:8px;cursor:pointer">' +
+      '<span style="font-size:19px">🙋</span><span>ขอรหัส</span></button>' +
+      '<div id="u360-gate-ask-msg" style="font-size:13px;color:#8FA79A;height:20px;text-align:center"></div>';
     document.body.appendChild(g);
 
     var inp = g.querySelector('#u360-gate-pin');
     var err = g.querySelector('#u360-gate-err');
     setTimeout(function () { try { inp.focus(); } catch (e) {} }, 150);
+
+    /* กดแล้วยิงบอกกะปัน/กลุ่มครัว ว่ามีคนติดอยู่หน้าไหน — ไม่โชว์รหัสบนจอเด็ดขาด */
+    var ask = g.querySelector('#u360-gate-ask');
+    var askMsg = g.querySelector('#u360-gate-ask-msg');
+    ask.addEventListener('click', function () {
+      ask.disabled = true;
+      askMsg.textContent = 'กำลังส่ง...';
+      fetch('/api/gate-help?p=' + encodeURIComponent(location.pathname), { cache: 'no-store' })
+        .then(function (r) { return r.json(); })
+        .then(function (j) {
+          /* ✅ ตัวใหญ่ อ่านไม่ออกก็รู้ว่าเรียบร้อย */
+          askMsg.innerHTML = j && j.ok
+            ? '<span style="color:#4ADE80;font-size:17px">✅ บอกให้แล้ว รอสักครู่</span>'
+            : '<span style="color:#FCA5A5">ส่งไม่ได้ ถามหัวหน้าในไลน์</span>';
+          /* เปิดให้กดใหม่ได้ เผื่อรอบแรกไม่มีใครเห็น แต่ต้องรอ ไม่ให้รัวติด ๆ */
+          setTimeout(function () { ask.disabled = false; }, 60000);
+        })
+        .catch(function () {
+          askMsg.innerHTML = '<span style="color:#FCA5A5">ส่งไม่ได้ ถามหัวหน้าในไลน์</span>';
+          setTimeout(function () { ask.disabled = false; }, 15000);
+        });
+    });
 
     inp.addEventListener('input', function () {
       var v = inp.value.replace(/[^0-9]/g, '');
