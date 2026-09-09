@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>ห้องนัท</title>
+<script src="/gate.js"></script>
+<!--
+  ════════════════════════════════════════════════════════════
+  ห้องนัท — 6 บล็อกตามที่นัทเคาะเอง 9 ก.ย. 2569
+  นัทบอก: "เอาตามนี้แหละ เดี๋ยวค่อยเพิ่มตอนใช้จริง" → 🔴 ห้ามเพิ่มบล็อกเอง
+
+  ① เคาะ ② ยอดขาย ③ ยามเฝ้าเจออะไร ④ แอด ⑤ ห้องไหนเปิดอยู่ ⑥ ส่งไฟล์
+
+  กติกาที่คุมหน้านี้:
+   · อ่านอย่างเดียว ไม่เขียนอะไรลงฐานข้อมูลเลย
+   · ตัวเลขทุกตัวนับสดจากของจริง ไม่มีค่าฝังตาย
+   · บล็อกไหนโหลดพัง = โชว์ว่าพัง ไม่ใช่โชว์ 0 (0 กับ "อ่านไม่ได้" คนละเรื่อง
+     และการโชว์ 0 ตอนที่จริง ๆ อ่านไม่ได้ คือการโกหกแบบเงียบที่สุด)
+   · ④ แอด ตั้งใจไม่ดึงตัวเลขจาก Meta มาโชว์เอง — ลิงก์ไปหน้า /ads ของห้อง M
+     เพราะเราปิดการขายใน LINE ตัวเลขจาก Meta ตรง ๆ โกหก (บทเรียนเดิมของบ้านนี้)
+  ════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{ --bg:#0E1A15; --card:#16261F; --line:#24382E; --fg:#E9F2EC; --dim:#8FA79A;
+         --acc:#4ADE80; --warn:#FBBF24; --red:#F87171; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;
+    padding:20px 14px calc(40px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto}
+  a{color:inherit;text-decoration:none}
+  .top{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+  h1{font-size:19px;margin:0;font-weight:800;letter-spacing:-.3px}
+  .back{font-size:12.5px;color:var(--dim)}
+  section{background:var(--card);border:1px solid var(--line);border-radius:14px;
+    padding:14px 15px;margin-bottom:11px}
+  .hd{display:flex;align-items:center;gap:8px;margin-bottom:9px}
+  .hd .t{font-size:13px;font-weight:800;letter-spacing:.2px}
+  .hd .go{margin-left:auto;font-size:11.5px;color:var(--dim)}
+  .row{display:flex;justify-content:space-between;gap:12px;font-size:13.5px;
+    padding:5px 0;line-height:1.5}
+  .row b{font-weight:700;white-space:nowrap}
+  .big{font-size:23px;font-weight:800;letter-spacing:-.5px}
+  .dim{color:var(--dim)}
+  .ok{color:var(--acc)} .warn{color:var(--warn)} .bad{color:var(--red)}
+  .load{color:var(--dim);font-size:12.5px;padding:4px 0}
+  ul{margin:6px 0 0;padding-left:17px} li{font-size:13px;line-height:1.65;margin-bottom:3px}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>👤 ห้องนัท</h1>
+  <a class="back" href="/staff">← โถง</a>
+</div>
+
+<section><div class="hd"><span>①</span><span class="t">เคาะ</span><a class="go" href="/pwa/nut.html">ดูทั้งหมด →</a></div><div id="b1" class="load">กำลังอ่าน…</div></section>
+<section><div class="hd"><span>②</span><span class="t">ยอดขาย</span><a class="go" href="/o">ออเดอร์ล่วงหน้า →</a></div><div id="b2" class="load">กำลังอ่าน…</div></section>
+<section><div class="hd"><span>③</span><span class="t">ยามเฝ้าเจออะไร</span><a class="go" href="/watchdog">ตัวเฝ้า →</a></div><div id="b3" class="load">กำลังอ่าน…</div></section>
+<section><div class="hd"><span>④</span><span class="t">แอด</span><a class="go" href="https://www.360foodbox.com/ads" target="_blank" rel="noopener">เปิดหน้าแอด →</a></div>
+  <div class="row dim" style="font-size:12.5px;line-height:1.6">ตัวเลขค่าโฆษณาอยู่ที่หน้าแอดของห้อง M<br>
+  ตั้งใจไม่ดึงมาโชว์ซ้ำที่นี่ — เราปิดการขายใน LINE ตัวเลขจาก Meta ตรง ๆ ไม่ตรงกับยอดจริง</div></section>
+<section><div class="hd"><span>⑤</span><span class="t">ห้องไหนเปิดอยู่</span><a class="go" href="/pwa/pollers.html">ดูทั้งหมด →</a></div><div id="b5" class="load">กำลังอ่าน…</div></section>
+<section><div class="hd"><span>⑥</span><span class="t">ส่งรูป / ไฟล์เข้าห้อง</span></div>
+  <a class="row" href="/pwa/inbox.html" style="color:var(--acc);font-weight:700">📤 เปิดหน้าส่งไฟล์ →</a>
+  <div class="dim" style="font-size:12px;margin-top:3px">เลือกห้อง ลากรูป กดส่ง — ห้องนั้นได้ทันที</div></section>
+
+<script>
+const U='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
+const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const H={apikey:K,Authorization:'Bearer '+K};
+const el=id=>document.getElementById(id);
+const baht=n=>'฿'+Math.round(Number(n)||0).toLocaleString();
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+/* วันไทยเสมอ — เครื่องที่เปิดอาจอยู่คนละโซน */
+const ymd=(off)=>new Date(Date.now()+7*3600000+(off||0)*86400000).toISOString().slice(0,10);
+
+/* 🔴 อ่านไม่ได้ต้องบอกว่าอ่านไม่ได้ ห้ามคืนค่าว่างแล้วปล่อยให้หน้าโชว์ 0 */
+async function q(path){
+  const r=await fetch(U+path,{headers:H});
+  if(!r.ok) throw new Error('อ่านข้อมูลไม่ได้ ('+r.status+')');
+  return r.json();
+}
+const fail=(id,e)=>{ el(id).innerHTML='<div class="bad" style="font-size:13px">อ่านไม่ได้ — '+esc(e.message||e)+'</div>'; };
+
+/* ① เรื่องรอเคาะ — นับจากช่องนัท (🎯 = พี่ปืนยกขึ้นแล้ว · 🟡/🔴 = ห้องส่งมาเอง) */
+(async()=>{ try{
+  const rows=await q('/session_messages?select=text,created_at,sender&room=eq.nut&order=created_at.desc&limit=120');
+  const open=rows.filter(r=>{ const t=(r.text||'').trimStart();
+    return t.startsWith('🎯')||t.startsWith('🟡')||t.startsWith('🔴'); });
+  /* เรื่องที่ถูกปิดไปแล้วขึ้นต้นด้วย ✅ — จับคู่ด้วยเลข 🎯 เพื่อไม่นับซ้ำของที่ปิดแล้ว */
+  const closed=new Set(rows.filter(r=>(r.text||'').trimStart().startsWith('✅'))
+    .map(r=>((r.text||'').match(/🎯\s*(\d+)/)||[])[1]).filter(Boolean));
+  const live=open.filter(r=>{ const n=((r.text||'').match(/🎯\s*(\d+)/)||[])[1]; return !(n&&closed.has(n)); });
+  if(!live.length){ el('b1').innerHTML='<div class="ok" style="font-size:14px">ไม่มีเรื่องค้าง</div>'; return; }
+  el('b1').innerHTML='<div class="big warn">'+live.length+' เรื่อง</div><ul>'+
+    live.slice(0,5).map(r=>'<li>'+esc((r.text||'').split('\n')[0].replace(/^[🎯🟡🔴]\s*/,'').slice(0,72))+'</li>').join('')+
+    '</ul>'+(live.length>5?'<div class="dim" style="font-size:12px;margin-top:5px">และอีก '+(live.length-5)+' เรื่อง</div>':'');
+}catch(e){ fail('b1',e); } })();
+
+/* ② ยอดขาย 30 วัน + ค่าส่ง + ออเดอร์พรุ่งนี้
+   นับเฉพาะใบที่มียอดเงินจริง — ใบยอด 0 คือรอบแบ่งส่ง ไม่ใช่การขาย (กฎ f-track) */
+(async()=>{ try{
+  const since=ymd(-30);
+  const rows=await q('/orders?select=total,delivery_fee,status,created_at,delivery_date&created_at=gte.'+since+'&limit=2000');
+  const sold=rows.filter(o=>o.status!=='cancelled'&&Number(o.total)>0);
+  const sum=sold.reduce((s,o)=>s+Number(o.total||0),0);
+  const fee=sold.reduce((s,o)=>s+Number(o.delivery_fee||0),0);
+  const tmr=ymd(1);
+  const tomorrow=rows.filter(o=>o.status!=='cancelled'&&o.delivery_date===tmr);
+  el('b2').innerHTML=
+    '<div class="big">'+baht(sum)+'</div>'+
+    '<div class="dim" style="font-size:12.5px;margin-bottom:8px">30 วันล่าสุด · '+sold.length+' ใบ</div>'+
+    '<div class="row"><span class="dim">ค่าส่งที่เก็บได้</span><b>'+baht(fee)+'</b></div>'+
+    '<div class="row"><span class="dim">ส่งพรุ่งนี้ ('+tmr+')</span><b>'+tomorrow.length+' ใบ</b></div>';
+}catch(e){ fail('b2',e); } })();
+
+/* ③ ยามเฝ้า — วิ่งเช็คเองสด ไม่ได้อ่านผลที่ใครสรุปไว้
+   ตอนนี้เฝ้า 2 อย่างที่เคยทำลูกค้าไม่ได้ของจริง:
+     วันในใบ ≠ วันของรอบ (เคส 03) · ลูกค้าคนเดียวได้ 2 รอบวันเดียวกัน */
+(async()=>{ try{
+  const today=ymd(0);
+  const mp=await q('/mp_deliveries?select=customer_name,mp_type,round_no,total_rounds,delivery_date,status,order_id&delivery_date=gte.'+today+'&limit=500');
+  const live=mp.filter(r=>r.status!=='cancelled'&&r.order_id&&r.delivery_date);
+  const ids=[...new Set(live.map(r=>r.order_id))];
+  const ords={};
+  for(let i=0;i<ids.length;i+=60){
+    (await q('/orders?select=id,order_number,delivery_date,status&id=in.('+ids.slice(i,i+60).join(',')+')'))
+      .forEach(o=>{ords[o.id]=o});
+  }
+  /* ยุค Hato เพี้ยนวันละ 1 วันทั้งก้อน = ของที่ย้ายเข้ามา ไม่ใช่บั๊กเรา — ไม่นับ */
+  const mismatch=live.filter(r=>{ const o=ords[r.order_id];
+    return o&&o.status!=='cancelled'&&/^U-/i.test(o.order_number||'')&&o.delivery_date!==r.delivery_date; });
+  const grp={};
+  live.forEach(r=>{ const k=r.customer_name+'|'+r.delivery_date+'|'+(r.mp_type||''); (grp[k]=grp[k]||[]).push(r); });
+  const dup=Object.values(grp).filter(v=>v.length>1);
+  const clean=!mismatch.length&&!dup.length;
+  el('b3').innerHTML= clean
+    ? '<div class="ok" style="font-size:14px">ไม่เจออะไร</div><div class="dim" style="font-size:12px;margin-top:3px">ตรวจ '+live.length+' รอบข้างหน้า</div>'
+    : '<div class="row"><span>วันในใบ ≠ วันของรอบ</span><b class="'+(mismatch.length?'bad':'ok')+'">'+mismatch.length+'</b></div>'+
+      '<div class="row"><span>คนเดียวได้ 2 รอบวันเดียวกัน</span><b class="'+(dup.length?'bad':'ok')+'">'+dup.length+'</b></div>'+
+      '<ul>'+mismatch.slice(0,3).map(r=>'<li>'+esc(r.customer_name)+' — ครัวเห็น '+r.delivery_date+' ใบลง '+ords[r.order_id].delivery_date+'</li>').join('')+'</ul>';
+}catch(e){ fail('b3',e); } })();
+
+/* ⑤ ห้องไหนเปิดอยู่ — ดูจากข้อความล่าสุดของแต่ละห้อง ไม่ใช่รายชื่อที่ใครพิมพ์ไว้ */
+(async()=>{ try{
+  const rows=await q('/session_messages?select=sender,created_at&order=created_at.desc&limit=300');
+  const last={};
+  rows.forEach(r=>{ const s=(r.sender||'').trim(); if(s&&!last[s]) last[s]=r.created_at; });
+  const now=Date.now();
+  const arr=Object.entries(last).map(([s,t])=>({s,m:Math.round((now-new Date(t))/60000)}))
+    .sort((a,b)=>a.m-b.m);
+  const hot=arr.filter(x=>x.m<=60);
+  el('b5').innerHTML='<div class="big">'+hot.length+'</div>'+
+    '<div class="dim" style="font-size:12.5px;margin-bottom:6px">ห้องที่ขยับใน 1 ชม.</div>'+
+    '<ul>'+arr.slice(0,6).map(x=>'<li>'+esc(x.s)+' <span class="dim">— '+
+      (x.m<60?(x.m+' นาทีที่แล้ว'):(Math.round(x.m/60)+' ชม.ที่แล้ว'))+'</span></li>').join('')+'</ul>';
+}catch(e){ fail('b5',e); } })();
+</script>
+</body>
+</html>

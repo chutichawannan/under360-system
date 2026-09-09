@@ -19,6 +19,14 @@
   ],
   "rewrites": [
     {
+      "source": "/staff/nut",
+      "destination": "/staff/nut.html"
+    },
+    {
+      "source": "/staff",
+      "destination": "/staff/index.html"
+    },
+    {
       "source": "/hq",
       "destination": "/pwa/hq.html"
     },
