@@ -361,6 +361,15 @@
                           background:#f3cf39; flex-shrink:0; }
     @media (max-width:700px) { .offer-hook { font-size:min(15px, 3.3vw); gap:7px; margin-bottom:9px; }
                                .offer-hook::before { width:7px; height:7px; } }
+    /* ── u360-inapp ── */
+    #inapptip { position:fixed; left:12px; right:12px; bottom:84px; z-index:60;
+      background:#24392e; color:#fff; border-radius:14px; padding:14px 40px 14px 16px;
+      box-shadow:0 6px 24px rgba(0,0,0,.28); font-size:14px; line-height:1.6; }
+    #inapptip b { font-weight:600; }
+    #inapptip span { display:block; margin-top:3px; color:#CFE0D6; }
+    #inapptipx { position:absolute; top:8px; right:8px; width:30px; height:30px;
+      background:none; border:0; color:#9DB3A8; font-size:16px; cursor:pointer; }
+    @media (min-width:701px) { #inapptip { left:auto; right:20px; bottom:20px; max-width:340px; } }
 </style>
 </head>
 <body>
@@ -490,6 +499,12 @@
   </div>
 
 <!-- ═══ u360-sticky-cta — แถบจองติดขอบล่าง เฉพาะมือถือ ═══ -->
+<!-- u360-inapp — ทางออกสำรองตอนเบราว์เซอร์ในแอปเปิด LINE ไม่ได้ -->
+<div id="inapptip" hidden>
+  <b>เปิด LINE ไม่ขึ้นใช่ไหม</b>
+  <span>แตะปุ่ม <b>⋯</b> มุมขวาบน แล้วเลือก <b>“เปิดในเบราว์เซอร์”</b> แล้วกดจองอีกครั้ง</span>
+  <button type="button" id="inapptipx" aria-label="ปิด">✕</button>
+</div>
 <div id="stickybar" hidden>
   <div>
     <b>฿4,190</b>
@@ -555,14 +570,45 @@ function u360track(event){
 }
 u360track('pageview');
 
+/* u360-inapp — เบราว์เซอร์ในแอป FB/IG ส่งต่อไป liff.line.me แล้วเปิดแอป LINE ไม่ได้
+   ลูกค้าเลยไปเจอหน้าล็อกอินอีเมล/รหัสผ่านของ LINE ซึ่งคนไทยส่วนใหญ่ไม่เคยตั้ง
+   → ในแอปพวกนี้ให้เรียกแอป LINE ตรงๆ ด้วย line://app/{liffId} ข้ามหน้าเว็บของ LINE ไปเลย */
+var IN_APP = /FBAN|FBAV|FB_IAB|FBIOS|Instagram/i.test(navigator.userAgent||'');
+var LIFF_ID = (ORDER_URL.split('liff.line.me/')[1]||'').split('?')[0];
+function orderTarget(){
+  var web = jayTracked(ORDER_URL);
+  if (!IN_APP || !LIFF_ID) return web;
+  /* ต่อ utm ชุดเดียวกันเป๊ะ — สายวัดผลต้องไม่เปลี่ยน */
+  var qs = web.split('?')[1] || '';
+  return 'line://app/' + LIFF_ID + (qs ? '?' + qs : '');
+}
+function showInAppTip(){
+  var t=document.getElementById('inapptip'); if(!t) return;
+  t.removeAttribute('hidden');
+  var x=document.getElementById('inapptipx');
+  if(x) x.onclick=function(){ t.setAttribute('hidden',''); };
+}
 [].slice.call(document.querySelectorAll('[data-order]')).forEach(function(el,i){
+  /* ในแอปยังใส่ลิงก์เว็บไว้ในปุ่มเหมือนเดิม เพื่อให้ "เปิดในเบราว์เซอร์/ก๊อปลิงก์" ยังใช้ได้ */
   try{ el.href=jayTracked(ORDER_URL); }catch(e){}
   el.addEventListener('click',function(e){
     e.preventDefault();
     try{ u360track('cta_click'); }catch(e){}
     try{ if(window.fbq) fbq('track','Lead',{content_name:'jay2026'}); }catch(e){}
     try{ if(window.gtag) gtag('event','conversion',{send_to:'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D'}); }catch(e){}
-    location.href=jayTracked(ORDER_URL);
+    var tgt = orderTarget();
+    if (IN_APP) {
+      /* เรียกแอป LINE · ถ้าไม่ติดใน 1.6 วิ แปลว่าเปิดแอปไม่ได้ → บอกทางออกสำรอง
+         ไม่เด้งไปหน้าเว็บ LINE ให้เอง เพราะปลายทางคือหน้าล็อกอินที่ลูกค้าไปต่อไม่ได้อยู่ดี */
+      var t0 = Date.now();
+      location.href = tgt;
+      setTimeout(function(){
+        if (document.hidden || Date.now() - t0 > 2600) return;   /* สลับไปแอป LINE แล้ว */
+        showInAppTip();
+      }, 1600);
+      return;
+    }
+    location.href = tgt;
   });
 });
 /* แถบล่าง: โผล่เมื่อปุ่มจองใบแรกพ้นจอ · ซ่อนเมื่อปุ่มใบท้ายโผล่ (ไม่ให้ซ้อนกัน)
