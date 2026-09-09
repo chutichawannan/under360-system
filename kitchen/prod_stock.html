@@ -1,0 +1,116 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ลิสต์สั่งผลิต เมนูสต็อค</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:#0F1115;color:#E8EAF0;padding:14px 12px 40px}
+h1{font-size:17px;margin:0 0 2px}
+.sub{font-size:12px;color:#8B90A0;margin-bottom:14px}
+.day{background:#171A21;border:1px solid #262B36;border-radius:11px;padding:12px 13px;margin-bottom:11px}
+.dh{font-size:14px;font-weight:700;margin-bottom:3px}
+.dm{font-size:11.5px;color:#8B90A0;margin-bottom:9px}
+.li{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;line-height:1.65;letter-spacing:.4px}
+.li b{color:#7BE3A8;font-weight:700}
+.nm{font-family:-apple-system,sans-serif;font-size:11.5px;color:#6E7382;letter-spacing:0}
+.split{margin-top:8px;font-size:12px;color:#8B90A0;border-top:1px dashed #2A3040;padding-top:7px}
+.empty{color:#6E7382;font-size:12.5px}
+.warn{color:#FFC46B}
+button{background:#1F4D3A;color:#fff;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;margin-bottom:14px}
+a{color:#7BE3A8}
+</style></head><body>
+<h1>🥡 ลิสต์สั่งผลิต เมนูสต็อค</h1>
+<div class="sub" id="sub">กำลังโหลด…</div>
+<button onclick="load()">↻ โหลดใหม่</button>
+<div id="out"></div>
+<script>
+/* คู่กับ kitchen/prod.html (ฝั่ง Meal Plan ของห้องฟ้า) — หน้านี้ทำฝั่งเมนูสต็อคอย่างเดียว
+   เมนูสต็อค = ทำล่วงหน้า ไม่ใช่ Meal Plan · ดูจากออเดอร์จริงที่ลูกค้าสั่งไว้แล้ว
+   ⚠️ ไม่รวมของแถม (notes=gift) เพราะครัวไม่ได้ทำเพิ่ม — แต่โชว์แยกให้เห็นว่ามี */
+const U='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+/* เวลาไทยเสมอ — นัทอยู่คนละโซน คำนวณจากเครื่องจะเพี้ยนไป 1 วัน */
+const thDate=()=>new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ทุก query ต้อง paginate — ตาราง orders/order_items เกิน 1000 แถว
+   ไม่ใส่ = ได้แค่ 1000 แถวแรกเงียบๆ แล้วครัวมองไม่เห็นออเดอร์ (เคยพังมาแล้ว) */
+async function q(path){
+  let out=[],from=0;
+  for(;;){
+    const r=await fetch(U+'/rest/v1/'+path,{headers:{apikey:K,Authorization:'Bearer '+K,Range:from+'-'+(from+999)}});
+    const j=await r.json();
+    if(!Array.isArray(j)||!j.length) break;
+    out=out.concat(j);
+    if(j.length<1000) break;
+    from+=1000;
+  }
+  return out;
+}
+
+async function load(){
+  const sub=document.getElementById('sub'), out=document.getElementById('out');
+  sub.textContent='กำลังโหลด…'; out.innerHTML='';
+  const today=thDate();
+  try{
+    const orders=(await q('orders?select=id,delivery_date,status&delivery_date=gte.'+today+'&order=id'))
+      .filter(o=>o.status!=='cancelled');
+    if(!orders.length){ sub.textContent='ไม่มีออเดอร์ล่วงหน้า'; out.innerHTML='<div class="empty">ยังไม่มีออเดอร์</div>'; return; }
+    const dateOf={}; orders.forEach(o=>dateOf[o.id]=o.delivery_date);
+
+    /* ดึง order_items ทั้งตารางแล้วกรองเอง — เลี่ยง URL ยาวเกินจาก in.(id ยาวๆ) */
+    const items=(await q('order_items?select=order_id,menu_code,quantity,notes&order=id'))
+      .filter(x=>dateOf[x.order_id]);
+
+    const codes=[...new Set(items.map(x=>x.menu_code).filter(Boolean))];
+    const menus=codes.length ? await q('menu_items?select=code,name,subcode&code=in.('+codes.join(',')+')') : [];
+    const M={}; menus.forEach(m=>M[m.code]=m);
+
+    const by={};
+    for(const it of items){
+      const note=String(it.notes||'');
+      if(note.startsWith('meal_plan')) continue;          // ฝั่ง Meal Plan อยู่หน้าของฟ้า
+      const d=by[dateOf[it.order_id]] = by[dateOf[it.order_id]] || {n:{},gift:{},total:0};
+      const bucket = note.startsWith('gift') ? d.gift : d.n;
+      bucket[it.menu_code]=(bucket[it.menu_code]||0)+(Number(it.quantity)||1);
+      if(bucket===d.n) d.total+=(Number(it.quantity)||1);
+    }
+
+    const days=Object.keys(by).sort();
+    if(!days.length){ sub.textContent='ไม่มีเมนูสต็อคที่ต้องผลิต'; out.innerHTML='<div class="empty">ล่วงหน้ามีแต่ Meal Plan</div>'; return; }
+    sub.innerHTML='ออเดอร์ล่วงหน้า '+days.length+' วัน · อัปเดต '+new Date(Date.now()+7*3600e3).toISOString().slice(11,16)+' น. · ฝั่ง Meal Plan ดูที่ <a href="prod.html">prod.html</a>';
+
+    /* เรียง s1-s8 → d1-d5 → ที่เหลือตามรหัส — ครัวอ่านตามลำดับโบรชัวร์ */
+    const rank=c=>{
+      const s=String((M[c]&&M[c].subcode)||'').trim().toUpperCase();
+      const head=s.charAt(0), n=parseInt(s.slice(1),10);
+      if((head==='S'||head==='D') && n>0 && String(n)===s.slice(1)) return (head==='S'?0:100)+n;
+      return 900;
+    };
+    let html='';
+    for(const d of days){
+      const g=by[d], dt=new Date(d+'T00:00:00Z');
+      const list=Object.keys(g.n).sort((a,b)=>rank(a)-rank(b)||a.localeCompare(b));
+      /* วันที่มีแต่ของแถม (ครัวไม่ต้องผลิตอะไร) — บอกตรงๆ ดีกว่าโชว์ '0 เมนู' ลอยๆ ให้ครัวงง */
+      const head = list.length ? ('รวม '+g.total+' กล่อง · '+list.length+' เมนู') : 'ไม่มีเมนูต้องผลิต — มีแต่ของแถมที่ต้องหยิบใส่';
+      html+='<div class="day"><div class="dh">'+DOW[dt.getUTCDay()]+' '+dt.getUTCDate()+' '+MON[dt.getUTCMonth()]+'</div>'
+          + '<div class="dm">'+head+'</div><div class="li">';
+      for(const c of list){
+        const m=M[c]||{}, label=(m.subcode||c);
+        html+= esc(label)+'-<b>'+g.n[c]+'</b> <span class="nm">'+esc(m.name||'')+'</span><br>';
+      }
+      html+='</div>';
+      const gk=Object.keys(g.gift);
+      if(gk.length) html+='<div class="split warn">🎁 ของแถม (ไม่ต้องผลิตเพิ่ม): '+gk.map(c=>esc((M[c]||{}).subcode||c)+'×'+g.gift[c]).join(' · ')+'</div>';
+      html+='</div>';
+    }
+    out.innerHTML=html;
+  }catch(e){
+    sub.textContent='โหลดไม่สำเร็จ';
+    out.innerHTML='<div class="empty">'+esc(e.message||e)+'</div>';
+  }
+}
+load();
+</script></body></html>
