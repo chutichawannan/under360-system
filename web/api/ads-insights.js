@@ -60,7 +60,7 @@ module.exports = async function handler(req, res) {
     const url = 'https://graph.facebook.com/v21.0/' + encodeURIComponent(ACC) + '/insights?level=ad'
       + '&time_range=' + encodeURIComponent(JSON.stringify({ since, until }))
       + '&time_increment=1'
-      + '&fields=campaign_name,adset_name,ad_name,spend,impressions,reach,frequency,clicks,cpc,ctr'
+      + '&fields=campaign_name,adset_name,ad_name,ad_id,spend,impressions,reach,frequency,clicks,cpc,ctr'
       + '&limit=500&access_token=' + encodeURIComponent(T);
     const r = await fetch(url);
     const j = await r.json();
@@ -78,7 +78,7 @@ module.exports = async function handler(req, res) {
       const day = d.date_start;
       spendByDay[day] = (spendByDay[day] || 0) + (+d.spend || 0);
       const k = d.ad_name || '(ไม่มีชื่อ)';
-      const a = byAd.get(k) || { ad: k, campaign: d.campaign_name || '', adset: d.adset_name || '',
+      const a = byAd.get(k) || { ad: k, id: d.ad_id || '', campaign: d.campaign_name || '', adset: d.adset_name || '',
                                  spend: 0, impressions: 0, reach: 0, clicks: 0, freqSum: 0, n: 0 };
       a.spend += +d.spend || 0;
       a.impressions += +d.impressions || 0;
@@ -88,12 +88,39 @@ module.exports = async function handler(req, res) {
       byAd.set(k, a);
     }
     out.ads = [...byAd.values()].map(a => ({
-      ad: a.ad, campaign: a.campaign, adset: a.adset,
+      ad: a.ad, id: a.id, campaign: a.campaign, adset: a.adset,
       spend: +a.spend.toFixed(2), impressions: a.impressions, reach: a.reach, clicks: a.clicks,
       frequency: a.n ? +(a.freqSum / a.n).toFixed(2) : 0,
       cpc: a.clicks ? +(a.spend / a.clicks).toFixed(2) : 0,
       ctr: a.impressions ? +((a.clicks / a.impressions) * 100).toFixed(2) : 0
     })).sort((x, y) => y.spend - x.spend);
+
+    /* ═══ u360-ads-thumbs — ดึงรูปครีเอทีฟ + สถานะ มาแปะแต่ละแถว ═══
+       นัทดูหน้านี้แล้วต้องรู้ว่า "d1 คือรูปไหน" ไม่ใช่จำรหัสเอง
+       ขอทีเดียวทุก id (ids=) ไม่ยิงทีละใบ · ล้มก็ไม่เป็นไร ตัวเลขยังโชว์ได้ */
+    try {
+      const ids = out.ads.map(a => a.id).filter(Boolean);
+      if (ids.length) {
+        const cu = 'https://graph.facebook.com/v21.0/?ids=' + encodeURIComponent(ids.join(','))
+                 + '&fields=effective_status,creative{thumbnail_url}'
+                 + '&access_token=' + encodeURIComponent(T);
+        const cr = await fetch(cu);
+        const cj = await cr.json();
+        if (!cj.error) {
+          for (const a of out.ads) {
+            const info = cj[a.id];
+            if (!info) continue;
+            a.thumb = (info.creative && info.creative.thumbnail_url) || null;
+            a.status = info.effective_status || null;
+            /* แอดที่ไม่ได้วิ่งแล้ว = ยอดเงินค้างในประวัติ ไม่ใช่ของที่กำลังใช้เงินอยู่ */
+            a.live = a.status === 'ACTIVE';
+          }
+        }
+      }
+    } catch (e) { /* ไม่มีรูปก็ยังอ่านตัวเลขได้ ไม่ทำให้ทั้งหน้าล่ม */ }
+
+    /* แอดที่ยังวิ่งอยู่ขึ้นก่อนเสมอ · ที่ปิดแล้วดันลงล่าง */
+    out.ads.sort((x, y) => (y.live === true) - (x.live === true) || y.spend - x.spend);
 
     const yest = th(new Date(Date.now() - 864e5));
     out.totals = {
@@ -146,6 +173,23 @@ module.exports = async function handler(req, res) {
       }
     }
   } catch (e) { /* ไม่มีตัวเลขออเดอร์ก็ยังโชว์ตัวเลขแอดได้ — ไม่ทำให้ทั้งหน้าพัง */ }
+
+  /* ── u360-funnel — คลิก → เข้าหน้าเจ → กดไป LINE → จองจริง ──
+     ตารางรายชิ้นงานบอกไม่ได้ว่า "รั่วตรงไหน" แถวนี้บอกได้ */
+  try {
+    const q = SB + '/rest/v1/web_events?select=event&page=eq.jay'
+            + '&created_at=gte.' + since + 'T00:00:00&limit=5000';
+    const r = await fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
+    if (r.ok) {
+      const rows = await r.json();
+      out.funnel = {
+        clicks:   out.totals ? out.totals.clicks : 0,
+        visits:   rows.filter(x => x.event === 'pageview').length,
+        toLine:   rows.filter(x => x.event === 'cta_click').length,
+        orders:   out.orders ? out.orders.matched : 0
+      };
+    }
+  } catch (e) { /* ไม่มีแถวสรุปก็ยังดูตารางได้ */ }
 
   /* ── ③ ธงเตือน ── */
   for (const a of out.ads) {

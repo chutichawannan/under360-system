@@ -74,6 +74,24 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
   .wdhead span { font-size:12px; opacity:.65; }
   .wd pre { margin:0; white-space:pre-wrap; word-break:break-word;
             font-family:inherit; font-size:13px; line-height:1.75; }
+  /* ── u360-thumbs-ui ── */
+  .adcell-wrap { display:block; }
+  .adcell { display:flex; align-items:center; gap:10px; min-width:190px; }
+  .adthumb { width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;
+             border:1px solid var(--line,#e5eae6); background:var(--soft,#f7f9f7); display:block; }
+  .adthumb.none { display:block; }
+  .adinfo { display:flex; flex-direction:column; line-height:1.35; min-width:0; }
+  .adinfo b { font-weight:600; font-size:13px; }
+  .adinfo em { font-style:normal; font-size:11px; opacity:.7; }
+  .dead { display:inline-block; margin-left:6px; font-size:10px; font-weight:500;
+          background:#EEE; color:#777; border-radius:5px; padding:1px 5px; vertical-align:1px; }
+  .funnel { display:flex; align-items:center; flex-wrap:wrap; gap:6px 4px; margin:14px 0 4px;
+            padding:14px 12px; border:1px solid var(--line,#e5eae6); border-radius:14px;
+            background:var(--soft,#f7f9f7); }
+  .fstep { display:flex; flex-direction:column; align-items:center; min-width:66px; }
+  .fstep b { font-size:19px; font-weight:600; line-height:1.3; }
+  .fstep em { font-style:normal; font-size:11px; opacity:.7; }
+  .arw { font-size:11px; opacity:.55; padding:0 2px; }
 </style>
 </head>
 <body>
@@ -95,6 +113,7 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
     <pre id="wdtext"></pre>
   </div>
   <div class="cards" id="cards"></div>
+  <div class="funnel" id="funnel" hidden></div>
   <div id="body"></div>
 </div></section>
 
@@ -185,6 +204,7 @@ function render(d){
   var diff = (t.today||0) - (t.yesterday||0);
   var cpo = (o.matched && t.spend) ? (t.spend / o.matched) : null;
 
+  renderFunnel(d.funnel);   /* u360-thumbs-ui */
   cards.innerHTML = ''
     + card('ใช้ไปวันนี้', baht(t.today),
         (t.yesterday!=null ? (diff>=0?'<span class="up">▲ '+baht(Math.abs(diff))+'</span>':'<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน ('+baht(t.yesterday)+')' : ''))
@@ -203,8 +223,7 @@ function render(d){
       + d.ads.map(function(a){
           var bad = a.flags && a.flags.length;
           return '<tr class="'+(bad?'bad':'')+'">'
-            + '<td>' + esc(a.ad)
-              + (a.campaign ? '<div style="font-size:.82rem;color:var(--muted)">' + esc(a.campaign) + '</div>' : '')
+            + '<td class="adcell-wrap">' + adCell(a)   /* u360-thumbs-ui */
               + (bad ? a.flags.map(function(f){return '<span class="flag">'+esc(f)+'</span>';}).join('') : '')
             + '</td>'
             + '<td>' + baht(a.spend) + '</td>'
@@ -263,6 +282,32 @@ function loadWatchdog(){
 }
 if (document.getElementById('adsgate')) document.addEventListener('u360-unlocked', loadWatchdog);
 else loadWatchdog();
+
+/* u360-thumbs-ui — เซลล์ชื่อชิ้นงาน: รูปจริง + ชื่อ + ยิงใส่ใคร + ป้ายถ้าปิดแล้ว
+   ชื่อกลุ่มใช้ชื่อชุดโฆษณาที่ Meta ส่งมาเอง ไม่ฝังคำแปลไว้ในโค้ด
+   (ฝังไว้ = พอ 06 เปลี่ยนชุด คำอธิบายจะเก่าโดยไม่มีใครรู้) */
+/* ใช้ esc() ที่หน้านี้มีอยู่แล้ว ไม่ประกาศซ้ำ */
+function adCell(a){
+  var img = a.thumb
+    ? '<img class="adthumb" src="' + esc(a.thumb) + '" alt="" loading="lazy">'
+    : '<span class="adthumb none"></span>';
+  var dead = (a.live === false) ? '<span class="dead">ปิดแล้ว</span>' : '';
+  return '<span class="adcell">' + img + '<span class="adinfo"><b>' + esc(a.ad) + '</b>' + dead
+       + '<em>' + esc(a.adset || '') + '</em></span></span>';
+}
+/* แถวสรุปช่องทาง — บอกว่าคนหายตรงไหน */
+function renderFunnel(f){
+  if (!f) return;
+  var box = document.getElementById('funnel'); if (!box) return;
+  var steps = [['กดจากแอด', f.clicks], ['เข้าหน้าเจ', f.visits], ['กดไป LINE', f.toLine], ['จองจริง', f.orders]];
+  box.innerHTML = steps.map(function(s, i){
+    var prev = i ? steps[i-1][1] : 0;
+    var pct = (i && prev) ? Math.round(s[1] / prev * 100) + '%' : '';
+    return (i ? '<span class="arw">' + pct + ' ›</span>' : '')
+         + '<span class="fstep"><b>' + s[1].toLocaleString('th-TH') + '</b><em>' + s[0] + '</em></span>';
+  }).join('');
+  box.removeAttribute('hidden');
+}
 
 </script>
 </body>
