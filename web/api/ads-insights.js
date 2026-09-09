@@ -112,7 +112,7 @@ module.exports = async function handler(req, res) {
         for (const x of cj.data || []) { byId[x.id] = x; byName[x.name] = x; }
         for (const a of out.ads) {
           const info = byId[a.id] || byName[a.ad];
-          if (!info) continue;
+          if (!info) { a.live = false; a.status = "DELETED"; continue; }
           a.thumb = (info.creative && info.creative.thumbnail_url) || null;
           a.status = info.effective_status || null;
           a.live = a.status === "ACTIVE";
