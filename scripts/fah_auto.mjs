@@ -178,4 +178,4 @@ say(vf.split('|SPLIT|').join('').split(String.fromCharCode(10)).filter(l => /❌
 // ---------- 8 สรุป ----------
 if (!existsSync(`${ROOT}/kitchen`)) mkdirSync(`${ROOT}/kitchen`);
 writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));
-say(`\n✅ จบ — ดูใบได้ที่ 360foodbox.com/k`);
+say(`\n✅ จบ — ดูใบได้ที่ under360-system.vercel.app/kitchen/ (โดเมน 360foodbox.com ไม่เสิร์ฟโฟลเดอร์นี้)`);

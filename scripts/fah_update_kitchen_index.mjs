@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * สร้างรายการลิงก์ใบงานในหน้ารวมของครัวใหม่ทั้งบล็อก (kitchen/index.html → 360foodbox.com/k)
+ * สร้างรายการลิงก์ใบงานในหน้ารวมของครัวใหม่ทั้งบล็อก (kitchen/index.html → under360-system.vercel.app/kitchen/ · ⚠️ โดเมน 360foodbox.com ไม่เสิร์ฟโฟลเดอร์ kitchen เลย เป็นคนละ Vercel project ที่ root=web/)
  *
  *   node scripts/fah_update_kitchen_index.mjs
  *   node scripts/fah_update_kitchen_index.mjs 2026-09-07   (ระบุวันได้ แต่ไม่จำเป็น — มันไล่จากไฟล์จริง)
