@@ -32,8 +32,16 @@ const PER_DAY = 9;
 const TARGET = { '2026-09-07': 10, '2026-09-09': 10, '2026-09-11': 10,
                  '2026-09-14': 10, '2026-09-16': 10, '2026-09-18': 10 };
 const MUST   = { '2026-09-07': ['39'], '2026-09-09': ['39'], '2026-09-11': ['39'],   // 39 = บิบิมบับหมู
-                 '2026-09-14': ['84', '85'],   // 84 = ไก่ Piri Piri (ยืนพื้น) · 85 = มีทบอล Hailey Bieber (แทรกวันจันทร์)
+                 // 🚫 มีทบอล Hailey (85) ถอดออกจากวันจันทร์แล้ว — นัทสั่งเอง 9 ก.ย. 2026
+                 //    เหตุผล: วันจันทร์มีลูกค้าเลือกเมนูไว้แล้ว ไม่อยากไปเบียดของเขา
+                 '2026-09-14': ['84'],   // 84 = ไก่ Piri Piri (ยืนพื้น)
                  '2026-09-16': ['84'], '2026-09-18': ['84'] };
+// EXCLUDE: เมนูที่ "ห้ามอยู่ในชุดของวันนั้น" — ตรงข้ามกับ MUST
+//   ต้องมีกลไกนี้เพราะการถอดชื่อออกจาก MUST เฉยๆ ไม่พอ:
+//   ถ้าเมนูนั้นอยู่ในกล่องแล้ว สคริปต์จะนับเป็น 1 ในชุดของวัน แล้วขึ้นว่า "ตรงแล้ว" ทั้งที่ยังอยู่
+//   (เจอจริง 9 ก.ย. 2026 ตอนนัทสั่งถอดมีทบอลออกจากวันจันทร์)
+const EXCLUDE = { '2026-09-14': ['85'] };   // 85 = มีทบอล Hailey Bieber — นัทสั่งถอด 9 ก.ย. 2026
+
 const MIN_BOXES_FOR_MUST = 3;   // เมนูที่สั่งให้มี ต้องมีคนกินอย่างน้อยเท่านี้ ไม่งั้นกลายเป็นกล่องเดี่ยว
 
 const TUNA = ['03','28','57','69','78'], BEEF = ['12','33','34','48','73'], TOFU = ['72'];
@@ -111,11 +119,12 @@ for (const date of Object.keys(byDay).sort()) {
   const scored = [...cand.values()].sort((a, b) => (usage[b.code] || 0) - (usage[a.code] || 0)
     || pool.findIndex(x => x.code === a.code) - pool.findIndex(x => x.code === b.code));
   // คุมบาลานซ์: โปรตีนชนิดเดียวไม่เกิน 4 ใน 9
+  const banDay = EXCLUDE[date] || [];   // เมนูที่ห้ามอยู่ในวันนี้
   const nine = [], protCount = {};
   // เมนูที่นัทสั่งให้มี ใส่ก่อนเสมอ
   for (const code of must) {
     const e = cand.get(code) || allMenus.get(code);
-    if (e && !nine.includes(e)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
+    if (e && !nine.includes(e) && !banDay.includes(e.code)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
   }
   // ---- เมนูที่ลูกค้าเลือกเอง ใส่ต่อจาก must ทันที ----
   // 🔴 บั๊กที่เจอ 9 ก.ย. 2026 (ก่อนเขียนจริง): คอมเมนต์หัวไฟล์เขียนว่า "ไม่แตะกล่องที่ลูกค้าเลือกเมนูเอง"
@@ -128,7 +137,7 @@ for (const date of Object.keys(byDay).sort()) {
   for (const code of wanted) {
     if (nine.length >= perDay) break;
     const e = cand.get(code) || allMenus.get(code);
-    if (e && !nine.includes(e)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
+    if (e && !nine.includes(e) && !banDay.includes(e.code)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
   }
   if (wanted.size && nine.length >= perDay) {
     const missed = [...wanted].filter(c => !nine.some(e => e.code === c));
@@ -137,16 +146,16 @@ for (const date of Object.keys(byDay).sort()) {
   }
   for (const e of scored) {
     if (nine.length >= perDay) break;
-    if (nine.includes(e)) continue;
+    if (nine.includes(e) || banDay.includes(e.code)) continue;
     const c = protCount[e.prot] || 0;
     if (c >= 4) continue;
     nine.push(e); protCount[e.prot] = c + 1;
   }
-  for (const e of scored) { if (nine.length >= perDay) break; if (!nine.includes(e)) nine.push(e); }
+  for (const e of scored) { if (nine.length >= perDay) break; if (!nine.includes(e) && !banDay.includes(e.code)) nine.push(e); }
   // ยังไม่ครบเป้า → ดึงจากคลังเมนูทั้งหมด เลือกตัวที่ "นานไม่ได้ทำ" ก่อน
   if (nine.length < perDay) {
     const extra = [...allMenus.values()]
-      .filter(e => !nine.some(x => x.code === e.code))
+      .filter(e => !nine.some(x => x.code === e.code) && !banDay.includes(e.code))
       .sort((a, b) => (lastMade[a.code] || '2000-01-01').localeCompare(lastMade[b.code] || '2000-01-01'));
     for (const e of extra) { if (nine.length >= perDay) break; nine.push(e); }
   }
@@ -156,7 +165,8 @@ for (const date of Object.keys(byDay).sort()) {
   const off = [...before].filter(c => !nineSet.has(c));
   const mustShort = must.filter(c => (usage[c] || 0) < MIN_BOXES_FOR_MUST);
   const shortOfTarget = !!TARGET[date] && before.size < perDay;   // เฉพาะวันที่นัทสั่งจำนวนไว้ ถึงจะบังคับให้ครบ
-  if (!off.length && before.size <= perDay && !mustShort.length && !shortOfTarget) { console.log(`${date}  ✅ ${before.size} เมนู ตรงแล้ว`); continue; }
+  const hasBanned = banDay.some(c => (usage[c] || 0) > 0);
+  if (!off.length && before.size <= perDay && !mustShort.length && !shortOfTarget && !hasBanned) { console.log(`${date}  ✅ ${before.size} เมนู ตรงแล้ว`); continue; }
 
   console.log(`\n${date}  ผลิตจริง ${before.size} เมนู → บีบเหลือ ${nine.length}: ${nine.map(e => e.code).join(',')}`);
   dayFixed++;
