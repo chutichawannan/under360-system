@@ -75,7 +75,16 @@ try {
   const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
 
   // ── ตัดสิน
+  // ── คลังคนสำหรับ "ตามหลอน" (คนเข้าหน้าเจแล้วยังไม่จอง) — เปิดได้เมื่อคนพอ
+  const RETARGET_AUD = '120253219106970111';
+  let retargetReady = null;
+  try {
+    const ra = await fetch(`https://graph.facebook.com/v21.0/${RETARGET_AUD}?fields=approximate_count_lower_bound,delivery_status&access_token=${T}`).then(r => r.json());
+    retargetReady = ra.delivery_status && ra.delivery_status.code === 200;
+  } catch (e) { /* ไม่สำคัญพอจะทำให้รายงานล้ม */ }
+
   const flags = [];
+  if (retargetReady) flags.push('**คลังคนสำหรับชุดตามหลอนโตพอแล้ว** — เปิดชุด E (คนเข้าหน้าเจแล้วยังไม่จอง) ได้ · รายงานนัทก่อนเปิด');
   // 🔑 แยก "แอดไม่มีคน" ออกจาก "ตัวนับพัง" — 8 ก.ย. ตัวนับหน้า /jay หายไป 4.5 ชม. โดยไม่มีอะไรแดง
   if (metaLinkClicks >= 10 && visits === 0)
     flags.push(`Meta บอกมีคนกดไปเว็บ ${metaLinkClicks} ครั้ง แต่ตัวนับเราได้ 0 → **ตัวนับหน้า /jay น่าจะพัง ไม่ใช่แอดไม่มีคน** (แจ้งห้อง M)`);
