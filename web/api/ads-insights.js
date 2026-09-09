@@ -99,25 +99,23 @@ module.exports = async function handler(req, res) {
        นัทดูหน้านี้แล้วต้องรู้ว่า "d1 คือรูปไหน" ไม่ใช่จำรหัสเอง
        ขอทีเดียวทุก id (ids=) ไม่ยิงทีละใบ · ล้มก็ไม่เป็นไร ตัวเลขยังโชว์ได้ */
     try {
-      const ids = out.ads.map(a => a.id).filter(Boolean);
-      if (ids.length) {
-        const cu = 'https://graph.facebook.com/v21.0/?ids=' + encodeURIComponent(ids.join(','))
-                 + '&fields=effective_status,creative{thumbnail_url}'
-                 + '&access_token=' + encodeURIComponent(T);
-        const cr = await fetch(cu);
-        const cj = await cr.json();
-        if (cj.error) {
-          out.thumbNote = "meta creative error " + (cj.error.code || "?") + "/" + (cj.error.type || "?") + " sub" + (cj.error.error_subcode || "-");
-        }
-        if (!cj.error) {
-          for (const a of out.ads) {
-            const info = cj[a.id];
-            if (!info) continue;
-            a.thumb = (info.creative && info.creative.thumbnail_url) || null;
-            a.status = info.effective_status || null;
-            /* แอดที่ไม่ได้วิ่งแล้ว = ยอดเงินค้างในประวัติ ไม่ใช่ของที่กำลังใช้เงินอยู่ */
-            a.live = a.status === 'ACTIVE';
-          }
+      const au = "https://graph.facebook.com/v21.0/" + encodeURIComponent(ACC) + "/ads"
+               + "?fields=id,name,effective_status,creative{thumbnail_url}&limit=300"
+               + "&access_token=" + encodeURIComponent(T);
+      const cr = await fetch(au);
+      const cj = await cr.json();
+      if (cj.error) {
+        out.thumbNote = "meta creative error " + (cj.error.code || "?") + "/" + (cj.error.type || "?");
+      } else {
+        /* จับคู่ด้วยรหัสแอดก่อน ถ้าไม่ตรงค่อยใช้ชื่อ (ชื่อจาก insights กับจาก /ads ตรงกันอยู่แล้ว) */
+        const byId = {}, byName = {};
+        for (const x of cj.data || []) { byId[x.id] = x; byName[x.name] = x; }
+        for (const a of out.ads) {
+          const info = byId[a.id] || byName[a.ad];
+          if (!info) continue;
+          a.thumb = (info.creative && info.creative.thumbnail_url) || null;
+          a.status = info.effective_status || null;
+          a.live = a.status === "ACTIVE";
         }
       }
     } catch (e) { out.thumbNote = "creative fetch threw"; /* ไม่มีรูปก็ยังอ่านตัวเลขได้ */ }
