@@ -148,7 +148,7 @@ function u360pin(){ return U360PIN; }
   function tryPin(p){
     return fetch('/api/ads-insights?days=1', {headers:{'x-ads-pin':p}}).then(function(r){ return r.status !== 401; });
   }
-  function unlock(){ gate.remove(); document.dispatchEvent(new Event('u360-unlocked')); }
+  function unlock(){ window.U360_UNLOCKED = true; gate.remove(); document.dispatchEvent(new Event('u360-unlocked')); }
   if (U360PIN) { tryPin(U360PIN).then(function(ok){ if(ok) unlock(); else { U360PIN=''; inp.focus(); } }); }
   else setTimeout(function(){ inp.focus(); }, 100);
   inp.addEventListener('input', function(){
@@ -264,8 +264,8 @@ function card(k, v, s, hero){
 renderRanges();
 /* รอปลดล็อกก่อนค่อยโหลด — ยิงก่อนมีรหัสจะได้ 401 แล้วหน้าค้างที่คำว่า locked
    ถ้าปลดไปแล้วตั้งแต่ครั้งก่อน (จำรหัสไว้) ประตูจะถูกถอดก่อนบรรทัดนี้ทำงาน เลยโหลดได้เลย */
-if (document.getElementById('adsgate')) document.addEventListener('u360-unlocked', load);
-else load();
+if (window.U360_UNLOCKED || !document.getElementById('adsgate')) load();
+else document.addEventListener('u360-unlocked', load);
 setInterval(load, 5 * 60 * 1000);   /* Meta หน่วง 15 นาทีอยู่แล้ว รีเฟรชถี่กว่านี้ไม่มีประโยชน์ */
 /* u360-watchdog-card — โชว์รายงานล่าสุดของยามเฝ้าแอด
    โหลดหลังปลดล็อกเท่านั้น เหมือนตัวเลขแอด */
@@ -291,8 +291,8 @@ function loadWatchdog(){
     })
     .catch(function(){});
 }
-if (document.getElementById('adsgate')) document.addEventListener('u360-unlocked', loadWatchdog);
-else loadWatchdog();
+if (window.U360_UNLOCKED || !document.getElementById('adsgate')) loadWatchdog();
+else document.addEventListener('u360-unlocked', loadWatchdog);
 
 /* u360-thumbs-ui — เซลล์ชื่อชิ้นงาน: รูปจริง + ชื่อ + ยิงใส่ใคร + ป้ายถ้าปิดแล้ว
    ชื่อกลุ่มใช้ชื่อชุดโฆษณาที่ Meta ส่งมาเอง ไม่ฝังคำแปลไว้ในโค้ด
