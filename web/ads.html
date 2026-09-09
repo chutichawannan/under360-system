@@ -250,8 +250,10 @@ function loadWatchdog(){
       if(!rows || !rows.length) return;
       var m=rows[0], box=document.getElementById('wd');
       /* textContent ไม่ใช่ innerHTML — ข้อความมาจากห้องอื่น ห้ามให้กลายเป็นโค้ดในหน้าเรา */
+      /* ตัด ** ของ markdown กับ ✅ นำหน้าออก — ใช้ split/join ไม่ใช้ regex
+         (regex ในสคริปต์ที่เขียนผ่าน shell โดน backslash หายมาแล้ว 3 รอบวันนี้) */
       document.getElementById('wdtext').textContent =
-        String(m.text||'').replace(/**/g,'').replace(/^✅s*/,'');
+        String(m.text||'').split('**').join('').replace('✅ ','').trim();
       var d=new Date(m.created_at);
       document.getElementById('wdtime').textContent =
         'อัปเดต ' + d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
