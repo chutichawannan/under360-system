@@ -29,7 +29,14 @@ a{color:#35D07F}
 <body>
 <div class="dot"></div>
 <div>กำลังเปิดใบงานครัว…</div>
-<noscript><a href="/kitchen/index.html">แตะที่นี่เพื่อเปิดใบงานครัว</a></noscript>
-<script>location.replace('/kitchen/index.html');</script>
+<noscript><a href="https://under360-system.vercel.app/kitchen/index.html">แตะที่นี่เพื่อเปิดใบงานครัว</a></noscript>
+<script>
+/* 🔴 ต้องระบุโดเมนให้ชัด ห้ามใช้ทางลัด
+   ครัวเข้าได้ 2 ทาง: under360-system.vercel.app/k กับ 360foodbox.com/k
+   ทางที่ 2 เป็นคนละโปรเจค ไม่มีโฟลเดอร์ kitchen → เด้งแบบไม่ระบุโดเมนแล้ว 404
+   (ฟ้าเจอ 9 ก.ย. · ครัวที่เข้าทางนั้นเปิดใบงานไม่ได้เลยสักใบ)
+   ทางเดิมไม่กระทบ — คนที่อยู่บนโดเมนหลังบ้านอยู่แล้วก็ไปที่เดิมเป๊ะ */
+location.replace('https://under360-system.vercel.app/kitchen/index.html');
+</script>
 </body>
 </html>
