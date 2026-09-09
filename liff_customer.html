@@ -2483,6 +2483,67 @@ function localYMD(d) {
   return `${y}-${m}-${dd}`;
 }
 
+/* 📅 วันของแต่ละรอบ Meal Plan — **จุดเดียวที่ตัดสิน**
+   ทั้งวันที่เขียนลงใบออเดอร์ และวันที่เขียนลงรอบผลิตของครัว ต้องมาจากที่นี่เหมือนกัน
+
+   🔴 ทำไมต้องมีฟังก์ชันนี้ (เคส 03 · 9 ก.ย. 2569 · นัทจับได้เอง):
+      เดิมวันส่งคำนวณกันคนละที่ ไม่มีอะไรบังคับให้ตรง
+        orders.delivery_date  = selDate (ตัวเลือกวันหลักของหน้าเช็คเอาท์)
+        รอบผลิต               = วันที่ลูกค้าเลือกในป้อบ Meal Plan / วัน จ-พ-ศ ถัดไป
+      Meal Plan ปิดรับ 08:30 ของวันส่ง แต่ตัวเลือกหลักปิด 18:00 ของวันก่อน
+      → ลูกค้าสั่งเช้าวันจันทร์ รอบลงวันจันทร์ แต่ใบลงวันพุธ
+      → ลูกค้าโผล่หน้าหนึ่ง หายอีกหน้าหนึ่ง เงียบสนิท ไม่มี error
+      โดนจริง 5 ราย รายหนึ่งค้าง 8 วันโดยไม่มีใครรู้
+
+   📅 ลูกค้าเลื่อนวันเริ่ม / ข้ามรอบไหนไว้ในป้อบ = ใช้วันที่เขาเลือกตรง ๆ
+      ไม่งั้นข้ามแล้วรอบยังลงวันเดิม = ลูกค้าไม่อยู่บ้านแต่ของไปส่ง
+   ⚠️ วันที่เลือกมาไม่ครบจำนวนรอบ = เติมต่อด้วย จ/พ/ศ ถัดไป
+      (แพลนเมนูอาจหมดกลางคัน ปล่อยผ่านจะกลายเป็นของส่งไม่ครบรอบ) */
+function mpRoundDates(cartItem, totalRounds){
+  const isMWF = dt => [1,3,5].includes(dt.getDay());
+  const n = Math.max(1, Number(totalRounds) || 1);
+  const picked = Array.isArray(cartItem && cartItem.mp_days) ? cartItem.mp_days.slice(0, n) : [];
+  const dates = picked.slice();
+  if (dates.length){
+    let nd = new Date(dates[dates.length-1] + 'T00:00:00');
+    while (dates.length < n){
+      nd.setDate(nd.getDate()+1);
+      while (!isMWF(nd)) nd.setDate(nd.getDate()+1);
+      dates.push(localYMD(nd));
+    }
+    return dates;
+  }
+  /* ลูกค้าไม่ได้เลือกวันเอง → เริ่มจากวันในตัวเลือกหลัก แล้วเลื่อนไป จ/พ/ศ ที่ใกล้ที่สุด
+     (Meal Plan ส่งได้เฉพาะ จ/พ/ศ — ข้อจำกัดการผลิตจริง ไม่ใช่กติกาที่ผ่อนได้) */
+  const out = [];
+  let d = new Date(selDate + 'T00:00:00');
+  while (!isMWF(d)) d.setDate(d.getDate()+1);
+  for (let i = 0; i < n; i++){
+    out.push(localYMD(d));
+    d.setDate(d.getDate()+1);
+    while (!isMWF(d)) d.setDate(d.getDate()+1);
+  }
+  return out;
+}
+
+/* วันที่ "ใบออเดอร์" ควรลง เมื่อในตะกร้ามี Meal Plan
+   คืน null = ไม่มี Meal Plan → ใบใช้ selDate เหมือนเดิมทุกประการ (ไม่กระทบใบอื่นเลย) */
+function orderDateForCart(){
+  try{
+    const mp = (cart || []).filter(c => c.type === 'meal_plan');
+    if (!mp.length) return null;
+    /* หลายชุดในตะกร้าเดียว = เอาวันแรกสุดในบรรดารอบแรกของแต่ละชุด
+       ครัวเริ่มทำวันนั้น ใบจะได้ไม่ลงหลังวันที่ของออกจากครัว */
+    const firsts = mp.map(c => {
+      const setObj = MP_SETS.find(x => x.id === c.mp_set);
+      const total = setObj ? Math.max(1, Math.round(setObj.boxes / 7)) : 1;
+      return (mpRoundDates(c, total) || [])[0];
+    }).filter(Boolean);
+    if (!firsts.length) return null;
+    return firsts.sort()[0];
+  }catch(e){ return null; }
+}
+
 async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipientName) {
   try {
     const setObj = MP_SETS.find(x => x.id === cartItem.mp_set);
@@ -2496,20 +2557,7 @@ async function generateMpDeliveries(orderId, cartItem, addrFinal, slot, recipien
     const isMWF = dt => [1,3,5].includes(dt.getDay());
     let d = new Date(selDate + 'T00:00:00');
     while (!isMWF(d)) d.setDate(d.getDate()+1);
-    /* 📅 ลูกค้าเลื่อนวันเริ่ม / ข้ามรอบไหนไว้ในป้อบ = ใช้วันที่เขาเลือกตรงๆ
-       ไม่งั้นข้ามแล้วรอบยังลงวันเดิม = ลูกค้าไม่อยู่บ้านแต่ของไปส่ง
-       ⚠️ ใช้ก็ต่อเมื่อจำนวนวันตรงกับจำนวนรอบพอดี — ไม่ตรงเมื่อไหร่ถอยไปนับ จ/พ/ศ แบบเดิมทันที
-          (แพลนเมนูอาจหมดกลางคัน วันที่จะได้ไม่ครบ ปล่อยผ่านไปจะกลายเป็นของส่งไม่ครบรอบ) */
-    const picked = Array.isArray(cartItem.mp_days) ? cartItem.mp_days.slice(0, totalRounds) : [];
-    const dates = picked.slice();
-    if (dates.length){
-      let nd = new Date(dates[dates.length-1] + 'T00:00:00');
-      while (dates.length < totalRounds){
-        nd.setDate(nd.getDate()+1);
-        while (!isMWF(nd)) nd.setDate(nd.getDate()+1);
-        dates.push(localYMD(nd));
-      }
-    }
+    const dates = mpRoundDates(cartItem, totalRounds);
     /* เมนูที่ลูกค้าเลือกไว้รายวัน → ยัดลง mp_deliveries.menu_items ของรอบนั้นเลย
        หน้าแพลนเมนูของแอดมินกับใบงานครัวอ่านที่เดียวกัน = เห็นตรงกันทันทีโดยไม่ต้องแก้หน้าไหน */
     const picks = cartItem.mp_picks || {};
@@ -4492,6 +4540,9 @@ async function submitOrder() {
   const tot   = cartTotal();
   // ── สร้าง order number format U-MMDD-NNN ──────────────────
   // เดิมนับจำนวนใบเก่าแล้ว +1 → ใบถูกลบ/2 คนกดพร้อมกัน = เลขซ้ำหรือย้อน · แก้เป็นดู "เลขล่าสุด" แล้ว +1 (3 ส.ค. 2026)
+  /* วันที่ "ใบนี้" ลงจริง — มี Meal Plan = วันของรอบแรก · ไม่มี = selDate เหมือนเดิม
+     ทุกที่ที่หมายถึง "วันในใบ" ต้องอ้างตัวนี้ ไม่ใช่ selDate (เคส 03) */
+  const orderDate = orderDateForCart() || selDate;
   const mmdd = selDate.slice(5,7) + selDate.slice(8,10);
   let nextNum = 1;
   try{
@@ -4526,7 +4577,9 @@ async function submitOrder() {
       customer_name:   recipientName,
       line_display_name: lineProfile.displayName,
       customer_phone:  recipientPhone,
-      delivery_date:   selDate,
+      /* 🔴 ถ้าตะกร้ามี Meal Plan ต้องลงวันเดียวกับรอบผลิต ไม่ใช่วันจากตัวเลือกหลัก
+         ไม่มี Meal Plan = ใช้ selDate เหมือนเดิมทุกประการ (ดู orderDateForCart) */
+      delivery_date:   orderDate,
       time_slot:       selSlot==='express' ? expressTime : selSlot,
       time_slot_label: slot?.time || '',
       delivery_address: addrFinal,
@@ -4788,7 +4841,9 @@ async function submitOrder() {
     if (mpRoundsAll.length) {
       const byDate = new Map();
       mpRoundsAll.forEach(r => {
-        if (r.round_no === 1 || r.delivery_date === selDate) return;  // รอบแรก = ใบหลัก ไม่เปิดซ้ำ
+        /* เทียบกับ "วันในใบ" ไม่ใช่ selDate — ตั้งแต่แก้เคส 03 สองค่านี้ไม่จำเป็นต้องเท่ากัน
+           ถ้ายังเทียบ selDate รอบที่บังเอิญตรงกับ selDate จะถูกข้าม = รอบนั้นไม่มีใบ (บั๊กเดียวกับ N-27) */
+        if (r.round_no === 1 || r.delivery_date === orderDate) return;  // รอบแรก = ใบหลัก ไม่เปิดซ้ำ
         if (!byDate.has(r.delivery_date)) byDate.set(r.delivery_date, []);
         byDate.get(r.delivery_date).push(r);
       });
@@ -4858,7 +4913,7 @@ async function submitOrder() {
       return `${h(c.name)}${(c.qty>1 && c.type==='individual')?` ×${c.qty}`:''}`;
     }).join('<br>');
     const roundLines = roundOrderNums.length
-      ? '<br>แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(selDate)
+      ? '<br>แบ่งส่ง ' + roundCount + ' รอบ:<br>&nbsp;&nbsp;• รอบ 1 — ' + fmtDate(orderDate)
         + roundOrderNums.map((r,i)=>'<br>&nbsp;&nbsp;• รอบ ' + (i+2) + ' — ' + fmtDate(r.date) + ' (' + r.num + ')').join('')
       : '';
     // N-25: Meal Plan — บอกวันของรอบถัดๆ ไปให้ชัด (ลูกค้าจะได้รู้ว่าต้องอยู่รับวันไหนบ้าง)
@@ -4871,7 +4926,7 @@ async function submitOrder() {
     const okMpBtn = document.getElementById('ok-mp-btn');
     if (okMpBtn) okMpBtn.style.display = cart.some(c => c.type === 'meal_plan') ? 'block' : 'none';
     document.getElementById('ok-detail').innerHTML =
-      `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(selDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}${mpLines}`;
+      `<div style="font-weight:700;color:var(--ink);margin-bottom:8px;line-height:1.5;">${orderNames}</div>${fmtDate(orderDate)}<br>${slot ? slot.label + ' (' + slot.time + ')' : ''}<br>ยอดรวม ฿${grandTotal.toLocaleString()}${roundLines}${mpLines}`;
     /* 💳 ตัดบัตร — ทำ "หลัง" บันทึกออเดอร์ลงฐานข้อมูลเรียบร้อยแล้วเสมอ
        ตัดไม่ผ่าน = ออเดอร์ยังอยู่ครบ ลูกค้าโอนแทนได้ ไม่มีใครสั่งของไม่ได้เพราะบัตรมีปัญหา
        (ถ้าสลับลำดับ ตัดเงินก่อนสร้างใบ วันที่ระบบสะดุดจะกลายเป็น "เก็บเงินแล้วไม่มีออเดอร์") */
