@@ -376,6 +376,8 @@
                  padding:6px 14px; font-size:14px; font-weight:500; color:var(--green); }
     .countdown b { font-weight:600; }
     @media (max-width:700px) { .countdown { font-size:min(13px,2.9vw); padding:5px 11px; margin-top:9px; } }
+    /* ── u360-countdown-live ── */
+    .countdown.urgent { background:#FFF4E5; border-color:#F3D3A0; color:#9A5B00; }
 </style>
 </head>
 <body>
@@ -645,23 +647,40 @@ function showInAppTip(){
   if(last) new IntersectionObserver(function(es){ lastIn=es[0].isIntersecting; upd(); }).observe(last);
 })();
 
-/* u360-countdown — นับวันถึงวันเริ่มเทศกาล (10 ต.ค. 2569)
-   คิดตามเวลาไทยเสมอ เพราะคนดูอยู่ไทย แต่เครื่องที่รันอาจอยู่คนละโซน
-   ⛔ ไม่นับ "เหลือกี่คอร์ส" — นัทตัดออกเอง เลขที่ไม่ตรงของจริง = โกหกลูกค้า */
+/* u360-countdown-live — นับถอยหลังถึง "เส้นตายที่ลูกค้าต้องลงมือ" ไม่ใช่วันเริ่มเทศกาล
+   ปิดรับจองรอบส่งแรก 7 ต.ค. 2569 23:59 เวลาไทย = 2026-10-07T16:59:00Z
+   ใช้เวลาสากลตายตัว ไม่คำนวณโซนเวลาจากนาฬิกาเครื่องผู้ใช้ (เพี้ยนคนละแบบทุกเครื่อง) */
 (function(){
-  var el=document.getElementById('countdown'); if(!el) return;
-  function thaiToday(){
-    var n=new Date();
-    var t=new Date(n.getTime()+(n.getTimezoneOffset()*60000)+7*3600000);
-    return new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  var el = document.getElementById('countdown'); if (!el) return;
+  var DEADLINE = Date.UTC(2026, 9, 7, 16, 59, 0);   /* เดือนนับจาก 0 → 9 = ตุลาคม */
+
+  function tick(){
+    var left = DEADLINE - Date.now();
+    if (left <= 0) {
+      /* 🔴 หมดเวลาแล้วห้ามโชว์ติดลบ */
+      el.textContent = 'ปิดรับจองรอบส่งแรกแล้ว';
+      el.classList.remove('urgent');
+      el.removeAttribute('hidden');
+      return false;
+    }
+    var mins  = Math.floor(left / 60000);
+    var days  = Math.floor(mins / 1440);
+    var hours = Math.floor((mins % 1440) / 60);
+    var m     = mins % 60;
+    el.innerHTML = '⏳ เหลืออีก <b>' + days + '</b> วัน <b>' + hours + '</b> ชม. <b>'
+                 + m + '</b> นาที ก่อนปิดรับจองรอบส่งแรก';
+    /* เหลือน้อยกว่า 7 วัน = เปลี่ยนสีเอง เพิ่มแรงกดดันโดยไม่ต้องเขียนอะไรเกินจริง */
+    el.classList.toggle('urgent', days < 7);
+    el.removeAttribute('hidden');
+    return true;
   }
-  var START=new Date(2026,9,10);              /* 10 ต.ค. 2026 = 2569 */
-  var d=Math.round((START-thaiToday())/864e5);
-  if(d>1)       el.innerHTML='🗓️ เหลืออีก <b>'+d+' วัน</b> ถึงเทศกาลกินเจ';
-  else if(d===1)el.innerHTML='🗓️ <b>พรุ่งนี้</b> เริ่มเทศกาลกินเจแล้ว';
-  else if(d===0)el.innerHTML='🗓️ <b>วันนี้</b> เริ่มเทศกาลกินเจแล้ว';
-  else return;                                 /* เลยวันเริ่มแล้ว ไม่ต้องโชว์ */
-  el.removeAttribute('hidden');
+
+  if (tick()) {
+    /* เดินทุก 1 นาทีพอ — วินาทีวิ่งรัวๆ ดูเป็นของปลอม และกินแบตมือถือฟรีๆ */
+    var t = setInterval(function(){ if (!tick()) clearInterval(t); }, 60000);
+    /* กลับมาเปิดแท็บอีกครั้งให้อัปเดตทันที ไม่ต้องรอครบนาที */
+    document.addEventListener('visibilitychange', function(){ if (!document.hidden) tick(); });
+  }
 })();
 
 </script>
