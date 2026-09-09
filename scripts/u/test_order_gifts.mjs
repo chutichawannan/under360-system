@@ -15,7 +15,7 @@ const grab = (n) => {
 /* ต้องยกตัวช่วยที่ orderGiftRules เรียกใช้มาด้วย ไม่งั้น ReferenceError ทุกครั้งที่รัน
    เทสนี้ error เงียบมานาน (ไม่เกี่ยวกับของแถมผูกโค้ด — verify กับ commit ก่อนหน้าแล้วว่าพังอยู่ก่อน)
    เจอ 9 ก.ย. ตอนรันเช็คว่าของใหม่ไปทับของเก่าไหม → เทสที่ error ทุกครั้ง = ไม่ได้ปกป้องอะไรเลย */
-const body = ['giftSlotKey','giftResolve','giftCodeOn','orderGiftRules','orderGiftsEarned','orderGiftNext']
+const body = ['giftSlotKey','giftResolve','giftCodeOn','giftRuleMet','orderGiftRules','orderGiftsEarned','orderGiftNext']
   .map(grab).join('\n');
 let ok = 0, fail = 0;
 const t = (n, got, want) => {

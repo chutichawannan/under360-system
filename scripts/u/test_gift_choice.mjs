@@ -12,7 +12,7 @@ const grab = (n) => {
     else if (src[j] === '}') { d--; if (st && d === 0) return src.slice(i, j + 1); }
   }
 };
-const body = ['giftSlotKey','orderGiftRules','giftResolve','orderGiftsEarned','orderGiftNext'].map(grab).join('\n');
+const body = ['giftSlotKey','orderGiftRules','giftResolve','giftCodeOn','giftRuleMet','orderGiftsEarned','orderGiftNext'].map(grab).join('\n');
 let ok = 0, fail = 0;
 const t = (n, got, want) => {
   const g = JSON.stringify(got), w = JSON.stringify(want);
