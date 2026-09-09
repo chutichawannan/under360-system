@@ -2,7 +2,9 @@
 import fs from 'node:fs';
 const src=fs.readFileSync(process.argv[2],'utf8');
 const grab=n=>{const i=src.indexOf('function '+n+'(');let d=0;for(let k=src.indexOf('{',i);k<src.length;k++){if(src[k]==='{')d++;else if(src[k]==='}'){d--;if(!d)return src.slice(i,k+1);}}};
-const body=grab('pkgFixedList')+'\n'+grab('cartFixedDate')+'\n'+grab('cartFixedRounds');
+/* ต้องยก pkgFixedRaw มาด้วย — pkgFixedList เรียกมัน ไม่ยกมาก็ ReferenceError ทุกครั้ง
+   (เทสนี้ error มาตลอด ไม่เคยปกป้องอะไรเลย — เจอ 9 ก.ย. ตอนไล่รันทั้งชุด) */
+const body=[grab('pkgFixedRaw'),grab('pkgFixedList'),grab('cartFixedDate'),grab('cartFixedRounds')].join('\n');
 const mk=(cart,pkgFixedDates)=>new Function('cart','pkgFixedDates',body+'; return {cartFixedDate,cartFixedRounds};')(cart,pkgFixedDates);
 const JAY='jay-id', HYX='hyrox-id';
 const T=[

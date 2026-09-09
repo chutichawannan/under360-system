@@ -31,4 +31,6 @@ T.forEach(([why,api,wantTester,wantFeat])=>{
   console.log(ok?'✅':'🔴', why.padEnd(38), '→ อยู่ในโหมด:', String(a).padEnd(5), '· เห็นคูปอง:', b);
 });
 console.log('\n'+(bad? '🔴 ผิด '+bad+' เคส' : '✅ ผ่านทั้ง '+T.length+' เคส (ตรรกะจากไฟล์ production จริง)'));
-process.exit(bad?1:0);
+/* exitCode แทน process.exit() — บน Windows การออกทันทีหลัง fetch ทำให้ Node พ่น
+   "Assertion failed ... async.c" ต่อท้าย ดูเหมือนเทสพังทั้งที่ผ่านหมด */
+process.exitCode = bad ? 1 : 0;

@@ -3,7 +3,9 @@ import fs from 'node:fs';
 const src=fs.readFileSync(process.argv[2],'utf8');
 const grab=n=>{const i=src.indexOf('function '+n+'(');let d=0;for(let k=src.indexOf('{',i);k<src.length;k++){if(src[k]==='{')d++;else if(src[k]==='}'){d--;if(!d)return src.slice(i,k+1);}}};
 const split=new Function(grab('splitSetItems')+'; return splitSetItems;')();
-const boxes=new Function('pkgFixedDates',grab('pkgFixedRaw')+'\n'+grab('pkgFixedBoxes')+'; return pkgFixedBoxes;');
+/* ต้องส่ง packages เข้าไปด้วย — pkgFixedBoxes อ่านจำนวนกล่องจาก groups ของแพคก่อน
+   แล้วค่อยถอยไปดู pkg_fixed_dates (ไม่ส่ง = ReferenceError ทุกครั้ง เทสนี้เลยไม่เคยรันผ่าน) */
+const boxes=new Function('pkgFixedDates','packages',grab('pkgFixedRaw')+'\n'+grab('pkgFixedBoxes')+'; return pkgFixedBoxes;');
 const items=Array.from({length:30},(_,i)=>({sku:'J'+String(i+1).padStart(2,'0')}));
 const T=[
  ['คอร์สเจ ล็อก [9,12,9]', split(items,3,[9,12,9]), [9,12,9]],
@@ -24,7 +26,8 @@ const okR = r1[0]==='J01'&&r1[8]==='J09' && r2[0]==='J10'&&r2[11]==='J21' && r3[
 if(!okR)bad++;
 console.log(okR?'✅':'🔴','เมนูตกรอบถูก'.padEnd(36), 'รอบ1 '+r1[0]+'-'+r1[8]+' · รอบ2 '+r2[0]+'-'+r2[11]+' · รอบ3 '+r3[0]+'-'+r3[8]);
 // ตัวอ่านจำนวนกล่องจากค่าที่แอดมินตั้ง
-const f=boxes({A:[{d:'2026-10-08',n:9},{d:'2026-10-11',n:12},{d:'2026-10-15',n:9}], B:['2026-10-08','2026-10-11'], C:'2026-08-11'});
+/* packages ว่าง = ไม่มีแพคไหนตั้ง groups ไว้ → ตกไปใช้ pkg_fixed_dates ตามที่เทสนี้ตั้งใจวัด */
+const f=boxes({A:[{d:'2026-10-08',n:9},{d:'2026-10-11',n:12},{d:'2026-10-15',n:9}], B:['2026-10-08','2026-10-11'], C:'2026-08-11'}, []);
 [['A',[9,12,9]],['B',null],['C',null]].forEach(([k,want])=>{
   const g=f(k), ok=JSON.stringify(g)===JSON.stringify(want);
   if(!ok)bad++;
