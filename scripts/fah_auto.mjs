@@ -130,6 +130,10 @@ say('');
 const vf = node('scripts/fah_verify_all.mjs');
 say(vf.split('|SPLIT|').join('').split(String.fromCharCode(10)).filter(l => /❌|🟡|✅ ผ่านครบ|ตรวจ /.test(l)).join(String.fromCharCode(10)));
 
+// ---------- 7c ยามเทียบวันในใบ กับ วันของรอบครัว ----------
+say("");
+const dm = node("scripts/fah_check_date_match.mjs").split(String.fromCharCode(10));
+say(dm.filter(l => /🔴 ไม่ตรงกัน|✅ ตรงกันทุกรอบ|ใบว่า /.test(l)).join(String.fromCharCode(10)));
 // ---------- 8 สรุป ----------
 if (!existsSync(`${ROOT}/kitchen`)) mkdirSync(`${ROOT}/kitchen`);
 writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));

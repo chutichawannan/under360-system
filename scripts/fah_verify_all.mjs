@@ -132,6 +132,15 @@ for (const f of ['fah_auto.mjs','fah_build_sheet.mjs','fah_assign_menus.mjs','fa
   catch { FAIL(`⑥ **${p} พัง** (syntax error) — รอบอัตโนมัติจะไม่ทำงาน`); }
 }
 
+// ---------- ⑦ วันในใบออเดอร์ ต้องตรงกับวันของรอบครัว ----------
+// เพิ่ม 9 ก.ย. 2026 หลังนัทเจอเองว่าลูกค้าหายจากใบงาน (docs/CASE_03_order_vs_round_date.md)
+// ตั้งใจให้เป็น "เตือน" ไม่ใช่ "ไม่ผ่าน" — ใบงานสร้างจากรอบซึ่งยังถูก ถ้าบล็อก = ครัวไม่มีใบ เจ็บกว่าเดิม
+try {
+  const { execFileSync: exec7 } = await import("node:child_process");
+  const out7 = exec7(process.execPath, ["scripts/fah_check_date_match.mjs"], { encoding: "utf8" });
+  const bad7 = out7.split(String.fromCharCode(10)).filter(l => /ใบว่า .* · .*รอบว่า/.test(l));
+  if (bad7.length) WARN("⑦ **วันในใบไม่ตรงกับวันของรอบ " + bad7.length + " รอบ** — ลูกค้าจะโผล่หน้าหนึ่ง หายอีกหน้าหนึ่ง · ดู node scripts/fah_check_date_match.mjs");
+} catch (e) { WARN("⑦ ตัวเทียบวันรันไม่ได้: " + e.message); }
 // ---------- สรุป ----------
 console.log(`ตรวจ ${days.length} วันผลิต · ${rows.length} รอบ\n`);
 if (warns.length) { console.log('🟡 เตือน:'); warns.forEach(w => console.log('   · ' + w)); console.log(''); }
