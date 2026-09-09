@@ -192,6 +192,31 @@ module.exports = async function handler(req, res) {
     }
   } catch (e) { /* ไม่มีแถวสรุปก็ยังดูตารางได้ */ }
 
+  /* ── u360-google — ฝั่ง Google Ads ──
+     ค่าใช้จ่ายยังดึงไม่ได้ (ต้องต่อ Google Ads API รอ developer token)
+     แต่ผลลัพธ์ฝั่งเราวัดเองได้ทั้งหมด จาก utm ที่ติดมากับลิงก์แอด */
+  try {
+    const gv = SB + '/rest/v1/web_events?select=event&utm_source=eq.google'
+             + '&created_at=gte.' + since + 'T00:00:00&limit=5000';
+    const go = SB + '/rest/v1/orders?select=total,source_campaign'
+             + '&source_campaign=like.google/*&total=gt.0'
+             + '&created_at=gte.' + since + 'T00:00:00&limit=2000';
+    const [rv, ro] = await Promise.all([
+      fetch(gv, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } }),
+      fetch(go, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } }),
+    ]);
+    const evs = rv.ok ? await rv.json() : [];
+    const ods = ro.ok ? await ro.json() : [];
+    out.google = {
+      visits:  evs.filter(x => x.event === 'pageview').length,
+      toLine:  evs.filter(x => x.event === 'cta_click').length,
+      orders:  ods.length,
+      revenue: +ods.reduce((s, x) => s + (+x.total || 0), 0).toFixed(2),
+      spend:   null,   /* ยังดึงไม่ได้ — หน้าเว็บต้องเขียนบอก ไม่ใช่โชว์ 0 */
+      spendNote: 'ยังต่อ Google Ads API ไม่ได้ (รอ developer token) — ดูค่าใช้จ่ายในคอนโซล Google ก่อน'
+    };
+  } catch (e) { /* ไม่มีฝั่ง Google ก็ยังดู Meta ได้ */ }
+
   /* ── ③ ธงเตือน ── */
   for (const a of out.ads) {
     a.flags = [];
