@@ -27,8 +27,13 @@ const PER_DAY = 9;
 // ---- ตั้งค่าพิเศษรายวัน (นัทสั่งเป็นรอบๆ) ----
 // TARGET: วันไหนอยากได้กี่เมนู · MUST: เมนูที่ต้องมีในวันนั้นแน่ๆ
 // 3 ก.ย. 2026 นัทสั่ง: "อาทิตย์หน้า จันทร์พุธศุกร์ เพิ่มพิเศษเป็น 10 เมนู มีเมนูบิบิมบับให้เลือกทั้ง 3 วัน"
-const TARGET = { '2026-09-07': 10, '2026-09-09': 10, '2026-09-11': 10 };
-const MUST   = { '2026-09-07': ['39'], '2026-09-09': ['39'], '2026-09-11': ['39'] };  // 39 = บิบิมบับหมู
+// 9 ก.ย. 2026 นัทสั่ง: "อาทิตย์หน้าจันทร์พุธศุกร์ก็ไก่ปิริ เป็นรวมของยืนพื้น 10 เมนู"
+//   + "มีทบอล Hailey Bieber เอาไปแทรกวันจันทร์หน้าเลย"
+const TARGET = { '2026-09-07': 10, '2026-09-09': 10, '2026-09-11': 10,
+                 '2026-09-14': 10, '2026-09-16': 10, '2026-09-18': 10 };
+const MUST   = { '2026-09-07': ['39'], '2026-09-09': ['39'], '2026-09-11': ['39'],   // 39 = บิบิมบับหมู
+                 '2026-09-14': ['84', '85'],   // 84 = ไก่ Piri Piri (ยืนพื้น) · 85 = มีทบอล Hailey Bieber (แทรกวันจันทร์)
+                 '2026-09-16': ['84'], '2026-09-18': ['84'] };
 const MIN_BOXES_FOR_MUST = 3;   // เมนูที่สั่งให้มี ต้องมีคนกินอย่างน้อยเท่านี้ ไม่งั้นกลายเป็นกล่องเดี่ยว
 
 const TUNA = ['03','28','57','69','78'], BEEF = ['12','33','34','48','73'], TOFU = ['72'];
@@ -55,6 +60,19 @@ for (const line of readFileSync('docs/FAH_MENU_PLAN_FOR_WEB.md', 'utf8').split('
   (plan[d] = plan[d] || []).push(e);
   allMenus.set(e.code, e);
 }
+
+// ---- เติมเมนูจากคลังจริงใน DB ด้วย ----
+// 🪤 เดิมรู้จักเมนูจากไฟล์แผนอย่างเดียว → เมนูที่นัทเพิ่งสั่งให้เพิ่ม (ยังไม่เคยอยู่ในแผน)
+//    จะขึ้นว่า "ไม่มีเมนูนี้ในระบบ" ทั้งที่มีอยู่จริง — เจอกับไก่ Piri Piri 9 ก.ย. 2026
+const PROT = n => /ทูน่า|แซลมอน|กุ้ง|ปลา|ซีฟู้ด/.test(n) ? "ทะเล" : /เนื้อ(?!อ่อน)/.test(n) ? "เนื้อ" : /หมู/.test(n) ? "หมู" : /ไก่/.test(n) ? "ไก่" : /ไข่|เต้าหู้/.test(n) ? "ไข่/เต้าหู้" : "—";
+try {
+  const cat = await (await fetch(`${U}/rest/v1/menu_items?select=code,name&category=eq.meal_lc&limit=300`, { headers: H })).json();
+  if (Array.isArray(cat)) for (const m of cat) {
+    const num = String(m.code || "").replace(/^LC/, "");
+    if (num && !allMenus.has(num)) allMenus.set(num, { code: num, name: m.name, prot: PROT(m.name || "") });
+  }
+} catch (e) { console.log("   ⚠️ ดึงคลังเมนูจาก DB ไม่ได้:", e.message); }
+
 
 const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);
 const rows = (await q(`mp_deliveries?select=id,order_id,customer_name,mp_type,round_no,total_rounds,delivery_date,box_count,status,menu_items&delivery_date=gte.${today}&order=delivery_date.asc&limit=300`))
@@ -98,6 +116,24 @@ for (const date of Object.keys(byDay).sort()) {
   for (const code of must) {
     const e = cand.get(code) || allMenus.get(code);
     if (e && !nine.includes(e)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
+  }
+  // ---- เมนูที่ลูกค้าเลือกเอง ใส่ต่อจาก must ทันที ----
+  // 🔴 บั๊กที่เจอ 9 ก.ย. 2026 (ก่อนเขียนจริง): คอมเมนต์หัวไฟล์เขียนว่า "ไม่แตะกล่องที่ลูกค้าเลือกเมนูเอง"
+  //    แต่โค้ดไม่เคยเช็ค by:"customer" เลย — ที่ผ่านมารอดเพราะเมนูลูกค้าบังเอิญติดชุดของวันอยู่แล้ว
+  //    เคสจริง: Panpilai เลือก 54 เอง แต่ 54 ไม่ติดชุด → จะโดนสลับออก = ลูกค้าไม่ได้ของที่สั่ง
+  //    ✅ ลูกค้าเลือกเอง = ครัวต้องทำ ห้ามให้หลุดชุดของวัน (ตรงกับสเปคน้องนิว: request มาก่อน แล้วค่อยเติมที่เหลือ)
+  const wanted = new Set();
+  for (const r of list) for (const i2 of (r.menu_items || []))
+    if (i2 && i2.by === "customer") wanted.add(String(i2.code || "").replace(/^(LC|HP|HX)/, ""));
+  for (const code of wanted) {
+    if (nine.length >= perDay) break;
+    const e = cand.get(code) || allMenus.get(code);
+    if (e && !nine.includes(e)) { nine.push(e); protCount[e.prot] = (protCount[e.prot] || 0) + 1; }
+  }
+  if (wanted.size && nine.length >= perDay) {
+    const missed = [...wanted].filter(c => !nine.some(e => e.code === c));
+    if (missed.length) console.log(`   ⚠️ ${date}: เมนูที่ลูกค้าเลือกเองล้นเป้าหมาย ${missed.join(",")} — ไม่ได้ตัดออก แต่ครัวจะทำเกิน ${perDay} เมนู`);
+    for (const c of missed) { const e = cand.get(c) || allMenus.get(c); if (e) nine.push(e); }
   }
   for (const e of scored) {
     if (nine.length >= perDay) break;
