@@ -106,6 +106,9 @@ module.exports = async function handler(req, res) {
                  + '&access_token=' + encodeURIComponent(T);
         const cr = await fetch(cu);
         const cj = await cr.json();
+        if (cj.error) {
+          out.thumbNote = "meta creative error " + (cj.error.code || "?") + "/" + (cj.error.type || "?") + " sub" + (cj.error.error_subcode || "-");
+        }
         if (!cj.error) {
           for (const a of out.ads) {
             const info = cj[a.id];
@@ -117,7 +120,7 @@ module.exports = async function handler(req, res) {
           }
         }
       }
-    } catch (e) { /* ไม่มีรูปก็ยังอ่านตัวเลขได้ ไม่ทำให้ทั้งหน้าล่ม */ }
+    } catch (e) { out.thumbNote = "creative fetch threw"; /* ไม่มีรูปก็ยังอ่านตัวเลขได้ */ }
 
     /* แอดที่ยังวิ่งอยู่ขึ้นก่อนเสมอ · ที่ปิดแล้วดันลงล่าง */
     out.ads.sort((x, y) => (y.live === true) - (x.live === true) || y.spend - x.spend);
