@@ -178,7 +178,7 @@ module.exports = async function handler(req, res) {
   /* ── u360-funnel — คลิก → เข้าหน้าเจ → กดไป LINE → จองจริง ──
      ตารางรายชิ้นงานบอกไม่ได้ว่า "รั่วตรงไหน" แถวนี้บอกได้ */
   try {
-    const q = SB + '/rest/v1/web_events?select=event&page=eq.jay'
+    const q = SB + '/rest/v1/web_events?select=event&page=eq.jay&utm_source=eq.fb'
             + '&created_at=gte.' + since + 'T00:00:00&limit=5000';
     const r = await fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
     if (r.ok) {
