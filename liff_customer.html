@@ -1677,14 +1677,19 @@ function giftCodeOn(rule){
     return (appliedPromos||[]).some(p => rule.codes.indexOf(String(p.code||'').toUpperCase()) >= 0);
   }catch(e){ return false; }
 }
-function orderGiftsEarned(){
+/* ได้ของแถมกติกานี้แล้วหรือยัง — **จุดเดียวที่ตัดสิน**
+   ทั้งกล่องในตะกร้าและตอนเขียนลงใบต้องถามที่นี่เหมือนกัน
+   ⚠️ เคยแยกกันคิดแล้วเพี้ยน: ตะกร้าขึ้น "ได้ฟรีซาลาเปา" แต่ตอนสั่งจริงไม่ได้
+      ลูกค้าเห็นของที่ไม่มีอยู่จริง แย่กว่าไม่มีฟีเจอร์นี้เลย */
+function giftRuleMet(r){
   const sub = cartTotal();
+  if(sub < r.min) return false;
+  return r.codes.length ? giftCodeOn(r) : true;
+}
+function orderGiftsEarned(){
   const out = [];
   orderGiftRules().forEach(r => {
-    /* ผูกโค้ด = ต้องกรอกโค้ดนั้น (และถ้าตั้งยอดขั้นต่ำไว้ด้วย ต้องถึงยอดด้วย)
-       ไม่ผูกโค้ด = ใช้ยอดตัดสินแบบเดิม */
-    const ok = r.codes.length ? (giftCodeOn(r) && sub >= r.min) : (sub >= r.min);
-    if(!ok) return;
+    if(!giftRuleMet(r)) return;
     r.items.forEach(g => out.push(Object.assign({ rule:r.key, slot:g.slot }, giftResolve(g))));
   });
   return out;
@@ -3627,8 +3632,7 @@ function renderCart() {
 /* กล่องของแถมท้ายตะกร้า — ได้แล้วขึ้นเขียว · ใกล้ได้บอกว่าขาดอีกเท่าไหร่
    (ตัวหลังคือตัวที่ทำให้ลูกค้าเติมของอีกชิ้น — ไม่ใช่ของประดับ) */
 function orderGiftHtml(){
-  const sub = cartTotal();
-  const rules = orderGiftRules().filter(r => sub >= r.min);
+  const rules = orderGiftRules().filter(giftRuleMet);   // ← ถามที่เดียวกับตอนเขียนลงใบ
   if(rules.length){
     let inner = '';
     rules.forEach(r => r.items.forEach(g => {

@@ -26,16 +26,17 @@ const t = (n, got, want) => {
 
 const body = [
   grab('giftSlotKey'), grab('orderGiftRules'), grab('giftResolve'),
-  grab('giftCodeOn'), grab('orderGiftsEarned'), grab('orderGiftNext'),
+  grab('giftCodeOn'), grab('giftRuleMet'), grab('orderGiftsEarned'), grab('orderGiftNext'),
+  grab('orderGiftHtml'), grab('giftLineText'),
 ].join(NL);
 
 /* ประกอบสภาพแวดล้อมให้เหมือนของจริง: ของในตะกร้า · โค้ดที่กรอกอยู่ · กติกาของแถม */
 const mk = (gifts, subtotal, codes) => new Function(
-  'orderGifts', 'cartTotal', 'appliedPromos', 'giftPick', 'localYMD',
-  body + '; return { orderGiftRules, orderGiftsEarned, orderGiftNext, giftCodeOn };')(
+  'orderGifts', 'cartTotal', 'appliedPromos', 'giftPick', 'localYMD', 'h',
+  body + '; return { orderGiftRules, orderGiftsEarned, orderGiftNext, giftCodeOn, orderGiftHtml };')(
     gifts, () => subtotal,
     (codes || []).map((c) => ({ code: c })), {},
-    () => '2026-09-09');
+    () => '2026-09-09', (x) => String(x == null ? '' : x));
 
 const SALAPAO = { items: [{ code: 'MC1', name: 'ซาลาเปา', qty: 1 }] };
 
@@ -96,6 +97,27 @@ console.log(NL + '⑥ ให้ลูกค้าเลือกรสได้ 
   const e = mk(g, 500, ['JAYOLD']).orderGiftsEarned();
   t('ไม่เลือก = ได้ตัวตั้งต้น ไม่ตกหล่น', e.map((x) => x.code), ['MC2']);
   t('ชื่อของแถมมาด้วย', e[0].name, 'ไส้ครีม');
+}
+
+console.log(NL + '⑦ 🔴 กล่องในตะกร้า ต้องพูดตรงกับของที่ได้จริงตอนกดสั่ง');
+{
+  /* บั๊กจริงที่เจอหลัง deploy: ตะกร้าดูแค่ยอด ไม่ดูโค้ด
+     → ขึ้น 'ได้ฟรีซาลาเปา' ให้ทุกคน ทั้งที่ตอนสั่งจริงไม่ได้ = ระบบโกหก */
+  const g = { jay: { label:'ซาลาเปา', code:'JAYOLD',
+    items:[{ code:'MC1', name:'ซาลาเปา', qty:2 }] } };
+  const noCode = mk(g, 4190);
+  const withCode = mk(g, 4190, ['JAYOLD']);
+  t('ไม่กรอกโค้ด — ตะกร้าต้องไม่โฆษณาของแถม', /ได้ฟรี/.test(noCode.orderGiftHtml()), false);
+  t('ไม่กรอกโค้ด — ไม่ได้ของจริงด้วย', noCode.orderGiftsEarned().length, 0);
+  t('กรอกโค้ด — ตะกร้าโชว์ของแถม', /ได้ฟรี/.test(withCode.orderGiftHtml()), true);
+  t('กรอกโค้ด — ได้ของจริง', withCode.orderGiftsEarned().length, 1);
+  t('โชว์จำนวนถูก (2 ลูก)', /×2/.test(withCode.orderGiftHtml()), true);
+  /* กฎที่ห้ามหลุดอีก: 2 ที่นี้ต้องตอบตรงกันเสมอ */
+  [[0,[]],[4190,[]],[100,['JAYOLD']],[4190,['JAYOLD']],[4190,['อื่น']]].forEach(function(c){
+    const e = mk(g, c[0], c[1]);
+    t('ยอด '+c[0]+' โค้ด '+(c[1].join(',')||'-')+' — ตะกร้ากับใบจริงตรงกัน',
+      /ได้ฟรี/.test(e.orderGiftHtml()), e.orderGiftsEarned().length > 0);
+  });
 }
 
 console.log(NL + (fail ? '❌' : '✅') + ' ผ่าน ' + ok + ' · ตก ' + fail);
