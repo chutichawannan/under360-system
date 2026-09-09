@@ -52,5 +52,10 @@ t('ยามเฝ้าไม่นับยุค Hato (ของที่ย�
 t('ใช้เวลาไทยเสมอ', nut.includes('Date.now()+7*3600000'), true);
 t('บล็อกแอดไม่ดึงตัวเลข Meta มาโชว์เอง', /graph\.facebook|ads-insights/.test(nut), false);
 
+console.log(NL+'⑦ โหลดเสร็จแล้วต้องไม่ดูเหมือนยังโหลดอยู่');
+t('เอาคลาส load ออกตอนใส่เนื้อหา', nut.includes("e.classList.remove('load')"), true);
+/* นับด้วยการแยกข้อความ ไม่ใช้ regex — backslash หายทุกครั้งที่ส่งผ่าน shell (โดนมาหลายรอบ) */
+t('ทุกบล็อกใช้ put() ไม่ใช่ innerHTML ตรง ๆ', nut.split("put('b").length - 1, 5);
+
 console.log(NL+(fail?'❌':'✅')+' ผ่าน '+ok+' · ตก '+fail);
 process.exitCode=fail?1:0;

@@ -71,6 +71,9 @@ const U='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const H={apikey:K,Authorization:'Bearer '+K};
 const el=id=>document.getElementById(id);
+/* ใส่เนื้อหาแล้วเอาคลาส "กำลังโหลด" ออกด้วย — ไม่งั้นสีจาง/ตัวเล็กค้าง
+   เนื้อหาจริงจะดูเหมือนยังโหลดไม่เสร็จ (เจอตอนเปิดดูด้วยตาบนของจริง) */
+const put=(id,html)=>{ const e=el(id); if(!e) return; e.classList.remove('load'); e.innerHTML=html; };
 const baht=n=>'฿'+Math.round(Number(n)||0).toLocaleString();
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 /* วันไทยเสมอ — เครื่องที่เปิดอาจอยู่คนละโซน */
@@ -93,10 +96,10 @@ const fail=(id,e)=>{ el(id).innerHTML='<div class="bad" style="font-size:13px">�
   const closed=new Set(rows.filter(r=>(r.text||'').trimStart().startsWith('✅'))
     .map(r=>((r.text||'').match(/🎯\s*(\d+)/)||[])[1]).filter(Boolean));
   const live=open.filter(r=>{ const n=((r.text||'').match(/🎯\s*(\d+)/)||[])[1]; return !(n&&closed.has(n)); });
-  if(!live.length){ el('b1').innerHTML='<div class="ok" style="font-size:14px">ไม่มีเรื่องค้าง</div>'; return; }
-  el('b1').innerHTML='<div class="big warn">'+live.length+' เรื่อง</div><ul>'+
+  if(!live.length){ put('b1', '<div class="ok" style="font-size:14px">ไม่มีเรื่องค้าง</div>'); return; }
+  put('b1', '<div class="big warn">'+live.length+' เรื่อง</div><ul>'+
     live.slice(0,5).map(r=>'<li>'+esc((r.text||'').split('\n')[0].replace(/^[🎯🟡🔴]\s*/,'').slice(0,72))+'</li>').join('')+
-    '</ul>'+(live.length>5?'<div class="dim" style="font-size:12px;margin-top:5px">และอีก '+(live.length-5)+' เรื่อง</div>':'');
+    '</ul>'+(live.length>5?'<div class="dim" style="font-size:12px;margin-top:5px">และอีก '+(live.length-5)+' เรื่อง</div>':''));
 }catch(e){ fail('b1',e); } })();
 
 /* ② ยอดขาย 30 วัน + ค่าส่ง + ออเดอร์พรุ่งนี้
@@ -109,11 +112,10 @@ const fail=(id,e)=>{ el(id).innerHTML='<div class="bad" style="font-size:13px">�
   const fee=sold.reduce((s,o)=>s+Number(o.delivery_fee||0),0);
   const tmr=ymd(1);
   const tomorrow=rows.filter(o=>o.status!=='cancelled'&&o.delivery_date===tmr);
-  el('b2').innerHTML=
-    '<div class="big">'+baht(sum)+'</div>'+
+  put('b2', '<div class="big">'+baht(sum)+'</div>'+
     '<div class="dim" style="font-size:12.5px;margin-bottom:8px">30 วันล่าสุด · '+sold.length+' ใบ</div>'+
     '<div class="row"><span class="dim">ค่าส่งที่เก็บได้</span><b>'+baht(fee)+'</b></div>'+
-    '<div class="row"><span class="dim">ส่งพรุ่งนี้ ('+tmr+')</span><b>'+tomorrow.length+' ใบ</b></div>';
+    '<div class="row"><span class="dim">ส่งพรุ่งนี้ ('+tmr+')</span><b>'+tomorrow.length+' ใบ</b></div>');
 }catch(e){ fail('b2',e); } })();
 
 /* ③ ยามเฝ้า — วิ่งเช็คเองสด ไม่ได้อ่านผลที่ใครสรุปไว้
@@ -136,11 +138,11 @@ const fail=(id,e)=>{ el(id).innerHTML='<div class="bad" style="font-size:13px">�
   live.forEach(r=>{ const k=r.customer_name+'|'+r.delivery_date+'|'+(r.mp_type||''); (grp[k]=grp[k]||[]).push(r); });
   const dup=Object.values(grp).filter(v=>v.length>1);
   const clean=!mismatch.length&&!dup.length;
-  el('b3').innerHTML= clean
+  put('b3', clean
     ? '<div class="ok" style="font-size:14px">ไม่เจออะไร</div><div class="dim" style="font-size:12px;margin-top:3px">ตรวจ '+live.length+' รอบข้างหน้า</div>'
     : '<div class="row"><span>วันในใบ ≠ วันของรอบ</span><b class="'+(mismatch.length?'bad':'ok')+'">'+mismatch.length+'</b></div>'+
       '<div class="row"><span>คนเดียวได้ 2 รอบวันเดียวกัน</span><b class="'+(dup.length?'bad':'ok')+'">'+dup.length+'</b></div>'+
-      '<ul>'+mismatch.slice(0,3).map(r=>'<li>'+esc(r.customer_name)+' — ครัวเห็น '+r.delivery_date+' ใบลง '+ords[r.order_id].delivery_date+'</li>').join('')+'</ul>';
+      '<ul>'+mismatch.slice(0,3).map(r=>'<li>'+esc(r.customer_name)+' — ครัวเห็น '+r.delivery_date+' ใบลง '+ords[r.order_id].delivery_date+'</li>').join('')+'</ul>');
 }catch(e){ fail('b3',e); } })();
 
 /* ⑤ ห้องไหนเปิดอยู่ — ดูจากข้อความล่าสุดของแต่ละห้อง ไม่ใช่รายชื่อที่ใครพิมพ์ไว้ */
@@ -152,10 +154,10 @@ const fail=(id,e)=>{ el(id).innerHTML='<div class="bad" style="font-size:13px">�
   const arr=Object.entries(last).map(([s,t])=>({s,m:Math.round((now-new Date(t))/60000)}))
     .sort((a,b)=>a.m-b.m);
   const hot=arr.filter(x=>x.m<=60);
-  el('b5').innerHTML='<div class="big">'+hot.length+'</div>'+
+  put('b5', '<div class="big">'+hot.length+'</div>'+
     '<div class="dim" style="font-size:12.5px;margin-bottom:6px">ห้องที่ขยับใน 1 ชม.</div>'+
     '<ul>'+arr.slice(0,6).map(x=>'<li>'+esc(x.s)+' <span class="dim">— '+
-      (x.m<60?(x.m+' นาทีที่แล้ว'):(Math.round(x.m/60)+' ชม.ที่แล้ว'))+'</span></li>').join('')+'</ul>';
+      (x.m<60?(x.m+' นาทีที่แล้ว'):(Math.round(x.m/60)+' ชม.ที่แล้ว'))+'</span></li>').join('')+'</ul>');
 }catch(e){ fail('b5',e); } })();
 </script>
 </body>
