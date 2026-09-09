@@ -1,0 +1,61 @@
+<!DOCTYPE html><html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ลิสต์สั่งผลิต Meal Plan</title>
+<link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,"Segoe UI",Roboto,sans-serif;background:#0F1115;color:#E8EAF0;padding:14px 12px 40px}
+h1{font-size:17px;margin:0 0 2px}
+.sub{font-size:12px;color:#8B90A0;margin-bottom:14px}
+.day{background:#171A21;border:1px solid #262B36;border-radius:11px;padding:12px 13px;margin-bottom:11px}
+.dh{font-size:14px;font-weight:700;margin-bottom:3px}
+.dm{font-size:11.5px;color:#8B90A0;margin-bottom:9px}
+.li{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:17px;line-height:1.65;letter-spacing:.4px}
+.li b{color:#7BE3A8;font-weight:700}
+.nm{font-family:-apple-system,sans-serif;font-size:11.5px;color:#6E7382;letter-spacing:0}
+.split{margin-top:8px;font-size:12px;color:#8B90A0;border-top:1px dashed #2A3040;padding-top:7px}
+.empty{color:#6E7382;font-size:12.5px}
+button{background:#1F4D3A;color:#fff;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;margin-bottom:14px}
+</style></head><body>
+<h1>🏭 ลิสต์สั่งผลิต Meal Plan</h1>
+<div class="sub" id="sub">กำลังโหลด…</div>
+<button onclick="load()">↻ โหลดใหม่</button>
+<div id="out"></div>
+<script>
+const U='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const DOW=['อาทิตย์','จันทร์','อังคาร','พุธ','พฤหัส','ศุกร์','เสาร์'];
+const MON=['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+/* เวลาไทยเสมอ — นัทอยู่คนละโซน คำนวณจากเครื่องจะเพี้ยนไป 1 วัน */
+const thDate=()=>new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
+async function q(p){const r=await fetch(U+'/rest/v1/'+p,{headers:{apikey:K,Authorization:'Bearer '+K}});const j=await r.json();return Array.isArray(j)?j:[]}
+async function load(){
+  const today=thDate();
+  document.getElementById('sub').textContent='กำลังโหลด…';
+  const rows=(await q('mp_deliveries?select=delivery_date,mp_type,box_count,status,menu_items&delivery_date=gte.'+today+'&limit=400'))
+    .filter(r=>r.status!=='cancelled'&&r.status!=='skip_requested');
+  const by={};
+  for(const r of rows){
+    const d=by[r.delivery_date]=by[r.delivery_date]||{n:{},lc:0,hp:0,box:0,names:{}};
+    d.box+=r.box_count||0; d[r.mp_type==='lc'?'lc':'hp']+=r.box_count||0;
+    for(const i of (r.menu_items||[])){
+      const c=String(i.code||'').replace(/^(LC|HP|HX)/,''); if(!c)continue;
+      d.n[c]=(d.n[c]||0)+(Number(i.qty)||1); d.names[c]=i.name||'';
+    }
+  }
+  const days=Object.keys(by).sort();
+  let html='';
+  for(const ds of days){
+    const d=by[ds], dt=new Date(ds+'T00:00:00Z');
+    const list=Object.entries(d.n).sort((a,b)=>b[1]-a[1]);
+    html+='<div class="day"><div class="dh">'+DOW[dt.getUTCDay()]+' '+dt.getUTCDate()+' '+MON[dt.getUTCMonth()]+'</div>'
+      +'<div class="dm">'+d.box+' กล่อง · '+list.length+' เมนู</div><div class="li">'
+      +(list.length?list.map(([c,n])=>'<b>'+c+'-'+n+'</b> <span class="nm">'+(d.names[c]||'')+'</span>').join('<br>')
+        :'<span class="empty">ยังไม่มีเมนู</span>')
+      +'</div><div class="split">LC '+d.lc+' กล่อง · HP '+d.hp+' กล่อง</div></div>';
+  }
+  document.getElementById('out').innerHTML=html||'<div class="empty">ไม่มีคิวข้างหน้า</div>';
+  document.getElementById('sub').textContent='อัปเดต '+new Date(Date.now()+7*3600e3).toISOString().slice(11,16)+' น. (เวลาไทย) · '+days.length+' วันข้างหน้า';
+}
+load();
+</script></body></html>
