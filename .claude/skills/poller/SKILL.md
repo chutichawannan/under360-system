@@ -16,6 +16,7 @@ description: เปิด poller ของห้องตัวเอง (ตั
 | U-maintainer | `node scripts/room_watch.mjs u-maintainer,u --me=u-maintainer,u` |
 | Kapan | *(ใช้ `scripts/kapan_watch.mjs` ตัวเดิม — ดู `docs/KAPAN_CARD.md`)* |
 | โปรเจค อาหารเจ 2026 | `node scripts/room_watch.mjs เจ2569 --me=เจ2569,เจ2026,J2026` |
+| ครีเอทีฟ | `node scripts/room_watch.mjs ครีเอทีฟ --me=ครีเอทีฟ,creative` |
 | Agent-Niw / นิว | `node scripts/room_watch.mjs niw --me=niw,นิว` |
 | 05 LINE OA / CRM | `node scripts/room_watch.mjs 05 --me=05,eath` |
 | 06 FB Ads-track | `node scripts/room_watch.mjs 06,06-ads --me=06,eath` |

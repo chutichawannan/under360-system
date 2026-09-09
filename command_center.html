@@ -1160,7 +1160,7 @@ async function niwWeeklySpecialWatch(sb, opt) {
 
 
 /* ---------- 👂 สถานะ poller (บรรทัดเดียว) — นัทขอ 8 ก.ย. ให้อยู่ในแดชบอร์ดฝั่งเจ้าของ ---------- */
-var POLLER_ROOMS=[['pm','พี่ปืน'],['secretary','เลขา'],['u-maintainer','U'],['kapan','กะปัน'],['เจ2569','เจ'],['niw','นิว'],['05','05'],['06','06'],['m','M'],['fah','ฟ้า'],['cc','CC'],['tiang','เตียง'],['eath','เอิธ']];
+var POLLER_ROOMS=[['pm','พี่ปืน'],['secretary','เลขา'],['u-maintainer','U'],['kapan','กะปัน'],['เจ2569','เจ'],['niw','นิว'],['05','05'],['06','06'],['m','M'],['ครีเอทีฟ','ครีเอทีฟ'],['fah','ฟ้า'],['cc','CC'],['tiang','เตียง'],['eath','เอิธ']];
 var pollerHb=null;
 function loadPoller(){
   return fetch(SB_URL+'/rest/v1/live_presence?select=page,last_seen&area=eq.poller&limit=100',{headers:{apikey:SB_KEY}})

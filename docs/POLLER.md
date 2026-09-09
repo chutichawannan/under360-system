@@ -31,6 +31,7 @@ poller ในห้อง   → แอบดูบอร์ดทุก 10 ว�
 | ห้อง | ประโยค |
 |---|---|
 | **เจ 2026** | `รัน node scripts/room_watch.mjs เจ2569 --me=เจ2569,เจ2026,J2026 ด้วย Monitor แบบ persistent timeout 3600000 แล้วรอ` |
+| **ครีเอทีฟ** | `รัน node scripts/room_watch.mjs ครีเอทีฟ --me=ครีเอทีฟ,creative ด้วย Monitor แบบ persistent timeout 3600000 แล้วรอ` |
 | นิว | `รัน node scripts/room_watch.mjs niw --me=niw,นิว ด้วย Monitor แบบ persistent timeout 3600000 แล้วรอ` |
 | 05 | `รัน node scripts/room_watch.mjs 05 --me=05,eath ด้วย Monitor แบบ persistent timeout 3600000 แล้วรอ` |
 | ครัว k | `รัน node scripts/room_watch.mjs k --me=k,ครัว ด้วย Monitor แบบ persistent timeout 3600000 แล้วรอ` |
