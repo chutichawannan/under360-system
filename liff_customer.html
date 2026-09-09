@@ -1643,9 +1643,15 @@ function orderGiftRules(){
       const code = String(g.code||'').trim();
       return code ? { slot:giftSlotKey(k, idx), code, name:String(g.name||code).trim(), qty } : null;
     }).filter(Boolean);
+    /* 🎟️ ทางที่สอง: แถมเมื่อ "ใช้โค้ดนี้" แทนที่จะแถมเมื่อ "ยอดถึง"
+       ตั้ง code เป็นสตริงเดียวหรือหลายตัวก็ได้ — ไม่ใส่ = กติกาแบบเดิมเป๊ะ */
+    const codes = (Array.isArray(r.codes) ? r.codes : (r.code ? [r.code] : []))
+      .map(c => String(c||'').trim().toUpperCase()).filter(Boolean);
     return { key:k, label:String(r.label||''), min:Math.max(0, Number(r.min_order)||0),
-             expires:r.expires_at||'', items };
-  }).filter(r => r.items.length && r.min > 0 && (!r.expires || r.expires >= today))
+             codes, expires:r.expires_at||'', items };
+  /* กติกาต้องมีอย่างน้อยทางใดทางหนึ่ง: ยอดขั้นต่ำ หรือ โค้ด
+     (เดิมบังคับ min > 0 อย่างเดียว — กติกาที่ผูกโค้ดล้วนจะถูกกรองทิ้งเงียบ ๆ) */
+  }).filter(r => r.items.length && (r.min > 0 || r.codes.length) && (!r.expires || r.expires >= today))
     .sort((a,b) => a.min - b.min);
 }
 /* รายการของแถม 1 ช่อง → ของที่จะได้จริง (คลี่ตัวเลือกเป็นของชิ้นเดียวแล้ว) */
@@ -1664,11 +1670,21 @@ function pickGift(slot, code){
   try{ if(typeof refreshCouponUI === 'function') refreshCouponUI(); }catch(e){}
 }
 /* ของแถมที่ "ได้แล้ว" จากยอดตอนนี้ — รวมทุกโปรที่ถึงยอด */
+/* กติกานี้ผูกกับโค้ด แล้วลูกค้ากรอกโค้ดนั้นอยู่หรือยัง */
+function giftCodeOn(rule){
+  if(!rule.codes || !rule.codes.length) return false;
+  try{
+    return (appliedPromos||[]).some(p => rule.codes.indexOf(String(p.code||'').toUpperCase()) >= 0);
+  }catch(e){ return false; }
+}
 function orderGiftsEarned(){
   const sub = cartTotal();
   const out = [];
   orderGiftRules().forEach(r => {
-    if(sub < r.min) return;
+    /* ผูกโค้ด = ต้องกรอกโค้ดนั้น (และถ้าตั้งยอดขั้นต่ำไว้ด้วย ต้องถึงยอดด้วย)
+       ไม่ผูกโค้ด = ใช้ยอดตัดสินแบบเดิม */
+    const ok = r.codes.length ? (giftCodeOn(r) && sub >= r.min) : (sub >= r.min);
+    if(!ok) return;
     r.items.forEach(g => out.push(Object.assign({ rule:r.key, slot:g.slot }, giftResolve(g))));
   });
   return out;
@@ -1677,7 +1693,9 @@ function orderGiftsEarned(){
 function orderGiftNext(){
   const sub = cartTotal();
   if(sub <= 0) return null;
-  const r = orderGiftRules().filter(x => sub < x.min)[0];
+  /* ข้ามกติกาที่ต้องใช้โค้ด แต่ลูกค้ายังไม่ได้กรอกโค้ดนั้น
+     ไม่งั้นจะไปบอกว่า "อีก ฿200 ได้ของฟรี" ทั้งที่เติมถึงแล้วก็ยังไม่ได้ */
+  const r = orderGiftRules().filter(x => sub < x.min && (!x.codes.length || giftCodeOn(x)))[0];
   return r ? { need: r.min - sub, rule: r } : null;
 }
 function pkgClr(pkg){
