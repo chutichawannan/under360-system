@@ -6880,11 +6880,21 @@ async function mpManageConfirmMoveDate(rowId) {
         const oq = await sb.from('orders').select('id,order_number,customer_name,delivery_date,notes,total').eq('id', row.order_id).maybeSingle();
         const o = oq.data;
         if (o && o.delivery_date !== newDate) {
-          /* ใบนี้มีของอื่นนอกจากรอบ Meal Plan ไหม — ดูจากรายการในใบ
-             ใบของรอบล้วนจะมีแต่บรรทัด MP-* (ยอด ฿0) ส่วนใบแรกมักมีเมนูเดี่ยวปนมาด้วย */
-          const itq = await sb.from('order_items').select('menu_code').eq('order_id', o.id).limit(200);
-          const codes = (itq.data || []).map(x => String(x.menu_code || ''));
-          mixed = codes.some(c => c && !/^MP-/i.test(c));
+          /* ใบนี้มีของอื่นนอกจากรอบ Meal Plan ไหม
+             🔴 แก้ 9 ก.ย. 2569 (เคส 03 · นัทจับได้เอง · ลูกค้าจ่ายเงินแล้วไม่ได้อาหาร)
+             เดิมดูจาก "ชื่อเมนู" ว่าขึ้นต้น MP- ไหม โดยเชื่อว่าใบของรอบมีแต่บรรทัด MP-*
+             แต่ตั้งแต่ 6 ส.ค. ระบบเขียน "เมนูรายกล่อง" ลงใบด้วย (LC01 · HP28 …)
+             ซึ่งไม่ขึ้นต้น MP- → ระบบเห็นของที่ตัวเองเขียน แล้วนึกว่าลูกค้าซื้อของอื่นปน
+             → ปฏิเสธการย้ายใบทุกใบที่ครัว assign เมนูแล้ว = ใบค้างวันเดิม ครัวทำผิดวัน
+
+             ตอนนี้ดูจาก "หมายเหตุบรรทัด" แทน ซึ่งระบบเป็นคนติดเองทุกบรรทัด:
+               meal_plan:*  = บรรทัดของรอบ (ทั้งหัวข้อรอบและเมนูรายกล่อง)
+               gift:*       = ของแถมที่ระบบใส่ให้ ไม่ใช่ของที่ลูกค้าเลือกซื้อ
+             เหลือจากนี้ = ของที่ลูกค้าซื้อเอง (pkg:* · set:* · เมนูเดี่ยว) → ห้ามย้าย
+             ตรวจกับใบจริงแล้วทั้ง 2 ทาง: 5 ใบที่ค้างอยู่ย้ายได้ · ใบที่มีของปนจริงยังกันไว้ได้ */
+          const itq = await sb.from('order_items').select('menu_code,notes').eq('order_id', o.id).limit(200);
+          const rows = itq.data || [];
+          mixed = rows.some(x => !/^(meal_plan:|gift:)/i.test(String(x.notes || '')));
           if (!mixed) {
             const stamp = '[ลูกค้าเลื่อนรอบ ' + (oldDate||'?') + '→' + newDate + ']';
             await sb.from('orders').update({
