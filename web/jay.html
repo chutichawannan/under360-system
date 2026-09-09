@@ -370,6 +370,12 @@
     #inapptipx { position:absolute; top:8px; right:8px; width:30px; height:30px;
       background:none; border:0; color:#9DB3A8; font-size:16px; cursor:pointer; }
     @media (min-width:701px) { #inapptip { left:auto; right:20px; bottom:20px; max-width:340px; } }
+    /* ── u360-countdown ── */
+    .countdown { display:inline-flex; align-items:center; gap:8px; margin:12px 0 0;
+                 background:var(--soft); border:1px solid var(--line); border-radius:999px;
+                 padding:6px 14px; font-size:14px; font-weight:500; color:var(--green); }
+    .countdown b { font-weight:600; }
+    @media (max-width:700px) { .countdown { font-size:min(13px,2.9vw); padding:5px 11px; margin-top:9px; } }
 </style>
 </head>
 <body>
@@ -389,6 +395,7 @@
           <h1 id="hero-title">กินเจปีนี้<br>ง่ายทุกมื้อ</h1>
           <p class="intro">30 เมนู ครบ 10 วัน<br>ส่งถึงบ้าน 3 รอบ</p>
           <p class="dates muted">9–18 ตุลาคม 2569 รวมวันล้างท้อง</p>
+          <p class="countdown" id="countdown" hidden><!-- u360-countdown --></p>
           <div class="offer">
             <p class="offer-hook"><!-- u360-offer-hook -->จองก่อน ได้ราคาพิเศษ</p>
             <p class="price">Early Bird <strong>฿4,190</strong></p>
@@ -563,7 +570,12 @@ function u360track(event){
       headers:{'Content-Type':'application/json',
         apikey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8'},
       body:JSON.stringify({event:event, page:'jay',
-        utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+        utm_source:u.source||null, utm_medium:u.medium||null,
+        /* u360-track-content — ตาราง web_events ไม่มีคอลัมน์ utm_content
+           พับรหัสชิ้นงานเข้า campaign แทน (jay2026 → jay2026-a1) จะได้แยกออกว่ามาจากรูปไหน
+           ตัวคั่นใช้ - ให้ตรงกับที่พับฝั่ง LIFF จะได้เทียบกันได้ */
+        utm_campaign:(function(){ var c=u.campaign||null, ct=(u.content||'').replace(/[^A-Za-z0-9._-]/g,'').slice(0,24);
+                                  return c && ct ? c+'-'+ct : c; })(),
         referrer:document.referrer||null, ua:(navigator.userAgent||'').slice(0,200)})
     }).then(function(){},function(){});
   }catch(e){}
@@ -631,6 +643,25 @@ function showInAppTip(){
   function upd(){ bar.classList.toggle('on', firstOut && !lastIn); }
   new IntersectionObserver(function(es){ firstOut=!es[0].isIntersecting; upd(); }).observe(first);
   if(last) new IntersectionObserver(function(es){ lastIn=es[0].isIntersecting; upd(); }).observe(last);
+})();
+
+/* u360-countdown — นับวันถึงวันเริ่มเทศกาล (10 ต.ค. 2569)
+   คิดตามเวลาไทยเสมอ เพราะคนดูอยู่ไทย แต่เครื่องที่รันอาจอยู่คนละโซน
+   ⛔ ไม่นับ "เหลือกี่คอร์ส" — นัทตัดออกเอง เลขที่ไม่ตรงของจริง = โกหกลูกค้า */
+(function(){
+  var el=document.getElementById('countdown'); if(!el) return;
+  function thaiToday(){
+    var n=new Date();
+    var t=new Date(n.getTime()+(n.getTimezoneOffset()*60000)+7*3600000);
+    return new Date(t.getFullYear(),t.getMonth(),t.getDate());
+  }
+  var START=new Date(2026,9,10);              /* 10 ต.ค. 2026 = 2569 */
+  var d=Math.round((START-thaiToday())/864e5);
+  if(d>1)       el.innerHTML='🗓️ เหลืออีก <b>'+d+' วัน</b> ถึงเทศกาลกินเจ';
+  else if(d===1)el.innerHTML='🗓️ <b>พรุ่งนี้</b> เริ่มเทศกาลกินเจแล้ว';
+  else if(d===0)el.innerHTML='🗓️ <b>วันนี้</b> เริ่มเทศกาลกินเจแล้ว';
+  else return;                                 /* เลยวันเริ่มแล้ว ไม่ต้องโชว์ */
+  el.removeAttribute('hidden');
 })();
 
 </script>
