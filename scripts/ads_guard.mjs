@@ -67,7 +67,9 @@ try {
   const dSpend = dAds.reduce((t, a) => t + (+a.spend || 0), 0);
   const dClicks = dAds.reduce((t, a) => t + (+a.clicks || 0), 0);
   const dCpc = dClicks ? dSpend / dClicks : 0;
-  const dVisits = await count(`web_events?select=id&utm_campaign=like.jay2026-d*&created_at=gte.${D_START}`);
+  // ⚠️ web_events เก็บ utm_campaign เป็น 'jay2026' เฉยๆ แยกรายชิ้นงานไม่ได้ (เช็คแล้ว 9 ก.ย.)
+  // → ใช้ "คลิกไปเว็บ" ที่ Meta นับให้แทน ซึ่งแยกรายชิ้นงานได้จริง
+  const dVisits = dAds.reduce((t, a) => t + (+a.inline_link_clicks || 0), 0);
   const dOrders = await count(`orders?select=id&source_campaign=like.jay2026-d*&total=gt.0`);
   const dDay = Math.floor((Date.parse(today) - Date.parse(D_START)) / 864e5) + 1;
   const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
@@ -81,7 +83,7 @@ try {
     flags.push(`คนกดไปเว็บ ${metaLinkClicks} แต่ตัวนับเราได้แค่ ${visits} — ห่างเกินปกติ เช็คว่าตัวนับครบไหม`);
   // เกณฑ์ปิดชุด D — ตกลงกับนัทไว้ 8 ก.ย. (ห้ามปิดด้วยความรู้สึก ต้องชนเกณฑ์)
   if (dDay >= 3 && dVisits < 30)
-    flags.push(`ชุด D ครบ ${dDay} วัน ใช้ ฿${dSpend.toFixed(0)} แต่คนเข้าเว็บแค่ ${dVisits} (เกณฑ์ ≥30) → **เสนอปิด D**`);
+    flags.push(`ชุด D ครบ ${dDay} วัน ใช้ ฿${dSpend.toFixed(0)} แต่คนกดไปเว็บแค่ ${dVisits} (เกณฑ์ ≥30) → **เสนอปิด D**`);
   if (dDay >= 3 && dClicks >= 10 && dCpc > 15)
     flags.push(`ชุด D ต่อคลิก ฿${dCpc.toFixed(2)} เกินเพดาน ฿15 → **เสนอปิด D**`);
   if (dDay >= 7 && dOrders === 0)
@@ -94,7 +96,7 @@ try {
     `${flags.length ? '🔴' : '✅'} [ยามเฝ้าแอด · ${today}] แคมเปญเจ jay2026`,
     '',
     `ใช้เงินสะสม **฿${spend.toFixed(2)}** · คลิก ${clicks} · ต่อคลิก ฿${cpc.toFixed(2)}`,
-    `— ชุด D (วันที่ ${dDay}) ฿${dSpend.toFixed(0)} · เข้าเว็บ ${dVisits} · ออเดอร์ ${dOrders} · ต่อคลิก ฿${dCpc.toFixed(2)}`,
+    `— ชุด D (วันที่ ${dDay}) ฿${dSpend.toFixed(0)} · กดไปเว็บ ${dVisits} · ออเดอร์ ${dOrders} · ต่อคลิก ฿${dCpc.toFixed(2)}`,
     `คนกดไปเว็บ (Meta นับ) **${metaLinkClicks}** · คนเข้า /jay (เรานับ) **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
     ads.length ? '' : '_(ยังไม่มีชิ้นงานที่วิ่งอยู่ในแคมเปญนี้)_',
     ...ads.map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
