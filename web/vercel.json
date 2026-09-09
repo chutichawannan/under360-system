@@ -172,6 +172,14 @@
     {
       "source": "/kol",
       "destination": "/kol.html"
+    },
+    {
+      "source": "/prayer",
+      "destination": "/prayer/index.html"
+    },
+    {
+      "source": "/prayer/worship",
+      "destination": "/prayer/worship.html"
     }
   ]
 }
