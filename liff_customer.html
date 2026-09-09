@@ -5630,12 +5630,25 @@ function computeOrder(){
           autoBlockedBy:(exclusive?exclusive.code:null), shipDisc, discount, total};
 }
 
+/* โค้ดนี้แถมอะไรไหม — ใช้ตอบตอนโค้ดไม่ได้ลดเงิน จะได้ไม่ขึ้นว่า "ลด ฿0" */
+function promoGiftText(code){
+  try{
+    const up = String(code||'').toUpperCase();
+    if(!up) return '';
+    const hit = orderGiftRules().filter(r => r.codes.indexOf(up) >= 0);
+    if(!hit.length) return '';
+    return giftLineText([].concat.apply([], hit.map(r => r.items.map(giftResolve))));
+  }catch(e){ return ''; }
+}
 function promoLabel(p){
-  if(p.discount_type==='fixed')        return 'ลด ฿'+p.discount_value;
-  if(p.discount_type==='percent')      return 'ลด '+p.discount_value+'%';
+  if(p.discount_type==='fixed' && Number(p.discount_value) > 0) return 'ลด ฿'+p.discount_value;
+  if(p.discount_type==='percent' && Number(p.discount_value) > 0) return 'ลด '+p.discount_value+'%';
   if(p.discount_type==='free_shipping')return 'ส่งฟรี';
   if(p.discount_type==='flat_shipping')return 'ค่าส่ง ฿'+p.discount_value;
-  return '';
+  /* ไม่ได้ลดเงินสักบาท — บอกของที่ได้แทน ถ้าโค้ดนี้ผูกของแถมไว้
+     (เดิมคืน 'ลด ฿0' ซึ่งอ่านแล้วเหมือนโค้ดเสีย ทั้งที่ของแถมเข้าตะกร้าแล้ว) */
+  const g = promoGiftText(p.code);
+  return g ? ('รับฟรี ' + g) : '';
 }
 
 async function applyPromo(codeOverride){
