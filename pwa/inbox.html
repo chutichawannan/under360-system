@@ -1,0 +1,109 @@
+<!DOCTYPE html><html lang="th"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ส่งรูปให้ห้อง — Under360</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📤</text></svg>">
+<style>
+:root{--bg:#FAF7F2;--ink:#1E1B18;--dim:#6E655C;--line:#E2DAD0;--card:#fff;--acc:#B4472A;--ok:#2E6B4F}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#16130F;--ink:#F2EDE6;--dim:#9A9088;--line:#2E2822;--card:#1E1A16;--acc:#E0714C;--ok:#5FB68C}}
+:root[data-theme="dark"]{--bg:#16130F;--ink:#F2EDE6;--dim:#9A9088;--line:#2E2822;--card:#1E1A16;--acc:#E0714C;--ok:#5FB68C}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:"Noto Sans Thai",system-ui,-apple-system,sans-serif;padding:18px 14px 40px;line-height:1.55}
+h1{font-size:20px;margin:0 0 3px}
+.sub{color:var(--dim);font-size:13px;margin-bottom:16px}
+label{display:block;font-size:12.5px;color:var(--dim);margin:0 0 5px}
+select,textarea{width:100%;background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:9px;padding:10px;font-size:14px;font-family:inherit;margin-bottom:14px}
+textarea{min-height:62px;resize:vertical}
+#drop{border:2px dashed var(--line);border-radius:14px;background:var(--card);padding:30px 16px;text-align:center;cursor:pointer;transition:.15s}
+#drop.hot{border-color:var(--acc);background:color-mix(in srgb,var(--acc) 8%,var(--card))}
+#drop b{display:block;font-size:15px;margin-bottom:4px}
+#drop span{font-size:12.5px;color:var(--dim)}
+#list{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-top:14px}
+.t{background:var(--card);border:1px solid var(--line);border-radius:10px;overflow:hidden;position:relative}
+.t img{width:100%;aspect-ratio:1;object-fit:cover;display:block}
+.t i{position:absolute;inset:0;display:grid;place-items:center;background:rgba(0,0,0,.55);color:#fff;font-style:normal;font-size:12px}
+.t.done i{background:var(--ok);width:22px;height:22px;border-radius:50%;inset:auto 5px 5px auto}
+button{width:100%;background:var(--acc);color:#fff;border:0;border-radius:10px;padding:13px;font-size:15px;font-weight:600;font-family:inherit;cursor:pointer;margin-top:16px}
+button:disabled{opacity:.45}
+#msg{margin-top:12px;font-size:13.5px;color:var(--ok);white-space:pre-wrap}
+code{font-size:11.5px;color:var(--dim);word-break:break-all}
+</style></head><body>
+<h1>📤 ส่งรูปให้ห้อง</h1>
+<div class="sub">ลากรูปใส่ หรือแตะเลือกจากมือถือ → ห้องที่เลือกจะได้จดหมายพร้อมลิงก์รูปทันที</div>
+
+<label>ส่งให้ห้องไหน</label>
+<select id="room">
+<option value="06">06 FB Ads (เอิธ)</option>
+<option value="pm">พี่ปืน (PM)</option>
+<option value="creative">ครีเอทีฟ</option>
+<option value="tiang">เตียง (โซเชียล)</option>
+<option value="05">05 LINE OA / CRM</option>
+<option value="m">02 M-track (เว็บ)</option>
+<option value="u-maintainer">U-maintainer (โค้ด)</option>
+<option value="niw">นิว</option>
+<option value="fah">ฟ้า (ครัว)</option>
+<option value="k">ห้องครัว</option>
+<option value="keng">เก่ง (ส่งของ)</option>
+<option value="f">08 การเงิน</option>
+<option value="buyer">buyer (จัดซื้อ)</option>
+<option value="kapan">กะปัน</option>
+<option value="cc">CC etc</option>
+<option value="bug">บั๊ก</option>
+</select>
+
+<label>บอกอะไรกับห้องนั้นหน่อย (ไม่ใส่ก็ได้)</label>
+<textarea id="note" placeholder="เช่น 3 ใบนี้อนุมัติแล้ว เอาไปทำแอดได้"></textarea>
+
+<div id="drop"><b>ลากรูปมาวางตรงนี้</b><span>หรือแตะเพื่อเลือกไฟล์ · ใส่ได้ทีละหลายรูป</span></div>
+<input type="file" id="f" accept="image/*,application/pdf" multiple hidden>
+<div id="list"></div>
+<button id="go" disabled>ส่ง</button>
+<div id="msg"></div>
+
+<script>
+const SB='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const drop=document.getElementById('drop'),inp=document.getElementById('f'),list=document.getElementById('list'),go=document.getElementById('go'),msg=document.getElementById('msg');
+let files=[];
+drop.onclick=()=>inp.click();
+inp.onchange=e=>add([...e.target.files]);
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('hot')}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('hot')}));
+drop.addEventListener('drop',e=>add([...e.dataTransfer.files]));
+function add(fs){
+  fs.forEach(f=>{
+    const o={f,el:document.createElement('div')};o.el.className='t';
+    o.el.innerHTML='<img><i>รอส่ง</i>';
+    if(f.type.startsWith('image/'))o.el.querySelector('img').src=URL.createObjectURL(f);
+    list.appendChild(o.el);files.push(o);
+  });
+  go.disabled=!files.length;go.textContent='ส่ง '+files.length+' ไฟล์';
+}
+function slug(n){return n.replace(/[^\w.\-฀-๿]+/g,'_')}
+go.onclick=async()=>{
+  go.disabled=true;msg.textContent='กำลังส่ง…';
+  const d=new Date(),day=d.toISOString().slice(0,10),urls=[];
+  for(const o of files){
+    if(o.done)continue;
+    const path='inbox/'+day+'/'+Date.now()+'_'+slug(o.f.name);
+    o.el.querySelector('i').textContent='…';
+    const r=await fetch(SB+'/storage/v1/object/menu-images/'+path,{method:'POST',
+      headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':o.f.type||'application/octet-stream','x-upsert':'true'},body:o.f});
+    if(r.ok){o.done=true;o.el.classList.add('done');o.el.querySelector('i').textContent='✓';
+      urls.push({n:o.f.name,u:SB+'/storage/v1/object/public/menu-images/'+path});}
+    else{o.el.querySelector('i').textContent='พลาด';}
+  }
+  if(!urls.length){msg.style.color='var(--acc)';msg.textContent='ส่งไม่สำเร็จสักไฟล์ ลองใหม่';go.disabled=false;return}
+  const room=document.getElementById('room').value;
+  const note=document.getElementById('note').value.trim();
+  const text='📤 **นัทส่งไฟล์มาให้ห้องนี้** ('+urls.length+' ไฟล์ · '+day+')\n\n'
+    +(note?'> '+note+'\n\n':'')
+    +urls.map((x,i)=>(i+1)+'. `'+x.n+'`\n   '+x.u).join('\n')
+    +'\n\n_ส่งจากหน้า /pwa/inbox.html — ไฟล์อยู่ใน Storage `menu-images/inbox/` โหลดด้วย curl ได้เลย_';
+  await fetch(SB+'/rest/v1/session_messages',{method:'POST',
+    headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'return=minimal'},
+    body:JSON.stringify([{room,sender:'นัท',role:'user',text}])});
+  msg.style.color='var(--ok)';
+  msg.textContent='✅ ส่งเข้าห้อง '+room+' แล้ว '+urls.length+' ไฟล์ — ห้องนั้นจะเห็นในไม่กี่วินาที';
+  go.textContent='ส่งเพิ่ม';go.disabled=false;
+};
+</script></body></html>
