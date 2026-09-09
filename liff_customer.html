@@ -762,7 +762,8 @@ body{background:#fff!important}
     <button class="hdr-back" onclick="closePkgSheet()">←</button>
     <div class="hdr-title" id="pkg-hdr-title">เลือกเมนูในแพค</div>
   </div>
-  <div class="scroll pb-btn">
+  <div class="scroll pb-btn" id="pkg-scroll">
+    <div id="pkg-banner"></div>
     <div id="pkg-progress"></div>
     <div style="padding:8px 14px 4px;">
       <input type="text" id="pkg-search-inp" placeholder="🔍 ค้นหาชื่อเมนู..."
@@ -1372,13 +1373,55 @@ function openPackage(pkgId) {
   if (inp) inp.value = '';
   document.getElementById('pkg-hdr-title').innerHTML = h(currentPkg.name) +
     (currentPkg.free_shipping ? ' <span style="font-size:11px;font-weight:800;background:#D1FAE5;color:#065F46;padding:2px 8px;border-radius:9px;white-space:nowrap;">🚚 ส่งฟรี</span>' : '');
+  renderPkgBanner();
   renderPkgSelect();
   document.getElementById('pkg-backdrop').classList.add('on');
   document.getElementById('s-pkg-select').classList.add('on');
+  /* เปิดมาต้องอยู่บนสุดเสมอ — เดิมค้างตำแหน่งเดิมจากที่เลื่อนไว้รอบก่อน
+     ลูกค้าเปิดมาเจอกลางรายการ ไม่เห็นหัวเรื่องว่ากำลังซื้ออะไรอยู่ (นัทเจอเองตอนเทส) */
+  const _sc = document.getElementById('pkg-scroll');
+  if (_sc) _sc.scrollTop = 0;
 }
 function closePkgSheet(){
   document.getElementById('s-pkg-select').classList.remove('on');
   document.getElementById('pkg-backdrop').classList.remove('on');
+}
+
+/* 🎨 แบนเนอร์หัวป๊อป — เฉพาะคอร์สเจ (นัทเลือกแบบ ข เอง 9 ก.ย.)
+   🔴 แถบล่างอ่านจากฐานข้อมูลจริงทุกค่า ห้ามฮาร์ดโค้ด
+      เพราะ Early Bird เต็มเมื่อไหร่ ระบบสลับเป็นราคาปกติให้เอง
+      ถ้าแบนเนอร์ฮาร์ดโค้ด ฿4,190 ไว้ ลูกค้าจะเห็น 4,190 แต่โดนคิด 4,490 = โกหกเรื่องเงิน
+   พื้นหลังตอนนี้เป็นสีทึบ — นัทบอกว่าจะออกแบบรูปมาใส่ทีหลัง เตรียมที่ไว้แล้ว */
+const JAY_PKG_IDS = ['26347b55-d28a-4ee1-980c-b4266b89b3d2','b36dcfb3-63b4-4e51-948f-7b23d1675b56'];
+function renderPkgBanner(){
+  const box = document.getElementById('pkg-banner');
+  if(!box) return;
+  const p = currentPkg;
+  if(!p || JAY_PKG_IDS.indexOf(p.id) < 0){ box.innerHTML = ''; return; }
+
+  /* ราคา + ของแถม อ่านจากแพคที่กำลังเปิดอยู่จริง (ซึ่งอาจถูกสลับมาแล้ว) */
+  const price = Number(p.base_price || 0).toLocaleString();
+  const gifts = (typeof pkgGiftsOf === 'function') ? pkgGiftsOf(p.id) : [];
+  const giftTxt = gifts.length ? (' + ' + giftLineText(gifts) + 'ฟรี') : '';
+  const q = (typeof pkgQuotaOf === 'function') ? pkgQuotaOf(p.id) : null;
+  const left = (q && typeof pkgQuotaLeft === 'function') ? pkgQuotaLeft(p.id) : null;
+  /* ยังมีสิทธิ์ Early Bird = โชว์ป้ายนั้น · เต็มแล้ว/ไม่มีโควตา = โชว์ชื่อแพคแทน
+     ไม่โชว์ "Early Bird" ค้างไว้ตอนที่มันเต็มไปแล้ว */
+  const leftTxt = (q && q.label && left !== null && left > 0) ? q.label : h(p.name);
+
+  box.innerHTML =
+    '<div style="background:#993C1D;padding:17px 16px 15px;text-align:center;">' +
+      '<div style="display:inline-block;background:#FAECE7;color:#4A1B0C;font-size:11px;' +
+        'padding:3px 10px;border-radius:7px;font-weight:700;">เทศกาลกินเจ 2026 · 9–18 ตุลาคม</div>' +
+      '<div style="color:#FAECE7;font-size:21px;font-weight:600;line-height:1.32;margin-top:9px;">' +
+        'กินเจให้ครบ 10 วัน<br>โดยไม่ต้องคิดเมนูเอง</div>' +
+      '<div style="color:#F0997B;font-size:12.5px;margin-top:6px;">30 เมนูไม่ซ้ำ · ส่งถึงบ้าน 3 รอบ</div>' +
+    '</div>' +
+    '<div style="background:#FAEEDA;color:#412402;font-size:12.5px;padding:8px 14px;' +
+      'display:flex;align-items:center;justify-content:space-between;gap:10px;">' +
+      '<span>' + leftTxt + h(giftTxt) + '</span>' +
+      '<span style="font-size:17px;font-weight:600;white-space:nowrap;">฿' + price + '</span>' +
+    '</div>';
 }
 
 function renderPkgSelect() {
