@@ -70,7 +70,7 @@ try {
   // ⚠️ web_events เก็บ utm_campaign เป็น 'jay2026' เฉยๆ แยกรายชิ้นงานไม่ได้ (เช็คแล้ว 9 ก.ย.)
   // → ใช้ "คลิกไปเว็บ" ที่ Meta นับให้แทน ซึ่งแยกรายชิ้นงานได้จริง
   const dVisits = dAds.reduce((t, a) => t + (+a.inline_link_clicks || 0), 0);
-  const dOrders = await count(`orders?select=id&source_campaign=like.jay2026-d*&total=gt.0`);
+  const dOrders = await count(`orders?select=id&source_campaign=like.*jay2026-d*&total=gt.0`);
   const dDay = Math.floor((Date.parse(today) - Date.parse(D_START)) / 864e5) + 1;
   const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
 
