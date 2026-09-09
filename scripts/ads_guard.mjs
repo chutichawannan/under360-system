@@ -60,6 +60,16 @@ try {
   const visits = await count(`web_events?select=id&page=like.*jay*&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
   const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
   const orders = await count(`orders?select=id&source_campaign=like.*jay*&total=gt.0`);
+
+  // ── ชุด D (Lookalike คนใหม่) มีเกณฑ์ปิดของตัวเอง — ตกลงกับนัท 8 ก.ย.
+  const D_START = '2026-09-08';
+  const dAds = ads.filter(a => (a.ad_name || '').startsWith('d'));
+  const dSpend = dAds.reduce((t, a) => t + (+a.spend || 0), 0);
+  const dClicks = dAds.reduce((t, a) => t + (+a.clicks || 0), 0);
+  const dCpc = dClicks ? dSpend / dClicks : 0;
+  const dVisits = await count(`web_events?select=id&utm_campaign=like.jay2026-d*&created_at=gte.${D_START}`);
+  const dOrders = await count(`orders?select=id&source_campaign=like.jay2026-d*&total=gt.0`);
+  const dDay = Math.floor((Date.parse(today) - Date.parse(D_START)) / 864e5) + 1;
   const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
 
   // ── ตัดสิน
@@ -69,6 +79,13 @@ try {
     flags.push(`Meta บอกมีคนกดไปเว็บ ${metaLinkClicks} ครั้ง แต่ตัวนับเราได้ 0 → **ตัวนับหน้า /jay น่าจะพัง ไม่ใช่แอดไม่มีคน** (แจ้งห้อง M)`);
   else if (metaLinkClicks >= 20 && visits < metaLinkClicks * 0.3)
     flags.push(`คนกดไปเว็บ ${metaLinkClicks} แต่ตัวนับเราได้แค่ ${visits} — ห่างเกินปกติ เช็คว่าตัวนับครบไหม`);
+  // เกณฑ์ปิดชุด D — ตกลงกับนัทไว้ 8 ก.ย. (ห้ามปิดด้วยความรู้สึก ต้องชนเกณฑ์)
+  if (dDay >= 3 && dVisits < 30)
+    flags.push(`ชุด D ครบ ${dDay} วัน ใช้ ฿${dSpend.toFixed(0)} แต่คนเข้าเว็บแค่ ${dVisits} (เกณฑ์ ≥30) → **เสนอปิด D**`);
+  if (dDay >= 3 && dClicks >= 10 && dCpc > 15)
+    flags.push(`ชุด D ต่อคลิก ฿${dCpc.toFixed(2)} เกินเพดาน ฿15 → **เสนอปิด D**`);
+  if (dDay >= 7 && dOrders === 0)
+    flags.push(`ชุด D ครบ 7 วัน ใช้ ฿${dSpend.toFixed(0)} **ยังไม่มีออเดอร์เลย** → เสนอปิด D · แปลว่าคนแปลกหน้ายังไม่ซื้อ ให้ทุ่มไปทางลิสต์เก่า/LINE แทน`);
   if (spend > 500 && metaLinkClicks === 0) flags.push(`ใช้เงินไป ฿${spend.toFixed(0)} แต่ยังไม่มีใครกดไปเว็บเลยสักคน`);
   if (clicks >= 30 && cpc > 15) flags.push(`ค่าคลิกแพงผิดปกติ ฿${cpc.toFixed(2)} (เพดาน ฿15)`);
   for (const g of GATES) if (today >= g.date && !g.check(d)) flags.push(`ไม่ผ่านประตู ${g.date}: ต้องได้ ${g.need}`);
@@ -77,6 +94,7 @@ try {
     `${flags.length ? '🔴' : '✅'} [ยามเฝ้าแอด · ${today}] แคมเปญเจ jay2026`,
     '',
     `ใช้เงินสะสม **฿${spend.toFixed(2)}** · คลิก ${clicks} · ต่อคลิก ฿${cpc.toFixed(2)}`,
+    `— ชุด D (วันที่ ${dDay}) ฿${dSpend.toFixed(0)} · เข้าเว็บ ${dVisits} · ออเดอร์ ${dOrders} · ต่อคลิก ฿${dCpc.toFixed(2)}`,
     `คนกดไปเว็บ (Meta นับ) **${metaLinkClicks}** · คนเข้า /jay (เรานับ) **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
     ads.length ? '' : '_(ยังไม่มีชิ้นงานที่วิ่งอยู่ในแคมเปญนี้)_',
     ...ads.map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
