@@ -18,7 +18,7 @@ console.log(NL+'① 🔴 หน้าลูกค้า — ห้ามล็�
 
 console.log(NL+'② หน้าหลังบ้าน — ต้องมีด่าน');
 ['operation_hub.html','main_database_v2.html','kitchen_queue.html','command_center.html','report.html',
- 'customer.html','pwa/cash_due.html','pwa/dispatch.html','pwa/jay_orders.html']
+ 'customer.html','pwa/cash_due.html','pwa/dispatch.html','pwa/jay_orders.html', 'pwa/inbox.html']
   .forEach(f => t(f, locked(f), true));
 
 console.log(NL+'③ ตัวตรวจฝั่งเซิร์ฟเวอร์');
