@@ -113,3 +113,6 @@ console.log(NL + '⑥ กดปุ่มเลือกวิธีจ่าย�
 
 console.log(NL + (fail ? '❌' : '✅') + ' ผ่าน ' + ok + ' · ตก ' + fail);
 process.exit(fail ? 1 : 0);
+
+/* เปิด branch นี้เพื่อสร้าง Preview deployment ที่มี test key ของ Omise ติดมาด้วย
+   (test key อยู่ scope=Preview เท่านั้น ตั้งใจ — ไม่ให้โผล่ production) */
