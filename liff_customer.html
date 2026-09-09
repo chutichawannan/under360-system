@@ -1332,6 +1332,28 @@ function renderPkgBand() {
     '</div>';
 }
 
+/* 🔗 ?pkg=<id> — พาลูกค้าเข้าป๊อปแพคเกจตรง ๆ ไม่ต้องหาการ์ดเอง
+   (06 ขอ 9 ก.ย. · นัทสั่งเอง: "ลูกค้าก็จะงงว่าแล้วกดสั่งจองคอร์สเจตรงไหน
+    ในเมื่อฉันกดปุ่มสั่งจองไปแล้วในหน้าเว็บ")
+
+   ทำเป็นแบบทั่วไป ไม่ฮาร์ดโค้ดคอร์สเจ → ใช้ซ้ำได้กับทุกแคมเปญ
+   ตัวอย่าง: https://liff.line.me/2011148232-oul66cEs?pkg=<id>&utm_source=fb
+
+   🔴 ห้ามค้างจอเปล่าเด็ดขาด — id ผิด/ปิดขาย/โหลดไม่ทัน = อยู่หน้าเมนูปกติ
+      คนที่กดมาจากแอดคือคนที่ตั้งใจซื้อที่สุด เจอจอค้างคือเสียทั้งคนทั้งค่าแอด */
+function openPkgFromUrl(){
+  try{
+    const want = (new URLSearchParams(location.search).get('pkg') || '').trim();
+    if(!want) return;
+    /* เต็มโควตาแล้ว openPackage สลับเป็นแพคสำรองให้เองอยู่แล้ว — เช็คทั้ง 2 ตัว
+       ไม่งั้น Early Bird เต็มเมื่อไหร่ ลิงก์ในแอดจะตายทันทีทั้งที่ของยังขายอยู่ */
+    const use = (typeof pkgResolveId === 'function') ? pkgResolveId(want) : want;
+    const found = (packages || []).some(p => p.id === want || p.id === use);
+    if(!found){ console.warn('?pkg= ไม่ตรงกับแพคที่เปิดขายอยู่:', want); return; }
+    openPackage(want);
+  }catch(e){ console.warn('เปิดป๊อปจาก ?pkg= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); }
+}
+
 function openPackage(pkgId) {
   /* เต็มโควตาแล้วสลับให้เองตั้งแต่ตอนเปิด — ลูกค้าไม่เจอหน้าตายว่า "ปิดรับแล้ว" */
   const _want = pkgId, _use = pkgResolveId(pkgId);
@@ -2944,7 +2966,7 @@ async function init() {
     renderMenu();
     updateCartUI();
     loadHomeLayout();
-    loadPackagesIfNeeded(); // v0.3.2
+    loadPackagesIfNeeded().then(openPkgFromUrl); // v0.3.2 · แล้วเปิดป๊อปตาม ?pkg= ถ้ามี
     loadMpOfferSets(); // v0.4.10 — โหลดชุด Meal Plan จาก DB ถ้ามี (เผื่อแอดมินเพิ่มชุดโปรโมชั่นเอง)
   } catch(e) { console.warn('Render error', e); }
   const _screenParam = new URLSearchParams(location.search).get('screen');
