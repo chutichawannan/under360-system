@@ -134,13 +134,23 @@ for (const f of ['fah_auto.mjs','fah_build_sheet.mjs','fah_assign_menus.mjs','fa
 
 // ---------- ⑦ วันในใบออเดอร์ ต้องตรงกับวันของรอบครัว ----------
 // เพิ่ม 9 ก.ย. 2026 หลังนัทเจอเองว่าลูกค้าหายจากใบงาน (docs/CASE_03_order_vs_round_date.md)
+// ⚠️ ใช้ตัวตรวจของห้อง U ไม่ใช่ของเราเอง — วันนั้นทำขึ้นมาพร้อมกัน 2 ตัว
+//    ของ U แยก "ยุค Hato ที่เพี้ยนเป็นระบบ" ออกจาก "บั๊กของเรา" ได้ ซึ่งของเราทำไม่ได้
+//    บ้านต้องมีตัวเลขเดียว ไม่งั้นเวลาไม่ตรงกันจะเถียงกันว่าเชื่อตัวไหน
 // ตั้งใจให้เป็น "เตือน" ไม่ใช่ "ไม่ผ่าน" — ใบงานสร้างจากรอบซึ่งยังถูก ถ้าบล็อก = ครัวไม่มีใบ เจ็บกว่าเดิม
+// ⚠️ ตัวตรวจของ U ตั้งใจคืน exit code 1 เมื่อเจอของผิด → execFileSync จะ throw
+//    ต้องอ่าน stdout จากตัว error ด้วย ไม่งั้นจะแปลว่า "ยามพัง" ทั้งที่ยามทำงานถูก
+let out7 = null, err7 = null;
 try {
   const { execFileSync: exec7 } = await import("node:child_process");
-  const out7 = exec7(process.execPath, ["scripts/fah_check_date_match.mjs"], { encoding: "utf8" });
-  const bad7 = out7.split(String.fromCharCode(10)).filter(l => /ใบว่า .* · .*รอบว่า/.test(l));
-  if (bad7.length) WARN("⑦ **วันในใบไม่ตรงกับวันของรอบ " + bad7.length + " รอบ** — ลูกค้าจะโผล่หน้าหนึ่ง หายอีกหน้าหนึ่ง · ดู node scripts/fah_check_date_match.mjs");
-} catch (e) { WARN("⑦ ตัวเทียบวันรันไม่ได้: " + e.message); }
+  out7 = exec7(process.execPath, ["scripts/u/check_mp_date_mismatch.mjs"], { encoding: "utf8" });
+} catch (e) { out7 = e.stdout || null; if (!out7) err7 = String(e.message).split(String.fromCharCode(10))[0]; }
+if (err7) FAIL("⑦ **ยามเทียบวันไม่ทำงาน** (scripts/u/check_mp_date_mismatch.mjs) — ยามเงียบอันตรายกว่าไม่มียาม: " + err7);
+else {
+  const m7 = out7.match(/ยังแก้ทัน ([0-9]+)/);
+  const bad7 = m7 ? Number(m7[1]) : 0;
+  if (bad7) WARN("⑦ **วันในใบไม่ตรงกับวันของรอบ " + bad7 + " รอบที่ยังแก้ทัน** — ลูกค้าจะโผล่หน้าหนึ่ง หายอีกหน้าหนึ่ง · ดู node scripts/u/check_mp_date_mismatch.mjs");
+}
 // ---------- สรุป ----------
 console.log(`ตรวจ ${days.length} วันผลิต · ${rows.length} รอบ\n`);
 if (warns.length) { console.log('🟡 เตือน:'); warns.forEach(w => console.log('   · ' + w)); console.log(''); }

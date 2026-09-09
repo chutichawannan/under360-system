@@ -64,7 +64,7 @@ say(`🎯 วันผลิตเป้าหมาย: ${DATE}`);
 //    ถ้าไม่ดึงลงมาก่อน เราจะ push ทับงานห้องอื่นด้วยไฟล์เก่าในเครื่อง
 run('git', ['fetch', '-q', 'origin'], { cwd: WT });
 run('git', ['reset', '-q', '--hard', 'origin/main'], { cwd: WT });
-for (const f of ['kitchen/index.html']) {
+for (const f of ['kitchen/index.html', 'scripts/u/check_mp_date_mismatch.mjs']) {
   if (existsSync(`${WT}/${f}`)) copyFileSync(`${WT}/${f}`, `${ROOT}/${f}`);
 }
 
@@ -132,8 +132,8 @@ say(vf.split('|SPLIT|').join('').split(String.fromCharCode(10)).filter(l => /❌
 
 // ---------- 7c ยามเทียบวันในใบ กับ วันของรอบครัว ----------
 say("");
-const dm = node("scripts/fah_check_date_match.mjs").split(String.fromCharCode(10));
-say(dm.filter(l => /🔴 ไม่ตรงกัน|✅ ตรงกันทุกรอบ|ใบว่า /.test(l)).join(String.fromCharCode(10)));
+const dm = node("scripts/u/check_mp_date_mismatch.mjs").split(String.fromCharCode(10));
+say(dm.filter(l => /ยังแก้ทัน|🔴 [^ ]/.test(l)).join(String.fromCharCode(10)));
 // ---------- 8 สรุป ----------
 if (!existsSync(`${ROOT}/kitchen`)) mkdirSync(`${ROOT}/kitchen`);
 writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));
