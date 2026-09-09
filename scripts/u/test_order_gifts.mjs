@@ -12,15 +12,19 @@ const grab = (n) => {
     else if (src[j] === '}') { d--; if (st && d === 0) return src.slice(i, j + 1); }
   }
 };
-const body = ['orderGiftRules','orderGiftsEarned','orderGiftNext'].map(grab).join('\n');
+/* ต้องยกตัวช่วยที่ orderGiftRules เรียกใช้มาด้วย ไม่งั้น ReferenceError ทุกครั้งที่รัน
+   เทสนี้ error เงียบมานาน (ไม่เกี่ยวกับของแถมผูกโค้ด — verify กับ commit ก่อนหน้าแล้วว่าพังอยู่ก่อน)
+   เจอ 9 ก.ย. ตอนรันเช็คว่าของใหม่ไปทับของเก่าไหม → เทสที่ error ทุกครั้ง = ไม่ได้ปกป้องอะไรเลย */
+const body = ['giftSlotKey','giftResolve','giftCodeOn','orderGiftRules','orderGiftsEarned','orderGiftNext']
+  .map(grab).join('\n');
 let ok = 0, fail = 0;
 const t = (n, got, want) => {
   const g = JSON.stringify(got), w = JSON.stringify(want);
   if (g === w) { ok++; console.log('  ✅', n); } else { fail++; console.log('  ❌', n, '\n     ได้ ', g, '\n     ควร ', w); }
 };
-const env = (total, gifts) => new Function('cartTotal','orderGifts','localYMD',
+const env = (total, gifts) => new Function('cartTotal','orderGifts','localYMD','giftPick','appliedPromos',
   body + '\n; return {orderGiftRules,orderGiftsEarned,orderGiftNext};')(
-  () => total, gifts, () => '2026-09-04');
+  () => total, gifts, () => '2026-09-04', {}, []);
 
 const BB = { bb99: { label:'ซื้อครบ ฿1,999 รับฟรี BoneBroth', min_order:1999, expires_at:'2026-09-09',
                      items:[{ code:'BB01', name:'โบนบรอธไก่', qty:1 }] } };
