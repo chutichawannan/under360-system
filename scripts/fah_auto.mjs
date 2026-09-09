@@ -19,7 +19,7 @@
  * ⛔ ตรวจไม่ผ่าน = ไม่ push (ใบเก่ายังอยู่ ดีกว่าใบใหม่ที่ผิด)
  */
 import { execFileSync } from 'node:child_process';
-import { writeFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, mkdirSync, copyFileSync } from 'node:fs';
 
 const args = process.argv.slice(2);
 const DRY = args.includes('--dry');
@@ -134,6 +134,34 @@ say(vf.split('|SPLIT|').join('').split(String.fromCharCode(10)).filter(l => /❌
 say("");
 const dm = node("scripts/u/check_mp_date_mismatch.mjs").split(String.fromCharCode(10));
 say(dm.filter(l => /ยังแก้ทัน|🔴 [^ ]/.test(l)).join(String.fromCharCode(10)));
+// ---------- 7d เจอวันไม่ตรง = ยิงบอร์ดเองทันที ----------
+// นัทสั่ง 9 ก.ย. 2026: "ขอแค่วันต่อๆ ไปจะไม่เห็นเหตุการณ์แบบนี้อีก ให้มัน 100%"
+// เตือนในเช็คลิสต์อย่างเดียวไม่พอ — ต้องมีคนเห็นโดยไม่ต้องรอใครเปิดอ่าน
+// ยิงเฉพาะตอน "ชุดใบที่เจอ" เปลี่ยนจากรอบก่อน กันสแปมบอร์ดวันละ 3 รอบ
+try {
+  const bad = dm.filter(l => /^  🔴 /.test(l)).map(l => l.trim()).sort();
+  const sig = bad.join(" | ");
+  const memo = ROOT + "/kitchen/_date_mismatch_last.txt";
+  const prev = existsSync(memo) ? readFileSync(memo, "utf8") : "";
+  if (bad.length && sig !== prev && !DRY) {
+    const lines = [
+      "🔴 [ยามห้องฟ้า · อัตโนมัติ] วันในใบไม่ตรงกับวันของรอบครัว " + bad.length + " ใบ",
+      "",
+      "ลูกค้ากลุ่มนี้จะโผล่ในหน้าออเดอร์ แต่หายจากใบงานครัว (หรือกลับกัน)",
+      "",
+      ...bad.map(b => "· " + b.replace(/^🔴 /, "")),
+      "",
+      "ตรวจซ้ำ: node scripts/u/check_mp_date_mismatch.mjs · สาเหตุ: docs/CASE_03_order_vs_round_date.md",
+      "(ยามยิงเองเมื่อรายชื่อเปลี่ยน ไม่ได้ยิงซ้ำทุกวัน)"
+    ].join(String.fromCharCode(10));
+    const rows = ["u-maintainer", "secretary"].map(room => ({ room, sender: "fah", role: "assistant", text: lines }));
+    const SBU = "https://zdartbvhbvqlwzwyyiia.supabase.co";
+    const SBK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+    const res = await fetch(SBU + "/rest/v1/session_messages", { method: "POST", headers: { apikey: SBK, Authorization: "Bearer " + SBK, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(rows) });
+    say(res.ok ? "   📮 แจ้งบอร์ดอัตโนมัติแล้ว (u + เลขา)" : "   ⚠️ แจ้งบอร์ดไม่สำเร็จ " + res.status);
+    if (res.ok) writeFileSync(memo, sig);
+  } else if (!bad.length && prev) { writeFileSync(memo, ""); say("   ✅ วันตรงกันหมดแล้ว (เคลียร์รายการที่เคยเตือน)"); }
+} catch (e) { say("   ⚠️ ยามแจ้งบอร์ดพลาด: " + e.message); }
 // ---------- 8 สรุป ----------
 if (!existsSync(`${ROOT}/kitchen`)) mkdirSync(`${ROOT}/kitchen`);
 writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));
