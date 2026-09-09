@@ -57,8 +57,8 @@ try {
   const metaLinkClicks = ads.reduce((s, a) => s + (+a.inline_link_clicks || 0), 0);
 
   // ── DB: คนเข้าหน้า /jay · คนกดไป LINE · ออเดอร์จากแอด
-  const visits = await count(`web_events?select=id&page=like.*jay*&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
-  const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&utm_campaign=not.like.*selftest*&created_at=gte.${START}`);
+  const visits = await count(`web_events?select=id&page=like.*jay*&utm_source=eq.fb&created_at=gte.${START}`);
+  const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&utm_source=eq.fb&created_at=gte.${START}`);
   const orders = await count(`orders?select=id&source_campaign=like.*jay*&total=gt.0`);
 
   // ── ชุด D (Lookalike คนใหม่) มีเกณฑ์ปิดของตัวเอง — ตกลงกับนัท 8 ก.ย.
