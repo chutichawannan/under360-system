@@ -1,0 +1,286 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ต้นแบบหน้าครัว · ISSUE 02</title>
+<style>
+:root{
+  --bg:#f2f4f1; --card:#ffffff; --ink:#16211c; --muted:#6b7a72;
+  --line:#dfe5e0; --green:#1f6b4a; --green-soft:#e6f2eb;
+  --amber:#b26a00; --amber-soft:#fff2dc; --red:#b3261e; --red-soft:#fde8e6;
+  --shadow:0 1px 2px rgba(22,33,28,.06),0 4px 14px rgba(22,33,28,.05);
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);
+ font-family:"Segoe UI","Noto Sans Thai",system-ui,-apple-system,sans-serif;
+ font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+.wrap{max-width:460px;margin:0 auto;padding:0 0 90px}
+
+/* ---- prototype banner ---- */
+.proto{background:#241f14;color:#ffd98a;font-size:12px;padding:7px 14px;text-align:center;line-height:1.5}
+.proto b{color:#fff}
+
+/* ---- top switcher (ของต้นแบบเท่านั้น ไม่ใช่ของจริง) ---- */
+.switch{display:flex;gap:6px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line);
+ position:sticky;top:0;z-index:20}
+.switch button{flex:1;padding:9px 4px;border:1px solid var(--line);background:#fff;border-radius:9px;
+ font:600 12.5px/1.2 inherit;color:var(--muted);cursor:pointer}
+.switch button.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ---- header ---- */
+.hd{background:#fff;padding:12px 16px 14px;border-bottom:1px solid var(--line)}
+.hd .row1{display:flex;justify-content:space-between;align-items:center;font-size:13.5px;color:var(--muted)}
+.hd .row1 .day{font-weight:700;color:var(--ink);font-size:15px}
+.big{margin:12px 0 4px;display:flex;align-items:baseline;gap:10px}
+.big .n{font-size:42px;font-weight:800;letter-spacing:-1px;line-height:1}
+.big .lb{font-size:14px;color:var(--muted);font-weight:600}
+.bar{height:12px;border-radius:99px;background:#e7ebe8;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--green);border-radius:99px}
+.barTxt{margin-top:6px;font-size:13px;color:var(--muted);font-weight:600}
+
+/* ---- mode buttons ---- */
+.modes{display:flex;gap:10px;padding:12px 14px}
+.modes button{flex:1;padding:16px 4px;border:2px solid var(--line);background:#fff;border-radius:14px;
+ font:800 17px/1.2 inherit;color:var(--muted);cursor:pointer;box-shadow:var(--shadow)}
+.modes button.on{background:var(--green);border-color:var(--green);color:#fff}
+
+/* ---- cards ---- */
+.sec{padding:4px 14px}
+.secTitle{font-size:12.5px;font-weight:800;color:var(--muted);letter-spacing:.4px;margin:16px 2px 8px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;margin-bottom:10px;
+ overflow:hidden;box-shadow:var(--shadow)}
+.card.urgent{border:2px solid var(--amber);background:var(--amber-soft)}
+.card.done{background:var(--green-soft);border-color:#bfdccd}
+.cHead{display:flex;justify-content:space-between;align-items:center;padding:11px 13px;font-weight:700;font-size:15px}
+.cHead .cnt{font-size:13px;color:var(--muted);font-weight:700}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 8px;border-radius:99px;
+ background:var(--amber);color:#fff;margin-right:6px;vertical-align:2px}
+.line{display:flex;align-items:center;gap:11px;padding:11px 13px;border-top:1px solid var(--line);cursor:pointer}
+.line:active{background:#f6f8f6}
+.ph{width:44px;height:44px;border-radius:10px;background:#e3e9e4;flex:none;
+ display:grid;place-items:center;font-size:19px}
+.code{font-size:19px;font-weight:800;min-width:44px}
+.qty{font-size:15px;color:var(--muted);font-weight:700;flex:1}
+.tick{width:30px;height:30px;border-radius:8px;border:2px solid var(--line);flex:none;
+ display:grid;place-items:center;font-size:17px;color:#fff}
+.tick.on{background:var(--green);border-color:var(--green)}
+
+/* ---- count mode ---- */
+.crow{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);
+ border-radius:14px;padding:11px 13px;margin-bottom:10px;box-shadow:var(--shadow)}
+.cinfo{flex:1;min-width:0}
+.cname{font-size:12.5px;color:var(--muted);font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cnum{width:76px;height:60px;border:2px solid var(--line);border-radius:12px;text-align:center;
+ font:800 30px/1 inherit;color:var(--ink);background:#fff;font-variant-numeric:tabular-nums}
+.cnum:focus{outline:none;border-color:var(--green)}
+.warn{display:block;margin-top:5px;font-size:12px;color:var(--amber);font-weight:700}
+
+/* ---- plan page ---- */
+.days{display:flex;gap:7px;overflow-x:auto;padding:12px 14px 4px}
+.days button{flex:none;padding:8px 13px;border:1px solid var(--line);background:#fff;border-radius:10px;
+ font:700 13px/1 inherit;color:var(--muted);cursor:pointer;white-space:nowrap}
+.days button.on{background:var(--ink);border-color:var(--ink);color:#fff}
+.prow{display:flex;align-items:center;gap:11px;background:#fff;border:1px solid var(--line);
+ border-radius:14px;padding:11px 13px;margin-bottom:10px;box-shadow:var(--shadow)}
+.make{font-size:30px;font-weight:800;min-width:52px;text-align:right}
+.make.zero{color:#b9c3bc}
+.why{font-size:12px;color:var(--muted);font-weight:600;line-height:1.5}
+.send{position:fixed;left:0;right:0;bottom:0;max-width:460px;margin:0 auto;padding:12px 14px 16px;
+ background:linear-gradient(to top,var(--bg) 70%,transparent)}
+.send button{width:100%;padding:16px;border:0;border-radius:14px;background:var(--green);color:#fff;
+ font:800 16px/1 inherit;cursor:pointer;box-shadow:var(--shadow)}
+
+/* ---- admin page ---- */
+.fld{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:10px;box-shadow:var(--shadow)}
+.fld label{display:block;font-size:12px;font-weight:800;color:var(--muted);margin-bottom:7px;letter-spacing:.3px}
+.fld input,.fld select{width:100%;padding:11px;border:1px solid var(--line);border-radius:10px;
+ font:600 15px/1 inherit;background:#fff}
+.pill{display:inline-flex;align-items:center;gap:6px;padding:9px 13px;border-radius:99px;
+ border:2px solid var(--line);background:#fff;font:800 14px/1 inherit;cursor:pointer;color:var(--muted)}
+.pill.on{background:var(--amber);border-color:var(--amber);color:#fff}
+.note{font-size:12.5px;color:var(--muted);line-height:1.65;padding:2px 4px 0}
+.note b{color:var(--ink)}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:96px;background:var(--ink);color:#fff;
+ padding:11px 17px;border-radius:99px;font:700 13.5px/1 inherit;opacity:0;transition:.2s;pointer-events:none;z-index:40}
+.toast.on{opacity:1}
+.cut{background:var(--red-soft);border:1px solid #f0c4c0;border-radius:12px;padding:11px 13px;margin:10px 14px;
+ font-size:12.5px;color:#7a1d17;line-height:1.6}
+.cut b{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="proto">🧪 <b>ต้นแบบ</b> — ข้อมูลสมมติ ยังไม่ต่อระบบจริง · รวมจาก 4 ห้อง (เลขา · นิว · U · 05)</div>
+
+<div class="switch">
+  <button id="tA" class="on" onclick="go('A')">👨‍🍳 หน้าครัว</button>
+  <button id="tB" onclick="go('B')">📋 หน้าวางแผน</button>
+  <button id="tC" onclick="go('C')">💁‍♀️ แอดมิน · ด่วน</button>
+</div>
+
+<!-- ══════════ หน้า A ══════════ -->
+<div class="wrap" id="pgA">
+  <div class="hd">
+    <div class="row1"><span class="day">วันนี้ · พฤหัส 10 ก.ย.</span><span>👤 โม๋ข่อง</span></div>
+    <div class="big"><span class="n" id="hdN">24</span><span class="lb">กล่อง ต้องส่งวันนี้ · 9 ใบ</span></div>
+    <div class="bar"><i id="hdBar" style="width:70%"></i></div>
+    <div class="barTxt" id="hdTxt">จัดแล้ว 17 / 24</div>
+  </div>
+
+  <div class="modes">
+    <button id="mPack" class="on" onclick="mode('pack')">📦 จัดของ</button>
+    <button id="mCount" onclick="mode('count')">🔢 นับของ</button>
+  </div>
+
+  <!-- โหมดจัดของ -->
+  <div class="sec" id="secPack">
+    <div class="secTitle">⚡ ด่วน — แอดมินเพิ่งสั่ง</div>
+    <div class="card urgent" data-card>
+      <div class="cHead"><span><span class="tag">ด่วน</span>คุณพลอย</span><span class="cnt"><b data-n>0</b>/2</span></div>
+      <div class="line" onclick="tick(this)"><div class="ph">🍱</div><div class="code">S6</div><div class="qty">×2</div><div class="tick">✓</div></div>
+    </div>
+
+    <div class="secTitle">รอบบ่าย</div>
+    <div class="card" data-card>
+      <div class="cHead"><span>ชัชพล พันธุ์แพ</span><span class="cnt"><b data-n>0</b>/3</span></div>
+      <div class="line" onclick="tick(this)"><div class="ph">🍚</div><div class="code">S2</div><div class="qty">×2</div><div class="tick">✓</div></div>
+      <div class="line" onclick="tick(this)"><div class="ph">🥗</div><div class="code">D1</div><div class="qty">×1</div><div class="tick">✓</div></div>
+    </div>
+    <div class="card" data-card>
+      <div class="cHead"><span>Golf</span><span class="cnt"><b data-n>0</b>/1</span></div>
+      <div class="line" onclick="tick(this)"><div class="ph">🍜</div><div class="code">S4</div><div class="qty">×1</div><div class="tick">✓</div></div>
+    </div>
+    <div class="note">แตะแถวไหน = ติ๊กแถวนั้น <b>ติ๊กครบ การ์ดพับเองเป็นสีเขียว ไม่ต้องกดยืนยันอะไรอีก</b><br>
+    (ของเดิมต้องกดยืนยันอีกชั้น — ขั้นนั้นทำให้ 84 ใบใน 9 วัน ส่วนกลางไม่เคยรู้ว่าถูกจัด)</div>
+  </div>
+
+  <!-- โหมดนับของ -->
+  <div class="sec" id="secCount" hidden>
+    <div class="secTitle">นับของในตู้ — ใส่ตามที่เห็น</div>
+    <div class="crow">
+      <div class="ph">🍚</div><div class="code">S2</div>
+      <div class="cinfo"><div class="cname">ข้าวคั่วกลิ้งอกไก่แครนเบอร์รี่</div>
+        <span class="warn">⚠️ ระบบคิดว่า 4</span></div>
+      <input class="cnum" value="3" inputmode="numeric">
+    </div>
+    <div class="crow">
+      <div class="ph">🥗</div><div class="code">D1</div>
+      <div class="cinfo"><div class="cname">แพคกับข้าว ผัดกะเพราไก่</div></div>
+      <input class="cnum" value="6" inputmode="numeric">
+    </div>
+    <div class="crow">
+      <div class="ph">🍜</div><div class="code">S4</div>
+      <div class="cinfo"><div class="cname">ข้าวไก่ซูวีซอสพริกเต้าเจี้ยว</div></div>
+      <input class="cnum" value="6" inputmode="numeric">
+    </div>
+    <div class="note"><b>ช่องเดียว</b> — ไม่มี "ของจริง / กำลังเติม / ขายได้" ให้ใส่ผิดช่องอีก<br>
+      <b>เลขที่ครัวพิมพ์ชนะเสมอ</b> ระบบไม่เด้งกลับ ไม่บล็อก ไม่ถามเหตุผล · ต่างกันแค่ขึ้น ⚠️ ให้รู้<br>
+      ส่วนต่างถูกเก็บเงียบๆ ให้ระบบไล่หาทางรั่วเอง — <b>ครัวไม่ต้องอธิบาย</b></div>
+  </div>
+</div>
+
+<!-- ══════════ หน้า B ══════════ -->
+<div class="wrap" id="pgB" hidden>
+  <div class="hd">
+    <div class="row1"><span class="day">แผนผลิต</span><span>ระบบคิดให้ · ครัวไม่ต้องคิด</span></div>
+    <div class="big"><span class="n">38</span><span class="lb">กล่อง · ศุกร์ 11 ก.ย.</span></div>
+  </div>
+  <div class="days">
+    <button>พฤ 10</button><button class="on">ศ 11</button><button>ส 12</button>
+    <button>อา 13</button><button>จ 14</button><button>อ 15</button><button>พ 16</button>
+  </div>
+  <div class="sec">
+    <div class="prow"><div class="ph">🍚</div><div class="code">S2</div>
+      <div class="cinfo"><div class="cname">ข้าวคั่วกลิ้งอกไก่</div><div class="why">จอง 11 · ในตู้ 3</div></div>
+      <div class="make">8</div></div>
+    <div class="prow"><div class="ph">🥗</div><div class="code">D1</div>
+      <div class="cinfo"><div class="cname">แพคกับข้าว กะเพราไก่</div><div class="why">จอง 5 · ในตู้ 0</div></div>
+      <div class="make">5</div></div>
+    <div class="prow"><div class="ph">🍜</div><div class="code">S4</div>
+      <div class="cinfo"><div class="cname">ข้าวไก่ซูวี</div><div class="why">จอง 1 · ในตู้ 6</div></div>
+      <div class="make zero">0</div></div>
+    <div class="note"><b>ทำ N = จองล่วงหน้า − ที่นับได้ในตู้</b> · ตัวเลขนี้ระบบคำนวณอยู่แล้วทุกวัน แค่ไม่เคยไปโผล่ที่ครัวเปิดถึง<br>
+      แถวที่ "ทำ 0" ก็ต้องขึ้น — เพื่อให้เห็นว่า<b>ทำไมถึงไม่ต้องทำ</b><br>
+      แตะเลขพิมพ์ทับได้ ไม่บังคับ · เลื่อนดูล่วงหน้า 7 วัน = <b>สั่งวัตถุดิบล่วงหน้าได้</b><br>
+      <b>ครัวไม่ต้องเปิดหน้านี้</b> — ครัวรับตัวเลขทางกลุ่มไลน์ที่เปิดอยู่แล้ว</div>
+  </div>
+  <div class="send"><button onclick="toast('ส่งเข้ากลุ่มไลน์ครัวแล้ว — รหัส + เลข + รูป ไม่มีประโยคไทย')">📤 ส่งเข้ากลุ่มไลน์ครัว</button></div>
+</div>
+
+<!-- ══════════ หน้า C ══════════ -->
+<div class="wrap" id="pgC" hidden>
+  <div class="hd">
+    <div class="row1"><span class="day">แอดมิน · สั่งจัดของด่วน</span><span>👤 กิ๊ฟ</span></div>
+    <div class="big"><span class="n">2</span><span class="lb">จังหวะ จบงาน</span></div>
+  </div>
+  <div class="cut"><b>เกณฑ์ตัดสินหน้านี้:</b> ถ้าออกแบบแล้วกิ๊ฟยังอยากเข้าไปลบเลขที่หลังบ้านเองอยู่ = <b>ออกแบบพลาด</b>
+    ต้องง่ายกว่าวิธีที่ใช้อยู่ทุกวันนี้</div>
+  <div class="sec">
+    <div class="fld"><label>ลูกค้า</label><input value="คุณพลอย · 081-234-5678"></div>
+    <div class="fld"><label>เมนู + จำนวน</label>
+      <select><option>S6 · ข้าวปลากระพงทอด — เหลือในตู้ 8</option><option>D1 · แพคกับข้าว — เหลือในตู้ 6</option></select>
+      <div style="height:9px"></div><input value="2" inputmode="numeric"></div>
+    <div class="fld"><label>ประเภท</label>
+      <span class="pill on" onclick="pill(this)">⚡ ด่วน วันนี้</span>
+      <span class="pill" onclick="pill(this)">📅 รอบปกติ</span></div>
+    <div class="fld" style="background:var(--green-soft);border-color:#bfdccd">
+      <label style="color:var(--green)">ของขาด → เปลี่ยนเมนูแทน</label>
+      <select><option>— ไม่ได้เปลี่ยน —</option><option>เปลี่ยนจาก S2 → S6</option></select>
+      <div class="note" style="padding:9px 0 0">เลือกตรงนี้ = <b>คืนของเดิม + จองของใหม่ พร้อมกันในจังหวะเดียว</b><br>
+        วันนี้ต้องทำ 2 ที่แล้วมักลืมที่ใดที่หนึ่ง = <b>ผิด 2 ต่อ</b></div>
+    </div>
+    <div class="note">กดแล้ว <b>เกิดใบจริงในระบบเสมอ</b> — ไม่มีทางสั่งลอย<br>
+      แล้ว<b>บอทยิงเข้ากลุ่มไลน์ครัวทันที</b> เพราะครัวไม่ได้จ้องจอทั้งวัน — บอกในจอเฉยๆ ไม่นับว่าบอกแล้ว<br>
+      การ์ดด่วนไป<b>แทรกบนสุดของหน้าครัว ขอบส้ม</b> — เห็นก่อนงานอื่น แต่ไม่กลบงานเดิม</div>
+  </div>
+  <div class="send"><button onclick="toast('เกิดใบจริง + ยิงเข้ากลุ่มไลน์ครัวแล้ว')">⚡ สั่งจัดด่วน</button></div>
+</div>
+
+<div class="toast" id="tst"></div>
+
+<script>
+function go(p){
+  for(const k of ['A','B','C']){
+    document.getElementById('pg'+k).hidden = (k!==p);
+    document.getElementById('t'+k).classList.toggle('on', k===p);
+  }
+  window.scrollTo(0,0);
+}
+function mode(m){
+  const pack = m==='pack';
+  document.getElementById('secPack').hidden = !pack;
+  document.getElementById('secCount').hidden = pack;
+  document.getElementById('mPack').classList.toggle('on',pack);
+  document.getElementById('mCount').classList.toggle('on',!pack);
+}
+function tick(row){
+  const t = row.querySelector('.tick');
+  t.classList.toggle('on');
+  const card = row.closest('[data-card]');
+  const rows = card.querySelectorAll('.line');
+  const on = card.querySelectorAll('.tick.on').length;
+  card.querySelector('[data-n]').textContent = on;
+  card.classList.toggle('done', on===rows.length);
+  recount();
+}
+function recount(){
+  const all = document.querySelectorAll('#secPack .line').length;
+  const on = document.querySelectorAll('#secPack .tick.on').length;
+  const base = 17, total = 24;
+  const done = Math.min(total, base + on);
+  document.getElementById('hdBar').style.width = (done/total*100)+'%';
+  document.getElementById('hdTxt').textContent = 'จัดแล้ว '+done+' / '+total;
+}
+function pill(el){
+  el.parentElement.querySelectorAll('.pill').forEach(p=>p.classList.remove('on'));
+  el.classList.add('on');
+}
+let tid;
+function toast(msg){
+  const t = document.getElementById('tst');
+  t.textContent = msg; t.classList.add('on');
+  clearTimeout(tid); tid = setTimeout(()=>t.classList.remove('on'), 2600);
+}
+</script>
+</body>
+</html>
