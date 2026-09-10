@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<script src="/gate.js"></script><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Under360 — ครัว (ของใหม่ · ทดลอง)</title>
+<link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600;700&family=IBM+Plex+Mono:wght@600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--g:#1F4D3A;--gs:#EBF3EF;--gold:#C9973F;--golds:#FFF8EC;--r:#DC2626;--rs:#FEF2F2;--blue:#1D4ED8;--blues:#EFF6FF;--ink:#1A1A1A;--soft:#6B7280;--xsoft:#D1D5DB;--bg:#F7F8F6;--w:#fff;--mono:'IBM Plex Mono';--sans:'IBM Plex Sans Thai',sans-serif;--rad:14px}
+body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-bottom:70px}
+.warn{background:#7C2D12;color:#fff;font-size:12px;padding:7px 12px;text-align:center;line-height:1.45}
+.hdr{background:var(--g);color:#fff;padding:10px 12px;position:sticky;top:0;z-index:50}
+.hdr-row{display:flex;align-items:center;gap:8px}
+.hdr h1{font-size:14px;font-weight:700;flex:1}
+.btn{background:rgba(255,255,255,.16);color:#fff;border:0;border-radius:9px;padding:6px 11px;font-size:12px;font-family:var(--sans);cursor:pointer}
+.btn.on{background:#fff;color:var(--g);font-weight:700}
+.days{display:flex;gap:6px;margin-top:8px;overflow-x:auto;padding-bottom:2px}
+.day{flex:0 0 auto;background:rgba(255,255,255,.14);color:#fff;border:0;border-radius:9px;padding:6px 12px;font-size:12px;font-family:var(--sans);cursor:pointer;white-space:nowrap}
+.day.on{background:#fff;color:var(--g);font-weight:700}
+.sum{background:var(--w);margin:10px;border-radius:var(--rad);padding:14px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.sum-big{font-size:40px;font-weight:700;font-family:var(--mono);line-height:1}
+.sum-lbl{font-size:12px;color:var(--soft);margin-top:2px}
+.bar{height:12px;border-radius:99px;background:#E5E7EB;overflow:hidden;margin-top:10px}
+.bar i{display:block;height:100%;background:var(--g)}
+.bar-txt{font-size:12px;color:var(--soft);margin-top:5px;font-family:var(--mono)}
+.tabs{display:flex;gap:8px;margin:0 10px 10px}
+.tab{flex:1;background:var(--w);border:2px solid var(--xsoft);border-radius:var(--rad);padding:13px 6px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;color:var(--soft)}
+.tab.on{border-color:var(--g);background:var(--gs);color:var(--g)}
+.wrap{padding:0 10px}
+.card{background:var(--w);border-radius:var(--rad);padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card.urg{border:2px solid var(--r);background:var(--rs)}
+.card.done{opacity:.55}
+.c-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.c-name{font-size:14px;font-weight:700;flex:1}
+.c-prog{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g)}
+.row{display:flex;align-items:center;gap:10px;padding:9px 6px;border-top:1px solid #F1F2F0;cursor:pointer}
+.row.on{background:var(--gs)}
+.pic{width:44px;height:44px;border-radius:9px;object-fit:cover;background:#EEE;flex:0 0 auto}
+.code{font-family:var(--mono);font-size:19px;font-weight:700;min-width:52px}
+.qty{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--soft)}
+.tick{margin-left:auto;font-size:24px;width:34px;text-align:center}
+.crow{display:flex;align-items:center;gap:10px;background:var(--w);border-radius:var(--rad);padding:10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.cnt{width:78px;height:52px;border:2px solid var(--xsoft);border-radius:11px;text-align:center;font-family:var(--mono);font-size:26px;font-weight:700;color:var(--ink)}
+.cnt:focus{outline:0;border-color:var(--g);background:var(--gs)}
+.diff{font-size:11px;color:var(--r);font-weight:600;margin-top:3px}
+.mini{font-size:11px;color:var(--soft)}
+.big{font-family:var(--mono);font-size:24px;font-weight:700;min-width:44px;text-align:right}
+.neg{color:var(--r)}
+.ok{color:var(--g)}
+.hint{background:var(--golds);border:1px solid #F2E2C4;border-radius:11px;padding:10px;font-size:12px;line-height:1.55;margin:0 10px 10px}
+.sec{font-size:12px;font-weight:700;color:var(--soft);margin:14px 4px 7px;letter-spacing:.3px}
+.empty{text-align:center;color:var(--soft);font-size:13px;padding:28px 10px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:78px;background:#111;color:#fff;padding:9px 16px;border-radius:11px;font-size:13px;z-index:99;opacity:0;transition:.2s;pointer-events:none}
+.toast.on{opacity:.95}
+.nav{position:fixed;left:0;right:0;bottom:0;background:var(--w);border-top:1px solid var(--xsoft);display:flex;z-index:60}
+.nav button{flex:1;border:0;background:none;padding:9px 2px 11px;font-family:var(--sans);font-size:11px;color:var(--soft);cursor:pointer}
+.nav button b{display:block;font-size:19px;font-weight:400;line-height:1.25}
+.nav button.on{color:var(--g);font-weight:700}
+.hist{font-size:11px;color:var(--soft);font-family:var(--mono);padding:3px 6px;line-height:1.6}
+</style>
+</head>
+<body>
+
+<div class="warn">🧪 <b>หน้าทดลอง — ยังไม่แทนหน้าครัวเดิม</b><br>ข้อมูลจริงทั้งหมด · กดแล้วเขียนจริง ตัดจริง · หน้าเก่า <b>/kitchen_queue.html</b> ยังทำงานปกติ</div>
+
+<div class="hdr">
+  <div class="hdr-row">
+    <h1>ครัว · ของใหม่</h1>
+    <button class="btn" id="who" onclick="setUser()">👤 —</button>
+  </div>
+  <div class="days" id="days"></div>
+</div>
+
+<div id="view"></div>
+
+<div class="toast" id="toast"></div>
+
+<div class="nav">
+  <button id="nav-pack"  onclick="go('pack')"  class="on"><b>📦</b>จัดของ</button>
+  <button id="nav-count" onclick="go('count')"><b>🔢</b>นับของ</button>
+  <button id="nav-plan"  onclick="go('plan')"><b>📅</b>วางแผน</button>
+  <button id="nav-admin" onclick="go('admin')"><b>🧾</b>แอดมิน</button>
+</div>
+
+<script>
+/* ══════════════════════════════════════════════════════════════════════════
+   หน้าครัวรุ่นใหม่ — เดินคู่ขนานกับ kitchen_queue.html (นัทเคาะ 10 ก.ย. 2569)
+
+   🔴 กติกาที่ไฟล์นี้ต้องไม่ผิด (ISSUE 02):
+     · เลขที่ครัวนับ = ความจริง  ระบบห้ามเด้งกลับ ห้ามบล็อก
+     · ของออกจากตู้ตอน "ส่งจริง" ไม่ใช่ตอนแพ็ค → ติ๊กจัดของไม่แตะสต๊อกเลย
+     · "ลูกค้าซื้อได้" คำนวณอย่างเดียว ห้ามใครกรอก
+     · ไม่มี "ปิดวันอัตโนมัติ" ไม่มีช่อง "กำลังเติม"
+
+   🤝 อยู่ร่วมกับหน้าเก่ายังไง (ข้อ 3 ที่พี่ปืนกำชับ):
+     เก็บที่เดิมทั้งคู่ ไม่เพิ่ม/ไม่ลบคอลัมน์
+       actual_stock = ของในตู้ที่ครัวนับได้   (ความหมายเดิมเป๊ะ)
+       stock_total  = ลูกค้าซื้อได้อีก        (ความหมายเดิมเป๊ะ) = max(0, นับได้ − จอง)
+     หน้าเก่าคิด "มีจริง" = stock_total + จอง − กำลังเติม
+       → เมื่อ "กำลังเติม" = 0 จะได้ค่าเดียวกับที่นับพอดี ไม่แตกกัน
+     ⚠️ ข้อยกเว้นที่ต้องรู้: ถ้านับได้ "น้อยกว่า" จอง หน้าเก่าจะโชว์เท่ากับจองเสมอ
+        (มันไม่มีที่เก็บค่าที่ต่ำกว่านั้น — คือบั๊กที่ ISSUE 02 กำลังแก้)
+        หน้านี้เก็บค่าจริงลง actual_stock ครบ ไม่ตัดทิ้ง
+
+   📌 ที่เก็บใหม่ใช้ kitchen_data (คีย์-ค่า) เท่านั้น ไม่แตะ schema
+       k2_pack = ติ๊กจัดของ (แยกคีย์จากของเก่า เพราะของเก่าเอาไปคิดสต๊อก แต่ของใหม่ไม่คิด)
+       k2_plan = เลขแผนผลิตที่คนพิมพ์ทับ
+   ══════════════════════════════════════════════════════════════════════════ */
+const SB_URL='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+let sb=null;
+function getSB(){try{if(!sb&&typeof supabase!=='undefined')sb=supabase.createClient(SB_URL,SB_KEY);return sb;}catch(e){return null;}}
+
+/* เวลาไทยเสมอ — เครื่องนัทอยู่คนละโซน ถ้าใช้เวลาเครื่องจะเพี้ยนทั้งวัน */
+function thaiToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+function dPlus(ymd,n){ const d=new Date(ymd+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
+const DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+function dLabel(ymd){
+  const t=thaiToday();
+  if(ymd===t) return 'วันนี้';
+  if(ymd===dPlus(t,1)) return 'พรุ่งนี้';
+  if(ymd===dPlus(t,-1)) return 'เมื่อวาน';
+  const d=new Date(ymd+'T00:00:00Z');
+  return DOW[d.getUTCDay()]+' '+d.getUTCDate()+'/'+(d.getUTCMonth()+1);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove('on'),1900); }
+
+/* รหัสสั้นที่ครัวเรียกกันจริง (s1-s8 / d1-d5) — ไม่มีก็ใช้โค้ดเต็ม */
+function shortCode(m){ return (m.subcode&&String(m.subcode).trim()) ? String(m.subcode).toUpperCase() : String(m.code||''); }
+function thumb(m){
+  const u=(m.image_urls&&m.image_urls[0])||'';
+  if(!u) return '';
+  return u.indexOf('/storage/v1/object/public/')>0 ? u.replace('/object/public/','/render/image/public/')+'?width=90' : u;
+}
+
+let VIEW='pack', DAY=thaiToday(), USER='';
+let MENUS=[], ORDERS=[], ITEMS={}, PACK={}, PLAN={}, HIST=[];
+
+function setUser(){
+  const n=(prompt('ใส่ชื่อคุณ (ระบบจำไว้ใช้ตอนบันทึก)',USER||'')||'').trim();
+  if(!n) return;
+  USER=n; try{ localStorage.setItem('lastNickname',n); }catch(e){}
+  document.getElementById('who').textContent='👤 '+n;
+}
+function needUser(){ if(!USER){ setUser(); } return !!USER; }
+
+/* ─── โหลดข้อมูลจริงทั้งหมด ───────────────────────────────────────────────
+   ช่วงที่โหลด: ย้อนหลัง 7 วัน ถึงหน้า 14 วัน — พอสำหรับดูย้อนหลังและวางแผน
+   ⚠️ ต้องมี limit เสมอ (บทเรียน 1000-cap ของบ้านนี้) */
+async function loadAll(){
+  const s=getSB(); if(!s) return;
+  const from=dPlus(thaiToday(),-7), to=dPlus(thaiToday(),14);
+  const [mr,or_,kd]=await Promise.all([
+    s.from('menu_items').select('id,code,subcode,name,image_urls,stock_total,actual_stock,is_available').eq('is_available',true).limit(500),
+    s.from('orders').select('id,order_number,customer_name,status,delivery_date,created_at,source,total')
+      .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
+    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan']).limit(5)
+  ]);
+  MENUS=(mr.data||[]).sort((a,b)=>shortCode(a).localeCompare(shortCode(b),'th',{numeric:true}));
+  ORDERS=(or_.data||[]).filter(o=>o.status!=='cancelled'&&o.source!=='parallel_test');
+  (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{}; });
+
+  ITEMS={};
+  const ids=ORDERS.map(o=>o.id);
+  for(let i=0;i<ids.length;i+=60){
+    const r=await s.from('order_items').select('id,order_id,menu_item_id,menu_code,menu_name,quantity').in('order_id',ids.slice(i,i+60)).limit(2000);
+    (r.data||[]).forEach(it=>{ (ITEMS[it.order_id]=ITEMS[it.order_id]||[]).push(it); });
+  }
+  render();
+}
+async function loadHist(){
+  const s=getSB(); if(!s) return;
+  const r=await s.from('activity_log').select('actor,summary,created_at,source')
+    .eq('action_type','stock').gte('created_at',dPlus(thaiToday(),-7))
+    .order('created_at',{ascending:false}).limit(120);
+  HIST=r.data||[]; if(VIEW==='count') render();
+}
+
+/* ─── ตัวเลขแกน 3 ตัว ────────────────────────────────────────────────────
+   จองที่ยังไม่ส่ง = ทุกใบที่วันส่ง >= วันนี้ และยังไม่ delivered
+   ⚠️ ตั้งใจไม่ตัดใบที่ "แพ็คแล้ว" ออก — ตามคอนเซปต์นัท ถุงที่แพ็คแล้วยังอยู่ในตู้
+      และยังถูกนับด้วยตา จึงต้องยังถูกนับเป็น "จอง" อยู่ */
+function bookedMap(){
+  const t=thaiToday(), m={};
+  ORDERS.forEach(o=>{
+    if(o.status==='delivered') return;
+    if(!o.delivery_date || o.delivery_date < t) return;
+    (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
+  });
+  return m;
+}
+function bookedOn(ymd){
+  const m={};
+  ORDERS.forEach(o=>{
+    if(o.status==='delivered'||o.delivery_date!==ymd) return;
+    (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
+  });
+  return m;
+}
+function ordersOn(ymd){ return ORDERS.filter(o=>o.delivery_date===ymd); }
+function boxesOf(o){ return (ITEMS[o.id]||[]).reduce((s,i)=>s+(i.quantity||0),0); }
+function packedOf(o){ const p=PACK[o.id]||{}; return Object.keys(p).reduce((s,k)=>s+(Number(p[k])||0),0); }
+function isDone(o){ const b=boxesOf(o); return b>0 && packedOf(o)>=b; }
+/* ใบที่แอดมินเปิดให้ระหว่างวัน = "ด่วน" — อธิบายตัวเองได้ในหน้า (ข้อ 2 ที่นัทติ) */
+function isUrgent(o){ return String(o.source||'')==='admin_manual' && String(o.created_at||'').slice(0,10) >= dPlus(thaiToday(),-1); }
+
+function go(v){ VIEW=v; ['pack','count','plan','admin'].forEach(x=>document.getElementById('nav-'+x).classList.toggle('on',x===v)); render(); }
+function pickDay(d){ DAY=d; render(); }
+
+function renderDays(){
+  const t=thaiToday(), out=[];
+  for(let i=-3;i<=7;i++){
+    const d=dPlus(t,i), n=ordersOn(d).length;
+    out.push('<button class="day'+(d===DAY?' on':'')+'" onclick="pickDay(\''+d+'\')">'+dLabel(d)+(n?' <b>'+n+'</b>':'')+'</button>');
+  }
+  document.getElementById('days').innerHTML=out.join('');
+}
+
+function render(){
+  renderDays();
+  const el=document.getElementById('view');
+  if(VIEW==='pack') el.innerHTML=viewPack();
+  else if(VIEW==='count') el.innerHTML=viewCount();
+  else if(VIEW==='plan') el.innerHTML=viewPlan();
+  else el.innerHTML=viewAdmin();
+}
+
+/* ─── 📦 จัดของ — ติ๊ก 1 ครั้งจบ ไม่มีปุ่มยืนยัน และไม่แตะสต๊อก ───────────── */
+function viewPack(){
+  const list=ordersOn(DAY);
+  const urg=list.filter(isUrgent), rest=list.filter(o=>!isUrgent(o));
+  const bills=list.length, done=list.filter(isDone).length;
+  let h='<div class="sum"><div class="sum-big">'+bills+'</div><div class="sum-lbl">ใบที่ต้องจัด · '+dLabel(DAY)+'</div>'
+   +'<div class="bar"><i style="width:'+(bills?Math.round(done/bills*100):0)+'%"></i></div>'
+   +'<div class="bar-txt">จัดครบแล้ว '+done+'/'+bills+' ใบ</div></div>';
+  if(urg.length){
+    h+='<div class="wrap"><div class="sec">⚡ ด่วน — แอดมินเพิ่งสั่งระหว่างวัน ('+urg.length+' ใบ)</div>'
+     + urg.map(o=>cardHtml(o,true)).join('')+'</div>';
+  }
+  h+='<div class="wrap">'+(rest.length?rest.map(o=>cardHtml(o,false)).join(''):'<div class="empty">ไม่มีใบของวันนี้</div>')+'</div>';
+  return h;
+}
+function cardHtml(o,urgent){
+  const its=ITEMS[o.id]||[], p=PACK[o.id]||{}, b=boxesOf(o), dn=packedOf(o);
+  let h='<div class="card'+(urgent?' urg':'')+(isDone(o)?' done':'')+'">'
+   +'<div class="c-top"><div class="c-name">'+esc(o.customer_name||'—')+'</div><div class="c-prog">☑ '+dn+'/'+b+'</div></div>';
+  its.forEach(it=>{
+    const m=MENUS.find(x=>x.id===it.menu_item_id)||{code:it.menu_code,name:it.menu_name};
+    const q=it.quantity||1, on=(Number(p[it.id])||0)>=q, im=thumb(m);
+    h+='<div class="row'+(on?' on':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
+     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
+     +'<div class="code">'+esc(shortCode(m))+'</div>'
+     +'<div style="flex:1;font-size:12px;color:var(--soft);line-height:1.35">'+esc(String(m.name||it.menu_name||'').slice(0,32))+'</div>'
+     +'<div class="qty">×'+q+'</div><div class="tick">'+(on?'✅':'⬜')+'</div></div>';
+  });
+  return h+'</div>';
+}
+async function tick(oid,iid,q){
+  const p=PACK[oid]||(PACK[oid]={});
+  if((Number(p[iid])||0)>=q) delete p[iid]; else p[iid]=q;
+  if(!Object.keys(p).length) delete PACK[oid];
+  render();
+  const s=getSB(); if(!s) return;
+  const r=await s.from('kitchen_data').upsert({key:'k2_pack',data:PACK},{onConflict:'key'});
+  if(r.error) toast('บันทึกไม่สำเร็จ ลองใหม่');
+}
+
+/* ─── 🔢 นับของ — ช่องเดียว เลขที่ครัวพิมพ์ชนะเสมอ ────────────────────── */
+function viewCount(){
+  const bk=bookedMap();
+  let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
+  MENUS.forEach(m=>{
+    const have=(m.actual_stock==null)?'':Number(m.actual_stock);
+    const booked=bk[m.id]||0, im=thumb(m);
+    const free=(have==='')?null:(have-booked);
+    h+='<div class="crow">'
+     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
+     +'<div style="flex:1"><div class="code">'+esc(shortCode(m))+'</div>'
+     +'<div class="mini">'+esc(String(m.name||'').slice(0,26))+'</div>'
+     +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')+'</div>'
+     +'<input class="cnt" type="number" inputmode="numeric" value="'+have+'" onchange="saveCount(\''+m.id+'\',this.value)">'
+     +'</div>';
+  });
+  h+='</div><div class="wrap"><div class="sec">🕘 ประวัติการนับ 7 วัน (ใครนับเท่าไหร่ เมื่อไหร่)</div><div class="card">';
+  h+= HIST.length ? HIST.slice(0,60).map(r=>'<div class="hist">'+esc(String(r.created_at).slice(5,16).replace('T',' '))+' · '+esc(r.actor||'—')+' · '+esc(String(r.summary||'').slice(0,70))+'</div>').join('')
+                  : '<div class="empty">ยังไม่มีประวัติ</div>';
+  return h+'</div></div>';
+}
+async function saveCount(mid,val){
+  if(!needUser()) { render(); return; }
+  const s=getSB(); if(!s) return;
+  const m=MENUS.find(x=>x.id===mid); if(!m) return;
+  const n=(String(val).trim()==='')?null:Math.max(0,parseInt(val,10)||0);
+  const before=(m.actual_stock==null)?'—':m.actual_stock;
+  const booked=bookedMap()[mid]||0;
+  /* 🔑 หัวใจของทั้ง issue:
+       actual_stock = เลขที่คนนับ  (เก็บครบ ไม่ตัดทิ้ง แม้จะน้อยกว่าที่จองไว้)
+       stock_total  = ที่ลูกค้าซื้อได้อีก = นับได้ − จอง  (ติดลบไม่ได้ เพราะแปลว่า "ซื้อได้อีกกี่ชิ้น") */
+  const sellable=(n==null)?null:Math.max(0,n-booked);
+  const r=await s.from('menu_items').update({actual_stock:n,stock_total:sellable}).eq('id',mid);
+  if(r.error){ toast('บันทึกไม่สำเร็จ: '+(r.error.message||'')); return; }
+  m.actual_stock=n; m.stock_total=sellable;
+  await s.from('activity_log').insert({
+    session_id:'k2_'+(window._sid||(window._sid=Date.now())), actor:USER, source:'k2', action_type:'stock',
+    summary:shortCode(m)+' '+String(m.name||'').slice(0,26)+' — นับของ · '+before+'→'+(n==null?'—':n)+' (จอง '+booked+' · ซื้อได้ '+(sellable==null?'∞':sellable)+')',
+    detail:{menu_id:mid,code:m.code,counted:n,booked:booked,sellable:sellable,page:'k2'}
+  });
+  toast('บันทึกแล้ว '+shortCode(m)+' = '+(n==null?'ไม่จำกัด':n));
+  loadHist();
+}
+
+/* ─── 📅 วางแผนผลิต — คนพิมพ์ทับได้ ไม่ใช่ ML ─────────────────────────── */
+function viewPlan(){
+  const bk=bookedOn(DAY), have={};
+  MENUS.forEach(m=>have[m.id]=(m.actual_stock==null?0:Number(m.actual_stock)));
+  const rows=MENUS.map(m=>{
+    const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
+    const ov=(PLAN[DAY]||{})[m.id];
+    return {m,b,have:have[m.id]||0,make:(ov==null?sug:Number(ov)),ov:ov!=null};
+  }).filter(r=>r.b>0||r.make>0||r.ov);
+  const total=rows.reduce((s,r)=>s+r.make,0);
+  let h='<div class="hint">🔴 <b>ข้อจำกัดที่ต้องรู้ก่อนใช้:</b> ระบบ<b>ยังไม่มีข้อมูล "1 รอบผลิตอยู่ได้กี่วัน" (อายุของ) สักเมนูเดียว</b><br>เลขข้างล่างจึงเป็น "พอสำหรับวันที่เลือกเท่านั้น" <b>ยังเกลี่ยข้ามวันให้ไม่ได้จริง</b> — อย่าใช้แทนการตัดสินใจเรื่องทำเผื่อ</div>'
+   +'<div class="sum"><div class="sum-big">'+total+'</div><div class="sum-lbl">กล่องที่ต้องทำสำหรับ '+dLabel(DAY)+'</div></div><div class="wrap">';
+  if(!rows.length) return h+'<div class="empty">วันนี้ยังไม่มีอะไรต้องทำ</div></div>';
+  rows.forEach(r=>{
+    const im=thumb(r.m);
+    h+='<div class="crow">'
+     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
+     +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
+     +'<div class="mini">จอง '+r.b+' · ในตู้ '+r.have+(r.ov?' · <b>คนแก้เลขเอง</b>':'')+'</div></div>'
+     +'<input class="cnt" type="number" inputmode="numeric" value="'+r.make+'" onchange="savePlan(\''+r.m.id+'\',this.value)">'
+     +'</div>';
+  });
+  return h+'</div>';
+}
+async function savePlan(mid,val){
+  const s=getSB(); if(!s) return;
+  PLAN[DAY]=PLAN[DAY]||{};
+  PLAN[DAY][mid]=Math.max(0,parseInt(val,10)||0);
+  const r=await s.from('kitchen_data').upsert({key:'k2_plan',data:PLAN},{onConflict:'key'});
+  if(r.error){ toast('บันทึกแผนไม่สำเร็จ'); return; }
+  toast('บันทึกแผนแล้ว'); render();
+}
+
+/* ─── 🧾 หน้าแอดมิน — เห็น "จอง" ซึ่งครัวไม่ต้องเห็น ────────────────────
+   เคสที่นัทยกมา: แอดมินบอกครัว "เอาอันนี้ไปแทน" ทั้งที่ของนั้นมีคนจองแล้ว
+   หน้านี้จึงต้องตอบคำถามเดียว: **หยิบตัวไหนไปแทนได้โดยไม่ไปกินของคนอื่น** */
+function viewAdmin(){
+  const bk=bookedMap();
+  const rows=MENUS.map(m=>{
+    const have=(m.actual_stock==null)?null:Number(m.actual_stock);
+    const b=bk[m.id]||0;
+    return {m,have,b,free:(have==null?null:have-b)};
+  });
+  const okList=rows.filter(r=>r.free!=null&&r.free>0).sort((a,b)=>b.free-a.free);
+  const bad=rows.filter(r=>r.free!=null&&r.free<0);
+  let h='<div class="hint">ตัวเลขนี้<b>ครัวไม่เห็น</b> — มีไว้ตอบคำถามเดียว: <b>หยิบเมนูไหนไปแทนได้ โดยไม่ไปกินของที่ลูกค้าคนอื่นจองไว้แล้ว</b></div><div class="wrap">';
+  if(bad.length){
+    h+='<div class="sec">🔴 จองเกินของที่นับได้ ('+bad.length+' เมนู) — ห้ามหยิบไปแทนเด็ดขาด</div>';
+    bad.forEach(r=>{ h+=adminRow(r); });
+  }
+  h+='<div class="sec">✅ ว่างจริง หยิบไปแทนได้ ('+okList.length+' เมนู)</div>';
+  h+= okList.length?okList.map(adminRow).join(''):'<div class="empty">ไม่มีเมนูที่ว่างเลย</div>';
+  const none=rows.filter(r=>r.free!=null&&r.free===0);
+  if(none.length){ h+='<div class="sec">⚪ พอดีเป๊ะ ไม่เหลือ ('+none.length+' เมนู)</div>'+none.map(adminRow).join(''); }
+  return h+'</div>';
+}
+function adminRow(r){
+  const im=thumb(r.m);
+  return '<div class="crow">'
+   +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
+   +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
+   +'<div class="mini">'+esc(String(r.m.name||'').slice(0,24))+'</div>'
+   +'<div class="mini">ในตู้ '+(r.have==null?'—':r.have)+' · จองแล้ว '+r.b+'</div></div>'
+   +'<div class="big '+(r.free<0?'neg':'ok')+'">'+(r.free==null?'—':r.free)+'</div></div>';
+}
+
+/* ─── เริ่มทำงาน ─────────────────────────────────────────────────────── */
+try{ USER=localStorage.getItem('lastNickname')||''; }catch(e){}
+if(USER) document.getElementById('who').textContent='👤 '+USER;
+loadAll().then(loadHist);
+/* รีเฟรชเบา ๆ ตอนกลับมาที่หน้า — ไม่ poll ถี่ กัน Supabase โดนยิงฟรี */
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadAll(); });
+</script>
+</body>
+</html>
