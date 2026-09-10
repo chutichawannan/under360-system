@@ -31,19 +31,18 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .tab{flex:1;background:var(--w);border:2px solid var(--xsoft);border-radius:var(--rad);padding:13px 6px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;color:var(--soft)}
 .tab.on{border-color:var(--g);background:var(--gs);color:var(--g)}
 .wrap{padding:0 10px}
-.card{background:var(--w);border-radius:var(--rad);padding:12px;margin-bottom:9px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card{background:var(--w);border-radius:var(--rad);padding:9px 10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .card.urg{border:2px solid var(--r);background:var(--rs)}
 .card.done{opacity:.55}
-.c-top{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.c-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
 .c-name{font-size:14px;font-weight:700;flex:1}
 .c-prog{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g)}
-.row{display:flex;align-items:center;gap:10px;padding:9px 6px;border-top:1px solid #F1F2F0;cursor:pointer}
+.row{display:flex;align-items:center;gap:9px;padding:5px 4px;border-top:1px solid #F4F5F3;cursor:pointer}
 .row.on{background:var(--gs)}
-.pic{width:44px;height:44px;border-radius:9px;object-fit:cover;background:#EEE;flex:0 0 auto}
-.code{font-family:var(--mono);font-size:19px;font-weight:700;min-width:52px}
-.qty{font-family:var(--mono);font-size:17px;font-weight:700;color:var(--soft)}
-.tick{margin-left:auto;font-size:24px;width:34px;text-align:center}
-.crow{display:flex;align-items:center;gap:10px;background:var(--w);border-radius:var(--rad);padding:10px;margin-bottom:8px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.code{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--g);width:52px;flex:0 0 52px;letter-spacing:.2px;line-height:1.3}
+.qty{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--soft)}
+.tick{margin-left:auto;font-size:21px;width:28px;text-align:center}
+.crow{display:flex;align-items:center;gap:9px;background:var(--w);border-radius:var(--rad);padding:7px 10px;margin-bottom:5px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .cnt{width:78px;height:52px;border:2px solid var(--xsoft);border-radius:11px;text-align:center;font-family:var(--mono);font-size:26px;font-weight:700;color:var(--ink)}
 .cnt:focus{outline:0;border-color:var(--g);background:var(--gs)}
 .diff{font-size:11px;color:var(--r);font-weight:600;margin-top:3px}
@@ -132,11 +131,9 @@ function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.
 
 /* รหัสสั้นที่ครัวเรียกกันจริง (s1-s8 / d1-d5) — ไม่มีก็ใช้โค้ดเต็ม */
 function shortCode(m){ return (m.subcode&&String(m.subcode).trim()) ? String(m.subcode).toUpperCase() : String(m.code||''); }
-function thumb(m){
-  const u=(m.image_urls&&m.image_urls[0])||'';
-  if(!u) return '';
-  return u.indexOf('/storage/v1/object/public/')>0 ? u.replace('/object/public/','/render/image/public/')+'?width=90' : u;
-}
+/* ❌ ถอดรูปอาหารออกทั้งหน้า — นัทสั่งเองจากหน้าจริง 10 ก.ย. 2569: "ไม่ต้องมีภาพอาหารข้างหน้า"
+   ผลพลอยได้: เมนูที่รูปโหลดไม่ขึ้น (เช่น S098 ขึ้นกรอบขาว) หายไปเอง
+   น้ำหนักการอ่านย้ายไปที่ "รหัสสั้น" ทั้งหมด → ขยายรหัสให้ใหญ่ที่สุดในแถวชดเชย */
 
 let VIEW='pack', DAY=thaiToday(), USER='';
 let MENUS=[], ORDERS=[], ITEMS={}, PACK={}, PLAN={}, HIST=[];
@@ -251,11 +248,10 @@ function cardHtml(o,urgent){
    +'<div class="c-top"><div class="c-name">'+esc(o.customer_name||'—')+'</div><div class="c-prog">☑ '+dn+'/'+b+'</div></div>';
   its.forEach(it=>{
     const m=MENUS.find(x=>x.id===it.menu_item_id)||{code:it.menu_code,name:it.menu_name};
-    const q=it.quantity||1, on=(Number(p[it.id])||0)>=q, im=thumb(m);
+    const q=it.quantity||1, on=(Number(p[it.id])||0)>=q;
     h+='<div class="row'+(on?' on':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
-     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
      +'<div class="code">'+esc(shortCode(m))+'</div>'
-     +'<div style="flex:1;font-size:12px;color:var(--soft);line-height:1.35">'+esc(String(m.name||it.menu_name||'').slice(0,32))+'</div>'
+     +'<div style="flex:1;font-size:14px;color:var(--ink);line-height:1.3">'+esc(String(m.name||it.menu_name||'').slice(0,32))+'</div>'
      +'<div class="qty">×'+q+'</div><div class="tick">'+(on?'✅':'⬜')+'</div></div>';
   });
   return h+'</div>';
@@ -276,10 +272,9 @@ function viewCount(){
   let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
   MENUS.forEach(m=>{
     const have=(m.actual_stock==null)?'':Number(m.actual_stock);
-    const booked=bk[m.id]||0, im=thumb(m);
+    const booked=bk[m.id]||0;
     const free=(have==='')?null:(have-booked);
     h+='<div class="crow">'
-     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
      +'<div style="flex:1"><div class="code">'+esc(shortCode(m))+'</div>'
      +'<div class="mini">'+esc(String(m.name||'').slice(0,26))+'</div>'
      +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')+'</div>'
@@ -328,9 +323,7 @@ function viewPlan(){
    +'<div class="sum"><div class="sum-big">'+total+'</div><div class="sum-lbl">กล่องที่ต้องทำสำหรับ '+dLabel(DAY)+'</div></div><div class="wrap">';
   if(!rows.length) return h+'<div class="empty">วันนี้ยังไม่มีอะไรต้องทำ</div></div>';
   rows.forEach(r=>{
-    const im=thumb(r.m);
     h+='<div class="crow">'
-     +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
      +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
      +'<div class="mini">จอง '+r.b+' · ในตู้ '+r.have+(r.ov?' · <b>คนแก้เลขเอง</b>':'')+'</div></div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+r.make+'" onchange="savePlan(\''+r.m.id+'\',this.value)">'
@@ -371,9 +364,7 @@ function viewAdmin(){
   return h+'</div>';
 }
 function adminRow(r){
-  const im=thumb(r.m);
   return '<div class="crow">'
-   +(im?'<img class="pic" src="'+esc(im)+'" loading="lazy">':'<div class="pic"></div>')
    +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
    +'<div class="mini">'+esc(String(r.m.name||'').slice(0,24))+'</div>'
    +'<div class="mini">ในตู้ '+(r.have==null?'—':r.have)+' · จองแล้ว '+r.b+'</div></div>'
