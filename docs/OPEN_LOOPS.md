@@ -408,3 +408,9 @@
 - ไฟล์นี้ = **ไฟล์ค้างกลางไฟล์เดียวของทั้งโปรเจค** ตามแผน docs/NOTE_CONSOLIDATION_PLAN.md (นัทเคาะ "ยุบเลย")
 - ยุบแล้ว: secretary (TODO.md·OMISE_NUT_TODO→archive) · 06 · 05 · นิว · ฟ้า · M · u-maintainer · bug (FINDINGS→archive โดยเลขา) · เจ=ยกเว้นถึงจบเทศกาล · f=finance/ นอก git เป็นเครื่องมือสด
 - รอ: pm · k · เตียง · เอิธ · กะปัน · buyer · เก่ง · cc
+
+### ห้อง pm — ยุบแล้ว 10 ก.ย. (11 ไฟล์ → 5)
+**ย้ายเข้า `docs/archive/` 6 ไฟล์ ไม่ได้ลบ:** PM_GAPS_TODO · PM_CLARIFY_LOG · PM_BOARD · PM_CHARTER · PM_HOOKS · NUT_FEED
+**เหลือใช้จริง 5:** NUT_ORDERS · RULE_FOLLOW_UP · OPEN_LOOPS (ไฟล์นี้) · POLLER · EVENT_CALENDAR
+- ⚠️ `PM_GAPS_TODO` มี 51 ข้อที่ **pm ไม่เคยกลับไปปิดเลยสักรอบ** — ไม่ยกมาที่นี่ทั้งกอง เพราะจะทำให้ไฟล์กลางเฟ้ออีก · อยู่ใน archive เปิดดูได้ ถ้านัทถามว่ามีอะไรค้างจะไปขุดมาให้
+- ของค้างจริงของ pm ที่ยังมีชีวิต อยู่ในไฟล์นี้อยู่แล้ว (รวม "แต่งหน้าโถง /hq" ที่นัทฝากทวง)
