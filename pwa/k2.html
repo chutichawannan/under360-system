@@ -31,14 +31,27 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .tab{flex:1;background:var(--w);border:2px solid var(--xsoft);border-radius:var(--rad);padding:13px 6px;font-size:15px;font-weight:700;font-family:var(--sans);cursor:pointer;color:var(--soft)}
 .tab.on{border-color:var(--g);background:var(--gs);color:var(--g)}
 .wrap{padding:0 10px}
-.card{background:var(--w);border-radius:var(--rad);padding:9px 10px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
+.card{background:var(--w);border-radius:var(--rad);padding:8px 10px 7px;margin-bottom:6px;box-shadow:0 1px 3px rgba(0,0,0,.05)}
 .card.urg{border:2px solid var(--r);background:var(--rs)}
 .card.done{opacity:.55}
-.c-top{display:flex;align-items:center;gap:8px;margin-bottom:4px}
-.c-name{font-size:14px;font-weight:700;flex:1}
+.c-top{display:flex;align-items:center;gap:8px}
+.c-name{font-size:14px;font-weight:700;flex:1;line-height:1.25}
+.c-line{font-size:11px;font-weight:400;color:var(--soft)}
 .c-prog{font-family:var(--mono);font-size:13px;font-weight:700;color:var(--g)}
-.row{display:flex;align-items:center;gap:9px;padding:5px 4px;border-top:1px solid #F4F5F3;cursor:pointer}
+.c-sub{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:3px 0 2px}
+.oid{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--soft)}
+.chip{font-size:10.5px;font-weight:600;border-radius:99px;padding:1px 7px;line-height:1.6}
+.chip.u-yes{background:var(--gs);color:var(--g)}
+.chip.u-no{background:var(--rs);color:var(--r)}
+.chip.st{background:var(--golds);color:var(--gold)}
+.row{display:flex;align-items:center;gap:8px;padding:3px 3px;border-top:1px solid #F4F5F3;cursor:pointer}
 .row.on{background:var(--gs)}
+.nm{flex:1;font-size:13px;color:var(--ink);line-height:1.25}
+.acts{display:flex;gap:6px;margin-top:5px}
+.bt{flex:1;border:0;border-radius:9px;padding:7px 4px;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer}
+.bt.pack{background:var(--g);color:#fff}
+.bt.part{background:var(--golds);color:#8A6220;border:1px solid #EFD9AE}
+.bt.undo{background:#F3F4F6;color:var(--soft)}
 .code{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--g);width:52px;flex:0 0 52px;letter-spacing:.2px;line-height:1.3}
 .qty{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--soft)}
 .tick{margin-left:auto;font-size:21px;width:28px;text-align:center}
@@ -154,7 +167,7 @@ async function loadAll(){
   const from=dPlus(thaiToday(),-7), to=dPlus(thaiToday(),14);
   const [mr,or_,kd]=await Promise.all([
     s.from('menu_items').select('id,code,subcode,name,image_urls,stock_total,actual_stock,is_available').eq('is_available',true).limit(500),
-    s.from('orders').select('id,order_number,customer_name,status,delivery_date,created_at,source,total')
+    s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
     s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan']).limit(5)
   ]);
@@ -202,7 +215,7 @@ function bookedOn(ymd){
 function ordersOn(ymd){ return ORDERS.filter(o=>o.delivery_date===ymd); }
 function boxesOf(o){ return (ITEMS[o.id]||[]).reduce((s,i)=>s+(i.quantity||0),0); }
 function packedOf(o){ const p=PACK[o.id]||{}; return Object.keys(p).reduce((s,k)=>s+(Number(p[k])||0),0); }
-function isDone(o){ const b=boxesOf(o); return b>0 && packedOf(o)>=b; }
+function isDone(o){ if(o.status==='ready'||o.status==='delivered') return true; const b=boxesOf(o); return b>0 && packedOf(o)>=b; }
 /* ใบที่แอดมินเปิดให้ระหว่างวัน = "ด่วน" — อธิบายตัวเองได้ในหน้า (ข้อ 2 ที่นัทติ) */
 function isUrgent(o){ return String(o.source||'')==='admin_manual' && String(o.created_at||'').slice(0,10) >= dPlus(thaiToday(),-1); }
 
@@ -242,19 +255,82 @@ function viewPack(){
   h+='<div class="wrap">'+(rest.length?rest.map(o=>cardHtml(o,false)).join(''):'<div class="empty">ไม่มีใบของวันนี้</div>')+'</div>';
   return h;
 }
+/* หัวการ์ด — เอาของที่หน้าเก่ามีและครัวใช้จริงมาครบ (นัทสั่งเอง 10 ก.ย. เทียบกับหน้าเก่า)
+     ชื่อลูกค้า (+ ชื่อไลน์ถ้าไม่ตรงกัน) · เลขใบ · ตัวนับกล่อง · ช้อนส้อม
+   ⚠️ ช้อนส้อม: ค่า null/undefined = ใส่ (default true ใน DB) — เช็คแบบเดียวกับหน้าเก่าเป๊ะ
+      ถ้าเช็คด้วย if(o.want_utensils) ใบเก่าที่ไม่มีค่าจะกลายเป็น "ไม่ต้องใส่" ทั้งหมด = ครัวลืมใส่ช้อน */
 function cardHtml(o,urgent){
   const its=ITEMS[o.id]||[], p=PACK[o.id]||{}, b=boxesOf(o), dn=packedOf(o);
-  let h='<div class="card'+(urgent?' urg':'')+(isDone(o)?' done':'')+'">'
-   +'<div class="c-top"><div class="c-name">'+esc(o.customer_name||'—')+'</div><div class="c-prog">☑ '+dn+'/'+b+'</div></div>';
+  const packed=(o.status==='ready'||o.status==='delivered');
+  const ln=String(o.line_display_name||'').trim(), cn=String(o.customer_name||'').trim();
+  const wantU=(o.want_utensils!==false);
+  let h='<div class="card'+(urgent?' urg':'')+(packed?' done':'')+'">'
+   +'<div class="c-top">'
+     +'<div class="c-name">'+esc(cn||'—')+(ln&&ln!==cn?'<span class="c-line"> (LINE: '+esc(ln)+')</span>':'')+'</div>'
+     +'<div class="c-prog">☑ '+dn+'/'+b+'</div></div>'
+   +'<div class="c-sub">'
+     +'<span class="oid">'+esc(o.order_number||'—')+'</span>'
+     +'<span class="chip'+(wantU?' u-yes':' u-no')+'">'+(wantU?'🥄🍴 ใส่ช้อนส้อม':'❌ ไม่ต้องช้อนส้อม')+'</span>'
+     +(packed?'<span class="chip st">✅ จัดกล่องแล้ว</span>':'')
+   +'</div>';
   its.forEach(it=>{
     const m=MENUS.find(x=>x.id===it.menu_item_id)||{code:it.menu_code,name:it.menu_name};
     const q=it.quantity||1, on=(Number(p[it.id])||0)>=q;
     h+='<div class="row'+(on?' on':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
      +'<div class="code">'+esc(shortCode(m))+'</div>'
-     +'<div style="flex:1;font-size:14px;color:var(--ink);line-height:1.3">'+esc(String(m.name||it.menu_name||'').slice(0,32))+'</div>'
+     +'<div class="nm">'+esc(String(m.name||it.menu_name||'').slice(0,34))+'</div>'
      +'<div class="qty">×'+q+'</div><div class="tick">'+(on?'✅':'⬜')+'</div></div>';
   });
-  return h+'</div>';
+  /* ปุ่ม 2 ตัวแบบหน้าเก่า — แต่ **ไม่ใช่ขั้นบังคับ** ติ๊กแต่ละแถวบันทึกทันทีอยู่แล้ว
+     ปุ่มนี้คือทางลัด "ติ๊กครบทั้งใบทีเดียว" + ปิดสถานะใบ ไม่ใช่ด่านที่ถ้าไม่กดแล้วงานหาย
+     (84 ใบใน 9 วันที่หน้าเก่าไม่เคยถูกกด = บทเรียนว่าห้ามให้งานขึ้นกับปุ่มเดียว) */
+  h+='<div class="acts">';
+  if(!packed){
+    if(dn>0&&dn<b) h+='<button class="bt part" onclick="markPartial(\''+o.id+'\')">📦 จัดเสร็จบางส่วน '+dn+'/'+b+'</button>';
+    h+='<button class="bt pack" onclick="markPacked(\''+o.id+'\')">✅ จัดกล่องเสร็จ</button>';
+  }else{
+    h+='<button class="bt undo" onclick="markUnpack(\''+o.id+'\')">↩ ยังไม่จัด</button>';
+  }
+  return h+'</div></div>';
+}
+/* ติ๊กครบทั้งใบ + ปิดสถานะ — เขียน status เดียวกับหน้าเก่า (ready) จะได้ไม่แตกกัน */
+async function markPacked(oid){
+  if(!needUser()) return;
+  const s=getSB(); if(!s) return;
+  const o=ORDERS.find(x=>x.id===oid); if(!o) return;
+  const p=PACK[oid]||(PACK[oid]={});
+  (ITEMS[oid]||[]).forEach(it=>{ p[it.id]=it.quantity||1; });
+  o.status='ready'; render();
+  const w=await s.from('orders').update({status:'ready',updated_at:new Date().toISOString()}).eq('id',oid);
+  if(w.error){ toast('บันทึกไม่สำเร็จ ลองใหม่'); return; }
+  await s.from('kitchen_data').upsert({key:'k2_pack',data:PACK},{onConflict:'key'});
+  logPack(o,'✅ จัดกล่องเสร็จ ('+boxesOf(o)+' กล่อง)');
+  toast('จัดกล่องเสร็จ · '+(o.customer_name||''));
+}
+async function markUnpack(oid){
+  if(!needUser()) return;
+  const s=getSB(); if(!s) return;
+  const o=ORDERS.find(x=>x.id===oid); if(!o) return;
+  o.status='confirmed'; render();
+  const w=await s.from('orders').update({status:'confirmed',updated_at:new Date().toISOString()}).eq('id',oid);
+  if(w.error){ toast('บันทึกไม่สำเร็จ ลองใหม่'); return; }
+  logPack(o,'↩ ยังไม่จัด');
+  toast('ย้อนกลับเป็นยังไม่จัดแล้ว');
+}
+/* บางส่วน = ยืนยันจำนวนที่ติ๊กไว้ตอนนี้ ให้มีร่องรอยว่าจัดไปแล้วกี่กล่อง ใบยังไม่ปิด */
+async function markPartial(oid){
+  if(!needUser()) return;
+  const o=ORDERS.find(x=>x.id===oid); if(!o) return;
+  logPack(o,'📦 จัดเสร็จบางส่วน '+packedOf(o)+'/'+boxesOf(o)+' กล่อง');
+  toast('บันทึกว่าจัดไปแล้ว '+packedOf(o)+' กล่อง');
+}
+function logPack(o,what){
+  const s=getSB(); if(!s) return;
+  s.from('activity_log').insert({
+    session_id:'k2_'+(window._sid||(window._sid=Date.now())), actor:USER, source:'k2', action_type:'kq_status',
+    summary:(o.customer_name||'—')+' ('+(o.order_number||'—')+') — '+what,
+    detail:{order_id:o.id,order_number:o.order_number,page:'k2'}
+  }).then(()=>{},()=>{});
 }
 async function tick(oid,iid,q){
   const p=PACK[oid]||(PACK[oid]={});
