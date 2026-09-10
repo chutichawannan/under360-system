@@ -119,7 +119,7 @@
 
 ### 📄 อื่นๆ (3)
 `download/hato_final/lineitem_summary.md` — สรุปยอดขายรายสินค้าจาก Hato (22,179 บรรทัด ฿6.04M) **มีค่าเชิงข้อมูล เก็บ**
-`web/tiang/backlog.md` · `image_index.md` — เตียงใช้จริงทุกสัปดาห์ **เก็บ**
+`web/tiang/image_index.md` · `post_log.csv` — เตียงใช้จริงทุกสัปดาห์ **เก็บ** · `backlog.md` ยุบเข้า OPEN_LOOPS แล้ว 10 ก.ย. (ต้นฉบับ `docs/archive/social/tiang_backlog_20260910.md`)
 
 ---
 
