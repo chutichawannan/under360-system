@@ -230,7 +230,7 @@ var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
 var AUDS = [['all','ทั้งหมด'],['new','คนใหม่ (A · D)'],['old','คนเก่า (B · C)']];
 var VIEWS = [['concept','ตามคอนเซปต์'],['ad','รายแอด']];
 var AUDNAME = { 'new':'คนใหม่', 'old':'คนเก่า' };
-var MIN_LEADS_WIN = 3;   /* 🏆 ต้องมีคนกดจองอย่างน้อยเท่านี้ถึงนับว่าชนะ — M ตั้งเอง (น้อยกว่านี้ยังบังเอิญได้) */
+var MIN_LEADS_WIN = 3;   /* 🏆 ต้องมีคนกดลิงก์เข้าไลน์อย่างน้อยเท่านี้ถึงนับว่าชนะ — M ตั้งเอง (น้อยกว่านี้ยังบังเอิญได้) */
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
@@ -326,8 +326,8 @@ function draw(){
     + card('ใช้ไปวันนี้ (ทั้งบัญชี)', baht(t.today),
         (t.yesterday!=null ? (diff>=0?'<span class="up">▲ '+baht(Math.abs(diff))+'</span>':'<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน ('+baht(t.yesterday)+')' : ''))
     + card('ใช้ทั้งช่วง' + scope, baht(g.spend), d.since + ' → ' + d.until + ' · คลิก ' + num(g.clicks))
-    + card('ต่อ 1 คนกดจอง' + scope, g.cpl!=null ? baht(g.cpl) : '—',
-        g.leads ? num(g.leads) + ' คนกดจอง · ตัวนี้สำคัญกว่าต่อคลิก' : 'ยังไม่มีคนกดจองในช่วงนี้', 'hero')
+    + card('ต่อ 1 คนกดลิงก์เข้าไลน์' + scope, g.cpl!=null ? baht(g.cpl) : '—',
+        g.leads ? num(g.leads) + ' คนกดลิงก์เข้าไลน์ · ตัวนี้สำคัญกว่าต่อคลิก' : 'ยังไม่มีคนกดลิงก์เข้าไลน์ในช่วงนี้', 'hero')
     + card('✅ ยืนยันใน DB' + scope, num(dbN) + ' ใบ',
         dbN ? 'ยอด ' + baht(dbRev) + (g.spend ? ' · ต่อใบ ' + baht(g.spend/dbN) : '') : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้', 'db')
     + card('Meta เคลม' + scope, num(g.claim) + ' ใบ · ' + baht(g.claimRev),
@@ -356,7 +356,7 @@ function draw(){
     + ' · เวลาไทย · ช่วง ' + d.since + ' → ' + d.until;
 }
 
-var HEAD_METRICS = '<th>ใช้เงิน</th><th>คลิก</th><th>CTR</th><th>กดจอง</th><th>ต่อคนกดจอง</th>'
+var HEAD_METRICS = '<th>ใช้เงิน</th><th>คลิก</th><th>CTR</th><th>คนกดลิงก์เข้าไลน์</th><th>ต่อคนกดลิงก์เข้าไลน์</th>'
   + '<th>ทักแชท</th><th>เซฟ</th><th>แชร์</th><th>เห็นซ้ำ</th><th>✅ ยืนยัน DB</th><th class="claimh">Meta เคลม</th>';
 
 function metricCells(m, crown){
@@ -391,7 +391,7 @@ function conceptView(ads){
   var best = null;
   rows.forEach(function(r){ if (r.k !== '__legacy' && r.m.leads >= MIN_LEADS_WIN && (!best || r.m.cpl < best.m.cpl)) best = r; });
 
-  var html = '<div class="h2row"><h2>คอนเซปต์ไหนชนะ</h2><span class="sub">รวมรหัสใบเดียวกันจากทุกชุด · กดแถวเพื่อดูแยกชุด · เรียงจากต่อคนกดจองถูกสุด</span></div>'
+  var html = '<div class="h2row"><h2>คอนเซปต์ไหนชนะ</h2><span class="sub">รวมรหัสใบเดียวกันจากทุกชุด · กดแถวเพื่อดูแยกชุด · เรียงจากต่อคนกดลิงก์เข้าไลน์ถูกสุด</span></div>'
     + '<div class="tblwrap"><table><thead><tr><th>คอนเซปต์</th><th>แอดวิ่ง</th>' + HEAD_METRICS + '</tr></thead><tbody>';
   rows.forEach(function(r){
     var m = r.m, bad = m.freq > 3;
@@ -414,7 +414,7 @@ function conceptView(ads){
     });
   });
   html += '</tbody></table></div>'
-    + '<p class="fine">🏆 = ต่อคนกดจองถูกสุด เฉพาะคอนเซปต์ที่มีคนกดจองอย่างน้อย ' + MIN_LEADS_WIN + ' คน (เกณฑ์นี้ M ตั้งเอง — น้อยกว่านี้ยังบังเอิญได้)'
+    + '<p class="fine">🏆 = ต่อคนกดลิงก์เข้าไลน์ถูกสุด เฉพาะคอนเซปต์ที่มีคนกดลิงก์เข้าไลน์อย่างน้อย ' + MIN_LEADS_WIN + ' คน (เกณฑ์นี้ M ตั้งเอง — น้อยกว่านี้ยังบังเอิญได้)'
     + ' · ตัวเลขรวมแอดที่หยุดไปแล้วด้วย เพราะเงินใช้ไปแล้วจริง · "เห็นซ้ำ" = ค่าสูงสุดของแอดในกลุ่มที่แสดงผลเกิน 300 ครั้ง'
     + ' · ✅ ยืนยัน DB = ออเดอร์จริงที่ติดรหัสแอดมา · Meta เคลม = ตัวเลขของ Meta เอง ห้ามอ่านเป็นยอดขาย</p>';
   return html;
