@@ -7,6 +7,7 @@
  *
  * วิธี: ยึด menu_name ที่บันทึกไว้ตอนขายเป็นความจริง → หาเลขปัจจุบันของเมนูชื่อนั้น → แก้ menu_code
  * แก้เฉพาะที่ชัวร์: ชื่อตรงเป๊ะกับเมนูปัจจุบันตัวเดียว · S→S หรือ D→D เท่านั้น · ไม่แตะรหัสท้าย -2
+ * รวมรหัสที่ไม่มีในตารางแล้ว (แก้ 11 ก.ย. — เดิมข้าม ทำให้ D029→D050 ประวัติ 19 แถวค้าง)
  *
  * รัน: node scripts/niw/backfill_order_codes.mjs --dry
  */
@@ -26,8 +27,8 @@ const items=await page('order_items?select=id,menu_code,menu_name');
 const fix=[], hold=[];
 for(const x of items){
   const c=String(x.menu_code||''); if(!/^[SD]\d+$/.test(c)) continue;
-  const cur=nameOf.get(c); if(!cur) continue;
-  if(norm(cur)===norm(x.menu_name)) continue;
+  const cur=nameOf.get(c);                 // รหัสที่หายจากตารางแล้ว (ถูกโยกไป) ก็ต้องตามแก้ ไม่งั้นด่าน 90 วันมองไม่เห็นยอดขาย
+  if(cur&&norm(cur)===norm(x.menu_name)) continue;
   const cands=(hits.get(norm(x.menu_name))||[]).filter(z=>/^[SD]\d+$/.test(z));
   const why=(m)=>hold.push({id:x.id,from:c,name:x.menu_name,why:m});
   if(cands.length===0){why('ไม่มีเมนูชื่อนี้ในตารางแล้ว');continue;}

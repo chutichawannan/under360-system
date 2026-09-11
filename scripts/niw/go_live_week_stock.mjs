@@ -9,20 +9,21 @@
  * เขียน: menu_items.subcode + stock_total + is_available · kitchen_data.stock_incoming (กำลังผลิต)
  *
  * ⛔ --apply เปิดขายจริงทันที — รันเมื่อนัทเคาะแล้วเท่านั้น
+ * --no-open = ใส่ป้าย+สต็อกอย่างเดียว ไม่แตะ is_available (pm เคาะ 11 ก.ย.: ตัวเปิดขายมีตัวเดียว = ของ U)
  * รัน: node scripts/niw/go_live_week_stock.mjs 2026-09-14          ← ดูอย่างเดียว
  *      node scripts/niw/go_live_week_stock.mjs 2026-09-14 --apply  ← ทำจริง
  */
 const SB='https://zdartbvhbvqlwzwyyiia.supabase.co';
 const K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const H={apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json'};
-const WEEK=process.argv[2], APPLY=process.argv.includes('--apply');
+const WEEK=process.argv[2], APPLY=process.argv.includes('--apply'), NO_OPEN=process.argv.includes('--no-open');
 const g=async u=>(await fetch(SB+'/rest/v1/'+u,{headers:H})).json();
 const P=async(code,body)=>{const r=await fetch(SB+'/rest/v1/menu_items?code=eq.'+code,{method:'PATCH',headers:{...H,Prefer:'return=representation'},body:JSON.stringify(body)});const j=await r.json();return r.ok&&Array.isArray(j)&&j.length===1;};
 const SLOTS=['S1','S2','S3','S4','S5','S6','S7','S8','D1','D2','D3','D4','D5'];
 
 async function main(){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(String(WEEK))){console.log('ใส่วันจันทร์ เช่น 2026-09-14');process.exitCode=1;return;}
-  console.log('สัปดาห์ '+WEEK+(APPLY?'  ⚠️ ทำจริง':'  (ดูอย่างเดียว ไม่แตะ DB)'));
+  console.log('สัปดาห์ '+WEEK+(APPLY?'  ⚠️ ทำจริง':'  (ดูอย่างเดียว ไม่แตะ DB)')+(NO_OPEN?'  · โหมด --no-open (ไม่เปิดขาย)':''));
 
   const kd=await g('kitchen_data?select=key,data&key=in.(weekly_subcode_plan,weekly_stock_plan,stock_incoming)');
   const get=k=>((kd.find(x=>x.key===k)||{}).data)||{};
@@ -91,7 +92,7 @@ async function main(){
   }
   const w=await fetch(SB+'/rest/v1/kitchen_data?key=eq.stock_incoming',{method:'PATCH',headers:{...H,Prefer:'return=minimal'},body:JSON.stringify({data:inc})});
   if(!w.ok){console.log('  ❌ บันทึกกำลังผลิตไม่สำเร็จ '+w.status+' — หยุดก่อนเปิดขาย');process.exitCode=2;return;}
-  for(const s of SLOTS) if(!await P(plan[s],{is_available:true})) console.log('  ❌ เปิดขายไม่สำเร็จ '+plan[s]);
+  if(!NO_OPEN) for(const s of SLOTS) if(!await P(plan[s],{is_available:true})) console.log('  ❌ เปิดขายไม่สำเร็จ '+plan[s]);
 
   // ── ตรวจซ้ำจาก DB จริง ──
   const back=await g('menu_items?select=code,subcode,is_available,stock_total&code=in.('+codes.join(',')+')');
@@ -102,8 +103,9 @@ async function main(){
   const noStock=back.filter(m=>m.stock_total==null);
   const dupTxt=dup.length?'🔴 '+dup.map(([k,a])=>k+'='+a.join('/')).join(' '):'0 ✅';
   const stkTxt=noStock.length?'🔴 '+noStock.map(m=>m.code).join(' '):'0 ✅';
-  console.log('เปิดขาย '+open+'/13 · ป้ายซ้ำ '+dupTxt+' · สต็อกว่าง '+stkTxt);
-  if(open!==13||dup.length||noStock.length){process.exitCode=2;return;}
+  const labeled=back.filter(m=>m.subcode&&SLOTS.includes(m.subcode)).length;
+  console.log((NO_OPEN?'ติดป้าย '+labeled+'/13 · เปิดขาย '+open+' (ไม่เปิดตามโหมด)':'เปิดขาย '+open+'/13')+' · ป้ายซ้ำ '+dupTxt+' · สต็อกว่าง '+stkTxt);
+  if((NO_OPEN?labeled!==13:open!==13)||dup.length||noStock.length){process.exitCode=2;return;}
   console.log('✅ เสร็จ — ยังต้องเปิดหน้าลูกค้าดูด้วยตาอีกชั้น');
 }
 main();
