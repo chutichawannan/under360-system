@@ -72,9 +72,23 @@ module.exports = async (req, res) => {
   // ── 6. ปฏิทินเมนู Meal Plan ยังมีวันให้ลูกค้าเลือกไหม ──
   //    (เพิ่ม 1 ก.ย. 2569 หลังเจอว่าเหลือ 2 วันโดยไม่มีอะไรฟ้อง)
   try {
-    const r = await fetch(`${SB}/kitchen_data?key=eq.mp_menu_plan&select=data`, { headers: H });
-    const j = await r.json();
-    const plan = (Array.isArray(j) && j[0] && j[0].data) || {};
+    /* พี่ปืนขอ 12 ก.ย.: อ่านพลาดให้ลองซ้ำ 1 ครั้งก่อนสรุป (เน็ตสะดุดชั่ววูบ ไม่ใช่ร้านล้ม) */
+    let r, j;
+    for (let ครั้ง = 1; ครั้ง <= 2; ครั้ง++) {
+      r = await fetch(`${SB}/kitchen_data?key=eq.mp_menu_plan&select=data`, { headers: H, cache: 'no-store' }).catch(() => null);
+      j = r ? await r.json().catch(() => null) : null;
+      if (r && r.ok && Array.isArray(j)) break;
+      if (ครั้ง === 1) await new Promise(f2 => setTimeout(f2, 1500));
+    }
+    /* 🟡 12 ก.ย. 2569: อ่านแพลนไม่ได้ ≠ ไม่มีวันให้ลูกค้าเลือก
+       เดิมสองกรณีนี้ตกลงมาที่ข้อความแดงอันเดียวกัน (plan = {}) → 06:30 ปลุก 4 ห้องว่าลูกค้าสั่ง Meal Plan ไม่ได้
+       ของจริงตอนนั้นมีวันในแพลน 13 วัน (14 ก.ย.–19 ต.ค.) · 3 นาทีต่อมาตัวเฝ้าเองรายงานว่าปกติ
+       แดง = เงินหยุดไหลจริงเท่านั้น · อ่านไม่ได้ = เหลือง บอกตรง ๆ ว่าเช็คไม่ได้ */
+    if (!r || !r.ok || !Array.isArray(j)) {
+      add("ปฏิทินเมนู Meal Plan", false, "เช็คไม่ได้ — อ่าน mp_menu_plan ไม่สำเร็จ 2 ครั้งติด (HTTP " + (r ? r.status : 'เชื่อมต่อไม่ได้') + ") ยังไม่ได้แปลว่าลูกค้าสั่งไม่ได้", "เหลือง");
+      throw new Error("skip");
+    }
+    const plan = (j[0] && j[0].data) || {};
     const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);   // วันไทย
     const left = Object.keys(plan).filter(d => d > today).sort();
     const last = left[left.length - 1];
@@ -87,7 +101,7 @@ module.exports = async (req, res) => {
       add('ปฏิทินเมนู Meal Plan', เหลือวัน > 14,
           left.length + ' วัน ถึง ' + last + (เหลือวัน <= 14 ? ' — อีก ' + เหลือวัน + ' วันหมด เริ่มทวงห้องฟ้าได้แล้ว' : ''),
           เหลือวัน > 14 ? 'เหลือง' : 'เหลือง');
-  } catch (e) { add('ปฏิทินเมนู Meal Plan', false, String(e && e.message), 'เหลือง'); }
+  } catch (e) { if (String(e && e.message) !== 'skip') add('ปฏิทินเมนู Meal Plan', false, String(e && e.message), 'เหลือง'); }
 
   // ── 7. สัญญาณธุรกิจ (เตือนเบา ไม่ใช่แดง) ──
   try {
