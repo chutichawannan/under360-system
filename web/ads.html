@@ -14,9 +14,9 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 :root{--ink:#14171A;--muted:#6B7280;--hair:#E4E7E2;--green:#2E7D43;--paper:#fff;--soft:#F7F8F6;
-  --red:#C62828;--redbg:#FDECEC;--amber:#8A6A00;--amberbg:#FFF8E6}
+  --red:#C62828;--redbg:#FDECEC;--amber:#8A6A00;--amberbg:#FFF8E6;--blue:#1F5FA8;--bluebg:#EAF2FB}
 body{font-family:'Sarabun',sans-serif;color:var(--ink);background:var(--soft);font-size:16px;line-height:1.6}
-.wrap{max-width:1120px;margin:0 auto;padding:0 18px}
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px}
 h1,h2,h3{font-family:'Prompt',sans-serif;font-weight:600;line-height:1.3}
 
 header{background:var(--paper);border-bottom:1px solid var(--hair);padding:14px 0}
@@ -24,10 +24,13 @@ header .r{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
 header h1{font-size:1.15rem;margin-right:auto}
 header .lock{font-size:.8rem;color:var(--muted);background:var(--soft);border:1px solid var(--hair);
   border-radius:999px;padding:4px 12px}
-.rangebtns{display:flex;gap:6px;background:var(--soft);border-radius:999px;padding:4px}
-.rangebtns button{border:0;background:transparent;font-family:'Prompt';font-weight:600;font-size:.85rem;
-  padding:6px 14px;border-radius:999px;cursor:pointer;color:var(--muted)}
-.rangebtns button.on{background:var(--green);color:#fff}
+.seg{display:flex;gap:4px;background:var(--soft);border:1px solid var(--hair);border-radius:999px;padding:3px}
+.seg button{border:0;background:transparent;font-family:'Prompt';font-weight:600;font-size:.85rem;
+  padding:6px 14px;border-radius:999px;cursor:pointer;color:var(--muted);white-space:nowrap}
+.seg button.on{background:var(--green);color:#fff}
+.seg.aud button.on[data-a="new"]{background:var(--blue)}
+.bar2{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:14px}
+.bar2 .lbl{font-size:.8rem;color:var(--muted)}
 
 .note{background:var(--amberbg);border-bottom:1px solid #F0DFA8;color:var(--amber);
   font-size:.9rem;padding:9px 0}
@@ -38,24 +41,71 @@ section{padding:22px 0}
 .card .k{font-size:.85rem;color:var(--muted)}
 .card .v{font-family:'Prompt';font-weight:700;font-size:1.85rem;line-height:1.2;margin-top:4px}
 .card .s{font-size:.85rem;color:var(--muted);margin-top:2px}
+.card.hero{border-color:var(--green)}
 .card.hero .v{color:var(--green)}
+.card.db .v{color:var(--ink)}
+.card.claim{background:var(--amberbg);border-color:#F0DFA8}
+.card.claim .k{color:var(--amber);font-weight:700}
+.card.claim .v{color:var(--amber);font-size:1.5rem}
 .up{color:var(--red)} .down{color:var(--green)}
+/* มือถือ: การ์ด 5 ใบเรียงแถวเดียว = ตารางคอนเซปต์ตกไปจอที่ 2 → วาง 2 คอลัมน์ · ช่อง Meta เคลมเต็มแถว (ข้อความเตือนยาว) */
+@media (max-width:520px){
+  .cards{grid-template-columns:1fr 1fr;gap:8px}
+  .card{padding:12px 13px}
+  .card .v{font-size:1.35rem}
+  .card .s{font-size:.78rem;line-height:1.45}
+  .card.claim{grid-column:1 / -1}
+  .card.claim .v{font-size:1.2rem}
+}
 
-.tblwrap{background:var(--paper);border:1px solid var(--hair);border-radius:14px;overflow:auto;margin-top:14px}
-table{width:100%;border-collapse:collapse;font-size:.92rem;min-width:780px}
-th,td{padding:11px 13px;text-align:right;white-space:nowrap;border-top:1px solid var(--hair)}
-th{font-family:'Prompt';font-weight:600;font-size:.82rem;color:var(--muted);
+.h2row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:26px 0 0}
+.h2row h2{font-size:1.05rem}
+.h2row .sub{font-size:.82rem;color:var(--muted)}
+
+.tblwrap{background:var(--paper);border:1px solid var(--hair);border-radius:14px;overflow:auto;margin-top:10px}
+table{width:100%;border-collapse:collapse;font-size:.9rem;min-width:980px}
+th,td{padding:10px 12px;text-align:right;white-space:nowrap;border-top:1px solid var(--hair)}
+th{font-family:'Prompt';font-weight:600;font-size:.78rem;color:var(--muted);
   text-align:right;background:var(--soft);border-top:0;position:sticky;top:0}
-th:first-child,td:first-child{text-align:left;white-space:normal;min-width:220px}
+th:first-child,td:first-child{text-align:left;white-space:normal;min-width:240px}
+th.claimh,td.claimc{background:var(--amberbg);color:var(--amber)}
 tr.bad td{background:var(--redbg)}
+tr.bad td.claimc{background:var(--amberbg)}
 .flag{display:inline-block;background:var(--red);color:#fff;border-radius:999px;
-  padding:2px 9px;font-size:.74rem;font-family:'Prompt';font-weight:600;margin-left:6px}
+  padding:2px 9px;font-size:.72rem;font-family:'Prompt';font-weight:600;margin:3px 4px 0 0}
 .win{color:var(--green);font-family:'Prompt';font-weight:600}
+.dim{color:#B3B8BF}
 .msg{background:var(--paper);border:1px solid var(--hair);border-radius:14px;padding:22px;margin-top:14px}
 .msg b{font-family:'Prompt';font-weight:600}
 .msg code{background:var(--soft);border:1px solid var(--hair);border-radius:6px;padding:2px 7px;font-size:.9em}
 .msg ol{margin:10px 0 0 20px} .msg li{margin-top:6px;color:var(--muted)}
+.fine{font-size:.8rem;color:var(--muted);margin-top:8px;line-height:1.6}
 footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
+
+/* ── u360-concepts — มุมมองตามคอนเซปต์ (06 ขอ 11 ก.ย.) ── */
+tr.crow{cursor:pointer}
+tr.crow:hover td{background:#FAFBF9}
+tr.crow.bad:hover td{background:var(--redbg)}
+.cname{display:flex;gap:10px;align-items:flex-start}
+.caret{display:inline-block;width:14px;color:var(--muted);transition:transform .15s;flex-shrink:0;margin-top:2px}
+tr.crow.open .caret{transform:rotate(90deg)}
+.ccode{font-family:'Prompt';font-weight:700;background:var(--soft);border:1px solid var(--hair);
+  border-radius:7px;padding:0 7px;font-size:.85rem;flex-shrink:0}
+.ctitle b{font-weight:600} .ctitle em{display:block;font-style:normal;font-size:.76rem;color:var(--muted)}
+.crown{margin-left:4px}
+tr.sub td{background:#FBFCFA;font-size:.84rem;color:#4B5563}
+tr.sub td:first-child{padding-left:46px}
+tr.sub[hidden]{display:none}
+.audtag{display:inline-block;font-size:.7rem;font-family:'Prompt';font-weight:600;border-radius:5px;padding:0 6px;margin-right:6px}
+.audtag.new{background:var(--bluebg);color:var(--blue)}
+.audtag.old{background:#F1ECF7;color:#6B3FA0}
+details.stopped{margin-top:14px}
+details.stopped summary{cursor:pointer;font-family:'Prompt';font-weight:600;font-size:.9rem;color:var(--muted);
+  background:var(--paper);border:1px solid var(--hair);border-radius:12px;padding:10px 14px;list-style:none}
+details.stopped summary::-webkit-details-marker{display:none}
+details.stopped[open] summary{border-radius:12px 12px 0 0}
+details.stopped .tblwrap{margin-top:0;border-radius:0 0 14px 14px;border-top:0;opacity:.85}
+
   /* ── u360-ads-gate ── */
   #adsgate { position:fixed; inset:0; z-index:200; display:grid; place-items:center;
              background:#10221A; color:#fff; text-align:center; padding:24px;
@@ -74,9 +124,15 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
   .wdhead span { font-size:12px; opacity:.65; }
   .wd pre { margin:0; white-space:pre-wrap; word-break:break-word;
             font-family:inherit; font-size:13px; line-height:1.75; }
+  /* แอด 50+ ตัว รายงานยามยาวทั้งจอ → ดันตารางคอนเซปต์ (ของที่นัทต้องเห็นก่อน) ตกขอบล่าง
+     พับไว้ 6 บรรทัด กดกางดูได้ */
+  .wd:not(.open) pre { max-height:calc(1.75em * 6); overflow:hidden;
+            -webkit-mask-image:linear-gradient(#000 60%, transparent); mask-image:linear-gradient(#000 60%, transparent); }
+  .wdmore { margin-top:6px; border:0; background:transparent; color:var(--green); font-family:'Prompt';
+            font-weight:600; font-size:13px; cursor:pointer; padding:2px 0; }
   /* ── u360-thumbs-ui ── */
   .adcell-wrap { display:block; }
-  .adcell { display:flex; align-items:center; gap:10px; min-width:190px; }
+  .adcell { display:flex; align-items:center; gap:10px; min-width:220px; }
   .adthumb { width:44px; height:44px; border-radius:8px; object-fit:cover; flex-shrink:0;
              border:1px solid var(--line,#e5eae6); background:var(--soft,#f7f9f7); display:block; }
   .adthumb.none { display:block; }
@@ -92,7 +148,6 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
   .fstep b { font-size:19px; font-weight:600; line-height:1.3; }
   .fstep em { font-style:normal; font-size:11px; opacity:.7; }
   .arw { font-size:11px; opacity:.55; padding:0 2px; }
-  .fnote { flex-basis:100%; font-size:11px; color:var(--muted); margin-top:6px; line-height:1.5; }
   /* ── u360-google-ui ── */
   .gsec { margin-top:22px; }
   .gh { font-size:1rem; margin-bottom:10px; }
@@ -110,22 +165,27 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
   <div class="wrap r">
     <h1>📊 ตัวเลขแอด</h1>
     <span class="lock">🔒 หน้าหลังบ้าน — ไม่ให้ Google เก็บ</span>
-    <div class="rangebtns" id="ranges"></div>
+    <div class="seg" id="ranges"></div>
   </div>
 </header>
 
-<div class="note"><div class="wrap">⏱️ ข้อมูลจาก Meta หน่วงประมาณ 15 นาที — ไม่ใช่เรียลไทม์</div></div>
+<div class="note" id="topnote"><div class="wrap">⏱️ ตัวเลข Meta ดึงใหม่ทุก 15 นาที — ไม่ใช่เรียลไทม์ (ดึงถี่กว่านี้บัญชีแอดโดน Meta ล็อก)</div></div>
 
-<!-- u360-watchdog-card — รายงานล่าสุดของยามเฝ้าแอด (นัทขอ 9 ก.ย.) -->
 <section><div class="wrap">
+  <!-- u360-watchdog-card — รายงานล่าสุดของยามเฝ้าแอด (นัทขอ 9 ก.ย.) -->
   <div class="wd" id="wd" hidden>
     <div class="wdhead"><b>🐕 ยามเฝ้าแอด</b><span id="wdtime"></span></div>
     <pre id="wdtext"></pre>
+    <button class="wdmore" id="wdmore" type="button" hidden>ดูรายงานเต็ม ▾</button>
+  </div>
+  <div class="bar2">
+    <span class="lbl">ยิงใส่ใคร</span><div class="seg aud" id="auds"></div>
+    <span class="lbl" style="margin-left:8px">ดูแบบ</span><div class="seg" id="views"></div>
   </div>
   <div class="cards" id="cards"></div>
+  <div id="body"></div>
   <div class="funnel" id="funnel" hidden></div>
   <div class="gsec" id="gsec" hidden></div>
-  <div id="body"></div>
 </div></section>
 
 <footer><div class="wrap" id="foot">กำลังโหลด…</div></footer>
@@ -140,14 +200,14 @@ footer{color:var(--muted);font-size:.85rem;padding:20px 0 40px}
 </div>
 <script>
 /* u360-ads-gate — หน้าเว็บไม่รู้ค่ารหัสจริง แค่ส่งไปให้ server ตรวจ
-   จำไว้ในเครื่องเพื่อไม่ต้องพิมพ์ซ้ำทุกครั้ง */
+   ?check=1 = เช็ครหัสอย่างเดียว ไม่ไปแตะ Meta (เดิมเช็ครหัสทีดึงแอดทั้งบัญชีที — 06 โดนล็อกลิมิต 11 ก.ย.) */
 var U360PIN = '';
 function u360pin(){ return U360PIN; }
 (function(){
   try{ U360PIN = localStorage.getItem('u360_ads_pin') || ''; }catch(e){}
   var gate=document.getElementById('adsgate'), inp=document.getElementById('adspin'), err=document.getElementById('adspinerr');
   function tryPin(p){
-    return fetch('/api/ads-insights?days=1', {headers:{'x-ads-pin':p}}).then(function(r){ return r.status !== 401; });
+    return fetch('/api/ads-insights?check=1', {headers:{'x-ads-pin':p}}).then(function(r){ return r.status !== 401; });
   }
   function unlock(){ window.U360_UNLOCKED = true; gate.remove(); document.dispatchEvent(new Event('u360-unlocked')); }
   if (U360PIN) { tryPin(U360PIN).then(function(ok){ if(ok) unlock(); else { U360PIN=''; inp.focus(); } }); }
@@ -163,20 +223,34 @@ function u360pin(){ return U360PIN; }
 })();
 </script>
 <script>
-var DAYS = 7;
+var DAYS = 7, AUDF = 'all', VIEW = 'concept', LAST = null;
+try { AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept'; } catch(e){}
 var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
+/* ความหมายชุด — ต้องตรงกับ AUD ใน web/api/ads-insights.js (06 กำหนด 11 ก.ย.) */
+var AUDS = [['all','ทั้งหมด'],['new','คนใหม่ (A · D)'],['old','คนเก่า (B · C)']];
+var VIEWS = [['concept','ตามคอนเซปต์'],['ad','รายแอด']];
+var AUDNAME = { 'new':'คนใหม่', 'old':'คนเก่า' };
+var MIN_LEADS_WIN = 3;   /* 🏆 ต้องมีคนกดจองอย่างน้อยเท่านี้ถึงนับว่าชนะ — M ตั้งเอง (น้อยกว่านี้ยังบังเอิญได้) */
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
   return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); }
 function baht(n){ return '฿' + Number(n||0).toLocaleString('th-TH',{maximumFractionDigits:0}); }
+function num(n){ return Number(n||0).toLocaleString('th-TH'); }
+function z(n, f){ return n ? (f ? f(n) : num(n)) : '<span class="dim">0</span>'; }
 
-function renderRanges(){
-  document.getElementById('ranges').innerHTML = RANGES.map(function(r){
-    return '<button class="'+(r[0]===DAYS?'on':'')+'" data-d="'+r[0]+'">'+r[1]+'</button>';
+function segs(id, list, cur, onPick){
+  var box = document.getElementById(id);
+  box.innerHTML = list.map(function(r){
+    return '<button class="'+(r[0]===cur?'on':'')+'" data-v="'+r[0]+'" data-a="'+r[0]+'">'+r[1]+'</button>';
   }).join('');
-  [].slice.call(document.querySelectorAll('#ranges button')).forEach(function(b){
-    b.onclick = function(){ DAYS = +b.dataset.d; renderRanges(); load(); };
+  [].slice.call(box.querySelectorAll('button')).forEach(function(b){
+    b.onclick = function(){ onPick(isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v); };
   });
+}
+function renderControls(){
+  segs('ranges', RANGES, DAYS, function(v){ DAYS = v; renderControls(); load(); });
+  segs('auds', AUDS, AUDF, function(v){ AUDF = v; try{localStorage.setItem('u360_ads_aud', v);}catch(e){} renderControls(); if (LAST) draw(); });
+  segs('views', VIEWS, VIEW, function(v){ VIEW = v; try{localStorage.setItem('u360_ads_view', v);}catch(e){} renderControls(); if (LAST) draw(); });
 }
 
 function load(){
@@ -191,7 +265,6 @@ function load(){
 function render(d){
   var cards = document.getElementById('cards'), body = document.getElementById('body');
 
-  /* ยังไม่ได้ตั้งค่า — บอกให้ชัดว่าต้องทำอะไร ไม่ใช่โชว์หน้าว่าง */
   if(d.setupNeeded){
     cards.innerHTML = '';
     body.innerHTML = '<div class="msg"><b>ยังใช้งานไม่ได้ — ต้องตั้งค่าใน Vercel ก่อน</b>'
@@ -210,68 +283,185 @@ function render(d){
     document.getElementById('foot').textContent = '';
     return;
   }
-
-  var t = d.totals || {}, o = d.orders || {};
-  var diff = (t.today||0) - (t.yesterday||0);
-  var cpo = (o.matched && t.spend) ? (t.spend / o.matched) : null;
-
+  LAST = d;
   renderFunnel(d.funnel);   /* u360-thumbs-ui */
   renderGoogle(d.google);   /* u360-google-ui */
-  cards.innerHTML = ''
-    + card('ใช้ไปวันนี้', baht(t.today),
-        (t.yesterday!=null ? (diff>=0?'<span class="up">▲ '+baht(Math.abs(diff))+'</span>':'<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน ('+baht(t.yesterday)+')' : ''))
-    + card('ใช้ทั้งช่วง', baht(t.spend), d.since + ' → ' + d.until)
-    + card('คลิกทั้งช่วง', Number(t.clicks||0).toLocaleString('th-TH'), '')
-    + card('ต่อ 1 ออเดอร์จริง', cpo!=null ? baht(cpo) : '—',
-        o.matched ? (o.matched + ' ออเดอร์จากแอด · ยอด ' + baht(o.revenue)) : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้ (ออเดอร์จากช่องทางอื่นไม่นับ)', true);
+  draw();
+}
 
-  if(!d.ads || !d.ads.length){
-    body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน</div>';
-  } else {
-    body.innerHTML = '<div class="tblwrap"><table><thead><tr>'
-      + '<th>ชิ้นงาน</th><th>ใช้เงิน</th><th>คนเห็น</th><th>เห็นซ้ำ</th>'
-      + '<th>คลิก</th><th>ต่อคลิก</th><th>CTR</th><th>ออเดอร์</th><th>ต่อออเดอร์</th>'
-      + '</tr></thead><tbody>'
-      + d.ads.map(function(a){
-          var bad = a.flags && a.flags.length;
-          return '<tr class="'+(bad?'bad':'')+'">'
-            + '<td class="adcell-wrap">' + adCell(a)   /* u360-thumbs-ui */
-              + (bad ? a.flags.map(function(f){return '<span class="flag">'+esc(f)+'</span>';}).join('') : '')
-            + '</td>'
-            + '<td>' + baht(a.spend) + '</td>'
-            + '<td>' + Number(a.reach||0).toLocaleString('th-TH') + '</td>'
-            + '<td>' + (a.frequency||0).toFixed(2) + '</td>'
-            + '<td>' + Number(a.clicks||0).toLocaleString('th-TH') + '</td>'
-            + '<td>' + baht(a.cpc) + '</td>'
-            + '<td>' + (a.ctr||0).toFixed(2) + '%</td>'
-            + '<td>' + (a.orders || 0) + '</td>'
-            + '<td>' + (a.costPerOrder!=null ? '<span class="win">'+baht(a.costPerOrder)+'</span>' : '—') + '</td>'
-            + '</tr>';
-        }).join('')
-      + '</tbody></table></div>';
+/* ยอดยืนยันใน DB ของกลุ่มแอด — นับ utm ละครั้งเดียว
+   (แอดชื่อเก่าหลายตัวใช้รหัสเดียวกัน เช่น c4 · จานแดง / c4 · health — บวกตรงๆ = ออเดอร์ใบเดียวนับซ้ำ) */
+function dbFor(list){
+  var by = (LAST.orders && LAST.orders.byUtm) || {}, seen = {}, n = 0, rev = 0;
+  list.forEach(function(a){
+    if (!a.utm || seen[a.utm]) return; seen[a.utm] = 1;
+    var h = by[a.utm]; if (h) { n += h.orders; rev += h.revenue; }
+  });
+  return { n:n, rev:rev };
+}
+function sum(list, k){ return list.reduce(function(s,a){ return s + (+a[k]||0); }, 0); }
+function agg(list){
+  var spend = sum(list,'spend'), clicks = sum(list,'clicks'), imp = sum(list,'impressions'), leads = sum(list,'leads');
+  var fr = 0; list.forEach(function(a){ if (a.impressions >= 300 && a.frequency > fr) fr = a.frequency; });
+  var db = dbFor(list);
+  return { n:list.length, live:list.filter(function(a){return a.live;}).length,
+    spend:spend, clicks:clicks, imp:imp, ctr: imp ? clicks/imp*100 : 0, leads:leads,
+    cpl: leads ? spend/leads : null, chats:sum(list,'chats'), saves:sum(list,'saves'), shares:sum(list,'shares'),
+    freq:fr, db:db.n, dbRev:db.rev, claim:sum(list,'metaPurchases'), claimRev:sum(list,'metaRevenue') };
+}
+
+function draw(){
+  var d = LAST, t = d.totals || {}, o = d.orders || {};
+  var ads = (d.ads || []).filter(function(a){ return AUDF === 'all' || a.aud === AUDF; });
+  var g = agg(ads);
+  var diff = (t.today||0) - (t.yesterday||0);
+  var scope = AUDF === 'all' ? '' : ' · เฉพาะ' + AUDNAME[AUDF];
+
+  /* ยืนยันใน DB: ดู "ทั้งหมด" ใช้ยอดรวมทุกใบจากแอด (รวมใบที่ผูกกับแอดตัวไหนไม่ได้)
+     กรองกลุ่ม = นับได้เฉพาะใบที่ผูกกับแอดในกลุ่มนั้น */
+  var dbN = AUDF === 'all' ? (o.matched||0) : g.db;
+  var dbRev = AUDF === 'all' ? (o.revenue||0) : g.dbRev;
+
+  document.getElementById('cards').innerHTML = ''
+    + card('ใช้ไปวันนี้ (ทั้งบัญชี)', baht(t.today),
+        (t.yesterday!=null ? (diff>=0?'<span class="up">▲ '+baht(Math.abs(diff))+'</span>':'<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน ('+baht(t.yesterday)+')' : ''))
+    + card('ใช้ทั้งช่วง' + scope, baht(g.spend), d.since + ' → ' + d.until + ' · คลิก ' + num(g.clicks))
+    + card('ต่อ 1 คนกดจอง' + scope, g.cpl!=null ? baht(g.cpl) : '—',
+        g.leads ? num(g.leads) + ' คนกดจอง · ตัวนี้สำคัญกว่าต่อคลิก' : 'ยังไม่มีคนกดจองในช่วงนี้', 'hero')
+    + card('✅ ยืนยันใน DB' + scope, num(dbN) + ' ใบ',
+        dbN ? 'ยอด ' + baht(dbRev) + (g.spend ? ' · ต่อใบ ' + baht(g.spend/dbN) : '') : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้', 'db')
+    + card('Meta เคลม' + scope, num(g.claim) + ' ใบ · ' + baht(g.claimRev),
+        '⚠️ ไม่ใช่ยอดจริง — Meta นับคนที่แค่เห็นแอดแล้วไปซื้อเองด้วย · ห้ามรวมกับช่อง DB', 'claim');
+
+  var body = document.getElementById('body');
+  if (!ads.length) { body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + '</div>'; }
+  else body.innerHTML = VIEW === 'concept' ? conceptView(ads) : adView(ads);
+
+  if (VIEW === 'concept') {
+    [].slice.call(body.querySelectorAll('tr.crow')).forEach(function(tr){
+      tr.onclick = function(){
+        var open = tr.classList.toggle('open');
+        [].slice.call(body.querySelectorAll('tr.sub[data-k="' + tr.dataset.k + '"]')).forEach(function(s){ s.hidden = !open; });
+      };
+    });
   }
 
+  var tn = document.getElementById('topnote').firstElementChild;
+  tn.textContent = d.staleNote ? '🟠 ' + d.staleNote
+    : '⏱️ ตัวเลข Meta ดึงใหม่ทุก 15 นาที — ไม่ใช่เรียลไทม์ (ดึงถี่กว่านี้บัญชีแอดโดน Meta ล็อก)';
+
+  var ft = function(s){ return new Date(s).toLocaleString('th-TH', {timeZone:'Asia/Bangkok', hour:'2-digit', minute:'2-digit', day:'numeric', month:'short'}); };
   document.getElementById('foot').textContent =
-    'อัปเดตเมื่อ ' + new Date(d.updatedAt).toLocaleString('th-TH', {timeZone:'Asia/Bangkok'})
+    'ตัวเลข Meta ดึงเมื่อ ' + ft(d.metaFetchedAt || d.updatedAt) + ' · ออเดอร์ใน DB ณ ' + ft(d.updatedAt)
     + ' · เวลาไทย · ช่วง ' + d.since + ' → ' + d.until;
 }
 
-function card(k, v, s, hero){
-  return '<div class="card' + (hero?' hero':'') + '"><div class="k">' + esc(k) + '</div>'
+var HEAD_METRICS = '<th>ใช้เงิน</th><th>คลิก</th><th>CTR</th><th>กดจอง</th><th>ต่อคนกดจอง</th>'
+  + '<th>ทักแชท</th><th>เซฟ</th><th>แชร์</th><th>เห็นซ้ำ</th><th>✅ ยืนยัน DB</th><th class="claimh">Meta เคลม</th>';
+
+function metricCells(m, crown){
+  return '<td>' + baht(m.spend) + '</td>'
+    + '<td>' + z(m.clicks) + '</td>'
+    + '<td>' + (m.ctr||0).toFixed(2) + '%</td>'
+    + '<td>' + z(m.leads) + '</td>'
+    + '<td>' + (m.cpl!=null ? '<span class="win">' + baht(m.cpl) + '</span>' + (crown ? '<span class="crown">🏆</span>' : '') : '<span class="dim">—</span>') + '</td>'
+    + '<td>' + z(m.chats) + '</td>'
+    + '<td>' + z(m.saves) + '</td>'
+    + '<td>' + z(m.shares) + '</td>'
+    + '<td>' + (m.freq ? (m.freq > 3 ? '<b class="up">' + m.freq.toFixed(2) + '</b>' : m.freq.toFixed(2)) : '<span class="dim">—</span>') + '</td>'
+    + '<td>' + (m.db ? '<b>' + m.db + '</b> · ' + baht(m.dbRev) : '<span class="dim">0</span>') + '</td>'
+    + '<td class="claimc">' + (m.claim ? m.claim + ' · ' + baht(m.claimRev) : '0') + '</td>';
+}
+
+/* ── u360-concepts — คำถามที่นัทอยากรู้: "คอนเซปต์ไหนชนะ" ไม่ใช่ "แอดตัวไหนชนะ" ── */
+function conceptView(ads){
+  var groups = {}, order = [];
+  ads.forEach(function(a){
+    var k = a.legacy ? '__legacy' : (a.code || '?');
+    if (!groups[k]) { groups[k] = { k:k, code:a.legacy ? 'เก่า' : a.code, title:a.legacy ? 'แอดชุดเก่า (ก่อน 11 ก.ย.)' : a.concept, ads:[] }; order.push(k); }
+    groups[k].ads.push(a);
+  });
+  var rows = order.map(function(k){ var g = groups[k]; g.m = agg(g.ads); return g; });
+  rows.sort(function(x, y){
+    if ((x.k === '__legacy') !== (y.k === '__legacy')) return x.k === '__legacy' ? 1 : -1;
+    if ((x.m.cpl==null) !== (y.m.cpl==null)) return x.m.cpl==null ? 1 : -1;
+    if (x.m.cpl!=null && x.m.cpl !== y.m.cpl) return x.m.cpl - y.m.cpl;
+    return y.m.spend - x.m.spend;
+  });
+  var best = null;
+  rows.forEach(function(r){ if (r.k !== '__legacy' && r.m.leads >= MIN_LEADS_WIN && (!best || r.m.cpl < best.m.cpl)) best = r; });
+
+  var html = '<div class="h2row"><h2>คอนเซปต์ไหนชนะ</h2><span class="sub">รวมรหัสใบเดียวกันจากทุกชุด · กดแถวเพื่อดูแยกชุด · เรียงจากต่อคนกดจองถูกสุด</span></div>'
+    + '<div class="tblwrap"><table><thead><tr><th>คอนเซปต์</th><th>แอดวิ่ง</th>' + HEAD_METRICS + '</tr></thead><tbody>';
+  rows.forEach(function(r){
+    var m = r.m, bad = m.freq > 3;
+    html += '<tr class="crow' + (bad ? ' bad' : '') + '" data-k="' + esc(r.k) + '">'
+      + '<td><span class="cname"><span class="caret">▸</span><span class="ccode">' + esc(r.code) + '</span>'
+      + '<span class="ctitle"><b>' + esc(r.title) + '</b><em>' + m.n + ' แอด' + (bad ? ' · ⚠️ มีแอดเห็นซ้ำเกิน 3' : '') + '</em></span></span></td>'
+      + '<td>' + (m.live ? m.live + '/' + m.n : '<span class="dim">หยุดหมด</span>') + '</td>'
+      + metricCells(m, best === r)
+      + '</tr>';
+    /* แยกตามชุด a/b/c/d ใต้คอนเซปต์ */
+    var bySet = {};
+    r.ads.forEach(function(a){ (bySet[a.set || '?'] = bySet[a.set || '?'] || []).push(a); });
+    Object.keys(bySet).sort().forEach(function(s){
+      var sm = agg(bySet[s]), a0 = bySet[s][0];
+      html += '<tr class="sub" data-k="' + esc(r.k) + '" hidden>'
+        + '<td>' + (a0.aud ? '<span class="audtag ' + a0.aud + '">' + AUDNAME[a0.aud] + '</span>' : '') + 'ชุด ' + esc(s.toUpperCase())
+        + ' <span class="dim">· ' + esc(a0.adset || '') + '</span></td>'
+        + '<td>' + (sm.live ? sm.live + '/' + sm.n : '<span class="dim">หยุด</span>') + '</td>'
+        + metricCells(sm, false) + '</tr>';
+    });
+  });
+  html += '</tbody></table></div>'
+    + '<p class="fine">🏆 = ต่อคนกดจองถูกสุด เฉพาะคอนเซปต์ที่มีคนกดจองอย่างน้อย ' + MIN_LEADS_WIN + ' คน (เกณฑ์นี้ M ตั้งเอง — น้อยกว่านี้ยังบังเอิญได้)'
+    + ' · ตัวเลขรวมแอดที่หยุดไปแล้วด้วย เพราะเงินใช้ไปแล้วจริง · "เห็นซ้ำ" = ค่าสูงสุดของแอดในกลุ่มที่แสดงผลเกิน 300 ครั้ง'
+    + ' · ✅ ยืนยัน DB = ออเดอร์จริงที่ติดรหัสแอดมา · Meta เคลม = ตัวเลขของ Meta เอง ห้ามอ่านเป็นยอดขาย</p>';
+  return html;
+}
+
+/* ── รายแอด — ที่ยังวิ่งอยู่ขึ้นก่อน · ที่หยุดแล้วพับเก็บ (ไม่งั้นนัทนึกว่ายังรัน) ── */
+function adView(ads){
+  var live = ads.filter(function(a){ return a.live !== false; });
+  var stopped = ads.filter(function(a){ return a.live === false; });
+  var bySpend = function(x, y){ return y.spend - x.spend; };
+  live.sort(bySpend); stopped.sort(bySpend);
+  var table = function(list){
+    return '<div class="tblwrap"><table><thead><tr><th>ชิ้นงาน</th>' + HEAD_METRICS + '</tr></thead><tbody>'
+      + list.map(function(a){
+          var bad = a.flags && a.flags.length;
+          var m = { spend:a.spend, clicks:a.clicks, ctr:a.ctr, leads:a.leads, cpl:a.costPerLead, chats:a.chats,
+                    saves:a.saves, shares:a.shares, freq:a.frequency, db:a.orders, dbRev:a.revenue,
+                    claim:a.metaPurchases, claimRev:a.metaRevenue };
+          return '<tr class="' + (bad ? 'bad' : '') + '">'
+            + '<td class="adcell-wrap">' + adCell(a)
+            + (bad ? '<div>' + a.flags.map(function(f){ return '<span class="flag">' + esc(f) + '</span>'; }).join('') + '</div>' : '')
+            + '</td>' + metricCells(m, false) + '</tr>';
+        }).join('')
+      + '</tbody></table></div>';
+  };
+  var html = '<div class="h2row"><h2>▶️ กำลังวิ่ง ' + live.length + ' แอด</h2><span class="sub">เรียงตามเงินที่ใช้</span></div>'
+    + (live.length ? table(live) : '<div class="msg">ไม่มีแอดที่กำลังวิ่งในกลุ่มนี้</div>');
+  if (stopped.length) html += '<details class="stopped"><summary>⏸️ หยุดแล้ว ' + stopped.length + ' แอด — กดดู (ไม่ได้ใช้เงินเพิ่มแล้ว)</summary>' + table(stopped) + '</details>';
+  return html;
+}
+
+function card(k, v, s, kind){
+  return '<div class="card' + (kind ? ' ' + kind : '') + '"><div class="k">' + esc(k) + '</div>'
        + '<div class="v">' + v + '</div>'
        + (s ? '<div class="s">' + s + '</div>' : '') + '</div>';
 }
 
-renderRanges();
-/* รอปลดล็อกก่อนค่อยโหลด — ยิงก่อนมีรหัสจะได้ 401 แล้วหน้าค้างที่คำว่า locked
-   ถ้าปลดไปแล้วตั้งแต่ครั้งก่อน (จำรหัสไว้) ประตูจะถูกถอดก่อนบรรทัดนี้ทำงาน เลยโหลดได้เลย */
+renderControls();
+/* รอปลดล็อกก่อนค่อยโหลด — ยิงก่อนมีรหัสจะได้ 401 แล้วหน้าค้างที่คำว่า locked */
 (function waitUnlock(){
   if (window.U360_UNLOCKED || !document.getElementById('adsgate')) { load(); return; }
   setTimeout(waitUnlock, 150);
 })();
-setInterval(load, 5 * 60 * 1000);   /* Meta หน่วง 15 นาทีอยู่แล้ว รีเฟรชถี่กว่านี้ไม่มีประโยชน์ */
-/* u360-watchdog-card — โชว์รายงานล่าสุดของยามเฝ้าแอด
-   โหลดหลังปลดล็อกเท่านั้น เหมือนตัวเลขแอด */
+/* server เก็บตัวเลข Meta ไว้ 15 นาทีอยู่แล้ว — รีเฟรชถี่กว่านี้ได้เลขเดิม */
+setInterval(load, 15 * 60 * 1000);
+
+/* u360-watchdog-card — โชว์รายงานล่าสุดของยามเฝ้าแอด (โหลดหลังปลดล็อกเท่านั้น) */
 function loadWatchdog(){
   var SBU='https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1/session_messages'
         + '?select=created_at,text&sender=eq.' + encodeURIComponent('ยามเฝ้าแอด')
@@ -283,14 +473,20 @@ function loadWatchdog(){
       if(!rows || !rows.length) return;
       var m=rows[0], box=document.getElementById('wd');
       /* textContent ไม่ใช่ innerHTML — ข้อความมาจากห้องอื่น ห้ามให้กลายเป็นโค้ดในหน้าเรา */
-      /* ตัด ** ของ markdown กับ ✅ นำหน้าออก — ใช้ split/join ไม่ใช้ regex
-         (regex ในสคริปต์ที่เขียนผ่าน shell โดน backslash หายมาแล้ว 3 รอบวันนี้) */
       document.getElementById('wdtext').textContent =
         String(m.text||'').split('**').join('').replace('✅ ','').trim();
       var d=new Date(m.created_at);
       document.getElementById('wdtime').textContent =
         'อัปเดต ' + d.toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
       box.removeAttribute('hidden');
+      var pre = document.getElementById('wdtext'), more = document.getElementById('wdmore');
+      if (pre.scrollHeight > pre.clientHeight + 4) {
+        more.hidden = false;
+        more.onclick = function(){
+          var open = box.classList.toggle('open');
+          more.textContent = open ? 'พับเก็บ ▴' : 'ดูรายงานเต็ม ▾';
+        };
+      }
     })
     .catch(function(){});
 }
@@ -299,19 +495,17 @@ function loadWatchdog(){
   setTimeout(waitUnlockWd, 150);
 })();
 
-/* u360-thumbs-ui — เซลล์ชื่อชิ้นงาน: รูปจริง + ชื่อ + ยิงใส่ใคร + ป้ายถ้าปิดแล้ว
-   ชื่อกลุ่มใช้ชื่อชุดโฆษณาที่ Meta ส่งมาเอง ไม่ฝังคำแปลไว้ในโค้ด
-   (ฝังไว้ = พอ 06 เปลี่ยนชุด คำอธิบายจะเก่าโดยไม่มีใครรู้) */
-/* ใช้ esc() ที่หน้านี้มีอยู่แล้ว ไม่ประกาศซ้ำ */
+/* u360-thumbs-ui — เซลล์ชื่อชิ้นงาน: รูปจริง + ชื่อ + ยิงใส่ใคร + ป้ายถ้าปิดแล้ว */
 function adCell(a){
   var img = a.thumb
     ? '<img class="adthumb" src="' + esc(a.thumb) + '" alt="" loading="lazy">'
     : '<span class="adthumb none"></span>';
-  var dead = (a.live === false) ? '<span class="dead">ปิดแล้ว</span>' : '';
+  var dead = (a.live === false) ? '<span class="dead">' + (a.status === 'DELETED' ? 'ลบแล้ว' : 'หยุดแล้ว') + '</span>' : '';
+  var aud = a.aud ? '<span class="audtag ' + a.aud + '">' + AUDNAME[a.aud] + '</span>' : '';
   return '<span class="adcell">' + img + '<span class="adinfo"><b>' + esc(a.ad) + '</b>' + dead
-       + '<em>' + esc(a.adset || '') + '</em></span></span>';
+       + '<em>' + aud + esc(a.adset || '') + '</em></span></span>';
 }
-/* แถวสรุปช่องทาง — บอกว่าคนหายตรงไหน */
+/* แถวสรุปช่องทาง — บอกว่าคนหายตรงไหน (ทั้งบัญชี ไม่แยกกลุ่ม) */
 function renderFunnel(f){
   if (!f) return;
   var box = document.getElementById('funnel'); if (!box) return;
@@ -325,8 +519,7 @@ function renderFunnel(f){
   box.removeAttribute('hidden');
 }
 
-/* u360-google-ui — ฝั่ง Google Ads
-   ช่องค่าใช้จ่ายเขียนบอกตรงๆ ว่ายังดึงไม่ได้ **ห้ามโชว์ 0** เดี๋ยวอ่านว่าไม่ได้ใช้เงิน */
+/* u360-google-ui — ช่องค่าใช้จ่ายเขียนบอกตรงๆ ว่ายังดึงไม่ได้ **ห้ามโชว์ 0** */
 function renderGoogle(g){
   var box = document.getElementById('gsec'); if (!box || !g) return;
   var cells = [
@@ -343,7 +536,6 @@ function renderGoogle(g){
     + (g.spendNote ? '<p class="gnote">' + esc(g.spendNote) + '</p>' : '');
   box.removeAttribute('hidden');
 }
-
 </script>
 </body>
 </html>
