@@ -167,6 +167,29 @@ ok('(ข) กด "ยังไม่จัด" ต้องล้างติ๊
 ok('(ค) หน้าแอดมินโชว์เมนูที่ยังไม่เคยนับ ไม่ใช่ซ่อนไปเฉย ๆ',
    /const unknown=rows\.filter\(r=>r\.free==null\)/.test(NEW) && /ยังไม่เคยนับ — ไม่รู้ว่ามีของจริงเท่าไหร่/.test(NEW));
 
+console.log('\n12) หน้านับของ: แยกหมวด + ปุ่มเลือกหมวด + พับหมวด (นัทสั่ง 11 ก.ย.)');
+ok('โหลดหมวดของเมนูมาด้วย', NEW.indexOf("stock_total,actual_stock,is_available,category').limit(1000)") >= 0);
+ok('โหลดชื่อไทยของหมวดจาก appConfig', NEW.indexOf("'k2_pack','k2_plan','appConfig'") >= 0);
+ok('มีปุ่มเลือกหมวดและหัวข้อพับได้', ['function pickCountCat(', 'function toggleCountFold(', 'function countGroups(', 'class="catbar"', 'cathead'].every(x => NEW.indexOf(x) >= 0));
+ok('หมวดที่พับ/ไม่ได้เลือก ตัดออกตอน render ไม่ใช่ซ่อนด้วย hidden (กันส่วน polish เปิดกลับเอง)', NEW.indexOf('if(folded) return;') >= 0 && NEW.indexOf("COUNT_CAT === 'all' || g.key === COUNT_CAT") >= 0);
+ok('หมวดที่ไม่มีชื่อไทยใน appConfig มีชื่อสำรอง (คอร์สเจ / Hyrox)', NEW.indexOf("jay2026:'คอร์สเจ 2569'") >= 0 && NEW.indexOf("hyrox:'Hyrox'") >= 0);
+ok('จำหมวดที่เลือก/ที่พับไว้ในเครื่อง และครอบ try/catch', NEW.indexOf("try{ COUNT_CAT = localStorage.getItem('k2_count_cat')") >= 0);
+ok('หัวข้อหมวดบอกจำนวนที่ยังไม่นับ', NEW.indexOf('ยังไม่นับ ') >= 0);
+{
+  const a0 = NEW.indexOf('const CAT_FALLBACK = {');
+  const fb = a0 < 0 ? null : NEW.slice(a0, NEW.indexOf('};', a0) + 2);
+  const fns = ['function catKey(', 'function catLabel(', 'function countGroups('].map(sig => grab(NEW, sig));
+  ok('ดึง catKey / catLabel / countGroups ออกมาได้', !!fb && fns.every(Boolean));
+  if (fb && fns.every(Boolean)) {
+    const api = new Function('CAT_LABEL', [fb].concat(fns).join(String.fromCharCode(10)) + '; return { countGroups, catLabel };')({ no_special: 'ข้าวกล่อง', pack_regular: 'โปรตีนแพค' });
+    const menus = [{ category: 'no_special' }, { category: 'no_special' }, { category: 'pack_regular' }, { category: 'no_special' }, { category: null }, { category: 'jay2026' }, { category: 'jay2026' }];
+    const g = api.countGroups(menus);
+    ok('หมวดที่มีเมนูมากขึ้นก่อน', g[0].key === 'no_special' && g[0].items.length === 3, JSON.stringify(g.map(x => x.key + ':' + x.items.length)));
+    ok('เมนูไม่มีหมวด ไปอยู่ "ยังไม่มีหมวด" ไม่หาย', g.some(x => x.key === 'uncategorized' && x.items.length === 1) && api.catLabel('uncategorized') === 'ยังไม่มีหมวด');
+    ok('ทุกเมนูอยู่ครบ ไม่ตกหล่นตอนแยกหมวด', g.reduce((s, x) => s + x.items.length, 0) === menus.length);
+    ok('ชื่อจาก appConfig มาก่อนชื่อสำรอง', api.catLabel('no_special') === 'ข้าวกล่อง' && api.catLabel('jay2026') === 'คอร์สเจ 2569');
+  }
+}
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;

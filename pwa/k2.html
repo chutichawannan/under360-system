@@ -129,6 +129,18 @@ body>.sum{margin-top:4px;margin-bottom:12px;padding:13px 16px;border-radius:16px
 @media(min-width:800px){.hdr-row{padding-bottom:12px}.filters{padding-top:0}.card.urg{column-gap:24px}}
 @media(max-width:799px){.hdr{padding:14px 16px 0}.page-heading{margin:14px 0 10px}.hdr h1{font-size:22px}.brand strong{font-size:18px}.day{min-width:62px}.day strong{font-size:17px}.card{padding:12px}.nav{padding-top:6px;padding-bottom:calc(6px + env(safe-area-inset-bottom))}}
 @media(max-width:360px){.row{gap:6px}.code{font-size:13px;flex-basis:46px;width:46px}.nm{font-size:13px}.filter{font-size:12px;padding:8px 10px}}
+/* 🗂️ หน้านับของ: ปุ่มหมวด + หัวข้อพับได้ (11 ก.ย. 2569) */
+.catbar{display:flex;gap:6px;overflow-x:auto;padding:2px 0 10px;scrollbar-width:none;-webkit-overflow-scrolling:touch;position:sticky;top:0;z-index:5;background:var(--bg)}
+.catbar::-webkit-scrollbar{display:none}
+.catchip{flex:0 0 auto;border:1px solid var(--xsoft);background:#fff;color:var(--soft);border-radius:99px;padding:8px 13px;min-height:40px;font-family:var(--sans);font-size:13px;white-space:nowrap}
+.catchip b{font-weight:600;color:var(--g);margin-left:2px}
+.catchip.on{background:var(--g);border-color:var(--g);color:#fff}.catchip.on b{color:#dce9df}
+.cathead{display:flex;align-items:center;gap:7px;width:100%;text-align:left;background:transparent;border:0;padding:10px 2px 6px;cursor:pointer;font-family:var(--sans);color:#52675a}
+.cathead .caret{width:14px;color:var(--g)}
+.cathead .catn{font-weight:400;color:var(--soft);font-size:12px}
+.cathead .catwarn{margin-left:auto;font-size:11px;font-weight:600;color:#936529;background:#fff6e8;border-radius:99px;padding:2px 8px}
+.cathead .catok{margin-left:auto;font-size:11px;font-weight:600;color:var(--g);background:var(--gs);border-radius:99px;padding:2px 8px}
+.cathead.folded{border-bottom:1px solid #e2e9e3;padding-bottom:10px}
 </style>
 </head>
 <body>
@@ -225,14 +237,15 @@ async function loadAll(){
     /* โหลดทั้งหมด ไม่กรอง is_available — ต้องรู้จักเมนูที่ปิดขายไปแล้วด้วย
        เพราะใบที่สั่งไว้ก่อนปิดขาย ยังมีของค้างอยู่จริง (เคสจริง 11 ก.ย.: S184 ปิดแล้ว แต่คุณ Golf ยังรอ 2 กล่อง)
        หน้านับของค่อยกรองเอาเฉพาะที่เปิดขายทีหลัง */
-    s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available').limit(1000),
+    s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available,category').limit(1000),
     s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
-    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan']).limit(5)
+    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig']).limit(5)
   ]);
   MENUS=(mr.data||[]).sort((a,b)=>shortCode(a).localeCompare(shortCode(b),'th',{numeric:true}));
   ORDERS=(or_.data||[]).filter(o=>o.status!=='cancelled'&&o.source!=='parallel_test');
-  (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{}; });
+  (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{};
+    if(r.key==='appConfig'){ CAT_LABEL={}; ((r.data&&r.data.categories)||[]).forEach(c=>{ if(c&&c.key) CAT_LABEL[c.key]=c.label||c.key; }); } });
 
   ITEMS={};
   const ids=ORDERS.map(o=>o.id);
@@ -301,6 +314,10 @@ function render(){
   else if(VIEW==='count') el.innerHTML=viewCount();
   else if(VIEW==='plan') el.innerHTML=viewPlan();
   else el.innerHTML=viewAdmin();
+  /* หน้านับของ: เลื่อนแถบหมวดให้เห็นปุ่มที่เลือกอยู่ — เปิดมาครั้งหน้าปุ่มที่จำไว้อาจอยู่ขวาสุดนอกจอ
+     รอให้ส่วน polish จัดหน้าเสร็จก่อน (setTimeout 0) · เลื่อนแนวนอนอย่างเดียว ไม่ให้หน้ากระโดด */
+  if(VIEW==='count') setTimeout(()=>{ try{ const bar=document.querySelector('.catbar'), on=bar&&bar.querySelector('.catchip.on');
+    if(bar&&on) bar.scrollLeft=Math.max(0, on.offsetLeft - (bar.clientWidth-on.clientWidth)/2); }catch(e){} },0);
 }
 
 /* ─── 📦 จัดของ — ติ๊ก 1 ครั้งจบ ไม่มีปุ่มยืนยัน และไม่แตะสต๊อก ───────────── */
@@ -429,10 +446,46 @@ async function tick(oid,iid,q){
 }
 
 /* ─── 🔢 นับของ — ช่องเดียว เลขที่ครัวพิมพ์ชนะเสมอ ────────────────────── */
+/* ─── 🗂️ หน้านับของ: แยกหมวด + เลือกหมวด + พับหมวด (นัทสั่ง 11 ก.ย. 2569) ─────────────────
+   นัท: "รายการมันเยอะ คนจะกรอกล่าง ๆ ต้องเลื่อนไปเยอะมาก — จะ collapse หรือจะเพิ่มประเภทมาให้ติ้กก็ได้"
+   → ทำทั้งคู่: ปุ่มหมวดบนหัว (แตะแล้วเหลือหมวดเดียว) + หัวข้อแต่ละหมวดแตะพับ/กางได้
+   🔴 ตัดแถวออกตอน render เท่านั้น — ส่วน polish ตั้ง el.hidden ใหม่ให้ทุกแถวทุกครั้ง ซ่อนด้วย hidden จะเด้งกลับ */
+let CAT_LABEL = {};
+/* หมวดที่ appConfig ยังไม่มีชื่อไทย — ตั้งชื่อสำรองให้ครัวอ่านออก ไม่ขึ้นรหัสดิบ */
+const CAT_FALLBACK = { jay2026:'คอร์สเจ 2569', hyrox:'Hyrox', uncategorized:'ยังไม่มีหมวด' };
+let COUNT_CAT = 'all';   // หมวดที่เลือกอยู่
+let COUNT_FOLD = {};     // { category: true } = พับไว้
+try{ COUNT_CAT = localStorage.getItem('k2_count_cat') || 'all'; COUNT_FOLD = JSON.parse(localStorage.getItem('k2_count_fold') || '{}') || {}; }catch(e){}
+function catKey(m){ return (m && m.category) ? String(m.category) : 'uncategorized'; }
+function catLabel(k){ return CAT_LABEL[k] || CAT_FALLBACK[k] || k; }
+function saveCountUi(){ try{ localStorage.setItem('k2_count_cat', COUNT_CAT); localStorage.setItem('k2_count_fold', JSON.stringify(COUNT_FOLD)); }catch(e){} }
+function pickCountCat(k){ COUNT_CAT = k; if(k !== 'all') COUNT_FOLD[k] = false; saveCountUi(); render(); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch(e){} }
+function toggleCountFold(k){ COUNT_FOLD[k] = !COUNT_FOLD[k]; saveCountUi(); render(); }
+/* เรียงหมวด: หมวดที่มีเมนูมากก่อน — เป็นหมวดที่ครัวนับบ่อยสุด */
+function countGroups(list){
+  const g = {};
+  list.forEach(m => { const k = catKey(m); (g[k] = g[k] || []).push(m); });
+  return Object.keys(g).sort((a,b) => g[b].length - g[a].length || catLabel(a).localeCompare(catLabel(b), "th")).map(k => ({ key:k, items:g[k] }));
+}
 function viewCount(){
   const bk=bookedMap();
   let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
-  MENUS.filter(m=>m.is_available!==false).forEach(m=>{
+  const openMenus = MENUS.filter(m=>m.is_available!==false);
+  const groups = countGroups(openMenus);
+  if(COUNT_CAT !== 'all' && !groups.some(g => g.key === COUNT_CAT)) COUNT_CAT = 'all';   // หมวดที่เคยเลือกไม่มีแล้ว → กลับไปทั้งหมด
+  const isCounted = m => HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
+  h+='</div><div class="catbar" role="group" aria-label="เลือกหมวดเมนู">'
+    +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
+    + groups.map(g => '<button type="button" class="catchip'+(COUNT_CAT===g.key?' on':'')+'" onclick="pickCountCat(\''+esc(g.key)+'\')">'+esc(catLabel(g.key))+' <b>'+g.items.length+'</b></button>').join('')
+    +'</div><div class="wrap">';
+  groups.filter(g => COUNT_CAT === 'all' || g.key === COUNT_CAT).forEach(g=>{
+    const folded = !!COUNT_FOLD[g.key];
+    const notYet = g.items.filter(m => !isCounted(m)).length;
+    h+='<button type="button" class="sec cathead'+(folded?' folded':'')+'" aria-expanded="'+(!folded)+'" onclick="toggleCountFold(\''+esc(g.key)+'\')">'
+      +'<span class="caret">'+(folded?'▸':'▾')+'</span> '+esc(catLabel(g.key))+' <span class="catn">'+g.items.length+' เมนู</span>'
+      +(notYet?'<span class="catwarn">ยังไม่นับ '+notYet+'</span>':'<span class="catok">นับครบ</span>')+'</button>';
+    if(folded) return;
+  g.items.forEach(m=>{
     const have=(m.actual_stock==null)?'':Number(m.actual_stock);
     const booked=bk[m.id]||0;
     const free=(have==='')?null:(have-booked);
@@ -452,6 +505,7 @@ function viewCount(){
      +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+have+'" onchange="saveCount(\''+m.id+'\',this.value)">'
      +'</div>';
+  });
   });
   h+='</div><div class="wrap"><div class="sec">🕘 ประวัติการนับ 7 วัน (ใครนับเท่าไหร่ เมื่อไหร่)</div><div class="card">';
   h+= HIST.length ? HIST.slice(0,60).map(r=>'<div class="hist">'+esc(String(r.created_at).slice(5,16).replace('T',' '))+' · '+esc(r.actor||'—')+' · '+esc(String(r.summary||'').slice(0,70))+'</div>').join('')
