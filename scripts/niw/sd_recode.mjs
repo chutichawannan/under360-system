@@ -36,8 +36,10 @@ async function main(){
     else{ if(src.is_available) bad.push('เปิดขายอยู่'); if(src.subcode) bad.push('มีชื่อเล่น '+src.subcode); if(liveC.has(m.from)) bad.push('มีออเดอร์ค้างส่ง'); if(inPlan.has(m.from)) bad.push('อยู่ในแผนสัปดาห์'); }
     if(occ&&!moved.has(occ.code)) bad.push('ปลายทาง '+m.to+' มี '+occ.name+' และยังไม่ถูกโยกออกก่อน');
     if(m.from[0]!==m.to[0]) bad.push('ข้ามฝั่ง S/D');
+    // สูตรต้องย้ายตามเมนูในจังหวะเดียวกัน (pm 11 ก.ย.) — ปลายทางมีสูตรจานอื่นค้างอยู่ = หยุด ไม่ข้ามเงียบๆ
     const recTo=rec.filter(x=>x&&x.code===m.to&&!(occ&&moved.has(occ.code)));
-    const note=[]; if(recTo.length) note.push('⚠️ มีสูตรรหัส '+m.to+' อยู่แล้ว: '+recTo.map(x=>x.name).join('/')+' (จะไม่ทับ)');
+    if(recTo.length) bad.push('สูตรรหัส '+m.to+' มีของจานอื่นค้าง: '+recTo.map(x=>x.name).join('/')+' → เคลียร์สูตรก่อน');
+    const note=[];
     if(msw[m.to]&&!occ) note.push('⚠️ ป้ายสัปดาห์ค้างที่ '+m.to+'='+msw[m.to]+' (ของเก่า จะถูกแทน)');
     console.log((bad.length?'🔴 ':'✅ ')+m.from+' → '+m.to+'  '+(src?src.name:'')+'  | แม่: '+(mom?mom.code+' '+mom.name:'❌ ไม่มี S เลขนี้')+(bad.length?'  | '+bad.join(' · '):'')+(note.length?'  | '+note.join(' · '):''));
     if(bad.length||!mom) stop=true;
@@ -50,8 +52,7 @@ async function main(){
     const r=await fetch(SB+'/rest/v1/menu_items?code=eq.'+m.from,{method:'PATCH',headers:{...H,Prefer:'return=representation'},body:JSON.stringify({code:m.to})});
     const j=await r.json();
     if(!r.ok||!Array.isArray(j)||j.length!==1){console.log('🔴 หยุดที่ '+m.from+' '+r.status+' '+JSON.stringify(j));process.exitCode=2;return;}
-    const hasRecTo=rec.some(x=>x&&x.code===m.to);
-    if(!hasRecTo) for(const x of rec) if(x&&x.code===m.from) x.code=m.to;
+    for(const x of rec) if(x&&x.code===m.from) x.code=m.to;   // ปลายทางว่างแน่นอน (ตรวจแล้วข้างบน)
     if(Object.prototype.hasOwnProperty.call(msw,m.from)){msw[m.to]=msw[m.from];delete msw[m.from];}
     console.log('  โยก '+m.from+' → '+m.to+' ✅');
   }
