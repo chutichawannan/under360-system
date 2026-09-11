@@ -53,3 +53,11 @@ export function gateCheck({gateRec,fp,planCodes,now=Date.now()}){
   if(gc!==pc) r.push('รหัสที่ด่านตรวจ ไม่ตรงกับแผนป้ายช่อง');
   return r;
 }
+/** ยืนยันก่อนเขียน (pm 11 ก.ย.): ต้องมี --confirm <สัปดาห์> ตรงกับสัปดาห์ที่จะเขียน */
+export function confirmCheck({args,week}){
+  const i=(args||[]).indexOf('--confirm');
+  if(i<0) return ['ต้องใส่ --confirm '+week+' เพื่อยืนยันว่าจะเขียนของจริงสัปดาห์นี้'];
+  const v=(args||[])[i+1];
+  if(v!==week) return ['--confirm '+(v||'(ว่าง)')+' ไม่ตรงกับสัปดาห์ '+week];
+  return [];
+}
