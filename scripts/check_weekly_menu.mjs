@@ -194,7 +194,7 @@ async function main() {
 
   const gate = await getKey(GATE);
   const prev = gate[week];
-  const base = { at: new Date().toISOString(), pass, fails, warns, fingerprint: fp, codes: codes.slice().sort() };
+  const base = { at: new Date().toISOString(), by: '05', pass, fails, warns, fingerprint: fp, codes: codes.slice().sort() };
 
   if (visualBy) {
     if (!pass) { console.log('🔴 บันทึก "ดูรูปแล้ว" ไม่ได้ — ชุดนี้ยังไม่ผ่านด่านเครื่อง'); return 1; }
