@@ -91,7 +91,8 @@ ok('ไม่มีรูปอาหารในหน้าเลยสัก�
    CODE.indexOf('<img') < 0 && CODE.indexOf('thumb(') < 0);
 /* นัทเห็นของจริงแล้วสั่งกลับ 10 ก.ย.: "รหัสไม่ต้องใหญ่เว่อ ให้พอดีๆ กับชื่อเมนู"
    → เด่นด้วยความหนา+สี ไม่ใช่ขนาด · และกว้างคงที่เพื่อให้ชื่อเมนูเรียงตรงกันทุกแถว */
-const codeCss = (NEW.match(/[.]code[{][^}]*[}]/) || [''])[0];
+/* ต้องจับกฎ ".code{...}" ที่ขึ้นต้นบรรทัดเท่านั้น — ไม่งั้นไปโดน ".row.mp .code{...}" ที่อยู่ก่อนหน้า */
+const codeCss = (NEW.match(/^[.]code[{][^}]*[}]/m) || [''])[0];
 const codeSize = Number((codeCss.match(/font-size:(\d+)px/) || [0, 0])[1]);
 ok('รหัสไม่ใหญ่เว่อ (≤ 17px) และเด่นด้วยความหนา',
    codeSize > 0 && codeSize <= 17 && /font-weight:7/.test(codeCss), 'ได้ ' + codeSize + 'px');
@@ -114,6 +115,16 @@ ok('⑤ หน้านับของดูประวัติย้อนห
 ok('⑥ แผนพิมพ์ทับได้ + บอกตรง ๆ ว่าไม่มีข้อมูลอายุของ', /function savePlan\(/.test(NEW) && /อายุของ/.test(NEW));
 ok('⑦ ครัวเปิดหน้าวางแผนเองได้ (อยู่ในแถบล่าง)', /go\('plan'\)/.test(NEW));
 
+console.log('\n8) ของที่เพิ่มรอบ 11 ก.ย. (เทียบกับข้อมูลจริงของวันนั้น)');
+ok('แยกใบ Meal Plan ออกจากเมนูสต็อก', /function isMPOrder\(/.test(NEW) && /Meal Plan — ทำสดวันนี้/.test(NEW));
+ok('แถวหัว Meal Plan ไม่ถูกนับเป็นกล่องในตัวนับ ☑',
+   /function boxesOf\([^)]*\)[^}]*isMPHeadRow\(i\)\?0:/.test(NEW));
+ok('ติดธงเมนูที่ปิดขายแล้วในใบที่สั่งไว้ก่อนปิด',
+   /is_available===false/.test(NEW) && /ปิดขายแล้ว/.test(NEW));
+ok('โหลดเมนูทั้งหมด ไม่กรอง is_available ตอนดึง (ต้องรู้จักเมนูที่ปิดไปแล้ว)',
+   !/menu_items'\)[\s\S]{0,200}eq\('is_available',true\)/.test(NEW));
+ok('แต่หน้านับของ/วางแผน/แอดมิน ยังโชว์เฉพาะเมนูที่เปิดขาย',
+   (NEW.match(/MENUS\.filter\(m=>m\.is_available!==false\)/g) || []).length >= 3);
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;

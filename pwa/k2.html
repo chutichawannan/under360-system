@@ -47,6 +47,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .row{display:flex;align-items:center;gap:8px;padding:3px 3px;border-top:1px solid #F4F5F3;cursor:pointer}
 .row.on{background:var(--gs)}
 .nm{flex:1;font-size:13px;color:var(--ink);line-height:1.25}
+.flag{display:inline-block;margin-left:6px;font-size:10.5px;font-weight:700;color:var(--r);background:var(--rs);border-radius:99px;padding:0 6px}
+.row.mp{background:#FBF7FF}
+.row.mp .code{color:#6D28D9}
 .acts{display:flex;gap:6px;margin-top:5px}
 .bt{flex:1;border:0;border-radius:9px;padding:7px 4px;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer}
 .bt.pack{background:var(--g);color:#fff}
@@ -166,7 +169,10 @@ async function loadAll(){
   const s=getSB(); if(!s) return;
   const from=dPlus(thaiToday(),-7), to=dPlus(thaiToday(),14);
   const [mr,or_,kd]=await Promise.all([
-    s.from('menu_items').select('id,code,subcode,name,image_urls,stock_total,actual_stock,is_available').eq('is_available',true).limit(500),
+    /* โหลดทั้งหมด ไม่กรอง is_available — ต้องรู้จักเมนูที่ปิดขายไปแล้วด้วย
+       เพราะใบที่สั่งไว้ก่อนปิดขาย ยังมีของค้างอยู่จริง (เคสจริง 11 ก.ย.: S184 ปิดแล้ว แต่คุณ Golf ยังรอ 2 กล่อง)
+       หน้านับของค่อยกรองเอาเฉพาะที่เปิดขายทีหลัง */
+    s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available').limit(1000),
     s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
     s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan']).limit(5)
@@ -213,7 +219,9 @@ function bookedOn(ymd){
   return m;
 }
 function ordersOn(ymd){ return ORDERS.filter(o=>o.delivery_date===ymd); }
-function boxesOf(o){ return (ITEMS[o.id]||[]).reduce((s,i)=>s+(i.quantity||0),0); }
+/* แถวหัว Meal Plan (MP-xxx ×7) = 1 รายการที่หมายถึงทั้งชุด ไม่ใช่ 7 กล่องที่ต้องหยิบทีละกล่อง
+   นับรวมเมื่อไหร่ ตัวนับ ☑ จะพองจนครัวเลิกเชื่อ (บทเรียนเดิมจากใบจัดของ: MP 1 แถว = 21 กล่อง) */
+function boxesOf(o){ return (ITEMS[o.id]||[]).reduce((s,i)=>s+(isMPHeadRow(i)?0:(i.quantity||0)),0); }
 function packedOf(o){ const p=PACK[o.id]||{}; return Object.keys(p).reduce((s,k)=>s+(Number(p[k])||0),0); }
 function isDone(o){ if(o.status==='ready'||o.status==='delivered') return true; const b=boxesOf(o); return b>0 && packedOf(o)>=b; }
 /* ใบที่แอดมินเปิดให้ระหว่างวัน = "ด่วน" — อธิบายตัวเองได้ในหน้า (ข้อ 2 ที่นัทติ) */
@@ -241,19 +249,33 @@ function render(){
 }
 
 /* ─── 📦 จัดของ — ติ๊ก 1 ครั้งจบ ไม่มีปุ่มยืนยัน และไม่แตะสต๊อก ───────────── */
+/* 🍱 ใบ Meal Plan = ทำสดวันนั้น คนละงานกับจัดของสต็อก — หน้าเก่าแยกแท็บไว้ ที่นี่แยกเป็นกลุ่มในหน้าเดียว
+   (ไม่เพิ่มแท็บ เพราะกติกาคือยิ่งครัวต้องเปิดน้อยหน้ายิ่งดี)
+   ของจริง 11 ก.ย.: 15 ใบของวันนั้น เป็น Meal Plan 10 ใบ — ถ้าไม่แยก ครัวเปิดมาเจอกองปนกันทันที */
+function isMPOrder(o){
+  return (ITEMS[o.id]||[]).some(it => /^MP-/i.test(String(it.menu_code||'')) || /^meal_plan:/i.test(String(it.notes||'')));
+}
+/* แถว "MP-HP-R2 ×7" = 1 รายการที่หมายถึงทั้งชุด ไม่ใช่ 7 กล่องที่ต้องหยิบทีละกล่อง
+   ถ้านับรวมเข้าตัวนับ ☑ ตัวเลขจะพองจนครัวเลิกเชื่อ (บทเรียนเดิมจากใบจัดของ: MP 1 แถว = 21 กล่อง) */
+function isMPHeadRow(it){ return /^MP-/i.test(String(it.menu_code||'')); }
 function viewPack(){
   const list=ordersOn(DAY);
-  const urg=list.filter(isUrgent), rest=list.filter(o=>!isUrgent(o));
+  const mp=list.filter(isMPOrder), stock=list.filter(o=>!isMPOrder(o));
+  const urg=stock.filter(isUrgent), rest=stock.filter(o=>!isUrgent(o));
   const bills=list.length, done=list.filter(isDone).length;
-  let h='<div class="sum"><div class="sum-big">'+bills+'</div><div class="sum-lbl">ใบที่ต้องจัด · '+dLabel(DAY)+'</div>'
+  let h='<div class="sum"><div class="sum-big">'+bills+'</div><div class="sum-lbl">ใบที่ต้องจัด · '+dLabel(DAY)
+   +(mp.length?' <b>(สต็อก '+stock.length+' · ทำสด '+mp.length+')</b>':'')+'</div>'
    +'<div class="bar"><i style="width:'+(bills?Math.round(done/bills*100):0)+'%"></i></div>'
    +'<div class="bar-txt">จัดครบแล้ว '+done+'/'+bills+' ใบ</div></div>';
   if(urg.length){
     h+='<div class="wrap"><div class="sec">⚡ ด่วน — แอดมินเพิ่งสั่งระหว่างวัน ('+urg.length+' ใบ)</div>'
      + urg.map(o=>cardHtml(o,true)).join('')+'</div>';
   }
-  h+='<div class="wrap">'+(rest.length?rest.map(o=>cardHtml(o,false)).join(''):'<div class="empty">ไม่มีใบของวันนี้</div>')+'</div>';
-  return h;
+  h+='<div class="wrap">';
+  if(stock.length) h+='<div class="sec">📦 เมนูสต็อก — หยิบจากตู้ ('+rest.length+' ใบ)</div>'+rest.map(o=>cardHtml(o,false)).join('');
+  if(mp.length)    h+='<div class="sec">🍱 Meal Plan — ทำสดวันนี้ ('+mp.length+' ใบ)</div>'+mp.map(o=>cardHtml(o,false)).join('');
+  if(!list.length) h+='<div class="empty">ไม่มีใบของวันนี้</div>';
+  return h+'</div>';
 }
 /* หัวการ์ด — เอาของที่หน้าเก่ามีและครัวใช้จริงมาครบ (นัทสั่งเอง 10 ก.ย. เทียบกับหน้าเก่า)
      ชื่อลูกค้า (+ ชื่อไลน์ถ้าไม่ตรงกัน) · เลขใบ · ตัวนับกล่อง · ช้อนส้อม
@@ -276,10 +298,16 @@ function cardHtml(o,urgent){
   its.forEach(it=>{
     const m=MENUS.find(x=>x.id===it.menu_item_id)||{code:it.menu_code,name:it.menu_name};
     const q=it.quantity||1, on=(Number(p[it.id])||0)>=q;
-    h+='<div class="row'+(on?' on':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
+    /* 🔴 เมนูที่ปิดขายไปแล้ว แต่ใบนี้สั่งไว้ก่อนปิด = ของยังถูกสัญญาไว้กับลูกค้า
+       ครัวต้องเห็นป้ายก่อนจะเดินไปหาในตู้แล้วไม่เจอ
+       เคสจริง 11 ก.ย.: S184 ปิดขายแล้ว ครัวบอกไม่มีของ แต่คุณ Golf ยังรออยู่ 2 กล่อง */
+    const closed = !!(it.menu_item_id && m && m.is_available===false);
+    const head = isMPHeadRow(it);
+    h+='<div class="row'+(on?' on':'')+(head?' mp':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
      +'<div class="code">'+esc(shortCode(m))+'</div>'
-     +'<div class="nm">'+esc(String(m.name||it.menu_name||'').slice(0,34))+'</div>'
-     +'<div class="qty">×'+q+'</div><div class="tick">'+(on?'✅':'⬜')+'</div></div>';
+     +'<div class="nm">'+esc(String(m.name||it.menu_name||'').slice(0,34))
+       +(closed?'<span class="flag">⚠️ ปิดขายแล้ว</span>':'')+'</div>'
+     +'<div class="qty">'+(head?('ชุด '+q):('×'+q))+'</div><div class="tick">'+(on?'✅':'⬜')+'</div></div>';
   });
   /* ปุ่ม 2 ตัวแบบหน้าเก่า — แต่ **ไม่ใช่ขั้นบังคับ** ติ๊กแต่ละแถวบันทึกทันทีอยู่แล้ว
      ปุ่มนี้คือทางลัด "ติ๊กครบทั้งใบทีเดียว" + ปิดสถานะใบ ไม่ใช่ด่านที่ถ้าไม่กดแล้วงานหาย
@@ -346,7 +374,7 @@ async function tick(oid,iid,q){
 function viewCount(){
   const bk=bookedMap();
   let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
-  MENUS.forEach(m=>{
+  MENUS.filter(m=>m.is_available!==false).forEach(m=>{
     const have=(m.actual_stock==null)?'':Number(m.actual_stock);
     const booked=bk[m.id]||0;
     const free=(have==='')?null:(have-booked);
@@ -389,7 +417,7 @@ async function saveCount(mid,val){
 function viewPlan(){
   const bk=bookedOn(DAY), have={};
   MENUS.forEach(m=>have[m.id]=(m.actual_stock==null?0:Number(m.actual_stock)));
-  const rows=MENUS.map(m=>{
+  const rows=MENUS.filter(m=>m.is_available!==false).map(m=>{
     const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
     const ov=(PLAN[DAY]||{})[m.id];
     return {m,b,have:have[m.id]||0,make:(ov==null?sug:Number(ov)),ov:ov!=null};
@@ -421,7 +449,7 @@ async function savePlan(mid,val){
    หน้านี้จึงต้องตอบคำถามเดียว: **หยิบตัวไหนไปแทนได้โดยไม่ไปกินของคนอื่น** */
 function viewAdmin(){
   const bk=bookedMap();
-  const rows=MENUS.map(m=>{
+  const rows=MENUS.filter(m=>m.is_available!==false).map(m=>{
     const have=(m.actual_stock==null)?null:Number(m.actual_stock);
     const b=bk[m.id]||0;
     return {m,have,b,free:(have==null?null:have-b)};
