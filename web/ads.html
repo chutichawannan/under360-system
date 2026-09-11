@@ -47,6 +47,17 @@ section{padding:22px 0}
 .card.claim{background:var(--amberbg);border-color:#F0DFA8}
 .card.claim .k{color:var(--amber);font-weight:700}
 .card.claim .v{color:var(--amber);font-size:1.5rem}
+.card.newc{border-color:var(--blue)}
+.card.newc .v{color:var(--blue)}
+/* ── u360-buyer-type / u360-new-buyers ── */
+th.bth,td.btc{background:#F6FAF6}
+.topbuy{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.topbuy .lbl{font-size:.8rem;color:var(--muted);margin-right:2px}
+.chip{background:var(--paper);border:1px solid var(--hair);border-radius:999px;padding:4px 12px;font-size:.85rem}
+.chip b{font-family:'Prompt';color:var(--green);margin-right:6px}
+.chip em{font-style:normal;color:var(--muted);font-size:.78rem}
+table.nb{min-width:900px}
+table.nb th:nth-child(3),table.nb td.items,table.nb th:nth-child(5),table.nb td.adsrc{text-align:left;white-space:normal;min-width:220px}
 .up{color:var(--red)} .down{color:var(--green)}
 /* มือถือ: การ์ด 5 ใบเรียงแถวเดียว = ตารางคอนเซปต์ตกไปจอที่ 2 → วาง 2 คอลัมน์ · ช่อง Meta เคลมเต็มแถว (ข้อความเตือนยาว) */
 @media (max-width:520px){
@@ -227,9 +238,12 @@ var DAYS = 7, AUDF = 'all', VIEW = 'concept', LAST = null;
 try { AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept'; } catch(e){}
 var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
 /* ความหมายชุด — ต้องตรงกับ AUD ใน web/api/ads-insights.js (06 กำหนด 11 ก.ย.) */
-var AUDS = [['all','ทั้งหมด'],['new','คนใหม่ (A · D)'],['old','คนเก่า (B · C)']];
+var AUDS = [['all','ทั้งหมด'],['new','แอดที่ยิงคนใหม่ (A · D)'],['old','แอดที่ยิงคนเก่า (B · C)']];
 var VIEWS = [['concept','ตามคอนเซปต์'],['ad','รายแอด']];
-var AUDNAME = { 'new':'คนใหม่', 'old':'คนเก่า' };
+/* "ยิงคนใหม่" = ชุดแอดที่ตั้งใจยิง ไม่ใช่คนที่ซื้อจริง (นัทสับสนแล้วรอบนึง 11 ก.ย.)
+   คนที่ซื้อจริงใช้ป้าย 🆕 คนใหม่ · 🔁 ลูกค้าเก่า · 🥬 เคยซื้อเจ ที่มาจากประวัติใน DB */
+var AUDNAME = { 'new':'ยิงคนใหม่', 'old':'ยิงคนเก่า' };
+var BT = [['new','🆕 คนใหม่'],['old','🔁 ลูกค้าเก่า'],['jay','🥬 เคยซื้อเจ']];
 var MIN_LEADS_WIN = 3;   /* 🏆 ต้องมีคนกดลิงก์เข้าไลน์อย่างน้อยเท่านี้ถึงนับว่าชนะ — M ตั้งเอง (น้อยกว่านี้ยังบังเอิญได้) */
 
 function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g, function(c){
@@ -292,12 +306,15 @@ function render(d){
 /* ยอดยืนยันใน DB ของกลุ่มแอด — นับ utm ละครั้งเดียว
    (แอดชื่อเก่าหลายตัวใช้รหัสเดียวกัน เช่น c4 · จานแดง / c4 · health — บวกตรงๆ = ออเดอร์ใบเดียวนับซ้ำ) */
 function dbFor(list){
-  var by = (LAST.orders && LAST.orders.byUtm) || {}, seen = {}, n = 0, rev = 0;
+  var by = (LAST.orders && LAST.orders.byUtm) || {}, seen = {};
+  var r = { n:0, rev:0, bt:{ 'new':{n:0,rev:0}, old:{n:0,rev:0}, jay:{n:0,rev:0}, unknown:{n:0,rev:0} } };
   list.forEach(function(a){
     if (!a.utm || seen[a.utm]) return; seen[a.utm] = 1;
-    var h = by[a.utm]; if (h) { n += h.orders; rev += h.revenue; }
+    var h = by[a.utm]; if (!h) return;
+    r.n += h.orders; r.rev += h.revenue;
+    ['new','old','jay','unknown'].forEach(function(t){ var x = h[t]; if (x) { r.bt[t].n += x.n; r.bt[t].rev += x.rev; } });
   });
-  return { n:n, rev:rev };
+  return r;
 }
 function sum(list, k){ return list.reduce(function(s,a){ return s + (+a[k]||0); }, 0); }
 function agg(list){
@@ -307,7 +324,7 @@ function agg(list){
   return { n:list.length, live:list.filter(function(a){return a.live;}).length,
     spend:spend, clicks:clicks, imp:imp, ctr: imp ? clicks/imp*100 : 0, leads:leads,
     cpl: leads ? spend/leads : null, chats:sum(list,'chats'), saves:sum(list,'saves'), shares:sum(list,'shares'),
-    freq:fr, db:db.n, dbRev:db.rev, claim:sum(list,'metaPurchases'), claimRev:sum(list,'metaRevenue') };
+    freq:fr, db:db.n, dbRev:db.rev, bt:db.bt, claim:sum(list,'metaPurchases'), claimRev:sum(list,'metaRevenue') };
 }
 
 function draw(){
@@ -315,12 +332,16 @@ function draw(){
   var ads = (d.ads || []).filter(function(a){ return AUDF === 'all' || a.aud === AUDF; });
   var g = agg(ads);
   var diff = (t.today||0) - (t.yesterday||0);
-  var scope = AUDF === 'all' ? '' : ' · เฉพาะ' + AUDNAME[AUDF];
+  var scope = AUDF === 'all' ? '' : ' · เฉพาะแอดที่' + AUDNAME[AUDF];
 
   /* ยืนยันใน DB: ดู "ทั้งหมด" ใช้ยอดรวมทุกใบจากแอด (รวมใบที่ผูกกับแอดตัวไหนไม่ได้)
      กรองกลุ่ม = นับได้เฉพาะใบที่ผูกกับแอดในกลุ่มนั้น */
   var dbN = AUDF === 'all' ? (o.matched||0) : g.db;
   var dbRev = AUDF === 'all' ? (o.revenue||0) : g.dbRev;
+  var bt = (AUDF === 'all' && d.buyers) ? d.buyers.totals : g.bt;
+  var btLine = BT.map(function(t){ return t[1].split(' ')[0] + ' ' + ((bt[t[0]]||{}).n||0); }).join(' · ')
+    /* ใบที่ไม่มีทั้ง customer_id และเบอร์ = บอกไม่ได้ว่าใคร → โชว์แยก ไม่งั้น 3 ป้ายรวมกันไม่เท่ายอดใบ */
+    + ((bt.unknown && bt.unknown.n) ? ' · ❔ ระบุไม่ได้ ' + bt.unknown.n : '');
 
   document.getElementById('cards').innerHTML = ''
     + card('ใช้ไปวันนี้ (ทั้งบัญชี)', baht(t.today),
@@ -328,14 +349,16 @@ function draw(){
     + card('ใช้ทั้งช่วง' + scope, baht(g.spend), d.since + ' → ' + d.until + ' · คลิก ' + num(g.clicks))
     + card('ต่อ 1 คนกดลิงก์เข้าไลน์' + scope, g.cpl!=null ? baht(g.cpl) : '—',
         g.leads ? num(g.leads) + ' คนกดลิงก์เข้าไลน์ · ตัวนี้สำคัญกว่าต่อคลิก' : 'ยังไม่มีคนกดลิงก์เข้าไลน์ในช่วงนี้', 'hero')
+    + card('🆕 คนใหม่จากแอด' + scope, num((bt['new']||{}).n) + ' คน · ' + baht((bt['new']||{}).rev),
+        'คนที่ไม่เคยจ่ายเงินกับร้านมาก่อน · ยืนยันใน DB' + (d.buyerNote ? ' · ⚠️ ' + esc(d.buyerNote) : ''), 'newc')
     + card('✅ ยืนยันใน DB' + scope, num(dbN) + ' ใบ',
-        dbN ? 'ยอด ' + baht(dbRev) + (g.spend ? ' · ต่อใบ ' + baht(g.spend/dbN) : '') : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้', 'db')
+        dbN ? btLine + ' · ยอด ' + baht(dbRev) + (g.spend ? ' · ต่อใบ ' + baht(g.spend/dbN) : '') : 'ยังไม่มีออเดอร์จากแอดในช่วงนี้', 'db')
     + card('Meta เคลม' + scope, num(g.claim) + ' ใบ · ' + baht(g.claimRev),
         '⚠️ ไม่ใช่ยอดจริง — Meta นับคนที่แค่เห็นแอดแล้วไปซื้อเองด้วย · ห้ามรวมกับช่อง DB', 'claim');
 
   var body = document.getElementById('body');
   if (!ads.length) { body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + '</div>'; }
-  else body.innerHTML = VIEW === 'concept' ? conceptView(ads) : adView(ads);
+  else body.innerHTML = (VIEW === 'concept' ? conceptView(ads) : adView(ads)) + newBuyersView(ads);
 
   if (VIEW === 'concept') {
     [].slice.call(body.querySelectorAll('tr.crow')).forEach(function(tr){
@@ -357,7 +380,9 @@ function draw(){
 }
 
 var HEAD_METRICS = '<th>ใช้เงิน</th><th>คลิก</th><th>CTR</th><th>คนกดลิงก์เข้าไลน์</th><th>ต่อคนกดลิงก์เข้าไลน์</th>'
-  + '<th>ทักแชท</th><th>เซฟ</th><th>แชร์</th><th>เห็นซ้ำ</th><th>✅ ยืนยัน DB</th><th class="claimh">Meta เคลม</th>';
+  + '<th>ทักแชท</th><th>เซฟ</th><th>แชร์</th><th>เห็นซ้ำ</th>'
+  + '<th class="bth">✅ 🆕 คนใหม่</th><th class="bth">✅ 🔁 ลูกค้าเก่า</th><th class="bth">✅ 🥬 เคยซื้อเจ</th><th class="claimh">Meta เคลม</th>';
+function btCell(x){ return (x && x.n) ? '<b>' + x.n + '</b> · ' + baht(x.rev) : '<span class="dim">0</span>'; }
 
 function metricCells(m, crown){
   return '<td>' + baht(m.spend) + '</td>'
@@ -369,7 +394,7 @@ function metricCells(m, crown){
     + '<td>' + z(m.saves) + '</td>'
     + '<td>' + z(m.shares) + '</td>'
     + '<td>' + (m.freq ? (m.freq > 3 ? '<b class="up">' + m.freq.toFixed(2) + '</b>' : m.freq.toFixed(2)) : '<span class="dim">—</span>') + '</td>'
-    + '<td>' + (m.db ? '<b>' + m.db + '</b> · ' + baht(m.dbRev) : '<span class="dim">0</span>') + '</td>'
+    + BT.map(function(t){ return '<td class="btc">' + btCell(m.bt && m.bt[t[0]]) + '</td>'; }).join('')
     + '<td class="claimc">' + (m.claim ? m.claim + ' · ' + baht(m.claimRev) : '0') + '</td>';
 }
 
@@ -416,7 +441,8 @@ function conceptView(ads){
   html += '</tbody></table></div>'
     + '<p class="fine">🏆 = ต่อคนกดลิงก์เข้าไลน์ถูกสุด เฉพาะคอนเซปต์ที่มีคนกดลิงก์เข้าไลน์อย่างน้อย ' + MIN_LEADS_WIN + ' คน (เกณฑ์นี้ M ตั้งเอง — น้อยกว่านี้ยังบังเอิญได้)'
     + ' · ตัวเลขรวมแอดที่หยุดไปแล้วด้วย เพราะเงินใช้ไปแล้วจริง · "เห็นซ้ำ" = ค่าสูงสุดของแอดในกลุ่มที่แสดงผลเกิน 300 ครั้ง'
-    + ' · ✅ ยืนยัน DB = ออเดอร์จริงที่ติดรหัสแอดมา · Meta เคลม = ตัวเลขของ Meta เอง ห้ามอ่านเป็นยอดขาย</p>';
+    + ' · ✅ = ออเดอร์จริงที่ติดรหัสแอดมา แยกตามประวัติของ<b>คนซื้อ</b> (ไม่ใช่ชุดแอดที่ยิง): 🆕 ไม่เคยจ่ายเงินกับร้านมาก่อน · 🔁 เคยสั่งแต่ไม่เคยซื้อเจ · 🥬 เคยสั่งเมนูเจมาก่อน (นับใบ ฿0 ของคอร์สเจด้วย)'
+    + ' · Meta เคลม = ตัวเลขของ Meta เอง ห้ามอ่านเป็นยอดขาย</p>';
   return html;
 }
 
@@ -432,6 +458,7 @@ function adView(ads){
           var bad = a.flags && a.flags.length;
           var m = { spend:a.spend, clicks:a.clicks, ctr:a.ctr, leads:a.leads, cpl:a.costPerLead, chats:a.chats,
                     saves:a.saves, shares:a.shares, freq:a.frequency, db:a.orders, dbRev:a.revenue,
+                    bt: dbFor([a]).bt,
                     claim:a.metaPurchases, claimRev:a.metaRevenue };
           return '<tr class="' + (bad ? 'bad' : '') + '">'
             + '<td class="adcell-wrap">' + adCell(a)
@@ -443,6 +470,42 @@ function adView(ads){
   var html = '<div class="h2row"><h2>▶️ กำลังวิ่ง ' + live.length + ' แอด</h2><span class="sub">เรียงตามเงินที่ใช้</span></div>'
     + (live.length ? table(live) : '<div class="msg">ไม่มีแอดที่กำลังวิ่งในกลุ่มนี้</div>');
   if (stopped.length) html += '<details class="stopped"><summary>⏸️ หยุดแล้ว ' + stopped.length + ' แอด — กดดู (ไม่ได้ใช้เงินเพิ่มแล้ว)</summary>' + table(stopped) + '</details>';
+  return html;
+}
+
+/* ── u360-new-buyers — "คนใหม่ที่แอดพามา ซื้ออะไรกัน" (06 · นัทขอ 11 ก.ย. — เอาไปพัฒนาโปรดักต์) ──
+   ชื่อที่แสดงเท่านั้น · ไม่มีเบอร์/ที่อยู่/LINE uid (server ไม่ส่งมาตั้งแต่ต้น) */
+function fdate(s){ return new Date(s).toLocaleString('th-TH', {timeZone:'Asia/Bangkok', day:'numeric', month:'short', hour:'2-digit', minute:'2-digit'}); }
+function newBuyersView(ads){
+  var all = (LAST.buyers && LAST.buyers.newList) || [];
+  var utms = {}; ads.forEach(function(a){ if (a.utm) utms[a.utm] = 1; });
+  var list = AUDF === 'all' ? all : all.filter(function(b){ return utms[b.utm]; });
+  var html = '<div class="h2row"><h2>🛒 คนใหม่ที่แอดพามา ซื้ออะไร</h2>'
+    + '<span class="sub">เฉพาะออเดอร์ที่ DB ยืนยันว่ามาจากแอด · คนที่ไม่เคยจ่ายเงินกับร้านมาก่อน · ล่าสุดก่อน</span></div>';
+  if (!list.length) {
+    return html + '<div class="msg">ยังไม่มีคนใหม่ที่ติดรหัสแอดในช่วงนี้' + (AUDF === 'all' ? '' : ' (เฉพาะแอดที่' + AUDNAME[AUDF] + ')')
+      + '<p class="fine">ระบบจำรหัสแอดไว้กับลูกค้า 7 วัน (ห้อง u) เริ่มใช้ 11 ก.ย. 2569 — ออเดอร์ 8–11 ก.ย. ย้อนผูกไม่ได้ '
+      + 'ตารางนี้จะเริ่มมีคนตั้งแต่ออเดอร์หลังจากนั้น</p></div>';
+  }
+  var cnt = {};
+  list.forEach(function(b){
+    var seen = {};
+    (b.items || []).forEach(function(it){ var k = it.replace(/ ×\d+$/, ''); if (seen[k]) return; seen[k] = 1; cnt[k] = (cnt[k]||0) + 1; });
+  });
+  var top = Object.keys(cnt).sort(function(x, y){ return cnt[y] - cnt[x]; }).slice(0, 5);
+  html += '<div class="topbuy"><span class="lbl">คนใหม่ซื้อบ่อยสุด</span>'
+    + top.map(function(k, i){ return '<span class="chip"><b>' + (i+1) + '</b>' + esc(k) + ' <em>' + cnt[k] + ' คน</em></span>'; }).join('')
+    + '</div>';
+  html += '<div class="tblwrap"><table class="nb"><thead><tr><th>ชื่อลูกค้า</th><th>สั่งครั้งแรกเมื่อ</th><th>ซื้ออะไร</th>'
+    + '<th>ยอด</th><th>มาจากแอดไหน</th><th>ซื้อซ้ำแล้ว</th></tr></thead><tbody>'
+    + list.map(function(b){
+        return '<tr><td>' + esc(b.name) + '</td><td>' + fdate(b.at) + '</td>'
+          + '<td class="items">' + esc((b.items || []).join(' · ')) + '</td><td>' + baht(b.total) + '</td>'
+          + '<td class="adsrc">' + (b.code ? '<span class="ccode">' + esc(b.code) + '</span> ' : '') + esc(b.ad || b.utm || '—') + '</td>'
+          + '<td>' + (b.repeat ? '<b class="win">' + b.repeat + ' ครั้ง</b>' : '<span class="dim">ยังไม่ซื้อซ้ำ</span>') + '</td></tr>';
+      }).join('')
+    + '</tbody></table></div>'
+    + '<p class="fine">ซื้อซ้ำ = ออเดอร์ที่จ่ายเงินจริงหลังใบแรกทั้งหมด ไม่ว่ามาจากช่องทางไหน · ซื้ออะไร = ชื่อแพคเกจ หรือชื่อเมนูถ้าไม่ได้สั่งเป็นแพคเกจ (ไม่นับของแถม)</p>';
   return html;
 }
 

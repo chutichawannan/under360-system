@@ -51,6 +51,85 @@ const pick = (arr, types) => {
   return 0;
 };
 
+const SBH = { apikey: KEY, Authorization: 'Bearer ' + KEY };
+/* เมนูเจทุกปีขึ้นต้น J/j ตามด้วยเลข (J054 · j26 · j2025-1) — เช็คกับ order_items จริง 11 ก.ย. */
+const JCODE = /^j\d/i;
+const phone9 = p => { const d = String(p || '').replace(/\D/g, ''); return d.length >= 9 ? d.slice(-9) : ''; };
+
+/* PostgREST คืนสูงสุด 1,000 แถว/ครั้ง **แบบเงียบๆ ไม่มี error** → ไล่หน้าเสมอ
+   (ของเดิมใส่ limit=2000 = ได้แค่ 1,000 จริง · ช่วง 30-90 วันออเดอร์เกินได้) */
+async function sbAll(path, maxPages) {
+  let rows = [];
+  for (let p = 0; p < (maxPages || 20); p++) {
+    const r = await fetch(SB + '/rest/v1/' + path + '&limit=1000&offset=' + (p * 1000), { headers: SBH });
+    if (!r.ok) throw new Error('supabase ' + r.status);
+    const page = await r.json();
+    rows = rows.concat(page);
+    if (page.length < 1000) break;
+  }
+  return rows;
+}
+
+/* ═══ u360-buyer-type — คนที่ซื้อจริงเป็นใคร (06 · นัทเคาะ 11 ก.ย.) ═══
+   ดูจาก **ประวัติสั่งซื้อของคนซื้อใน DB** ไม่ใช่จากชุดแอดที่ยิง
+   (เคสคุณสินัลรินีย์: ลูกค้าใหม่จริง แต่ Meta ให้เครดิตชุด C ที่ตั้งยิงคนเก่า)
+     🥬 jay  = เคยมีออเดอร์ที่มีเมนูรหัส J มาก่อน — **นับใบ ฿0 ด้วย** เพราะใบแบ่งรอบคอร์สเจปีก่อนเป็น ฿0 (เคสคุณนรุตม์)
+     🔁 old  = เคยมีออเดอร์จ่ายจริง (ยอด>0) แต่ไม่เคยมีเมนูเจ
+     🆕 new  = ไม่มีทั้งสองอย่าง
+   ตัวตนเดียวกัน = customer_id เดียวกัน หรือเบอร์ 9 หลักท้ายตรงกัน (ใบยอด>0 ที่ customer_id ว่างมี 47 ใบ)
+   ไม่นับ: log แต้ม Hato (HS- · hato_loyalty_log — ไม่ใช่การขาย) · ใบแบ่งรอบของออเดอร์ใบนี้เอง (สร้างหลังใบหลัก ~1 วิ)
+   ⚠️ ผลลัพธ์ห้ามมีเบอร์ · ที่อยู่ · LINE uid — ส่งกลับแค่ชื่อที่แสดง */
+async function classifyAdOrders(adOrders) {
+  const unknown = o => ({ order: o, type: 'unknown', repeat: 0, items: [] });
+  const cids = [...new Set(adOrders.map(o => o.customer_id).filter(Boolean))];
+  const phs = [...new Set(adOrders.map(o => phone9(o.customer_phone)).filter(Boolean))];
+  if (!cids.length && !phs.length) return adOrders.map(unknown);
+
+  const parts = [];
+  if (cids.length) parts.push('customer_id.in.(' + cids.join(',') + ')');
+  if (phs.length) parts.push('customer_phone.in.(' + phs.flatMap(p => ['0' + p, p, '66' + p, '+66' + p]).join(',') + ')');
+  const hist = (await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,source,notes,'
+      + 'order_items(menu_code,menu_name,quantity,notes)'
+      + '&or=' + encodeURIComponent('(' + parts.join(',') + ')') + '&order=created_at.asc,id.asc', 10))
+    .filter(h => h.source !== 'hato_loyalty_log' && String(h.order_number || '').indexOf('HS-') !== 0);
+
+  const pkgIds = new Set();
+  hist.forEach(h => (h.order_items || []).forEach(i => { const m = /^pkg:([0-9a-f-]{36})/.exec(i.notes || ''); if (m) pkgIds.add(m[1]); }));
+  const pkgName = {};
+  if (pkgIds.size) {
+    const pr = await fetch(SB + '/rest/v1/packages?select=id,name&id=in.(' + [...pkgIds].join(',') + ')', { headers: SBH });
+    if (pr.ok) (await pr.json()).forEach(p => { pkgName[p.id] = p.name; });
+  }
+
+  const byId = {};
+  hist.forEach(h => { byId[h.id] = h; });
+  const same = (h, o) => (o.customer_id && h.customer_id === o.customer_id)
+    || (phone9(o.customer_phone) && phone9(h.customer_phone) === phone9(o.customer_phone));
+
+  return adOrders.map(o => {
+    if (!o.customer_id && !phone9(o.customer_phone)) return unknown(o);
+    const mine = hist.filter(h => same(h, o) && h.id !== o.id);
+    const before = mine.filter(h => h.created_at < o.created_at && String(h.notes || '').indexOf(o.order_number) < 0);
+    const hadJay = before.some(h => (h.order_items || []).some(i => JCODE.test(i.menu_code || '')));
+    const hadPaid = before.some(h => +h.total > 0);
+    const type = hadJay ? 'jay' : hadPaid ? 'old' : 'new';
+    /* ซื้อซ้ำ = ออเดอร์จ่ายจริงหลังใบนี้ทั้งหมด ไม่ใช่แค่ที่มาจากแอด (06 ขอ — บอกว่าลูกค้าติดไหม) */
+    const repeat = mine.filter(h => h.created_at > o.created_at && +h.total > 0).length;
+
+    /* ซื้ออะไร: แพคเกจ → ชื่อแพคเกจ · ไม่ใช่แพคเกจ → ชื่อเมนู × จำนวน · ของแถม (gift:) ไม่นับ */
+    const labels = {};
+    ((byId[o.id] || o).order_items || []).forEach(i => {
+      const n = String(i.notes || '');
+      if (n.indexOf('gift:') === 0) return;
+      const m = /^pkg:([0-9a-f-]{36})/.exec(n);
+      const label = m ? (pkgName[m[1]] || 'แพคเกจ') : (i.menu_name || i.menu_code || '?');
+      labels[label] = (labels[label] || 0) + (m ? 0 : (+i.quantity || 1));
+    });
+    const items = Object.keys(labels).map(k => labels[k] > 1 ? k + ' ×' + labels[k] : k);
+    return { order: o, type, repeat, items };
+  });
+}
+
 /* อ่านชื่อแอด → ชุด · คอนเซปต์ · รูป · utm_content
    ชื่อใหม่ (11 ก.ย.): "a · น1 · ไหว้เสร็จแล้ว มีอะไรกิน (I034)"        → a_n1_i034
                       "d · พ1 · เจที่ไม่ต้องฝืนกิน (คาร์รูเซล 4 ใบ)"   → d_p1_carousel
@@ -226,34 +305,60 @@ module.exports = async function handler(req, res) {
   /* ── ② ออเดอร์จริงในช่วงเดียวกัน — นับที่ server ไม่ส่งแถวลงเบราว์เซอร์ ──
      🏆 ตัวชี้ขาดที่ Meta บอกเองไม่ได้ เพราะเราปิดการขายในไลน์ · ตัวนี้เท่านั้นคือ "ยืนยันใน DB" */
   try {
-    const q = SB + '/rest/v1/orders?select=total,source_campaign,source_content'
-            + '&created_at=gte.' + since + 'T00:00:00'
-            + '&total=gt.0&limit=2000';
-    const r = await fetch(q, { headers: { apikey: KEY, Authorization: 'Bearer ' + KEY } });
-    if (r.ok) {
-      const rows = await r.json();
-      const byUtm = {};
-      let matched = 0, revenue = 0;
-      for (const o of rows) {
-        const c = (o.source_campaign || '').trim();
-        /* 🔴 นับเฉพาะแอดที่เสียเงิน — ขึ้นต้น fb/paid/ เสมอ (ig/social, web, broadcast ไม่นับ) */
-        if (c.indexOf('fb/paid/') !== 0) continue;
-        matched++; revenue += +o.total || 0;
-        /* utm_content ของออเดอร์ — จาก source_content ถ้ามี ไม่มีก็ท้าย campaign (jay2026-a_n1_i034) */
-        const k = ((o.source_content || '').trim() || (c.split('/').pop().split('-').pop() || '')).toLowerCase();
-        if (!k) continue;
-        byUtm[k] = byUtm[k] || { orders: 0, revenue: 0 };
-        byUtm[k].orders++; byUtm[k].revenue += +o.total || 0;
-      }
-      out.orders = { matched, revenue: +revenue.toFixed(2), byUtm, scanned: rows.length };
+    const rows = await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,customer_name,line_display_name,source_campaign,source_content'
+      + '&created_at=gte.' + since + 'T00:00:00&total=gt.0&order=created_at.asc,id.asc', 10);
+    const blank = () => ({ n: 0, rev: 0 });
+    const byUtm = {}, adOrders = [];
+    let matched = 0, revenue = 0;
+    for (const o of rows) {
+      const c = (o.source_campaign || '').trim();
+      /* 🔴 นับเฉพาะแอดที่เสียเงิน — ขึ้นต้น fb/paid/ เสมอ (ig/social, web, broadcast, direct/none ไม่นับ) */
+      if (c.indexOf('fb/paid/') !== 0) continue;
+      matched++; revenue += +o.total || 0;
+      /* utm_content ของออเดอร์ — จาก source_content ถ้ามี ไม่มีก็ท้าย campaign (jay2026-a_n1_i034) */
+      const k = ((o.source_content || '').trim() || (c.split('/').pop().split('-').pop() || '')).toLowerCase();
+      adOrders.push({ o, k });
+      if (!k) continue;
+      byUtm[k] = byUtm[k] || { orders: 0, revenue: 0, new: blank(), old: blank(), jay: blank(), unknown: blank() };
+      byUtm[k].orders++; byUtm[k].revenue += +o.total || 0;
+    }
 
-      /* ผูกออเดอร์เข้าแอดด้วย utm_content ตรงตัวเท่านั้น (ไม่ใช้ includes) */
-      for (const a of out.ads) {
-        const hit = a.utm && byUtm[a.utm];
-        a.orders = hit ? hit.orders : 0;
-        a.revenue = hit ? +hit.revenue.toFixed(2) : 0;
-        a.costPerOrder = a.orders ? +(a.spend / a.orders).toFixed(2) : null;
+    /* แยกคนซื้อ 🆕/🔁/🥬 — พังก็ยังโชว์ยอดรวมได้ */
+    const totalsByType = { new: blank(), old: blank(), jay: blank(), unknown: blank() };
+    const newList = [];
+    let cls;
+    try { cls = await classifyAdOrders(adOrders.map(x => x.o)); }
+    catch (e) { cls = adOrders.map(x => ({ order: x.o, type: 'unknown', repeat: 0, items: [] })); out.buyerNote = 'แยกคนซื้อใหม่/เก่าไม่ได้ชั่วคราว'; }
+    const adByUtm = {};
+    for (const a of out.ads) if (a.utm && !adByUtm[a.utm]) adByUtm[a.utm] = a;
+    cls.forEach((c, i) => {
+      const o = c.order, k = adOrders[i].k, t = +o.total || 0;
+      totalsByType[c.type].n++; totalsByType[c.type].rev += t;
+      if (k && byUtm[k]) { byUtm[k][c.type].n++; byUtm[k][c.type].rev += t; }
+      if (c.type === 'new') {
+        const ad = adByUtm[k];
+        newList.push({
+          /* ชื่อที่แสดงเท่านั้น — ไม่มีชื่อ LINE ใช้แค่คำแรกของชื่อผู้รับ */
+          name: o.line_display_name || String(o.customer_name || '').trim().split(/\s+/)[0] || 'ไม่มีชื่อ',
+          at: o.created_at, total: t, utm: k || '', ad: ad ? ad.ad : '', code: ad && !ad.legacy ? ad.code : '',
+          items: c.items, repeat: c.repeat
+        });
       }
+    });
+    newList.sort((x, y) => (x.at < y.at ? 1 : -1));
+    const round = x => { x.rev = +x.rev.toFixed(2); return x; };
+    Object.values(totalsByType).forEach(round);
+    Object.values(byUtm).forEach(b => { b.revenue = +b.revenue.toFixed(2); ['new', 'old', 'jay', 'unknown'].forEach(t => round(b[t])); });
+
+    out.orders = { matched, revenue: +revenue.toFixed(2), byUtm, scanned: rows.length };
+    out.buyers = { totals: totalsByType, newList };
+
+    /* ผูกออเดอร์เข้าแอดด้วย utm_content ตรงตัวเท่านั้น (ไม่ใช้ includes) */
+    for (const a of out.ads) {
+      const hit = a.utm && byUtm[a.utm];
+      a.orders = hit ? hit.orders : 0;
+      a.revenue = hit ? +hit.revenue.toFixed(2) : 0;
+      a.costPerOrder = a.orders ? +(a.spend / a.orders).toFixed(2) : null;
     }
   } catch (e) { /* ไม่มีตัวเลขออเดอร์ก็ยังโชว์ตัวเลขแอดได้ */ }
 
@@ -308,3 +413,4 @@ module.exports = async function handler(req, res) {
 };
 
 module.exports.parseName = parseName;   /* ให้สคริปต์ทดสอบเรียกได้ */
+module.exports.classifyAdOrders = classifyAdOrders;
