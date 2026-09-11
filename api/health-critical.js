@@ -88,6 +88,12 @@ module.exports = async (req, res) => {
       add("ปฏิทินเมนู Meal Plan", false, "เช็คไม่ได้ — อ่าน mp_menu_plan ไม่สำเร็จ 2 ครั้งติด (HTTP " + (r ? r.status : 'เชื่อมต่อไม่ได้') + ") ยังไม่ได้แปลว่าลูกค้าสั่งไม่ได้", "เหลือง");
       throw new Error("skip");
     }
+    /* ไม่เจอแถวเลย = ตัวแพลนหายไปจากฐานข้อมูล — เป็นเรื่องที่ต้องรู้ แต่ไม่ใช่หลักฐานว่าลูกค้าสั่งไม่ได้
+       (หน้าลูกค้ามีไฟล์สำรอง preview/mp_plan_seed.json) · พี่ปืนขอข้อ ① ให้เป็นเหลือง ไม่ใช่แดง */
+    if (!j.length) {
+      add("ปฏิทินเมนู Meal Plan", false, "เช็คไม่ได้ — ไม่เจอแถว mp_menu_plan ในฐานข้อมูล (ห้อง u ต้องรันต่อท่อใหม่)", "เหลือง");
+      throw new Error("skip");
+    }
     const plan = (j[0] && j[0].data) || {};
     const today = new Date(Date.now() + 7 * 3600 * 1000).toISOString().slice(0, 10);   // วันไทย
     const left = Object.keys(plan).filter(d => d > today).sort();
