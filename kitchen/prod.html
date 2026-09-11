@@ -14,11 +14,13 @@ h1{font-size:17px;margin:0 0 2px}
 .li b{color:#7BE3A8;font-weight:700}
 .nm{font-family:-apple-system,sans-serif;font-size:11.5px;color:#6E7382;letter-spacing:0}
 .split{margin-top:8px;font-size:12px;color:#8B90A0;border-top:1px dashed #2A3040;padding-top:7px}
+.warn{margin-top:8px;font-size:12px;color:#FFB86B;background:#2A1F12;border-radius:7px;padding:6px 8px}
 .empty{color:#6E7382;font-size:12.5px}
 button{background:#1F4D3A;color:#fff;border:0;border-radius:9px;padding:9px 15px;font-size:13px;font-weight:700;margin-bottom:14px}
 </style></head><body>
 <h1>🏭 ลิสต์สั่งผลิต Meal Plan</h1>
 <div class="sub" id="sub">กำลังโหลด…</div>
+<div id="stable" style="font-size:12.5px;line-height:1.55;border-radius:9px;padding:9px 11px;margin-bottom:12px"></div>
 <button onclick="load()">↻ โหลดใหม่</button>
 <div id="out"></div>
 <script>
@@ -31,6 +33,13 @@ const thDate=()=>new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
 async function q(p){const r=await fetch(U+'/rest/v1/'+p,{headers:{apikey:K,Authorization:'Bearer '+K}});const j=await r.json();return Array.isArray(j)?j:[]}
 async function load(){
   const today=thDate();
+  /* 🔴 ยอดพรุ่งนี้ยังไม่นิ่งจนหลัง 1 ทุ่ม — แอดมินเคลียร์/ยกเลิกใบช่วง 18:50-19:00 เป็นประจำ
+     เจอจริง 2 ครั้ง: 26 ส.ค. (ออกใบ 18:25 ยกเลิก 18:51) · 10 ก.ย. (นัทสั่งของตาม 98 กล่อง ผลิตจริง 70) */
+  const thHour=new Date(Date.now()+7*3600e3).getUTCHours();
+  const tmr=new Date(Date.now()+7*3600e3+86400e3).toISOString().slice(0,10);
+  const st=document.getElementById("stable");
+  if(thHour<19){st.style.background="#2A1F12";st.style.color="#FFB86B";st.innerHTML="⚠️ <b>ยอดของพรุ่งนี้ยังไม่นิ่ง</b> — แอดมินมักยกเลิก/ย้ายใบช่วง 18:50–19:00 · <b>สั่งของหลัง 19:00</b> จะตรงที่สุด (ใบงานรอบ 21:00 คือยอดสุดท้าย)";}
+  else{st.style.background="#12291D";st.style.color="#7BE3A8";st.innerHTML="✅ หลัง 19:00 แล้ว — ยอดของพรุ่งนี้นิ่งแล้ว สั่งของได้";}
   document.getElementById('sub').textContent='กำลังโหลด…';
   const rows=(await q('mp_deliveries?select=delivery_date,mp_type,box_count,status,menu_items&delivery_date=gte.'+today+'&limit=400'))
     .filter(r=>r.status!=='cancelled'&&r.status!=='skip_requested');
@@ -49,7 +58,7 @@ async function load(){
     const d=by[ds], dt=new Date(ds+'T00:00:00Z');
     const list=Object.entries(d.n).sort((a,b)=>b[1]-a[1]);
     html+='<div class="day"><div class="dh">'+DOW[dt.getUTCDay()]+' '+dt.getUTCDate()+' '+MON[dt.getUTCMonth()]+'</div>'
-      +'<div class="dm">'+d.box+' กล่อง · '+list.length+' เมนู</div><div class="li">'
+      +'<div class="dm">'+d.box+' กล่อง · '+list.length+' เมนู</div>'+(ds===tmr&&thHour<19?'<div class="warn">⚠️ ยอดวันนี้ยังขยับได้ถึง 19:00</div>':'')+'<div class="li">'
       +(list.length?list.map(([c,n])=>'<b>'+c+'-'+n+'</b> <span class="nm">'+(d.names[c]||'')+'</span>').join('<br>')
         :'<span class="empty">ยังไม่มีเมนู</span>')
       +'</div><div class="split">LC '+d.lc+' กล่อง · HP '+d.hp+' กล่อง</div></div>';
