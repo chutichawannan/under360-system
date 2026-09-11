@@ -190,6 +190,43 @@ ok('หัวข้อหมวดบอกจำนวนที่ยังไ�
     ok('ชื่อจาก appConfig มาก่อนชื่อสำรอง', api.catLabel('no_special') === 'ข้าวกล่อง' && api.catLabel('jay2026') === 'คอร์สเจ 2569');
   }
 }
+console.log('\n13) เติมก่อนย้ายครัว (นัทสั่ง 11 ก.ย. "เติมเลยด่วน"): พิมพ์ใบจัดของ · กำลังผลิต · รอบ Meal Plan');
+ok('โหลด stock_incoming + แผนป้าย + ยอดวางขายของนิว', NEW.indexOf("'stock_incoming','weekly_subcode_plan','weekly_stock_plan'") >= 0);
+ok('โหลดรอบ Meal Plan (mp_deliveries) ในช่วงวันเดียวกับใบ และมี limit', /from\('mp_deliveries'\)\.select\([^)]*\)\.gte\('delivery_date',from\)\.lte\('delivery_date',to\)\.limit\(/.test(NEW));
+ok('ปุ่มพิมพ์ใช้หน้าพิมพ์เดิม ส่งวันที่เลือกไปด้วย', NEW.indexOf("'/print_pickslip.html?date='+encodeURIComponent(ymd)+'&auto=1'") >= 0 && NEW.indexOf('href="\'+printUrl(DAY)+\'"') >= 0);
+ok('ไม่เพิ่มช่องกรอกในหน้านับของ (กำลังผลิตโชว์อย่างเดียว)', (NEW.match(/class="cnt"/g) || []).length === 2, 'เจอช่อง cnt ' + (NEW.match(/class="cnt"/g) || []).length);
+ok('k2 ไม่เขียน stock_incoming เอง (ช่องนี้เป็นของนิว/หน้าเดิม)', !/upsert\(\{key:'stock_incoming'/.test(NEW) && !/key=eq\.stock_incoming[^]{0,80}PATCH/.test(NEW));
+{
+  const fns = ['function ordersOn(', 'function incOf(', 'function weekStartOfYmd(', 'function weekPlanOf(', 'function mpRoundsOffOrder(', 'function mpRoundsOn('].map(sig => grab(NEW, sig));
+  ok('ดึง incOf / weekPlanOf / mpRoundsOffOrder ออกมาได้', fns.every(Boolean));
+  if (fns.every(Boolean)) {
+    const make = (ctx) => new Function('ORDERS', 'MPD', 'INC', 'SUBPLAN', 'STOCKPLAN', fns.join(String.fromCharCode(10)) + '; return { incOf, weekPlanOf, mpRoundsOffOrder, mpRoundsOn, weekStartOfYmd };')(ctx.ORDERS || [], ctx.MPD || [], ctx.INC || {}, ctx.SUBPLAN || {}, ctx.STOCKPLAN || {});
+    const f = make({
+      ORDERS: [{ id: 'oA', delivery_date: '2026-09-14' }, { id: 'oOld', delivery_date: '2026-09-04' }],
+      MPD: [
+        { id: 'r1', order_id: 'oA', delivery_date: '2026-09-14', status: 'menu_assigned', customer_name: 'ตรงวัน' },
+        { id: 'r2', order_id: 'oOld', delivery_date: '2026-09-14', status: 'menu_assigned', customer_name: 'PIMM' },
+        { id: 'r3', order_id: null, delivery_date: '2026-09-14', status: 'scheduled', customer_name: 'ไม่มีใบ' },
+        { id: 'r4', order_id: 'oOld', delivery_date: '2026-09-14', status: 'delivered', customer_name: 'ส่งแล้ว' },
+        { id: 'r5', order_id: 'oOld', delivery_date: '2026-09-15', status: 'menu_assigned', customer_name: 'วันอื่น' }
+      ],
+      INC: { m1: { n: 5, by: 'น้องนิว', at: '2026-09-11T15:00:00Z' }, m2: { n: 0 } },
+      SUBPLAN: { '2026-09-14': { S1: 'S158', D1: 'D158' } },
+      STOCKPLAN: { '2026-09-14': { qty: { S1: 5, D1: 4 } } }
+    });
+    const off = f.mpRoundsOffOrder('2026-09-14').map(r => r.customer_name);
+    ok('รอบที่ใบลงวันอื่น (เคส PIMM) ขึ้นเตือน', off.indexOf('PIMM') >= 0, JSON.stringify(off));
+    ok('รอบที่ไม่มีใบเลย ขึ้นเตือนด้วย', off.indexOf('ไม่มีใบ') >= 0, JSON.stringify(off));
+    ok('รอบที่ใบตรงวัน / ส่งแล้ว / คนละวัน ไม่ขึ้นเตือน', off.length === 2, JSON.stringify(off));
+    ok('นับรอบ Meal Plan ของวันนั้นทั้งหมด', f.mpRoundsOn('2026-09-14').length === 4);
+    ok('กำลังผลิต 5 → โชว์ 5', f.incOf('m1') && f.incOf('m1').n === 5);
+    ok('กำลังผลิต 0 หรือไม่มี → ไม่โชว์', f.incOf('m2') === null && f.incOf('zz') === null);
+    ok('สัปดาห์เริ่มวันจันทร์ (ศุกร์ 18 → จันทร์ 14 · อาทิตย์ 20 → จันทร์ 14)', f.weekStartOfYmd('2026-09-18') === '2026-09-14' && f.weekStartOfYmd('2026-09-20') === '2026-09-14');
+    const p = f.weekPlanOf({ code: 'D158' }, '2026-09-16');
+    ok('ยอดวางขายหาจากแผนป้าย (รหัสจริง) ได้ช่องและจำนวนถูก', p && p.slot === 'D1' && p.n === 4, JSON.stringify(p));
+    ok('เมนูสัปดาห์ถัดไป/ไม่อยู่ในแผน → ไม่โชว์', f.weekPlanOf({ code: 'D158' }, '2026-09-21') === null && f.weekPlanOf({ code: 'S017' }, '2026-09-14') === null);
+  }
+}
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;

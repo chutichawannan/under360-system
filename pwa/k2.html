@@ -218,6 +218,8 @@ function shortCode(m){ return (m.subcode&&String(m.subcode).trim()) ? String(m.s
 
 let VIEW='pack', DAY=thaiToday(), USER='';
 let MENUS=[], ORDERS=[], ITEMS={}, PACK={}, PLAN={}, HIST=[];
+/* 11 ก.ย. 2569 (นัท "เติมเลยด่วน"): กำลังผลิต (stock_incoming) · แผนป้าย+ยอดวางขายของนิว · รอบ Meal Plan */
+let INC={}, SUBPLAN={}, STOCKPLAN={}, MPD=[];
 
 function setUser(){
   const n=(prompt('ใส่ชื่อคุณ (ระบบจำไว้ใช้ตอนบันทึก)',USER||'')||'').trim();
@@ -233,17 +235,21 @@ function needUser(){ if(!USER){ setUser(); } return !!USER; }
 async function loadAll(){
   const s=getSB(); if(!s) return;
   const from=dPlus(thaiToday(),-7), to=dPlus(thaiToday(),14);
-  const [mr,or_,kd]=await Promise.all([
+  const [mr,or_,kd,mpr]=await Promise.all([
     /* โหลดทั้งหมด ไม่กรอง is_available — ต้องรู้จักเมนูที่ปิดขายไปแล้วด้วย
        เพราะใบที่สั่งไว้ก่อนปิดขาย ยังมีของค้างอยู่จริง (เคสจริง 11 ก.ย.: S184 ปิดแล้ว แต่คุณ Golf ยังรอ 2 กล่อง)
        หน้านับของค่อยกรองเอาเฉพาะที่เปิดขายทีหลัง */
     s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available,category').limit(1000),
     s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
-    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig']).limit(5)
+    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig','stock_incoming','weekly_subcode_plan','weekly_stock_plan']).limit(10),
+    /* รอบ Meal Plan — หน้าครัวเดิมมีคิวนี้ · k2 เดิมอ่านจากใบอย่างเดียว รอบที่ใบลงวันอื่นจึงหายจากจอ */
+    s.from('mp_deliveries').select('id,order_id,customer_name,delivery_date,round_no,total_rounds,mp_type,box_count,status').gte('delivery_date',from).lte('delivery_date',to).limit(1000)
   ]);
   MENUS=(mr.data||[]).sort((a,b)=>shortCode(a).localeCompare(shortCode(b),'th',{numeric:true}));
   ORDERS=(or_.data||[]).filter(o=>o.status!=='cancelled'&&o.source!=='parallel_test');
+  MPD=((mpr&&mpr.data)||[]).filter(r=>r.status!=='cancelled');
+  (kd.data||[]).forEach(r=>{ if(r.key==='stock_incoming')INC=r.data||{}; if(r.key==='weekly_subcode_plan')SUBPLAN=r.data||{}; if(r.key==='weekly_stock_plan')STOCKPLAN=r.data||{}; });
   (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{};
     if(r.key==='appConfig'){ CAT_LABEL={}; ((r.data&&r.data.categories)||[]).forEach(c=>{ if(c&&c.key) CAT_LABEL[c.key]=c.label||c.key; }); } });
 
@@ -330,6 +336,27 @@ function isMPOrder(o){
 /* แถว "MP-HP-R2 ×7" = 1 รายการที่หมายถึงทั้งชุด ไม่ใช่ 7 กล่องที่ต้องหยิบทีละกล่อง
    ถ้านับรวมเข้าตัวนับ ☑ ตัวเลขจะพองจนครัวเลิกเชื่อ (บทเรียนเดิมจากใบจัดของ: MP 1 แถว = 21 กล่อง) */
 function isMPHeadRow(it){ return /^MP-/i.test(String(it.menu_code||'')); }
+/* 🍳 กำลังผลิต — ยอดที่สั่งครัวทำไว้ (นิวเขียนตอนเปิดเมนูสัปดาห์ใหม่ · หน้าครัวเดิมก็เขียนช่องนี้)
+   โชว์อย่างเดียว ไม่มีช่องกรอก — หน้านับของยังมีช่องเดียวตามที่ออกแบบไว้ (ISSUE 02 รอบ 4) */
+function incOf(mid){ const r=INC&&INC[mid]; return (r&&Number(r.n)>0)?{n:Number(r.n),by:String(r.by||""),at:String(r.at||"")}:null; }
+/* ยอดที่นิววางขายสัปดาห์นั้น ของเมนูนี้ — หาช่องจากแผนป้าย (รหัสจริง) ไม่ใช่จาก subcode ปัจจุบัน
+   เพราะป้าย S1–S8 ย้ายไปเมนูชุดใหม่ทุกสัปดาห์ */
+function weekStartOfYmd(ymd){ const d=new Date(ymd+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7)); return d.toISOString().slice(0,10); }
+function weekPlanOf(m,ymd){
+  const wk=weekStartOfYmd(ymd), plan=(SUBPLAN||{})[wk], qty=(((STOCKPLAN||{})[wk])||{}).qty;
+  if(!plan||!qty||!m) return null;
+  const slot=Object.keys(plan).find(k=>plan[k]===m.code);
+  return (slot&&Number(qty[slot])>0)?{slot:slot,n:Number(qty[slot]),week:wk}:null;
+}
+/* 🍱 รอบ Meal Plan ของวันนั้นที่ "ใบออเดอร์ลงวันอื่น" — หน้าที่อ่านจากใบ (k2 · ใบจัดของ · แมส) จะไม่เห็นรายนี้
+   เคสจริง 11 ก.ย.: PIMM รอบ 3/3 ส่งจันทร์ 14 แต่ใบ U-0904-005 ลงวันที่ 4 */
+function mpRoundsOffOrder(ymd){
+  const onDay=new Set(ordersOn(ymd).map(o=>o.id));
+  return MPD.filter(r=>r.delivery_date===ymd&&r.status!=='delivered'&&!(r.order_id&&onDay.has(r.order_id)));
+}
+function mpRoundsOn(ymd){ return MPD.filter(r=>r.delivery_date===ymd); }
+/* พิมพ์ใบจัดของ — ใช้หน้าพิมพ์เดิมที่ครัวใช้อยู่ (เครื่อง SUNMI) ส่งวันไปให้ แล้วเด้งกล่องพิมพ์เอง */
+function printUrl(ymd){ return '/print_pickslip.html?date='+encodeURIComponent(ymd)+'&auto=1'; }
 function viewPack(){
   const list=ordersOn(DAY);
   const mp=list.filter(isMPOrder), stock=list.filter(o=>!isMPOrder(o));
@@ -338,7 +365,15 @@ function viewPack(){
   let h='<div class="sum"><div class="sum-big">'+bills+'</div><div class="sum-lbl">ใบที่ต้องจัด · '+dLabel(DAY)
    +(mp.length?' <b>(สต็อก '+stock.length+' · ทำสด '+mp.length+')</b>':'')+'</div>'
    +'<div class="bar"><i style="width:'+(bills?Math.round(done/bills*100):0)+'%"></i></div>'
-   +'<div class="bar-txt">จัดครบแล้ว '+done+'/'+bills+' ใบ</div></div>';
+   +'<div class="bar-txt">จัดครบแล้ว '+done+'/'+bills+' ใบ</div>'
+   +'<a class="k2print" href="'+printUrl(DAY)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:99px;background:#fff;color:#1F4D3A;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;width:auto;max-width:100%">🖨️ พิมพ์ใบจัดของ '+esc(dLabel(DAY))+'</a></div>';
+  const offs=mpRoundsOffOrder(DAY), mpAll=mpRoundsOn(DAY).length;
+  if(offs.length){
+    h+='<div class="wrap"><div class="sec">⚠️ Meal Plan ต้องส่ง'+esc(dLabel(DAY))+' แต่ใบลงวันอื่น ('+offs.length+' ราย) — ไม่อยู่ในรายการด้านล่าง</div>'
+     + offs.map(r=>'<div class="card urg"><div class="c-top"><div class="c-name">'+esc(r.customer_name||'—')+'</div><div class="c-prog">'+esc(String(r.mp_type||'').toUpperCase())+' รอบ '+(r.round_no||'?')+'/'+(r.total_rounds||'?')+'</div></div>'
+        +'<div class="c-sub"><span class="chip st">'+(r.box_count||'?')+' กล่อง</span><span class="mini">แจ้งแอดมินย้ายวันในใบให้ตรง</span></div></div>').join('')+'</div>';
+  }
+  if(mpAll) h+='<div class="hint">🍱 รอบ Meal Plan '+esc(dLabel(DAY))+' ตามแพลนเมนู '+mpAll+' รอบ</div>';
   if(urg.length){
     h+='<div class="wrap"><div class="sec">⚡ ด่วน — แอดมินเพิ่งสั่งระหว่างวัน ('+urg.length+' ใบ)</div>'
      + urg.map(o=>cardHtml(o,true)).join('')+'</div>';
@@ -502,7 +537,8 @@ function viewCount(){
      +'<div class="mini">'+esc(String(m.name||'').slice(0,26))+'</div>'
      +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')
      +(!counted?'<div class="mini warn2">🕳️ ยังไม่เคยนับใน 7 วัน — เลขนี้ไม่ได้มาจากการนับ</div>':'')
-     +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')+'</div>'
+     +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')
+     +(incOf(m.id)?'<div class="mini">🍳 กำลังผลิต '+incOf(m.id).n+' — ยังไม่ต้องนับรวม</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+have+'" onchange="saveCount(\''+m.id+'\',this.value)">'
      +'</div>';
   });
@@ -543,7 +579,7 @@ function viewPlan(){
     const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
     const ov=(PLAN[DAY]||{})[m.id];
     return {m,b,have:have[m.id]||0,make:(ov==null?sug:Number(ov)),ov:ov!=null};
-  }).filter(r=>r.b>0||r.make>0||r.ov);
+  }).filter(r=>r.b>0||r.make>0||r.ov||incOf(r.m.id)||weekPlanOf(r.m,DAY));
   const total=rows.reduce((s,r)=>s+r.make,0);
   let h='<div class="hint">🔴 <b>ข้อจำกัดที่ต้องรู้ก่อนใช้:</b> ระบบ<b>ยังไม่มีข้อมูล "1 รอบผลิตอยู่ได้กี่วัน" (อายุของ) สักเมนูเดียว</b><br>เลขข้างล่างจึงเป็น "พอสำหรับวันที่เลือกเท่านั้น" <b>ยังเกลี่ยข้ามวันให้ไม่ได้จริง</b> — อย่าใช้แทนการตัดสินใจเรื่องทำเผื่อ</div>'
    +'<div class="sum"><div class="sum-big">'+total+'</div><div class="sum-lbl">กล่องที่ต้องทำสำหรับ '+dLabel(DAY)+'</div></div><div class="wrap">';
@@ -551,7 +587,9 @@ function viewPlan(){
   rows.forEach(r=>{
     h+='<div class="crow">'
      +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
-     +'<div class="mini">จอง '+r.b+' · ในตู้ '+r.have+(r.ov?' · <b>คนแก้เลขเอง</b>':'')+'</div></div>'
+     +'<div class="mini">จอง '+r.b+' · ในตู้ '+r.have+(r.ov?' · <b>คนแก้เลขเอง</b>':'')+'</div>'
+     +(incOf(r.m.id)?'<div class="mini">🍳 กำลังผลิต '+incOf(r.m.id).n+'</div>':'')
+     +(weekPlanOf(r.m,DAY)?'<div class="mini">📋 นิววางขายสัปดาห์นี้ '+weekPlanOf(r.m,DAY).n+' ('+weekPlanOf(r.m,DAY).slot+')</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+r.make+'" onchange="savePlan(\''+r.m.id+'\',this.value)">'
      +'</div>';
   });
