@@ -472,7 +472,13 @@ const ORDER_URL = 'https://liff.line.me/2011148232-oul66cEs?lid=2011148232-oul66
 const OA_FOLLOW_URL = 'https://line.me/R/ti/p/@under360'; // แอดเพื่อน OA — ใช้กับลิงก์รองในฟุตเตอร์
 function orderNow(el){
   try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'blog'}); }catch(e){}
-  try{ track('cta_click', 'blog:' + (new URLSearchParams(location.search).get('post') || '-')); }catch(e){}
+  /* u360-click-slug — อ่าน slug แบบเดียวกับ pageview: ?post= ก่อน ไม่มีค่อยดูจาก /blog/<slug>
+     (เดิมดู ?post= อย่างเดียว → เปิดผ่าน /blog/<slug> คลิกถูกนับเป็น blog:- · 3 ใน 12 คลิก 29 ส.ค.–10 ก.ย.) */
+  try{
+    const _p = location.pathname.split('/').filter(Boolean);
+    const _slug = new URLSearchParams(location.search).get('post') || (_p[0] === 'blog' && _p[1] ? decodeURIComponent(_p[1]) : '-');
+    track('cta_click', 'blog:' + _slug);
+  }catch(e){}
   window.location.href = u360Tracked(ORDER_URL);
   return false;
 }
