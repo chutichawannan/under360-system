@@ -125,6 +125,13 @@ ok('โหลดเมนูทั้งหมด ไม่กรอง is_avail
    !/menu_items'\)[\s\S]{0,200}eq\('is_available',true\)/.test(NEW));
 ok('แต่หน้านับของ/วางแผน/แอดมิน ยังโชว์เฉพาะเมนูที่เปิดขาย',
    (NEW.match(/MENUS\.filter\(m=>m\.is_available!==false\)/g) || []).length >= 3);
+
+
+console.log('\n9) ไม่ปล่อยให้เลข 0 พูดแทนคน (เคส MC1 · 11 ก.ย.)');
+ok('บอกได้ว่าเมนูไหน "ยังไม่เคยนับ" ไม่ใช่ปล่อยให้ 0 กำกวม',
+   /ยังไม่เคยนับใน 7 วัน/.test(NEW) && /HIST\.some/.test(NEW));
+ok('เตือนเมนูที่ตั้งเป็นขายไม่จำกัด (stock_total = null)',
+   /const unlimited = \(m\.stock_total == null\)/.test(NEW) && /ขายได้ไม่จำกัด/.test(NEW));
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;

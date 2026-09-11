@@ -63,6 +63,7 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .cnt:focus{outline:0;border-color:var(--g);background:var(--gs)}
 .diff{font-size:11px;color:var(--r);font-weight:600;margin-top:3px}
 .mini{font-size:11px;color:var(--soft)}
+.warn2{color:#92400E;background:var(--golds);border-radius:7px;padding:1px 6px;margin-top:2px;display:inline-block;font-weight:600}
 .big{font-family:var(--mono);font-size:24px;font-weight:700;min-width:44px;text-align:right}
 .neg{color:var(--r)}
 .ok{color:var(--g)}
@@ -378,10 +379,20 @@ function viewCount(){
     const have=(m.actual_stock==null)?'':Number(m.actual_stock);
     const booked=bk[m.id]||0;
     const free=(have==='')?null:(have-booked);
+    /* 🔴 "0" ในช่องนี้แปลได้ 2 อย่างที่ตรงข้ามกัน และหน้าจอเดิมแยกไม่ออก:
+         (ก) ครัวนับแล้วได้ 0 จริง   (ข) ไม่เคยมีใครกรอกเลย ค่าตั้งต้นเป็น 0
+       เคสจริง 11 ก.ย.: MC1 ซาลาเปาเจ ขึ้น 0 → ทั้งห้อง u และห้อง 05 อ่านว่า "ของหมด"
+       ความจริงคือ **ไม่มีใครเคยกรอกสักครั้ง** (activity_log พูดถึง MC1 = 0 แถว)
+       และ stock_total = null แปลว่าขายได้ไม่จำกัดอยู่แล้ว — อันตรายกว่า 0 เสียอีก
+       → ถ้า 7 วันนี้ไม่มีร่องรอยการนับ ต้องบอกตรง ๆ ว่า "ยังไม่เคยนับ" ห้ามปล่อยให้เลข 0 พูดแทน */
+    const counted = HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
+    const unlimited = (m.stock_total == null);
     h+='<div class="crow">'
      +'<div style="flex:1"><div class="code">'+esc(shortCode(m))+'</div>'
      +'<div class="mini">'+esc(String(m.name||'').slice(0,26))+'</div>'
-     +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')+'</div>'
+     +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')
+     +(!counted?'<div class="mini warn2">🕳️ ยังไม่เคยนับใน 7 วัน — เลขนี้ไม่ได้มาจากการนับ</div>':'')
+     +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+have+'" onchange="saveCount(\''+m.id+'\',this.value)">'
      +'</div>';
   });
