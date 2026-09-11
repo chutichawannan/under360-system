@@ -210,7 +210,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h2>สั่งยังไง</h2>
   <div class="steps">
     <div class="step"><b>1 · เลือกเมนู</b><p>กดเลือกกับข้าวที่อยากกินจากด้านบน ใส่ตะกร้าได้เลย</p></div>
-    <div class="step"><b>2 · กรอกที่อยู่</b><p>ชื่อ เบอร์ ที่อยู่ แล้วกดสั่ง — หรือจะไปสั่งต่อในไลน์ก็ได้</p></div>
+    <div class="step"><b>2 · สั่งในไลน์</b><p>กดปุ่มไปสั่งในไลน์ แจ้งที่อยู่และวันที่อยากรับกับแอดมินได้เลย</p></div>
     <div class="step"><b>3 · โอนแล้วรอรับ</b><p>เราจะทักไปยืนยันและแจ้งวันส่งทางไลน์หรือโทรศัพท์</p></div>
   </div>
 </div></section>
@@ -407,14 +407,8 @@ function renderCart(){
     ${zone==='bkk' && sub<FREE_BKK_MIN ? `<p style="color:var(--muted);font-size:.9rem;margin:-6px 0 6px">ซื้อครบ ฿${FREE_BKK_MIN} ส่งฟรีในกรุงเทพฯ (อีก ฿${(FREE_BKK_MIN-sub).toLocaleString('th-TH')})</p>` : ''}
     <div class="sum tot"><span>รวมทั้งหมด</span><span>฿${(sub+fee).toLocaleString('th-TH')}</span></div>
 
-    <div class="f"><label>ชื่อผู้รับ</label><input id="fName" placeholder="ชื่อ-นามสกุล"></div>
-    <div class="f"><label>เบอร์โทร</label><input id="fPhone" inputmode="tel" placeholder="08x-xxx-xxxx"></div>
-    <div class="f"><label>ที่อยู่จัดส่ง</label><textarea id="fAddr" placeholder="บ้านเลขที่ ถนน แขวง/ตำบล เขต/อำเภอ จังหวัด รหัสไปรษณีย์"></textarea></div>
-    <div class="f"><label>บอกอะไรเราเพิ่มไหม (ไม่บังคับ)</label><input id="fNote" placeholder="เช่น แพ้อาหารอะไร · ฝากไว้กับ รปภ."></div>
-
-    <button class="btn btn-green" style="width:100%;margin-top:16px" onclick="submitWeb()">สั่งเลย — จบที่นี่</button>
-    <p style="text-align:center;color:var(--muted);font-size:.9rem;margin:10px 0 4px">หรือ</p>
-    <button class="btn btn-line" style="width:100%" onclick="goLine()">ไปสั่งต่อในไลน์</button>
+    <p style="text-align:center;color:var(--muted);font-size:.92rem;margin:16px 0 8px">สั่งและชำระเงินในไลน์ได้เลย — แอดมินดูแลต่อให้ค่ะ</p>
+    <button class="btn btn-line" style="width:100%" onclick="goLine()">ไปสั่งในไลน์ →</button>
     ${LINE_PROMO_CODE ? `<div class="codebox"><div style="font-size:.9rem;color:#8A6D00">กรอกโค้ดนี้ในแอปเพื่อรับส่วนลด</div><div class="cd">${esc(LINE_PROMO_CODE)}</div></div>`
                       : `<p style="text-align:center;color:var(--muted);font-size:.88rem;margin-top:8px">${esc(LINE_PROMO_TEXT)}</p>`}
     <p style="text-align:center;margin-top:14px"><a href="#" onclick="closeCart();return false" style="color:var(--muted);font-size:.92rem">เลือกเมนูเพิ่ม</a></p>`;
@@ -446,96 +440,10 @@ function goLineNow(){
 }
 function goLine(){ remindCode(goLineNow); }
 
-async function submitWeb(){
-  const name  = (document.getElementById('fName').value||'').trim();
-  const phone = (document.getElementById('fPhone').value||'').trim();
-  const addr  = (document.getElementById('fAddr').value||'').trim();
-  const note  = (document.getElementById('fNote').value||'').trim();
-  const zone  = document.getElementById('zone').value;
-  const lines = cartLines(), sub = cartSub(), fee = feeOf(zone, sub);
-  if(!lines.length) return alert('ยังไม่ได้เลือกเมนูเลยค่ะ');
-  if(name.length < 2)  return alert('กรอกชื่อผู้รับด้วยค่ะ');
-  if(phone.replace(/\D/g,'').length < 9) return alert('กรอกเบอร์โทรให้ครบด้วยค่ะ');
-  if(addr.length < 10) return alert('กรอกที่อยู่ให้ละเอียดหน่อยค่ะ จะได้ส่งถูก');
-
-  const btn = event.target; btn.disabled = true; btn.textContent = 'กำลังบันทึก…';
-  try{
-    /* เลขออเดอร์ U-MMDD-NNN — ใช้วิธีเดียวกับฝั่งแอปเป๊ะ (ดูเลขล่าสุดแล้ว +1 · ชนแล้วขยับ)
-       ห้ามคิดสูตรใหม่ ไม่งั้นเลขชนกับใบที่ออกจากแอป */
-    const d = new Date();
-    const mmdd = String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0');
-    let nextNum = 1;
-    try{
-      const last = await sb.from('orders').select('order_number')
-        .like('order_number','U-'+mmdd+'-%').order('order_number',{ascending:false}).limit(1);
-      const l = last.data && last.data[0] && last.data[0].order_number;
-      if(l) nextNum = (parseInt(String(l).slice(-3),10)||0) + 1;
-    }catch(e){}
-
-    /* delivery_date ต้องมีค่า — หน้าครัว/หน้าออเดอร์กรองด้วยคอลัมน์นี้
-       ถ้าปล่อยว่าง ใบจะหายไปจากทุกหน้าที่แอดมินเปิดดู (ไม่มี error อะไรฟ้อง)
-       ตั้งพรุ่งนี้ไว้ก่อน แล้วเขียนใน notes ให้แอดมินยืนยัน/แก้วันจริงตอนทักกลับ */
-    const dnext = new Date(Date.now() + 86400000);
-    const delivDate = dnext.getFullYear() + '-' + String(dnext.getMonth()+1).padStart(2,'0') + '-' + String(dnext.getDate()).padStart(2,'0');
-
-    const payload = {
-      customer_name: name, customer_phone: phone,
-      delivery_date: delivDate,
-      delivery_address: addr, delivery_fee: fee,
-      subtotal: sub, total: sub + fee,
-      status: 'confirmed', payment_status: 'unpaid',
-      payment_method: 'transfer',
-      delivery_type: zone === 'up' ? 'cold_chain' : 'messenger',
-      source: 'web_pack',
-      notes: (note ? note + ' · ' : '') + '🌐 สั่งผ่านหน้าเว็บแพ็คกับข้าว · ⚠️ วันส่งเป็นค่าตั้งต้น (พรุ่งนี้) ลูกค้ายังไม่ได้เลือก — แอดมินทักยืนยันแล้วแก้วันจริง',
-    };
-    try{
-      const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
-      const tag = [u.source,u.medium,u.campaign].filter(Boolean).join('/').slice(0,120);
-      if(tag) payload.source_campaign = tag;
-    }catch(e){}
-
-    let ord, oErr;
-    for(let i=0;i<6;i++){
-      payload.order_number = 'U-'+mmdd+'-'+String(nextNum).padStart(3,'0');
-      ({ data: ord, error: oErr } = await sb.from('orders').insert(payload).select().single());
-      if(!oErr) break;
-      if(oErr.code === '23505' || /duplicate|order_number/i.test(oErr.message||'')){ nextNum++; continue; }
-      break;
-    }
-    if(oErr) throw oErr;
-
-    /* ⚠️ ชื่อคอลัมน์ต้องตรงกับตารางจริง: unit_price (ไม่ใช่ price) + subtotal + menu_item_id
-       เช็คกับ order_items ของจริงแล้ว ไม่ได้เดาจากชื่อที่คุ้น */
-    await sb.from('order_items').insert(lines.map(l => ({
-      order_id: ord.id, menu_item_id: l.id, menu_code: l.code, menu_name: l.name,
-      quantity: l.qty, unit_price: l.price, subtotal: l.sum, notes: ''
-    })));
-
-    try{ if(typeof fbq==='function') fbq('track','Purchase',{value:sub+fee,currency:'THB',content_name:'pack'}); }catch(e){}
-    try{ if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D','value':sub+fee,'currency':'THB'}); }catch(e){}
-    track('cta_click','pack:order-web');
-
-    document.getElementById('sheetBox').innerHTML = `
-      <div class="ok">
-        <h3>รับออเดอร์แล้วค่ะ 🎉</h3>
-        <div class="num">${esc(ord.order_number)}</div>
-        <p style="color:var(--muted)">ยอดรวม <b style="color:var(--ink)">฿${(sub+fee).toLocaleString('th-TH')}</b></p>
-        <div class="note" style="text-align:left">
-          <b>ขั้นต่อไป — โอนแล้วแจ้งเราได้เลย</b><br>
-          พร้อมเพย์ <b>084-655-6601</b> (ธนาคารออมสิน)<br>
-          โอนแล้วส่งสลิปมาทางไลน์พร้อมบอกเลขออเดอร์ <b>${esc(ord.order_number)}</b><br>
-          เราจะทักกลับไปยืนยันวันส่งค่ะ
-        </div>
-        <a class="btn btn-line" style="width:100%" href="${OA_URL}" rel="noopener">ส่งสลิปทางไลน์</a>
-        <p style="margin-top:12px"><a href="#" onclick="location.reload();return false" style="color:var(--muted);font-size:.92rem">สั่งเพิ่มอีก</a></p>
-      </div>`;
-    cart.clear(); syncBar();
-  }catch(e){
-    btn.disabled = false; btn.textContent = 'สั่งเลย — จบที่นี่';
-    alert('บันทึกออเดอร์ไม่สำเร็จค่ะ ลองอีกครั้ง หรือกดปุ่ม "ไปสั่งต่อในไลน์" ด้านล่างได้เลย');
-  }
-}
+/* 🛑 ปิดระบบสั่งของบนหน้านี้แล้ว — นัทเคาะ 11 ก.ย. 2569: "หน้าเว็บ pack ปิดระบบสั่งของไปเลย ในเมื่อเรา track ลูกค้าได้แล้ว"
+   เดิมฟังก์ชันนี้สร้างใบใน orders เองโดยตั้งวันส่ง = พรุ่งนี้เสมอ → สั่งเมนูสัปดาห์หน้าที่ยังไม่ผลิตได้ (เคส U-0823-013)
+   ตอนนี้ทุกทางพาไปสั่งในไลน์ (LIFF) ที่มีด่านวันส่ง + ติดที่มาแอดครบ · เหลือชื่อฟังก์ชันไว้กันหน้าที่แคชเก่ากดแล้วพัง */
+function submitWeb(){ goLine(); }
 
 /* ═══ แพ็คใหญ่ ═══ */
 async function loadPacks(){
