@@ -62,12 +62,12 @@ console.log('\n3) 🤝 อยู่ร่วมกับหน้าเก่า
 });
 
 console.log('\n4) ⚠️ เคสที่หน้าเก่าตามไม่ทัน — ต้องรู้ไว้ ไม่ใช่แกล้งไม่เห็น');
-/* นับได้น้อยกว่าที่จอง = เคส S062 วันนี้ (จอง 4 · นับได้ 3)
+/* นับได้น้อยกว่าที่จอง = เคส S062 (จอง 4 · นับได้ 3)
    หน้าเก่าไม่มีที่เก็บค่าที่ต่ำกว่าจอง จึงเห็นเท่ากับจองเสมอ — นี่คือบั๊กที่ ISSUE 02 กำลังแก้ */
 const s062 = { counted: 3, booked: 4 };
 const sellable062 = Math.max(0, s062.counted - s062.booked);
 const oldSees = realOld(sellable062, s062.booked, 0);
-ok('หน้าเก่ายังเห็น 4 (ตามข้อจำกัดของมันเอง) — พฤติกรรมไม่เปลี่ยนจากวันนี้',
+ok('หน้าเก่ายังเห็น 4 (ตามข้อจำกัดของมันเอง) — พฤติกรรมไม่เปลี่ยน',
    oldSees === 4, 'ได้ ' + oldSees);
 ok('แต่หน้าใหม่เก็บ 3 ไว้ครบใน actual_stock — ไม่ถูกตัดทิ้ง',
    /Math\.max\(0,\s*parseInt\(val,\s*10\)\s*\|\|\s*0\)/.test(NEW));
@@ -77,29 +77,17 @@ console.log('\n5) กติกาที่ห้ามผิดในหน้�
 ok('ไม่มี "ปิดวันอัตโนมัติ"', !/ปิดวันอัตโนมัติ|rollover/i.test(CODE));
 ok('ไม่มีช่อง "กำลังเติม"', !/กำลังเติม|stockIncoming/.test(CODE));
 ok('ติ๊กจัดของไม่แตะ menu_items เลย',
-   !/tick[\s\S]{0,600}from\('menu_items'\)/.test(NEW));
+   !/async function tick[\s\S]{0,600}from\('menu_items'\)/.test(NEW));
 ok('ติ๊กเก็บที่ส่วนกลาง ไม่ใช่ localStorage',
    /upsert\(\{key:'k2_pack'/.test(NEW) && !/localStorage[\s\S]{0,80}k2_pack/.test(NEW));
 ok('ใช้คีย์ใหม่ ไม่ทับ pk_done ของหน้าเก่า', !/'pk_done'/.test(NEW));
-ok('ไม่แตะไฟล์หน้าเก่า (คนละไฟล์)', !/kitchen_queue\.html['"]/.test(NEW) || /หน้าเก่า/.test(NEW));
 ok('ยึดเวลาไทยเสมอ', /Date\.now\(\)\s*\+\s*7\s*\*\s*3600e3/.test(NEW));
-ok('ทุก .select\\(\\) มี .limit\\(\\) (บทเรียน 1000-cap)',
+ok('ทุก .select() มี .limit() (บทเรียน 1000-cap)',
    (NEW.match(/\.select\(/g) || []).length <= (NEW.match(/\.limit\(/g) || []).length);
 ok('มีป้ายบอกว่าเป็นหน้าทดลอง ไม่ใช่ของจริง', /หน้าทดลอง/.test(NEW));
 /* นัทสั่งเอง 10 ก.ย. จากหน้าจริง: "ไม่ต้องมีภาพอาหารข้างหน้า" — กันรูปแอบกลับมา */
 ok('ไม่มีรูปอาหารในหน้าเลยสักจุด',
    CODE.indexOf('<img') < 0 && CODE.indexOf('thumb(') < 0);
-/* นัทเห็นของจริงแล้วสั่งกลับ 10 ก.ย.: "รหัสไม่ต้องใหญ่เว่อ ให้พอดีๆ กับชื่อเมนู"
-   → เด่นด้วยความหนา+สี ไม่ใช่ขนาด · และกว้างคงที่เพื่อให้ชื่อเมนูเรียงตรงกันทุกแถว */
-/* ต้องจับกฎ ".code{...}" ที่ขึ้นต้นบรรทัดเท่านั้น — ไม่งั้นไปโดน ".row.mp .code{...}" ที่อยู่ก่อนหน้า */
-const codeCss = (NEW.match(/^[.]code[{][^}]*[}]/m) || [''])[0];
-const codeSize = Number((codeCss.match(/font-size:(\d+)px/) || [0, 0])[1]);
-ok('รหัสไม่ใหญ่เว่อ (≤ 17px) และเด่นด้วยความหนา',
-   codeSize > 0 && codeSize <= 17 && /font-weight:7/.test(codeCss), 'ได้ ' + codeSize + 'px');
-ok('คอลัมน์รหัสกว้างคงที่ → ชื่อเมนูเรียงตรงกันทุกแถว',
-   /width:\d+px/.test(codeCss) && /flex:0 0 \d+px/.test(codeCss));
-ok('แถวชิดขึ้น — padding บน/ล่าง ≤ 6px',
-   Number((( NEW.match(/[.]row[{][^}]*[}]/) || [''])[0].match(/padding:(\d+)px/) || [0, 99])[1]) <= 6);
 ok('หน้าครัวไม่โชว์คำว่า "จอง" ในโหมดนับ/จัดของ (เฉพาะแอดมิน)',
    /ครัวไม่เห็น/.test(NEW));
 
@@ -126,12 +114,59 @@ ok('โหลดเมนูทั้งหมด ไม่กรอง is_avail
 ok('แต่หน้านับของ/วางแผน/แอดมิน ยังโชว์เฉพาะเมนูที่เปิดขาย',
    (NEW.match(/MENUS\.filter\(m=>m\.is_available!==false\)/g) || []).length >= 3);
 
-
 console.log('\n9) ไม่ปล่อยให้เลข 0 พูดแทนคน (เคส MC1 · 11 ก.ย.)');
 ok('บอกได้ว่าเมนูไหน "ยังไม่เคยนับ" ไม่ใช่ปล่อยให้ 0 กำกวม',
    /ยังไม่เคยนับใน 7 วัน/.test(NEW) && /HIST\.some/.test(NEW));
 ok('เตือนเมนูที่ตั้งเป็นขายไม่จำกัด (stock_total = null)',
    /const unlimited = \(m\.stock_total == null\)/.test(NEW) && /ขายได้ไม่จำกัด/.test(NEW));
+
+/* ขนาดตัวอักษร/ช่องไฟ เคยคุมด้วยเทสตามคำสั่งนัทรอบ 10 ก.ย.
+   ตอนนี้ดีไซน์ทั้งหมดมาจากชุด polish ที่นัททำเองแล้ว (สไตล์ชุดนี้ทับของเดิม) → เทสไม่ตัดสินเรื่องหน้าตาอีก
+   ที่คุมแทนคือ "ชุด polish อยู่ครบ ฝังในไฟล์เดียว และลิงก์ไม่หาย" */
+console.log('\n10) ชุด polish ที่นัททำเอง (11 ก.ย.) — ฝังในไฟล์เดียว ลิงก์ครบ');
+ok('ไม่อ้างไฟล์ภายนอก ./mobile.css / ./mobile.js (ฝังในไฟล์แล้ว — กันมือถือติดของเก่าจาก service worker)',
+   !/href="\.\/mobile\.css"|src="\.\/mobile\.js"/.test(NEW));
+ok('ดีไซน์ชุด polish อยู่ในไฟล์ (ฟอนต์ Sarabun + หน้าต่างตั้งชื่อ)',
+   /Sarabun/.test(NEW) && /\.user-sheet\{/.test(NEW));
+ok('ส่วนแสดงผลชุด polish อยู่ในไฟล์ (ค้นหา/ตัวกรอง/ครอบ render)',
+   /function applyFilter\(/.test(NEW) && /const originalRender=render;render=function\(\)/.test(NEW));
+ok('ชุด polish รันหลังสคริปต์หลักเสมอ (ไม่งั้นครอบฟังก์ชันที่ยังไม่มี)',
+   NEW.indexOf('function saveCount(') < NEW.indexOf('const originalRender=render'));
+ok('gate.js ยังโหลดเป็นอย่างแรก', /<head>[\s\S]{0,200}<script src="\/gate\.js"><\/script>/.test(NEW));
+ok('ลิงก์ไปหน้าครัวเดิมยังอยู่ (กดได้จริง)', /<a href="\/kitchen_queue\.html">/.test(NEW));
+ok('ปุ่มแถบล่าง 4 ปุ่มยังอยู่ครบ',
+   ['nav-pack', 'nav-count', 'nav-plan', 'nav-admin'].every(id => NEW.indexOf('id="' + id + '"') >= 0));
+ok('ไม่มีข้อมูลสมมติจากหน้า preview หลุดเข้ามา',
+   !/preview-data|PREVIEW_DATA|previewNoNetworkWrites/.test(NEW));
+ok('<style> กับ </style> เท่ากัน', (NEW.match(/<style>/g) || []).length === (NEW.match(/<\/style>/g) || []).length);
+
+console.log('\n11) แก้ 3 จุดที่ reviewer ของชุด polish ชี้ในโค้ดเดิม — เทสด้วยฟังก์ชันจริง');
+const src = ['function isMPHeadRow(', 'function boxesOf(', 'function packedOf(']
+  .map(sig => grab(NEW, sig));
+ok('ดึง isMPHeadRow / boxesOf / packedOf ออกมาได้ครบ', src.every(Boolean));
+if (src.every(Boolean)) {
+  const make = (items, pack) => new Function('ITEMS', 'PACK', src.join('\n') + '; return { boxesOf, packedOf };')(items, pack);
+  /* ใบ Meal Plan จริงหน้าตาแบบนี้: แถวหัว MP-HP-R2 ×7 + เมนูจริง 7 แถว แถวละ 1 */
+  const items = [{ id: 'h', menu_code: 'MP-HP-R2', quantity: 7 }]
+    .concat([1, 2, 3, 4, 5, 6, 7].map(n => ({ id: 'm' + n, menu_code: 'HP3' + n, quantity: 1 })));
+  const allTicked = {}; items.forEach(it => { allTicked[it.id] = it.quantity; });
+  const o = { id: 'o1' };
+  const f = make({ o1: items }, { o1: allTicked });
+  ok('(ก) ติ๊กครบรวมแถวหัวชุด → ☑ ต้อง 7/7 ไม่ใช่ 14/7',
+     f.packedOf(o) === 7 && f.boxesOf(o) === 7, 'ได้ ' + f.packedOf(o) + '/' + f.boxesOf(o));
+  const onlyHead = make({ o1: items }, { o1: { h: 7 } });
+  ok('(ก) ติ๊กแค่แถวหัวชุด → ยังไม่นับว่าจัดไปสักกล่อง',
+     onlyHead.packedOf(o) === 0, 'ได้ ' + onlyHead.packedOf(o));
+  const stock = [{ id: 'a', menu_code: 'S2', quantity: 2 }, { id: 'b', menu_code: 'D1', quantity: 1 }];
+  const g = make({ o1: stock }, { o1: { a: 2 } });
+  ok('(ก) ใบเมนูสต็อกธรรมดายังนับเหมือนเดิม (ติ๊ก S2×2 จาก 3 กล่อง → 2/3)',
+     g.packedOf(o) === 2 && g.boxesOf(o) === 3, 'ได้ ' + g.packedOf(o) + '/' + g.boxesOf(o));
+}
+ok('(ข) กด "ยังไม่จัด" ต้องล้างติ๊กและบันทึกขึ้นส่วนกลาง',
+   /async function markUnpack[\s\S]{0,700}delete PACK\[oid\][\s\S]{0,400}upsert\(\{key:'k2_pack'/.test(NEW));
+ok('(ค) หน้าแอดมินโชว์เมนูที่ยังไม่เคยนับ ไม่ใช่ซ่อนไปเฉย ๆ',
+   /const unknown=rows\.filter\(r=>r\.free==null\)/.test(NEW) && /ยังไม่เคยนับ — ไม่รู้ว่ามีของจริงเท่าไหร่/.test(NEW));
+
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;
