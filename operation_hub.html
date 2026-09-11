@@ -6538,7 +6538,7 @@ async function initOnbehalf(){
   if(obInit)return; obInit=true;
   try{ await sb_.from('orders').select('created_by').limit(1); obHasCreatedBy=true; }catch(e){ obHasCreatedBy=false; }
   var res=await Promise.all([
-    sb_.from('menu_items').select('id,code,name,price,category,subcode').eq('is_available',true).order('sort_order'),
+    sb_.from('menu_items').select('id,code,name,price,category,subcode,available_from').eq('is_available',true).order('sort_order'),
     sb_.from('packages').select('id,name,size,base_price,qty,groups,free_shipping,delivery_rounds').eq('is_active',true).order('display_order'),
     sb_.from('mp_offer_sets').select('set_key,label,boxes,price_hp,price_lc').eq('is_active',true).order('display_order'),
     sb_.from('kitchen_data').select('key,data').in('key',['pkg_plan_type','pkg_fixed_dates'])
@@ -6946,6 +6946,23 @@ function obCartQty(key,delta){
   obRenderCart();
 }
 function obSubtotal(){return obCart.reduce(function(s,c){return s+c.price*c.qty;},0);}
+/* 🔒 วันแรกที่ส่งได้ของตะกร้านี้ = available_from ที่ช้าที่สุดของเมนูในตะกร้า (รวมเมนูที่เลือกในเซ็ต)
+   เดิมหน้านี้ไม่ดู available_from เลย แอดมินเลือกวันไหนก็บันทึกได้ — ประตูที่ LIFF ปิดไปแล้วตั้งแต่ 22 ส.ค. (ใบ U-0823-013)
+   11 ก.ย. 2569: นัทเคาะเปิดขายเมนูสัปดาห์หน้าทุกศุกร์ 18:00 → เมนูใหม่เปิดก่อนวันผลิต 2 วันเต็ม
+   Meal Plan ไม่มีรหัสเมนูในตะกร้า — วันส่งของ MP คุมด้วยกติกา จ/พ/ศ ของมันเอง ไม่เกี่ยวกับตัวนี้ */
+function obCartReadyDate(){
+  var latest=null;
+  function see(code){
+    var m=obMenus.find(function(x){return x.code===code;});
+    var af=(m&&m.available_from)?String(m.available_from).slice(0,10):'';
+    if(af&&(!latest||af>latest))latest=af;
+  }
+  obCart.forEach(function(c){
+    if(c.kind==='menu'&&c.code)see(c.code);
+    if(c.kind==='pkg'&&c.picked)c.picked.forEach(function(p){ if(p&&p.sku)see(p.sku); });
+  });
+  return latest;
+}
 function obCartBadge(c){
   if(c.kind==='mp') return '<span style="background:#E8F0EC;color:#1F4D3A;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px">Meal Plan</span>';
   if(c.kind==='pkg') return '<span style="background:#FEF3C7;color:#B45309;border-radius:5px;padding:1px 6px;font-size:11px;font-weight:700;margin-right:6px">เซ็ต</span>';
@@ -6973,6 +6990,9 @@ function obRenderCart(){
     });
     var rd=obCart.filter(function(c){return (c.rounds||1)>1;});
     rd.forEach(function(c){ msgs.push('🔁 "'+c.name+'" ปกติแบ่งส่ง '+c.rounds+' รอบ — ใบนี้บันทึกรอบเดียว ถ้าจะแบ่งให้กดสั่งแยกใบตามวันส่ง'); });
+    /* 🔒 วันส่งก่อนวันที่เมนูเริ่มขาย — บอกตั้งแต่ในตะกร้า ปุ่มบันทึกจะไม่ยอมอยู่แล้ว */
+    var obReady=obCartReadyDate();
+    if(obReady&&de&&de.value&&de.value<obReady) msgs.push('⛔ ในตะกร้ามีเมนูที่เริ่มส่งได้ '+obReady+' แต่ช่อง 3 เลือก '+de.value+' — บันทึกไม่ได้ <a onclick="document.getElementById(&quot;ob-date&quot;).value=&quot;'+obReady+'&quot;;obRenderCart()" style="color:#1F4D3A;font-weight:700;cursor:pointer;text-decoration:underline">เลื่อนเป็น '+obReady+'</a>');
     note.innerHTML=msgs.length?'<div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:8px 10px;font-size:12px;color:#374151;line-height:1.7">'+msgs.join('<br>')+'</div>':'';
   }
   var fee=parseInt((document.getElementById('ob-fee')||{}).value)||0;
@@ -7013,6 +7033,8 @@ async function obSubmit(){
   if(!admin)return err('กรอกชื่อผู้กด (แอดมิน) ก่อน');
   if(!obCart.length)return err('ยังไม่มีรายการอาหาร');
   var date=document.getElementById('ob-date').value; if(!date)return err('เลือกวันส่ง');
+  /* 🔒 วันส่งห้ามก่อนวันที่เมนูในตะกร้าเริ่มขาย — ด่านเดียวกับ LIFF (11 ก.ย. 2569) */
+  var obReadyAt=obCartReadyDate(); if(obReadyAt&&date<obReadyAt)return err('ในตะกร้ามีเมนูที่เริ่มส่งได้ '+obReadyAt+' — เลือกวันส่งตั้งแต่วันนั้น (ตอนนี้เลือก '+date+')');
   /* ถ้าแอดมินเลือกให้ยึดวันจากป๊อปอัพเมนู ต้องย้ายวันส่งของใบตามไปด้วย ไม่งั้นกลับไปเป็นบั๊กเดิม */
   var obFixOrderDate=null;
   var rname=(document.getElementById('ob-rname').value||'').trim();
