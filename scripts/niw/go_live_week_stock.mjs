@@ -103,7 +103,9 @@ async function main(){
   const noStock=back.filter(m=>m.stock_total==null);
   const dupTxt=dup.length?'🔴 '+dup.map(([k,a])=>k+'='+a.join('/')).join(' '):'0 ✅';
   const stkTxt=noStock.length?'🔴 '+noStock.map(m=>m.code).join(' '):'0 ✅';
-  const labeled=back.filter(m=>m.subcode&&SLOTS.includes(m.subcode)).length;
+  // ป้ายต้องตรงช่องในแผนทีละช่อง (ไม่ใช่แค่มีป้ายอะไรก็ได้) — U ใช้ exit 0 ของโหมดนี้เป็นสัญญาณไปเปิดขาย
+  const bk=new Map(back.map(m=>[m.code,m]));
+  const labeled=SLOTS.filter(s=>(bk.get(plan[s])||{}).subcode===s).length;
   console.log((NO_OPEN?'ติดป้าย '+labeled+'/13 · เปิดขาย '+open+' (ไม่เปิดตามโหมด)':'เปิดขาย '+open+'/13')+' · ป้ายซ้ำ '+dupTxt+' · สต็อกว่าง '+stkTxt);
   if((NO_OPEN?labeled!==13:open!==13)||dup.length||noStock.length){process.exitCode=2;return;}
   console.log('✅ เสร็จ — ยังต้องเปิดหน้าลูกค้าดูด้วยตาอีกชั้น');
