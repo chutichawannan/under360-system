@@ -80,6 +80,27 @@ th{font-family:'Prompt';font-weight:600;font-size:.78rem;color:var(--muted);
   text-align:right;background:var(--soft);border-top:0;position:sticky;top:0}
 th:first-child,td:first-child{text-align:left;white-space:normal;min-width:240px}
 th.claimh,td.claimc{background:var(--amberbg);color:var(--amber)}
+/* ── u360-table-scroll (นัทบ่น 11 ก.ย.: "ไม่อยากเลื่อนไปล่างสุดจนเจอ scroll bar") ──
+   กล่องสูงไม่เกินจอ → แถบเลื่อนแนวนอนอยู่ขอบล่างจอเสมอ · หัวตารางตรึงบน · คอลัมน์ชื่อตรึงซ้าย
+   ช่องที่ตรึงต้องมีพื้นทึบ ไม่งั้นตัวเลขที่เลื่อนผ่านจะทับกันอ่านไม่ออก */
+.tblwrap{max-height:75vh;overscroll-behavior:contain}
+th{z-index:2}
+th:first-child,td:first-child{position:sticky;left:0;box-shadow:1px 0 0 var(--hair)}
+td:first-child{background:var(--paper);z-index:1}
+th:first-child{z-index:3}
+@media (max-width:520px){
+  .tblwrap{max-height:70vh}
+  th:first-child,td:first-child{min-width:150px;max-width:170px}
+  .adcell{min-width:0;gap:7px}
+  .adthumb{width:32px;height:32px}
+  tr.sub td:first-child{padding-left:22px}
+}
+/* ── u360-sort ── */
+th.sortable{cursor:pointer;user-select:none}
+th.sortable:hover{color:var(--ink);text-decoration:underline dotted}
+th.sortable.on{color:var(--green)}
+th.sortable.on.claimh{color:var(--amber)}
+th .arr{font-size:.72rem}
 tr.bad td{background:var(--redbg)}
 tr.bad td.claimc{background:var(--amberbg)}
 .flag{display:inline-block;background:var(--red);color:#fff;border-radius:999px;
@@ -360,6 +381,17 @@ function draw(){
   if (!ads.length) { body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + '</div>'; }
   else body.innerHTML = (VIEW === 'concept' ? conceptView(ads) : adView(ads)) + newBuyersView(ads);
 
+  /* u360-sort — กดหัวเดิม = สลับทิศ · กดหัวใหม่ = เริ่มทิศที่เหมาะกับคอลัมน์นั้น · จำไว้ในเครื่อง แยกตามมุมมอง */
+  [].slice.call(body.querySelectorAll('th[data-sort]')).forEach(function(th){
+    th.onclick = function(){
+      var s = SORTS[VIEW], k = th.dataset.sort;
+      if (s.k === k) s.d = (s.d === 'desc' ? 'asc' : 'desc');
+      else { s.k = k; s.d = colOf(k)[3]; }
+      try { localStorage.setItem('u360_ads_sort', JSON.stringify(SORTS)); } catch(e){}
+      draw();
+    };
+  });
+
   if (VIEW === 'concept') {
     [].slice.call(body.querySelectorAll('tr.crow')).forEach(function(tr){
       tr.onclick = function(){
@@ -379,9 +411,50 @@ function draw(){
     + ' · เวลาไทย · ช่วง ' + d.since + ' → ' + d.until;
 }
 
-var HEAD_METRICS = '<th>ใช้เงิน</th><th>คลิก</th><th>CTR</th><th>คนกดลิงก์เข้าไลน์</th><th>ต่อคนกดลิงก์เข้าไลน์</th>'
-  + '<th>ทักแชท</th><th>เซฟ</th><th>แชร์</th><th>เห็นซ้ำ</th>'
-  + '<th class="bth">✅ 🆕 คนใหม่</th><th class="bth">✅ 🔁 ลูกค้าเก่า</th><th class="bth">✅ 🥬 เคยซื้อเจ</th><th class="claimh">Meta เคลม</th>';
+/* ── u360-sort — กดหัวคอลัมน์เพื่อเรียง (นัทขอ 11 ก.ย.: "บางทีอยากดูแอดที่ขายได้เยอะสุด บางทีอยากดูที่จ่ายเยอะสุด") ──
+   [คีย์, หัวคอลัมน์, อ่านค่า, ทิศเริ่มต้นตอนกดครั้งแรก]
+   ค่าที่ไม่มี (null) = ไปท้ายเสมอทั้งสองทิศ — "ต่อคนกดลิงก์เข้าไลน์" ของแอดที่ยังไม่มีคนกด ต้องไม่ขึ้นบนสุด (06 ย้ำ)
+   ค่าเท่ากัน = เรียงรองด้วยเงินที่ใช้ (ยอด DB ส่วนใหญ่ยังเป็น 0) */
+var COLS = [
+  ['spend',  'ใช้เงิน',                function(m){ return m.spend; }, 'desc'],
+  ['clicks', 'คลิก',                   function(m){ return m.clicks; }, 'desc'],
+  ['ctr',    'CTR',                    function(m){ return m.ctr; }, 'desc'],
+  ['leads',  'คนกดลิงก์เข้าไลน์',       function(m){ return m.leads; }, 'desc'],
+  ['cpl',    'ต่อคนกดลิงก์เข้าไลน์',    function(m){ return m.cpl; }, 'asc'],
+  ['chats',  'ทักแชท',                 function(m){ return m.chats; }, 'desc'],
+  ['saves',  'เซฟ',                    function(m){ return m.saves; }, 'desc'],
+  ['shares', 'แชร์',                   function(m){ return m.shares; }, 'desc'],
+  ['freq',   'เห็นซ้ำ',                 function(m){ return m.freq || null; }, 'desc'],
+  ['bt_new', '✅ 🆕 คนใหม่',            function(m){ return m.bt && m.bt['new'] ? m.bt['new'].rev : 0; }, 'desc'],
+  ['bt_old', '✅ 🔁 ลูกค้าเก่า',         function(m){ return m.bt && m.bt.old ? m.bt.old.rev : 0; }, 'desc'],
+  ['bt_jay', '✅ 🥬 เคยซื้อเจ',          function(m){ return m.bt && m.bt.jay ? m.bt.jay.rev : 0; }, 'desc'],
+  ['claim',  'Meta เคลม',              function(m){ return m.claimRev; }, 'desc']
+];
+var SORTS = { concept:{ k:'cpl', d:'asc' }, ad:{ k:'spend', d:'desc' } };
+try { var _s = JSON.parse(localStorage.getItem('u360_ads_sort') || 'null'); if (_s && _s.concept && _s.ad) SORTS = _s; } catch(e){}
+function colOf(k){ for (var i = 0; i < COLS.length; i++) if (COLS[i][0] === k) return COLS[i]; return COLS[0]; }
+function headMetrics(view){
+  var s = SORTS[view];
+  return COLS.map(function(c){
+    var on = s.k === c[0];
+    var cls = 'sortable' + (c[0].indexOf('bt_') === 0 ? ' bth' : c[0] === 'claim' ? ' claimh' : '') + (on ? ' on' : '');
+    return '<th class="' + cls + '" data-sort="' + c[0] + '" title="กดเพื่อเรียงตามคอลัมน์นี้">' + c[1]
+         + '<span class="arr">' + (on ? (s.d === 'desc' ? ' ▼' : ' ▲') : '') + '</span></th>';
+  }).join('');
+}
+function sortBy(view){
+  var s = SORTS[view], c = colOf(s.k), sign = s.d === 'desc' ? -1 : 1;
+  return function(x, y){
+    var a = c[2](x), b = c[2](y), an = a == null, bn = b == null;
+    if (an !== bn) return an ? 1 : -1;
+    if (!an && a !== b) return (a - b) * sign;
+    return (y.spend || 0) - (x.spend || 0);
+  };
+}
+function sortLabel(view){
+  var s = SORTS[view], c = colOf(s.k);
+  return 'เรียงตาม' + c[1] + ' ' + (s.d === 'desc' ? 'มาก→น้อย' : 'น้อย→มาก');
+}
 function btCell(x){ return (x && x.n) ? '<b>' + x.n + '</b> · ' + baht(x.rev) : '<span class="dim">0</span>'; }
 
 function metricCells(m, crown){
@@ -407,17 +480,17 @@ function conceptView(ads){
     groups[k].ads.push(a);
   });
   var rows = order.map(function(k){ var g = groups[k]; g.m = agg(g.ads); return g; });
+  var cmp = sortBy('concept');
   rows.sort(function(x, y){
+    /* แอดชุดเก่า (ก่อน 11 ก.ย.) ไม่ใช่คอนเซปต์ → อยู่ท้ายเสมอ ไม่ว่าเรียงตามอะไร */
     if ((x.k === '__legacy') !== (y.k === '__legacy')) return x.k === '__legacy' ? 1 : -1;
-    if ((x.m.cpl==null) !== (y.m.cpl==null)) return x.m.cpl==null ? 1 : -1;
-    if (x.m.cpl!=null && x.m.cpl !== y.m.cpl) return x.m.cpl - y.m.cpl;
-    return y.m.spend - x.m.spend;
+    return cmp(x.m, y.m);
   });
   var best = null;
   rows.forEach(function(r){ if (r.k !== '__legacy' && r.m.leads >= MIN_LEADS_WIN && (!best || r.m.cpl < best.m.cpl)) best = r; });
 
-  var html = '<div class="h2row"><h2>คอนเซปต์ไหนชนะ</h2><span class="sub">รวมรหัสใบเดียวกันจากทุกชุด · กดแถวเพื่อดูแยกชุด · เรียงจากต่อคนกดลิงก์เข้าไลน์ถูกสุด</span></div>'
-    + '<div class="tblwrap"><table><thead><tr><th>คอนเซปต์</th><th>แอดวิ่ง</th>' + HEAD_METRICS + '</tr></thead><tbody>';
+  var html = '<div class="h2row"><h2>คอนเซปต์ไหนชนะ</h2><span class="sub">' + sortLabel('concept') + ' · กดหัวคอลัมน์เพื่อเรียงใหม่ · กดแถวเพื่อดูแยกชุด</span></div>'
+    + '<div class="tblwrap"><table><thead><tr><th>คอนเซปต์</th><th>แอดวิ่ง</th>' + headMetrics('concept') + '</tr></thead><tbody>';
   rows.forEach(function(r){
     var m = r.m, bad = m.freq > 3;
     html += '<tr class="crow' + (bad ? ' bad' : '') + '" data-k="' + esc(r.k) + '">'
@@ -450,16 +523,20 @@ function conceptView(ads){
 function adView(ads){
   var live = ads.filter(function(a){ return a.live !== false; });
   var stopped = ads.filter(function(a){ return a.live === false; });
-  var bySpend = function(x, y){ return y.spend - x.spend; };
-  live.sort(bySpend); stopped.sort(bySpend);
+  var mOf = function(a){
+    return { spend:a.spend, clicks:a.clicks, ctr:a.ctr, leads:a.leads, cpl:a.costPerLead, chats:a.chats,
+             saves:a.saves, shares:a.shares, freq:a.frequency, db:a.orders, dbRev:a.revenue,
+             bt: dbFor([a]).bt, claim:a.metaPurchases, claimRev:a.metaRevenue };
+  };
+  var cmp = sortBy('ad');
+  var sorted = function(list){
+    return list.map(function(a){ return { a:a, m:mOf(a) }; }).sort(function(x, y){ return cmp(x.m, y.m); });
+  };
   var table = function(list){
-    return '<div class="tblwrap"><table><thead><tr><th>ชิ้นงาน</th>' + HEAD_METRICS + '</tr></thead><tbody>'
-      + list.map(function(a){
+    return '<div class="tblwrap"><table><thead><tr><th>ชิ้นงาน</th>' + headMetrics('ad') + '</tr></thead><tbody>'
+      + sorted(list).map(function(row){
+          var a = row.a, m = row.m;
           var bad = a.flags && a.flags.length;
-          var m = { spend:a.spend, clicks:a.clicks, ctr:a.ctr, leads:a.leads, cpl:a.costPerLead, chats:a.chats,
-                    saves:a.saves, shares:a.shares, freq:a.frequency, db:a.orders, dbRev:a.revenue,
-                    bt: dbFor([a]).bt,
-                    claim:a.metaPurchases, claimRev:a.metaRevenue };
           return '<tr class="' + (bad ? 'bad' : '') + '">'
             + '<td class="adcell-wrap">' + adCell(a)
             + (bad ? '<div>' + a.flags.map(function(f){ return '<span class="flag">' + esc(f) + '</span>'; }).join('') + '</div>' : '')
@@ -467,7 +544,7 @@ function adView(ads){
         }).join('')
       + '</tbody></table></div>';
   };
-  var html = '<div class="h2row"><h2>▶️ กำลังวิ่ง ' + live.length + ' แอด</h2><span class="sub">เรียงตามเงินที่ใช้</span></div>'
+  var html = '<div class="h2row"><h2>▶️ กำลังวิ่ง ' + live.length + ' แอด</h2><span class="sub">' + sortLabel('ad') + ' · กดหัวคอลัมน์เพื่อเรียงใหม่</span></div>'
     + (live.length ? table(live) : '<div class="msg">ไม่มีแอดที่กำลังวิ่งในกลุ่มนี้</div>');
   if (stopped.length) html += '<details class="stopped"><summary>⏸️ หยุดแล้ว ' + stopped.length + ' แอด — กดดู (ไม่ได้ใช้เงินเพิ่มแล้ว)</summary>' + table(stopped) + '</details>';
   return html;
