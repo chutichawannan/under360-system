@@ -3,7 +3,7 @@
    รัน: node scripts/tests/test_utm_attribution.mjs                                */
 import fs from 'fs';
 
-const src = fs.readFileSync(new URL('../../liff_customer.html', import.meta.url), 'utf8');
+const src = fs.readFileSync(new URL('../../liff_customer.html', import.meta.url), 'utf8').split(String.fromCharCode(13)).join('');
 function grab(name){
   const i = src.indexOf('function '+name+'(');
   if(i<0) throw new Error('ไม่เจอฟังก์ชัน '+name);
@@ -67,7 +67,9 @@ const guard = src.includes('if(_utm) orderPayload.source_campaign = _utm;');
 console.log((guard?'  ✅ ':'  ❌ ')+'ใส่ฟิลด์เฉพาะตอนมีค่า ไม่ส่ง null ไปทับ');
 guard?pass++:fail++;
 
-const wrapped = /try\{\s*\n\s*const _utm = utmTag\(\);[\s\S]{0,120}?\}catch\(e\)\{/.test(src);
+/* 11 ก.ย. 2569: ช่วงค้น 120 → 1500 ตัวอักษร — บล็อกนี้ยาวขึ้นตั้งแต่เพิ่ม source_content (8 ก.ย.)
+   ข้อนี้เลยแดงมาตลอดทั้งที่โค้ดครอบ try/catch จริง · และตัด CR ออกก่อน (ไฟล์เป็น CRLF) */
+const wrapped = /try\{\s*\n\s*const _utm = utmTag\(\);[\s\S]{0,1500}?\}catch\(e\)\{/.test(src);
 console.log((wrapped?'  ✅ ':'  ❌ ')+'ครอบ try/catch — utmTag พังก็สั่งของได้');
 wrapped?pass++:fail++;
 

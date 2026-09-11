@@ -2859,6 +2859,7 @@ async function init() {
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
   hasSourceContentColumn = !val(scR).error;   // ยังไม่รัน SQL = false → ไม่ยัดลง payload
+  try{ utmRemember(); }catch(e){}   // 📣 จำที่มากับตัวลูกค้าไว้ก่อน (ไม่รอ) — กลับมาทางริชเมนูวันหลังยังรู้ว่ามาจากแอดไหน
   hasPaymentStatusColumn = !val(payR).error;
   customerOrderCount = (ocR.status==='fulfilled' && typeof ocR.value.count==='number') ? ocR.value.count : null; // นับออเดอร์เก่า → guard โปรลูกค้าใหม่
 
@@ -4679,6 +4680,7 @@ async function submitOrder() {
     };
     /* 📣 แปะที่มาของออเดอร์ — ใส่เฉพาะตอนมีค่าจริง ไม่มีก็ไม่แตะ payload เลย
        (ห้ามส่ง null ไปทับของเดิม และห้ามทำให้ออเดอร์ที่ไม่มี UTM พัง) */
+    try{ await utmMemWait(); }catch(e){}   // 📣 รอของที่จำไว้สั้น ๆ (≤1.5 วิ) · ไม่ได้ก็ไปต่อ
     try{
       const _utm = utmTag();
       if(_utm) orderPayload.source_campaign = _utm;
@@ -4686,6 +4688,13 @@ async function submitOrder() {
          ยังไม่ได้รัน SQL = ข้ามไปเงียบ ๆ ออเดอร์ไม่พัง */
       const _con = utmContent();
       if(_con && hasSourceContentColumn) orderPayload.source_content = _con;
+      /* 📣 ไม่มีที่มาสด → ใช้ที่จำไว้กับตัวลูกค้า (ภายใน UTM_MAX_AGE_DAYS)
+         → ไม่มีเลย = บันทึกชัดว่า "ไม่ทราบที่มา" แทนการปล่อยว่าง (นัทสั่ง 11 ก.ย.: แยก "ไม่มีจริง" ออกจาก "ระบบลืมเก็บ") */
+      if(!_utm){
+        const _mem = utmMemTag();
+        orderPayload.source_campaign = _mem ? _mem.tag : UTM_UNKNOWN_TAG;
+        if(_mem && _mem.content && hasSourceContentColumn && !orderPayload.source_content) orderPayload.source_content = _mem.content;
+      }
     }catch(e){ /* พลาดตรงนี้ = แค่ไม่รู้ที่มา ห้ามบล็อกการสั่ง */ }
     // ส่ง want_utensils เฉพาะตอนที่รัน scripts/sql_utensils.sql แล้ว (เช็คตอน init) กันออเดอร์พังถ้ายังไม่รัน
     if (hasUtensilColumn) {
@@ -5281,7 +5290,9 @@ async function saveBirthday(){
      ② localStorage u360_utm ที่เว็บ (index/mealplan/blog) เขียนไว้แล้ว — ทางเดียวกับ track()
    🔴 กฎเหล็กของงานนี้: ไม่มี UTM ต้องสั่งได้เหมือนเดิม — ทุกจุด try/catch และถ้าไม่มีค่า
       จะไม่ยัดฟิลด์ลง payload เลย (ไม่ส่ง null ไปให้ DB ตีความ) */
-const UTM_MAX_AGE_DAYS = 30;   // เกินนี้ = ไม่นับว่ามาจากแอดตัวนั้นแล้ว (กันแอดเก่าเคลมยอดใหม่)
+const UTM_MAX_AGE_DAYS = 7;    // เกินนี้ = ไม่นับว่ามาจากแอดตัวนั้นแล้ว (กันแอดเก่าเคลมยอดใหม่)
+                               // 11 ก.ย. 2569: 30 → 7 วัน ให้ตรงหน้าต่างที่ Meta นับ (06 Ads ขอ · นัทเคาะ "ภายใน 7 วัน")
+                               // ใช้ร่วมกันทั้งที่มาในเครื่อง (localStorage) และที่จำไว้กับตัวลูกค้า (kitchen_data) — เกณฑ์เดียว
 function utmRead(){
   try{
     const p = new URLSearchParams(location.search);
@@ -5316,6 +5327,61 @@ function utmTag(){
   const parts = [clean(u.source), clean(u.medium), clean(u.campaign)].filter(Boolean);
   const tag = parts.join('/');
   return tag ? tag.slice(0,120) : null;
+}
+/* ══ 📣 ที่มาของออเดอร์แบบ "จำไว้กับตัวลูกค้า" (06 Ads → u · นัทเคาะ 11 ก.ย. 2569) ══
+   ปัญหา: ที่มาเดิมเก็บไว้แค่ในเครื่อง (localStorage) — ลูกค้ากดแอด → เปิด LIFF → ปิด
+          → วันหลังกลับมาทางริชเมนู URL ไม่มี utm และเบราว์เซอร์ในแอป LINE อาจล้างที่เก็บไปแล้ว
+          → ออเดอร์นั้นไม่มีที่มา · เคสจริง: ลูกค้าใหม่จากแอด สั่ง 2 ใบใน 3 วัน ไม่ติดที่มาทั้งคู่
+   แก้:   เปิด LIFF แล้วมี utm ใน URL → จำลง kitchen_data คีย์ 'utm:{line_uid}' ทันที ไม่ต้องรอสั่ง
+          ตอนสั่ง ถ้าไม่มีที่มาสด → ใช้ที่จำไว้ถ้ายังไม่เกิน UTM_MAX_AGE_DAYS → ไม่มีเลย = บันทึก "ไม่ทราบที่มา"
+   ทำไม kitchen_data: ไม่ต้องรัน SQL · แพทเทิร์นเดียวกับกระเป๋าคูปอง 'cw:{uid}' ที่ใช้อยู่แล้ว
+   ทำไมไม่ใช้ customers.source_campaign: คอลัมน์นั้นเก็บที่มาเดิมของลูกค้าเก่า (เช่น ploy_je_2562_2566)
+          และหน้าแอดมินโชว์อยู่ — เขียนทับ = ประวัติลูกค้าหาย
+   กติกา: utm สดใน URL ชนะของที่จำไว้เสมอ · ไม่มี utm ต้องสั่งได้เหมือนเดิมทุกกรณี · พลาดตรงไหน = แค่ไม่รู้ที่มา
+   🔴 "ไม่ทราบที่มา" = 'direct/none' — ขึ้นต้นไม่ตรงกับ fb/paid/ · google/ · kol/ ที่หน้า /ads และ kol นับอยู่
+      จึงไม่ถูกนับเป็นยอดจากแอด · แต่แยกออกได้ชัดว่า "ไม่มีที่มาจริง" ไม่ใช่ "ระบบลืมเก็บ" */
+const UTM_MEM_PREFIX = 'utm:';
+const UTM_UNKNOWN_TAG = 'direct/none';
+let utmMem = null;        // { source, medium, campaign, content, ts } ของลูกค้าคนนี้
+let utmMemReady = null;   // งานโหลด/บันทึกตอนเปิดแอป (ไว้รอสั้น ๆ ตอนกดสั่ง)
+function utmMemTag(){
+  try{
+    const u = utmMem;
+    if(!u || !u.source) return null;
+    if(!u.ts || (Date.now() - Number(u.ts)) > UTM_MAX_AGE_DAYS*86400000) return null;
+    const clean = v => String(v||'').trim().replace(/[^A-Za-z0-9._-]/g,'').slice(0,40);
+    const tag = [clean(u.source), clean(u.medium), clean(u.campaign)].filter(Boolean).join('/');
+    if(!tag) return null;
+    return { tag: tag.slice(0,120), content: clean(u.content) || null };
+  }catch(e){ return null; }
+}
+function utmRemember(){
+  utmMemReady = (async () => {
+    try{
+      const uid = (lineProfile && lineProfile.userId) || '';
+      if(!uid || typeof sb === 'undefined' || !sb) return;
+      const p = new URLSearchParams(location.search);
+      const src = String(p.get('utm_source') || '').trim();
+      /* มีที่มาสดใน URL → จำทับของเก่าเสมอ (last-touch) · 'liff' คือแท็กภายในของเราเอง ไม่ใช่ที่มา */
+      if(src && src.toLowerCase() !== 'liff'){
+        const u = { source: src, medium: p.get('utm_medium') || '', campaign: p.get('utm_campaign') || '',
+                    content: p.get('utm_content') || '', ts: Date.now() };
+        utmMem = u;
+        await sb.from('kitchen_data').upsert({ key: UTM_MEM_PREFIX + uid, data: u }, { onConflict:'key' });
+        return;
+      }
+      /* ไม่มีที่มาสด → ดึงของที่จำไว้ (ถ้ามี) มาเตรียมไว้ใช้ตอนสั่ง */
+      const r = await sb.from('kitchen_data').select('data').eq('key', UTM_MEM_PREFIX + uid).maybeSingle();
+      const d = r && r.data && r.data.data;
+      if(d && d.source) utmMem = d;
+    }catch(e){ /* จำไม่ได้ = แค่ไม่รู้ที่มา ห้ามทำให้แอปพัง */ }
+  })();
+  return utmMemReady;
+}
+/* ตอนกดสั่ง: รอของที่จำไว้สั้น ๆ ไม่เกิน 1.5 วิ — ช้ากว่านั้นไปต่อเลย ห้ามให้ลูกค้ารอเพราะเรื่องสถิติ */
+async function utmMemWait(){
+  if(!utmMemReady) return;
+  await Promise.race([ utmMemReady, new Promise(r => setTimeout(r, 1500)) ]);
 }
 
 // normalize เบอร์ให้เทียบกันได้ (DB เก็บเป็น 0xxxxxxxxx)
