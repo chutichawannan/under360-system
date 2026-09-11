@@ -5,6 +5,7 @@
  * แก้ 3 ที่พร้อมกัน (ไม่ครบ = พังเงียบ): menu_items.code · kitchen_data.recipes · menu_special_weeks
  * กันชน: ทำจากท้ายโซ่ก่อนเสมอ · ตัวไหนมีออเดอร์ยังไม่ส่ง/มี subcode = หยุดทั้งชุด
  *
+ * หลังรันจริง: node scripts/niw/backfill_order_codes.mjs --dry แล้วรันจริง (ไม่งั้นด่าน 90 วันอ่านประวัติเมนูคนเก่า)
  * รัน: node scripts/niw/sd_apply_week0914.mjs --dry   แล้วค่อยรันจริง
  */
 const SB='https://zdartbvhbvqlwzwyyiia.supabase.co';
@@ -57,8 +58,9 @@ async function main(){
   if(!r.ok){console.log('  🔴 หยุด: '+r.status+' '+await r.text());return;}
   // ตามแก้สูตร + ประวัติสัปดาห์
   if(Array.isArray(recipes)) for(const x of recipes) if(x&&x.code===m.from) x.code=m.to;
-  if(weeks&&typeof weeks==='object') for(const wk of Object.keys(weeks)){
-    const v=weeks[wk]; if(Array.isArray(v)) weeks[wk]=v.map(c=>c===m.from?m.to:c);
+  // menu_special_weeks จริงเก็บแบบ { รหัส: 'สัปดาห์' } — ต้องย้าย key ตาม (บั๊กเดิมทำ D101→D134 ค้าง แก้มือ 11 ก.ย.)
+  if(weeks&&typeof weeks==='object'&&!Array.isArray(weeks)&&Object.prototype.hasOwnProperty.call(weeks,m.from)){
+    weeks[m.to]=weeks[m.from]; delete weeks[m.from];
   }
  }
  if(!DRY){
