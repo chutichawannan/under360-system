@@ -322,7 +322,7 @@ function render(){
   else el.innerHTML=viewAdmin();
   /* หน้านับของ: เลื่อนแถบหมวดให้เห็นปุ่มที่เลือกอยู่ — เปิดมาครั้งหน้าปุ่มที่จำไว้อาจอยู่ขวาสุดนอกจอ
      รอให้ส่วน polish จัดหน้าเสร็จก่อน (setTimeout 0) · เลื่อนแนวนอนอย่างเดียว ไม่ให้หน้ากระโดด */
-  if(VIEW==='count') setTimeout(()=>{ try{ const bar=document.querySelector('.catbar'), on=bar&&bar.querySelector('.catchip.on');
+  if(VIEW==='count'||VIEW==='admin') setTimeout(()=>{ try{ const bar=document.querySelector('.catbar'), on=bar&&bar.querySelector('.catchip.on');
     if(bar&&on) bar.scrollLeft=Math.max(0, on.offsetLeft - (bar.clientWidth-on.clientWidth)/2); }catch(e){} },0);
 }
 
@@ -609,26 +609,43 @@ async function savePlan(mid,val){
    หน้านี้จึงต้องตอบคำถามเดียว: **หยิบตัวไหนไปแทนได้โดยไม่ไปกินของคนอื่น** */
 function viewAdmin(){
   const bk=bookedMap();
-  const rows=MENUS.filter(m=>m.is_available!==false).map(m=>{
+  /* หมวด: ใช้ตัวเดียวกับหน้านับของ — เลือกหมวดที่แท็บไหน อีกแท็บก็ติดตาม (นัทสั่ง 12 ก.ย. ผ่าน 05) */
+  const openMenus=MENUS.filter(m=>m.is_available!==false);
+  const groups=countGroups(openMenus);
+  if(COUNT_CAT!=='all' && !groups.some(g=>g.key===COUNT_CAT)) COUNT_CAT='all';   // หมวดที่เคยเลือกไม่มีแล้ว
+  const pick=openMenus.filter(m=>COUNT_CAT==='all'||catKey(m)===COUNT_CAT);
+  const rows=pick.map(m=>{
     const have=(m.actual_stock==null)?null:Number(m.actual_stock);
     const b=bk[m.id]||0;
     return {m,have,b,free:(have==null?null:have-b)};
   });
-  const okList=rows.filter(r=>r.free!=null&&r.free>0).sort((a,b)=>b.free-a.free);
   const bad=rows.filter(r=>r.free!=null&&r.free<0);
-  let h='<div class="hint">ตัวเลขนี้<b>ครัวไม่เห็น</b> — มีไว้ตอบคำถามเดียว: <b>หยิบเมนูไหนไปแทนได้ โดยไม่ไปกินของที่ลูกค้าคนอื่นจองไว้แล้ว</b></div><div class="wrap">';
-  if(bad.length){
-    h+='<div class="sec">🔴 จองเกินของที่นับได้ ('+bad.length+' เมนู) — ห้ามหยิบไปแทนเด็ดขาด</div>';
-    bad.forEach(r=>{ h+=adminRow(r); });
-  }
-  h+='<div class="sec">✅ ว่างจริง หยิบไปแทนได้ ('+okList.length+' เมนู)</div>';
-  h+= okList.length?okList.map(adminRow).join(''):'<div class="empty">ไม่มีเมนูที่ว่างเลย</div>';
+  const okList=rows.filter(r=>r.free!=null&&r.free>0).sort((a,b)=>b.free-a.free);
   const none=rows.filter(r=>r.free!=null&&r.free===0);
-  if(none.length){ h+='<div class="sec">⚪ พอดีเป๊ะ ไม่เหลือ ('+none.length+' เมนู)</div>'+none.map(adminRow).join(''); }
-  /* เมนูที่ไม่เคยมีใครนับ (actual_stock = null) เดิมหายไปจากหน้านี้ทั้งหมด — แอดมินมองไม่เห็นว่ามีเมนูที่ยังไม่รู้จำนวนจริง
-     (reviewer ของชุด polish 11 ก.ย. ชี้ไว้) · ห้ามจัดเข้า "ว่างจริง" เพราะไม่รู้ว่ามีของหรือเปล่า */
   const unknown=rows.filter(r=>r.free==null);
-  if(unknown.length){ h+='<div class="sec">❔ ยังไม่เคยนับ — ไม่รู้ว่ามีของจริงเท่าไหร่ ('+unknown.length+' เมนู) · อย่าหยิบไปแทนจนกว่าครัวจะนับ</div>'+unknown.map(adminRow).join(''); }
+  /* พับกลุ่มได้เหมือนหน้านับของ — เก็บสถานะพับด้วยคีย์ adm: กันชนกับหมวดของหน้านับ */
+  const sec=(key,label,list)=>{
+    if(!list.length) return '';
+    const folded=!!COUNT_FOLD['adm:'+key];
+    let x='<button type="button" class="sec cathead'+(folded?' folded':'')+'" aria-expanded="'+(!folded)+'" onclick="toggleCountFold(\'adm:'+key+'\')">'
+      +'<span class="caret">'+(folded?'▸':'▾')+'</span> '+label+' <span class="catn">'+list.length+' เมนู</span></button>';
+    if(!folded) x+=list.map(adminRow).join('');
+    return x;
+  };
+  let h='<div class="hint">ตัวเลขนี้<b>ครัวไม่เห็น</b> — มีไว้ตอบคำถามเดียว: <b>หยิบเมนูไหนไปแทนได้ โดยไม่ไปกินของที่ลูกค้าจองไว้</b><br>เลขใหญ่ = ในตู้ − จองแล้ว</div>';
+  /* แถบปุ่มหมวด — ชุดเดียวกับหน้านับของ (ทั้งหมด + หมวดที่มีเมนูจริง เรียงตามจำนวน) */
+  h+='<div class="catbar" role="group" aria-label="เลือกหมวดเมนู">'
+    +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
+    + groups.map(g => '<button type="button" class="catchip'+(COUNT_CAT===g.key?' on':'')+'" onclick="pickCountCat(\''+esc(g.key)+'\')">'+esc(catLabel(g.key))+' <b>'+g.items.length+'</b></button>').join('')
+    +'</div><div class="wrap">';
+  if(!rows.length) return h+'<div class="empty">หมวดนี้ยังไม่มีเมนูเปิดขาย</div></div>';
+  h+=sec('bad','🔴 จองเกินของที่นับได้ — ห้ามหยิบไปแทนเด็ดขาด',bad);
+  h+=sec('ok','✅ ว่างจริง หยิบไปแทนได้',okList);
+  if(!okList.length) h+='<div class="empty">หมวดนี้ไม่มีเมนูที่ว่างเลย</div>';
+  h+=sec('none','⚪ พอดีเป๊ะ ไม่เหลือ',none);
+  /* เมนูที่ไม่เคยมีใครนับ (actual_stock = null) ห้ามจัดเข้า "ว่างจริง" เพราะไม่รู้ว่ามีของหรือเปล่า
+     (reviewer ของชุด polish 11 ก.ย. ชี้ไว้ — เดิมหายไปจากหน้านี้ทั้งหมด) */
+  h+=sec('unknown','❔ ยังไม่เคยนับ — ไม่รู้ว่ามีของจริงเท่าไหร่ · อย่าหยิบไปแทนจนกว่าครัวจะนับ',unknown);
   return h+'</div>';
 }
 function adminRow(r){
