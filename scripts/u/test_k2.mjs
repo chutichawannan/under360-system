@@ -227,6 +227,31 @@ ok('k2 ไม่เขียน stock_incoming เอง (ช่องนี้�
     ok('เมนูสัปดาห์ถัดไป/ไม่อยู่ในแผน → ไม่โชว์', f.weekPlanOf({ code: 'D158' }, '2026-09-21') === null && f.weekPlanOf({ code: 'S017' }, '2026-09-14') === null);
   }
 }
+console.log('\n14) ข้อจำกัดอาหาร (แพ้/ไม่ทาน) — ครัวต้องเห็นก่อนหยิบของ · หน้าเดิมมีมาตลอด');
+ok('โหลด customer_preferences', NEW.indexOf("from('customer_preferences').select('customer_id,allergies,dislikes')") >= 0);
+ok('ดึง customer_id + line_uid มากับใบ (ไม่งั้นหาข้อจำกัดไม่เจอ)',
+   NEW.indexOf('source,total,customer_id,line_uid') >= 0);
+ok('ซอยเป็นก้อน กัน URL ยาวเกิน', /ids\.slice\(i,\s*i\+60\)/.test(NEW));
+ok('การ์ดออเดอร์เรียก dietHtml', NEW.indexOf('+dietHtml(o);') >= 0);
+ok('อ่านไม่ได้ต้องไม่ทำทั้งหน้าพัง (มี try/catch)', /catch\(e\)\{ PREFS=\{\}; \}/.test(NEW));
+{
+  const fn = grab(NEW, 'function dietHtml(');
+  ok('ดึง dietHtml ออกมาได้', !!fn);
+  if (fn) {
+    const mk = (prefs) => new Function('PREFS', 'esc', fn + '; return dietHtml;')(prefs, (x) => String(x));
+    const byId = mk({ c1: { allergies: 'กุ้ง', dislikes: '' }, 'U-line': { allergies: '', dislikes: 'ผักชี' }, c3: { allergies: 'ถั่ว', dislikes: 'เผ็ด' }, c4: { allergies: '', dislikes: '' } });
+    const has = (h, t) => String(h).indexOf(t) >= 0;
+    ok('แพ้ → ขึ้นป้ายแดง พร้อมคำว่าแพ้', has(byId({ customer_id: 'c1' }), 'diet-al') && has(byId({ customer_id: 'c1' }), 'แพ้ กุ้ง'));
+    ok('หาไม่เจอด้วย customer_id → ใช้ line_uid ต่อ (ของจริงมีเคสนี้)',
+       has(byId({ customer_id: 'ไม่มีในตาราง', line_uid: 'U-line' }), 'ไม่ทาน ผักชี'));
+    ok('มีทั้งแพ้และไม่ทาน → ขึ้นทั้งคู่ แพ้มาก่อน',
+       (() => { const h = byId({ customer_id: 'c3' }); return has(h, 'แพ้ ถั่ว') && has(h, 'ไม่ทาน เผ็ด') && h.indexOf('diet-al') < h.indexOf('diet-dl'); })());
+    ok('มีแถวแต่ว่างทั้งคู่ → ไม่ขึ้นอะไรเลย', byId({ customer_id: 'c4' }) === '');
+    ok('ลูกค้าที่ไม่มีข้อจำกัด → ไม่ขึ้นอะไรเลย', byId({ customer_id: 'zzz' }) === '');
+    ok('ใบที่ไม่มีตัวตนลูกค้า → ไม่พัง', byId({}) === '' && byId(null) === '');
+  }
+}
+
 console.log('\n────────────────────────────');
 console.log(fail ? '❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass : '✅ ผ่านทั้งหมด ' + pass + ' ข้อ');
 if (fail) process.exitCode = 1;

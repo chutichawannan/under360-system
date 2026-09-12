@@ -141,6 +141,10 @@ body>.sum{margin-top:4px;margin-bottom:12px;padding:13px 16px;border-radius:16px
 .cathead .catwarn{margin-left:auto;font-size:11px;font-weight:600;color:#936529;background:#fff6e8;border-radius:99px;padding:2px 8px}
 .cathead .catok{margin-left:auto;font-size:11px;font-weight:600;color:var(--g);background:var(--gs);border-radius:99px;padding:2px 8px}
 .cathead.folded{border-bottom:1px solid #e2e9e3;padding-bottom:10px}
+/* ⚠️ ข้อจำกัดอาหารบนการ์ด (12 ก.ย. 2569) — แพ้ต้องสะดุดตากว่าไม่ทานชัดเจน */
+.diet{margin:4px 0 0;padding:5px 9px;border-radius:9px;font-size:12px;font-weight:700;line-height:1.45}
+.diet-al{background:#fde8e4;color:#a4291b;border:1.5px solid #f0b4aa}
+.diet-dl{background:#fff4e2;color:#8a5a12;border:1px solid #f2ddb8}
 </style>
 </head>
 <body>
@@ -220,6 +224,8 @@ let VIEW='pack', DAY=thaiToday(), USER='';
 let MENUS=[], ORDERS=[], ITEMS={}, PACK={}, PLAN={}, HIST=[];
 /* 11 ก.ย. 2569 (นัท "เติมเลยด่วน"): กำลังผลิต (stock_incoming) · แผนป้าย+ยอดวางขายของนิว · รอบ Meal Plan */
 let INC={}, SUBPLAN={}, STOCKPLAN={}, MPD=[];
+/* ข้อจำกัดอาหารของลูกค้า (แพ้/ไม่ทาน) — คีย์ได้ทั้ง customer_id และ line_uid เหมือนหน้าครัวเดิม */
+let PREFS={};
 
 function setUser(){
   const n=(prompt('ใส่ชื่อคุณ (ระบบจำไว้ใช้ตอนบันทึก)',USER||'')||'').trim();
@@ -240,7 +246,7 @@ async function loadAll(){
        เพราะใบที่สั่งไว้ก่อนปิดขาย ยังมีของค้างอยู่จริง (เคสจริง 11 ก.ย.: S184 ปิดแล้ว แต่คุณ Golf ยังรอ 2 กล่อง)
        หน้านับของค่อยกรองเอาเฉพาะที่เปิดขายทีหลัง */
     s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available,category').limit(1000),
-    s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total')
+    s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total,customer_id,line_uid')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
     s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig','stock_incoming','weekly_subcode_plan','weekly_stock_plan']).limit(10),
     /* รอบ Meal Plan — หน้าครัวเดิมมีคิวนี้ · k2 เดิมอ่านจากใบอย่างเดียว รอบที่ใบลงวันอื่นจึงหายจากจอ */
@@ -248,6 +254,19 @@ async function loadAll(){
   ]);
   MENUS=(mr.data||[]).sort((a,b)=>shortCode(a).localeCompare(shortCode(b),'th',{numeric:true}));
   ORDERS=(or_.data||[]).filter(o=>o.status!=='cancelled'&&o.source!=='parallel_test');
+  /* 🔴 ข้อจำกัดอาหาร — ครัวต้องเห็นก่อนจัดของ (หน้าครัวเดิมมีมาตลอด · k2 เพิ่งเติม 12 ก.ย. 2569)
+     ถามทั้ง customer_id และ line_uid เพราะฝั่งโปรไฟล์เขียน fallback เป็น line_uid ตอนหา customer id ไม่เจอ
+     ซอยเป็นก้อนละ 60 กัน URL ยาวเกินตอนออเดอร์เยอะ (บทเรียนเดียวกับหน้าเดิม) */
+  PREFS={};
+  try{
+    const ids=[];
+    ORDERS.forEach(o=>{ if(o.customer_id&&ids.indexOf(o.customer_id)<0) ids.push(o.customer_id);
+                        if(o.line_uid&&ids.indexOf(o.line_uid)<0) ids.push(o.line_uid); });
+    for(let i=0;i<ids.length;i+=60){
+      const pf=await s.from('customer_preferences').select('customer_id,allergies,dislikes').in('customer_id',ids.slice(i,i+60)).limit(200);
+      (pf.data||[]).forEach(p=>{ PREFS[p.customer_id]=p; });
+    }
+  }catch(e){ PREFS={}; }   /* อ่านไม่ได้ = ไม่โชว์ ดีกว่าทำให้ทั้งหน้าพัง — แต่ครัวจะไม่เห็นคำเตือน */
   MPD=((mpr&&mpr.data)||[]).filter(r=>r.status!=='cancelled');
   (kd.data||[]).forEach(r=>{ if(r.key==='stock_incoming')INC=r.data||{}; if(r.key==='weekly_subcode_plan')SUBPLAN=r.data||{}; if(r.key==='weekly_stock_plan')STOCKPLAN=r.data||{}; });
   (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{};
@@ -388,6 +407,18 @@ function viewPack(){
      ชื่อลูกค้า (+ ชื่อไลน์ถ้าไม่ตรงกัน) · เลขใบ · ตัวนับกล่อง · ช้อนส้อม
    ⚠️ ช้อนส้อม: ค่า null/undefined = ใส่ (default true ใน DB) — เช็คแบบเดียวกับหน้าเก่าเป๊ะ
       ถ้าเช็คด้วย if(o.want_utensils) ใบเก่าที่ไม่มีค่าจะกลายเป็น "ไม่ต้องใส่" ทั้งหมด = ครัวลืมใส่ช้อน */
+/* ⚠️ ป้ายข้อจำกัดอาหาร — แพ้ = อันตรายถึงชีวิต · ไม่ทาน = ความชอบ
+   ไม่มีข้อจำกัด = ไม่ขึ้นอะไรเลย (ถ้าขึ้นทุกใบ ครัวจะชินแล้วเลิกอ่าน — กติกาเดียวกับหน้าครัวเดิม) */
+function dietHtml(o){
+  const p = o ? (PREFS[o.customer_id] || PREFS[o.line_uid]) : null;
+  if(!p) return '';
+  const al=String(p.allergies||'').trim(), dl=String(p.dislikes||'').trim();
+  if(!al&&!dl) return '';
+  let h='';
+  if(al) h+='<div class="diet diet-al">⚠️ แพ้ '+esc(al)+'</div>';
+  if(dl) h+='<div class="diet diet-dl">ไม่ทาน '+esc(dl)+'</div>';
+  return h;
+}
 function cardHtml(o,urgent){
   const its=ITEMS[o.id]||[], p=PACK[o.id]||{}, b=boxesOf(o), dn=packedOf(o);
   const packed=(o.status==='ready'||o.status==='delivered');
@@ -401,7 +432,8 @@ function cardHtml(o,urgent){
      +'<span class="oid">'+esc(o.order_number||'—')+'</span>'
      +'<span class="chip'+(wantU?' u-yes':' u-no')+'">'+(wantU?'🥄🍴 ใส่ช้อนส้อม':'❌ ไม่ต้องช้อนส้อม')+'</span>'
      +(packed?'<span class="chip st">✅ จัดกล่องแล้ว</span>':'')
-   +'</div>';
+   +'</div>'
+   +dietHtml(o);
   its.forEach(it=>{
     const m=MENUS.find(x=>x.id===it.menu_item_id)||{code:it.menu_code,name:it.menu_name};
     const q=it.quantity||1, on=(Number(p[it.id])||0)>=q;
