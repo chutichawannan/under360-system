@@ -2832,6 +2832,20 @@ async function loadMenus(){
       if(ia<0) ia=9999; if(ib<0) ib=9999;
       return ia-ib;
     });
+/* 🔢 ข้อความสต็อกบนการ์ดเมนู (12 ก.ย. 2569 — นัทถามว่าแอดมินจะงงไหม)
+   ความหมายของ 2 คอลัมน์ (ห้ามสลับ):
+     actual_stock = ที่ครัวนับได้ในตู้ (รวมถุงที่แพ็คไว้แล้ว ของออกจากตู้ตอนส่งจริง)
+     stock_total  = ที่ลูกค้าซื้อได้อีก = max(0, นับได้ − ที่จองไว้)  · null = ขายไม่จำกัด
+   จอง = นับได้ − ซื้อได้อีก (ย้อนสูตร ไม่ต้องยิง order_items เพิ่ม)
+   ⛔ เดิมอ่าน stock_reserved ซึ่งไม่มีใครเขียนเลย → ขึ้น "พร้อม" ตลอดแม้ของถูกจองหมด */
+function ohStockLabel(m){
+  var counted = (m && m.actual_stock != null) ? Number(m.actual_stock) : null;
+  var left    = (m && m.stock_total  != null) ? Number(m.stock_total)  : null;
+  if (left == null) return { txt: counted == null ? "ขายไม่จำกัด" : ("นับได้ " + counted + " · ขายไม่จำกัด"), warn: false };
+  if (counted == null) return { txt: "ยังไม่เคยนับ · ซื้อได้อีก " + left, warn: left === 0 };
+  var booked = Math.max(0, counted - left);
+  return { txt: "นับได้ " + counted + " · จอง " + booked + " · ซื้อได้อีก " + left, warn: left === 0 };
+}
     var h="";
     order.forEach(function(cat){
       var items=groups[cat];
@@ -2843,8 +2857,9 @@ async function loadMenus(){
         h+="<div class='menu-card-img"+(showImages?"":" hide-img")+"'>🍱</div>";
         h+="<div class='menu-card-body'><div class='menu-code'>"+(m.code||"—")+"</div>";
         h+="<div class='menu-name'>"+esc2(m.name)+"</div>";
-        h+="<div class='menu-stock'><div class='stock-dot"+(m.stock_reserved>0?" low":"")+"'></div>";
-        h+="<span>"+(m.stock_reserved>0?"จอง "+m.stock_reserved:"พร้อม")+"</span>";
+        var st=ohStockLabel(m);
+        h+="<div class='menu-stock'><div class='stock-dot"+(st.warn?" low":"")+"'></div>";
+        h+="<span>"+st.txt+"</span>";
         h+="<span style='margin-left:auto;font-family:var(--mono);font-weight:600;color:#1F4D3A'>฿"+(m.price||0)+"</span></div>";
         h+="<div class='menu-note-wrap'><button class='note-toggle' onclick=\"this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.textContent=this.nextElementSibling.style.display==='block'?'▲ ปิด':'▼ โน้ต'\">▼ โน้ต</button>";
         h+="<textarea class='menu-note' rows='1' placeholder='โน้ต...' style='display:none;width:100%;margin-top:4px;font-size:12px;border:1px solid #D1FAE5;border-radius:5px;padding:4px 7px;font-family:inherit;resize:vertical'></textarea></div>";
