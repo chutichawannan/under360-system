@@ -176,7 +176,10 @@ console.log('\n12) หน้านับของ: แยกหมวด + ป�
 ok('โหลดหมวดของเมนูมาด้วย', NEW.indexOf("stock_total,actual_stock,is_available,category').limit(1000)") >= 0);
 ok('โหลดชื่อไทยของหมวดจาก appConfig', NEW.indexOf("'k2_pack','k2_plan','appConfig'") >= 0);
 ok('มีปุ่มเลือกหมวดและหัวข้อพับได้', ['function pickCountCat(', 'function toggleCountFold(', 'function countGroups(', 'class="catbar"', 'cathead'].every(x => NEW.indexOf(x) >= 0));
-ok('หมวดที่พับ/ไม่ได้เลือก ตัดออกตอน render ไม่ใช่ซ่อนด้วย hidden (กันส่วน polish เปิดกลับเอง)', NEW.indexOf('if(folded) return;') >= 0 && NEW.indexOf("COUNT_CAT === 'all' || g.key === COUNT_CAT") >= 0);
+/* 12 ก.ย.: เพิ่มตัวเลือก 🎯 ต้องนับวันนี้ → เงื่อนไขกรองยาวขึ้น · เทสจับ "เจตนา" ไม่ผูกกับข้อความเป๊ะ
+   เจตนา: หมวดที่พับ/ไม่ได้เลือก ต้อง **ไม่ถูกสร้างเป็น HTML เลย** (ถ้าซ่อนด้วย hidden ส่วน polish จะเปิดกลับเอง) */
+ok('หมวดที่พับ/ไม่ได้เลือก ตัดออกตอน render ไม่ใช่ซ่อนด้วย hidden (กันส่วน polish เปิดกลับเอง)',
+   NEW.indexOf('if(folded) return;') >= 0 && /groups\.filter\(g =>[^)]*g\.key === COUNT_CAT\)\.forEach/.test(NEW));
 ok('หมวดที่ไม่มีชื่อไทยใน appConfig มีชื่อสำรอง (คอร์สเจ / Hyrox)', NEW.indexOf("jay2026:'คอร์สเจ 2569'") >= 0 && NEW.indexOf("hyrox:'Hyrox'") >= 0);
 ok('จำหมวดที่เลือก/ที่พับไว้ในเครื่อง และครอบ try/catch', NEW.indexOf("try{ COUNT_CAT = localStorage.getItem('k2_count_cat')") >= 0);
 ok('หัวข้อหมวดบอกจำนวนที่ยังไม่นับ', NEW.indexOf('ยังไม่นับ ') >= 0);
@@ -254,6 +257,33 @@ ok('อ่านไม่ได้ต้องไม่ทำทั้งหน�
     ok('มีแถวแต่ว่างทั้งคู่ → ไม่ขึ้นอะไรเลย', byId({ customer_id: 'c4' }) === '');
     ok('ลูกค้าที่ไม่มีข้อจำกัด → ไม่ขึ้นอะไรเลย', byId({ customer_id: 'zzz' }) === '');
     ok('ใบที่ไม่มีตัวตนลูกค้า → ไม่พัง', byId({}) === '' && byId(null) === '');
+  }
+}
+
+console.log('\n15) ลดเวลานับของครัว (นัทยกเอง 12 ก.ย. "นับของมันนาน" · พี่ปืนเคาะให้ทำ)');
+ok('เปิดหน้ามาเจอ "ต้องนับวันนี้" เป็นค่าเริ่มต้น', /localStorage\.getItem\('k2_count_cat'\) \|\| 'todo'/.test(NEW));
+ok('มีปุ่ม 🎯 ต้องนับวันนี้ พร้อมจำนวน', NEW.indexOf('🎯 ต้องนับวันนี้') >= 0);
+ok('ปุ่มเท่าเดิมมีเฉพาะเมนูที่มีเลข **และ** เคยนับใน 7 วัน (กันยืนยันเลขที่ไม่มีใครนับ)',
+   NEW.indexOf(String.fromCharCode(40)+"have===''||!counted)?'':'<button type=\"button\" class=\"same\"") >= 0);
+ok('ยืนยันเท่าเดิม = เขียนผ่านทางเดียวกับการนับ (ไม่มีทางเขียนใหม่)', /return saveCount\(mid, m\.actual_stock, true\);/.test(NEW));
+ok('log แยกคำว่า "ยืนยันเท่าเดิม" ออกจาก "นับของ"', NEW.indexOf("same?('ยืนยันเท่าเดิม ") >= 0);
+ok('เลขในแผนเก็บชื่อคนใส่ + เวลา', /PLAN\[DAY\]\[mid\]=\{ n:Math\.max\(0,parseInt\(val,10\)\|\|0\), by:USER\|\|"", at:/.test(NEW));
+ok('แผนรูปแบบเก่า (ตัวเลขล้วน) ยังอ่านได้', NEW.indexOf('function planNum(') >= 0 && NEW.indexOf('planNum((PLAN[DAY]||{})[m.id])') >= 0);
+ok('ใส่เลขแผนต้องรู้ว่าใครใส่ก่อน', /async function savePlan[\s\S]{0,200}needUser\(\)/.test(NEW));
+{
+  const fn = grab(NEW, 'function needCountToday(');
+  ok('ดึง needCountToday ออกมาได้', !!fn);
+  if (fn) {
+    const f = new Function(fn + '; return needCountToday;')();
+    const counted = () => true;      // เคยนับใน 7 วัน
+    const never = () => false;       // ไม่เคยนับเลย
+    const none = {};
+    ok('เมนูสัปดาห์ (มีชื่อเล่น) ต้องนับเสมอ', f({ id:'a', subcode:'S1', stock_total:99 }, none, counted) === true);
+    ok('ของใกล้หมด (เหลือ ≤3) ต้องนับ', f({ id:'b', subcode:'', stock_total:3 }, none, counted) === true);
+    ok('มีคนจองวันนี้/พรุ่งนี้ ต้องนับ', f({ id:'c', subcode:'', stock_total:50 }, { c:2 }, counted) === true);
+    ok('ไม่มีร่องรอยการนับใน 7 วัน ต้องนับ', f({ id:'d', subcode:'', stock_total:50 }, none, never) === true);
+    ok('ของเหลือเยอะ ไม่มีจอง เพิ่งนับ → วันนี้ไม่ต้องนับ', f({ id:'e', subcode:'', stock_total:50 }, none, counted) === false);
+    ok('ขายไม่จำกัด (stock_total ว่าง) + เพิ่งนับ → ไม่บังคับนับ', f({ id:'f', subcode:'', stock_total:null }, none, counted) === false);
   }
 }
 

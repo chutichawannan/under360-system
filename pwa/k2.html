@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
 <script src="/gate.js"></script><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Under360 — ครัว (ของใหม่ · ทดลอง)</title>
+<title>Under360 — หน้าครัว</title>
 <link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -145,6 +145,12 @@ body>.sum{margin-top:4px;margin-bottom:12px;padding:13px 16px;border-radius:16px
 .diet{margin:4px 0 0;padding:5px 9px;border-radius:9px;font-size:12px;font-weight:700;line-height:1.45}
 .diet-al{background:#fde8e4;color:#a4291b;border:1.5px solid #f0b4aa}
 .diet-dl{background:#fff4e2;color:#8a5a12;border:1px solid #f2ddb8}
+/* 🎯 ปุ่มต้องนับวันนี้ + ปุ่มเท่าเดิม (12 ก.ย. 2569 — ลดเวลานับของครัว) */
+.catchip.todo{border-color:#cfe0d4}
+.catchip.todo.on{background:#1F4D3A;color:#fff}
+.same{flex-shrink:0;margin-left:8px;min-height:44px;padding:0 14px;border-radius:12px;border:1.5px solid #cfe0d4;
+  background:#fff;color:#1F4D3A;font-weight:700;font-size:13px;font-family:inherit;cursor:pointer}
+.same:active{background:#eef4ef}
 </style>
 </head>
 <body>
@@ -520,13 +526,23 @@ let CAT_LABEL = {};
 const CAT_FALLBACK = { jay2026:'คอร์สเจ 2569', hyrox:'Hyrox', uncategorized:'ยังไม่มีหมวด' };
 let COUNT_CAT = 'all';   // หมวดที่เลือกอยู่
 let COUNT_FOLD = {};     // { category: true } = พับไว้
-try{ COUNT_CAT = localStorage.getItem('k2_count_cat') || 'all'; COUNT_FOLD = JSON.parse(localStorage.getItem('k2_count_fold') || '{}') || {}; }catch(e){}
+/* เปิดมาครั้งแรกให้เจอ "ต้องนับวันนี้" — คนที่เคยเลือกหมวดค้างไว้ ยังได้ของเดิม */
+try{ COUNT_CAT = localStorage.getItem('k2_count_cat') || 'todo'; COUNT_FOLD = JSON.parse(localStorage.getItem('k2_count_fold') || '{}') || {}; }catch(e){ COUNT_CAT = 'todo'; }
 function catKey(m){ return (m && m.category) ? String(m.category) : 'uncategorized'; }
 function catLabel(k){ return CAT_LABEL[k] || CAT_FALLBACK[k] || k; }
 function saveCountUi(){ try{ localStorage.setItem('k2_count_cat', COUNT_CAT); localStorage.setItem('k2_count_fold', JSON.stringify(COUNT_FOLD)); }catch(e){} }
 function pickCountCat(k){ COUNT_CAT = k; if(k !== 'all') COUNT_FOLD[k] = false; saveCountUi(); render(); try{ window.scrollTo({top:0, behavior:'smooth'}); }catch(e){} }
 function toggleCountFold(k){ COUNT_FOLD[k] = !COUNT_FOLD[k]; saveCountUi(); render(); }
 /* เรียงหมวด: หมวดที่มีเมนูมากก่อน — เป็นหมวดที่ครัวนับบ่อยสุด */
+/* 🎯 ต้องนับวันนี้ไหม — ระบบช่วยเลือก ไม่ใช่ระบบเดาเลขแทนคน
+   เข้าข้อใดข้อหนึ่ง = ต้องนับ · ที่เหลือกดดูได้จากปุ่ม "ทั้งหมด" */
+function needCountToday(m, bookedSoon, counted7d){
+  if(String(m.subcode||'').trim()) return true;                       // เมนูสัปดาห์
+  if(m.stock_total!=null && Number(m.stock_total)<=3) return true;      // ใกล้หมด
+  if((bookedSoon[m.id]||0)>0) return true;                              // มีคนจองวันนี้/พรุ่งนี้
+  if(!counted7d(m)) return true;                                        // ไม่มีร่องรอยการนับใน 7 วัน
+  return false;
+}
 function countGroups(list){
   const g = {};
   list.forEach(m => { const k = catKey(m); (g[k] = g[k] || []).push(m); });
@@ -536,14 +552,20 @@ function viewCount(){
   const bk=bookedMap();
   let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
   const openMenus = MENUS.filter(m=>m.is_available!==false);
-  const groups = countGroups(openMenus);
-  if(COUNT_CAT !== 'all' && !groups.some(g => g.key === COUNT_CAT)) COUNT_CAT = 'all';   // หมวดที่เคยเลือกไม่มีแล้ว → กลับไปทั้งหมด
   const isCounted = m => HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
+  /* จองวันนี้ + พรุ่งนี้ — ของที่กำลังจะออกจากตู้ */
+  const bkToday=bookedOn(DAY), bkNext=bookedOn(dPlus(DAY,1)), bookedSoon={};
+  MENUS.forEach(m=>{ const n=(bkToday[m.id]||0)+(bkNext[m.id]||0); if(n) bookedSoon[m.id]=n; });
+  const todo = openMenus.filter(m=>needCountToday(m, bookedSoon, isCounted));
+  const pool = (COUNT_CAT==='todo') ? todo : openMenus;
+  const groups = countGroups(pool);
+  if(COUNT_CAT !== 'all' && COUNT_CAT !== 'todo' && !groups.some(g => g.key === COUNT_CAT)) COUNT_CAT = 'all';   // หมวดที่เคยเลือกไม่มีแล้ว
   h+='</div><div class="catbar" role="group" aria-label="เลือกหมวดเมนู">'
+    +'<button type="button" class="catchip todo'+(COUNT_CAT==='todo'?' on':'')+'" onclick="pickCountCat(\'todo\')">🎯 ต้องนับวันนี้ <b>'+todo.length+'</b></button>'
     +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
     + groups.map(g => '<button type="button" class="catchip'+(COUNT_CAT===g.key?' on':'')+'" onclick="pickCountCat(\''+esc(g.key)+'\')">'+esc(catLabel(g.key))+' <b>'+g.items.length+'</b></button>').join('')
     +'</div><div class="wrap">';
-  groups.filter(g => COUNT_CAT === 'all' || g.key === COUNT_CAT).forEach(g=>{
+  groups.filter(g => COUNT_CAT === 'all' || COUNT_CAT === 'todo' || g.key === COUNT_CAT).forEach(g=>{
     const folded = !!COUNT_FOLD[g.key];
     const notYet = g.items.filter(m => !isCounted(m)).length;
     h+='<button type="button" class="sec cathead'+(folded?' folded':'')+'" aria-expanded="'+(!folded)+'" onclick="toggleCountFold(\''+esc(g.key)+'\')">'
@@ -570,6 +592,11 @@ function viewCount(){
      +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')
      +(incOf(m.id)?'<div class="mini">🍳 กำลังผลิต '+incOf(m.id).n+' — ยังไม่ต้องนับรวม</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+have+'" onchange="saveCount(\''+m.id+'\',this.value)">'
+     /* ของที่ไม่ขยับ — แตะครั้งเดียวแทนพิมพ์เลข · ยังเป็นคนยืนยัน ไม่ใช่ระบบเดา
+        ไม่เคยนับเลย (ช่องว่าง) = ไม่มีเลขให้ยืนยัน ต้องพิมพ์เอง
+        12 ก.ย. 2569: ไม่มีร่องรอยการนับใน 7 วัน ก็ไม่ให้กด "เท่าเดิม" ด้วย —
+        เลขที่ไม่รู้ว่ามาจากไหน ถ้ากดยืนยันได้ = ระบบได้ "การนับ" ที่ไม่มีใครนับจริง (เคส MC1 = 0) */
+     +((have===''||!counted)?'':'<button type="button" class="same" onclick="confirmSame(\''+m.id+'\')">เท่าเดิม</button>')
      +'</div>';
   });
   });
@@ -578,7 +605,14 @@ function viewCount(){
                   : '<div class="empty">ยังไม่มีประวัติ</div>';
   return h+'</div></div>';
 }
-async function saveCount(mid,val){
+/* ยืนยันว่าของเท่าเดิม — เขียนค่าเดิมกลับไป + ลง log ว่าใครยืนยันเมื่อไหร่
+   ต่างจาก "ปิดวันอัตโนมัติ" ของหน้าเก่าตรงที่ **มีคนแตะจริง** ไม่ใช่ระบบขยับเลขเอง */
+function confirmSame(mid){
+  const m=MENUS.find(x=>x.id===mid);
+  if(!m || m.actual_stock==null){ toast('ยังไม่เคยนับ — ต้องพิมพ์เลขก่อน'); return; }
+  return saveCount(mid, m.actual_stock, true);
+}
+async function saveCount(mid,val,same){
   if(!needUser()) { render(); return; }
   const s=getSB(); if(!s) return;
   const m=MENUS.find(x=>x.id===mid); if(!m) return;
@@ -594,20 +628,23 @@ async function saveCount(mid,val){
   m.actual_stock=n; m.stock_total=sellable;
   await s.from('activity_log').insert({
     session_id:'k2_'+(window._sid||(window._sid=Date.now())), actor:USER, source:'k2', action_type:'stock',
-    summary:shortCode(m)+' '+String(m.name||'').slice(0,26)+' — นับของ · '+before+'→'+(n==null?'—':n)+' (จอง '+booked+' · ซื้อได้ '+(sellable==null?'∞':sellable)+')',
+    summary:shortCode(m)+' '+String(m.name||'').slice(0,26)+' — '+(same?('ยืนยันเท่าเดิม '+(n==null?'—':n)):('นับของ · '+before+'→'+(n==null?'—':n)))+' (จอง '+booked+' · ซื้อได้ '+(sellable==null?'∞':sellable)+')',
     detail:{menu_id:mid,code:m.code,counted:n,booked:booked,sellable:sellable,page:'k2'}
   });
-  toast('บันทึกแล้ว '+shortCode(m)+' = '+(n==null?'ไม่จำกัด':n));
+  toast((same?'ยืนยันเท่าเดิม ':'บันทึกแล้ว ')+shortCode(m)+' = '+(n==null?'ไม่จำกัด':n));
   loadHist();
 }
 
 /* ─── 📅 วางแผนผลิต — คนพิมพ์ทับได้ ไม่ใช่ ML ─────────────────────────── */
+/* เลขในแผนเก็บได้ 2 แบบ: ตัวเลขล้วน (ของเก่า) หรือ {n,by,at} (ตั้งแต่ 12 ก.ย. 2569) */
+function planNum(v){ return (v && typeof v === "object") ? v.n : v; }
+function planWho(v){ return (v && typeof v === "object" && v.by) ? v.by : ""; }
 function viewPlan(){
   const bk=bookedOn(DAY), have={};
   MENUS.forEach(m=>have[m.id]=(m.actual_stock==null?0:Number(m.actual_stock)));
   const rows=MENUS.filter(m=>m.is_available!==false).map(m=>{
     const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
-    const ov=(PLAN[DAY]||{})[m.id];
+    const ov=planNum((PLAN[DAY]||{})[m.id]);
     return {m,b,have:have[m.id]||0,make:(ov==null?sug:Number(ov)),ov:ov!=null};
   }).filter(r=>r.b>0||r.make>0||r.ov||incOf(r.m.id)||weekPlanOf(r.m,DAY));
   const total=rows.reduce((s,r)=>s+r.make,0);
@@ -619,6 +656,7 @@ function viewPlan(){
      +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
      +'<div class="mini">จอง '+r.b+' · ในตู้ '+r.have+(r.ov?' · <b>คนแก้เลขเอง</b>':'')+'</div>'
      +(incOf(r.m.id)?'<div class="mini">🍳 กำลังผลิต '+incOf(r.m.id).n+'</div>':'')
+     +(planWho((PLAN[DAY]||{})[r.m.id])?'<div class="mini">✍️ '+esc(planWho((PLAN[DAY]||{})[r.m.id]))+' เป็นคนใส่เลขนี้</div>':'')
      +(weekPlanOf(r.m,DAY)?'<div class="mini">📋 นิววางขายสัปดาห์นี้ '+weekPlanOf(r.m,DAY).n+' ('+weekPlanOf(r.m,DAY).slot+')</div>':'')+'</div>'
      +'<input class="cnt" type="number" inputmode="numeric" value="'+r.make+'" onchange="savePlan(\''+r.m.id+'\',this.value)">'
      +'</div>';
@@ -627,8 +665,11 @@ function viewPlan(){
 }
 async function savePlan(mid,val){
   const s=getSB(); if(!s) return;
+  if(!needUser()){ render(); return; }   // ต้องรู้ว่าใครใส่ ก่อนจะเก็บเลข
   PLAN[DAY]=PLAN[DAY]||{};
-  PLAN[DAY][mid]=Math.max(0,parseInt(val,10)||0);
+  /* เก็บเป็น {n, by, at} — เลขเปล่า ๆ ที่ไม่รู้ว่าใครใส่เมื่อไหร่ คือของที่ไม่มีใครกล้าแตะทีหลัง
+     รูปแบบเก่า (ตัวเลขล้วน) ยังอ่านได้ ดู planNum() */
+  PLAN[DAY][mid]={ n:Math.max(0,parseInt(val,10)||0), by:USER||"", at:new Date().toISOString() };
   const r=await s.from('kitchen_data').upsert({key:'k2_plan',data:PLAN},{onConflict:'key'});
   if(r.error){ toast('บันทึกแผนไม่สำเร็จ'); return; }
   toast('บันทึกแผนแล้ว'); render();
