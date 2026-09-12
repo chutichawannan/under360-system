@@ -52,7 +52,7 @@
     },
     {
       "source": "/kq",
-      "destination": "/kitchen_queue.html"
+      "destination": "/pwa/k2.html"
     },
     {
       "source": "/db",

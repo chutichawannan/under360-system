@@ -24,6 +24,10 @@ const TODAY = '2026-09-06';
 async function run(menus, incoming, currentUser) {
   const moved = [], logs = [];
   const ctx = {
+    /* 12 ก.ย. 2569: ย้ายครัวมา k2 แล้ว หน้าเก่ามีสวิตช์ K2_MOVED กันไม่ให้ "ปิดวันอัตโนมัติ" ทำงานอีก
+       เทสนี้ตั้งเป็น false เพื่อทดสอบ "ตรรกะ" ต่อไป — เผื่อวันไหนต้องปลดหน้าเก่ากลับมาใช้ ตรรกะต้องยังถูก
+       (ตัวที่กันของจริงคือ test_kitchen_move ซึ่งเช็คว่าสวิตช์เป็น true บน main) */
+    K2_MOVED: false,
     stockIncoming: incoming,
     allMenus: menus,
     thaiToday2: () => TODAY,

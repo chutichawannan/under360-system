@@ -482,6 +482,19 @@ body.tablet .mp-chip{font-size:14px;padding:4px 9px;}
 </style>
 </head>
 <body>
+<!-- 🚚 ย้ายครัวมา k2 แล้ว 12 ก.ย. 2569 (นัทเคาะเอง) — หน้านี้ไม่ใช่ที่ทำงานอีกต่อไป
+     ปลดกลับ: แก้ K2_MOVED เป็น false ในสคริปต์ด้านล่าง แล้วหน้านี้กลับมาทำงานเหมือนเดิมทันที -->
+<div id="kqMoved" style="display:none;position:fixed;inset:0;z-index:9999;background:#f4f7f4;
+  display:none;align-items:center;justify-content:center;padding:24px;font-family:inherit">
+  <div style="max-width:420px;width:100%;background:#fff;border-radius:20px;padding:28px 22px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,.08)">
+    <div style="font-size:54px;line-height:1">🍳➡️</div>
+    <div style="font-size:22px;font-weight:800;color:#1F4D3A;margin-top:10px">ย้ายไปหน้าครัวใหม่แล้ว</div>
+    <div style="font-size:15px;color:#5b6b60;margin-top:8px;line-height:1.6">ของทุกอย่างอยู่ที่หน้าใหม่ · ตัวเลขเดิมอยู่ครบ</div>
+    <a href="/pwa/k2.html" style="display:block;margin-top:20px;background:#1F4D3A;color:#fff;text-decoration:none;
+      font-size:19px;font-weight:800;border-radius:14px;padding:16px">เปิดหน้าครัวใหม่ →</a>
+    <div style="font-size:12px;color:#8a978e;margin-top:14px">under360-system.vercel.app/pwa/k2.html</div>
+  </div>
+</div>
 
 <div class="hdr">
   <div class="hdr-title">🍳 ครัว Under360</div>
@@ -1657,6 +1670,7 @@ async function stkToggleInf(menuId){
    เขียน stock_total ทุกครั้งที่ครัวแก้ · เวลาลูกค้าสั่งเพิ่ม RPC adjust_stock ลด stock_total ให้เอง
    → ตัวเลขสองทางนี้ไม่ตีกัน เพราะฝั่งลูกค้าลดทีละ 1 พร้อมกับ ordered เพิ่มทีละ 1 */
 async function stkCommit(m, real, inc, why){
+  if(K2_MOVED) return;   // 🚚 ย้ายไป k2 แล้ว — ห้ามเขียนสต็อกจากหน้านี้
   var sb_=getSB(); if(!sb_) return;
   var ordered=stkOrderedMap()[m.id]||0;
   var before={real:stkRealOf(m,ordered), inc:stkIncOf(m.id)};
@@ -1670,6 +1684,7 @@ async function stkCommit(m, real, inc, why){
   await logStock(m, why, before, {real:real, inc:inc});
 }
 async function stkSetUnlimited(m){
+  if(K2_MOVED) return;   // 🚚 ย้ายไป k2 แล้ว
   var sb_=getSB(); if(!sb_) return;
   m.stock_total=null; m.actual_stock=null;
   delete stockIncoming[m.id];
@@ -1700,6 +1715,7 @@ function stkNotYetProduced(m){
   return !!af && af > thaiToday2();
 }
 async function stkRolloverDay(){
+  if(K2_MOVED) return;   // 🚚 ย้ายไป k2 แล้ว — "ปิดวันอัตโนมัติ" ต้องไม่ทำงานอีก (ต้นเหตุเลขบวม ISSUE 02)
   _needRollover=false;
   var today=thaiToday2(), ids=[], skipped=0;
   for(var k in stockIncoming){
@@ -1771,6 +1787,7 @@ function renderStockHistory(){
 
 // val = "ทำไว้ทั้งหมด" (ตัวเลข) หรือ null (ไม่จำกัด)  ── ของเดิม เก็บไว้ให้ที่อื่นเรียกได้
 function stkWrite(menuId,val){
+  if(K2_MOVED) return;   // 🚚 ย้ายไป k2 แล้ว
   var left = (val==null) ? null : Math.max(0, val - stkOrderedOf(menuId));
   var m=(allMenus||[]).find(function(x){return x.id===menuId;}); if(m)m.stock_total=left;
   clearTimeout(saveTimers["stk_"+menuId]);
@@ -2296,8 +2313,20 @@ function buildDatePicker(){
 buildDatePicker();
 
 loadNickname();
-loadAll();
-setInterval(loadAll,30000);
+/* 🚚 สวิตช์ย้ายครัว (12 ก.ย. 2569) — true = หน้านี้หยุดทำงาน พาไป k2 อย่างเดียว
+   ปลดกลับเป็น false = หน้านี้ทำงานเหมือนเดิมทุกอย่าง (ไม่ได้ลบโค้ดอะไรทิ้ง) */
+var K2_MOVED = true;
+function kqShowMoved(){
+  var el=document.getElementById('kqMoved');
+  if(el) el.style.display='flex';
+  /* ซ่อนของเดิมไว้ข้างหลัง กันคนกดทะลุ */
+  document.querySelectorAll('body > *:not(#kqMoved)').forEach(function(x){ x.style.display='none'; });
+}
+if(K2_MOVED){ kqShowMoved(); }
+else {
+  loadAll();
+  setInterval(loadAll,30000);
+}
 </script>
 </body>
 </html>

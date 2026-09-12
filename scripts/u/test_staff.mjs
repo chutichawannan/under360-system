@@ -23,7 +23,9 @@ t('ไม่ได้เพิ่ม rewrite ของครัว', vercel.rewr
   const k=vercel.rewrites.find(r=>r.source==='/k');
   t('/k ยังชี้ที่เดิม', k&&k.destination, '/pwa/app-k.html');
   const kq=vercel.rewrites.find(r=>r.source==='/kq');
-  t('/kq ยังชี้ที่เดิม', kq&&kq.destination, '/kitchen_queue.html');
+  /* 12 ก.ย. 2569 นัทเคาะเองให้ย้ายครัวมา k2 ("เราจะย้ายกันวันนี้เนี่ยแหละ")
+     → /kq ต้องชี้ k2 แล้ว · ที่เทสข้อนี้มีไว้แต่แรกคือกัน "ห้องอื่นมาเปลี่ยนทางเข้าของครัวเอง" ไม่ใช่ห้ามย้ายตลอดกาล */
+  t('/kq ชี้หน้าครัวตัวจริง (ย้ายมา k2 แล้ว 12 ก.ย.)', kq&&kq.destination, '/pwa/k2.html');
   const o=vercel.rewrites.find(r=>r.source==='/o');
   t('/o ยังชี้ที่เดิม', o&&o.destination, '/pwa/orders_upcoming.html');
 }

@@ -28,7 +28,9 @@ t('ยังมีไอคอน', src.includes('/pwa/icon-192.png'), true);
 t('ยังกัน Google', src.includes('noindex'), true);
 
 console.log(NL+'④ k.html ที่ราก — ตัวที่โดเมนหลักเสิร์ฟจริง');
-['kitchen_queue.html','kitchen/index.html','pwa/jay_orders.html','pwa/orders_upcoming.html',
+/* 12 ก.ย. 2569: นัทเคาะย้ายครัวมา k2 → การ์ด "หน้าครัว" ในหน้ารวมลิงก์ชี้ pwa/k2.html แทน kitchen_queue.html
+   (ข้อนี้มีไว้กันลิงก์ของครัวหาย/กลายเป็นลิงก์ไม่ระบุโดเมน ไม่ได้ห้ามย้ายหน้า) */
+['pwa/k2.html','kitchen/index.html','pwa/jay_orders.html','pwa/orders_upcoming.html',
  'pwa/fah.html','main_database_v2.html','pwa/stock_count.html','pwa/checklist.html'].forEach(x=>
   t('ระบุโดเมน '+x, kroot.includes('href="'+HOST+'/'+x+'"'), true));
 /* แยกข้อความนับเอง ไม่ใช้ regex — backslash หายทุกครั้งที่เขียนไฟล์ผ่าน shell */
