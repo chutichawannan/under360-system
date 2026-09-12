@@ -104,7 +104,10 @@ async function main() {
   const codes = menus.map(m => m.code);
   const b1 = fails.length;
   if (codes.length) {
-    const orders = await all(`orders?select=id,total&created_at=gte.${since}&created_at=lt.${week}`);
+    // ⚠️ ปิดหน้าต่างที่ "ศุกร์ก่อนสัปดาห์นั้น" ไม่ใช่วันจันทร์ — วงจรใหม่เปิดขายศุกร์ 18:00
+    //    ถ้านับถึงวันจันทร์ ยอดขายล่วงหน้าของสัปดาห์ตัวเองจะทำให้ตกข้อ ① ทุกสัปดาห์ (นิวเจอจริง 12 ก.ย.)
+    const SALE_OPEN = new Date(new Date(week + "T00:00:00Z").getTime() - 3 * 864e5).toISOString().slice(0, 10);
+    const orders = await all(`orders?select=id,total&created_at=gte.${since}&created_at=lt.${SALE_OPEN}`);
     const oid = new Set(orders.filter(o => Number(o.total) > 0).map(o => o.id));
     const items = await all(`order_items?select=menu_code,order_id&menu_code=in.(${codes.join(',')})`);
     const sold = new Set(items.filter(x => oid.has(x.order_id)).map(x => x.menu_code));
