@@ -270,6 +270,14 @@ ok('log แยกคำว่า "ยืนยันเท่าเดิม" �
 ok('เลขในแผนเก็บชื่อคนใส่ + เวลา', /PLAN\[DAY\]\[mid\]=\{ n:Math\.max\(0,parseInt\(val,10\)\|\|0\), by:USER\|\|"", at:/.test(NEW));
 ok('แผนรูปแบบเก่า (ตัวเลขล้วน) ยังอ่านได้', NEW.indexOf('function planNum(') >= 0 && NEW.indexOf('planNum((PLAN[DAY]||{})[m.id])') >= 0);
 ok('ใส่เลขแผนต้องรู้ว่าใครใส่ก่อน', /async function savePlan[\s\S]{0,200}needUser\(\)/.test(NEW));
+/* 12 ก.ย. 2569: พี่ปืนเตือนว่าครัวใช้หน้านี้อยู่กลางวันทำงาน — รายการน้อยลงจะถูกอ่านว่า "เมนูหาย"
+   ป้ายนี้คือด่านกัน ห้ามหลุด (ถ้าหลุด แปลว่าครัวเห็นรายการหดโดยไม่มีใครบอกว่ากรองอยู่) */
+ok('ตอนกรอง 🎯 มีป้ายบอกว่ากำลังกรอง ไม่ใช่ของหาย', NEW.indexOf('กำลังโชว์เฉพาะที่ควรนับวันนี้') >= 0);
+ok('ป้ายบอกด้วยว่าอีกกี่เมนูที่ไม่ได้หาย', NEW.indexOf('ไม่ได้หาย') >= 0 && /const hidden = openMenus.length - todo.length;/.test(NEW));
+ok('มีปุ่มกดดูครบอยู่ในป้ายเลย ไม่ต้องไปหา', NEW.indexOf('class="seeall" onclick="pickCountCat(&quot;all&quot;)"') >= 0);
+ok('ป้ายขึ้นเฉพาะตอนเลือก 🎯 (เลือกทั้งหมด/หมวดอื่นต้องไม่ขึ้น)',
+   (()=>{ const i = NEW.indexOf('if(COUNT_CAT===&#39;todo&#39;){'.split('&#39;').join(String.fromCharCode(39)));
+          return i >= 0 && NEW.slice(i, i+420).indexOf('filternote') >= 0; })());
 {
   const fn = grab(NEW, 'function needCountToday(');
   ok('ดึง needCountToday ออกมาได้', !!fn);

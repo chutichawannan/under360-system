@@ -68,6 +68,8 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .neg{color:var(--r)}
 .ok{color:var(--g)}
 .hint{background:var(--golds);border:1px solid #F2E2C4;border-radius:11px;padding:10px;font-size:12px;line-height:1.55;margin:0 10px 10px}
+.filternote{background:#fffbea;border:1px solid #f0dfa2;border-radius:11px;padding:11px 13px;margin:0 10px 11px;font-size:13px;line-height:1.7;color:#6b5a12}
+.seeall{margin-top:8px;background:#fff;border:1px solid #c9b25f;color:#6b5a12;border-radius:9px;padding:9px 14px;font-size:13px;font-weight:700;min-height:44px}
 .sec{font-size:12px;font-weight:700;color:var(--soft);margin:14px 4px 7px;letter-spacing:.3px}
 .empty{text-align:center;color:var(--soft);font-size:13px;padding:28px 10px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:78px;background:#111;color:#fff;padding:9px 16px;border-radius:11px;font-size:13px;z-index:99;opacity:0;transition:.2s;pointer-events:none}
@@ -565,6 +567,14 @@ function viewCount(){
     +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
     + groups.map(g => '<button type="button" class="catchip'+(COUNT_CAT===g.key?' on':'')+'" onclick="pickCountCat(\''+esc(g.key)+'\')">'+esc(catLabel(g.key))+' <b>'+g.items.length+'</b></button>').join('')
     +'</div><div class="wrap">';
+  /* 🔴 ครัวเปิดมากลางวันทำงานแล้วเห็นรายการน้อยลง จะอ่านว่า "เมนูหาย" ไม่ใช่ "กำลังกรอง"
+     → บอกตรง ๆ ว่ากรองอยู่ + ซ่อนไปกี่เมนู + ปุ่มกดดูครบอยู่ตรงนี้เลย ไม่ต้องไปหา */
+  if(COUNT_CAT==='todo'){
+    const hidden = openMenus.length - todo.length;
+    h+='<div class="filternote">'+(todo.length?'🎯 <b>กำลังโชว์เฉพาะที่ควรนับวันนี้ '+todo.length+' เมนู</b>':'✅ <b>วันนี้ไม่มีเมนูที่ต้องนับ</b> — ของในตู้ยังพอ ไม่มีใครจอง และเพิ่งนับไปครบ')
+      +((todo.length && hidden>0)?'<br>อีก '+hidden+' เมนู<b>ไม่ได้หาย</b> — ของในตู้ยังพอ ยังไม่มีใครจอง และเพิ่งนับไป':'')
+      +'<br><button type="button" class="seeall" onclick="pickCountCat(&quot;all&quot;)">ดูครบทั้ง '+openMenus.length+' เมนู</button></div>';
+  }
   groups.filter(g => COUNT_CAT === 'all' || COUNT_CAT === 'todo' || g.key === COUNT_CAT).forEach(g=>{
     const folded = !!COUNT_FOLD[g.key];
     const notYet = g.items.filter(m => !isCounted(m)).length;
