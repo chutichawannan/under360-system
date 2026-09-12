@@ -174,6 +174,12 @@ async function main() {
     if (!(Number(m.kcal) > 0 && Number(m.protein) > 0 && has(m.carb) && has(m.fat)))
       bad('④', m.code + ' โภชนาการไม่ครบ (kcal=' + m.kcal + ' P=' + m.protein + ' C=' + m.carb + ' F=' + m.fat + ') — ' + m.name);
   });
+  // นัทเคาะจากประสบการณ์ 12 ก.ย.: "S ไม่มีเมนูไหนต่ำกว่า 300 แคลแน่" (ข้าวกล่องมีข้าวเต็มกล่อง)
+  S.forEach(m => { if (Number(m.kcal) > 0 && Number(m.kcal) < 300) flag(m.code + " " + m.kcal + " kcal ต่ำกว่า 300 — ข้าวกล่องไม่ควรต่ำขนาดนี้ (เช็คตัวเลขตัวแม่) — " + m.name); });
+  // ตัวเลขต้องสอดคล้องกันเอง: P*4 + C*4 + F*9 ควรใกล้ kcal ที่เขียนไว้ (เจอจริง 12 ก.ย.: S187 290 แต่มาโครได้ 340)
+  menus.forEach(m => { const calc = Number(m.protein) * 4 + Number(m.carb) * 4 + Number(m.fat) * 9;
+    if (Number(m.kcal) > 0 && calc > 0 && Math.abs(calc - Number(m.kcal)) > 25)
+      flag(m.code + " แคลที่เขียน " + m.kcal + " แต่คำนวณจาก P/C/F ได้ " + Math.round(calc) + " — ตัวเลขไม่สอดคล้องกันเอง"); });
   D_SLOTS.forEach((ds, i) => {
     const d = bySub[ds], s = bySub[S_SLOTS[i]];
     if (d && s && Number(d.kcal) > 0 && Number(d.kcal) >= Number(s.kcal))
