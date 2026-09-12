@@ -529,7 +529,12 @@ const CAT_FALLBACK = { jay2026:'คอร์สเจ 2569', hyrox:'Hyrox', unca
 let COUNT_CAT = 'all';   // หมวดที่เลือกอยู่
 let COUNT_FOLD = {};     // { category: true } = พับไว้
 /* เปิดมาครั้งแรกให้เจอ "ต้องนับวันนี้" — คนที่เคยเลือกหมวดค้างไว้ ยังได้ของเดิม */
-try{ COUNT_CAT = localStorage.getItem('k2_count_cat') || 'todo'; COUNT_FOLD = JSON.parse(localStorage.getItem('k2_count_fold') || '{}') || {}; }catch(e){ COUNT_CAT = 'todo'; }
+/* 🔴 นัทสั่งซ่อน 12 ก.ย. 2569: "ซ่อนระบบนับของที่นายคิดให้ไปก่อนเลย เพราะผิด objective ที่คุยไว้ตอนแรก
+   แถมตีความผิดแล้วไปทำระบบเองขึ้นมาด้วย"
+   ปิดทั้งชุดด้วยตัวแปรเดียว: ปุ่ม 🎯 ต้องนับวันนี้ · กล่องบอกว่ากำลังกรอง · ปุ่ม "เท่าเดิม"
+   ไม่ได้ลบโค้ดทิ้ง — ถ้าวันหนึ่งนัทสั่งเอา เปลี่ยนเป็น true บรรทัดเดียวจบ */
+var COUNT_SMART = false;
+try{ COUNT_CAT = localStorage.getItem('k2_count_cat') || (COUNT_SMART ? 'todo' : 'all'); COUNT_FOLD = JSON.parse(localStorage.getItem('k2_count_fold') || '{}') || {}; }catch(e){ COUNT_CAT = COUNT_SMART ? 'todo' : 'all'; }
 function catKey(m){ return (m && m.category) ? String(m.category) : 'uncategorized'; }
 function catLabel(k){ return CAT_LABEL[k] || CAT_FALLBACK[k] || k; }
 function saveCountUi(){ try{ localStorage.setItem('k2_count_cat', COUNT_CAT); localStorage.setItem('k2_count_fold', JSON.stringify(COUNT_FOLD)); }catch(e){} }
@@ -559,17 +564,18 @@ function viewCount(){
   const bkToday=bookedOn(DAY), bkNext=bookedOn(dPlus(DAY,1)), bookedSoon={};
   MENUS.forEach(m=>{ const n=(bkToday[m.id]||0)+(bkNext[m.id]||0); if(n) bookedSoon[m.id]=n; });
   const todo = openMenus.filter(m=>needCountToday(m, bookedSoon, isCounted));
+  if(!COUNT_SMART && COUNT_CAT==='todo') COUNT_CAT='all';   // เคยเลือกไว้ก่อนสั่งซ่อน — ดีดกลับ ไม่ให้หน้าว่าง
   const pool = (COUNT_CAT==='todo') ? todo : openMenus;
   const groups = countGroups(pool);
   if(COUNT_CAT !== 'all' && COUNT_CAT !== 'todo' && !groups.some(g => g.key === COUNT_CAT)) COUNT_CAT = 'all';   // หมวดที่เคยเลือกไม่มีแล้ว
   h+='</div><div class="catbar" role="group" aria-label="เลือกหมวดเมนู">'
-    +'<button type="button" class="catchip todo'+(COUNT_CAT==='todo'?' on':'')+'" onclick="pickCountCat(\'todo\')">🎯 ต้องนับวันนี้ <b>'+todo.length+'</b></button>'
+    +(COUNT_SMART?'<button type="button" class="catchip todo'+(COUNT_CAT==='todo'?' on':'')+'" onclick="pickCountCat(\'todo\')">🎯 ต้องนับวันนี้ <b>'+todo.length+'</b></button>':'')
     +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
     + groups.map(g => '<button type="button" class="catchip'+(COUNT_CAT===g.key?' on':'')+'" onclick="pickCountCat(\''+esc(g.key)+'\')">'+esc(catLabel(g.key))+' <b>'+g.items.length+'</b></button>').join('')
     +'</div><div class="wrap">';
   /* 🔴 ครัวเปิดมากลางวันทำงานแล้วเห็นรายการน้อยลง จะอ่านว่า "เมนูหาย" ไม่ใช่ "กำลังกรอง"
      → บอกตรง ๆ ว่ากรองอยู่ + ซ่อนไปกี่เมนู + ปุ่มกดดูครบอยู่ตรงนี้เลย ไม่ต้องไปหา */
-  if(COUNT_CAT==='todo'){
+  if(COUNT_SMART && COUNT_CAT==='todo'){
     const hidden = openMenus.length - todo.length;
     h+='<div class="filternote">'+(todo.length?'🎯 <b>กำลังโชว์เฉพาะที่ควรนับวันนี้ '+todo.length+' เมนู</b>':'✅ <b>วันนี้ไม่มีเมนูที่ต้องนับ</b> — ของในตู้ยังพอ ไม่มีใครจอง และเพิ่งนับไปครบ')
       +((todo.length && hidden>0)?'<br>อีก '+hidden+' เมนู<b>ไม่ได้หาย</b> — ของในตู้ยังพอ ยังไม่มีใครจอง และเพิ่งนับไป':'')
@@ -606,7 +612,7 @@ function viewCount(){
         ไม่เคยนับเลย (ช่องว่าง) = ไม่มีเลขให้ยืนยัน ต้องพิมพ์เอง
         12 ก.ย. 2569: ไม่มีร่องรอยการนับใน 7 วัน ก็ไม่ให้กด "เท่าเดิม" ด้วย —
         เลขที่ไม่รู้ว่ามาจากไหน ถ้ากดยืนยันได้ = ระบบได้ "การนับ" ที่ไม่มีใครนับจริง (เคส MC1 = 0) */
-     +((have===''||!counted)?'':'<button type="button" class="same" onclick="confirmSame(\''+m.id+'\')">เท่าเดิม</button>')
+     +((!COUNT_SMART||have===''||!counted)?'':'<button type="button" class="same" onclick="confirmSame(\''+m.id+'\')">เท่าเดิม</button>')
      +'</div>';
   });
   });

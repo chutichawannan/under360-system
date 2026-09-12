@@ -261,10 +261,19 @@ ok('อ่านไม่ได้ต้องไม่ทำทั้งหน�
 }
 
 console.log('\n15) ลดเวลานับของครัว (นัทยกเอง 12 ก.ย. "นับของมันนาน" · พี่ปืนเคาะให้ทำ)');
-ok('เปิดหน้ามาเจอ "ต้องนับวันนี้" เป็นค่าเริ่มต้น', /localStorage\.getItem\('k2_count_cat'\) \|\| 'todo'/.test(NEW));
+/* 🔴 12 ก.ย. 2569 นัทสั่งซ่อนทั้งชุด: "ซ่อนระบบนับของที่นายคิดให้ไปก่อนเลย เพราะผิด objective"
+   เทสข้อนี้กันไม่ให้ใครเผลอเปิดคืนโดยนัทไม่ได้สั่ง — โค้ดยังอยู่ครบ แค่ปิดสวิตช์ */
+ok('สวิตช์ตัวช่วยนับของ = ปิดอยู่ (ห้ามเปิดเองโดยนัทไม่ได้สั่ง)', /var COUNT_SMART = false;/.test(NEW));
+ok('ปิดแล้วหน้าต้องกลับไปโชว์ทุกเมนูเป็นค่าเริ่มต้น',
+   NEW.indexOf("localStorage.getItem('k2_count_cat') || (COUNT_SMART ? 'todo' : 'all')") >= 0);
+ok('เคยเลือก 🎯 ค้างไว้ ต้องดีดกลับเป็นทั้งหมด ไม่ปล่อยหน้าว่าง',
+   NEW.indexOf("if(!COUNT_SMART && COUNT_CAT==='todo') COUNT_CAT='all';") >= 0);
+/* เดิมข้อนี้เช็คว่าเปิดมาเจอ "ต้องนับวันนี้" — นัทสั่งซ่อนทั้งชุด 12 ก.ย. ค่าเริ่มต้นกลับเป็นทั้งหมด */
+ok('เปิดหน้ามาเจอทุกเมนู (ตัวช่วยถูกซ่อนตามที่นัทสั่ง)',
+   NEW.indexOf("localStorage.getItem('k2_count_cat') || (COUNT_SMART ? 'todo' : 'all')") >= 0);
 ok('มีปุ่ม 🎯 ต้องนับวันนี้ พร้อมจำนวน', NEW.indexOf('🎯 ต้องนับวันนี้') >= 0);
-ok('ปุ่มเท่าเดิมมีเฉพาะเมนูที่มีเลข **และ** เคยนับใน 7 วัน (กันยืนยันเลขที่ไม่มีใครนับ)',
-   NEW.indexOf(String.fromCharCode(40)+"have===''||!counted)?'':'<button type=\"button\" class=\"same\"") >= 0);
+ok('ปุ่มเท่าเดิมถูกซ่อนอยู่ (นัทสั่งซ่อน 12 ก.ย.) และเงื่อนไขเดิมยังอยู่ครบ',
+   NEW.indexOf(String.fromCharCode(40)+"!COUNT_SMART||have===''||!counted)?'':'<button type=\"button\" class=\"same\"") >= 0);
 ok('ยืนยันเท่าเดิม = เขียนผ่านทางเดียวกับการนับ (ไม่มีทางเขียนใหม่)', /return saveCount\(mid, m\.actual_stock, true\);/.test(NEW));
 ok('log แยกคำว่า "ยืนยันเท่าเดิม" ออกจาก "นับของ"', NEW.indexOf("same?('ยืนยันเท่าเดิม ") >= 0);
 ok('เลขในแผนเก็บชื่อคนใส่ + เวลา', /PLAN\[DAY\]\[mid\]=\{ n:Math\.max\(0,parseInt\(val,10\)\|\|0\), by:USER\|\|"", at:/.test(NEW));
@@ -275,9 +284,9 @@ ok('ใส่เลขแผนต้องรู้ว่าใครใส่�
 ok('ตอนกรอง 🎯 มีป้ายบอกว่ากำลังกรอง ไม่ใช่ของหาย', NEW.indexOf('กำลังโชว์เฉพาะที่ควรนับวันนี้') >= 0);
 ok('ป้ายบอกด้วยว่าอีกกี่เมนูที่ไม่ได้หาย', NEW.indexOf('ไม่ได้หาย') >= 0 && /const hidden = openMenus.length - todo.length;/.test(NEW));
 ok('มีปุ่มกดดูครบอยู่ในป้ายเลย ไม่ต้องไปหา', NEW.indexOf('class="seeall" onclick="pickCountCat(&quot;all&quot;)"') >= 0);
-ok('ป้ายขึ้นเฉพาะตอนเลือก 🎯 (เลือกทั้งหมด/หมวดอื่นต้องไม่ขึ้น)',
-   (()=>{ const i = NEW.indexOf('if(COUNT_CAT===&#39;todo&#39;){'.split('&#39;').join(String.fromCharCode(39)));
-          return i >= 0 && NEW.slice(i, i+420).indexOf('filternote') >= 0; })());
+ok('กล่องบอกว่ากำลังกรอง ผูกกับสวิตช์ที่ปิดอยู่',
+   (()=>{ const i = NEW.indexOf('if(COUNT_SMART && COUNT_CAT===' + String.fromCharCode(39) + 'todo' + String.fromCharCode(39) + '){');
+          return i >= 0 && NEW.slice(i, i+460).indexOf('filternote') >= 0; })());
 {
   const fn = grab(NEW, 'function needCountToday(');
   ok('ดึง needCountToday ออกมาได้', !!fn);
