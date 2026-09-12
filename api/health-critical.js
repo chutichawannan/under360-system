@@ -32,12 +32,33 @@ const LIFF_OK    = '2010442513-NI3JGTkb';
 
 const bkk = () => new Intl.DateTimeFormat('th-TH', { timeZone: 'Asia/Bangkok', dateStyle: 'short', timeStyle: 'short' }).format(new Date());
 
+/* 🔁 อ่านซ้ำ 1 ครั้งก่อนสรุป — "เน็ตสะดุด/ฐานข้อมูลตอบช้า" ไม่ใช่ "ร้านล้ม"
+   12 ก.ย. 2569: รอบ 06:30 กับ 07:00 อ่านพลาดคนละจุด แล้วออกมาเป็นข่าวร้าย/ตัวเลข 0 ทั้งคู่
+   ใช้ตัวเดียวกันหมดทุกจุด จะได้ไม่ต้องไล่แก้ทีละที่อีก */
+const รอ = (ms) => new Promise((f) => setTimeout(f, ms));
+async function อ่านซ้ำ(url, init) {
+  let r = null, j = null;
+  for (let ครั้ง = 1; ครั้ง <= 2; ครั้ง++) {
+    r = await fetch(url, init).catch(() => null);
+    if (r && r.ok) { j = await r.json().catch(() => null); if (Array.isArray(j)) break; }
+    if (ครั้ง === 1) await รอ(1500);
+  }
+  const สำเร็จ = !!(r && r.ok && Array.isArray(j));
+  return { r, j, สำเร็จ, เหตุ: r ? ('HTTP ' + r.status) : 'เชื่อมต่อไม่ได้' };
+}
+
 async function page(path) {
-  try {
-    const r = await fetch(SITE + path, { cache: 'no-store' });
-    const t = await r.text();
-    return { ok: r.ok, status: r.status, text: t };
-  } catch (e) { return { ok: false, status: 0, text: '', err: String(e && e.message) }; }
+  let last = { ok: false, status: 0, text: '', err: '' };
+  for (let ครั้ง = 1; ครั้ง <= 2; ครั้ง++) {
+    try {
+      const r = await fetch(SITE + path, { cache: 'no-store' });
+      const t = await r.text();
+      last = { ok: r.ok, status: r.status, text: t };
+    } catch (e) { last = { ok: false, status: 0, text: '', err: String(e && e.message) }; }
+    if (last.ok) break;
+    if (ครั้ง === 1) await รอ(1500);
+  }
+  return last;
 }
 
 module.exports = async (req, res) => {
@@ -58,10 +79,15 @@ module.exports = async (req, res) => {
 
   // ── 3. ฐานข้อมูล + เมนู ──
   try {
-    const r = await fetch(`${SB}/menu_items?select=id&is_available=eq.true&limit=1`, { headers: { ...H, Prefer: 'count=exact' } });
-    const n = +((r.headers.get('content-range') || '/0').split('/')[1] || 0);
-    add('ฐานข้อมูลตอบ + มีเมนูเปิดขาย', r.ok && n > 0, r.ok ? (n + ' เมนู') : ('HTTP ' + r.status));
-  } catch (e) { add('ฐานข้อมูลตอบ + มีเมนูเปิดขาย', false, String(e && e.message)); }
+    const a = await อ่านซ้ำ(`${SB}/menu_items?select=id&is_available=eq.true&limit=1`, { headers: { ...H, Prefer: 'count=exact' } });
+    if (!a.สำเร็จ) {
+      /* อ่านฐานข้อมูลไม่สำเร็จ 2 ครั้งติด ≠ ร้านไม่มีเมนูขาย — ห้ามปลุกทุกห้องว่าร้านล้ม */
+      add('ฐานข้อมูลตอบ + มีเมนูเปิดขาย', false, 'เช็คไม่ได้ — อ่านเมนูไม่สำเร็จ 2 ครั้งติด (' + a.เหตุ + ')', 'เหลือง');
+    } else {
+      const n = +((a.r.headers.get('content-range') || '/0').split('/')[1] || 0);
+      add('ฐานข้อมูลตอบ + มีเมนูเปิดขาย', n > 0, n + ' เมนู');
+    }
+  } catch (e) { add('ฐานข้อมูลตอบ + มีเมนูเปิดขาย', false, 'เช็คไม่ได้ — ' + String(e && e.message), 'เหลือง'); }
 
   // ── 4-5. หน้าที่ครัวใช้ ──
   const kq = await page('/kitchen_queue.html');
@@ -73,13 +99,8 @@ module.exports = async (req, res) => {
   //    (เพิ่ม 1 ก.ย. 2569 หลังเจอว่าเหลือ 2 วันโดยไม่มีอะไรฟ้อง)
   try {
     /* พี่ปืนขอ 12 ก.ย.: อ่านพลาดให้ลองซ้ำ 1 ครั้งก่อนสรุป (เน็ตสะดุดชั่ววูบ ไม่ใช่ร้านล้ม) */
-    let r, j;
-    for (let ครั้ง = 1; ครั้ง <= 2; ครั้ง++) {
-      r = await fetch(`${SB}/kitchen_data?key=eq.mp_menu_plan&select=data`, { headers: H, cache: 'no-store' }).catch(() => null);
-      j = r ? await r.json().catch(() => null) : null;
-      if (r && r.ok && Array.isArray(j)) break;
-      if (ครั้ง === 1) await new Promise(f2 => setTimeout(f2, 1500));
-    }
+    const a = await อ่านซ้ำ(`${SB}/kitchen_data?key=eq.mp_menu_plan&select=data`, { headers: H, cache: 'no-store' });
+    const r = a.r, j = a.j;
     /* 🟡 12 ก.ย. 2569: อ่านแพลนไม่ได้ ≠ ไม่มีวันให้ลูกค้าเลือก
        เดิมสองกรณีนี้ตกลงมาที่ข้อความแดงอันเดียวกัน (plan = {}) → 06:30 ปลุก 4 ห้องว่าลูกค้าสั่ง Meal Plan ไม่ได้
        ของจริงตอนนั้นมีวันในแพลน 13 วัน (14 ก.ย.–19 ต.ค.) · 3 นาทีต่อมาตัวเฝ้าเองรายงานว่าปกติ
@@ -112,9 +133,14 @@ module.exports = async (req, res) => {
   // ── 7. สัญญาณธุรกิจ (เตือนเบา ไม่ใช่แดง) ──
   try {
     const since = new Date(Date.now() - 24 * 3600 * 1000).toISOString();
-    const r = await fetch(`${SB}/orders?select=id&created_at=gte.${since}&limit=1`, { headers: { ...H, Prefer: 'count=exact' } });
-    const n = +((r.headers.get('content-range') || '/0').split('/')[1] || 0);
-    add('มีออเดอร์เข้าใน 24 ชม.', n > 0, n + ' ใบ', 'เหลือง');
+    const a = await อ่านซ้ำ(`${SB}/orders?select=id&created_at=gte.${since}&limit=1`, { headers: { ...H, Prefer: 'count=exact' } });
+    /* 12 ก.ย. 07:00 ขึ้น "0 ใบ" ทั้งที่ของจริง 13 ใบ — เพราะอ่านไม่สำเร็จแล้วนับเป็น 0
+       ตัวเลขที่โกหกอันตรายกว่าไม่มีตัวเลข */
+    if (!a.สำเร็จ) add('มีออเดอร์เข้าใน 24 ชม.', false, 'เช็คไม่ได้ — อ่านออเดอร์ไม่สำเร็จ 2 ครั้งติด (' + a.เหตุ + ')', 'เหลือง');
+    else {
+      const n = +((a.r.headers.get('content-range') || '/0').split('/')[1] || 0);
+      add('มีออเดอร์เข้าใน 24 ชม.', n > 0, n + ' ใบ', 'เหลือง');
+    }
   } catch (e) { add('มีออเดอร์เข้าใน 24 ชม.', false, String(e && e.message), 'เหลือง'); }
 
   const แดงที่พัง = checks.filter(c => !c.ผ่าน && c.ระดับ === 'แดง');
@@ -124,9 +150,16 @@ module.exports = async (req, res) => {
   // ── โพสต์บอร์ดเฉพาะตอนสถานะเปลี่ยน ──
   let โพสต์ = 'ไม่ได้โพสต์ (สถานะไม่เปลี่ยน)';
   try {
-    const prev = await (await fetch(`${SB}/kitchen_data?select=data&key=eq.${STATE_KEY}`, { headers: H })).json();
-    const was = (Array.isArray(prev) && prev[0] && prev[0].data) ? prev[0].data.ok : null;
-    const เปลี่ยน = was === null || was !== ok;
+    /* 12 ก.ย. 07:00 โพสต์ "กลับมาปกติแล้ว" ซ้ำ ทั้งที่รอบก่อนก็ปกติ — เพราะอ่านสถานะเดิมไม่ได้
+       แล้วโค้ดเดิมตีเป็น was = null = "สถานะเปลี่ยน" · ตัวเฝ้าที่พูดพร่ำ = คนเลิกอ่าน */
+    const a = await อ่านซ้ำ(`${SB}/kitchen_data?select=data&key=eq.${STATE_KEY}`, { headers: H });
+    const prev = a.สำเร็จ ? a.j : null;
+    const เคยรู้ = a.สำเร็จ;                       // อ่านสำเร็จไหม (ไม่ใช่ "มีแถวไหม")
+    const was = (prev && prev[0] && prev[0].data) ? prev[0].data.ok : null;
+    /* รอบแรกสุด (อ่านสำเร็จแต่ยังไม่มีแถว) = ประกาศเฉพาะตอนพัง — ไม่มีใครอยากโดนปลุกด้วยข่าวว่า "ปกติ" (พี่ปืนขอข้อ ④)
+       อ่านไม่สำเร็จ = เงียบไว้ รอบหน้าค่อยว่ากัน */
+    const เปลี่ยน = เคยรู้ && (was === null ? !ok : was !== ok);
+    if (!เคยรู้) โพสต์ = 'ไม่ได้โพสต์ (อ่านสถานะเดิมไม่สำเร็จ — เงียบไว้ดีกว่าปลุกผิด)';
     const บังคับ = req && req.query && req.query.post === '1';
 
     if (เปลี่ยน || บังคับ) {

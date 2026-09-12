@@ -32,17 +32,33 @@ const resp = (body, { status = 200, headers = {} } = {}) => ({
 });
 
 /* planRows = ฟังก์ชันคืนผลของการอ่าน mp_menu_plan ทีละครั้ง (ให้จำลอง "พลาดครั้งแรก" ได้) */
-async function run(planRows) {
+async function run(planRows, opts) {
+  const o = opts || {};
   const state = { planCalls: 0, posts: 0, stateWrites: 0 };
   globalThis.fetch = async (url, init) => {
     const u = String(url), method = String((init && init.method) || 'GET').toUpperCase();
     if (u.indexOf('/session_messages') >= 0) { state.posts++; return resp([]); }
     if (u.indexOf('/kitchen_data') >= 0 && method === 'POST') { state.stateWrites++; return resp([]); }
     if (u.indexOf('key=eq.mp_menu_plan') >= 0) { state.planCalls++; return planRows(state.planCalls); }
-    if (u.indexOf('key=eq.health_critical_state') >= 0) return resp([{ data: { ok: true } }]);
-    if (u.indexOf('/menu_items') >= 0) return resp([], { headers: { 'content-range': '0-0/139' } });
-    if (u.indexOf('/orders') >= 0) return resp([], { headers: { 'content-range': '0-0/13' } });
-    if (u.indexOf('liff_customer.html') >= 0) return resp(LIFF_TEXT);
+    if (u.indexOf('key=eq.health_critical_state') >= 0) {
+      if (o.stateFail) return resp({}, { status: 500 });
+      if (o.noRow) return resp([]);                    // รอบแรกสุด — ยังไม่เคยมีแถวสถานะ
+      return resp([{ data: { ok: o.wasOk === undefined ? true : o.wasOk } }]);
+    }
+    if (u.indexOf('/menu_items') >= 0) {
+      state.menuCalls = (state.menuCalls || 0) + 1;
+      if (o.menuFail) return resp({}, { status: 500 });
+      return resp([], { headers: { 'content-range': '0-0/139' } });
+    }
+    if (u.indexOf('/orders') >= 0) {
+      if (o.orderFail) return resp({}, { status: 500 });
+      return resp([], { headers: { 'content-range': '0-0/13' } });
+    }
+    if (u.indexOf('liff_customer.html') >= 0) {
+      state.liffCalls = (state.liffCalls || 0) + 1;
+      if (o.liffFailFirst && state.liffCalls === 1) return resp('', { status: 502 });
+      return resp(LIFF_TEXT);
+    }
     return resp('');                                  // หน้าครัว · ใบจัดของ
   };
   let out = null;
@@ -99,6 +115,55 @@ console.log(NL + '5) เน็ตสะดุดชั่ววูบ — พล
     : resp([{ data: { [day(3)]: menus, [day(10)]: menus, [day(17)]: menus, [day(24)]: menus } }])));
   ok('ผ่าน ไม่ต้องเตือนใครเลย', mp['ผ่าน'] === true, JSON.stringify(mp));
   ok('อ่าน 2 ครั้ง (ครั้งที่ 2 ได้ของ)', state.planCalls === 2, 'อ่าน ' + state.planCalls + ' ครั้ง');
+}
+
+
+const okPlan = () => resp([{ data: { [day(2)]: menus, [day(5)]: menus, [day(9)]: menus, [day(20)]: menus, [day(30)]: menus } }]);
+const หา = (out, ชื่อ) => (out['รายการตรวจ'] || []).find((c) => c['ชื่อ'] === ชื่อ) || {};
+
+console.log(NL + '6) อ่านเมนูจากฐานข้อมูลไม่สำเร็จ — ห้ามแดงว่าร้านล้ม');
+{
+  const { out, state } = await run(okPlan, { menuFail: true });
+  const c = หา(out, 'ฐานข้อมูลตอบ + มีเมนูเปิดขาย');
+  ok('เหลือง "เช็คไม่ได้" ไม่ใช่แดง', c['ผ่าน'] === false && c['ระดับ'] === 'เหลือง', JSON.stringify(c));
+  ok('ร้านยังถูกนับว่าปกติ', String(out['สรุป']).indexOf('ปกติ') >= 0, out['สรุป']);
+  ok('ลองซ้ำ 1 ครั้ง (อ่าน 2 ครั้ง)', state.menuCalls === 2, 'อ่าน ' + state.menuCalls + ' ครั้ง');
+  ok('ไม่โพสต์บอร์ด', state.posts === 0, 'โพสต์ ' + state.posts + ' ครั้ง');
+}
+
+console.log(NL + '7) 🔴 เคส 07:00 — อ่านออเดอร์ไม่สำเร็จ ต้องไม่พูดว่า "0 ใบ"');
+{
+  const { out } = await run(okPlan, { orderFail: true });
+  const c = หา(out, 'มีออเดอร์เข้าใน 24 ชม.');
+  ok('บอกว่าเช็คไม่ได้', String(c['รายละเอียด'] || '').indexOf('เช็คไม่ได้') >= 0, c['รายละเอียด']);
+  ok('ไม่โกหกว่า 0 ใบ', String(c['รายละเอียด'] || '').indexOf('0 ใบ') < 0, c['รายละเอียด']);
+  ok('เป็นเหลือง ร้านยังปกติ', c['ระดับ'] === 'เหลือง' && String(out['สรุป']).indexOf('ปกติ') >= 0, out['สรุป']);
+}
+
+console.log(NL + '8) 🔴 เคส 07:00 — อ่านสถานะเดิมไม่สำเร็จ ต้องเงียบ ไม่โพสต์ "กลับมาปกติแล้ว" ซ้ำ');
+{
+  const { out, state } = await run(okPlan, { stateFail: true });
+  ok('ไม่โพสต์บอร์ดเลย', state.posts === 0, 'โพสต์ ' + state.posts + ' ครั้ง');
+  ok('บอกเหตุผลว่าอ่านสถานะเดิมไม่สำเร็จ', String(out['การแจ้ง'] || '').indexOf('อ่านสถานะเดิมไม่สำเร็จ') >= 0, out['การแจ้ง']);
+}
+
+console.log(NL + '9) เพิ่งพัง/เพิ่งหาย — ยังต้องประกาศตามเดิม');
+{
+  const a = await run(okPlan, { wasOk: false });
+  ok('เคยพัง → ตอนนี้ปกติ = โพสต์ "กลับมาปกติแล้ว" 4 ห้อง', a.state.posts === 4, 'โพสต์ ' + a.state.posts + ' ครั้ง');
+  const b = await run(() => resp([{ data: { '2026-08-21': menus } }]), { wasOk: true });
+  ok('เคยปกติ → ตอนนี้แพลนว่างจริง = โพสต์เตือน 4 ห้อง', b.state.posts === 4, 'โพสต์ ' + b.state.posts + ' ครั้ง');
+  const c = await run(okPlan, { liffFailFirst: true });
+  ok('เปิดหน้าลูกค้าพลาดครั้งแรก แล้วได้ครั้งที่สอง = ไม่ปลุกใคร', String(c.out['สรุป']).indexOf('ปกติ') >= 0 && c.state.posts === 0, c.out['สรุป']);
+}
+
+console.log(NL + '10) รอบแรกสุด ยังไม่เคยมีแถวสถานะ — ประกาศเฉพาะตอนพัง (พี่ปืนขอข้อ ④)');
+{
+  const a = await run(okPlan, { noRow: true });
+  ok('ทุกอย่างปกติ = เงียบ ไม่โพสต์', a.state.posts === 0, 'โพสต์ ' + a.state.posts + ' ครั้ง');
+  ok('ยังเขียนสถานะไว้ให้รอบหน้าเทียบ', a.state.stateWrites === 1, 'เขียน ' + a.state.stateWrites + ' ครั้ง');
+  const b = await run(() => resp([{ data: { '2026-08-21': menus } }]), { noRow: true });
+  ok('พังจริง = โพสต์เตือน 4 ห้อง', b.state.posts === 4, 'โพสต์ ' + b.state.posts + ' ครั้ง');
 }
 
 console.log(NL + '────────────────────────────');
