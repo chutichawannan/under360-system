@@ -3574,6 +3574,8 @@ function previewPasteStock(){
   box.innerHTML = h;
 }
 async function applyPasteStock(){
+  /* 🔒 เดิมเขียนทั้ง stock_total และ actual_stock รวดเดียวทุกแถว = ทับของที่ครัวนับมากับมือ */
+  if(stockEditClosed()) return;
   if(!_pasteRows.length) return;
   const sb = getSB();
   let ok=0, fail=0;
@@ -3582,8 +3584,8 @@ async function applyPasteStock(){
     x.r.stock = x.qty;
     if(x.r.code && sb){
       try{
-        const { error } = await sb.from('menu_items').update({ stock_total:x.qty, actual_stock:x.qty }).eq('code', x.r.code);
-        if(error) throw error;
+        /* 🔒 เดิมเขียน stock_total + actual_stock ทับของที่ครัวนับมากับมือ — ปิดถาวร 12 ก.ย. 2569 (สต็อกอยู่ที่ k2) */
+        const error = null;
         ok++; if(x.before!==x.qty) done.push(x.r.code+'='+x.qty);
       }catch(e){ fail++; console.error('อัปเดตสต็อกไม่สำเร็จ', x.r.code, e); }
     }
@@ -4374,8 +4376,9 @@ function renderPttCard(r){
     </span>
     <div class="ptt-stock-ctrl">
       <button class="ptt-qb" onclick="chgStockFast('${r.id}',-1)">−</button>
-      <input type="number" class="ptt-stock-num" data-stock-id="${r.id}"
-        value="${r.stock||0}" oninput="saveStockInline('${r.id}',this.value)">
+      <input type="number" class="ptt-stock-num" data-stock-id="${r.id}" readonly
+        title="สต็อกแก้ที่หน้า k2 เท่านั้น (แท็บ 🔢 นับของ)"
+        value="${r.stock||0}" onclick="stockEditClosed()">
       <button class="ptt-qb plus" onclick="chgStockFast('${r.id}',1)">+</button>
     </div>
     <button class="ptt-open-btn" onclick="if(tapWasScroll())return; state.openId=(state.openId==='${r.id}'?null:'${r.id}'); render()">
@@ -4421,6 +4424,7 @@ async function clearIncomingFor(code){
 }
 
 function chgStockFast(id, delta){
+  if(stockEditClosed()) return;            // 🔒 สต็อกแก้ที่ k2 เท่านั้น
   const r = state.recipes.find(r=>r.id===id);
   if(!r) return;
   r.stock = Math.max(0, (r.stock||0) + delta);
@@ -4433,6 +4437,8 @@ function chgStockFast(id, delta){
 }
 
 function saveStockInline(id, val){
+  if(stockEditClosed()) return;            // 🔒 สต็อกแก้ที่ k2 เท่านั้น
+  void val;
   const r = state.recipes.find(r=>r.id===id);
   if(!r) return;
   r.stock = Math.max(0, parseInt(val)||0);
@@ -4443,19 +4449,17 @@ function saveStockInline(id, val){
 
 // ดัน stock ขึ้น menu_items จริง (คนละที่กับ persistRecipes ที่เซฟแค่ local working copy)
 // nat: null=ไม่จำกัด(ค่าเริ่มต้น) / 0=หมดสต็อกจริง / N=เหลือ N — ต้องมี code ถึง sync ได้ (เหมือน syncOnlineMenu)
-let _stockSyncTimers = {};
-function syncStockDebounced(r){
-  if(!r || !r.code) return;
-  clearTimeout(_stockSyncTimers[r.id]);
-  _stockSyncTimers[r.id] = setTimeout(async () => {
-    try{
-      const sb = getSB();
-      const { error } = await sb.from('menu_items').update({ stock_total: r.stock }).eq('code', r.code);
-      if(error) throw error;
-    }catch(e){ console.error('syncStockDebounced failed', e); showToast('⚠ ซิงค์สต็อกออนไลน์ไม่สำเร็จ'); }
-    finally{ delete _stockSyncTimers[r.id]; }   /* ต้องลบทิ้ง ไม่งั้นตัวดึงเลขสดจะนึกว่ายังมีคิวค้างตลอดกาล */
-  }, 500);
+/* 🔒 สต็อกมีที่กรอกที่เดียว = k2 (นัทเคาะ 12 ก.ย. 2569)
+   "งั้นเราไม่ลงสต้อคที่หน้า db แล้ว กรอกหน้า k2 ไปเลย ... ให้ใช้หน้าเดียวกับครัวไป"
+   ทำไมต้องปิดจริง ไม่ใช่ซ่อนปุ่ม: หน้านี้เคยเขียนทับเลขที่ k2 คิดไว้ (ครัวนับได้ − ที่ลูกค้าจอง) แบบเงียบ ๆ
+   = เลขเพี้ยนโดยไม่มีอะไรฟ้อง · อาการเดียวกับ ISSUE 02 ที่เพิ่งไล่ปิดไป */
+const K2_URL = '/pwa/k2.html';
+function stockEditClosed(){
+  try{ showToast('🔒 สต็อกแก้ที่หน้า k2 เท่านั้น — เปิด ' + K2_URL + ' แท็บ 🔢 นับของ'); }catch(e){}
+  return true;
 }
+/* เหลือชื่อเดิมไว้ให้ที่อื่นเรียกได้ แต่ไม่เขียนอะไรลงฐานข้อมูลอีกแล้ว */
+function syncStockDebounced(r){ void r; return stockEditClosed(); }
 
 function renderRecipeCard(r, tot, pinInfo){
   const isOpen = state.openId === r.id;
@@ -5301,6 +5305,7 @@ function attachHandlers(){
       const id = ctrl.dataset.id;
       const valInput = ctrl.querySelector('.stock-val');
       const commitStock = (newVal)=>{
+        if(stockEditClosed()) return;       // 🔒 สต็อกแก้ที่ k2 เท่านั้น
         if(!requireUser()) return;
         const r = state.recipes.find(x=>x.id===id);
         const delta = newVal - (r.stock||0);
