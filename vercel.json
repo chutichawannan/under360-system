@@ -43,6 +43,10 @@
       "destination": "/pwa/cash_due.html"
     },
     {
+      "source": "/ledger",
+      "destination": "/pwa/money.html"
+    },
+    {
       "source": "/o",
       "destination": "/pwa/orders_upcoming.html"
     },

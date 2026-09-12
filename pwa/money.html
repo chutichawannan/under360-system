@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<script src="/gate.js"></script>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Under360 — สมุดรายรับรายจ่าย</title>
+<meta name="theme-color" content="#10221A">
+<link rel="icon" href="./icon-192.png">
+<!--
+  💰 สมุดรายรับรายจ่าย — ใบงาน docs/BRIEF_LEDGER.md (นัทขอเอง 12 ก.ย. 2569) ทำตาม **v2**
+  v2 = ใช้ 2 คน (นัท + พลอย) · 3 กระเป๋า: ส่วนตัว · ร้าน Under360 · ของเราสองคน
+
+  หน้านี้ไม่ใช่ "ที่กรอกบัญชี" — คนจดด้วยการพิมพ์ในกลุ่มไลน์ที่มีกะปันตามปกติ
+  หน้านี้คือ "ที่มาดู / มาแก้ทีหลัง" + ที่ส่งออกให้คนทำบัญชี
+
+  🔴 สถานะ: **เปลือกหน้าจอยังไม่ใช่ตัวจบ** — ใบงาน v2 เขียนว่าเลขาทำดีไซน์ให้นัทเคาะก่อน
+     ตัวนี้คือเครื่องยนต์ที่ทำงานได้จริงแล้ว (อ่าน/เขียน/สรุป/ส่งออก) รอเปลี่ยนเปลือกตามที่นัทเคาะ
+
+  ⚠️ ชื่อซ้ำที่ต้องระวัง: เส้นทาง /money = **ใบทวงเงินลูกค้า** (pwa/cash_due.html) ของเดิม
+     หน้านี้อยู่ที่ /ledger — อย่าสลับกันเวลาบอกใคร
+
+  กติกาที่หน้านี้บังคับให้เป็นจริง:
+   · รายรับของร้าน **ไม่ให้ใครจด** — คำนวณสดจาก orders ทุกครั้ง (กติกาเดียวกับ scripts/finance/orders.mjs)
+     ตัดออเดอร์เทส · ตัด HS- (log แต้ม ไม่ใช่ยอดขาย) · ตัดใบยอด 0 (รอบส่งเพิ่ม/พนักงาน/prepaid)
+   · แยกกระเป๋าตั้งแต่ตอนจด — ปุ่มสลับอยู่บนสุด ไม่ใช่ตัวกรองซ่อนอยู่
+   · กระเป๋า "ของเราสองคน" ต้องรู้ว่าใครออกเงิน → สรุปได้ว่าตอนนี้ใครออกไปมากกว่าเท่าไหร่
+   · ของที่กะปันเดาไม่ชัด ขึ้นแถบ "รอยืนยัน" ให้กดแก้ทีเดียวหลายรายการ
+   · ข้อมูลไม่เคยกลายเป็นไฟล์ใน repo — export CSV เกิดในเครื่องคนกด ไม่ผ่านเซิร์ฟเวอร์เรา
+   · ลบแล้วต้องนับซ้ำว่าหายจริง (RLS เคยบล็อกเงียบแล้วคืน 204 เหมือนสำเร็จ)
+
+  🔴 ที่ยังทำไม่ได้จริง และห้ามเคลมว่าทำได้:
+     ใบงาน v2 เขียนว่า "หน้าของอีกฝ่ายเปิดดูไม่ได้" — ตอนนี้ทำได้แค่ระดับการแสดงผล
+     ทุกหน้าในระบบยิงด้วย anon key ตัวเดียวกัน คนที่รู้วิธีเปิดดูได้หมด
+     ถ้าพลอยต้องการล็อกจริง ต้องอ่าน/เขียนผ่าน serverless (service role) + ผูก LINE uid — ยังไม่ได้ทำ
+
+  ⛔ ไม่ทำในเวอร์ชันแรก (กันบานปลาย ตามใบงาน): OCR สลิป · ต่อ API ธนาคาร · งบกำไรขาดทุนอัตโนมัติ
+     ตัวเลขทุกตัวต้องผ่านคนทำบัญชีก่อนใช้จริง — หน้านี้ไม่ใช่โปรแกรมบัญชี
+-->
+<style>
+:root{
+  --bg:#0E1512; --panel:#16211C; --panel2:#1D2A24; --line:#2A3A32;
+  --tx:#EAF2ED; --soft:#93A79B; --g:#35D07F; --g-dim:#1F7A4D;
+  --warn:#FF6B6B; --amber:#F2B33D; --blue:#5AA9FF; --violet:#C7A9FF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
+  font-size:16px;line-height:1.45;padding-bottom:90px}
+header{position:sticky;top:0;z-index:20;background:rgba(14,21,18,.97);
+  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px}
+.hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.htitle{font-size:19px;font-weight:700}
+.hsub{font-size:12px;color:var(--soft);margin-top:2px}
+.right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.btn{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
+  border-radius:10px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;
+  font-family:inherit;min-height:40px}
+.btn:active{background:var(--g-dim)}
+.btn.on{border-color:var(--g);color:var(--g)}
+.btn.ghost{background:transparent}
+.btn.danger{border-color:#5A2A2A;color:var(--warn)}
+.books{display:flex;gap:8px;margin-top:10px}
+.books .btn{flex:1;padding:9px 6px}
+main{padding:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
+.kpi .l{font-size:12px;color:var(--soft)}
+.kpi .v{font-size:24px;font-weight:800;margin-top:3px;letter-spacing:-.3px}
+.kpi .s{font-size:11.5px;color:var(--soft);margin-top:3px;line-height:1.6}
+.kpi.in .v{color:var(--g)}
+.kpi.out .v{color:var(--amber)}
+.kpi.net .v{color:var(--blue)}
+.kpi.owe .v{color:var(--violet)}
+.sec{font-size:13px;color:var(--soft);margin:18px 0 9px;font-weight:600}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
+  padding:12px 14px;margin-bottom:10px}
+.row{display:flex;gap:10px;align-items:flex-start}
+.row .amt{margin-left:auto;text-align:right;flex-shrink:0}
+.amt .n{font-size:19px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.amt .n.in{color:var(--g)}
+.amt .n.out{color:var(--amber)}
+.meta{font-size:12px;color:var(--soft);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.note{font-size:14.5px;font-weight:600;overflow-wrap:anywhere}
+.raw{font-size:12px;color:var(--soft);margin-top:4px;overflow-wrap:anywhere;font-style:italic}
+.tag{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
+.tag.shop{background:#12283B;color:var(--blue);border:1px solid #204866}
+.tag.personal{background:#2B2438;color:var(--violet);border:1px solid #433764}
+.tag.shared{background:#12301F;color:var(--g);border:1px solid #1F5A3A}
+.tag.review{background:#3A2F12;color:var(--amber);border:1px solid #5A4A20}
+.tag.slip{background:#12301F;color:var(--g);border:1px solid #1F5A3A}
+.acts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
+.acts .btn{padding:7px 11px;font-size:13px;min-height:36px}
+.rbanner{background:#2A2312;border:1px solid #5A4A20;border-radius:14px;padding:12px 14px;margin-bottom:13px}
+.rbanner .t{font-weight:700;color:var(--amber);font-size:14.5px}
+.rbanner .d{font-size:12.5px;color:var(--soft);margin-top:4px;line-height:1.65}
+.empty{background:var(--panel);border:1px dashed var(--line);border-radius:14px;
+  padding:22px 18px;text-align:center;color:var(--soft);font-size:14px;line-height:1.75}
+.empty b{color:var(--tx)}
+code{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+  padding:1px 6px;font-size:12.5px;color:var(--amber);overflow-wrap:anywhere}
+label{display:block;font-size:12px;color:var(--soft);margin:9px 0 4px}
+input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--tx);
+  border-radius:10px;padding:11px 12px;font-size:15px;font-family:inherit;min-height:44px}
+textarea{min-height:64px;resize:vertical}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+dialog{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:16px;
+  padding:16px;width:min(94vw,460px);max-height:88vh}
+dialog::backdrop{background:#000A}
+.dtitle{font-size:17px;font-weight:700;margin-bottom:2px}
+.dhint{font-size:12px;color:var(--soft);line-height:1.6}
+.fab{position:fixed;right:16px;bottom:18px;z-index:30;background:var(--g);color:#08150E;
+  border:0;border-radius:999px;padding:15px 21px;font-size:15px;font-weight:800;
+  font-family:inherit;box-shadow:0 8px 26px #0009;cursor:pointer}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;z-index:40;
+  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
+  padding:11px 17px;font-size:14px;max-width:92vw;display:none}
+.who{font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap}
+.who .btn{padding:5px 10px;font-size:12px;min-height:30px}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div>
+      <div class="htitle">💰 สมุดรายรับรายจ่าย</div>
+      <div class="hsub" id="sub">กำลังโหลด…</div>
+    </div>
+    <div class="right">
+      <button class="btn" onclick="exportCsv()">⬇ CSV</button>
+      <button class="btn" onclick="load()">↻</button>
+    </div>
+  </div>
+  <div class="books">
+    <button class="btn on" id="b-personal" onclick="setBook('personal')">👤 ส่วนตัว</button>
+    <button class="btn" id="b-shop" onclick="setBook('shop')">🏪 ร้าน</button>
+    <button class="btn" id="b-shared" onclick="setBook('shared')">👫 เราสองคน</button>
+  </div>
+  <div class="who">
+    <span>เปิดในชื่อ</span>
+    <button class="btn" id="w-nut" onclick="setWho('nut')">นัท</button>
+    <button class="btn" id="w-ploy" onclick="setWho('ploy')">พลอย</button>
+  </div>
+</header>
+
+<main>
+  <div id="kpis"></div>
+  <div id="list"></div>
+</main>
+
+<button class="fab" onclick="openAdd()">+ จดเพิ่ม</button>
+<div class="toast" id="toast"></div>
+
+<dialog id="dlg">
+  <div class="dtitle" id="dtitle">จดรายการ</div>
+  <div class="dhint">ปกติพิมพ์บอกในกลุ่มไลน์ที่มีกะปันแล้วจดให้เอง — ช่องนี้ไว้ใส่เองหรือแก้ของเก่า</div>
+  <form method="dialog" id="form">
+    <div class="grid2">
+      <div>
+        <label for="f-book">กระเป๋า</label>
+        <select id="f-book" onchange="syncPaidBy()">
+          <option value="personal">👤 ส่วนตัว</option>
+          <option value="shop">🏪 ร้าน Under360</option>
+          <option value="shared">👫 ของเราสองคน</option>
+        </select>
+      </div>
+      <div>
+        <label for="f-kind">รับหรือจ่าย</label>
+        <select id="f-kind"><option value="out">จ่ายออก</option><option value="in">รับเข้า</option></select>
+      </div>
+    </div>
+    <div class="grid2">
+      <div>
+        <label for="f-amount">จำนวนเงิน (บาท)</label>
+        <input id="f-amount" type="number" inputmode="decimal" min="0" step="0.01" required>
+      </div>
+      <div>
+        <label for="f-at">วันที่เกิดรายการ</label>
+        <input id="f-at" type="date">
+      </div>
+    </div>
+    <div id="paidwrap" style="display:none">
+      <label for="f-paid">ใครออกเงินจริง (ใช้กับกระเป๋าของเราสองคน)</label>
+      <select id="f-paid"><option value="nut">นัท</option><option value="ploy">พลอย</option></select>
+    </div>
+    <label for="f-category">หมวด</label>
+    <input id="f-category" list="cats" placeholder="เช่น วัตถุดิบ · ค่าส่ง · แอด · บ้าน · ลูก">
+    <datalist id="cats"></datalist>
+    <label for="f-note">รายละเอียด (เก็บข้อความดิบไว้ได้เลย)</label>
+    <textarea id="f-note" placeholder="เช่น วันนี้กินแซมาอึลไป 956 บาท"></textarea>
+    <label for="f-slip">ลิงก์สลิป (ถ้ามี)</label>
+    <input id="f-slip" type="url" placeholder="https://…">
+    <div class="acts" style="margin-top:14px">
+      <button class="btn on" id="f-save" value="save" type="submit">บันทึก</button>
+      <button class="btn ghost" value="cancel" type="submit" formnovalidate>ยกเลิก</button>
+      <button class="btn danger" id="f-del" value="delete" type="submit" formnovalidate style="margin-left:auto;display:none">ลบรายการ</button>
+    </div>
+  </form>
+</dialog>
+
+<script>
+/* PWA เพจนี้ยิง REST ตรง (เหมือน pwa/ingredient_prices.html) — ไม่โหลด SDK ให้หนักมือถือ */
+const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
+const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+
+/* หมวดตั้งต้น — f-track เป็นเจ้าของหมวดตามใบงาน ตรงนี้แค่ช่วยพิมพ์ ไม่ได้บังคับ */
+const CATS = ['วัตถุดิบ','ค่าส่ง','แอด','เครื่องมือ','ค่าแรง','ของใช้ครัว','แก๊ส/ไฟ/น้ำ','ค่าธรรมเนียม',
+              'อาหาร','บ้าน','ลูก','เดินทาง','ของใช้','อื่น ๆ'];
+const NAME = {nut:'นัท', ploy:'พลอย'};
+
+let BOOK = 'personal', WHO = 'nut', ROWS = [], SHOP_IN = {day:0, month:0, days:0},
+    STATE = 'loading', EDIT = null;
+try{ WHO = localStorage.getItem('ledger_who') || 'nut'; }catch(e){}
+
+const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const baht = n => '฿' + Math.round(Number(n)||0).toLocaleString();
+
+/* 🇹🇭 เวลาไทยเสมอ — นัทอยู่ PST เปิดหน้านี้ตอนไหนก็ต้องได้ "วันนี้" แบบเดียวกับที่ครัว/แอดมินเห็น
+   (บทเรียนจาก pwa/orders_upcoming: คำนวณจากเครื่องแล้ววันเพี้ยนไป 1 วัน) */
+function thaiYmd(d){
+  const t = new Date((d||new Date()).getTime() + 7*3600*1000);
+  return t.toISOString().slice(0,10);
+}
+const dayStartIso = ymd => new Date(ymd + 'T00:00:00+07:00').toISOString();
+const dayEndIso   = ymd => new Date(new Date(ymd + 'T00:00:00+07:00').getTime() + 86400000).toISOString();
+function monthRange(ymd){
+  /* คิดจากตัวเลขในสตริงตรง ๆ — ห้ามใช้ getUTCMonth ของเวลาไทยที่แปลงแล้ว
+     วันที่ 1 เวลาไทย = วันสุดท้ายของเดือนก่อนตาม UTC → เดือนจะเลื่อนผิดไป 1 แบบเงียบ ๆ */
+  const y = Number(ymd.slice(0,4)), m = Number(ymd.slice(5,7));
+  const two = n => (n < 10 ? '0' : '') + n;
+  const first = y + '-' + two(m) + '-01';
+  const nextFirst = (m === 12 ? (y+1) + '-01' : y + '-' + two(m+1)) + '-01';
+  return { from: dayStartIso(first), to: dayStartIso(nextFirst) };
+}
+function thaiTime(iso){
+  if(!iso) return '';
+  const t = new Date(new Date(iso).getTime() + 7*3600*1000).toISOString();
+  return t.slice(8,10) + '/' + t.slice(5,7) + ' ' + t.slice(11,16);
+}
+
+async function rest(path, opt){
+  const o = opt || {};
+  const r = await fetch(SB_URL + '/rest/v1/' + path, {
+    method: o.method || 'GET',
+    headers: Object.assign({apikey:SB_KEY, Authorization:'Bearer ' + SB_KEY,
+      'Content-Type':'application/json'}, o.headers || {}),
+    body: o.body ? JSON.stringify(o.body) : undefined
+  });
+  /* 404 = ตารางยังไม่ถูกสร้าง ต้องแยกจาก "สร้างแล้วแต่ว่าง" ไม่งั้นไม่มีใครรู้ว่าต้องไปรัน SQL */
+  if(r.status === 404) return {missing:true, rows:[]};
+  if(!r.ok) throw new Error(path + ' → ' + r.status + ' ' + (await r.text()).slice(0,200));
+  const txt = await r.text();
+  return {missing:false, rows: txt ? JSON.parse(txt) : []};
+}
+
+/* ── รายรับของร้าน: ไม่ให้ใครจด คำนวณสดจาก orders ────────────────────────────
+   ใช้กติกาเดียวกับ scripts/finance/orders.mjs — ถ้าแก้ที่นั่น ต้องแก้ที่นี่ด้วย
+   (ยกมาเป็นโค้ดเพราะหน้านี้เป็น HTML ไฟล์เดียว import ไม่ได้ · ห้ามคำนวณยอดขายด้วยมือแบบอื่น) */
+const TEST_NAMES = ['nut','test user','ทดลอบ 1','ploy ♡','schematest'];
+function isTestOrder(o){
+  if(o.source === 'parallel_test') return true;
+  if(o.created_by === '[TEST-P] Claude') return true;
+  if(String(o.notes||'').indexOf('[PARALLEL]') === 0) return true;
+  return TEST_NAMES.indexOf(String(o.customer_name||'').trim().toLowerCase()) >= 0;
+}
+const isLoyaltyLog = o => o.source === 'hato_loyalty_log' || String(o.order_number||'').indexOf('HS-') === 0;
+/* ใบยอด 0 ไม่ใช่การขาย (รอบส่งเพิ่ม · prepaid ทยอยส่ง · อาหารพนักงาน) — 3 แบบนี้นับเป็นยอดไม่ได้ทั้งหมด */
+const isSale = o => Number(o.total) > 0 && !isLoyaltyLog(o) && !isTestOrder(o);
+
+async function loadShopIncome(today){
+  const m = monthRange(today);
+  const sel = 'select=order_number,total,created_at,source,created_by,customer_name,notes';
+  const q = 'orders?' + sel + '&created_at=gte.' + m.from + '&created_at=lt.' + m.to
+          + '&order=created_at.asc&limit=5000';
+  const res = await rest(q);
+  const sales = (res.rows||[]).filter(isSale);
+  const dFrom = dayStartIso(today), dTo = dayEndIso(today);
+  const inDay = sales.filter(o => o.created_at >= dFrom && o.created_at < dTo);
+  return {
+    month: sales.reduce((s,o) => s + Number(o.total||0), 0),
+    day:   inDay.reduce((s,o) => s + Number(o.total||0), 0),
+    days:  inDay.length, monthCount: sales.length
+  };
+}
+
+async function load(){
+  STATE = 'loading'; render();
+  const today = thaiYmd();
+  try{
+    const m = monthRange(today);
+    /* sequential reads ตามกติกาโปรเจค · ทุก select มี limit เสมอ */
+    const led = await rest('ledger?select=*&at=gte.' + m.from + '&at=lt.' + m.to
+                         + '&order=at.desc&limit=3000');
+    if(led.missing){ STATE = 'nosql'; return render(); }
+    ROWS = led.rows || [];
+    SHOP_IN = await loadShopIncome(today);
+    STATE = 'ok';
+  }catch(e){
+    console.error(e); STATE = 'error'; document.getElementById('sub').textContent = String(e.message||e);
+  }
+  render();
+}
+
+function setBook(b){
+  BOOK = b;
+  ['personal','shop','shared'].forEach(x =>
+    document.getElementById('b-' + x).className = 'btn' + (x === b ? ' on' : ''));
+  render();
+}
+function setWho(w){
+  WHO = w;
+  try{ localStorage.setItem('ledger_who', w); }catch(e){}
+  ['nut','ploy'].forEach(x =>
+    document.getElementById('w-' + x).className = 'btn' + (x === w ? ' on' : ''));
+  render();
+}
+
+/* กระเป๋าส่วนตัว = ของใครของมัน · ร้าน/เราสองคน = เห็นร่วมกัน
+   (นี่คือการ "แยกการแสดงผล" ไม่ใช่การล็อกสิทธิ์จริง — ดูหมายเหตุหัวไฟล์) */
+function visible(){
+  if(BOOK === 'personal') return ROWS.filter(r => r.book === 'personal' && (r.owner||'nut') === WHO);
+  return ROWS.filter(r => r.book === BOOK);
+}
+const sum = (list, kind) => list.filter(r => r.kind === kind)
+  .reduce((s,r) => s + Number(r.amount||0), 0);
+
+/* ของเราสองคน: ใครออกไปแล้วเท่าไหร่ → ตอนนี้ใครควรได้คืนเท่าไหร่
+   หารครึ่งเป็นค่าตั้งต้น (ไม่มีใครเคยเคาะสัดส่วนอื่น — ถ้าจะเปลี่ยนต้องให้นัท/พลอยเคาะ) */
+function sharedBalance(list){
+  const paid = {nut:0, ploy:0};
+  list.filter(r => r.kind === 'out').forEach(r => {
+    const by = (r.paid_by || r.owner || 'nut');
+    if(paid[by] == null) paid[by] = 0;
+    paid[by] += Number(r.amount||0);
+  });
+  const total = paid.nut + paid.ploy;
+  const each = total / 2;
+  return {paid:paid, total:total, nutNet: paid.nut - each};   // บวก = นัทออกเกิน ควรได้คืน
+}
+
+function kpis(){
+  const today = thaiYmd(), dFrom = dayStartIso(today), dTo = dayEndIso(today);
+  const list = visible();
+  const day  = list.filter(r => r.at >= dFrom && r.at < dTo);
+  const shop = BOOK === 'shop';   // ยอดขายร้านโผล่เฉพาะกระเป๋าร้าน
+  const inDay  = sum(day,'in')  + (shop ? SHOP_IN.day : 0);
+  const outDay = sum(day,'out');
+  const inMon  = sum(list,'in') + (shop ? SHOP_IN.month : 0);
+  const outMon = sum(list,'out');
+  const src = shop
+    ? '<div class="s">รวมยอดขายจาก orders แล้ว ' + baht(SHOP_IN.day) + ' (' + SHOP_IN.days + ' ใบ) — ไม่มีใครต้องจด</div>'
+    : '<div class="s">กระเป๋านี้ไม่นับยอดขายร้าน</div>';
+  let h = '<div class="kpis">'
+    + '<div class="kpi in"><div class="l">รับเข้า วันนี้</div><div class="v">' + baht(inDay) + '</div>' + src + '</div>'
+    + '<div class="kpi out"><div class="l">จ่ายออก วันนี้</div><div class="v">' + baht(outDay) + '</div>'
+      + '<div class="s">' + day.filter(r=>r.kind==='out').length + ' รายการ</div></div>'
+    + '<div class="kpi net"><div class="l">เดือนนี้ เหลือสุทธิ</div><div class="v">' + baht(inMon - outMon) + '</div>'
+      + '<div class="s">รับ ' + baht(inMon) + ' · จ่าย ' + baht(outMon) + '</div></div>';
+  if(BOOK === 'shared'){
+    const b = sharedBalance(list);
+    const who = b.nutNet >= 0 ? 'nut' : 'ploy';
+    const diff = Math.abs(b.nutNet);
+    h += '<div class="kpi owe"><div class="l">เดือนนี้ ใครออกไปมากกว่า</div>'
+      + '<div class="v">' + (diff < 1 ? 'เท่ากัน' : NAME[who] + ' +' + baht(diff)) + '</div>'
+      + '<div class="s">นัทออก ' + baht(b.paid.nut) + ' · พลอยออก ' + baht(b.paid.ploy)
+      + '<br>คิดแบบหารครึ่ง — ถ้าตกลงกันแบบอื่นบอกห้อง u ได้</div></div>';
+  }
+  return h + '</div>';
+}
+
+function rowHtml(r){
+  const t = r.kind === 'in' ? 'in' : 'out';
+  const book = r.book === 'shop' ? 'shop">🏪 ร้าน'
+             : r.book === 'shared' ? 'shared">👫 เราสองคน' : 'personal">👤 ส่วนตัว';
+  return '<div class="card"><div class="row"><div style="min-width:0;flex:1">'
+    + '<div class="note">' + esc(r.category || (r.kind === 'in' ? 'รับเข้า' : 'จ่ายออก')) + '</div>'
+    + (r.note ? '<div class="raw">' + esc(r.note) + '</div>' : '')
+    + '<div class="meta">'
+      + '<span class="tag ' + book + '</span>'
+      + (r.book === 'shared' ? '<span>ออกโดย ' + esc(NAME[r.paid_by || r.owner || 'nut'] || '—') + '</span>' : '')
+      + (r.needs_review ? '<span class="tag review">รอยืนยันกระเป๋า</span>' : '')
+      + (r.slip_url ? '<a class="tag slip" href="' + esc(r.slip_url) + '" target="_blank" rel="noopener">ดูสลิป</a>' : '')
+      + '<span>' + esc(thaiTime(r.at)) + '</span>'
+      + (r.created_by ? '<span>· ' + esc(r.created_by) + '</span>' : '')
+    + '</div></div>'
+    + '<div class="amt"><div class="n ' + t + '">' + (t === 'in' ? '+' : '−') + baht(r.amount) + '</div></div>'
+    + '</div>'
+    + '<div class="acts">'
+      + '<button class="btn" onclick="openEdit(&quot;' + r.id + '&quot;)">แก้</button>'
+      + (r.needs_review ? '<button class="btn on" onclick="confirmBook(&quot;' + r.id + '&quot;)">ยืนยันว่าถูกแล้ว</button>' : '')
+    + '</div></div>';
+}
+
+function render(){
+  const sub = document.getElementById('sub'), list = document.getElementById('list'),
+        kp = document.getElementById('kpis');
+  ['nut','ploy'].forEach(x =>
+    document.getElementById('w-' + x).className = 'btn' + (x === WHO ? ' on' : ''));
+  if(STATE === 'loading'){ sub.textContent = 'กำลังโหลด…'; kp.innerHTML=''; list.innerHTML=''; return; }
+  if(STATE === 'nosql'){
+    sub.textContent = 'ยังเปิดใช้ไม่ได้';
+    kp.innerHTML = '';
+    list.innerHTML = '<div class="empty"><b>ยังไม่ได้สร้างตารางในฐานข้อมูล</b><br>'
+      + 'ต้องเปิด Supabase → SQL Editor แล้วรันไฟล์ <code>scripts/sql_ledger.sql</code> ก่อนหนึ่งครั้ง<br>'
+      + 'หน้านี้จะใช้ได้ทันทีหลังรัน ไม่ต้องแก้อะไรเพิ่ม</div>';
+    return;
+  }
+  if(STATE === 'error'){
+    kp.innerHTML = '';
+    list.innerHTML = '<div class="empty"><b>โหลดข้อมูลไม่สำเร็จ</b><br>กด ↻ อีกครั้ง ถ้ายังไม่ได้ให้บอกห้อง u</div>';
+    return;
+  }
+  const rows = visible();
+  sub.textContent = 'เดือนนี้ ' + ROWS.length + ' รายการ · วันไทย ' + thaiYmd();
+  kp.innerHTML = kpis();
+
+  let h = '';
+  const review = rows.filter(r => r.needs_review);
+  if(review.length){
+    h += '<div class="rbanner"><div class="t">⚠️ รอยืนยันว่าอยู่กระเป๋าไหน ' + review.length + ' รายการ</div>'
+      + '<div class="d">กะปันจดให้แล้วแต่ไม่ชัดว่ากระเป๋าไหน จึงลงเป็น "ส่วนตัว" ไว้ก่อน — '
+      + 'แยกผิดตั้งแต่ตอนจดจะตามแก้ตอนสิ้นเดือนไม่ทัน</div>'
+      + '<div class="acts"><button class="btn on" onclick="confirmAll()">ยืนยันทั้งหมดว่าถูกแล้ว</button></div></div>';
+  }
+  if(!rows.length){
+    h += '<div class="empty">เดือนนี้ยังไม่มีรายการในกระเป๋านี้<br>'
+       + '<b>ปกติไม่ต้องมากรอกที่นี่</b> — พิมพ์บอกในกลุ่มไลน์ที่มีกะปันตามปกติ เดี๋ยวขึ้นเอง</div>';
+  } else {
+    h += '<div class="sec">รายการเดือนนี้ (ใหม่สุดก่อน)</div>' + rows.map(rowHtml).join('');
+  }
+  list.innerHTML = h;
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.display = 'block';
+  clearTimeout(toast._t); toast._t = setTimeout(() => { t.style.display = 'none'; }, 2600);
+}
+
+/* ── เพิ่ม / แก้ / ลบ ─────────────────────────────────────────────── */
+function fillCats(){
+  document.getElementById('cats').innerHTML =
+    CATS.map(c => '<option value="' + esc(c) + '">').join('');
+}
+function syncPaidBy(){
+  document.getElementById('paidwrap').style.display =
+    document.getElementById('f-book').value === 'shared' ? '' : 'none';
+}
+function openAdd(){
+  EDIT = null;
+  document.getElementById('dtitle').textContent = 'จดรายการ';
+  document.getElementById('f-book').value = BOOK;
+  document.getElementById('f-kind').value = 'out';
+  document.getElementById('f-amount').value = '';
+  document.getElementById('f-at').value = thaiYmd();
+  document.getElementById('f-paid').value = WHO;
+  document.getElementById('f-category').value = '';
+  document.getElementById('f-note').value = '';
+  document.getElementById('f-slip').value = '';
+  document.getElementById('f-del').style.display = 'none';
+  syncPaidBy();
+  document.getElementById('dlg').showModal();
+}
+function openEdit(id){
+  const r = ROWS.find(x => x.id === id); if(!r) return;
+  EDIT = r;
+  document.getElementById('dtitle').textContent = 'แก้รายการ';
+  document.getElementById('f-book').value = r.book || 'personal';
+  document.getElementById('f-kind').value = r.kind;
+  document.getElementById('f-amount').value = r.amount;
+  document.getElementById('f-at').value = thaiYmd(new Date(r.at));
+  document.getElementById('f-paid').value = r.paid_by || r.owner || 'nut';
+  document.getElementById('f-category').value = r.category || '';
+  document.getElementById('f-note').value = r.note || '';
+  document.getElementById('f-slip').value = r.slip_url || '';
+  document.getElementById('f-del').style.display = '';
+  syncPaidBy();
+  document.getElementById('dlg').showModal();
+}
+
+document.getElementById('form').addEventListener('submit', async (ev) => {
+  const act = ev.submitter && ev.submitter.value;
+  if(act === 'cancel') return;
+  if(act === 'delete'){ ev.preventDefault(); document.getElementById('dlg').close(); return removeRow(); }
+  ev.preventDefault();
+  const amount = Number(document.getElementById('f-amount').value);
+  if(!(amount >= 0)){ toast('ใส่จำนวนเงินก่อน'); return; }
+  const ymd = document.getElementById('f-at').value || thaiYmd();
+  /* แก้เฉพาะ "วัน" ให้คงเวลาเดิมไว้ ไม่งั้นรายการเที่ยงคืนจะเด้งข้ามวันตอนกดแก้ */
+  const at = (EDIT && thaiYmd(new Date(EDIT.at)) === ymd) ? EDIT.at : dayStartIso(ymd);
+  const book = document.getElementById('f-book').value;
+  const body = {
+    at: at,
+    book: book,
+    kind: document.getElementById('f-kind').value,
+    amount: amount,
+    paid_by: book === 'shared' ? document.getElementById('f-paid').value : null,
+    category: document.getElementById('f-category').value.trim() || null,
+    note: document.getElementById('f-note').value.trim() || null,
+    slip_url: document.getElementById('f-slip').value.trim() || null,
+    updated_at: new Date().toISOString()
+  };
+  try{
+    if(EDIT){
+      body.needs_review = false;      // คนแตะเองแล้ว = ไม่ต้องรอยืนยันอีก
+      await rest('ledger?id=eq.' + EDIT.id, {method:'PATCH', body:body});
+      toast('แก้แล้ว');
+    } else {
+      body.owner = WHO;
+      body.source = 'manual';
+      body.created_by = 'หน้าเว็บ (' + (NAME[WHO]||WHO) + ')';
+      await rest('ledger', {method:'POST', body:body});
+      toast('จดแล้ว ' + baht(amount));
+    }
+    document.getElementById('dlg').close();
+    await load();
+  }catch(e){ console.error(e); toast('บันทึกไม่สำเร็จ'); }
+});
+
+/* 🔴 DELETE ได้ 204 ไม่ได้แปลว่าลบแล้ว — RLS บล็อกเงียบได้ ต้องนับแถวซ้ำเสมอ
+   (เจอมาแล้วในโปรเจคนี้ · ถ้าไม่เช็ค คนจะคิดว่าลบไปแล้วทั้งที่ยังอยู่) */
+async function removeRow(){
+  const r = EDIT; if(!r) return;
+  if(!confirm('ลบรายการนี้? ' + baht(r.amount) + ' ' + (r.category||''))) return;
+  try{
+    await rest('ledger?id=eq.' + r.id, {method:'DELETE'});
+    const back = await rest('ledger?select=id&id=eq.' + r.id + '&limit=1');
+    if((back.rows||[]).length){ toast('ลบไม่สำเร็จ — แถวยังอยู่ (สิทธิ์ถูกปฏิเสธเงียบ)'); return; }
+    toast('ลบแล้ว'); await load();
+  }catch(e){ console.error(e); toast('ลบไม่สำเร็จ'); }
+}
+
+async function patch(id, body){
+  await rest('ledger?id=eq.' + id, {method:'PATCH',
+    body: Object.assign({updated_at:new Date().toISOString()}, body)});
+}
+async function confirmBook(id){
+  try{ await patch(id, {needs_review:false}); toast('ยืนยันแล้ว'); await load(); }
+  catch(e){ console.error(e); toast('ไม่สำเร็จ'); }
+}
+async function confirmAll(){
+  const ids = visible().filter(r => r.needs_review).map(r => r.id);
+  if(!ids.length) return;
+  if(!confirm('ยืนยันว่ากระเป๋าถูกแล้วทั้ง ' + ids.length + ' รายการ?')) return;
+  try{
+    await rest('ledger?id=in.(' + ids.join(',') + ')',
+      {method:'PATCH', body:{needs_review:false, updated_at:new Date().toISOString()}});
+    toast('ยืนยัน ' + ids.length + ' รายการ'); await load();
+  }catch(e){ console.error(e); toast('ไม่สำเร็จ'); }
+}
+
+/* ── ส่งออกให้คนทำบัญชี ──────────────────────────────────────────────
+   เกิดในเครื่องคนกดล้วน ๆ (Blob + a.download) ไม่ผ่านเซิร์ฟเวอร์เรา
+   → ข้อมูลไม่เคยกลายเป็นไฟล์ที่ค้างอยู่ใน repo หรือบนโฮสต์ (ใบงานข้อ 5)
+   BOM ข้างหน้า ไม่งั้น Excel เปิดภาษาไทยเป็นขยะ */
+function exportCsv(){
+  const rows = visible();
+  if(!rows.length){ toast('ไม่มีรายการให้ส่งออก'); return; }
+  const BOOKNAME = {shop:'ร้าน', personal:'ส่วนตัว', shared:'ของเราสองคน'};
+  const head = ['วันที่','เวลา','กระเป๋า','คนจด','คนออกเงิน','รับ/จ่าย','จำนวนเงิน','หมวด','รายละเอียด','สลิป','ที่มา','รอยืนยัน'];
+  const q = v => '"' + String(v==null?'':v).split('"').join('""') + '"';
+  const body = rows.map(r => {
+    const t = new Date(new Date(r.at).getTime() + 7*3600*1000).toISOString();
+    return [t.slice(0,10), t.slice(11,16), BOOKNAME[r.book] || r.book,
+            NAME[r.owner] || r.owner || '', NAME[r.paid_by] || '',
+            r.kind === 'in' ? 'รับ' : 'จ่าย', Number(r.amount||0), r.category||'', r.note||'',
+            r.slip_url||'', r.source||'', r.needs_review ? 'ใช่' : ''].map(q).join(',');
+  });
+  const csv = String.fromCharCode(0xFEFF) + [head.map(q).join(',')].concat(body).join(String.fromCharCode(13,10));
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'ledger-' + BOOK + '-' + thaiYmd() + '.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  toast('ส่งออก ' + rows.length + ' รายการ');
+}
+
+fillCats();
+setWho(WHO);
+load();
+</script>
+</body>
+</html>
