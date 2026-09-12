@@ -2764,6 +2764,21 @@ function cartDateBeforeReady(ymd){
   const ready = cartEarliestReadyDate();
   return (ready && ymd && String(ymd).slice(0,10) < ready) ? ready : null;
 }
+/* 🔒 ของในตะกร้าเกินที่ซื้อได้จริงของวันรับที่เลือกไหม
+   (ลูกค้าอาจใส่ตะกร้าตอนยังไม่เลือกวัน แล้วค่อยมาเลือกวันที่ของยังไม่เสร็จ)
+   คืนรายการที่เกิน พร้อมจำนวนที่ซื้อได้จริง — คืน [] ถ้าผ่านหมด */
+function cartOverStockFor(ymd){
+  const bad = [];
+  for (const c of cart) {
+    if (c.type === 'package' || c.type === 'meal_plan') continue;
+    const item = menuItems.find(m => m.id === c.id);
+    if (!item) continue;
+    const can = stockForDate(item, ymd);
+    if (Number(c.qty) > can) bad.push({ name: item.name || item.code, qty: Number(c.qty), can: can,
+      from: String((kitchenMake[item.id] || {}).from || '').slice(0,10) });
+  }
+  return bad;
+}
 
 function cartWeekType() {
   /* คืน 'next' ถ้าตะกร้า **มีเมนูพรีออเดอร์อยู่แม้แต่ชิ้นเดียว** ('current' = ของพร้อมส่งทั้งตะกร้า)
@@ -2852,7 +2867,8 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
+  const MAKE_KEY = 'k2_make';   // ใบสั่งงานครัว: { menu_id: {n, from:'YYYY-MM-DD'} }
+const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
   const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),
     sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
@@ -2863,6 +2879,11 @@ async function init() {
     sb.from('orders').select('id', { count:'exact', head:true }).eq('line_uid', lineProfile.userId)  // นับออเดอร์ลูกค้า → guard โปร "ลูกค้าใหม่"
   ]);
   const val = r => (r.status === 'fulfilled' ? r.value : {});
+  /* ใบสั่งงานครัว — อ่านอย่างเดียว พังก็ไม่กระทบการสั่งของ (ถือว่าไม่มีแผน) */
+  try {
+    const _mk = (val(cfgR).data || []).find(r => r.key === MAKE_KEY);
+    kitchenMake = (_mk && _mk.data) || {};
+  } catch (e) { kitchenMake = {}; }
 
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
@@ -3265,6 +3286,31 @@ function selectCat(c) {
 // 📦 STOCK — stock_total=0/null = ไม่จำกัด (ยังไม่ได้ตั้งสต็อก) ตั้งค่า > 0 เมื่อไหร่ถึงเริ่มจำกัดจริง
 // (เดิมโค้ดอ้าง item.stock_quantity ซึ่งไม่มีคอลัมน์นี้จริง — เลยกดซื้อได้ตลอดไม่ว่าสต็อกจะเท่าไหร่)
 // ══════════════════════════════════════
+/* ─── ของที่ครัวบอกว่า "จะทำเพิ่ม" ─────────────────────────────
+   kitchenMake[menu_id] = { n: จำนวน, from: 'YYYY-MM-DD' ส่งได้ตั้งแต่ }
+   ว่าง = ไม่มีแผนอะไร = ทุกอย่างทำงานเหมือนก่อนหน้านี้ทุกประการ */
+let kitchenMake = {};
+function thaiTodayYmd(){
+  return new Date(Date.now() + 7*3600*1000).toISOString().slice(0,10);   // เวลาไทยเสมอ
+}
+/* กันไว้กี่ชิ้นสำหรับ "วันรับของ" ที่ลูกค้าเลือก (ymd ว่าง = ยังไม่ได้เลือกวัน) */
+function makeHeldFor(item, ymd) {
+  const mk = item && kitchenMake[item.id];
+  if (!mk || !(Number(mk.n) > 0)) return 0;
+  const from = String(mk.from || '').slice(0,10);
+  const day  = ymd ? String(ymd).slice(0,10) : '';
+  /* ① เลือกวันรับก่อนของเสร็จ → ยังซื้อส่วนนี้ไม่ได้
+     ② เลยวันที่ครัวบอกไว้แล้วแต่ใบสั่งงานยังค้าง = ไม่มีใครยืนยันว่าทำจริง → กันไว้ก่อน */
+  const tooEarly = !!(from && day && day < from);
+  const unproven = !!(from && from < thaiTodayYmd());
+  return (tooEarly || unproven) ? Number(mk.n) : 0;
+}
+/* จำนวนที่ซื้อได้จริงสำหรับวันรับที่เลือก — ไม่เคยติดลบ */
+function stockForDate(item, ymd) {
+  const base = effectiveStock(item);
+  if (base >= 999) return base;                       // ไม่จำกัด
+  return Math.max(0, base - Math.min(makeHeldFor(item, ymd), base));
+}
 function effectiveStock(item) {
   return (item && item.stock_total != null) ? item.stock_total : 999;
 }
@@ -4502,6 +4548,20 @@ async function submitOrder() {
   /* 🔒 ด่านสุดท้าย: วันส่งห้ามก่อนวันที่เมนูในตะกร้าเริ่มขาย (เคสจริง U-0823-013 · วงจรเปิดศุกร์ 18:00 11 ก.ย.) */
   { const _notYet = cartDateBeforeReady(selDate);
     if (_notYet) { selDate = null; renderDatePick(); toast('ในตะกร้ามีเมนูที่เริ่มส่งได้ ' + readyDateLabel({available_from:_notYet}) + ' — กรุณาเลือกวันส่งใหม่'); return; } }
+  /* 🔒 ของที่ครัวยัง "ไม่ได้ทำ" ต้องไม่หลุดไปลงวันก่อนกำหนด
+     ต่างจากด่านบน: ด่านบนดู "เมนูเริ่มขายวันไหน" · ด่านนี้ดู "ของชุดที่ครัวกำลังจะทำ เสร็จวันไหน"
+     เช็คพลาด/ไม่มีแผน = ปล่อยผ่าน ห้ามบล็อกการสั่งเด็ดขาด (กฎเดิมของไฟล์นี้) */
+  try {
+    const _over = cartOverStockFor(selDate);
+    if (_over.length) {
+      const f = _over[0];
+      selDate = null; renderDatePick();
+      toast(f.from
+        ? ('"' + f.name + '" ชุดนี้ครัวทำเสร็จ ' + readyDateLabel({available_from:f.from}) + ' — เลือกวันรับใหม่ หรือลดจำนวนเหลือ ' + f.can)
+        : ('"' + f.name + '" เหลือ ' + f.can + ' ชิ้น — ปรับจำนวนก่อนนะครับ'));
+      return;
+    }
+  } catch (e) { console.warn('เช็คของที่กำลังจะทำไม่สำเร็จ ปล่อยผ่าน', e); }
   /* 🔁 กันออเดอร์ขยะจากการ "สั่งใหม่แทนการแก้"
      เคสจริง 23 ส.ค.: Leklucky สั่ง U-0824-015 ฿483 แล้ว 4 นาทีต่อมาสั่ง U-0824-016 ฿588
      ใบแรกไม่จ่าย แต่ครัวจัดไปแล้วทั้ง 2 ใบ = เสียของจริง 5 กล่อง

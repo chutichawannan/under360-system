@@ -1,0 +1,137 @@
+/* เทส "จะทำเพิ่ม" — ระบบที่นัทออกแบบเอง 12 ก.ย. 2569
+
+   ที่มา (คำนัท): ระบบมีช่องเดียวคือสต็อก แต่ต้องตอบ 2 คำถามพร้อมกัน
+     · ลูกค้า: "สั่งลงวันพุธได้ไหม"        · ครัว: "วันนี้ต้องทำอะไรกี่กล่อง"
+   → ใครอยากให้ลูกค้าสั่งได้ ต้องกรอกสต็อกล่วงหน้า แล้วครัวก็อ่านไม่ออกว่าของมีจริงหรือยัง
+
+   เคสจริงที่ต้องผ่านให้ได้ (นัทยกมาเอง):
+     1) เมนูสัปดาห์ใหม่ กรอกศุกร์เย็น ส่งได้จันทร์ → ลูกค้าติ๊กซื้อได้ตั้งแต่ศุกร์ แต่เลือกวันอาทิตย์ไม่ได้
+     2) เมนูปกติ X เหลือ 2 ครัวเติม 10 ส่งได้พุธ → เลือกอังคารเห็น 2 · เลือกพุธเห็น 12
+
+   🔴 กฎที่ห้ามหลุดเด็ดขาด (ISSUE 02 เกิดซ้ำเมื่อ 12 ก.ย. ตี 3:45):
+      "จะทำเพิ่ม" ต้องไม่มีทางกลายเป็น actual_stock เอง — ของในตู้มาจากการนับเท่านั้น */
+import fs from 'node:fs';
+const NL = String.fromCharCode(10);
+const url = (p) => new URL(p, import.meta.url);
+const K2 = fs.readFileSync(url('../../pwa/k2.html'), 'utf8').split(String.fromCharCode(13)).join('');
+const LIFF = fs.readFileSync(url('../../liff_customer.html'), 'utf8').split(String.fromCharCode(13)).join('');
+
+let pass = 0, fail = 0;
+const ok = (name, got) => {
+  if (got === true) { pass++; console.log('  ✅', name); }
+  else { fail++; console.log('  ❌', name); }
+};
+function grab(src, head) {
+  let i = src.indexOf(head);
+  if (i < 0) return null;
+  if (src.slice(i - 6, i) === 'async ') i -= 6;
+  let d = 0, started = false;
+  for (let j = i; j < src.length; j++) {
+    if (src[j] === '{') { d++; started = true; }
+    else if (src[j] === '}') { d--; if (started && d === 0) return src.slice(i, j + 1); }
+  }
+  return null;
+}
+
+console.log(NL + '1) หน้าครัว — ช่อง "จะทำเพิ่ม" แยกขาดจากช่องนับของ');
+ok('มีที่เก็บแยก (k2_make) ไม่ปนกับสต็อก', K2.indexOf("'k2_make'") >= 0 && K2.indexOf('let MAKE={}') >= 0);
+ok('กรอก 2 อย่าง: จำนวน + ส่งได้ตั้งแต่', K2.indexOf('class="mk-n"') >= 0 && K2.indexOf('class="mk-d"') >= 0);
+ok('เก็บชื่อคนใส่ไว้ด้วย', K2.indexOf('by:USER') >= 0 && K2.indexOf('เป็นคนใส่') >= 0);
+ok('เมนูที่ยังไม่มีแผน เป็นปุ่มเล็ก ไม่กางช่องทั้ง 139 เมนู', K2.indexOf('class="mk-add"') >= 0);
+ok('งานที่ต้องทำถูกเรียงขึ้นบนสุด', K2.indexOf('rows.sort((a,b)=>{') >= 0 && K2.indexOf('makeOf(a.m.id)?2:0') >= 0);
+ok('หัวจอนับ "จะทำเพิ่ม" เข้าไปด้วย (เดิมขึ้น 0 ทั้งที่ต้องผลิต 75)',
+  K2.indexOf('(mk && !makeExpired(mk)) ? mk.n : 0') >= 0);
+ok('เลขในตู้ที่ไม่ได้มาจากการนับ ติดป้ายในหน้าวางแผนด้วย',
+  K2.indexOf('เลขในตู้นี้ไม่ได้มาจากการนับใน 7 วัน') >= 0);
+
+console.log(NL + '2) 🔴 กฎเหล็ก — แผนต้องไม่กลายเป็นของในตู้เอง');
+{
+  const fn = grab(K2, 'async function saveMake(');
+  ok('ดึง saveMake ออกมาได้', !!fn);
+  /* ตัดคอมเมนต์ออกก่อนตรวจ — ไม่งั้นไปจับคำใน "คำเตือนที่เราเขียนเอง" แทนโค้ดจริง
+     (กับดักประจำโปรเจคนี้ เจอมาแล้วหลายรอบ) */
+  /* ตัดคอมเมนต์แบบบล็อกออกทั้งก้อน — บรรทัดกลางบล็อกไม่ได้ขึ้นต้นด้วย * เสมอไป
+     (รอบแรกผมกรองแค่บรรทัดที่ขึ้นต้นด้วย * เลยยังไปจับคำเตือนของตัวเอง) */
+  const codeOnly = (function(src){
+    let out = '', depth = 0;
+    for (let k = 0; k < src.length; k++) {
+      if (src[k] === '/' && src[k+1] === '*') { depth++; k++; continue; }
+      if (src[k] === '*' && src[k+1] === '/') { if (depth) depth--; k++; continue; }
+      if (!depth) out += src[k];
+    }
+    return out;
+  })(fn || '');
+  ok('saveMake ไม่แตะ actual_stock เลยแม้แต่ที่เดียว (ดูเฉพาะโค้ด ไม่นับคอมเมนต์)',
+    !!fn && codeOnly.indexOf('actual_stock') < 0);
+  ok('saveMake แตะแค่ stock_total (ยอดที่ลูกค้าซื้อได้)', !!fn && fn.indexOf('stock_total:next') >= 0);
+  ok('บวกเฉพาะส่วนต่าง ไม่ใช่ยอดเต็ม (แก้ 4→6 ต้องบวก 2)', !!fn && fn.indexOf('const d = n - before;') >= 0);
+  ok('ยอดขายไม่มีทางติดลบ', !!fn && fn.indexOf('Math.max(0, curSell + d)') >= 0);
+  ok('ทุกครั้งที่แก้ มี log ว่าใครแก้จากเท่าไหร่เป็นเท่าไหร่', !!fn && fn.indexOf('activity_log') >= 0);
+}
+{
+  const fn = grab(K2, 'async function saveCount(');
+  ok('ครัวนับแล้ว = ปิดใบสั่งงานที่ถึงกำหนด (คนยืนยัน ไม่ใช่เวลาผ่านไป)',
+    !!fn && fn.indexOf('delete MAKE[mid];') >= 0);
+  ok('ใบของสัปดาห์หน้าที่ยังไม่ถึงวัน ต้องไม่ถูกลบทิ้ง',
+    !!fn && fn.indexOf("(!mk.from || String(mk.from) <= DAY)") >= 0);
+}
+
+console.log(NL + '3) หน้าลูกค้า — เห็นของตามวันที่เลือกรับ');
+ok('โหลดใบสั่งงานครัวมาด้วย (ไม่เพิ่ม query ใหม่)',
+  LIFF.indexOf("const MAKE_KEY = 'k2_make'") >= 0 && LIFF.indexOf('CFG_KEYS = [') >= 0 &&
+  LIFF.indexOf('MAKE_KEY,') >= 0);
+ok('อ่านพลาดแล้วไม่พัง ถือว่าไม่มีแผน', LIFF.indexOf('catch (e) { kitchenMake = {}; }') >= 0);
+{
+  const body = [grab(LIFF, 'function thaiTodayYmd('), grab(LIFF, 'function makeHeldFor('),
+                grab(LIFF, 'function effectiveStock('), grab(LIFF, 'function stockForDate(')].join(NL);
+  const mk = (from, n) => ({ A: { n: n, from: from } });
+  const f = new Function('kitchenMake', 'TODAY',
+    'function thaiTodayYmd(){ return TODAY; }' + NL +
+    body.replace(grab(LIFF, 'function thaiTodayYmd('), '') + NL +
+    '; return {held:makeHeldFor, stock:stockForDate};')(mk('2026-09-16', 10), '2026-09-14');
+  const item = { id: 'A', stock_total: 12 };   // ในตู้ 2 + จะทำเพิ่ม 10 = ซื้อได้ 12
+
+  console.log('   · เคสนัทข้อ 2: X เหลือ 2 · เติม 10 · ส่งได้พุธ 16');
+  ok('เลือกรับอังคาร 15 (ของยังไม่เสร็จ) → เห็น 2', f.stock(item, '2026-09-15') === 2);
+  ok('เลือกรับพุธ 16 (วันที่ครัวบอก) → เห็น 12', f.stock(item, '2026-09-16') === 12);
+  ok('เลือกรับพฤหัส 17 → เห็น 12', f.stock(item, '2026-09-17') === 12);
+  ok('ยังไม่เลือกวัน (เดินดูเมนูอยู่) → เห็น 12 ไม่ขึ้นว่าหมด', f.stock(item, null) === 12);
+
+  console.log('   · เมนูที่ไม่มีแผนอะไรเลย ต้องเหมือนเดิมเป๊ะ');
+  const f2 = new Function('kitchenMake', 'TODAY',
+    'function thaiTodayYmd(){ return TODAY; }' + NL +
+    body.replace(grab(LIFF, 'function thaiTodayYmd('), '') + NL +
+    '; return {stock:stockForDate};')({}, '2026-09-14');
+  ok('ไม่มีแผน → ได้เท่าสต็อกเดิม', f2.stock({ id: 'A', stock_total: 5 }, '2026-09-15') === 5);
+  ok('ไม่มีแผน + ขายไม่จำกัด → ยังไม่จำกัด', f2.stock({ id: 'A', stock_total: null }, '2026-09-15') === 999);
+  ok('ไม่มีแผน + ของหมด → ยังหมด', f2.stock({ id: 'A', stock_total: 0 }, '2026-09-15') === 0);
+
+  console.log('   · 🔴 เลยวันที่ครัวบอกแล้ว แต่ยังไม่มีใครนับ = ไม่มีหลักฐานว่าทำจริง');
+  const f3 = new Function('kitchenMake', 'TODAY',
+    'function thaiTodayYmd(){ return TODAY; }' + NL +
+    body.replace(grab(LIFF, 'function thaiTodayYmd('), '') + NL +
+    '; return {stock:stockForDate};')(mk('2026-09-14', 10), '2026-09-16');
+  ok('เลยกำหนด 2 วัน ใบยังค้าง → กันไว้ เหลือ 2 (พังแบบปลอดภัย ไม่ขายของที่ไม่มี)',
+    f3.stock(item, '2026-09-17') === 2);
+
+  console.log('   · กันเลขเพี้ยน');
+  const f4 = new Function('kitchenMake', 'TODAY',
+    'function thaiTodayYmd(){ return TODAY; }' + NL +
+    body.replace(grab(LIFF, 'function thaiTodayYmd('), '') + NL +
+    '; return {stock:stockForDate};')(mk('2026-09-16', 99), '2026-09-14');
+  ok('แผนมากกว่าสต็อกที่มี → ไม่ติดลบ ได้ 0', f4.stock({ id: 'A', stock_total: 12 }, '2026-09-15') === 0);
+}
+
+console.log(NL + '4) ด่านตอนกดสั่ง — กันที่หน้าจออย่างเดียวไม่พอ');
+ok('มีด่านเช็คของเกินตามวันรับ', LIFF.indexOf('function cartOverStockFor(') >= 0);
+ok('ด่านนี้ถูกเรียกตอนกดสั่งจริง', LIFF.indexOf('const _over = cartOverStockFor(selDate);') >= 0);
+ok('ข้ามแพคเกจกับ Meal Plan (คนละเรื่องกับสต็อก)',
+  (grab(LIFF, 'function cartOverStockFor(') || '').indexOf("c.type === 'package' || c.type === 'meal_plan'") >= 0);
+ok('เช็คพลาดแล้วปล่อยผ่าน ห้ามบล็อกการสั่ง (กฎเดิมของไฟล์นี้)',
+  LIFF.indexOf("catch (e) { console.warn('เช็คของที่กำลังจะทำไม่สำเร็จ ปล่อยผ่าน', e); }") >= 0);
+ok('บอกลูกค้าว่าเลือกวันใหม่ได้ หรือลดจำนวนเหลือเท่าไหร่', LIFF.indexOf('หรือลดจำนวนเหลือ') >= 0);
+ok('ด่านวันเริ่มขายเดิมยังอยู่ ไม่ได้ถูกแทนที่', LIFF.indexOf('const _notYet = cartDateBeforeReady(selDate);') >= 0);
+
+console.log(NL + '────────────────────────────');
+console.log(fail ? ('❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass) : ('✅ ผ่านทั้งหมด ' + pass + ' ข้อ'));
+process.exit(fail ? 1 : 0);

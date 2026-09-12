@@ -202,7 +202,9 @@ console.log('\n13) เติมก่อนย้ายครัว (นัท�
 ok('โหลด stock_incoming + แผนป้าย + ยอดวางขายของนิว', NEW.indexOf("'stock_incoming','weekly_subcode_plan','weekly_stock_plan'") >= 0);
 ok('โหลดรอบ Meal Plan (mp_deliveries) ในช่วงวันเดียวกับใบ และมี limit', /from\('mp_deliveries'\)\.select\([^)]*\)\.gte\('delivery_date',from\)\.lte\('delivery_date',to\)\.limit\(/.test(NEW));
 ok('ปุ่มพิมพ์ใช้หน้าพิมพ์เดิม ส่งวันที่เลือกไปด้วย', NEW.indexOf("'/print_pickslip.html?date='+encodeURIComponent(ymd)+'&auto=1'") >= 0 && NEW.indexOf('href="\'+printUrl(DAY)+\'"') >= 0);
-ok('ไม่เพิ่มช่องกรอกในหน้านับของ (กำลังผลิตโชว์อย่างเดียว)', (NEW.match(/class="cnt"/g) || []).length === 2, 'เจอช่อง cnt ' + (NEW.match(/class="cnt"/g) || []).length);
+/* 12 ก.ย. 2569: หน้าวางแผนเลิกใช้ช่อง .cnt (เปลี่ยนเป็นช่อง "จะทำเพิ่ม" ที่คนใส่เอง)
+   → เหลือช่อง .cnt ที่เดียวคือหน้านับของ · ข้อนี้ยังเฝ้าเรื่องเดิม: ห้ามงอกช่องกรอกในหน้านับของ */
+ok('หน้านับของมีช่องกรอกช่องเดียว (กำลังผลิตโชว์อย่างเดียว)', (NEW.match(/class="cnt"/g) || []).length === 1, 'เจอช่อง cnt ' + (NEW.match(/class="cnt"/g) || []).length);
 ok('k2 ไม่เขียน stock_incoming เอง (ช่องนี้เป็นของนิว/หน้าเดิม)', !/upsert\(\{key:'stock_incoming'/.test(NEW) && !/key=eq\.stock_incoming[^]{0,80}PATCH/.test(NEW));
 {
   const fns = ['function ordersOn(', 'function incOf(', 'function weekStartOfYmd(', 'function weekPlanOf(', 'function mpRoundsOffOrder(', 'function mpRoundsOn('].map(sig => grab(NEW, sig));
