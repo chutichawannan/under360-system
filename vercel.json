@@ -47,10 +47,6 @@
       "destination": "/pwa/money.html"
     },
     {
-      "source": "/brief",
-      "destination": "/pwa/brief.html"
-    },
-    {
       "source": "/o",
       "destination": "/pwa/orders_upcoming.html"
     },
