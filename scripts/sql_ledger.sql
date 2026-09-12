@@ -79,3 +79,15 @@ begin
     update ledger set book = side where book is distinct from side and side in ('personal','shop');
   end if;
 end $$;
+
+-- ─────────────────────────────────────────────
+-- seed: รายการจริงรายการแรกที่นัทพิมพ์เข้ามาแล้ว (ใบงาน v3)
+-- 12 ก.ย. 2569 · เราสองคน · "กินข้าวกับพลอย" · นัทออก · ฿1,471
+-- กันซ้ำถ้ารันไฟล์นี้หลายรอบ
+-- ─────────────────────────────────────────────
+insert into ledger (at, owner, book, paid_by, kind, amount, category, note, source, created_by)
+select '2026-09-12T12:00:00+07:00'::timestamptz, 'nut', 'shared', 'nut', 'out', 1471,
+       'กินข้าวด้วยกัน', 'กินข้าวกับพลอย', 'line', 'กะปัน'
+where not exists (
+  select 1 from ledger where note = 'กินข้าวกับพลอย' and amount = 1471 and book = 'shared'
+);

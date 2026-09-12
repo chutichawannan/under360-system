@@ -3,168 +3,199 @@
 <head>
 <meta charset="UTF-8">
 <meta name="robots" content="noindex, nofollow, noarchive">
-<script src="/gate.js"></script>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Under360 — สมุดรายรับรายจ่าย</title>
-<meta name="theme-color" content="#10221A">
+<title>สมุดเงินเรา</title>
+<meta name="theme-color" content="#EFF2ED">
 <link rel="icon" href="./icon-192.png">
+<script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bai+Jamjuree:wght@500;600;700&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <!--
-  💰 สมุดรายรับรายจ่าย — ใบงาน docs/BRIEF_LEDGER.md (นัทขอเอง 12 ก.ย. 2569) ทำตาม **v2**
-  v2 = ใช้ 2 คน (นัท + พลอย) · 3 กระเป๋า: ส่วนตัว · ร้าน Under360 · ของเราสองคน
+  💰 สมุดเงินเรา — ใบงาน docs/BRIEF_LEDGER.md (นัทขอเอง 12 ก.ย. 2569) ทำตาม **v3**
+  นัทเคาะดีไซน์แล้ว: *"กำลังไปได้ดี แบบไหนก็ใช้ได้หมดนั่นแหละ เดี๋ยววันไหนใช้ไม่ได้เดี๋ยวก็ขอให้แก้เพิ่มเอง"*
+  หน้าตาอิงดีไซน์ที่นัทดู: claude.ai/code/artifact/db6eba6b-c503-4154-ac69-d19ac7077eef
 
-  หน้านี้ไม่ใช่ "ที่กรอกบัญชี" — คนจดด้วยการพิมพ์ในกลุ่มไลน์ที่มีกะปันตามปกติ
+  หน้านี้ไม่ใช่ "ที่กรอกบัญชี" — คนจดด้วยการพิมพ์ในกลุ่มไลน์ที่มีกะปัน
   หน้านี้คือ "ที่มาดู / มาแก้ทีหลัง" + ที่ส่งออกให้คนทำบัญชี
 
-  🔴 สถานะ: **เปลือกหน้าจอยังไม่ใช่ตัวจบ** — ใบงาน v2 เขียนว่าเลขาทำดีไซน์ให้นัทเคาะก่อน
-     ตัวนี้คือเครื่องยนต์ที่ทำงานได้จริงแล้ว (อ่าน/เขียน/สรุป/ส่งออก) รอเปลี่ยนเปลือกตามที่นัทเคาะ
+  ⚠️ ชื่อซ้ำที่ต้องระวัง: /money = **ใบทวงเงินลูกค้า** (pwa/cash_due.html) ของเดิม
+     หน้านี้อยู่ที่ **/ledger** — อย่าสลับกันเวลาบอกใคร
 
-  ⚠️ ชื่อซ้ำที่ต้องระวัง: เส้นทาง /money = **ใบทวงเงินลูกค้า** (pwa/cash_due.html) ของเดิม
-     หน้านี้อยู่ที่ /ledger — อย่าสลับกันเวลาบอกใคร
+  🔑 ใครเป็นใคร = **LINE uid** ไม่ใช่ PIN ร่วม (ใบงาน v3 สั่งไว้ตรง ๆ)
+     ผูกครั้งแรกแบบ "ใครเปิดก่อนกดเลือกชื่อ" แล้วล็อกช่องนั้นทันที (เก็บใน kitchen_data คีย์ ledger_owners)
+     🔴 **ยังเป็นการล็อกระดับการแสดงผล ไม่ใช่ระดับสิทธิ์จริง** — ทุกหน้าในระบบยิงด้วย anon key ตัวเดียวกัน
+        คนที่รู้วิธียังอ้อมไปอ่านฐานข้อมูลตรงได้ · ถ้าพลอยต้องการล็อกจริงต้องอ่านผ่าน serverless (service role)
+        **ห้ามบอกใครว่าข้อมูลถูกล็อกแล้ว** จนกว่าจะทำชั้นนั้น
 
   กติกาที่หน้านี้บังคับให้เป็นจริง:
-   · รายรับของร้าน **ไม่ให้ใครจด** — คำนวณสดจาก orders ทุกครั้ง (กติกาเดียวกับ scripts/finance/orders.mjs)
-     ตัดออเดอร์เทส · ตัด HS- (log แต้ม ไม่ใช่ยอดขาย) · ตัดใบยอด 0 (รอบส่งเพิ่ม/พนักงาน/prepaid)
-   · แยกกระเป๋าตั้งแต่ตอนจด — ปุ่มสลับอยู่บนสุด ไม่ใช่ตัวกรองซ่อนอยู่
-   · กระเป๋า "ของเราสองคน" ต้องรู้ว่าใครออกเงิน → สรุปได้ว่าตอนนี้ใครออกไปมากกว่าเท่าไหร่
-   · ของที่กะปันเดาไม่ชัด ขึ้นแถบ "รอยืนยัน" ให้กดแก้ทีเดียวหลายรายการ
-   · ข้อมูลไม่เคยกลายเป็นไฟล์ใน repo — export CSV เกิดในเครื่องคนกด ไม่ผ่านเซิร์ฟเวอร์เรา
+   · รายรับของร้าน **ไม่ให้ใครจด** — คำนวณสดจาก orders (กติกาเดียวกับ scripts/finance/orders.mjs)
+     ตัดออเดอร์เทส · ตัด HS- (log แต้ม) · ตัดใบยอด 0 (รอบส่งเพิ่ม/พนักงาน/prepaid)
+   · กระเป๋า "เราสองคน" ต้องบอกว่าใครออก → หน้าสรุปบอกได้ว่าใครออกไปก่อนมากกว่า
+   · ที่กะปันเดาไม่ชัด ติดป้าย "ยังไม่ยืนยันกระเป๋า" แตะยืนยันได้ทันทีในแถวนั้นเลย
+   · export CSV เกิดในเครื่องคนกด ไม่ผ่านเซิร์ฟเวอร์เรา — ข้อมูลไม่กลายเป็นไฟล์ค้างที่ไหน
    · ลบแล้วต้องนับซ้ำว่าหายจริง (RLS เคยบล็อกเงียบแล้วคืน 204 เหมือนสำเร็จ)
 
-  🔴 ที่ยังทำไม่ได้จริง และห้ามเคลมว่าทำได้:
-     ใบงาน v2 เขียนว่า "หน้าของอีกฝ่ายเปิดดูไม่ได้" — ตอนนี้ทำได้แค่ระดับการแสดงผล
-     ทุกหน้าในระบบยิงด้วย anon key ตัวเดียวกัน คนที่รู้วิธีเปิดดูได้หมด
-     ถ้าพลอยต้องการล็อกจริง ต้องอ่าน/เขียนผ่าน serverless (service role) + ผูก LINE uid — ยังไม่ได้ทำ
-
-  ⛔ ไม่ทำในเวอร์ชันแรก (กันบานปลาย ตามใบงาน): OCR สลิป · ต่อ API ธนาคาร · งบกำไรขาดทุนอัตโนมัติ
-     ตัวเลขทุกตัวต้องผ่านคนทำบัญชีก่อนใช้จริง — หน้านี้ไม่ใช่โปรแกรมบัญชี
+  ⛔ เวอร์ชันแรกตั้งใจไม่ทำ: อ่านสลิปอัตโนมัติ · ต่อ API ธนาคาร · งบกำไรขาดทุน · ตีความภาษี
+     ตัวเลขทุกตัวต้องผ่านคนทำบัญชีก่อนใช้จริง
 -->
 <style>
 :root{
-  --bg:#0E1512; --panel:#16211C; --panel2:#1D2A24; --line:#2A3A32;
-  --tx:#EAF2ED; --soft:#93A79B; --g:#35D07F; --g-dim:#1F7A4D;
-  --warn:#FF6B6B; --amber:#F2B33D; --blue:#5AA9FF; --violet:#C7A9FF;
+  --ground:#EFF2ED; --card:#FFFFFF; --card-2:#F7F9F5;
+  --ink:#16211B; --ink-2:#4A5952; --ink-3:#7C8A83;
+  --line:#DDE4D9; --line-soft:#E9EEE6;
+  --accent:#2E6F4E; --accent-soft:#E2EFE6;
+  --pot-personal:#2E6F4E; --pot-shop:#1F5D7A; --pot-ploy:#A63D6B; --pot-shared:#6A55C4;
+  --out:#A8443C; --in:#2E6F4E; --warn:#B4791C; --warn-soft:#FBF0DA;
+  --shadow:0 1px 2px rgba(22,33,27,.06), 0 8px 24px -16px rgba(22,33,27,.25);
 }
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --ground:#0D120F; --card:#151C18; --card-2:#1B231E;
+  --ink:#E8EEE9; --ink-2:#A9B6AE; --ink-3:#7A877F;
+  --line:#26302A; --line-soft:#202823;
+  --accent:#6DBF8E; --accent-soft:#1C2E23;
+  --pot-personal:#6DBF8E; --pot-shop:#67B2D6; --pot-ploy:#E489B0; --pot-shared:#A493F0;
+  --out:#E08A80; --in:#6DBF8E; --warn:#E0B458; --warn-soft:#2A2415;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 28px -18px rgba(0,0,0,.8);
+}}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-html,body{margin:0;padding:0}
-body{background:var(--bg);color:var(--tx);
-  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Noto Sans Thai",sans-serif;
-  font-size:16px;line-height:1.45;padding-bottom:90px}
-header{position:sticky;top:0;z-index:20;background:rgba(14,21,18,.97);
-  backdrop-filter:blur(8px);border-bottom:1px solid var(--line);padding:12px 14px}
-.hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
-.htitle{font-size:19px;font-weight:700}
-.hsub{font-size:12px;color:var(--soft);margin-top:2px}
-.right{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
-.btn{background:var(--panel2);color:var(--tx);border:1px solid var(--line);
-  border-radius:10px;padding:9px 13px;font-size:14px;font-weight:600;cursor:pointer;
-  font-family:inherit;min-height:40px}
-.btn:active{background:var(--g-dim)}
-.btn.on{border-color:var(--g);color:var(--g)}
-.btn.ghost{background:transparent}
-.btn.danger{border-color:#5A2A2A;color:var(--warn)}
-.books{display:flex;gap:8px;margin-top:10px}
-.books .btn{flex:1;padding:9px 6px}
-main{padding:14px}
-.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
-.kpi{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:13px 15px}
-.kpi .l{font-size:12px;color:var(--soft)}
-.kpi .v{font-size:24px;font-weight:800;margin-top:3px;letter-spacing:-.3px}
-.kpi .s{font-size:11.5px;color:var(--soft);margin-top:3px;line-height:1.6}
-.kpi.in .v{color:var(--g)}
-.kpi.out .v{color:var(--amber)}
-.kpi.net .v{color:var(--blue)}
-.kpi.owe .v{color:var(--violet)}
-.sec{font-size:13px;color:var(--soft);margin:18px 0 9px;font-weight:600}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;
-  padding:12px 14px;margin-bottom:10px}
-.row{display:flex;gap:10px;align-items:flex-start}
-.row .amt{margin-left:auto;text-align:right;flex-shrink:0}
-.amt .n{font-size:19px;font-weight:800;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
-.amt .n.in{color:var(--g)}
-.amt .n.out{color:var(--amber)}
-.meta{font-size:12px;color:var(--soft);margin-top:3px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.note{font-size:14.5px;font-weight:600;overflow-wrap:anywhere}
-.raw{font-size:12px;color:var(--soft);margin-top:4px;overflow-wrap:anywhere;font-style:italic}
-.tag{font-size:10.5px;font-weight:700;border-radius:999px;padding:2px 8px;white-space:nowrap}
-.tag.shop{background:#12283B;color:var(--blue);border:1px solid #204866}
-.tag.personal{background:#2B2438;color:var(--violet);border:1px solid #433764}
-.tag.shared{background:#12301F;color:var(--g);border:1px solid #1F5A3A}
-.tag.review{background:#3A2F12;color:var(--amber);border:1px solid #5A4A20}
-.tag.slip{background:#12301F;color:var(--g);border:1px solid #1F5A3A}
-.acts{display:flex;gap:7px;margin-top:10px;flex-wrap:wrap}
-.acts .btn{padding:7px 11px;font-size:13px;min-height:36px}
-.rbanner{background:#2A2312;border:1px solid #5A4A20;border-radius:14px;padding:12px 14px;margin-bottom:13px}
-.rbanner .t{font-weight:700;color:var(--amber);font-size:14.5px}
-.rbanner .d{font-size:12.5px;color:var(--soft);margin-top:4px;line-height:1.65}
-.empty{background:var(--panel);border:1px dashed var(--line);border-radius:14px;
-  padding:22px 18px;text-align:center;color:var(--soft);font-size:14px;line-height:1.75}
-.empty b{color:var(--tx)}
-code{background:var(--panel2);border:1px solid var(--line);border-radius:6px;
-  padding:1px 6px;font-size:12.5px;color:var(--amber);overflow-wrap:anywhere}
-label{display:block;font-size:12px;color:var(--soft);margin:9px 0 4px}
-input,select,textarea{width:100%;background:var(--panel2);border:1px solid var(--line);color:var(--tx);
+body{margin:0;background:var(--ground);color:var(--ink);
+  font-family:"IBM Plex Sans Thai","Noto Sans Thai",system-ui,sans-serif;font-size:15px;line-height:1.55;
+  padding-bottom:84px}
+h1{font-family:"Bai Jamjuree","IBM Plex Sans Thai",sans-serif;margin:0;font-size:21px;font-weight:700;letter-spacing:-.01em}
+.num{font-family:"IBM Plex Mono",ui-monospace,monospace;font-variant-numeric:tabular-nums}
+.app{max-width:470px;margin:0 auto;background:var(--card);min-height:100vh;
+  border-left:1px solid var(--line);border-right:1px solid var(--line)}
+.ph-top{padding:16px 16px 0;display:flex;flex-direction:column;gap:12px;position:sticky;top:0;z-index:10;
+  background:var(--card);border-bottom:1px solid var(--line-soft)}
+.brand{display:flex;align-items:baseline;justify-content:space-between;gap:10px}
+.brand span{font-size:11.5px;color:var(--ink-3);letter-spacing:.09em}
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;background:var(--card-2);
+  border:1px solid var(--line-soft);border-radius:11px;padding:4px;margin-bottom:12px}
+.tabs button{font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);background:none;border:0;
+  border-radius:8px;padding:9px 2px;cursor:pointer;min-height:40px}
+.tabs button[aria-selected="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.10);font-weight:600}
+.tabs button[disabled]{opacity:.38}
+.potbar{display:flex;gap:6px;padding:12px 16px 0}
+.potbar button{font:inherit;font-size:12.5px;padding:7px 13px;border-radius:999px;cursor:pointer;min-height:36px;
+  border:1px solid var(--line);background:transparent;color:var(--ink-2)}
+.potbar button[aria-pressed="true"]{border-color:transparent;color:#fff;background:var(--pc,var(--accent))}
+.totals{display:flex;gap:14px;padding:14px 16px 10px;align-items:flex-end;justify-content:space-between}
+.tot-label{font-size:11.5px;letter-spacing:.08em;color:var(--ink-3)}
+.tot-big{font-size:30px;font-weight:500;line-height:1.1;color:var(--out)}
+.tot-side{text-align:right;font-size:13px;color:var(--ink-2)}
+.tot-side b{display:block;font-family:"IBM Plex Mono",monospace;font-weight:500;font-size:16px;color:var(--in)}
+.bars{display:flex;height:7px;border-radius:99px;overflow:hidden;margin:0 16px;background:var(--line-soft)}
+.bars i{display:block}
+.legend{display:flex;flex-wrap:wrap;gap:10px;padding:8px 16px 2px;font-size:11.5px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:8px;height:8px;border-radius:3px;display:inline-block}
+.daygroup{padding:10px 16px 0}
+.dayhead{display:flex;justify-content:space-between;align-items:baseline;padding:12px 0 6px;
+  border-top:1px solid var(--line-soft);font-size:12px;color:var(--ink-3);letter-spacing:.04em}
+.row{display:grid;grid-template-columns:34px minmax(0,1fr) auto;gap:10px;padding:9px 0;align-items:start}
+.ic{width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-size:15px;
+  background:var(--card-2);border:1px solid var(--line-soft)}
+.r-main{min-width:0}
+.r-title{font-size:14.5px;font-weight:500;overflow-wrap:anywhere}
+.r-sub{font-size:12px;color:var(--ink-3);display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-top:1px}
+.chip{font-size:11px;padding:2px 7px;border-radius:6px;background:var(--card-2);
+  border:1px solid var(--line-soft);color:var(--ink-2)}
+.chip.flag{background:var(--warn-soft);border-color:transparent;color:var(--warn);font-weight:500;cursor:pointer}
+.chip.tap{cursor:pointer}
+.amt{font-family:"IBM Plex Mono",monospace;font-variant-numeric:tabular-nums;font-size:14.5px;
+  white-space:nowrap;color:var(--out);padding-top:1px}
+.amt.in{color:var(--in)}
+.compose{margin:14px 16px 16px;border:1px dashed var(--line);border-radius:12px;background:var(--card-2);
+  padding:11px 12px;display:flex;gap:9px;align-items:center}
+.compose .lineico{width:26px;height:26px;border-radius:7px;background:#06C755;color:#fff;
+  display:grid;place-items:center;font-size:10px;font-weight:700;flex:none}
+.compose p{margin:0;font-size:12.5px;color:var(--ink-2)}
+.hidden{display:none}
+.empty{margin:16px;border:1px dashed var(--line);border-radius:12px;padding:22px 18px;
+  text-align:center;color:var(--ink-2);font-size:13.5px;line-height:1.8}
+.empty b{color:var(--ink)}
+code{background:var(--card-2);border:1px solid var(--line-soft);border-radius:6px;
+  padding:1px 6px;font-size:12.5px;overflow-wrap:anywhere}
+.btn{font:inherit;background:var(--card-2);color:var(--ink);border:1px solid var(--line);
+  border-radius:10px;padding:9px 13px;font-size:13.5px;font-weight:500;cursor:pointer;min-height:40px}
+.btn.on{background:var(--accent);border-color:transparent;color:#fff}
+.btn.danger{color:var(--out);border-color:var(--out)}
+.tools{display:flex;gap:8px;padding:0 16px 14px;flex-wrap:wrap}
+label{display:block;font-size:11.5px;color:var(--ink-3);margin:9px 0 4px;letter-spacing:.04em}
+input,select,textarea{width:100%;background:var(--card-2);border:1px solid var(--line);color:var(--ink);
   border-radius:10px;padding:11px 12px;font-size:15px;font-family:inherit;min-height:44px}
-textarea{min-height:64px;resize:vertical}
+textarea{min-height:60px;resize:vertical}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-dialog{background:var(--panel);color:var(--tx);border:1px solid var(--line);border-radius:16px;
-  padding:16px;width:min(94vw,460px);max-height:88vh}
-dialog::backdrop{background:#000A}
-.dtitle{font-size:17px;font-weight:700;margin-bottom:2px}
-.dhint{font-size:12px;color:var(--soft);line-height:1.6}
-.fab{position:fixed;right:16px;bottom:18px;z-index:30;background:var(--g);color:#08150E;
-  border:0;border-radius:999px;padding:15px 21px;font-size:15px;font-weight:800;
-  font-family:inherit;box-shadow:0 8px 26px #0009;cursor:pointer}
-.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:92px;z-index:40;
-  background:var(--panel2);border:1px solid var(--line);border-radius:12px;
-  padding:11px 17px;font-size:14px;max-width:92vw;display:none}
-.who{font-size:12px;color:var(--soft);display:flex;gap:6px;align-items:center;margin-top:9px;flex-wrap:wrap}
-.who .btn{padding:5px 10px;font-size:12px;min-height:30px}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:16px;
+  padding:16px;width:min(94vw,440px);max-height:88vh}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dtitle{font-family:"Bai Jamjuree",sans-serif;font-size:17px;font-weight:600;margin-bottom:2px}
+.dhint{font-size:12px;color:var(--ink-3);line-height:1.6}
+.acts{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap;align-items:center}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:16px;z-index:30;background:var(--accent);
+  color:#fff;border:0;border-radius:999px;padding:14px 22px;font-size:14.5px;font-weight:600;
+  font-family:inherit;box-shadow:var(--shadow);cursor:pointer}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:78px;z-index:40;background:var(--ink);
+  color:var(--ground);border-radius:12px;padding:11px 17px;font-size:13.5px;max-width:92vw;display:none}
+.gate{max-width:470px;margin:0 auto;padding:40px 22px;text-align:center}
+.gate h1{margin-bottom:8px}
+.gate p{color:var(--ink-2);font-size:13.5px;line-height:1.8}
+.gate .acts{justify-content:center}
 </style>
 </head>
 <body>
 
-<header>
-  <div class="hrow">
+<div id="gate" class="gate hidden"></div>
+
+<div class="app hidden" id="app">
+  <div class="ph-top">
+    <div class="brand"><h1>สมุดเงินเรา</h1><span id="whoami">—</span></div>
+    <div class="tabs" role="tablist" id="tabs">
+      <button role="tab" aria-selected="true"  data-tab="nut">ของนัท</button>
+      <button role="tab" aria-selected="false" data-tab="ploy">ของพลอย</button>
+      <button role="tab" aria-selected="false" data-tab="shared">เราสองคน</button>
+      <button role="tab" aria-selected="false" data-tab="sum">สรุป</button>
+    </div>
+  </div>
+
+  <div class="potbar hidden" id="potbar"></div>
+
+  <div class="totals">
     <div>
-      <div class="htitle">💰 สมุดรายรับรายจ่าย</div>
-      <div class="hsub" id="sub">กำลังโหลด…</div>
+      <div class="tot-label" id="totLabel">จ่ายเดือนนี้</div>
+      <div class="tot-big num" id="totBig">—</div>
     </div>
-    <div class="right">
-      <button class="btn" onclick="exportCsv()">⬇ CSV</button>
-      <button class="btn" onclick="load()">↻</button>
-    </div>
+    <div class="tot-side">รับเข้า<b class="num" id="totIn">฿0</b></div>
   </div>
-  <div class="books">
-    <button class="btn on" id="b-personal" onclick="setBook('personal')">👤 ส่วนตัว</button>
-    <button class="btn" id="b-shop" onclick="setBook('shop')">🏪 ร้าน</button>
-    <button class="btn" id="b-shared" onclick="setBook('shared')">👫 เราสองคน</button>
-  </div>
-  <div class="who">
-    <span>เปิดในชื่อ</span>
-    <button class="btn" id="w-nut" onclick="setWho('nut')">นัท</button>
-    <button class="btn" id="w-ploy" onclick="setWho('ploy')">พลอย</button>
-  </div>
-</header>
+  <div class="bars" id="bars"></div>
+  <div class="legend" id="legend"></div>
 
-<main>
-  <div id="kpis"></div>
-  <div id="list"></div>
-</main>
+  <div class="daygroup" id="list"></div>
 
-<button class="fab" onclick="openAdd()">+ จดเพิ่ม</button>
+  <div class="tools">
+    <button class="btn" onclick="exportCsv()">⬇ CSV ส่งคนทำบัญชี</button>
+    <button class="btn" onclick="load()">↻ รีเฟรช</button>
+  </div>
+
+  <div class="compose">
+    <span class="lineico">LINE</span>
+    <p>พิมพ์ในกลุ่ม <b>“เงินเรา”</b> ได้เลย — กะปันจดให้เอง</p>
+  </div>
+</div>
+
+<button class="fab hidden" id="fab" onclick="openAdd()">+ จดเอง</button>
 <div class="toast" id="toast"></div>
 
 <dialog id="dlg">
   <div class="dtitle" id="dtitle">จดรายการ</div>
-  <div class="dhint">ปกติพิมพ์บอกในกลุ่มไลน์ที่มีกะปันแล้วจดให้เอง — ช่องนี้ไว้ใส่เองหรือแก้ของเก่า</div>
+  <div class="dhint">ปกติพิมพ์ในกลุ่มไลน์แล้วกะปันจดให้ — ช่องนี้ไว้ใส่เองหรือแก้ของเก่า</div>
   <form method="dialog" id="form">
     <div class="grid2">
       <div>
         <label for="f-book">กระเป๋า</label>
         <select id="f-book" onchange="syncPaidBy()">
-          <option value="personal">👤 ส่วนตัว</option>
-          <option value="shop">🏪 ร้าน Under360</option>
-          <option value="shared">👫 ของเราสองคน</option>
+          <option value="personal">ส่วนตัว</option>
+          <option value="shop">ร้าน Under360</option>
+          <option value="shared">เราสองคน</option>
         </select>
       </div>
       <div>
@@ -178,48 +209,64 @@ dialog::backdrop{background:#000A}
         <input id="f-amount" type="number" inputmode="decimal" min="0" step="0.01" required>
       </div>
       <div>
-        <label for="f-at">วันที่เกิดรายการ</label>
+        <label for="f-at">วันที่</label>
         <input id="f-at" type="date">
       </div>
     </div>
-    <div id="paidwrap" style="display:none">
-      <label for="f-paid">ใครออกเงินจริง (ใช้กับกระเป๋าของเราสองคน)</label>
+    <div id="paidwrap" class="hidden">
+      <label for="f-paid">ใครออกเงินจริง</label>
       <select id="f-paid"><option value="nut">นัท</option><option value="ploy">พลอย</option></select>
     </div>
+    <label for="f-note">รายการ</label>
+    <textarea id="f-note" placeholder="เช่น กินข้าวกับพลอย"></textarea>
     <label for="f-category">หมวด</label>
-    <input id="f-category" list="cats" placeholder="เช่น วัตถุดิบ · ค่าส่ง · แอด · บ้าน · ลูก">
+    <input id="f-category" list="cats" placeholder="เช่น อาหาร · วัตถุดิบ · ค่าส่ง · ลูก">
     <datalist id="cats"></datalist>
-    <label for="f-note">รายละเอียด (เก็บข้อความดิบไว้ได้เลย)</label>
-    <textarea id="f-note" placeholder="เช่น วันนี้กินแซมาอึลไป 956 บาท"></textarea>
     <label for="f-slip">ลิงก์สลิป (ถ้ามี)</label>
     <input id="f-slip" type="url" placeholder="https://…">
-    <div class="acts" style="margin-top:14px">
+    <div class="acts">
       <button class="btn on" id="f-save" value="save" type="submit">บันทึก</button>
-      <button class="btn ghost" value="cancel" type="submit" formnovalidate>ยกเลิก</button>
-      <button class="btn danger" id="f-del" value="delete" type="submit" formnovalidate style="margin-left:auto;display:none">ลบรายการ</button>
+      <button class="btn" value="cancel" type="submit" formnovalidate>ยกเลิก</button>
+      <button class="btn danger" id="f-del" value="delete" type="submit" formnovalidate
+              style="margin-left:auto;display:none">ลบ</button>
     </div>
   </form>
 </dialog>
 
 <script>
-/* PWA เพจนี้ยิง REST ตรง (เหมือน pwa/ingredient_prices.html) — ไม่โหลด SDK ให้หนักมือถือ */
+/* PWA เพจนี้ยิง REST ตรง (เหมือน pwa/ingredient_prices.html) — ไม่โหลด SDK ฐานข้อมูลให้หนักมือถือ */
 const SB_URL = 'https://zdartbvhbvqlwzwyyiia.supabase.co';
 const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const LIFF_IDS = ['2011148232-oul66cEs', '2010442513-NI3JGTkb'];   // ประตูใหม่ก่อน แล้วค่อยประตูเก่า
+const OWNERS_KEY = 'ledger_owners';   // kitchen_data: { "<line uid>": "nut" | "ploy" }
 
-/* หมวดตั้งต้น — f-track เป็นเจ้าของหมวดตามใบงาน ตรงนี้แค่ช่วยพิมพ์ ไม่ได้บังคับ */
-const CATS = ['วัตถุดิบ','ค่าส่ง','แอด','เครื่องมือ','ค่าแรง','ของใช้ครัว','แก๊ส/ไฟ/น้ำ','ค่าธรรมเนียม',
-              'อาหาร','บ้าน','ลูก','เดินทาง','ของใช้','อื่น ๆ'];
 const NAME = {nut:'นัท', ploy:'พลอย'};
+const POTS = {nut:['personal','shop'], ploy:['ploy'], shared:['shared'], sum:['sum']};
+const POTNAME = {personal:'ส่วนตัว', shop:'ร้าน Under360', ploy:'ของพลอย', shared:'เราสองคน', sum:'ทุกกระเป๋า'};
+const CATS = ['อาหาร','ของลูก','เดินทาง','สุขภาพ','ของใช้','บ้าน','ลูก','ทริป',
+              'วัตถุดิบ','ค่าส่ง','การตลาด','ค่าแรง','ของใช้ครัว','ค่าธรรมเนียม','เครื่องมือ','อื่น ๆ'];
+/* ไอคอนเดาจากหมวด/ข้อความ — ดีไซน์มีไอคอนทุกแถว แต่ข้อมูลจริงไม่มีช่องไอคอน
+   เดาไม่ออกก็ใช้ตัวกลาง ไม่ไปแต่งข้อมูลให้ดูดีเกินจริง */
+const ICONS = [
+  ['วัตถุดิบ','🥬'], ['freshket','🥬'], ['go ','🏪'], ['ค่าส่ง','🛵'], ['lalamove','🛵'],
+  ['แอด','📣'], ['การตลาด','📣'], ['ค่าแรง','⏱️'], ['แก๊ส','🔥'], ['ของใช้ครัว','🍳'],
+  ['ค่าธรรมเนียม','💳'], ['เครื่องมือ','🧰'], ['อาหาร','🍜'], ['กาแฟ','☕'], ['กินข้าว','🍽️'],
+  ['ลูก','🧒'], ['เรียน','🏫'], ['เทอม','🏫'], ['บ้าน','🏠'], ['ไฟ','💡'], ['น้ำมัน','⛽'],
+  ['เดินทาง','🚕'], ['แท็กซี่','🚕'], ['ทริป','🏨'], ['โรงแรม','🏨'], ['สุขภาพ','💊'], ['ยา','💊']
+];
+function iconOf(r){
+  const hay = (String(r.category||'') + ' ' + String(r.note||'')).toLowerCase();
+  for(const [k,v] of ICONS){ if(hay.indexOf(k) >= 0) return v; }
+  return r.kind === 'in' ? '🧾' : '🧾';
+}
 
-let BOOK = 'personal', WHO = 'nut', ROWS = [], SHOP_IN = {day:0, month:0, days:0},
-    STATE = 'loading', EDIT = null;
-try{ WHO = localStorage.getItem('ledger_who') || 'nut'; }catch(e){}
+let TAB = 'nut', POT = 'personal', ME = null, OWNERS = {}, ROWS = [],
+    SHOP_IN = {day:0, month:0, days:0, monthCount:0}, STATE = 'loading', EDIT = null;
 
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const baht = n => '฿' + Math.round(Number(n)||0).toLocaleString();
+const money = n => '฿' + Math.round(Number(n)||0).toLocaleString('en-US');
 
-/* 🇹🇭 เวลาไทยเสมอ — นัทอยู่ PST เปิดหน้านี้ตอนไหนก็ต้องได้ "วันนี้" แบบเดียวกับที่ครัว/แอดมินเห็น
-   (บทเรียนจาก pwa/orders_upcoming: คำนวณจากเครื่องแล้ววันเพี้ยนไป 1 วัน) */
+/* 🇹🇭 เวลาไทยเสมอ — นัทอยู่ PST เปิดตอนไหนก็ต้องได้ "วันนี้" แบบเดียวกับที่เมืองไทยเห็น */
 function thaiYmd(d){
   const t = new Date((d||new Date()).getTime() + 7*3600*1000);
   return t.toISOString().slice(0,10);
@@ -235,10 +282,13 @@ function monthRange(ymd){
   const nextFirst = (m === 12 ? (y+1) + '-01' : y + '-' + two(m+1)) + '-01';
   return { from: dayStartIso(first), to: dayStartIso(nextFirst) };
 }
-function thaiTime(iso){
-  if(!iso) return '';
-  const t = new Date(new Date(iso).getTime() + 7*3600*1000).toISOString();
-  return t.slice(8,10) + '/' + t.slice(5,7) + ' ' + t.slice(11,16);
+const TH_MON = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
+function dayLabel(ymd){
+  const today = thaiYmd(), y1 = thaiYmd(new Date(Date.now() - 86400000));
+  const d = Number(ymd.slice(8,10)) + ' ' + TH_MON[Number(ymd.slice(5,7)) - 1];
+  if(ymd === today) return 'วันนี้ · ' + d;
+  if(ymd === y1) return 'เมื่อวาน · ' + d;
+  return d;
 }
 
 async function rest(path, opt){
@@ -256,6 +306,65 @@ async function rest(path, opt){
   return {missing:false, rows: txt ? JSON.parse(txt) : []};
 }
 
+/* ── ใครเป็นใคร: LINE uid (ใบงาน v3 สั่ง ไม่ใช่ PIN ร่วม) ───────────────── */
+function gateHtml(inner){
+  const g = document.getElementById('gate');
+  g.innerHTML = inner; g.classList.remove('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('fab').classList.add('hidden');
+}
+async function loadOwners(){
+  const r = await rest('kitchen_data?select=key,data&key=eq.' + OWNERS_KEY + '&limit=1');
+  OWNERS = (r.rows && r.rows[0] && r.rows[0].data) || {};
+  return OWNERS;
+}
+async function saveOwners(next){
+  const has = await rest('kitchen_data?select=key&key=eq.' + OWNERS_KEY + '&limit=1');
+  if((has.rows||[]).length) await rest('kitchen_data?key=eq.' + OWNERS_KEY, {method:'PATCH', body:{data:next}});
+  else await rest('kitchen_data', {method:'POST', body:{key:OWNERS_KEY, data:next}});
+  OWNERS = next;
+}
+async function claimMe(uid, who){
+  if(OWNERS[uid]) return;                                  // ผูกแล้ว ไม่ให้เปลี่ยนเอง
+  const taken = Object.keys(OWNERS).filter(k => OWNERS[k] === who);
+  if(taken.length){ toast('ช่องของ' + NAME[who] + 'ถูกผูกไว้แล้ว'); return; }
+  const next = Object.assign({}, OWNERS); next[uid] = who;
+  await saveOwners(next);
+  ME = who;
+  start();
+}
+async function identify(){
+  let uid = null, err = null;
+  try{
+    for(const id of LIFF_IDS){
+      try{ await liff.init({liffId:id}); break; }catch(e){ err = e; }
+    }
+    if(typeof liff !== 'undefined' && liff.isLoggedIn && !liff.isLoggedIn()){ liff.login(); return null; }
+    const p = await liff.getProfile();
+    uid = p && p.userId;
+  }catch(e){ err = e; }
+  if(!uid){
+    gateHtml('<h1>สมุดเงินเรา</h1>'
+      + '<p>เปิดหน้านี้ต้องเข้าผ่านบัญชีไลน์ เพื่อให้รู้ว่าใครเป็นใคร<br>'
+      + '(ใบงานกำหนดว่าใช้ไลน์ ไม่ใช่รหัสร่วม)</p>'
+      + '<p style="color:var(--ink-3);font-size:12px">' + esc(String((err && err.message) || 'ยังไม่ได้เข้าระบบไลน์')) + '</p>'
+      + '<div class="acts"><button class="btn on" onclick="location.reload()">ลองใหม่</button></div>');
+    return null;
+  }
+  await loadOwners();
+  if(OWNERS[uid]) return OWNERS[uid];
+  /* ยังไม่เคยผูก — ให้เลือกชื่อครั้งเดียว แล้วล็อกช่องนั้นถาวร */
+  const used = Object.keys(OWNERS).map(k => OWNERS[k]);
+  const btn = w => used.indexOf(w) >= 0 ? '' :
+    '<button class="btn on" onclick="claimMe(&quot;' + esc(uid) + '&quot;,&quot;' + w + '&quot;)">ฉันคือ' + NAME[w] + '</button>';
+  gateHtml('<h1>สมุดเงินเรา</h1>'
+    + '<p>ไลน์นี้ยังไม่ได้ผูกกับสมุด<br>เลือกครั้งเดียว แล้วจะจำไว้ถาวร</p>'
+    + '<div class="acts">' + btn('nut') + btn('ploy') + '</div>'
+    + (used.length >= 2 ? '<p style="color:var(--warn)">ผูกครบ 2 คนแล้ว — ถ้านี่คือเครื่องของนัทหรือพลอยจริง ๆ ให้บอกห้อง u มาแก้ให้</p>' : '')
+    + '<p style="color:var(--ink-3);font-size:11.5px">รหัสไลน์ของคุณ: ' + esc(uid.slice(0,10)) + '…</p>');
+  return null;
+}
+
 /* ── รายรับของร้าน: ไม่ให้ใครจด คำนวณสดจาก orders ────────────────────────────
    ใช้กติกาเดียวกับ scripts/finance/orders.mjs — ถ้าแก้ที่นั่น ต้องแก้ที่นี่ด้วย
    (ยกมาเป็นโค้ดเพราะหน้านี้เป็น HTML ไฟล์เดียว import ไม่ได้ · ห้ามคำนวณยอดขายด้วยมือแบบอื่น) */
@@ -267,15 +376,14 @@ function isTestOrder(o){
   return TEST_NAMES.indexOf(String(o.customer_name||'').trim().toLowerCase()) >= 0;
 }
 const isLoyaltyLog = o => o.source === 'hato_loyalty_log' || String(o.order_number||'').indexOf('HS-') === 0;
-/* ใบยอด 0 ไม่ใช่การขาย (รอบส่งเพิ่ม · prepaid ทยอยส่ง · อาหารพนักงาน) — 3 แบบนี้นับเป็นยอดไม่ได้ทั้งหมด */
+/* ใบยอด 0 ไม่ใช่การขาย (รอบส่งเพิ่ม · prepaid ทยอยส่ง · อาหารพนักงาน) */
 const isSale = o => Number(o.total) > 0 && !isLoyaltyLog(o) && !isTestOrder(o);
 
 async function loadShopIncome(today){
   const m = monthRange(today);
   const sel = 'select=order_number,total,created_at,source,created_by,customer_name,notes';
-  const q = 'orders?' + sel + '&created_at=gte.' + m.from + '&created_at=lt.' + m.to
-          + '&order=created_at.asc&limit=5000';
-  const res = await rest(q);
+  const res = await rest('orders?' + sel + '&created_at=gte.' + m.from + '&created_at=lt.' + m.to
+                       + '&order=created_at.asc&limit=5000');
   const sales = (res.rows||[]).filter(isSale);
   const dFrom = dayStartIso(today), dTo = dayEndIso(today);
   const inDay = sales.filter(o => o.created_at >= dFrom && o.created_at < dTo);
@@ -292,146 +400,157 @@ async function load(){
   try{
     const m = monthRange(today);
     /* sequential reads ตามกติกาโปรเจค · ทุก select มี limit เสมอ */
-    const led = await rest('ledger?select=*&at=gte.' + m.from + '&at=lt.' + m.to
-                         + '&order=at.desc&limit=3000');
+    const led = await rest('ledger?select=*&at=gte.' + m.from + '&at=lt.' + m.to + '&order=at.desc&limit=3000');
     if(led.missing){ STATE = 'nosql'; return render(); }
     ROWS = led.rows || [];
     SHOP_IN = await loadShopIncome(today);
     STATE = 'ok';
-  }catch(e){
-    console.error(e); STATE = 'error'; document.getElementById('sub').textContent = String(e.message||e);
-  }
+  }catch(e){ console.error(e); STATE = 'error'; }
   render();
 }
 
-function setBook(b){
-  BOOK = b;
-  ['personal','shop','shared'].forEach(x =>
-    document.getElementById('b-' + x).className = 'btn' + (x === b ? ' on' : ''));
-  render();
+/* กระเป๋าไหนเห็นอะไร — "ของนัท/ของพลอย" = ของใครของมัน · shared/sum = เห็นร่วมกัน */
+function rowsOf(pot){
+  if(pot === 'personal') return ROWS.filter(r => r.book === 'personal' && (r.owner||'nut') === 'nut');
+  if(pot === 'ploy')     return ROWS.filter(r => r.book === 'personal' && r.owner === 'ploy');
+  if(pot === 'shop')     return ROWS.filter(r => r.book === 'shop');
+  if(pot === 'shared')   return ROWS.filter(r => r.book === 'shared');
+  return ROWS;   // sum
 }
-function setWho(w){
-  WHO = w;
-  try{ localStorage.setItem('ledger_who', w); }catch(e){}
-  ['nut','ploy'].forEach(x =>
-    document.getElementById('w-' + x).className = 'btn' + (x === w ? ' on' : ''));
-  render();
-}
+const outSum = list => list.filter(r => r.kind === 'out').reduce((s,r) => s + Number(r.amount||0), 0);
+const inSum  = list => list.filter(r => r.kind === 'in').reduce((s,r) => s + Number(r.amount||0), 0);
 
-/* กระเป๋าส่วนตัว = ของใครของมัน · ร้าน/เราสองคน = เห็นร่วมกัน
-   (นี่คือการ "แยกการแสดงผล" ไม่ใช่การล็อกสิทธิ์จริง — ดูหมายเหตุหัวไฟล์) */
-function visible(){
-  if(BOOK === 'personal') return ROWS.filter(r => r.book === 'personal' && (r.owner||'nut') === WHO);
-  return ROWS.filter(r => r.book === BOOK);
-}
-const sum = (list, kind) => list.filter(r => r.kind === kind)
-  .reduce((s,r) => s + Number(r.amount||0), 0);
-
-/* ของเราสองคน: ใครออกไปแล้วเท่าไหร่ → ตอนนี้ใครควรได้คืนเท่าไหร่
-   หารครึ่งเป็นค่าตั้งต้น (ไม่มีใครเคยเคาะสัดส่วนอื่น — ถ้าจะเปลี่ยนต้องให้นัท/พลอยเคาะ) */
+/* เราสองคน: ใครออกไปก่อนมากกว่า (หารครึ่งเป็นค่าตั้งต้น — ยังไม่มีใครเคาะสัดส่วนอื่น) */
 function sharedBalance(list){
   const paid = {nut:0, ploy:0};
   list.filter(r => r.kind === 'out').forEach(r => {
-    const by = (r.paid_by || r.owner || 'nut');
+    const by = r.paid_by || r.owner || 'nut';
     if(paid[by] == null) paid[by] = 0;
     paid[by] += Number(r.amount||0);
   });
   const total = paid.nut + paid.ploy;
-  const each = total / 2;
-  return {paid:paid, total:total, nutNet: paid.nut - each};   // บวก = นัทออกเกิน ควรได้คืน
+  return {paid:paid, total:total, nutNet: paid.nut - total/2};   // บวก = นัทออกเกิน ควรได้คืน
 }
 
-function kpis(){
-  const today = thaiYmd(), dFrom = dayStartIso(today), dTo = dayEndIso(today);
-  const list = visible();
-  const day  = list.filter(r => r.at >= dFrom && r.at < dTo);
-  const shop = BOOK === 'shop';   // ยอดขายร้านโผล่เฉพาะกระเป๋าร้าน
-  const inDay  = sum(day,'in')  + (shop ? SHOP_IN.day : 0);
-  const outDay = sum(day,'out');
-  const inMon  = sum(list,'in') + (shop ? SHOP_IN.month : 0);
-  const outMon = sum(list,'out');
-  const src = shop
-    ? '<div class="s">รวมยอดขายจาก orders แล้ว ' + baht(SHOP_IN.day) + ' (' + SHOP_IN.days + ' ใบ) — ไม่มีใครต้องจด</div>'
-    : '<div class="s">กระเป๋านี้ไม่นับยอดขายร้าน</div>';
-  let h = '<div class="kpis">'
-    + '<div class="kpi in"><div class="l">รับเข้า วันนี้</div><div class="v">' + baht(inDay) + '</div>' + src + '</div>'
-    + '<div class="kpi out"><div class="l">จ่ายออก วันนี้</div><div class="v">' + baht(outDay) + '</div>'
-      + '<div class="s">' + day.filter(r=>r.kind==='out').length + ' รายการ</div></div>'
-    + '<div class="kpi net"><div class="l">เดือนนี้ เหลือสุทธิ</div><div class="v">' + baht(inMon - outMon) + '</div>'
-      + '<div class="s">รับ ' + baht(inMon) + ' · จ่าย ' + baht(outMon) + '</div></div>';
-  if(BOOK === 'shared'){
-    const b = sharedBalance(list);
-    const who = b.nutNet >= 0 ? 'nut' : 'ploy';
-    const diff = Math.abs(b.nutNet);
-    h += '<div class="kpi owe"><div class="l">เดือนนี้ ใครออกไปมากกว่า</div>'
-      + '<div class="v">' + (diff < 1 ? 'เท่ากัน' : NAME[who] + ' +' + baht(diff)) + '</div>'
-      + '<div class="s">นัทออก ' + baht(b.paid.nut) + ' · พลอยออก ' + baht(b.paid.ploy)
-      + '<br>คิดแบบหารครึ่ง — ถ้าตกลงกันแบบอื่นบอกห้อง u ได้</div></div>';
+function setTab(t){
+  if(t === 'nut' && ME !== 'nut') return;
+  if(t === 'ploy' && ME !== 'ploy') return;
+  TAB = t; POT = POTS[t][0];
+  document.querySelectorAll('[role="tab"]').forEach(b =>
+    b.setAttribute('aria-selected', b.dataset.tab === t));
+  render();
+}
+function setPot(p){ POT = p; render(); }
+
+function renderPots(){
+  const pots = POTS[TAB], bar = document.getElementById('potbar');
+  bar.classList.toggle('hidden', pots.length < 2);
+  bar.innerHTML = pots.map(p => '<button data-pot="' + p + '" aria-pressed="' + (p === POT)
+    + '" style="--pc:var(--pot-' + (p === 'sum' ? 'personal' : p) + ')" onclick="setPot(&quot;' + p + '&quot;)">'
+    + POTNAME[p] + '</button>').join('');
+}
+
+function renderSummary(){
+  const boxes = [
+    {pot:'personal', ic:'🙍', t:'ส่วนตัวนัท'},
+    {pot:'shop',     ic:'🏪', t:'ร้าน Under360'},
+    {pot:'ploy',     ic:'👩', t:'ของพลอย'},
+    {pot:'shared',   ic:'🏠', t:'เราสองคน'}
+  ].map(b => { const l = rowsOf(b.pot); return Object.assign({}, b, {n:l.length, v:outSum(l)}); });
+  const bal = sharedBalance(rowsOf('shared'));
+  const who = bal.nutNet >= 0 ? 'nut' : 'ploy';
+  const diff = Math.abs(bal.nutNet);
+  const rowOf = (ic,t,c,a,isIn) => '<div class="row"><div class="ic">' + ic + '</div>'
+    + '<div class="r-main"><div class="r-title">' + esc(t) + '</div>'
+    + '<div class="r-sub"><span class="chip">' + esc(c) + '</span></div></div>'
+    + '<div class="amt' + (isIn ? ' in' : '') + '">' + (isIn ? '+' : '−') + money(a) + '</div></div>';
+  return '<div class="dayhead"><span>รวมตามกระเป๋า</span><span class="num">'
+      + money(boxes.reduce((s,b) => s + b.v, 0)) + '</span></div>'
+    + boxes.map(b => rowOf(b.ic, b.t, b.n + ' รายการ', b.v)).join('')
+    + '<div class="dayhead"><span>เงินระหว่างกัน</span><span></span></div>'
+    + (bal.total
+        ? rowOf('⚖️', (diff < 1 ? 'ออกไปเท่ากันพอดี' : NAME[who] + 'ออกไปก่อนมากกว่า'),
+                'หารครึ่ง · นัทออก ' + money(bal.paid.nut) + ' พลอยออก ' + money(bal.paid.ploy), diff)
+        : '<div class="empty">เดือนนี้ยังไม่มีรายการของเราสองคน</div>')
+    + '<div class="dayhead"><span>รายรับร้าน (ดึงอัตโนมัติ)</span><span></span></div>'
+    + rowOf('🧾', 'ยอดขายจากออเดอร์ในระบบ', 'ไม่ต้องจดเอง · ' + SHOP_IN.monthCount + ' ใบ', SHOP_IN.month, true);
+}
+
+function renderList(){
+  const rows = rowsOf(POT).slice().sort((a,b) => String(b.at).localeCompare(String(a.at)));
+  if(!rows.length){
+    return '<div class="empty">เดือนนี้ยังไม่มีรายการในกระเป๋านี้<br>'
+      + '<b>ไม่ต้องมากรอกที่นี่ก็ได้</b> — พิมพ์ในกลุ่มไลน์ตามปกติ เดี๋ยวขึ้นเอง</div>';
   }
-  return h + '</div>';
-}
-
-function rowHtml(r){
-  const t = r.kind === 'in' ? 'in' : 'out';
-  const book = r.book === 'shop' ? 'shop">🏪 ร้าน'
-             : r.book === 'shared' ? 'shared">👫 เราสองคน' : 'personal">👤 ส่วนตัว';
-  return '<div class="card"><div class="row"><div style="min-width:0;flex:1">'
-    + '<div class="note">' + esc(r.category || (r.kind === 'in' ? 'รับเข้า' : 'จ่ายออก')) + '</div>'
-    + (r.note ? '<div class="raw">' + esc(r.note) + '</div>' : '')
-    + '<div class="meta">'
-      + '<span class="tag ' + book + '</span>'
-      + (r.book === 'shared' ? '<span>ออกโดย ' + esc(NAME[r.paid_by || r.owner || 'nut'] || '—') + '</span>' : '')
-      + (r.needs_review ? '<span class="tag review">รอยืนยันกระเป๋า</span>' : '')
-      + (r.slip_url ? '<a class="tag slip" href="' + esc(r.slip_url) + '" target="_blank" rel="noopener">ดูสลิป</a>' : '')
-      + '<span>' + esc(thaiTime(r.at)) + '</span>'
-      + (r.created_by ? '<span>· ' + esc(r.created_by) + '</span>' : '')
-    + '</div></div>'
-    + '<div class="amt"><div class="n ' + t + '">' + (t === 'in' ? '+' : '−') + baht(r.amount) + '</div></div>'
-    + '</div>'
-    + '<div class="acts">'
-      + '<button class="btn" onclick="openEdit(&quot;' + r.id + '&quot;)">แก้</button>'
-      + (r.needs_review ? '<button class="btn on" onclick="confirmBook(&quot;' + r.id + '&quot;)">ยืนยันว่าถูกแล้ว</button>' : '')
-    + '</div></div>';
+  const byDay = {};
+  rows.forEach(r => {
+    const ymd = thaiYmd(new Date(r.at));
+    (byDay[ymd] = byDay[ymd] || []).push(r);
+  });
+  return Object.keys(byDay).sort().reverse().map(ymd => {
+    const list = byDay[ymd];
+    return '<div class="dayhead"><span>' + esc(dayLabel(ymd)) + '</span>'
+      + '<span class="num">' + money(outSum(list)) + '</span></div>'
+      + list.map(r => {
+        const isIn = r.kind === 'in';
+        const chips = [];
+        chips.push('<span class="chip tap" onclick="openEdit(&quot;' + r.id + '&quot;)">'
+          + esc(r.category || (isIn ? 'รับเข้า' : 'จ่ายออก'))
+          + (r.book === 'shared' ? ' · ' + esc(NAME[r.paid_by || r.owner || 'nut'] || '') + 'ออก' : '')
+          + '</span>');
+        if(r.slip_url) chips.push('<a class="chip" href="' + esc(r.slip_url) + '" target="_blank" rel="noopener">สลิป</a>');
+        if(r.needs_review) chips.push('<span class="chip flag" onclick="confirmBook(&quot;' + r.id + '&quot;)">ยังไม่ยืนยันกระเป๋า</span>');
+        return '<div class="row"><div class="ic">' + iconOf(r) + '</div>'
+          + '<div class="r-main"><div class="r-title">' + esc(r.note || r.category || '—') + '</div>'
+          + '<div class="r-sub">' + chips.join('') + '</div></div>'
+          + '<div class="amt' + (isIn ? ' in' : '') + '">' + (isIn ? '+' : '−') + money(r.amount) + '</div></div>';
+      }).join('');
+  }).join('');
 }
 
 function render(){
-  const sub = document.getElementById('sub'), list = document.getElementById('list'),
-        kp = document.getElementById('kpis');
-  ['nut','ploy'].forEach(x =>
-    document.getElementById('w-' + x).className = 'btn' + (x === WHO ? ' on' : ''));
-  if(STATE === 'loading'){ sub.textContent = 'กำลังโหลด…'; kp.innerHTML=''; list.innerHTML=''; return; }
+  const list = document.getElementById('list');
+  document.getElementById('whoami').textContent = ME ? NAME[ME] : '—';
+  document.querySelectorAll('[role="tab"]').forEach(b => {
+    const t = b.dataset.tab;
+    b.disabled = (t === 'nut' && ME !== 'nut') || (t === 'ploy' && ME !== 'ploy');
+  });
+  if(STATE === 'loading'){ list.innerHTML = '<div class="empty">กำลังโหลด…</div>'; return; }
   if(STATE === 'nosql'){
-    sub.textContent = 'ยังเปิดใช้ไม่ได้';
-    kp.innerHTML = '';
+    document.getElementById('totBig').textContent = '—';
     list.innerHTML = '<div class="empty"><b>ยังไม่ได้สร้างตารางในฐานข้อมูล</b><br>'
-      + 'ต้องเปิด Supabase → SQL Editor แล้วรันไฟล์ <code>scripts/sql_ledger.sql</code> ก่อนหนึ่งครั้ง<br>'
+      + 'ต้องเปิด Supabase → SQL Editor แล้วรัน <code>scripts/sql_ledger.sql</code> ก่อนหนึ่งครั้ง<br>'
       + 'หน้านี้จะใช้ได้ทันทีหลังรัน ไม่ต้องแก้อะไรเพิ่ม</div>';
     return;
   }
   if(STATE === 'error'){
-    kp.innerHTML = '';
     list.innerHTML = '<div class="empty"><b>โหลดข้อมูลไม่สำเร็จ</b><br>กด ↻ อีกครั้ง ถ้ายังไม่ได้ให้บอกห้อง u</div>';
     return;
   }
-  const rows = visible();
-  sub.textContent = 'เดือนนี้ ' + ROWS.length + ' รายการ · วันไทย ' + thaiYmd();
-  kp.innerHTML = kpis();
+  renderPots();
+  const rows = rowsOf(POT);
+  const isSum = POT === 'sum';
+  const out = outSum(rows);
+  const income = inSum(rows) + ((POT === 'shop' || isSum) ? SHOP_IN.month : 0);
+  document.getElementById('totLabel').textContent = 'จ่ายเดือนนี้ · ' + POTNAME[POT];
+  document.getElementById('totBig').textContent = money(out);
+  document.getElementById('totIn').textContent = money(income);
 
-  let h = '';
-  const review = rows.filter(r => r.needs_review);
-  if(review.length){
-    h += '<div class="rbanner"><div class="t">⚠️ รอยืนยันว่าอยู่กระเป๋าไหน ' + review.length + ' รายการ</div>'
-      + '<div class="d">กะปันจดให้แล้วแต่ไม่ชัดว่ากระเป๋าไหน จึงลงเป็น "ส่วนตัว" ไว้ก่อน — '
-      + 'แยกผิดตั้งแต่ตอนจดจะตามแก้ตอนสิ้นเดือนไม่ทัน</div>'
-      + '<div class="acts"><button class="btn on" onclick="confirmAll()">ยืนยันทั้งหมดว่าถูกแล้ว</button></div></div>';
-  }
-  if(!rows.length){
-    h += '<div class="empty">เดือนนี้ยังไม่มีรายการในกระเป๋านี้<br>'
-       + '<b>ปกติไม่ต้องมากรอกที่นี่</b> — พิมพ์บอกในกลุ่มไลน์ที่มีกะปันตามปกติ เดี๋ยวขึ้นเอง</div>';
-  } else {
-    h += '<div class="sec">รายการเดือนนี้ (ใหม่สุดก่อน)</div>' + rows.map(rowHtml).join('');
-  }
-  list.innerHTML = h;
+  /* แถบสัดส่วน 4 หมวดบนสุด — ดีไซน์ล็อกไว้ว่าต้องมี */
+  const cats = {};
+  rows.filter(r => r.kind === 'out').forEach(r => {
+    const k = r.category || 'ไม่ระบุหมวด';
+    cats[k] = (cats[k]||0) + Number(r.amount||0);
+  });
+  const top = Object.keys(cats).map(k => [k, cats[k]]).sort((a,b) => b[1]-a[1]).slice(0,4);
+  const hues = ['var(--pot-shop)','var(--pot-personal)','var(--pot-ploy)','var(--pot-shared)'];
+  document.getElementById('bars').innerHTML = out
+    ? top.map((e,n) => '<i style="width:' + (e[1]/out*100).toFixed(1) + '%;background:' + hues[n] + '"></i>').join('') : '';
+  document.getElementById('legend').innerHTML = out
+    ? top.map((e,n) => '<span><i class="dot" style="background:' + hues[n] + '"></i>'
+        + esc(e[0]) + ' <b class="num">' + money(e[1]) + '</b></span>').join('') : '';
+
+  list.innerHTML = isSum ? renderSummary() : renderList();
 }
 
 function toast(msg){
@@ -442,21 +561,21 @@ function toast(msg){
 
 /* ── เพิ่ม / แก้ / ลบ ─────────────────────────────────────────────── */
 function fillCats(){
-  document.getElementById('cats').innerHTML =
-    CATS.map(c => '<option value="' + esc(c) + '">').join('');
+  document.getElementById('cats').innerHTML = CATS.map(c => '<option value="' + esc(c) + '">').join('');
 }
 function syncPaidBy(){
-  document.getElementById('paidwrap').style.display =
-    document.getElementById('f-book').value === 'shared' ? '' : 'none';
+  document.getElementById('paidwrap').classList.toggle('hidden',
+    document.getElementById('f-book').value !== 'shared');
 }
+const potToBook = p => (p === 'ploy' ? 'personal' : (p === 'sum' ? 'personal' : p));
 function openAdd(){
   EDIT = null;
   document.getElementById('dtitle').textContent = 'จดรายการ';
-  document.getElementById('f-book').value = BOOK;
+  document.getElementById('f-book').value = potToBook(POT);
   document.getElementById('f-kind').value = 'out';
   document.getElementById('f-amount').value = '';
   document.getElementById('f-at').value = thaiYmd();
-  document.getElementById('f-paid').value = WHO;
+  document.getElementById('f-paid').value = ME || 'nut';
   document.getElementById('f-category').value = '';
   document.getElementById('f-note').value = '';
   document.getElementById('f-slip').value = '';
@@ -493,8 +612,7 @@ document.getElementById('form').addEventListener('submit', async (ev) => {
   const at = (EDIT && thaiYmd(new Date(EDIT.at)) === ymd) ? EDIT.at : dayStartIso(ymd);
   const book = document.getElementById('f-book').value;
   const body = {
-    at: at,
-    book: book,
+    at: at, book: book,
     kind: document.getElementById('f-kind').value,
     amount: amount,
     paid_by: book === 'shared' ? document.getElementById('f-paid').value : null,
@@ -509,22 +627,21 @@ document.getElementById('form').addEventListener('submit', async (ev) => {
       await rest('ledger?id=eq.' + EDIT.id, {method:'PATCH', body:body});
       toast('แก้แล้ว');
     } else {
-      body.owner = WHO;
+      body.owner = ME || 'nut';
       body.source = 'manual';
-      body.created_by = 'หน้าเว็บ (' + (NAME[WHO]||WHO) + ')';
+      body.created_by = 'หน้าเว็บ (' + (NAME[ME]||ME||'—') + ')';
       await rest('ledger', {method:'POST', body:body});
-      toast('จดแล้ว ' + baht(amount));
+      toast('จดแล้ว ' + money(amount));
     }
     document.getElementById('dlg').close();
     await load();
   }catch(e){ console.error(e); toast('บันทึกไม่สำเร็จ'); }
 });
 
-/* 🔴 DELETE ได้ 204 ไม่ได้แปลว่าลบแล้ว — RLS บล็อกเงียบได้ ต้องนับแถวซ้ำเสมอ
-   (เจอมาแล้วในโปรเจคนี้ · ถ้าไม่เช็ค คนจะคิดว่าลบไปแล้วทั้งที่ยังอยู่) */
+/* 🔴 DELETE ได้ 204 ไม่ได้แปลว่าลบแล้ว — RLS บล็อกเงียบได้ ต้องนับแถวซ้ำเสมอ */
 async function removeRow(){
   const r = EDIT; if(!r) return;
-  if(!confirm('ลบรายการนี้? ' + baht(r.amount) + ' ' + (r.category||''))) return;
+  if(!confirm('ลบรายการนี้? ' + money(r.amount) + ' ' + (r.note||r.category||''))) return;
   try{
     await rest('ledger?id=eq.' + r.id, {method:'DELETE'});
     const back = await rest('ledger?select=id&id=eq.' + r.id + '&limit=1');
@@ -532,35 +649,22 @@ async function removeRow(){
     toast('ลบแล้ว'); await load();
   }catch(e){ console.error(e); toast('ลบไม่สำเร็จ'); }
 }
-
-async function patch(id, body){
-  await rest('ledger?id=eq.' + id, {method:'PATCH',
-    body: Object.assign({updated_at:new Date().toISOString()}, body)});
-}
 async function confirmBook(id){
-  try{ await patch(id, {needs_review:false}); toast('ยืนยันแล้ว'); await load(); }
-  catch(e){ console.error(e); toast('ไม่สำเร็จ'); }
-}
-async function confirmAll(){
-  const ids = visible().filter(r => r.needs_review).map(r => r.id);
-  if(!ids.length) return;
-  if(!confirm('ยืนยันว่ากระเป๋าถูกแล้วทั้ง ' + ids.length + ' รายการ?')) return;
   try{
-    await rest('ledger?id=in.(' + ids.join(',') + ')',
-      {method:'PATCH', body:{needs_review:false, updated_at:new Date().toISOString()}});
-    toast('ยืนยัน ' + ids.length + ' รายการ'); await load();
+    await rest('ledger?id=eq.' + id, {method:'PATCH',
+      body:{needs_review:false, updated_at:new Date().toISOString()}});
+    toast('ยืนยันแล้ว'); await load();
   }catch(e){ console.error(e); toast('ไม่สำเร็จ'); }
 }
 
 /* ── ส่งออกให้คนทำบัญชี ──────────────────────────────────────────────
    เกิดในเครื่องคนกดล้วน ๆ (Blob + a.download) ไม่ผ่านเซิร์ฟเวอร์เรา
-   → ข้อมูลไม่เคยกลายเป็นไฟล์ที่ค้างอยู่ใน repo หรือบนโฮสต์ (ใบงานข้อ 5)
    BOM ข้างหน้า ไม่งั้น Excel เปิดภาษาไทยเป็นขยะ */
 function exportCsv(){
-  const rows = visible();
+  const rows = POT === 'sum' ? ROWS : rowsOf(POT);
   if(!rows.length){ toast('ไม่มีรายการให้ส่งออก'); return; }
-  const BOOKNAME = {shop:'ร้าน', personal:'ส่วนตัว', shared:'ของเราสองคน'};
-  const head = ['วันที่','เวลา','กระเป๋า','คนจด','คนออกเงิน','รับ/จ่าย','จำนวนเงิน','หมวด','รายละเอียด','สลิป','ที่มา','รอยืนยัน'];
+  const BOOKNAME = {shop:'ร้าน', personal:'ส่วนตัว', shared:'เราสองคน'};
+  const head = ['วันที่','เวลา','กระเป๋า','คนจด','คนออกเงิน','รับ/จ่าย','จำนวนเงิน','หมวด','รายการ','สลิป','ที่มา','รอยืนยัน'];
   const q = v => '"' + String(v==null?'':v).split('"').join('""') + '"';
   const body = rows.map(r => {
     const t = new Date(new Date(r.at).getTime() + 7*3600*1000).toISOString();
@@ -572,15 +676,32 @@ function exportCsv(){
   const csv = String.fromCharCode(0xFEFF) + [head.map(q).join(',')].concat(body).join(String.fromCharCode(13,10));
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
-  a.download = 'ledger-' + BOOK + '-' + thaiYmd() + '.csv';
+  a.download = 'ledger-' + POT + '-' + thaiYmd() + '.csv';
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
   toast('ส่งออก ' + rows.length + ' รายการ');
 }
 
-fillCats();
-setWho(WHO);
-load();
+function start(){
+  document.getElementById('gate').classList.add('hidden');
+  document.getElementById('app').classList.remove('hidden');
+  document.getElementById('fab').classList.remove('hidden');
+  TAB = ME === 'ploy' ? 'ploy' : 'nut';
+  POT = POTS[TAB][0];
+  document.querySelectorAll('[role="tab"]').forEach(b => {
+    b.setAttribute('aria-selected', b.dataset.tab === TAB);
+    b.onclick = () => setTab(b.dataset.tab);
+  });
+  fillCats();
+  load();
+}
+
+(async function(){
+  const who = await identify();
+  if(!who) return;          // หน้าจอบอกไปแล้วว่าต้องทำอะไรต่อ
+  ME = who;
+  start();
+})();
 </script>
 </body>
 </html>
