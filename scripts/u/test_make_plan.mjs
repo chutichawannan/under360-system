@@ -108,6 +108,37 @@ console.log(NL + '2.5) 🕐 เวลาไทย — นัทจับได�
     K2.indexOf("String(r.created_at).slice(5,16)") < 0 && K2.indexOf("String(o.created_at||'').slice(0,10)") < 0);
 }
 
+console.log(NL + '2.7) 🧮 หักจองเฉพาะใบที่ยังไม่ได้จัด (เคสจริง S135 · นัทโทรถามครัวยืนยันแล้ว 13 ก.ย.)');
+{
+  /* ครัวจัดของให้ทั้ง 2 ใบไปแล้ว · นับของเหลือในตู้ได้ 1 · เดิมคิด 1−2 = −1 ทั้งที่ของพอ
+     หลัก: ของที่ออกจากตู้ไปแล้ว ไม่นับ ไม่หัก ทั้งสองฝั่ง */
+  const body = [grab(K2,'function packDoneOf('), grab(K2,'function bookedOpen(')].join(NL);
+  const mk = (id, date, qty, packed) => ({ id:id, status:'ready', delivery_date:date,
+    items:[{id:id+'-i', menu_item_id:'M1', quantity:qty}], packed:packed });
+  const run = (orders, today) => new Function('ORDERS','ITEMS','PACK','thaiToday','isMPHeadRow','packedOf',
+    body + '; return bookedOpen();')(
+      orders, Object.fromEntries(orders.map(o=>[o.id,o.items])),
+      Object.fromEntries(orders.map(o=>[o.id, o.packed?{[o.id+'-i']:o.items[0].quantity}:{}])),
+      () => today, () => false,
+      (o) => Object.values((Object.fromEntries(orders.map(x=>[x.id, x.packed?{[x.id+'-i']:x.items[0].quantity}:{}])))[o.id]||{})
+               .reduce((s,n)=>s+Number(n||0),0));
+  const T = '2026-09-13';
+  ok('ใบที่ยังไม่ได้จัด → ยังกันของไว้ให้เหมือนเดิม',
+    run([mk('a', T, 2, false)], T).M1 === 2);
+  ok('ใบที่จัดใส่ถุงแล้ว → ไม่หักซ้ำ (ของออกจากตู้ไปแล้ว)',
+    run([mk('a', T, 2, true)], T).M1 === undefined);
+  ok('เคส S135 จริง: 2 ใบจัดไปแล้วทั้งคู่ → หัก 0',
+    run([mk('a', T, 1, true), mk('b','2026-09-14', 1, true)], T).M1 === undefined);
+  ok('ปนกัน: จัดแล้ว 1 ใบ ยังไม่จัด 1 ใบ → หักเฉพาะใบที่ยังไม่จัด',
+    run([mk('a', T, 1, true), mk('b','2026-09-14', 3, false)], T).M1 === 3);
+  ok('ใบวันที่ผ่านไปแล้ว ไม่เอามานับ',
+    run([mk('a','2026-09-01', 5, false)], T).M1 === undefined);
+}
+ok('คำสั่งบนจอเปลี่ยนให้ตรงกับสูตรใหม่ (ห้ามนับถุงที่จัดแล้ว)',
+  K2.indexOf('เฉพาะของที่ยังไม่ได้จัด') >= 0 && K2.indexOf('รวมถุงที่แพ็คไว้แล้ว') < 0);
+ok('ทุกหน้าที่โชว์ยอดจอง ใช้ฐานเดียวกัน',
+  K2.split('bookedOpen()').length - 1 >= 3 && K2.indexOf('bookedOnOpen(DAY)') >= 0);
+
 console.log(NL + '3) หน้าลูกค้า — เห็นของตามวันที่เลือกรับ');
 ok('โหลดใบสั่งงานครัวมาด้วย (ไม่เพิ่ม query ใหม่)',
   LIFF.indexOf("const MAKE_KEY = 'k2_make'") >= 0 && LIFF.indexOf('CFG_KEYS = [') >= 0 &&

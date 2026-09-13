@@ -327,6 +327,24 @@ async function loadHist(){
    จองที่ยังไม่ส่ง = ทุกใบที่วันส่ง >= วันนี้ และยังไม่ delivered
    ⚠️ ตั้งใจไม่ตัดใบที่ "แพ็คแล้ว" ออก — ตามคอนเซปต์นัท ถุงที่แพ็คแล้วยังอยู่ในตู้
       และยังถูกนับด้วยตา จึงต้องยังถูกนับเป็น "จอง" อยู่ */
+/* ใบนี้จัดครบแล้วหรือยัง — จัดครบ = ของออกจากตู้ไปแล้ว ไม่ต้องกันไว้ให้อีก
+   นับจากช่องติ๊กจริงในหน้าจัดของ (PACK) ไม่ใช่จากสถานะใบ เพราะสถานะเปลี่ยนด้วยเหตุอื่นได้ */
+function packDoneOf(o){
+  const need = (ITEMS[o.id]||[]).filter(it=>!isMPHeadRow(it)).reduce((s,it)=>s+(Number(it.quantity)||0),0);
+  return need > 0 && packedOf(o) >= need;
+}
+/* ยอดจองที่ยัง "ต้องกันของไว้ให้" — ตัดใบที่จัดใส่ถุงไปแล้วออก
+   🔑 ของที่ออกจากตู้ไปแล้ว ไม่นับ ไม่หัก ทั้งสองฝั่ง (เคส S135 13 ก.ย.: 1 − 2 = −1 ทั้งที่ของพอ) */
+function bookedOpen(){
+  const t=thaiToday(), m={};
+  ORDERS.forEach(o=>{
+    if(o.status==='delivered') return;
+    if(!o.delivery_date || o.delivery_date < t) return;
+    if(packDoneOf(o)) return;                       // จัดแล้ว = ไม่อยู่ในตู้แล้ว
+    (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
+  });
+  return m;
+}
 function bookedMap(){
   const t=thaiToday(), m={};
   ORDERS.forEach(o=>{
@@ -340,6 +358,17 @@ function bookedOn(ymd){
   const m={};
   ORDERS.forEach(o=>{
     if(o.status==='delivered'||o.delivery_date!==ymd) return;
+    (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
+  });
+  return m;
+}
+/* รายวัน เฉพาะใบที่ยังไม่ได้จัด — ใช้ตอบ "วันนั้นต้องเตรียมของอีกกี่กล่อง"
+   ใบที่จัดใส่ถุงแล้วไม่ต้องเตรียมซ้ำ (เคส S135 13 ก.ย.) */
+function bookedOnOpen(ymd){
+  const m={};
+  ORDERS.forEach(o=>{
+    if(o.status==='delivered'||o.delivery_date!==ymd) return;
+    if(packDoneOf(o)) return;
     (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
   });
   return m;
@@ -588,8 +617,8 @@ function countGroups(list){
   return Object.keys(g).sort((a,b) => g[b].length - g[a].length || catLabel(a).localeCompare(catLabel(b), "th")).map(k => ({ key:k, items:g[k] }));
 }
 function viewCount(){
-  const bk=bookedMap();
-  let h='<div class="hint">นับของในตู้ทั้งหมด <b>รวมถุงที่แพ็คไว้แล้ว</b> — พิมพ์เลขที่นับได้ลงไปตรง ๆ<br>ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
+  const bk=bookedOpen();
+  let h='<div class="hint">นับ <b>เฉพาะของที่ยังไม่ได้จัด</b> — ถุงที่จัดใส่ไว้แล้วไม่ต้องนับ<br>พิมพ์เลขที่นับได้ลงไปตรง ๆ ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
   const openMenus = MENUS.filter(m=>m.is_available!==false);
   const isCounted = m => HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
   /* จองวันนี้ + พรุ่งนี้ — ของที่กำลังจะออกจากตู้ */
@@ -666,7 +695,9 @@ async function saveCount(mid,val,same){
   const m=MENUS.find(x=>x.id===mid); if(!m) return;
   const n=(String(val).trim()==='')?null:Math.max(0,parseInt(val,10)||0);
   const before=(m.actual_stock==null)?'—':m.actual_stock;
-  const booked=bookedMap()[mid]||0;
+  /* 13 ก.ย. 2569: หักเฉพาะใบที่ยังไม่ได้จัด — ของที่แพ็คไปแล้วไม่อยู่ในตู้ ครัวก็ไม่ได้นับมัน
+     เดิมหักทุกใบ → S135 นับได้ 1 หักจอง 2 (จัดไปแล้วทั้งคู่) = −1 ทั้งที่ของเหลือจริง 1 */
+  const booked=bookedOpen()[mid]||0;
   /* 🔑 หัวใจของทั้ง issue:
        actual_stock = เลขที่คนนับ  (เก็บครบ ไม่ตัดทิ้ง แม้จะน้อยกว่าที่จองไว้)
        stock_total  = ที่ลูกค้าซื้อได้อีก = นับได้ − จอง  (ติดลบไม่ได้ เพราะแปลว่า "ซื้อได้อีกกี่ชิ้น") */
@@ -715,7 +746,7 @@ function makeRow(m){
     + '</div>';
 }
 function viewPlan(){
-  const bk=bookedOn(DAY), have={};
+  const bk=bookedOnOpen(DAY), have={};
   MENUS.forEach(m=>have[m.id]=(m.actual_stock==null?0:Number(m.actual_stock)));
   let rows=MENUS.filter(m=>m.is_available!==false).map(m=>{
     const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
@@ -836,7 +867,7 @@ async function savePlan(mid,val){
    เคสที่นัทยกมา: แอดมินบอกครัว "เอาอันนี้ไปแทน" ทั้งที่ของนั้นมีคนจองแล้ว
    หน้านี้จึงต้องตอบคำถามเดียว: **หยิบตัวไหนไปแทนได้โดยไม่ไปกินของคนอื่น** */
 function viewAdmin(){
-  const bk=bookedMap();
+  const bk=bookedOpen();
   /* หมวด: ใช้ตัวเดียวกับหน้านับของ — เลือกหมวดที่แท็บไหน อีกแท็บก็ติดตาม (นัทสั่ง 12 ก.ย. ผ่าน 05) */
   const openMenus=MENUS.filter(m=>m.is_available!==false);
   const groups=countGroups(openMenus);
@@ -860,7 +891,7 @@ function viewAdmin(){
     if(!folded) x+=list.map(adminRow).join('');
     return x;
   };
-  let h='<div class="hint">ตัวเลขนี้<b>ครัวไม่เห็น</b> — มีไว้ตอบคำถามเดียว: <b>หยิบเมนูไหนไปแทนได้ โดยไม่ไปกินของที่ลูกค้าจองไว้</b><br>เลขใหญ่ = ในตู้ − จองแล้ว</div>';
+  let h='<div class="hint">ตัวเลขนี้<b>ครัวไม่เห็น</b> — มีไว้ตอบคำถามเดียว: <b>หยิบเมนูไหนไปแทนได้ โดยไม่ไปกินของที่ลูกค้าจองไว้</b><br>เลขใหญ่ = ในตู้ − จองที่ยังไม่ได้จัด (ใบที่จัดใส่ถุงแล้วไม่หัก เพราะของออกจากตู้ไปแล้ว)</div>';
   /* แถบปุ่มหมวด — ชุดเดียวกับหน้านับของ (ทั้งหมด + หมวดที่มีเมนูจริง เรียงตามจำนวน) */
   h+='<div class="catbar" role="group" aria-label="เลือกหมวดเมนู">'
     +'<button type="button" class="catchip'+(COUNT_CAT==='all'?' on':'')+'" onclick="pickCountCat(\'all\')">ทั้งหมด <b>'+openMenus.length+'</b></button>'
