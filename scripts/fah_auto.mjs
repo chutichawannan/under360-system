@@ -113,6 +113,11 @@ try {
   } else if (!bad.length) { if (prev) writeFileSync(memo, ""); say("   ✅ ไม่มีใบใหม่ที่วันเพี้ยน"); }
 } catch (e) { say("   ⚠️ ยามแจ้งบอร์ดพลาด: " + e.message); }
 
+// ---------- 0c ล้างเมนูที่ถือข้ามวันมา (กฎนัท 13 ก.ย.: ย้ายวัน = เมนูเดิมเป็นโมฆะ) ----------
+say('');
+say('⓪ c ล้างเมนูที่ถือข้ามวันมา');
+say(node('scripts/fah_strip_carried_menus.mjs', DRY ? [] : ['--write']).trim().split(String.fromCharCode(10)).slice(-1)[0]);
+
 // ---------- 1-3 เตรียมข้อมูล ----------
 const w = DRY ? [] : ['--write'];
 say('\n① จ่ายเมนูรอบที่ยังว่าง');       say(node('scripts/fah_assign_menus.mjs', w).trim().split('\n').slice(-1)[0]);
@@ -136,7 +141,35 @@ const passed = /ผ่านครบ 7 ข้อ/.test(chk);
 say(chk.split('\n').filter(l => /🔴|❌|✅ ผ่าน|เมนูที่ต้องผลิต|ในใบจัดของ/.test(l)).join('\n'));
 const syn = node('scripts/check-html-js.js', [`kitchen/${DATE}.html`]) + node('scripts/check-html-js.js', [`kitchen/${DATE}_pack.html`]);
 const synOk = (syn.match(/syntax ผ่าน/g) || []).length === 2;
-if (!passed || !synOk) {
+// 🔁 13 ก.ย. 2026 (นัท: "เป็น 10 ครั้งแล้วที่ไม่ทำเมนูพรุ่งนี้ให้ ต้องให้ทวง")
+//    เดิม: ตกด่าน = ไม่ push แล้ว "เงียบ" — ไม่มีใครรู้จนนัทมาทวงเอง
+//    ตอนนี้: ตกด่าน → ซ่อมตัวเองรอบเดียว (ล้างเมนูข้ามวัน + บีบจำนวนเมนู + ทำใบใหม่) → ตรวจซ้ำ
+//    ยังไม่ผ่านอีก = ยิงบอร์ดบอกคนทันที ไม่รอใครถาม
+let repaired = false;
+if (!passed && !DRY) {
+  say("");
+  say("🔧 ตกด่าน — ซ่อมตัวเองรอบเดียวแล้วตรวจใหม่");
+  node("scripts/fah_strip_carried_menus.mjs", ["--write"]);
+  node("scripts/fah_enforce_nine.mjs", ["--write"]);
+  node("scripts/fah_sync_order_items.mjs", ["--write"]);
+  node("scripts/fah_build_sheet.mjs", [DATE]);
+  node("scripts/fah_update_kitchen_index.mjs");
+  const chk2 = node("scripts/fah_check_sheet.mjs", [DATE]);
+  repaired = /ผ่านครบ 7 ข้อ/.test(chk2);
+  say(repaired ? "   ✅ ซ่อมแล้วผ่าน — ไปต่อ" : "   🔴 ซ่อมแล้วยังไม่ผ่าน");
+  say(chk2.split(String.fromCharCode(10)).filter(l => /🔴|❌/.test(l)).join(String.fromCharCode(10)));
+}
+if ((!passed && !repaired) || !synOk) {
+  // ยิงบอร์ดให้มีคนเห็นทันที (ห้ามเงียบ)
+  try {
+    const SBU = "https://zdartbvhbvqlwzwyyiia.supabase.co";
+    const SBK = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
+    const bad = chk.split(String.fromCharCode(10)).filter(l => /🔴|❌/.test(l)).join(String.fromCharCode(10));
+    const msg = "🔴 [ยามห้องฟ้า] ใบงานครัววันที่ " + DATE + " ออกไม่ได้ — ซ่อมอัตโนมัติแล้วยังไม่ผ่าน" + String.fromCharCode(10) + String.fromCharCode(10) + bad + String.fromCharCode(10) + String.fromCharCode(10) + "ครัวยังไม่มีใบของวันนั้น ต้องมีคนเข้าไปดู";
+    const rows2 = ["fah", "secretary", "k"].map(room => ({ room, sender: "fah", role: "assistant", text: msg }));
+    await fetch(SBU + "/rest/v1/session_messages", { method: "POST", headers: { apikey: SBK, Authorization: "Bearer " + SBK, "Content-Type": "application/json", Prefer: "return=minimal" }, body: JSON.stringify(rows2) });
+    say("   📮 ยิงบอร์ดแจ้งแล้ว (ฟ้า · เลขา · ครัว)");
+  } catch (e) { say("   ⚠️ ยิงบอร์ดไม่สำเร็จ: " + e.message); }
   say(`\n🔴 ไม่ผ่าน — ไม่ push (ใบเก่ายังอยู่บนเว็บ ปลอดภัยกว่าใบใหม่ที่ผิด)`);
   writeFileSync(`${ROOT}/kitchen/_auto_last_run.txt`, log.join('\n'));
   process.exit(1);

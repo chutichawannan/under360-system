@@ -29,10 +29,22 @@ const lockUntil = new Date(Date.now() + (7 + LOCK_DAYS * 24) * 3600 * 1000).toIS
 // ---------- ① ของจริงที่ครัวจะทำ ----------
 const rows = (await q(`mp_deliveries?select=delivery_date,status,menu_items&delivery_date=gte.${today}&limit=400`))
   .filter(r => r.status !== 'cancelled' && r.status !== 'skip_requested' && Array.isArray(r.menu_items));
+// 13 ก.ย. 2026 (กฎนัท): ลูกค้าย้ายวัน = เมนูที่เลือกไว้เป็นโมฆะ · LIFF ต้องโชว์เฉพาะชุดของวันนั้น
+//   เดิมเอา "ทุกโค้ดในกล่องวันนั้น" ขึ้น LIFF → ใครถือเมนูวันอื่นมา คนอื่นเห็นแล้วเลือกตาม → เมนูบานทุกวัน
 const real = {};
-for (const r of rows) for (const i of r.menu_items) {
-  const no = String(i.code || '').replace(/^(LC|HP|HX)/, '');
-  (real[r.delivery_date] = real[r.delivery_date] || new Set()).add(no);
+{
+  const cnt = {};
+  for (const r of rows) for (const it of r.menu_items) {
+    const no = String(it.code || "").replace(/^(LC|HP|HX)/, ""); if (!no) continue;
+    const k = r.delivery_date + "|" + no;
+    const o = (cnt[k] = cnt[k] || { cust: 0, fah: 0 });
+    if (it.by === "customer") o.cust++; else o.fah++;
+  }
+  for (const k of Object.keys(cnt)) {
+    const parts = k.split("|"), d2 = parts[0], no = parts[1];
+    if (cnt[k].fah > 0) (real[d2] = real[d2] || new Set()).add(no);
+    else console.log("   ไม่เอาขึ้น LIFF (ถือข้ามวันมา): " + d2 + " " + no);
+  }
 }
 
 // ---------- ③ ที่ LIFF อ่าน ----------

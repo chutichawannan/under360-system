@@ -55,7 +55,18 @@ const days = Object.keys(byDay).sort();
 for (const d of days) {
   const real = codeSet(d);
   const shown = new Set((liff[d] || []).map(x => String(x.no)));
-  const missing = [...real].filter(c => !shown.has(c));
+  // เมนูที่ลูกค้าเลือกเองล้วน = ตั้งใจไม่โชว์ใน LIFF (กันคนอื่นเลือกตามจนเมนูบาน) ครัวยังทำให้เจ้าของเหมือนเดิม
+  const custOnlyOf = new Set();
+  {
+    const cnt2 = {};
+    (byDay[d] || []).forEach(r => (r.menu_items || []).forEach(i => {
+      const c2 = String(i.code || "").replace(/^(LC|HP|HX)/, ""); if (!c2) return;
+      const o2 = (cnt2[c2] = cnt2[c2] || { cust: 0, fah: 0 });
+      if (i.by === "customer") o2.cust++; else o2.fah++;
+    }));
+    Object.entries(cnt2).forEach(([c2, o2]) => { if (o2.cust > 0 && o2.fah === 0) custOnlyOf.add(c2); });
+  }
+  const missing = [...real].filter(c => !shown.has(c) && !custOnlyOf.has(c));
   if (missing.length) FAIL(`① ${d}: ครัวจะทำ ${missing.join(',')} แต่ **ลูกค้าไม่เห็นใน LIFF** → ลูกค้าเลือกไม่ได้`);
 }
 

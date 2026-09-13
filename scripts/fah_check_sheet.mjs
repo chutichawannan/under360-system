@@ -81,8 +81,23 @@ console.log(`   เมนูที่ต้องผลิต: ${pool.length} �
 const custPerCode = {};
 C.forEach(c => { new Set(c.items || []).forEach(code => { custPerCode[code] = (custPerCode[code] || 0) + 1; }); });
 const corePool = pool.filter(code => custPerCode[code] > 1);
-if (corePool.length > MAX_MENUS_PER_DAY) {
-  FAIL(`แกนเมนูที่ใช้ร่วมกัน ≥2 คน บานเป็น ${corePool.length} ตัว (เพดาน ${MAX_MENUS_PER_DAY}) — มีคนถือชุดเมนูของวันอื่นติดมา ต้องจัดใหม่จากชุดของวันนี้`);
+// 13 ก.ย. 2026: เจอเคสจริง — ลูกค้าเลือกเมนูเองผ่าน LIFF (71 เสี่ยวหลงเปา · 85 มีทบอล) หลายคนพร้อมกัน
+//   ทำให้แกนเมนูบานเกินเพดาน แล้วด่านล้ม = ครัวไม่ได้ใบเลย ทั้งที่ฟ้าแก้อะไรไม่ได้ (ห้ามแตะเมนูที่ลูกค้าเลือกเอง)
+//   ด่านนี้มีไว้จับ "ความผิดของเรา" (คนถือชุดเมนูวันอื่นติดมา) ไม่ใช่จับการตัดสินใจของลูกค้า
+//   → โค้ดที่ทุกกล่องเป็นของลูกค้าเลือกเอง = ไม่นับเข้าเพดาน แต่ขึ้นเตือนให้เห็นว่าครัวต้องทำเพิ่ม
+const byCodeSrc = {};
+rows.forEach(r => (Array.isArray(r.menu_items) ? r.menu_items : []).forEach(i => {
+  const c = String(i.code || "").replace(/^(LC|HP|HX)/, ""); if (!c) return;
+  const b = (byCodeSrc[c] = byCodeSrc[c] || { cust: 0, fah: 0 });
+  if (i.by === "customer") b.cust++; else b.fah++;
+}));
+const custOnlyCodes = new Set(Object.entries(byCodeSrc).filter(([, v]) => v.cust > 0 && v.fah === 0).map(([c]) => c));
+const coreOurs = corePool.filter(code => !custOnlyCodes.has(code));
+const coreCust = corePool.filter(code => custOnlyCodes.has(code));
+if (coreOurs.length > MAX_MENUS_PER_DAY) {
+  FAIL(`แกนเมนูที่ฟ้าจัดเอง (ใช้ร่วมกัน ≥2 คน) บานเป็น ${coreOurs.length} ตัว (เพดาน ${MAX_MENUS_PER_DAY}) — มีคนถือชุดเมนูของวันอื่นติดมา ต้องจัดใหม่จากชุดของวันนี้`);
+} else if (coreCust.length) {
+  WARN(`ลูกค้าเลือกเมนูเองเพิ่มอีก ${coreCust.length} ตัว (${coreCust.join(",")}) — ครัวต้องทำเพิ่มจากแกน ${coreOurs.length} ตัว รวม ${pool.length} · ฟ้าแตะไม่ได้ตามกฎ`);
 } else if (pool.length > MAX_MENUS_PER_DAY) {
   WARN(`เมนูรวม ${pool.length} ตัว เกินเพดาน ${MAX_MENUS_PER_DAY} แต่ที่ใช้ร่วมกันจริงมีแค่ ${corePool.length} ตัว — ส่วนเกิน ${pool.length - corePool.length} ตัวเป็นโค้ดเฉพาะของลูกค้ารายเดียว (ปกติมาจากคอร์สที่ล็อกเมนูไว้ก่อนแพลนวันนี้ถูกเขียน) — ตรวจกับ "กล่องเดี่ยว" ด้านล่างประกอบ`);
 }
