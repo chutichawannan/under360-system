@@ -227,6 +227,12 @@ function getSB(){try{if(!sb&&typeof supabase!=='undefined')sb=supabase.createCli
 
 /* เวลาไทยเสมอ — เครื่องนัทอยู่คนละโซน ถ้าใช้เวลาเครื่องจะเพี้ยนทั้งวัน */
 function thaiToday(){ return new Date(Date.now()+7*3600e3).toISOString().slice(0,10); }
+/* 🕐 ฐานข้อมูลเก็บเวลาเป็น UTC · ไทย = UTC+7
+   ทุกที่ที่เอาเวลาจากฐานข้อมูลมาให้คนอ่าน ต้องผ่าน 2 ตัวนี้ ห้ามตัดสตริงดิบ ๆ
+   (นัทจับได้ 13 ก.ย.: ครัวนับ 9 โมงเช้า แต่หน้าจอขึ้น 02:10) */
+function thaiIso(iso){ return iso ? new Date(new Date(iso).getTime()+7*3600e3).toISOString() : ''; }
+function thaiDateOf(iso){ return thaiIso(iso).slice(0,10); }          // วันที่ตามเวลาไทย
+function thaiClock(iso){ const t=thaiIso(iso); return t ? (t.slice(8,10)+'/'+t.slice(5,7)+' '+t.slice(11,16)+' น.') : ''; }
 function dPlus(ymd,n){ const d=new Date(ymd+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
 const DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
 function dLabel(ymd){
@@ -347,7 +353,10 @@ function boxesOf(o){ return (ITEMS[o.id]||[]).reduce((s,i)=>s+(isMPHeadRow(i)?0:
 function packedOf(o){ const p=PACK[o.id]||{}; return (ITEMS[o.id]||[]).reduce((s,it)=>s+(isMPHeadRow(it)?0:(Number(p[it.id])||0)),0); }
 function isDone(o){ if(o.status==='ready'||o.status==='delivered') return true; const b=boxesOf(o); return b>0 && packedOf(o)>=b; }
 /* ใบที่แอดมินเปิดให้ระหว่างวัน = "ด่วน" — อธิบายตัวเองได้ในหน้า (ข้อ 2 ที่นัทติ) */
-function isUrgent(o){ return String(o.source||'')==='admin_manual' && String(o.created_at||'').slice(0,10) >= dPlus(thaiToday(),-1); }
+/* ป้าย "ด่วน" = แอดมินเพิ่งสั่งเพิ่มระหว่างวัน
+   เดิมเทียบ created_at (UTC) กับวันไทยตรง ๆ → ใบที่สั่งเที่ยงคืน–7 โมงเช้าเวลาไทย
+   จะถูกอ่านเป็นของ "เมื่อวาน" แล้วป้ายด่วนหายทั้งที่เพิ่งสั่งจริง */
+function isUrgent(o){ return String(o.source||'')==='admin_manual' && thaiDateOf(o.created_at) >= dPlus(thaiToday(),-1); }
 
 function go(v){ VIEW=v; ['pack','count','plan','admin'].forEach(x=>document.getElementById('nav-'+x).classList.toggle('on',x===v)); render(); }
 function pickDay(d){ DAY=d; render(); }
@@ -640,7 +649,7 @@ function viewCount(){
   });
   });
   h+='</div><div class="wrap"><div class="sec">🕘 ประวัติการนับ 7 วัน (ใครนับเท่าไหร่ เมื่อไหร่)</div><div class="card">';
-  h+= HIST.length ? HIST.slice(0,60).map(r=>'<div class="hist">'+esc(String(r.created_at).slice(5,16).replace('T',' '))+' · '+esc(r.actor||'—')+' · '+esc(String(r.summary||'').slice(0,70))+'</div>').join('')
+  h+= HIST.length ? HIST.slice(0,60).map(r=>'<div class="hist">'+esc(thaiClock(r.created_at))+' · '+esc(r.actor||'—')+' · '+esc(String(r.summary||'').slice(0,70))+'</div>').join('')
                   : '<div class="empty">ยังไม่มีประวัติ</div>';
   return h+'</div></div>';
 }

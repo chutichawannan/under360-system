@@ -92,6 +92,22 @@ console.log(NL + '2) 🔴 กฎเหล็ก — แผนต้องไม�
     !!fn && fn.indexOf("(!mk.from || String(mk.from) <= DAY)") >= 0);
 }
 
+console.log(NL + '2.5) 🕐 เวลาไทย — นัทจับได้เอง 13 ก.ย.: "โม๋ข่องนับ 2.10 คือเวลาไหน"');
+{
+  /* ฐานข้อมูลเก็บ UTC · ไทย +7 · ครัวนับ 9 โมงเช้า หน้าจอเคยขึ้น 02:10 */
+  const f = new Function(grab(K2,'function thaiIso(') + ';' + grab(K2,'function thaiDateOf(') + ';' +
+    grab(K2,'function thaiClock(') + '; return {d:thaiDateOf, c:thaiClock};')();
+  ok('ครัวนับ 02:10 UTC → หน้าจอต้องขึ้น 09:10 น. เวลาไทย',
+    f.c('2026-09-13T02:10:00Z').indexOf('09:10') >= 0);
+  ok('วันที่ก็ต้องเป็นวันไทย: 20:00 UTC ของวันที่ 12 = วันที่ 13 ที่ไทย',
+    f.d('2026-09-12T20:00:00Z') === '2026-09-13');
+  ok('เย็นวันไทยยังเป็นวันเดิม', f.d('2026-09-12T10:00:00Z') === '2026-09-12');
+  ok('ประวัติการนับใช้ตัวแปลง ไม่ตัดสตริงดิบ', K2.indexOf('esc(thaiClock(r.created_at))') >= 0);
+  ok('ป้ายด่วนเทียบวันไทยกับวันไทย', K2.indexOf('thaiDateOf(o.created_at) >= dPlus(thaiToday(),-1)') >= 0);
+  ok('ไม่เหลือการตัดสตริงเวลาดิบในหน้าครัวแล้ว',
+    K2.indexOf("String(r.created_at).slice(5,16)") < 0 && K2.indexOf("String(o.created_at||'').slice(0,10)") < 0);
+}
+
 console.log(NL + '3) หน้าลูกค้า — เห็นของตามวันที่เลือกรับ');
 ok('โหลดใบสั่งงานครัวมาด้วย (ไม่เพิ่ม query ใหม่)',
   LIFF.indexOf("const MAKE_KEY = 'k2_make'") >= 0 && LIFF.indexOf('CFG_KEYS = [') >= 0 &&
