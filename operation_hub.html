@@ -2153,7 +2153,11 @@ async function odFridge(id){
        — ย้ายเฉพาะรอบที่อยู่วันเดิม ห้ามลากรอบถัดไปของคอร์สมาด้วย (ดู mpMovableRounds) */
     var frRows=await sb_.from("mp_deliveries").select("id,status,round_no,delivery_date").eq("order_id",id);
     var frMove=mpMovableRounds(frRows.data,prep);
-    if(frMove.length) await sb_.from("mp_deliveries").update({delivery_date:ship,updated_at:new Date().toISOString()})
+    /* เส้นแบ่งที่นัทให้เอง 13 ก.ย.: วันส่งใหม่เป็นวันทำ Meal Plan (จ/พ/ศ) = ต้องใช้เมนูสดของวันนั้น
+       ถ้าย้ายไปวันที่ไม่ได้ทำ Meal Plan = เก็บตู้ของเดิมได้ เมนูติดไปกับใบตามเดิม */
+    var frPatch={delivery_date:ship,updated_at:new Date().toISOString()};
+    if(mpIsCookDay(ship)){ frPatch.menu_items=[]; frPatch.customer_request=[]; frPatch.status="scheduled"; }
+    if(frMove.length) await sb_.from("mp_deliveries").update(frPatch)
              .in("id",frMove.map(function(m){return m.id;}));
     try{
       await sb_.from("activity_log").insert({
@@ -2180,7 +2184,10 @@ async function odUnfridge(id){
     if(up.error) throw up.error;
     var unRows=await sb_.from("mp_deliveries").select("id,status,round_no,delivery_date").eq("order_id",id);
     var unMove=mpMovableRounds(unRows.data,fr.ship);   /* ตอนนี้รอบอยู่ที่วันส่ง → ดึงกลับไปวันจัด */
-    if(unMove.length) await sb_.from("mp_deliveries").update({delivery_date:fr.prep,updated_at:new Date().toISOString()}).in("id",unMove.map(function(m){return m.id;}));
+    /* ดึงกลับก็ใช้เส้นแบ่งเดียวกัน — กลับไปวันผลิต = ใช้เมนูสดของวันนั้น */
+    var unPatch={delivery_date:fr.prep,updated_at:new Date().toISOString()};
+    if(mpIsCookDay(fr.prep)){ unPatch.menu_items=[]; unPatch.customer_request=[]; unPatch.status="scheduled"; }
+    if(unMove.length) await sb_.from("mp_deliveries").update(unPatch).in("id",unMove.map(function(m){return m.id;}));
     closeOrderDetail(); loadAll(true);
   }catch(e){ alert("ยกเลิกไม่สำเร็จ: "+((e&&e.message)||e)); }
 }
@@ -3941,6 +3948,13 @@ function mpCookCutoffPassed(ymd){
   if(nowYmd<ymd) return false;
   var h=now.getUTCHours(), m=now.getUTCMinutes();   // บวก 7 ชม.ไว้แล้ว → อ่าน UTC = เวลาไทย
   return (h>8 || (h===8 && m>=30));
+}
+/* วันทำ Meal Plan = จันทร์ · พุธ · ศุกร์ (ปรุงสดเช้าวันส่ง)
+   ใช้ตัดสินว่า "ย้ายวันแล้วต้องใช้เมนูสดของวันใหม่" หรือ "เก็บตู้ของเดิมได้"
+   นัทให้เส้นแบ่งเอง 13 ก.ย.: ย้ายในช่วง จ/พ/ศ = เมนูสดใหม่ · ย้ายนอกวันทำ = เก็บตู้ */
+function mpIsCookDay(ymd){
+  if(!ymd) return false;
+  return [1,3,5].indexOf(new Date(String(ymd)+"T00:00:00").getDay()) >= 0;
 }
 function mpNextMWF(ymd, steps){
   var d=new Date(ymd+"T00:00:00");
