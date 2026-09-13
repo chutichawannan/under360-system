@@ -227,7 +227,9 @@ async function fetchMeta(T, ACC, since, until) {
      06 ขอ 13 ก.ย.: ชุด E รอ Meta สร้างกลุ่มอยู่ → ต้องขึ้นว่า "ยังไม่เริ่ม" ไม่ใช่ ฿0 (ไม่งั้นอ่านเป็นแอดพัง) */
   const delivered = new Set(ads.map(a => a.id));
   const notStarted = (adsInfo || [])
-    .filter(x => !delivered.has(x.id) && x.effective_status !== 'DELETED' && x.effective_status !== 'ARCHIVED')
+    /* 06 ขอ 13 ก.ย.: นับเฉพาะที่เปิดอยู่จริง — แอดที่ถูกหยุดไว้จะไม่มีวันเริ่ม ไม่ควรขึ้นว่า 'ยังไม่เริ่ม'
+       (แอดในชุดที่ยังไม่เปิด Meta คืนเป็น ADSET_PAUSED/CAMPAIGN_PAUSED → จะโผล่เองตอน 06 กดเปิดชุด) */
+    .filter(x => !delivered.has(x.id) && x.effective_status === 'ACTIVE')
     .map(x => Object.assign({ id: x.id, ad: x.name || '', status: x.effective_status || null }, parseName(x.name)))
     .filter(x => !x.legacy)            /* เอาเฉพาะชื่อรูปแบบใหม่ ไม่งั้นแอดเก่าที่ปิดไปแล้วมาปน */
     .slice(0, 60);
