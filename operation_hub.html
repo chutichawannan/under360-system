@@ -2364,7 +2364,9 @@ async function odMoveDate(id){
             +"\n\nขยับตามให้เลยไหม? (กติกา: เลื่อน 1 รอบ = ขยับทั้งพวง)\nกดยกเลิก = ปล่อยรอบถัดไปไว้วันเดิม")){
           for(var li=0;li<later.length;li++){
             var lr=later[li], lto=mpNextMWF(lr.delivery_date,gapA);
-            var lu=await sb_.from("mp_deliveries").update({delivery_date:lto,updated_at:new Date().toISOString()}).eq("id",lr.id);
+            /* รอบถัดไปก็ย้ายวันเหมือนกัน → เมนูเป็นโมฆะด้วย (กฎนัท 13 ก.ย.) */
+            var lu=await sb_.from("mp_deliveries").update({delivery_date:lto,menu_items:[],customer_request:[],
+              status:"scheduled",updated_at:new Date().toISOString()}).eq("id",lr.id);
             if(lu.error) continue;
             // ใบของรอบนั้นต้องขยับตาม ไม่งั้นครัว/แมสยังเห็นวันเก่า
             try{
@@ -3927,7 +3929,7 @@ function mpSyncBadge(rowId,tgt){
 
    **ข้อ 2: ได้เมนูเดิมไหม ขึ้นกับครัวทำไปหรือยัง** — เส้นแบ่ง 08:30 ของวันส่งเดิม
      Meal Plan ปรุงสดเช้าวันส่ง ส่งบ่าย · 08:30 เป็นเส้นเดียวกับที่ใช้ตัดยอดสั่งอยู่แล้ว
-     · ก่อน 08:30 = ยังไม่ได้ทำ → ยกเมนูเดิมไปวันใหม่
+     · ก่อน 08:30 = ยังไม่ได้ทำ → เมนูเดิมก็เป็นโมฆะ (กฎนัท 13 ก.ย. ย้ายวันเมื่อไหร่ เมนูเป็นโมฆะเสมอ)
      · หลัง 08:30 = ทำไปแล้ว → อาหารกล่องนั้นมีอยู่จริง เก็บข้ามวันไม่ได้
        → ล้างเมนูรอบนั้น ให้จ่ายเมนูของวันใหม่ + จดว่ากล่องที่ทำแล้วเอาไปไหน (ทางเลือก B3 ที่นัทเลือก)
    ⚠️ 08:30 คือ "เดาจากเวลา" ไม่ใช่ความจริง — วันที่ครัวทำช้าจะเดาผิด
@@ -3985,14 +3987,17 @@ async function planMoveRound(rowId, ev){
     +(sameCourse.length>4?("\n   …และอีก "+(sameCourse.length-4)+" รอบ"):"")+"\n";
   msg+= cooked
     ? "\n🍳 เลย 08:30 ของวันส่งเดิมแล้ว = ถือว่าครัวทำไปแล้ว\n   → เมนูรอบนี้จะถูกล้าง ต้องจ่ายเมนูใหม่ของวันที่ "+nd+"\n   → กล่องที่ทำไว้แล้วอย่าทิ้ง เอาไปขายเป็นเมนูสต็อค/ให้พนักงาน"
-    : "\n✅ ยังไม่ถึง 08:30 ของวันส่งเดิม = ยังไม่ได้ทำ → ยกเมนูเดิมไปวันใหม่";
+    : String.fromCharCode(10)+"✅ ยังไม่ถึง 08:30 ของวันส่งเดิม = ยังไม่ได้ทำ"+String.fromCharCode(10)+"   → เมนูเดิมเป็นโมฆะเหมือนกัน ต้องจ่ายเมนูใหม่ตามรอบของวันใหม่"
   if(!window.confirm(msg+"\n\nคนกด: "+who+"\n\nยืนยันไหม?")) return;
 
   try{
-    var patch={delivery_date:nd,updated_at:new Date().toISOString()};
+    /* 🔴 กฎนัท 13 ก.ย.: "ลูกค้าย้ายวัน ห้ามย้ายเมนูมาด้วย — ที่เลือกไว้เป็นโมฆะ"
+       เดิมล้างเมนูเฉพาะตอนเลย 08:30 (ถือว่าครัวทำแล้ว) · ถ้ายังไม่ถึงจะปล่อยเมนูเดิมติดไปด้วย
+       เคสจริง 13 ก.ย.: เลื่อน 14→16 แล้วเมนูวันจันทร์ตามไปวันพุธ วันพุธบานเป็น 14 เมนู
+       → ล้างทุกครั้งที่ย้ายวัน ไม่มีข้อยกเว้น */
+    var patch={delivery_date:nd,updated_at:new Date().toISOString(),
+               menu_items:[], customer_request:[], status:"scheduled"};
     if(cooked){
-      patch.menu_items=[];                          // ของทำสด เมนูเดิมไปวันใหม่ไม่ได้
-      patch.status="scheduled";                     // กลับเข้าคิวให้จ่ายเมนูใหม่
       patch.admin_notes=String(r.admin_notes||"")+" [เลื่อน "+cur+"→"+nd+" หลังครัวทำแล้ว · กล่องเดิม "+(r.box_count||7)+" เอาไปขายต่อ/พนักงาน · โดย "+who+"]";
     }
     var up=await sb_.from("mp_deliveries").update(patch).eq("id",rowId).select("id,delivery_date");
@@ -4007,7 +4012,9 @@ async function planMoveRound(rowId, ev){
     var moved=[];
     for(var i=0;i<sameCourse.length;i++){
       var x=sameCourse[i], to=mpNextMWF(x.delivery_date,gap);
-      var u2=await sb_.from("mp_deliveries").update({delivery_date:to,updated_at:new Date().toISOString()}).eq("id",x.id);
+      /* รอบถัดไปก็ย้ายวันเหมือนกัน → เมนูที่เคยจ่ายไว้เป็นโมฆะด้วย (กฎนัท 13 ก.ย.) */
+      var u2=await sb_.from("mp_deliveries").update({delivery_date:to,menu_items:[],customer_request:[],
+        status:"scheduled",updated_at:new Date().toISOString()}).eq("id",x.id);
       if(u2.error) continue;
       var om2=mpOrderMap[x.id];
       if(om2&&om2.id) await sb_.from("orders").update({delivery_date:to,updated_at:new Date().toISOString()}).eq("id",om2.id);
