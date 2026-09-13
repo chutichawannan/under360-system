@@ -28,9 +28,9 @@ const FLAG_SPEND = 500;   /* ใช้เกินนี้แล้วยัง
 const FLAG_FREQ  = 3;     /* เห็นซ้ำเกินนี้ = วนคนเดิม (06 · 11 ก.ย.) */
 const FREQ_MIN_IMP = 300; /* แอดที่เพิ่งขึ้น เห็น 5 ครั้งจากคน 1 คน = f5 หลอกตา → เตือนเมื่อแสดงผลถึงเกณฑ์นี้แล้ว (M ตั้งเอง) */
 
-/* ชุดกลุ่มเป้าหมาย — 06 กำหนด 11 ก.ย.: A · D = คนใหม่ · B · C = คนเก่า
-   ถ้า 06 เปลี่ยนความหมายชุด ต้องแก้ตรงนี้ที่เดียว */
-const AUD = { a: 'new', d: 'new', b: 'old', c: 'old' };
+/* ชุดกลุ่มเป้าหมาย — 06 กำหนด · แก้ 13 ก.ย.: A · D · E = คนใหม่ · B · C = คนเก่า (ปิดทั้ง 2 ชุดแล้ว 13 ก.ย.)
+   E = Lookalike จากเบอร์ลูกค้าเจเก่า 361 เบอร์ · ถ้า 06 เปลี่ยนความหมายชุด ต้องแก้ตรงนี้ที่เดียว */
+const AUD = { a: 'new', d: 'new', e: 'new', b: 'old', c: 'old' };
 const ROMAN = { 'น': 'n', 'พ': 'p', 'ส': 's' };
 
 /* ประเภท action ของ Meta — ไล่ตามลำดับ เจอตัวแรกใช้ตัวนั้น (ไม่บวกกัน กันนับซ้ำ) */
@@ -139,7 +139,7 @@ function parseName(name) {
   const raw = String(name || '');
   const parts = raw.split(' · ').map(s => s.trim());
   const p0 = (parts[0] || '').toLowerCase();
-  if (/^[a-d]$/.test(p0) && parts.length >= 3) {
+  if (/^[a-e]$/.test(p0) && parts.length >= 3) {
     const code = parts[1];
     const rest = parts.slice(2).join(' · ');
     const m = rest.match(/\(([^()]*)\)\s*$/);
@@ -151,7 +151,7 @@ function parseName(name) {
     return { set: p0, aud: AUD[p0] || '', code, codeKey, concept: title, img,
              utm: img ? (p0 + '_' + codeKey + '_' + img).toLowerCase() : '', legacy: false };
   }
-  const m = p0.match(/^([a-d])(\d+)$/);
+  const m = p0.match(/^([a-e])(\d+)$/);
   if (m) return { set: m[1], aud: AUD[m[1]] || '', code: p0, codeKey: p0,
                   concept: parts.slice(1).join(' · '), img: '', utm: p0, legacy: true };
   return { set: '', aud: '', code: '', codeKey: '', concept: raw, img: '', utm: '', legacy: true };
@@ -223,7 +223,16 @@ async function fetchMeta(T, ACC, since, until) {
     });
   });
 
-  return { ads, spendByDay, thumbNote, fetchedAt: Date.now() };
+  /* u360-not-started — แอดที่มีอยู่ใน Meta แต่ยังไม่เคยแสดงผลสักวัน (insights ไม่คืนแถวให้)
+     06 ขอ 13 ก.ย.: ชุด E รอ Meta สร้างกลุ่มอยู่ → ต้องขึ้นว่า "ยังไม่เริ่ม" ไม่ใช่ ฿0 (ไม่งั้นอ่านเป็นแอดพัง) */
+  const delivered = new Set(ads.map(a => a.id));
+  const notStarted = (adsInfo || [])
+    .filter(x => !delivered.has(x.id) && x.effective_status !== 'DELETED' && x.effective_status !== 'ARCHIVED')
+    .map(x => Object.assign({ id: x.id, ad: x.name || '', status: x.effective_status || null }, parseName(x.name)))
+    .filter(x => !x.legacy)            /* เอาเฉพาะชื่อรูปแบบใหม่ ไม่งั้นแอดเก่าที่ปิดไปแล้วมาปน */
+    .slice(0, 60);
+
+  return { ads, notStarted, spendByDay, thumbNote, fetchedAt: Date.now() };
 }
 
 async function getMeta(T, ACC, since, until) {
@@ -291,6 +300,7 @@ module.exports = async function handler(req, res) {
 
   /* สำเนาแถวแอดทุกครั้ง — ห้ามแก้ของที่อยู่ในที่เก็บตรงๆ (คำขอถัดไปจะได้เลขเพี้ยน) */
   out.ads = meta.ads.map(a => Object.assign({}, a));
+  out.notStarted = (meta.notStarted || []).map(a => Object.assign({}, a));
   if (meta.thumbNote) out.thumbNote = meta.thumbNote;
 
   const yest = th(new Date(Date.now() - 864e5));

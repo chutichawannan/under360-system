@@ -49,6 +49,19 @@ section{padding:22px 0}
 .card.claim .v{color:var(--amber);font-size:1.5rem}
 .card.newc{border-color:var(--blue)}
 .card.newc .v{color:var(--blue)}
+/* ── u360-not-started / u360-format ── */
+.nostart{background:var(--soft);border:1px dashed var(--hair);border-radius:12px;padding:10px 14px;margin-top:12px;font-size:.88rem;color:var(--muted)}
+.nostart b{color:var(--ink)}
+.nostart em{display:block;font-style:normal;font-size:.8rem;margin-top:4px;opacity:.8}
+.fstrip{display:flex;gap:10px;align-items:stretch;flex-wrap:wrap;margin-top:12px}
+.fstrip .lbl{align-self:center;font-size:.8rem;color:var(--muted)}
+.fcard{background:var(--paper);border:1px solid var(--hair);border-radius:12px;padding:10px 14px;min-width:190px}
+.fcard .k{font-size:.85rem;font-family:'Prompt';font-weight:600}
+.fcard .k em{font-style:normal;font-weight:400;color:var(--muted);font-size:.78rem}
+.fcard .v{font-family:'Prompt';font-weight:700;font-size:1.3rem;color:var(--green);line-height:1.25}
+.fcard .v span{font-family:'Sarabun';font-weight:400;font-size:.75rem;color:var(--muted);margin-left:3px}
+.fcard .s{font-size:.78rem;color:var(--muted)}
+.fstrip .fnote{align-self:center;font-size:.76rem;color:var(--muted);max-width:220px}
 /* ── u360-buyer-type / u360-new-buyers ── */
 th.bth,td.btc{background:#F6FAF6}
 .topbuy{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
@@ -213,6 +226,7 @@ details.stopped .tblwrap{margin-top:0;border-radius:0 0 14px 14px;border-top:0;o
   <div class="bar2">
     <span class="lbl">ยิงใส่ใคร</span><div class="seg aud" id="auds"></div>
     <span class="lbl" style="margin-left:8px">ดูแบบ</span><div class="seg" id="views"></div>
+    <span class="lbl" style="margin-left:8px">แอด</span><div class="seg" id="runs"></div>
   </div>
   <div class="cards" id="cards"></div>
   <div id="body"></div>
@@ -255,12 +269,14 @@ function u360pin(){ return U360PIN; }
 })();
 </script>
 <script>
-var DAYS = 7, AUDF = 'all', VIEW = 'concept', LAST = null;
-try { AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept'; } catch(e){}
+var DAYS = 7, AUDF = 'all', VIEW = 'concept', RUNF = 'all', LAST = null;
+try { AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept'; RUNF = localStorage.getItem('u360_ads_run') || 'all'; } catch(e){}
 var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
-/* ความหมายชุด — ต้องตรงกับ AUD ใน web/api/ads-insights.js (06 กำหนด 11 ก.ย.) */
-var AUDS = [['all','ทั้งหมด'],['new','แอดที่ยิงคนใหม่ (A · D)'],['old','แอดที่ยิงคนเก่า (B · C)']];
-var VIEWS = [['concept','ตามคอนเซปต์'],['ad','รายแอด']];
+/* ความหมายชุด — ต้องตรงกับ AUD ใน web/api/ads-insights.js (06 แก้ 13 ก.ย.: เพิ่มชุด E เข้ากลุ่มคนใหม่) */
+var AUDS = [['all','ทั้งหมด'],['new','แอดที่ยิงคนใหม่ (A · D · E)'],['old','แอดที่ยิงคนเก่า (B · C)']];
+var VIEWS = [['concept','ตามคอนเซปต์'],['img','ตามรูป'],['ad','รายแอด']];
+/* 13 ก.ย. ตัดแอดเหลือ 11 ใบ แต่ของที่หยุดแล้วยังมีตัวเลขค้างอยู่ 65 ใบ → ให้กดดูเฉพาะที่ยังวิ่งได้ */
+var RUNS = [['all','รวมที่หยุดแล้ว'],['live','เฉพาะที่ยังวิ่ง']];
 /* "ยิงคนใหม่" = ชุดแอดที่ตั้งใจยิง ไม่ใช่คนที่ซื้อจริง (นัทสับสนแล้วรอบนึง 11 ก.ย.)
    คนที่ซื้อจริงใช้ป้าย 🆕 คนใหม่ · 🔁 ลูกค้าเก่า · 🥬 เคยซื้อเจ ที่มาจากประวัติใน DB */
 var AUDNAME = { 'new':'ยิงคนใหม่', 'old':'ยิงคนเก่า' };
@@ -286,6 +302,7 @@ function renderControls(){
   segs('ranges', RANGES, DAYS, function(v){ DAYS = v; renderControls(); load(); });
   segs('auds', AUDS, AUDF, function(v){ AUDF = v; try{localStorage.setItem('u360_ads_aud', v);}catch(e){} renderControls(); if (LAST) draw(); });
   segs('views', VIEWS, VIEW, function(v){ VIEW = v; try{localStorage.setItem('u360_ads_view', v);}catch(e){} renderControls(); if (LAST) draw(); });
+  segs('runs', RUNS, RUNF, function(v){ RUNF = v; try{localStorage.setItem('u360_ads_run', v);}catch(e){} renderControls(); if (LAST) draw(); });
 }
 
 function load(){
@@ -350,7 +367,7 @@ function agg(list){
 
 function draw(){
   var d = LAST, t = d.totals || {}, o = d.orders || {};
-  var ads = (d.ads || []).filter(function(a){ return AUDF === 'all' || a.aud === AUDF; });
+  var ads = (d.ads || []).filter(function(a){ return (AUDF === 'all' || a.aud === AUDF) && (RUNF === 'all' || a.live); });
   var g = agg(ads);
   var diff = (t.today||0) - (t.yesterday||0);
   var scope = AUDF === 'all' ? '' : ' · เฉพาะแอดที่' + AUDNAME[AUDF];
@@ -378,8 +395,9 @@ function draw(){
         '⚠️ ไม่ใช่ยอดจริง — Meta นับคนที่แค่เห็นแอดแล้วไปซื้อเองด้วย · ห้ามรวมกับช่อง DB', 'claim');
 
   var body = document.getElementById('body');
-  if (!ads.length) { body.innerHTML = '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + '</div>'; }
-  else body.innerHTML = (VIEW === 'concept' ? conceptView(ads) : adView(ads)) + newBuyersView(ads);
+  var head = notStartedStrip() + formatStrip(ads);
+  if (!ads.length) { body.innerHTML = head + '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + (RUNF === 'live' ? ' (เฉพาะที่ยังวิ่ง)' : '') + '</div>'; }
+  else body.innerHTML = head + (VIEW === 'concept' ? conceptView(ads) : VIEW === 'img' ? imgView(ads) : adView(ads)) + newBuyersView(ads);
 
   /* u360-sort — กดหัวเดิม = สลับทิศ · กดหัวใหม่ = เริ่มทิศที่เหมาะกับคอลัมน์นั้น · จำไว้ในเครื่อง แยกตามมุมมอง */
   [].slice.call(body.querySelectorAll('th[data-sort]')).forEach(function(th){
@@ -392,7 +410,7 @@ function draw(){
     };
   });
 
-  if (VIEW === 'concept') {
+  if (VIEW !== 'ad') {
     [].slice.call(body.querySelectorAll('tr.crow')).forEach(function(tr){
       tr.onclick = function(){
         var open = tr.classList.toggle('open');
@@ -428,10 +446,11 @@ var COLS = [
   ['bt_new', '✅ 🆕 คนใหม่',            function(m){ return m.bt && m.bt['new'] ? m.bt['new'].rev : 0; }, 'desc'],
   ['bt_old', '✅ 🔁 ลูกค้าเก่า',         function(m){ return m.bt && m.bt.old ? m.bt.old.rev : 0; }, 'desc'],
   ['bt_jay', '✅ 🥬 เคยซื้อเจ',          function(m){ return m.bt && m.bt.jay ? m.bt.jay.rev : 0; }, 'desc'],
-  ['claim',  'Meta เคลม',              function(m){ return m.claimRev; }, 'desc']
+  ['claim',  'Meta เคลม*',             function(m){ return m.claimRev; }, 'desc']
 ];
-var SORTS = { concept:{ k:'cpl', d:'asc' }, ad:{ k:'spend', d:'desc' } };
-try { var _s = JSON.parse(localStorage.getItem('u360_ads_sort') || 'null'); if (_s && _s.concept && _s.ad) SORTS = _s; } catch(e){}
+var SORTS = { concept:{ k:'cpl', d:'asc' }, img:{ k:'cpl', d:'asc' }, ad:{ k:'spend', d:'desc' } };
+/* Object.assign ไม่ใช่ = เฉยๆ — ของที่จำไว้ในเครื่องก่อน 13 ก.ย. ไม่มีคีย์ 'img' จะทำให้มุมมองใหม่พัง */
+try { var _s = JSON.parse(localStorage.getItem('u360_ads_sort') || 'null'); if (_s && _s.concept && _s.ad) SORTS = Object.assign(SORTS, _s); } catch(e){}
 function colOf(k){ for (var i = 0; i < COLS.length; i++) if (COLS[i][0] === k) return COLS[i]; return COLS[0]; }
 function headMetrics(view){
   var s = SORTS[view];
@@ -470,6 +489,85 @@ function metricCells(m, crown){
     + BT.map(function(t){ return '<td class="btc">' + btCell(m.bt && m.bt[t[0]]) + '</td>'; }).join('')
     + '<td class="claimc">' + (m.claim ? m.claim + ' · ' + baht(m.claimRev) : '0') + '</td>';
 }
+
+/* ── u360-not-started — แอดที่ตั้งไว้แล้วแต่ Meta ยังไม่เคยแสดงผล (ชุด E รอ Meta สร้างกลุ่ม 13 ก.ย.)
+   ต้องขึ้นว่า "ยังไม่เริ่ม" ไม่ใช่ ฿0 — ไม่งั้นอ่านเป็นแอดพัง (06 ขอ) ── */
+function notStartedStrip(){
+  var ns = (LAST.notStarted || []).filter(function(a){ return AUDF === 'all' || a.aud === AUDF; });
+  if (!ns.length) return '';
+  var bySet = {};
+  ns.forEach(function(a){ var s = (a.set || '?').toUpperCase(); (bySet[s] = bySet[s] || []).push(a); });
+  return '<div class="nostart"><b>⏸️ ยังไม่เริ่ม</b> — ตั้งแอดไว้แล้วแต่ Meta ยังไม่เคยแสดงผลสักครั้ง จึงยังไม่มีตัวเลขให้อ่าน (ไม่ใช่แอดพัง): '
+    + Object.keys(bySet).sort().map(function(s){ return '<b>ชุด ' + esc(s) + '</b> ' + bySet[s].length + ' ใบ'; }).join(' · ')
+    + '<em>' + ns.slice(0, 5).map(function(a){ return esc(a.ad); }).join(' · ') + (ns.length > 5 ? ' … อีก ' + (ns.length - 5) + ' ใบ' : '') + '</em></div>';
+}
+
+/* ── u360-format — คาร์รูเซล vs รูปเดี่ยว (06 ขอ 13 ก.ย.: ชุด E มีคาร์รูเซล 1 ใบแข่งกับรูปเดี่ยว 3 ใบ) ── */
+function formatStrip(ads){
+  var carou = ads.filter(function(a){ return a.img === 'carousel'; });
+  var single = ads.filter(function(a){ return a.img && a.img !== 'carousel'; });
+  if (!carou.length || !single.length) return '';       /* มีแบบเดียว = ไม่มีอะไรให้เทียบ */
+  var cell = function(label, list){
+    var m = agg(list);
+    return '<div class="fcard"><div class="k">' + label + ' <em>' + m.n + ' แอด</em></div>'
+      + '<div class="v">' + (m.cpl != null ? baht(m.cpl) : '—') + '<span>/คนกดลิงก์</span></div>'
+      + '<div class="s">ใช้ ' + baht(m.spend) + ' · กดลิงก์ ' + num(m.leads) + ' · ✅ 🆕 ' + ((m.bt && m.bt['new'] ? m.bt['new'].n : 0)) + ' คน</div></div>';
+  };
+  return '<div class="fstrip"><span class="lbl">ฟอร์แมตไหนดีกว่า</span>'
+    + cell('🖼️ รูปเดี่ยว', single) + cell('🎠 คาร์รูเซล', carou)
+    + '<span class="fnote">เทียบเฉพาะแอดที่อยู่ในตัวกรองตอนนี้ · ตัวเลขน้อยอยู่ อย่าเพิ่งสรุป</span></div>';
+}
+
+/* ── u360-img-view — "รูปไหนพาลูกค้าใหม่มาถูกที่สุด" รวมรูปเดียวกันข้ามชุด (06 ขอ 13 ก.ย.) ── */
+function imgView(ads){
+  var groups = {}, order = [];
+  ads.forEach(function(a){
+    var k = a.img ? a.img : '__none';
+    if (!groups[k]) { groups[k] = { k:k, label: k === 'carousel' ? '🎠 คาร์รูเซล' : (k === '__none' ? 'ชื่อแบบเก่า (ไม่มีรหัสรูป)' : k), ads:[] }; order.push(k); }
+    groups[k].ads.push(a);
+  });
+  var rows = order.map(function(k){ var g = groups[k]; g.m = agg(g.ads); return g; });
+  var cmp = sortBy('img');
+  rows.sort(function(x, y){
+    if ((x.k === '__none') !== (y.k === '__none')) return x.k === '__none' ? 1 : -1;
+    return cmp(x.m, y.m);
+  });
+  var best = null;
+  rows.forEach(function(r){ if (r.k !== '__none' && r.m.leads >= MIN_LEADS_WIN && (!best || r.m.cpl < best.m.cpl)) best = r; });
+
+  var html = '<div class="h2row"><h2>รูปไหนพาคนมาถูกที่สุด</h2><span class="sub">' + sortLabel('img')
+    + ' · รวมรูปเดียวกันจากทุกชุด · กดแถวเพื่อดูรายแอด</span></div>'
+    + '<div class="tblwrap"><table><thead><tr><th>รูป</th><th>แอดวิ่ง</th>' + headMetrics('img') + '</tr></thead><tbody>';
+  rows.forEach(function(r){
+    var m = r.m;
+    var sets = [];
+    r.ads.forEach(function(a){ var s = (a.set || '').toUpperCase(); if (s && sets.indexOf(s) < 0) sets.push(s); });
+    var codes = [];
+    r.ads.forEach(function(a){ if (a.code && codes.indexOf(a.code) < 0) codes.push(a.code); });
+    /* แถว "ชื่อแบบเก่า" รวมแอดเก่าไว้ 20+ ตัว — โชว์ทั้งหมดแล้วยาวจนอ่านไม่ออก */
+    var codeTxt = codes.slice(0, 6).join(' · ') + (codes.length > 6 ? ' … อีก ' + (codes.length - 6) : '');
+    var thumb = (r.ads.find(function(a){ return a.thumb; }) || {}).thumb;
+    html += '<tr class="crow" data-k="' + esc(r.k) + '">'
+      + '<td><span class="cname"><span class="caret">▸</span>'
+      + (thumb ? '<img class="adthumb" src="' + esc(thumb) + '" alt="" loading="lazy">' : '')
+      + '<span class="ctitle"><b>' + esc(r.label) + '</b><em>ชุด ' + esc(sets.sort().join(' · ') || '—') + ' · คอนเซปต์ ' + esc(codeTxt || '—') + '</em></span></span></td>'
+      + '<td>' + (m.live ? m.live + '/' + m.n : '<span class="dim">หยุดหมด</span>') + '</td>'
+      + metricCells(m, best === r) + '</tr>';
+    r.ads.slice().sort(function(a, b){ return b.spend - a.spend; }).forEach(function(a){
+      var am = { spend:a.spend, clicks:a.clicks, ctr:a.ctr, leads:a.leads, cpl:a.costPerLead, chats:a.chats,
+                 saves:a.saves, shares:a.shares, freq:a.frequency, bt: dbFor([a]).bt, claim:a.metaPurchases, claimRev:a.metaRevenue };
+      html += '<tr class="sub" data-k="' + esc(r.k) + '" hidden>'
+        + '<td>' + (a.aud ? '<span class="audtag ' + a.aud + '">' + AUDNAME[a.aud] + '</span>' : '') + esc(a.ad) + '</td>'
+        + '<td>' + (a.live ? '▶️' : '<span class="dim">หยุด</span>') + '</td>'
+        + metricCells(am, false) + '</tr>';
+    });
+  });
+  html += '</tbody></table></div>' + FINE_META;
+  return html;
+}
+
+var FINE_META = '<p class="fine">* <b>Meta เคลม</b> = ตัวเลขที่ Meta นับเอง รวมคนที่แค่<b>เห็น</b>แอดแล้วไปซื้อเองด้วย — อ่านเป็นยอดขายจากแอดไม่ได้'
+  + ' (13 ก.ย. Meta เครดิตแอด c2 ฿5,720 จากคนกดลิงก์ 14 คน) · <b>✅ ยืนยันใน DB</b> = ใบสั่งจริงที่ติดรหัสแอดมา</p>';
 
 /* ── u360-concepts — คำถามที่นัทอยากรู้: "คอนเซปต์ไหนชนะ" ไม่ใช่ "แอดตัวไหนชนะ" ── */
 function conceptView(ads){
@@ -547,7 +645,7 @@ function adView(ads){
   var html = '<div class="h2row"><h2>▶️ กำลังวิ่ง ' + live.length + ' แอด</h2><span class="sub">' + sortLabel('ad') + ' · กดหัวคอลัมน์เพื่อเรียงใหม่</span></div>'
     + (live.length ? table(live) : '<div class="msg">ไม่มีแอดที่กำลังวิ่งในกลุ่มนี้</div>');
   if (stopped.length) html += '<details class="stopped"><summary>⏸️ หยุดแล้ว ' + stopped.length + ' แอด — กดดู (ไม่ได้ใช้เงินเพิ่มแล้ว)</summary>' + table(stopped) + '</details>';
-  return html;
+  return html + FINE_META;
 }
 
 /* ── u360-new-buyers — "คนใหม่ที่แอดพามา ซื้ออะไรกัน" (06 · นัทขอ 11 ก.ย. — เอาไปพัฒนาโปรดักต์) ──
