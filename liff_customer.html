@@ -23,9 +23,6 @@ fbq('track','PageView');
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- ฟอนต์ Sarabun — นัทเลือกเอง 14 ก.ย. (ใช้ในป๊อปเลือกไซส์) -->
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap">
 <style>
 /* ═══════════ RESET + ROOT ═══════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -6814,11 +6811,15 @@ function renderHomeGrid() {
     var cc = colCards.map(function(s){
       var f=s.item_filter||{};
       return { cat:(f.category||f.he_group||''), title:(s.title||''), subtitle:(s.subtitle||''),
-               bg_color:s.bg_color, bg_image:s.bg_image, size:COL_SPAN_TO_SIZE[s.col_span]||'square' };
+               bg_color:s.bg_color, bg_image:s.bg_image, crop:(f.crop||''),   // จุดครอปรูป ไม่ตั้ง = กลางภาพเหมือนเดิม
+               size:COL_SPAN_TO_SIZE[s.col_span]||'square' };
     });
     var cardHtml = function(c){
       var isTiny=(c.size==='tiny');
-      var img=c.bg_image?'<img src="'+c.bg_image+'" onerror="this.remove()">':'';
+      /* จุดครอป: รูปบางใบพระเอกไม่ได้อยู่กลางภาพ ครอปกลางแล้วตัดของสำคัญทิ้ง
+         ใส่ผ่าน style ตรง ๆ ได้ เพราะค่านี้มาจากหน้าจัดการ์ดของเราเอง ไม่ใช่ของลูกค้า */
+      var _cr=c.crop?' style="object-position:'+String(c.crop).replace(/["<>]/g,'')+'"':'';
+      var img=c.bg_image?'<img src="'+c.bg_image+'"'+_cr+' onerror="this.remove()">':'';
       var sc=(isTiny?' sm':'');
       var cta=(!isTiny?'<span class="col-cta">ดูเมนู →</span>':'');
       return '<div class="col-card fmt-'+c.size+'" data-cat="'+c.cat+'" onclick="colCardClick(this)" style="background:'+c.bg_color+'">'+img+'<div class="col-ov"></div><div class="col-body"><div class="col-title'+sc+'">'+c.title+'</div><div class="col-sub'+sc+'">'+(c.subtitle||'')+'</div>'+cta+'</div></div>';
