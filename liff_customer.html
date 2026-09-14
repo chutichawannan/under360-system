@@ -794,7 +794,7 @@ body{background:#fff!important}
 <div id="pkg-backdrop" onclick="closePkgSheet()"></div>
 <div class="scr" id="s-pkg-select">
   <div class="hdr">
-    <button class="hdr-back" onclick="closePkgSheet()">←</button>
+    <button class="hdr-back" onclick="pkgBack()">←</button>
     <div class="hdr-title" id="pkg-hdr-title">เลือกเมนูในแพค</div>
   </div>
   <div class="scroll pb-btn" id="pkg-scroll">
@@ -1425,7 +1425,11 @@ function pkgSetFromUrl(){
     return true;
   }catch(e){ console.warn('เปิดป๊อปจาก ?pkgset= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
 }
+/* จำไว้ว่าลูกค้าเข้าหน้าเลือกเมนูมาจากป๊อปเลือกไซส์ใบไหน — ไว้ให้ปุ่มย้อนกลับพากลับไปที่เดิม
+   null = เข้ามาทางอื่น (กดการ์ด / ?pkg= ตรง ๆ) → ปุ่มย้อนกลับทำงานแบบเดิมทุกอย่าง */
+let pkgSetBack = null;
 function showPkgSetSheet(set, list){
+  pkgSetBack = { set: set, list: list };
   const box = document.getElementById('pkgset-list');
   if(!box) return;
   document.getElementById('pkgset-title').textContent = set.title || 'เลือกขนาดที่ต้องการ';
@@ -1462,11 +1466,14 @@ function showPkgSetSheet(set, list){
   document.getElementById('pkgset-sheet').classList.add('on');
   document.getElementById('pkgset-backdrop').classList.add('on');
 }
-function closePkgSet(){
+/* keepBack = true เฉพาะตอนกดเลือกไซส์ (ยังอยู่ในเส้นทางเดิม)
+   กด ✕ / แตะนอกป๊อป / "ดูเมนูทั้งหมดก่อน" = ตั้งใจออกจากเส้นทาง → ลืมที่มา */
+function closePkgSet(keepBack){
+  if(!keepBack) pkgSetBack = null;
   document.getElementById('pkgset-sheet').classList.remove('on');
   document.getElementById('pkgset-backdrop').classList.remove('on');
 }
-function pickPkgSet(id){ closePkgSet(); openPackage(id); }
+function pickPkgSet(id){ closePkgSet(true); openPackage(id); }   // เลือกไซส์ = ยังอยู่ในเส้นทาง
 function openPkgFromUrl(){
   try{
     const want = (u360qs().get('pkg') || '').trim();
@@ -1507,7 +1514,18 @@ function openPackage(pkgId) {
   const _sc = document.getElementById('pkg-scroll');
   if (_sc) _sc.scrollTop = 0;
 }
+/* ⬅️ ปุ่มย้อนกลับในหน้าเลือกเมนู — มาจากป๊อปเลือกไซส์ ให้กลับไปหน้าเลือกไซส์
+   ไม่ใช่ปิดทิ้งไปหน้าเมนูรวม (นัทเจอเอง 14 ก.ย.) */
+function pkgBack(){
+  const back = pkgSetBack;
+  closePkgSheet();              // ตัวนี้ล้าง pkgSetBack ทิ้ง จึงต้องจำไว้ก่อน
+  if(back && back.list && back.list.length > 1){
+    try{ showPkgSetSheet(back.set, back.list); }
+    catch(e){ console.warn("กลับไปหน้าเลือกไซส์ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)", e); }
+  }
+}
 function closePkgSheet(){
+  pkgSetBack = null;            // ออกจากหน้าเลือกเมนูแล้ว = จบเส้นทางนี้
   document.getElementById('s-pkg-select').classList.remove('on');
   document.getElementById('pkg-backdrop').classList.remove('on');
 }

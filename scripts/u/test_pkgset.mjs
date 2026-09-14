@@ -58,7 +58,7 @@ ok('?pkg= เดิมยังอยู่', has('function openPkgFromUrl(){'))
 ok('?pkgset= มาก่อน ไม่มีค่อยใช้ ?pkg= เดิม',
   has('if(!pkgSetFromUrl()) openPkgFromUrl();'));
 ok('กดเลือกไซส์แล้วเข้าทางเดิม (openPackage) ไม่ได้เขียนทางใหม่',
-  has('function pickPkgSet(id){ closePkgSet(); openPackage(id); }'));
+  has('function pickPkgSet(id){ closePkgSet(true); openPackage(id); }'));
 
 console.log(NL + '4) หน้าตา — เจอจริงตอนเทส 14 ก.ย.');
 /* ป๊อปโดนแถบหมวด/แถบตะกร้าลอยทับครึ่งใบ เพราะของเดิมในไฟล์นี้ลอยสูงถึง 999 */
@@ -67,6 +67,22 @@ ok('ชื่อแพคยาวถูกตัดที่ขีด ไม่
 ok('ใส่ชื่อผ่าน textContent ไม่ต่อสตริง html (ไฟล์นี้ไม่มี esc ให้ใช้)',
   has('n.textContent = (cut > 0 ? full.slice(0, cut) : full).trim();'));
 ok('มีทางออกให้คนที่ยังไม่อยากเลือก', has('ดูเมนูทั้งหมดก่อน'));
+
+console.log(NL + '5) ⬅️ ปุ่มย้อนกลับต้องพากลับไปหน้าเลือกไซส์ (นัทเจอเอง 14 ก.ย.)');
+/* คนที่กดย้อนกลับคือคนที่กำลังเทียบ S กับ M = คนที่สนใจที่สุด
+   เดิมหลุดไปหน้าเมนูรวม ต้องกดลิงก์แอดใหม่ซึ่งลูกค้าไม่รู้ = เสียคนที่เราจ่ายค่าคลิกไปแล้ว */
+ok('ปุ่มย้อนกลับเรียก pkgBack ไม่ใช่ปิดทิ้ง', has('class="hdr-back" onclick="pkgBack()"'));
+ok('ไม่เหลือปุ่มย้อนกลับตัวเก่าที่ปิดทิ้ง', !has('class="hdr-back" onclick="closePkgSheet()"'));
+{
+  const fn = grab(L, 'function pkgBack(){');
+  ok('ดึง pkgBack ออกมาได้', !!fn);
+  ok('จำที่มาไว้ก่อนปิด (closePkgSheet ล้างทิ้ง)', !!fn && fn.indexOf('const back = pkgSetBack;') >= 0);
+  ok('มีที่มาจริง และมีให้เลือกเกิน 1 ใบ ถึงจะเด้งกลับ', !!fn && fn.indexOf('back.list.length > 1') >= 0);
+  ok('เด้งกลับไม่สำเร็จก็ไม่ค้างจอ ตกไปหน้าเมนูปกติ', !!fn && fn.indexOf('อยู่หน้าเมนูปกติแทน') >= 0);
+}
+ok('กดเลือกไซส์ = ยังอยู่ในเส้นทาง ไม่ลืมที่มา', has('function pickPkgSet(id){ closePkgSet(true);'));
+ok('กด ✕ / แตะนอกป๊อป = ตั้งใจออก ลืมที่มา', has('if(!keepBack) pkgSetBack = null;'));
+ok('ออกจากหน้าเลือกเมนูเมื่อไหร่ = จบเส้นทาง', has('pkgSetBack = null;            // ออกจากหน้าเลือกเมนูแล้ว'));
 
 console.log(NL + '────────────────────────────');
 console.log(fail ? ('❌ ตก ' + fail + ' ข้อ · ผ่าน ' + pass) : ('✅ ผ่านทั้งหมด ' + pass + ' ข้อ'));
