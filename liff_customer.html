@@ -1460,24 +1460,33 @@ function u360qs(){
 /* 🛒 เด้งป๊อป "เลือกไซส์" จากลิงก์แอด — ?pkgset=<ชื่อกลุ่ม>
    คนกดแอดเข้ามาต้องเจอของที่จะซื้อทันที ไม่ต้องไปหาเองในหน้าเมนู
    กลุ่มมาจากฐานข้อมูล ไม่ฮาร์ดโค้ด → คอร์สเจ/แคมเปญอื่นใช้ซ้ำได้ */
-function pkgSetFromUrl(){
+/* เปิดป๊อปเลือกไซส์ตามชื่อกลุ่ม — ใช้ร่วมกันระหว่างลิงก์แอด (?pkgset=) กับการ์ดหน้าแรก
+   ทางเดียวกันเป๊ะ จะได้ไม่หลุดกันเองเวลาแก้ทางใดทางหนึ่ง */
+function openPkgSetByKey(want){
   try{
-    const want = (u360qs().get('pkgset') || '').trim();
+    want = String(want || '').trim();
     if(!want) return false;
     const set = pkgSets && pkgSets[want];
     if(!set || !Array.isArray(set.ids) || !set.ids.length){
-      console.warn('?pkgset= ไม่มีกลุ่มนี้ในระบบ:', want); return false;   // ตกไปหน้าเมนูปกติ
+      console.warn('ไม่มีกลุ่มแพคนี้ในระบบ:', want); return false;   // ตกไปหน้าเมนูปกติ
     }
     /* เอาเฉพาะแพคที่เปิดขายจริงตอนนี้ — ปิดไปแล้วต้องไม่โผล่ให้กด
        และเรียงตามลำดับที่ตั้งไว้ในกลุ่ม ไม่ใช่ลำดับในฐานข้อมูล */
     const list = set.ids
       .map(id => (packages || []).find(x => x.id === id))
       .filter(Boolean);
-    if(!list.length){ console.warn('?pkgset= แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
+    if(!list.length){ console.warn('แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
     if(list.length === 1){ openPackage(list[0].id); return true; }   // เหลือใบเดียว ไม่ต้องให้เลือก
-    /* ส่งชื่อกลุ่มไปด้วย — ใช้หยิบคำขายตั้งต้นของแคมเปญนั้น (ฐานข้อมูลไม่มีก็ยังมีคำขาย) */
+    /* ส่งชื่อกลุ่มไปด้วย — ใช้หยิบคำขายตั้งต้นของแคมเปญนั้น */
     showPkgSetSheet(Object.assign({ key: want }, set), list);
     return true;
+  }catch(e){ console.warn('เปิดป๊อปเลือกไซส์ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
+}
+function pkgSetFromUrl(){
+  try{
+    const want = (u360qs().get('pkgset') || '').trim();
+    if(!want) return false;
+    return openPkgSetByKey(want);   // ทางเดียวกับการ์ดหน้าแรก ไม่เขียนซ้ำ
   }catch(e){ console.warn('เปิดป๊อปจาก ?pkgset= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
 }
 /* จำไว้ว่าลูกค้าเข้าหน้าเลือกเมนูมาจากป๊อปเลือกไซส์ใบไหน — ไว้ให้ปุ่มย้อนกลับพากลับไปที่เดิม
@@ -6919,6 +6928,11 @@ function colCardClick(el) {
     openPackage(pkgId);
   } else if (cat === '__meal_plan__') {
     openMealPlanPicker();
+  } else if (cat.startsWith('__pkgset:')) {
+    /* การ์ดหน้าแรก → ป๊อปเลือกไซส์ตัวเดียวกับที่ลิงก์แอดเปิด (นัทสั่ง 14 ก.ย.)
+       กลุ่มหาย / แพคในกลุ่มปิดขายหมด = อยู่หน้าเมนูปกติ ไม่ค้างจอ (กฎเดิมของป๊อป) */
+    var setKey = cat.slice(9, -2);
+    openPkgSetByKey(setKey);
   } else if (cat.startsWith('__mpoffer:')) {
     var offerKey = cat.slice(10, -2);
     openMealPlanPicker(offerKey);
