@@ -19,6 +19,16 @@
   ],
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "host",
+          "value": "staff.360foodbox.com"
+        }
+      ],
+      "destination": "/staff/v2.html"
+    },
+    {
       "source": "/staff/v2",
       "destination": "/staff/v2.html"
     },
