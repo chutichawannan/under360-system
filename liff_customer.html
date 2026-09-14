@@ -75,6 +75,20 @@ input,textarea{font-family:inherit}
 .pkgset-name i{font-size:11.5px;font-style:normal;color:#8a9a90;line-height:1.5}
 .pkgset-meta{font-size:12px;color:#8a9a90;white-space:nowrap}
 .pkgset-price{font-size:17px;font-weight:700;color:#2d6b53;white-space:nowrap}
+/* แบนเนอร์ + คำขาย (นัทสั่ง 14 ก.ย.) — พื้นหลังเป็นสีทึบไปก่อน นัทจะออกแบบรูปมาใส่ทีหลัง */
+.pkgset-banner{background:linear-gradient(135deg,#1F4D3A,#2d6b53);border-radius:14px;
+  padding:14px 15px;margin-bottom:12px;color:#fff}
+.pkgset-banner b{display:block;font-size:16.5px;font-weight:800;line-height:1.4}
+.pkgset-banner i{display:block;font-style:normal;font-size:12.5px;opacity:.9;margin-top:3px;line-height:1.5}
+.pkgset-lead{font-size:12.5px;color:#5b6c62;line-height:1.75;margin-bottom:11px}
+.pkgset-good{display:flex;gap:8px;font-size:12px;color:#3d5346;line-height:1.6;margin-bottom:6px}
+.pkgset-good span{flex-shrink:0}
+.pkgset-good b{font-weight:700;color:#16211B}
+.pkgset-goods{margin-bottom:13px}
+.pkgset-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#1F4D3A;
+  background:#DCF3E5;border-radius:20px;padding:2px 8px;margin-bottom:3px;align-self:flex-start}
+.pkgset-note{font-size:11.5px;color:#6b7d71;line-height:1.65;margin-top:11px;
+  background:#F3F7F4;border-radius:10px;padding:9px 11px}
 .pkgset-skip{width:100%;background:transparent;border:0;color:#8a9a90;font-size:13px;
   padding:10px;font-family:inherit;min-height:40px}
 #s-pkg-select.on{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;top:auto;
@@ -788,7 +802,10 @@ body{background:#fff!important}
     </div>
     <button type="button" class="pkgset-x" onclick="closePkgSet()" aria-label="ปิด">✕</button>
   </div>
+  <div id="pkgset-banner"></div>
+  <div id="pkgset-sell"></div>
   <div id="pkgset-list"></div>
+  <div id="pkgset-note"></div>
   <button type="button" class="pkgset-skip" onclick="closePkgSet()">ดูเมนูทั้งหมดก่อน</button>
 </div>
 <div id="pkg-backdrop" onclick="closePkgSheet()"></div>
@@ -1421,18 +1438,77 @@ function pkgSetFromUrl(){
       .filter(Boolean);
     if(!list.length){ console.warn('?pkgset= แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
     if(list.length === 1){ openPackage(list[0].id); return true; }   // เหลือใบเดียว ไม่ต้องให้เลือก
-    showPkgSetSheet(set, list);
+    /* ส่งชื่อกลุ่มไปด้วย — ใช้หยิบคำขายตั้งต้นของแคมเปญนั้น (ฐานข้อมูลไม่มีก็ยังมีคำขาย) */
+    showPkgSetSheet(Object.assign({ key: want }, set), list);
     return true;
   }catch(e){ console.warn('เปิดป๊อปจาก ?pkgset= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
 }
 /* จำไว้ว่าลูกค้าเข้าหน้าเลือกเมนูมาจากป๊อปเลือกไซส์ใบไหน — ไว้ให้ปุ่มย้อนกลับพากลับไปที่เดิม
    null = เข้ามาทางอื่น (กดการ์ด / ?pkg= ตรง ๆ) → ปุ่มย้อนกลับทำงานแบบเดิมทุกอย่าง */
 let pkgSetBack = null;
+/* ค่าตั้งต้นคำขายของแคมเปญแพคกับข้าว (06 Ads เขียน · นัทเคาะ 14 ก.ย.)
+   มีค่าเดียวกันนี้ใน kitchen_data คีย์ pkg_sets เมื่อไหร่ ของในฐานข้อมูลชนะเสมอ
+   → อยากแก้คำ ไม่ต้องแก้โค้ด ไม่ต้องรอห้อง u */
+const PKGSET_COPY = { protein: {
+  banner: 'กับข้าวพร้อมกิน เก็บไว้ในช่องฟรีซ',
+  bannerSub: 'หุงข้าวเอง ที่เหลือเราทำให้',
+  lead: 'กับข้าวปรุงสุกจากครัวเรา แช่แข็งทันทีทีละแพค — หยิบจากช่องฟรีซ อุ่น แล้วกินกับข้าวสวยได้เลย',
+  bullets: [['🧊','เก็บได้นาน','ไม่ต้องรีบกินให้หมด'],
+            ['⚡','อุ่นแล้วกินได้เลย','ไม่ต้องเข้าครัว'],
+            ['💸','ยิ่งแพคเยอะ ยิ่งตกถูก','เทียบราคาต่อแพคได้ที่ปุ่มข้างล่าง']],
+  note: 'กรุงเทพฯ ส่งฟรีทุกไซส์ · ต่างจังหวัด M และ L ส่งฟรี · S ค่าส่ง ฿100',
+  /* ป้ายบอกว่าใครควรเอาไซส์ไหน — ไล่จากใบที่แพคน้อยสุดไปมากสุด ไม่ผูกกับ id แพค
+     (ผูกกับ id แล้วเปลี่ยนแพคทีไร ป้ายไปติดผิดใบ) */
+  tags: ['ลองก่อน 1 สัปดาห์','กินต่อเนื่อง 2 สัปดาห์','ตุนยาว ยิ่งเยอะยิ่งตกถูก']
+} };
 function showPkgSetSheet(set, list){
   pkgSetBack = { set: set, list: list };
   const box = document.getElementById('pkgset-list');
   if(!box) return;
   document.getElementById('pkgset-title').textContent = set.title || 'เลือกขนาดที่ต้องการ';
+  /* คำขาย: ของในฐานข้อมูลมาก่อนเสมอ · ไม่มีค่อยใช้ค่าตั้งต้นในโค้ด · ไม่มีทั้งคู่ = ป๊อปหน้าตาเดิม */
+  const cp = Object.assign({}, PKGSET_COPY[set.key] || {}, set);
+  const bn = document.getElementById('pkgset-banner');
+  bn.textContent = '';
+  if(cp.banner){
+    const bx = document.createElement('div'); bx.className = 'pkgset-banner';
+    const b = document.createElement('b'); b.textContent = cp.banner; bx.appendChild(b);
+    if(cp.bannerSub){ const i = document.createElement('i'); i.textContent = cp.bannerSub; bx.appendChild(i); }
+    bn.appendChild(bx);
+  }
+  const sell = document.getElementById('pkgset-sell');
+  sell.textContent = '';
+  if(cp.lead){
+    const d = document.createElement('div'); d.className = 'pkgset-lead'; d.textContent = cp.lead;
+    sell.appendChild(d);
+  }
+  /* จอมือถือเตี้ย ๆ ต้องเห็นปุ่มไซส์แรกโดยไม่ต้องเลื่อน → ตัดเหลือ 2 ข้อ (06 กำชับ) */
+  if(Array.isArray(cp.bullets) && cp.bullets.length){
+    const wr = document.createElement('div'); wr.className = 'pkgset-goods';
+    const room = (window.innerHeight || 800) < 700 ? 2 : 3;
+    cp.bullets.slice(0, room).forEach(g => {
+      const row = document.createElement('div'); row.className = 'pkgset-good';
+      const ic = document.createElement('span'); ic.textContent = g[0] || '•'; row.appendChild(ic);
+      const tx = document.createElement('div');
+      const b = document.createElement('b'); b.textContent = g[1] || ''; tx.appendChild(b);
+      if(g[2]) tx.appendChild(document.createTextNode(' ' + g[2]));
+      row.appendChild(tx); wr.appendChild(row);
+    });
+    sell.appendChild(wr);
+  }
+  const nt = document.getElementById('pkgset-note');
+  nt.textContent = '';
+  if(cp.note){
+    const d = document.createElement('div'); d.className = 'pkgset-note'; d.textContent = cp.note;
+    nt.appendChild(d);
+  }
+  /* ป้ายไซส์ไล่จากใบที่แพคน้อยสุดไปมากสุด — ไม่ใช่ลำดับที่ตั้งไว้ในกลุ่ม
+     เพราะป้าย "ลองก่อน" ต้องไปอยู่กับใบเล็กเสมอ ไม่ว่าจะเรียงยังไง */
+  const byQty = list.slice().sort((a,b) => Number(a.qty||0) - Number(b.qty||0));
+  const tagOf = (pk) => {
+    if(!Array.isArray(cp.tags) || !cp.tags.length) return '';
+    return cp.tags[byQty.indexOf(pk)] || '';
+  };
   const sub = document.getElementById('pkgset-sub');
   sub.textContent = set.subtitle || '';
   sub.style.display = set.subtitle ? '' : 'none';
@@ -1447,6 +1523,9 @@ function showPkgSetSheet(set, list){
     const full = String(pk.name || '');
     const cut = full.indexOf('—');
     const wrap = document.createElement('span'); wrap.className = 'pkgset-name';
+    const tg = tagOf(pk);
+    if(tg){ const t = document.createElement('em'); t.className = 'pkgset-tag';
+            t.style.fontStyle = 'normal'; t.textContent = tg; wrap.appendChild(t); }
     const n = document.createElement('b');
     n.textContent = (cut > 0 ? full.slice(0, cut) : full).trim();
     wrap.appendChild(n);
@@ -1456,7 +1535,12 @@ function showPkgSetSheet(set, list){
       wrap.appendChild(d);
     }
     const m = document.createElement('span'); m.className = 'pkgset-meta';
-    m.textContent = Number(pk.qty || 0) ? (Number(pk.qty) + ' แพค') : '';
+    /* "ตกแพคละ" คำนวณสดจากราคาในฐานข้อมูล ไม่ใช่ตัวเลขที่พิมพ์ไว้
+       ปัดขึ้นเสมอ — ตัวเลขที่ลูกค้าเห็นต้องไม่ถูกกว่าที่จ่ายจริง */
+    const _q = Number(pk.qty || 0), _b = Number(pk.base_price || 0);
+    m.textContent = _q ? (_q + ' แพค') : '';
+    if(_q && _b) m.textContent += String.fromCharCode(10) + 'ตกแพคละ ฿' + Math.ceil(_b / _q).toLocaleString();
+    m.style.whiteSpace = 'pre-line'; m.style.textAlign = 'right'; m.style.lineHeight = '1.6';
     const pr = document.createElement('span'); pr.className = 'pkgset-price';
     /* ราคามาจากฐานข้อมูลเสมอ ห้ามฮาร์ดโค้ด — แก้ราคาที่หน้า DB แล้วต้องเปลี่ยนตาม */
     pr.textContent = '฿' + Number(pk.base_price || 0).toLocaleString();
