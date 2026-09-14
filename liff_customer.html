@@ -56,6 +56,27 @@ input,textarea{font-family:inherit}
 /* เซ็ต/คอร์ส/แพค — popup sheet (เหมือน Meal Plan) */
 #pkg-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:310;display:none;}
 #pkg-backdrop.on{display:block;}
+#pkgset-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:none}
+#pkgset-backdrop.on{display:block}
+#pkgset-sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(94vw,420px);
+  background:#fff;border-radius:20px;padding:18px 16px 16px;z-index:61;display:none;
+  box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:86vh;overflow:auto;z-index:10001}
+#pkgset-sheet.on{display:block}
+.pkgset-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
+#pkgset-title{font-size:18px;font-weight:700;color:#16211B;line-height:1.4}
+#pkgset-sub{font-size:13px;color:#6b7d71;margin-top:3px;line-height:1.6}
+.pkgset-x{margin-left:auto;background:#f2f5f3;border:0;border-radius:50%;width:32px;height:32px;
+  font-size:15px;color:#6b7d71;flex-shrink:0}
+.pkgset-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;
+  border:1px solid #e2e9e3;border-radius:14px;padding:14px;margin-bottom:9px;font-family:inherit;min-height:62px}
+.pkgset-item:active{background:#f2f8f3;border-color:#2d6b53}
+.pkgset-name{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pkgset-name b{font-size:15.5px;font-weight:700;color:#16211B;line-height:1.4}
+.pkgset-name i{font-size:11.5px;font-style:normal;color:#8a9a90;line-height:1.5}
+.pkgset-meta{font-size:12px;color:#8a9a90;white-space:nowrap}
+.pkgset-price{font-size:17px;font-weight:700;color:#2d6b53;white-space:nowrap}
+.pkgset-skip{width:100%;background:transparent;border:0;color:#8a9a90;font-size:13px;
+  padding:10px;font-family:inherit;min-height:40px}
 #s-pkg-select.on{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;top:auto;
   width:calc(100% - 36px);max-width:460px;min-height:0;height:auto;max-height:84vh;
   background:#fff;border-radius:18px;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.34);z-index:320;}
@@ -756,6 +777,20 @@ body{background:#fff!important}
 <!-- ══════════════════════════════════════
      SCREEN: PACKAGE MENU SELECTION (v0.3.2)
 ══════════════════════════════════════ -->
+<!-- 🛒 ป๊อปเลือกไซส์จากลิงก์แอด (?pkgset=) — คนกดแอดต้องเจอของที่จะซื้อทันที
+     รายการข้างในวาดจากฐานข้อมูลทั้งหมด ไม่มีราคาฮาร์ดโค้ด -->
+<div id="pkgset-backdrop" onclick="closePkgSet()"></div>
+<div id="pkgset-sheet">
+  <div class="pkgset-head">
+    <div>
+      <div id="pkgset-title">เลือกขนาดที่ต้องการ</div>
+      <div id="pkgset-sub"></div>
+    </div>
+    <button type="button" class="pkgset-x" onclick="closePkgSet()" aria-label="ปิด">✕</button>
+  </div>
+  <div id="pkgset-list"></div>
+  <button type="button" class="pkgset-skip" onclick="closePkgSet()">ดูเมนูทั้งหมดก่อน</button>
+</div>
 <div id="pkg-backdrop" onclick="closePkgSheet()"></div>
 <div class="scr" id="s-pkg-select">
   <div class="hdr">
@@ -1342,6 +1377,71 @@ function renderPkgBand() {
 
    🔴 ห้ามค้างจอเปล่าเด็ดขาด — id ผิด/ปิดขาย/โหลดไม่ทัน = อยู่หน้าเมนูปกติ
       คนที่กดมาจากแอดคือคนที่ตั้งใจซื้อที่สุด เจอจอค้างคือเสียทั้งคนทั้งค่าแอด */
+let pkgSets = {};
+/* 🛒 เด้งป๊อป "เลือกไซส์" จากลิงก์แอด — ?pkgset=<ชื่อกลุ่ม>
+   คนกดแอดเข้ามาต้องเจอของที่จะซื้อทันที ไม่ต้องไปหาเองในหน้าเมนู
+   กลุ่มมาจากฐานข้อมูล ไม่ฮาร์ดโค้ด → คอร์สเจ/แคมเปญอื่นใช้ซ้ำได้ */
+function pkgSetFromUrl(){
+  try{
+    const want = (new URLSearchParams(location.search).get('pkgset') || '').trim();
+    if(!want) return false;
+    const set = pkgSets && pkgSets[want];
+    if(!set || !Array.isArray(set.ids) || !set.ids.length){
+      console.warn('?pkgset= ไม่มีกลุ่มนี้ในระบบ:', want); return false;   // ตกไปหน้าเมนูปกติ
+    }
+    /* เอาเฉพาะแพคที่เปิดขายจริงตอนนี้ — ปิดไปแล้วต้องไม่โผล่ให้กด
+       และเรียงตามลำดับที่ตั้งไว้ในกลุ่ม ไม่ใช่ลำดับในฐานข้อมูล */
+    const list = set.ids
+      .map(id => (packages || []).find(x => x.id === id))
+      .filter(Boolean);
+    if(!list.length){ console.warn('?pkgset= แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
+    if(list.length === 1){ openPackage(list[0].id); return true; }   // เหลือใบเดียว ไม่ต้องให้เลือก
+    showPkgSetSheet(set, list);
+    return true;
+  }catch(e){ console.warn('เปิดป๊อปจาก ?pkgset= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
+}
+function showPkgSetSheet(set, list){
+  const box = document.getElementById('pkgset-list');
+  if(!box) return;
+  document.getElementById('pkgset-title').textContent = set.title || 'เลือกขนาดที่ต้องการ';
+  const sub = document.getElementById('pkgset-sub');
+  sub.textContent = set.subtitle || '';
+  sub.style.display = set.subtitle ? '' : 'none';
+  /* สร้างปุ่มด้วย DOM ไม่ใช่ต่อสตริง — ชื่อแพคมาจากฐานข้อมูล ใส่ผ่าน textContent
+     จะได้ไม่ต้องหนีอักขระเอง และไฟล์นี้ไม่มีตัว esc() ให้ใช้ */
+  box.textContent = '';
+  list.forEach(pk => {
+    const b = document.createElement('button');
+    b.type = 'button'; b.className = 'pkgset-item';
+    b.onclick = () => pickPkgSet(pk.id);
+    /* ตัดชื่อที่ขีดยาว — หน้าขีดคือชื่อที่คนจำได้ หลังขีดเป็นคำอธิบาย */
+    const full = String(pk.name || '');
+    const cut = full.indexOf('—');
+    const wrap = document.createElement('span'); wrap.className = 'pkgset-name';
+    const n = document.createElement('b');
+    n.textContent = (cut > 0 ? full.slice(0, cut) : full).trim();
+    wrap.appendChild(n);
+    if(cut > 0){
+      const d = document.createElement('i');
+      d.textContent = full.slice(cut + 1).trim();
+      wrap.appendChild(d);
+    }
+    const m = document.createElement('span'); m.className = 'pkgset-meta';
+    m.textContent = Number(pk.qty || 0) ? (Number(pk.qty) + ' แพค') : '';
+    const pr = document.createElement('span'); pr.className = 'pkgset-price';
+    /* ราคามาจากฐานข้อมูลเสมอ ห้ามฮาร์ดโค้ด — แก้ราคาที่หน้า DB แล้วต้องเปลี่ยนตาม */
+    pr.textContent = '฿' + Number(pk.base_price || 0).toLocaleString();
+    b.appendChild(wrap); b.appendChild(m); b.appendChild(pr);
+    box.appendChild(b);
+  });
+  document.getElementById('pkgset-sheet').classList.add('on');
+  document.getElementById('pkgset-backdrop').classList.add('on');
+}
+function closePkgSet(){
+  document.getElementById('pkgset-sheet').classList.remove('on');
+  document.getElementById('pkgset-backdrop').classList.remove('on');
+}
+function pickPkgSet(id){ closePkgSet(); openPackage(id); }
 function openPkgFromUrl(){
   try{
     const want = (new URLSearchParams(location.search).get('pkg') || '').trim();
@@ -2867,8 +2967,9 @@ async function init() {
   // ── โหลดทุกอย่างแบบขนาน (เดิม await เรียงกัน ~7 รอบ → เหลือ 1 batch: ลดเวลา splash มาก) ──
   // แต่ละ query ไม่ขึ้นต่อกัน · รวม kitchen_data 4 คีย์เป็น query เดียวด้วย .in()
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
-  const MAKE_KEY = 'k2_make';   // ใบสั่งงานครัว: { menu_id: {n, from:'YYYY-MM-DD'} }
-const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
+  const PKGSET_KEY = 'pkg_sets';   // กลุ่มแพคสำหรับลิงก์แอด: { "<ชื่อกลุ่ม>": {title, subtitle, ids:[...]} }
+const MAKE_KEY = 'k2_make';   // ใบสั่งงานครัว: { menu_id: {n, from:'YYYY-MM-DD'} }
+const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, PKGSET_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
   const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),
     sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
@@ -2884,6 +2985,11 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     const _mk = (val(cfgR).data || []).find(r => r.key === MAKE_KEY);
     kitchenMake = (_mk && _mk.data) || {};
   } catch (e) { kitchenMake = {}; }
+  /* กลุ่มแพคสำหรับลิงก์แอด — อ่านพลาดก็แค่ไม่มีกลุ่ม ลูกค้ายังใช้แอปได้ปกติ */
+  try {
+    const _ps = (val(cfgR).data || []).find(r => r.key === PKGSET_KEY);
+    pkgSets = (_ps && _ps.data) || {};
+  } catch (e) { pkgSets = {}; }
 
   // want_utensils capability (SQL รันแล้ว = ไม่มี error)
   hasUtensilColumn = !val(utR).error;
@@ -3039,7 +3145,8 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     renderMenu();
     updateCartUI();
     loadHomeLayout();
-    loadPackagesIfNeeded().then(openPkgFromUrl); // v0.3.2 · แล้วเปิดป๊อปตาม ?pkg= ถ้ามี
+    /* ?pkgset= (เลือกไซส์) มาก่อน · ไม่มีค่อยใช้ ?pkg= เดิม (เด้งแพคเดียว) */
+    loadPackagesIfNeeded().then(() => { if(!pkgSetFromUrl()) openPkgFromUrl(); });
     loadMpOfferSets(); // v0.4.10 — โหลดชุด Meal Plan จาก DB ถ้ามี (เผื่อแอดมินเพิ่มชุดโปรโมชั่นเอง)
   } catch(e) { console.warn('Render error', e); }
   const _screenParam = new URLSearchParams(location.search).get('screen');
