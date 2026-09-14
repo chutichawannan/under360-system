@@ -1,0 +1,109 @@
+<!doctype html>
+<meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{width:430px;background:#e9eef0;font-family:"Sarabun",sans-serif;-webkit-font-smoothing:antialiased;padding:18px 14px 26px}
+  .phone{background:#fff;border-radius:22px;overflow:hidden;box-shadow:0 10px 34px rgba(0,0,0,.18)}
+
+  /* ── แบนเนอร์ ── */
+  .banner{position:relative;height:212px;overflow:hidden}
+  .banner img{width:100%;height:100%;object-fit:cover;display:block}
+  .shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.30) 45%,rgba(0,0,0,.72) 100%)}
+  .btxt{position:absolute;left:18px;right:18px;bottom:15px;color:#fff}
+  .btxt h1{font-size:24px;font-weight:800;line-height:1.28;text-shadow:0 2px 10px rgba(0,0,0,.45)}
+  .btxt p{font-size:15px;margin-top:5px;opacity:.95;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+  .x{position:absolute;top:13px;right:13px;width:31px;height:31px;border-radius:50%;
+     background:rgba(255,255,255,.92);color:#2b3a32;font-size:17px;display:flex;align-items:center;justify-content:center}
+  .chip{position:absolute;top:14px;left:14px;background:#16a34a;color:#fff;font-size:12.5px;
+        font-weight:700;padding:5px 11px;border-radius:999px}
+
+  .body{padding:15px 16px 18px}
+  .lead{font-size:14.5px;color:#4b584f;line-height:1.85}
+
+  .perks{display:flex;flex-direction:column;gap:10px;margin:13px 0 15px;
+         background:#f4f9f5;border:1px solid #e0eee5;border-radius:13px;padding:12px 13px}
+  .perk{display:flex;gap:10px;font-size:14px;color:#1f2b25;align-items:flex-start;line-height:1.7}
+  .perk b{font-weight:700}
+  .perk i{font-style:normal;flex:none;width:22px;height:22px;border-radius:7px;background:#16a34a;color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+
+  .pick{font-size:13.5px;font-weight:800;color:#7c8a81;letter-spacing:.4px;margin-bottom:9px}
+
+  .card{display:flex;align-items:center;gap:12px;border:1.6px solid #e3e9e5;border-radius:14px;
+        padding:13px;margin-bottom:10px;background:#fff}
+  .card.best{border-color:#16a34a;background:#f7fdf9;position:relative}
+  .flag{position:absolute;top:-10px;left:13px;background:#16a34a;color:#fff;font-size:11.5px;
+        font-weight:800;padding:3px 9px;border-radius:999px}
+  .card img{width:54px;height:54px;border-radius:11px;object-fit:cover;flex:none}
+  .info{flex:1;min-width:0}
+  .nm{font-size:16.5px;font-weight:800;color:#16211b}
+  .tag{font-size:13px;color:#16a34a;font-weight:700;margin-top:2px}
+  .sub{font-size:12.5px;color:#7f8d84;margin-top:2px}
+  .pr{text-align:right;flex:none}
+  .baht{font-size:19.5px;font-weight:800;color:#16211b;white-space:nowrap}
+  .per{font-size:12px;color:#7f8d84;margin-top:2px;white-space:nowrap}
+
+  .ship{margin-top:13px;background:#fffbeb;border:1px solid #fde68a;border-radius:11px;
+        padding:11px 13px;font-size:12.8px;color:#6b4c08;line-height:1.7}
+  .all{text-align:center;margin-top:16px;font-size:14px;color:#8a978f;text-decoration:underline}
+</style>
+
+<div class="phone">
+    <div class="banner">
+    <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/inbox/2026-09-14/1789367535463_exec-2fd2b6a0-34de-4b6f-b4d0-d25b7090a52e.png" style="object-position:center 16%">
+    <div class="shade"></div>
+    <div class="chip">ส่งฟรี กรุงเทพฯ</div>
+    <div class="x">✕</div>
+    <div class="btxt">
+      <h1>กับข้าวพร้อมกิน<br>เก็บไว้ในช่องฟรีซ</h1>
+      <p>หุงข้าวเอง ที่เหลือเราทำให้</p>
+    </div>
+  </div>
+
+  <div class="body">
+    <div class="lead">กับข้าวปรุงสุกจากครัวเรา แช่แข็งทันทีทีละแพค — หยิบจากช่องฟรีซ อุ่น แล้วกินกับข้าวสวยได้เลย</div>
+
+    <div class="perks">
+      <div class="perk"><i>1</i><span><b>เก็บได้นาน</b> ไม่ต้องรีบกินให้หมด</span></div>
+      <div class="perk"><i>2</i><span><b>อุ่นแล้วกินได้เลย</b> ไม่ต้องเข้าครัว</span></div>
+      <div class="perk"><i>3</i><span><b>ตกแพคละไม่ถึง ฿67</b> ถูกกว่าซื้อทีละแพค (ปกติ 70–85)</span></div>
+    </div>
+
+    <div class="pick">เลือกขนาดที่ใช่สำหรับคุณ</div>
+
+    <div class="card best">
+      <div class="flag">เริ่มต้นที่นี่</div>
+      <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/A16.jpg">
+      <div class="info">
+        <div class="nm">Protein Pack S</div>
+        <div class="tag">ลองก่อน 1 สัปดาห์</div>
+        <div class="sub">21 แพค</div>
+      </div>
+      <div class="pr"><div class="baht">฿1,400</div><div class="per">แพคละ ฿67</div></div>
+    </div>
+
+    <div class="card">
+      <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/A9.jpg">
+      <div class="info">
+        <div class="nm">Protein Pack M</div>
+        <div class="tag">กินต่อเนื่อง 2 สัปดาห์</div>
+        <div class="sub">42 แพค</div>
+      </div>
+      <div class="pr"><div class="baht">฿2,650</div><div class="per">แพคละ ฿63</div></div>
+    </div>
+
+    <div class="card">
+      <img src="https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/D070.jpg">
+      <div class="info">
+        <div class="nm">Protein Pack L</div>
+        <div class="tag">ตุนยาว ยิ่งเยอะยิ่งตกถูก</div>
+        <div class="sub">84 แพค · แบ่งส่งได้ 2 รอบ</div>
+      </div>
+      <div class="pr"><div class="baht">฿4,900</div><div class="per">แพคละ ฿59</div></div>
+    </div>
+
+    <div class="ship"><b>กรุงเทพฯ ส่งฟรีทุกไซส์</b> · ต่างจังหวัด M และ L ส่งฟรี · S ค่าส่ง ฿100</div>
+
+    <div class="all">ดูเมนูทั้งหมดก่อน</div>
+  </div>
+</div>
