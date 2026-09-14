@@ -70,6 +70,9 @@ th.bth,td.btc{background:#F6FAF6}
 .chip b{font-family:'Prompt';color:var(--green);margin-right:6px}
 .chip em{font-style:normal;color:var(--muted);font-size:.78rem}
 table.nb{min-width:900px}
+/* u360-campaign — ตารางสรุปรายแคมเปญ แถวน้อย ไม่ต้องกว้างเท่าตารางแอด */
+table.camp{min-width:760px}
+table.camp td:first-child{min-width:190px}
 table.nb th:nth-child(3),table.nb td.items,table.nb th:nth-child(5),table.nb td.adsrc{text-align:left;white-space:normal;min-width:220px}
 .up{color:var(--red)} .down{color:var(--green)}
 /* มือถือ: การ์ด 5 ใบเรียงแถวเดียว = ตารางคอนเซปต์ตกไปจอที่ 2 → วาง 2 คอลัมน์ · ช่อง Meta เคลมเต็มแถว (ข้อความเตือนยาว) */
@@ -395,7 +398,7 @@ function draw(){
         '⚠️ ไม่ใช่ยอดจริง — Meta นับคนที่แค่เห็นแอดแล้วไปซื้อเองด้วย · ห้ามรวมกับช่อง DB', 'claim');
 
   var body = document.getElementById('body');
-  var head = notStartedStrip() + formatStrip(ads);
+  var head = campaignStrip() + notStartedStrip() + formatStrip(ads);
   if (!ads.length) { body.innerHTML = head + '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + (RUNF === 'live' ? ' (เฉพาะที่ยังวิ่ง)' : '') + '</div>'; }
   else body.innerHTML = head + (VIEW === 'concept' ? conceptView(ads) : VIEW === 'img' ? imgView(ads) : adView(ads)) + newBuyersView(ads);
 
@@ -492,6 +495,40 @@ function metricCells(m, crown){
 
 /* ── u360-not-started — แอดที่ตั้งไว้แล้วแต่ Meta ยังไม่เคยแสดงผล (ชุด E รอ Meta สร้างกลุ่ม 13 ก.ย.)
    ต้องขึ้นว่า "ยังไม่เริ่ม" ไม่ใช่ ฿0 — ไม่งั้นอ่านเป็นแอดพัง (06 ขอ) ── */
+/* ── u360-campaign — "แคมเปญนี้คุ้มหรือไม่คุ้ม" (นัทสั่งเอง 14 ก.ย.)
+   ลงทุน = เงินที่ใช้จริงระดับแคมเปญ · ได้กลับ = ยอดที่ยืนยันในฐานข้อมูลเรา
+   Meta เคลมแยก 2 ช่องเสมอ: กดแอดแล้วซื้อ (7 วัน) กับ แค่เห็นแอดแล้วซื้อ (1 วัน) — ห้ามรวมเป็นก้อนเดียว */
+function campaignStrip(){
+  var cs = (LAST.campaigns || []);
+  if (!cs.length) return LAST.campaignNote ? '<div class="nostart">⚠️ ' + esc(LAST.campaignNote) + '</div>' : '';
+  var pct = Math.round((cs[0].margin || 0.33) * 100);
+  var row = function(c){
+    var profit = c.estProfit || 0;
+    return '<tr>'
+      + '<td><b>' + esc(c.name) + '</b></td>'
+      + '<td>' + baht(c.spend) + '</td>'
+      + '<td class="btc">' + (c.dbOrders ? '<b>' + c.dbOrders + ' ใบ</b> · ' + baht(c.dbRevenue) : '<span class="dim">ยังไม่มี</span>') + '</td>'
+      + '<td class="btc">' + (c.newBuyers ? '<b>' + c.newBuyers + ' คน</b>' : '<span class="dim">0</span>') + '</td>'
+      + '<td class="claimc">' + (c.buyClick ? c.buyClick + ' ใบ · ' + baht(c.valClick) : '<span class="dim">0</span>') + '</td>'
+      + '<td class="claimc">' + (c.buyView ? c.buyView + ' ใบ · ' + baht(c.valView) : '<span class="dim">0</span>') + '</td>'
+      + '<td class="' + (profit >= 0 ? 'win' : 'up') + '">' + (profit >= 0 ? '+' : '−') + baht(Math.abs(profit)) + '</td>'
+      + '</tr>';
+  };
+  return '<div class="h2row"><h2>แคมเปญนี้คุ้มหรือไม่คุ้ม</h2><span class="sub">ลงทุนเท่าไหร่ ได้กลับเท่าไหร่ · ช่วง ' + esc(LAST.since) + ' → ' + esc(LAST.until) + '</span></div>'
+    + '<div class="tblwrap"><table class="camp"><thead><tr>'
+    + '<th>แคมเปญ</th><th>ลงทุน</th><th class="bth">✅ ยืนยันใน DB</th><th class="bth">🆕 ลูกค้าใหม่</th>'
+    + '<th class="claimh">Meta: กดแอดแล้วซื้อ</th><th class="claimh">Meta: แค่เห็นแอด</th><th>กำไรโดยประมาณ</th>'
+    + '</tr></thead><tbody>' + cs.map(row).join('') + '</tbody></table></div>'
+    + '<p class="fine">'
+    + '<b>กำไรโดยประมาณ</b> = (ยอดที่ยืนยันใน DB × ' + pct + '%) − เงินที่ใช้จริง · '
+    + '⚠️ <b>มาร์จิ้น ' + pct + '% เป็นตัวเลขที่นัทเคยประมาณเร็วๆ ยังไม่เคยยืนยันจากบัญชีจริง</b> — อ่านเป็นทิศทาง ไม่ใช่ตัวเลขปิดบัญชี<br>'
+    + '<b>Meta: แค่เห็นแอด</b> = คนที่ไม่ได้กดแอด แต่ Meta นับว่าซื้อภายใน 1 วันหลังเห็น — <b>มีลูกค้าเก่าที่จะซื้ออยู่แล้วปนอยู่ พิสูจน์ไม่ได้ว่าแอดทำให้ซื้อ</b><br>'
+    + '<b>ช่องยืนยันใน DB ของช่วงก่อน 14 ก.ย. ต่ำกว่าความจริง</b> — ตอนนั้นออเดอร์ส่วนใหญ่ไม่ติดรหัสแอด (บั๊กที่ห้อง u เพิ่งแก้) ไม่ได้แปลว่าแอดไม่ได้ผล<br>'
+    + 'ลงทุน = เงินที่ใช้จริง ไม่ใช่งบที่ตั้งไว้ (ในบัญชีมีแคมเปญค้างจากปีก่อนที่ตั้งงบไว้แต่ไม่ได้ใช้เงินจริง)'
+    + (LAST.campaignDbNote ? '<br>⚠️ ' + esc(LAST.campaignDbNote) : '')
+    + '</p>';
+}
+
 function notStartedStrip(){
   var ns = (LAST.notStarted || []).filter(function(a){ return AUDF === 'all' || a.aud === AUDF; });
   if (!ns.length) return '';
