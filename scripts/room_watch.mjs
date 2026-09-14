@@ -34,7 +34,9 @@ const isMe = s => me.some(m => (s || '').toLowerCase().includes(m));
 const roomFilter = rooms.length === 1 ? `room=eq.${encodeURIComponent(rooms[0])}` : `room=in.(${rooms.map(encodeURIComponent).join(',')})`;
 
 // เต้นหัวใจลง live_presence (sid=poller:<ห้อง>) ทุก 30 วิ → หน้า /pwa/pollers.html โชว์ว่าห้องไหนยังหายใจ
-const HB_MS = Number(process.env.WATCH_HB_MS || 180000); // 3 นาที (เดิม 30 วิ) — หน้า /pwa/pollers.html ยังดูออกว่าห้องไหนหายใจ
+// จังหวะหัวใจมีหน้าที่เดียว: บอกหน้า /pwa/pollers.html ว่าห้องนี้ยังตื่นอยู่ ไม่เกี่ยวกับการรับจดหมาย
+// นัทเคาะเอง 14 ก.ย. 2569: ทุก 5 นาทีพอ (เดิม 30 วิ)
+const HB_MS = Number(process.env.WATCH_HB_MS || 300000);
 let lastHb = 0;
 async function heartbeat() {
   if (Date.now() - lastHb < HB_MS) return;

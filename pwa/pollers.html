@@ -33,7 +33,7 @@
 <div class="grid" id="grid"></div>
 <div class="foot" id="paused" style="margin-top:14px"></div>
 <div class="foot">
-  🟢 เต้นอยู่ (ไม่เกิน 5 นาที) · 🟡 เงียบ 5-15 นาที · 🔴 หายไปเกิน 15 นาที = ห้องปิด/poller ตาย · ⚪ ยังไม่เคยเปิด<br><span style="opacity:.7">(14 ก.ย. 2569 — poller เต้นทุก 3 นาที แทน 30 วิ เพื่อลดโควตา Supabase จึงขยายเกณฑ์ตาม)</span><br>
+  🟢 เต้นอยู่ (ไม่เกิน 10 นาที) · 🟡 เงียบ 10-25 นาที · 🔴 หายไปเกิน 25 นาที = ห้องปิด/poller ตาย · ⚪ ยังไม่เคยเปิด<br><span style="opacity:.7">(14 ก.ย. 2569 — นัทเคาะให้ poller เต้นทุก 5 นาที แทน 30 วิ เพื่อลดโควตา Supabase จึงขยายเกณฑ์ตาม)</span><br>
   เปิด poller ห้องไหน: พิมพ์ประโยคจาก <code>docs/POLLER.md</code> ในห้องนั้น · หน้านี้รีเฟรชเองทุก 30 วิ
 </div>
 <script>
@@ -58,12 +58,12 @@ async function load(){
     const t=seen[room];let cls,txt,agoTxt='';
     if(room==='kapan'&&!t){cls='ok';txt='เต้นอยู่ (ตัวเดิม)';agoTxt='ตรวจไม่ได้ · ใช้ kapan_watch';ok++}
     else if(!t){cls='none';txt='ยังไม่เคยเปิด';none++}
-    else{const d=now-t;agoTxt='ล่าสุด '+ago(d)+'ที่แล้ว';if(d<300000){cls='ok';txt='เต้นอยู่';ok++}else if(d<900000){cls='warn';txt='เงียบ';warn++}else{cls='bad';txt='หายไป';bad++}}
+    else{const d=now-t;agoTxt='ล่าสุด '+ago(d)+'ที่แล้ว';if(d<600000){cls='ok';txt='เต้นอยู่';ok++}else if(d<1500000){cls='warn';txt='เงียบ';warn++}else{cls='bad';txt='หายไป';bad++}}
     const el=document.createElement('div');el.className='card '+cls;
     el.innerHTML='<div class="room">'+label+'</div><div class="st"><span class="dot"></span>'+txt+'</div><div class="ago">'+agoTxt+'</div>';
     g.appendChild(el);
   }
-  const pz=PAUSED.map(([r,l])=>seen[r]&&(now-seen[r])<900000?l+' 🟢':l).join(' · ');document.getElementById('paused').textContent='พัก (ไม่ต้องมี poller): '+pz;
+  const pz=PAUSED.map(([r,l])=>seen[r]&&(now-seen[r])<1500000?l+' 🟢':l).join(' · ');document.getElementById('paused').textContent='พัก (ไม่ต้องมี poller): '+pz;
   document.getElementById('sum').innerHTML='<span>🟢 <b>'+ok+'</b></span><span>🟡 <b>'+warn+'</b></span><span>🔴 <b>'+bad+'</b></span><span>⚪ <b>'+none+'</b></span>';
   document.getElementById('upd').textContent='อัปเดต '+new Date().toLocaleTimeString('th-TH',{timeZone:'Asia/Bangkok'})+' น. (เวลาไทย)';
 }
