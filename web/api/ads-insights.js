@@ -50,6 +50,16 @@ const pick = (arr, types) => {
   for (const t of types) { const x = arr.find(a => a.action_type === t); if (x) return +x.value || 0; }
   return 0;
 };
+/* อ่านค่าตามหน้าต่าง attribution ที่ขอไว้ (7d_click / 1d_view)
+   ไม่มีค่าของหน้าต่างนั้น = 0 · **ห้าม fallback ไปใช้ค่ารวม** เพราะค่ารวมคือ 2 ก้อนนี้บวกกัน จะนับซ้ำ */
+const pickWin = (arr, types, win) => {
+  if (!Array.isArray(arr)) return 0;
+  for (const t of types) { const x = arr.find(a => a.action_type === t); if (x) return +x[win] || 0; }
+  return 0;
+};
+/* มาร์จิ้นสำหรับช่อง "กำไรโดยประมาณ" — นัทเคยประมาณเร็วๆ ว่า 33%
+   ⚠️ ยังไม่เคยยืนยันจากบัญชีจริง (f-track ยังไม่ได้ statement) → หน้าเว็บต้องติดป้ายว่าเป็นการประมาณเสมอ */
+const MARGIN = 0.33;
 
 const SBH = { apikey: KEY, Authorization: 'Bearer ' + KEY };
 /* เมนูเจทุกปีขึ้นต้น J/j ตามด้วยเลข (J054 · j26 · j2025-1) — เช็คกับ order_items จริง 11 ก.ย. */
@@ -234,7 +244,36 @@ async function fetchMeta(T, ACC, since, until) {
     .filter(x => !x.legacy)            /* เอาเฉพาะชื่อรูปแบบใหม่ ไม่งั้นแอดเก่าที่ปิดไปแล้วมาปน */
     .slice(0, 60);
 
-  return { ads, notStarted, spendByDay, thumbNote, fetchedAt: Date.now() };
+  /* ④ ระดับแคมเปญ — "ลงทุนเท่าไหร่ ได้กลับเท่าไหร่" (นัทสั่งเอง 14 ก.ย. ผ่าน 06)
+     ขอ 2 หน้าต่าง attribution แยกกัน: 7d_click = กดแอดแล้วซื้อ · 1d_view = แค่เห็นแอดแล้วซื้อ
+     🔴 ห้ามรวมเป็นตัวเลขเดียว — ก้อน "แค่เห็น" มีลูกค้าเก่าที่จะซื้ออยู่แล้วปนอยู่ พิสูจน์ไม่ได้ว่าแอดทำให้ซื้อ
+     ⚠️ ใช้ spend เท่านั้น ห้ามใช้ daily_budget — บัญชีมีแคมเปญค้างจากปี 2565 อีก 22 ตัว งบรวม ฿9,620/วัน แต่ไม่ได้ใช้เงินจริง */
+  let campaigns = [], campaignNote = null;
+  try {
+    const cUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign'
+      + '&time_range=' + encodeURIComponent(JSON.stringify({ since, until }))
+      + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
+      + '&fields=campaign_id,campaign_name,spend,impressions,clicks,actions,action_values'
+      + '&limit=200' + tok;
+    campaigns = (await graphAll(cUrl, 2)).map(c => {
+      const name = c.campaign_name || '(ไม่มีชื่อ)';
+      return {
+        id: c.campaign_id || '', name,
+        /* ชื่อแคมเปญขึ้นต้นด้วยรหัสเดียวกับที่ติดไปกับลิงก์ เช่น "jay2026 · คอร์สเจ" → jay2026 */
+        key: String(name).split(/[\s·]+/)[0].toLowerCase(),
+        spend: +(+c.spend || 0).toFixed(2),
+        clicks: +c.clicks || 0,
+        impressions: +c.impressions || 0,
+        leads: pick(c.actions, T_LEAD),
+        buyClick: pickWin(c.actions, T_BUY, '7d_click'),
+        buyView:  pickWin(c.actions, T_BUY, '1d_view'),
+        valClick: +pickWin(c.action_values, T_BUY, '7d_click').toFixed(2),
+        valView:  +pickWin(c.action_values, T_BUY, '1d_view').toFixed(2)
+      };
+    }).filter(c => c.spend > 0 || c.impressions > 0);
+  } catch (e) { campaignNote = 'ดึงตัวเลขระดับแคมเปญไม่ได้ (' + (e.code || '?') + ')'; }
+
+  return { ads, notStarted, campaigns, campaignNote, spendByDay, thumbNote, fetchedAt: Date.now() };
 }
 
 async function getMeta(T, ACC, since, until) {
@@ -329,7 +368,9 @@ module.exports = async function handler(req, res) {
       matched++; revenue += +o.total || 0;
       /* utm_content ของออเดอร์ — จาก source_content ถ้ามี ไม่มีก็ท้าย campaign (jay2026-a_n1_i034) */
       const k = ((o.source_content || '').trim() || (c.split('/').pop().split('-').pop() || '')).toLowerCase();
-      adOrders.push({ o, k });
+      /* รหัสแคมเปญ: fb/paid/jay2026-c2 → jay2026 (ตรงกับคำแรกของชื่อแคมเปญใน Meta) */
+      const camp = c.slice('fb/paid/'.length).split('-')[0].toLowerCase();
+      adOrders.push({ o, k, camp });
       if (!k) continue;
       byUtm[k] = byUtm[k] || { orders: 0, revenue: 0, new: blank(), old: blank(), jay: blank(), unknown: blank() };
       byUtm[k].orders++; byUtm[k].revenue += +o.total || 0;
@@ -343,10 +384,18 @@ module.exports = async function handler(req, res) {
     catch (e) { cls = adOrders.map(x => ({ order: x.o, type: 'unknown', repeat: 0, items: [] })); out.buyerNote = 'แยกคนซื้อใหม่/เก่าไม่ได้ชั่วคราว'; }
     const adByUtm = {};
     for (const a of out.ads) if (a.utm && !adByUtm[a.utm]) adByUtm[a.utm] = a;
+    const byCamp = {};
     cls.forEach((c, i) => {
       const o = c.order, k = adOrders[i].k, t = +o.total || 0;
       totalsByType[c.type].n++; totalsByType[c.type].rev += t;
       if (k && byUtm[k]) { byUtm[k][c.type].n++; byUtm[k][c.type].rev += t; }
+      /* สะสมรายแคมเปญ — ยอดที่ "ยืนยันใน DB" ได้จริง + นับหัวลูกค้าใหม่ */
+      const cm = adOrders[i].camp;
+      if (cm) {
+        byCamp[cm] = byCamp[cm] || { orders: 0, revenue: 0, newBuyers: 0 };
+        byCamp[cm].orders++; byCamp[cm].revenue += t;
+        if (c.type === 'new') byCamp[cm].newBuyers++;
+      }
       if (c.type === 'new') {
         const ad = adByUtm[k];
         newList.push({
@@ -362,6 +411,17 @@ module.exports = async function handler(req, res) {
     Object.values(totalsByType).forEach(round);
     Object.values(byUtm).forEach(b => { b.revenue = +b.revenue.toFixed(2); ['new', 'old', 'jay', 'unknown'].forEach(t => round(b[t])); });
 
+    /* ── u360-campaign — สรุป "ลงทุนเท่าไหร่ ได้กลับเท่าไหร่" รายแคมเปญ ──
+       กำไร = (ยอดที่ยืนยันใน DB × มาร์จิ้นประมาณการ) − เงินที่ใช้จริง · หน้าเว็บต้องติดป้ายว่าเป็นการประมาณ */
+    out.campaigns = (meta.campaigns || []).map(c => {
+      const db = byCamp[c.key] || { orders: 0, revenue: 0, newBuyers: 0 };
+      return Object.assign({}, c, {
+        dbOrders: db.orders, dbRevenue: +db.revenue.toFixed(2), newBuyers: db.newBuyers,
+        estProfit: +(db.revenue * MARGIN - c.spend).toFixed(2), margin: MARGIN
+      });
+    }).sort((a, b) => b.spend - a.spend);
+    if (meta.campaignNote) out.campaignNote = meta.campaignNote;
+
     out.orders = { matched, revenue: +revenue.toFixed(2), byUtm, scanned: rows.length };
     out.buyers = { totals: totalsByType, newList };
 
@@ -373,6 +433,14 @@ module.exports = async function handler(req, res) {
       a.costPerOrder = a.orders ? +(a.spend / a.orders).toFixed(2) : null;
     }
   } catch (e) { /* ไม่มีตัวเลขออเดอร์ก็ยังโชว์ตัวเลขแอดได้ */ }
+
+  /* DB ล่มก็ยังต้องเห็นว่าแคมเปญไหนใช้เงินไปเท่าไหร่ — ช่องฝั่ง DB เป็น 0 พร้อมหมายเหตุ */
+  if (!out.campaigns) {
+    out.campaigns = (meta.campaigns || []).map(c => Object.assign({}, c,
+      { dbOrders: 0, dbRevenue: 0, newBuyers: 0, estProfit: +(0 - c.spend).toFixed(2), margin: MARGIN }));
+    if (meta.campaignNote) out.campaignNote = meta.campaignNote;
+    if (out.campaigns.length) out.campaignDbNote = 'อ่านออเดอร์จากฐานข้อมูลไม่ได้ตอนนี้ — ช่องยืนยันใน DB ยังไม่ใช่ของจริง';
+  }
 
   /* ── u360-funnel — คลิก → เข้าหน้าเจ → กดไป LINE → จองจริง ── */
   try {

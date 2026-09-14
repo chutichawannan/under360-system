@@ -133,8 +133,12 @@ module.exports = async (req, res) => {
   try {
     const token = await getLineToken();   // 13 ส.ค.: ไม่มี token ตรงๆ = แลกจากความลับแชนแนลเอง
     const hasToken = !!token;
-    const today = new Date().toISOString().slice(0, 10);
-    const tomorrowDate = new Date(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
+    /* 🕐 ยึดวันไทยเสมอ — ลูกค้าและครัวอยู่ไทย ไม่ใช่ UTC
+       ตอนนี้ cron รัน 09:00 ไทย (02:00 UTC) วันตรงกันพอดี ผลลัพธ์วันนี้จึงไม่เปลี่ยน
+       แต่ถ้าใครขยับเวลา cron ไปก่อน 07:00 ไทย จะเปิด/ปิดหน้าต่างผิดวันทันทีแบบเงียบ ๆ */
+    const thaiNow = () => new Date(Date.now() + 7 * 3600e3);
+    const today = thaiNow().toISOString().slice(0, 10);
+    const tomorrowDate = thaiNow(); tomorrowDate.setDate(tomorrowDate.getDate() + 1);
     const tomorrow = tomorrowDate.toISOString().slice(0, 10);
 
     const openWindows = await runOpenRequestWindows(token, hasToken, today);

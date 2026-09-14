@@ -23,6 +23,9 @@ fbq('track','PageView');
 <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<!-- ฟอนต์ Sarabun — นัทเลือกเอง 14 ก.ย. (ใช้ในป๊อปเลือกไซส์) -->
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;600;700;800&display=swap">
 <style>
 /* ═══════════ RESET + ROOT ═══════════ */
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -58,38 +61,67 @@ input,textarea{font-family:inherit}
 #pkg-backdrop.on{display:block;}
 #pkgset-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:10000;display:none}
 #pkgset-backdrop.on{display:block}
+/* 🎨 ดีไซน์ที่นัทเคาะ 14 ก.ย. — แบนเนอร์เต็มผืน ไม่มีขอบขาวคั่น (padding อยู่ข้างในแทน) */
 #pkgset-sheet{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;width:min(94vw,420px);
-  background:#fff;border-radius:20px;padding:18px 16px 16px;z-index:61;display:none;
+  background:#fff;border-radius:20px;padding:0;z-index:61;display:none;font-family:"Sarabun",inherit;
   box-shadow:0 12px 40px rgba(0,0,0,.25);max-height:86vh;overflow:auto;z-index:10001}
 #pkgset-sheet.on{display:block}
-.pkgset-head{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}
-#pkgset-title{font-size:18px;font-weight:700;color:#16211B;line-height:1.4}
-#pkgset-sub{font-size:13px;color:#6b7d71;margin-top:3px;line-height:1.6}
-.pkgset-x{margin-left:auto;background:#f2f5f3;border:0;border-radius:50%;width:32px;height:32px;
+/* แบนเนอร์: รูปเต็มผืน + ฟิล์มดำไล่เฉด + ข้อความทับ
+   สูง 212px ตามม็อค · จอเตี้ยลดเหลือ 186px ไม่งั้นปุ่ม S ตกจอ (06 เตือนไว้) */
+.pkgset-head{position:relative;height:212px;overflow:hidden;border-radius:20px 20px 0 0}
+@media (max-height:700px){ .pkgset-head{height:186px} }
+.pkgset-head img{width:100%;height:100%;object-fit:cover;display:block}
+.pkgset-shade{position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(0,0,0,.15) 0%,rgba(0,0,0,.30) 45%,rgba(0,0,0,.72) 100%)}
+.pkgset-htxt{position:absolute;left:18px;right:18px;bottom:15px;color:#fff}
+#pkgset-title{font-size:24px;font-weight:800;line-height:1.28;color:#fff;
+  text-shadow:0 2px 10px rgba(0,0,0,.45)}
+#pkgset-sub{font-size:15px;margin-top:5px;color:#fff;opacity:.95;text-shadow:0 1px 8px rgba(0,0,0,.45)}
+.pkgset-chip{position:absolute;top:14px;left:14px;background:#16a34a;color:#fff;font-size:12.5px;
+  font-weight:700;padding:5px 11px;border-radius:999px}
+/* ป้ายไม่มีรูป — ยังต้องอ่านออก ไม่ใช่ตัวขาวบนพื้นขาว */
+.pkgset-head.noimg{background:linear-gradient(135deg,#1F4D3A,#2d6b53);height:auto;padding:18px 16px 16px}
+.pkgset-head.noimg .pkgset-htxt{position:static}
+.pkgset-body{padding:15px 16px 18px}
+.pkgset-x{position:absolute;top:13px;right:13px;background:rgba(255,255,255,.92);border:0;
+  border-radius:50%;width:31px;height:31px;color:#2b3a32;z-index:2;
   font-size:15px;color:#6b7d71;flex-shrink:0}
-.pkgset-item{display:flex;align-items:center;gap:10px;width:100%;text-align:left;background:#fff;
+/* กล่องข้อดี — ตัวเลข 1/2/3 ในกรอบเขียว ตามม็อค */
+.pkgset-goods{display:flex;flex-direction:column;gap:10px;margin:13px 0 15px;
+  background:#f4f9f5;border:1px solid #e0eee5;border-radius:13px;padding:12px 13px}
+.pkgset-good{display:flex;gap:10px;font-size:14px;color:#1f2b25;align-items:flex-start;line-height:1.7}
+.pkgset-good b{font-weight:700}
+.pkgset-good span{flex:none;width:22px;height:22px;border-radius:7px;background:#16a34a;color:#fff;
+  font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;line-height:1}
+.pkgset-pick{font-size:13.5px;font-weight:800;color:#7c8a81;letter-spacing:.4px;margin-bottom:9px}
+.pkgset-thumb{width:54px;height:54px;border-radius:11px;object-fit:cover;flex:none}
+/* ใบที่อยากให้คนเริ่ม = กรอบเขียว + ป้ายลอยมุมบน */
+.pkgset-item.best{border-color:#16a34a;background:#f7fdf9}
+.pkgset-flag{position:absolute;top:-10px;left:13px;background:#16a34a;color:#fff;font-size:11.5px;
+  font-weight:800;padding:3px 9px;border-radius:999px}
+.pkgset-item{position:relative;display:flex;align-items:center;gap:12px;width:100%;text-align:left;background:#fff;
   border:1px solid #e2e9e3;border-radius:14px;padding:14px;margin-bottom:9px;font-family:inherit;min-height:62px}
 .pkgset-item:active{background:#f2f8f3;border-color:#2d6b53}
 .pkgset-name{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
-.pkgset-name b{font-size:15.5px;font-weight:700;color:#16211B;line-height:1.4}
+.pkgset-name b{font-size:16.5px;font-weight:800;color:#16211B;line-height:1.35}
 .pkgset-name i{font-size:11.5px;font-style:normal;color:#8a9a90;line-height:1.5}
-.pkgset-meta{font-size:12px;color:#8a9a90;white-space:nowrap}
-.pkgset-price{font-size:17px;font-weight:700;color:#2d6b53;white-space:nowrap}
+.pkgset-meta{font-size:12.5px;color:#7f8d84;margin-top:2px;line-height:1.6}
+.pkgset-price{font-size:19.5px;font-weight:800;color:#16211B;white-space:nowrap;text-align:right}
+.pkgset-per{font-size:12px;color:#7f8d84;margin-top:2px;white-space:nowrap;text-align:right}
 /* แบนเนอร์ + คำขาย (นัทสั่ง 14 ก.ย.) — พื้นหลังเป็นสีทึบไปก่อน นัทจะออกแบบรูปมาใส่ทีหลัง */
 .pkgset-banner{background:linear-gradient(135deg,#1F4D3A,#2d6b53);border-radius:14px;
   padding:14px 15px;margin-bottom:12px;color:#fff}
 .pkgset-banner b{display:block;font-size:16.5px;font-weight:800;line-height:1.4}
 .pkgset-banner i{display:block;font-style:normal;font-size:12.5px;opacity:.9;margin-top:3px;line-height:1.5}
-.pkgset-lead{font-size:12.5px;color:#5b6c62;line-height:1.75;margin-bottom:11px}
+.pkgset-lead{font-size:14.5px;color:#4b584f;line-height:1.85}
 .pkgset-good{display:flex;gap:8px;font-size:12px;color:#3d5346;line-height:1.6;margin-bottom:6px}
 .pkgset-good span{flex-shrink:0}
 .pkgset-good b{font-weight:700;color:#16211B}
 .pkgset-goods{margin-bottom:13px}
-.pkgset-tag{display:inline-block;font-size:10.5px;font-weight:700;color:#1F4D3A;
-  background:#DCF3E5;border-radius:20px;padding:2px 8px;margin-bottom:3px;align-self:flex-start}
-.pkgset-note{font-size:11.5px;color:#6b7d71;line-height:1.65;margin-top:11px;
-  background:#F3F7F4;border-radius:10px;padding:9px 11px}
-.pkgset-skip{width:100%;background:transparent;border:0;color:#8a9a90;font-size:13px;
+.pkgset-tag{font-size:13px;color:#16a34a;font-weight:700;margin-top:2px}
+.pkgset-note{margin-top:13px;background:#fffbeb;border:1px solid #fde68a;border-radius:11px;
+  padding:11px 13px;font-size:12.8px;color:#6b4c08;line-height:1.7}
+.pkgset-skip{width:100%;background:transparent;border:0;color:#8a978f;font-size:14px;text-decoration:underline;
   padding:10px;font-family:inherit;min-height:40px}
 #s-pkg-select.on{position:fixed;left:50%;transform:translateX(-50%);bottom:14px;top:auto;
   width:calc(100% - 36px);max-width:460px;min-height:0;height:auto;max-height:84vh;
@@ -388,6 +420,10 @@ body{background:#fff!important}
 .sec-title-marquee{overflow:hidden;white-space:nowrap;padding:18px 0 10px;}
 .sec-marquee-track{display:inline-block;white-space:nowrap;font-weight:800;color:var(--ink);animation:secScroll linear infinite;}
 @keyframes secScroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+/* คำอธิบายหมวด — บรรทัดบาง ๆ ใต้แถบหมวด บอกว่าของในหมวดนี้คืออะไร
+   ไม่ทำเป็นกล่องใหญ่ เพราะลูกค้ามาที่หน้านี้เพื่อดูเมนู ไม่ใช่มาอ่าน */
+.cat-desc{font-size:12px;color:#5b6c62;line-height:1.65;padding:9px 14px 2px;background:#fff}
+.cat-desc.hide{display:none}
 .ctabs{cursor:grab;}
 .ctabs.dragging{cursor:grabbing;}
 .sec-see-all{font-size:13px;color:var(--g);font-weight:600;}
@@ -776,6 +812,7 @@ body{background:#fff!important}
     </button>
     <div class="divider" style="margin:8px 0 0"></div>
     <div class="ctabs" id="ctabsInner"></div>
+    <div class="cat-desc hide" id="catDesc"></div>
     <div class="mlist" id="mlist"></div>
   </div>
   <!-- floating cart button -->
@@ -795,18 +832,23 @@ body{background:#fff!important}
      รายการข้างในวาดจากฐานข้อมูลทั้งหมด ไม่มีราคาฮาร์ดโค้ด -->
 <div id="pkgset-backdrop" onclick="closePkgSet()"></div>
 <div id="pkgset-sheet">
-  <div class="pkgset-head">
-    <div>
+  <div class="pkgset-head" id="pkgset-head">
+    <img id="pkgset-img" alt="" hidden>
+    <div class="pkgset-shade" id="pkgset-shade" hidden></div>
+    <div class="pkgset-chip" id="pkgset-chip" hidden></div>
+    <button type="button" class="pkgset-x" onclick="closePkgSet()" aria-label="ปิด">✕</button>
+    <div class="pkgset-htxt">
       <div id="pkgset-title">เลือกขนาดที่ต้องการ</div>
       <div id="pkgset-sub"></div>
     </div>
-    <button type="button" class="pkgset-x" onclick="closePkgSet()" aria-label="ปิด">✕</button>
   </div>
-  <div id="pkgset-banner"></div>
-  <div id="pkgset-sell"></div>
-  <div id="pkgset-list"></div>
-  <div id="pkgset-note"></div>
-  <button type="button" class="pkgset-skip" onclick="closePkgSet()">ดูเมนูทั้งหมดก่อน</button>
+  <div class="pkgset-body">
+    <div id="pkgset-sell"></div>
+    <div class="pkgset-pick" id="pkgset-pick" hidden>เลือกขนาดที่ใช่สำหรับคุณ</div>
+    <div id="pkgset-list"></div>
+    <div id="pkgset-note"></div>
+    <button type="button" class="pkgset-skip" onclick="closePkgSet()">ดูเมนูทั้งหมดก่อน</button>
+  </div>
 </div>
 <div id="pkg-backdrop" onclick="closePkgSheet()"></div>
 <div class="scr" id="s-pkg-select">
@@ -1306,6 +1348,15 @@ const CAT_LABELS = {
 // Custom labels from HE (overrides CAT_LABELS when set)
 let customCatLabels = JSON.parse(localStorage.getItem('u360_cat_labels')||'{}');
 function getCatLabel(cat){ return customCatLabels[cat] || CAT_LABELS[cat] || cat; }
+/* คำอธิบายหมวด — ค่าตั้งต้นในโค้ด · แก้ทับได้ที่ appConfig.categories[].desc
+   หมวดที่ไม่มีในนี้และไม่มีใน DB = ไม่มีบรรทัดคำอธิบาย เหมือนเดิมทุกประการ
+   (นัทสั่งเอง 14 ก.ย. — ขอสั้น ๆ ไม่ต้องยาว) */
+const CAT_DESC = {
+  pack_special: 'แพคอาหารแช่ฟรีซ เก็บได้นาน หยิบมาอุ่นกินกับข้าวสวยได้เลย · ส่งได้ทั้งกรุงเทพฯ และต่างจังหวัด',
+  pack_regular: 'แพคอาหารแช่ฟรีซ เก็บได้นาน หยิบมาอุ่นกินกับข้าวสวยได้เลย · ส่งได้ทั้งกรุงเทพฯ และต่างจังหวัด'
+};
+let customCatDesc = {};   // เติมจาก appConfig ตอนโหลด
+function getCatDesc(cat){ return customCatDesc[cat] || CAT_DESC[cat] || ''; }
 
 const STATUS = {
   confirmed: { t:'ยืนยันแล้ว',   c:'s-conf' },
@@ -1423,24 +1474,33 @@ function u360qs(){
 /* 🛒 เด้งป๊อป "เลือกไซส์" จากลิงก์แอด — ?pkgset=<ชื่อกลุ่ม>
    คนกดแอดเข้ามาต้องเจอของที่จะซื้อทันที ไม่ต้องไปหาเองในหน้าเมนู
    กลุ่มมาจากฐานข้อมูล ไม่ฮาร์ดโค้ด → คอร์สเจ/แคมเปญอื่นใช้ซ้ำได้ */
-function pkgSetFromUrl(){
+/* เปิดป๊อปเลือกไซส์ตามชื่อกลุ่ม — ใช้ร่วมกันระหว่างลิงก์แอด (?pkgset=) กับการ์ดหน้าแรก
+   ทางเดียวกันเป๊ะ จะได้ไม่หลุดกันเองเวลาแก้ทางใดทางหนึ่ง */
+function openPkgSetByKey(want){
   try{
-    const want = (u360qs().get('pkgset') || '').trim();
+    want = String(want || '').trim();
     if(!want) return false;
     const set = pkgSets && pkgSets[want];
     if(!set || !Array.isArray(set.ids) || !set.ids.length){
-      console.warn('?pkgset= ไม่มีกลุ่มนี้ในระบบ:', want); return false;   // ตกไปหน้าเมนูปกติ
+      console.warn('ไม่มีกลุ่มแพคนี้ในระบบ:', want); return false;   // ตกไปหน้าเมนูปกติ
     }
     /* เอาเฉพาะแพคที่เปิดขายจริงตอนนี้ — ปิดไปแล้วต้องไม่โผล่ให้กด
        และเรียงตามลำดับที่ตั้งไว้ในกลุ่ม ไม่ใช่ลำดับในฐานข้อมูล */
     const list = set.ids
       .map(id => (packages || []).find(x => x.id === id))
       .filter(Boolean);
-    if(!list.length){ console.warn('?pkgset= แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
+    if(!list.length){ console.warn('แพคในกลุ่มปิดขายหมดแล้ว:', want); return false; }
     if(list.length === 1){ openPackage(list[0].id); return true; }   // เหลือใบเดียว ไม่ต้องให้เลือก
-    /* ส่งชื่อกลุ่มไปด้วย — ใช้หยิบคำขายตั้งต้นของแคมเปญนั้น (ฐานข้อมูลไม่มีก็ยังมีคำขาย) */
+    /* ส่งชื่อกลุ่มไปด้วย — ใช้หยิบคำขายตั้งต้นของแคมเปญนั้น */
     showPkgSetSheet(Object.assign({ key: want }, set), list);
     return true;
+  }catch(e){ console.warn('เปิดป๊อปเลือกไซส์ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
+}
+function pkgSetFromUrl(){
+  try{
+    const want = (u360qs().get('pkgset') || '').trim();
+    if(!want) return false;
+    return openPkgSetByKey(want);   // ทางเดียวกับการ์ดหน้าแรก ไม่เขียนซ้ำ
   }catch(e){ console.warn('เปิดป๊อปจาก ?pkgset= ไม่สำเร็จ (อยู่หน้าเมนูปกติแทน)', e); return false; }
 }
 /* จำไว้ว่าลูกค้าเข้าหน้าเลือกเมนูมาจากป๊อปเลือกไซส์ใบไหน — ไว้ให้ปุ่มย้อนกลับพากลับไปที่เดิม
@@ -1457,6 +1517,18 @@ const PKGSET_COPY = { protein: {
             ['⚡','อุ่นแล้วกินได้เลย','ไม่ต้องเข้าครัว'],
             ['💸','ยิ่งแพคเยอะ ยิ่งตกถูก','เทียบราคาต่อแพคได้ที่ปุ่มข้างล่าง']],
   note: 'กรุงเทพฯ ส่งฟรีทุกไซส์ · ต่างจังหวัด M และ L ส่งฟรี · S ค่าส่ง ฿100',
+  /* 🔴 รูปแบนเนอร์นัทเลือกเอง (อัปทาง /pwa/inbox.html 14 ก.ย.) — ห้ามเปลี่ยนเอง
+     crop: ไม่ครอปที่ 16% จากบน มือกับแพคที่เป็นพระเอกจะโดนตัด เหลือแต่จาน */
+  image: 'https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/inbox/2026-09-14/1789367535463_exec-2fd2b6a0-34de-4b6f-b4d0-d25b7090a52e.png',
+  crop: 'center 16%',
+  chip: 'ส่งฟรี กรุงเทพฯ',
+  pickLabel: 'เลือกขนาดที่ใช่สำหรับคุณ',
+  /* ป้ายบนใบที่อยากให้คนเริ่ม — ใบเล็กสุด (S ขายได้ 17 จาก 22 ใบ) */
+  bestTag: 'เริ่มต้นที่นี่',
+  /* รูปเล็กประจำไซส์ ไล่จากใบเล็กสุด — ชุดเดียวกับม็อคที่นัทดูแล้ว */
+  thumbs: ['https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/A16.jpg',
+           'https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/A9.jpg',
+           'https://zdartbvhbvqlwzwyyiia.supabase.co/storage/v1/object/public/menu-images/D070.jpg'],
   /* ป้ายบอกว่าใครควรเอาไซส์ไหน — ไล่จากใบที่แพคน้อยสุดไปมากสุด ไม่ผูกกับ id แพค
      (ผูกกับ id แล้วเปลี่ยนแพคทีไร ป้ายไปติดผิดใบ) */
   tags: ['ลองก่อน 1 สัปดาห์','กินต่อเนื่อง 2 สัปดาห์','ตุนยาว ยิ่งเยอะยิ่งตกถูก']
@@ -1468,14 +1540,23 @@ function showPkgSetSheet(set, list){
   document.getElementById('pkgset-title').textContent = set.title || 'เลือกขนาดที่ต้องการ';
   /* คำขาย: ของในฐานข้อมูลมาก่อนเสมอ · ไม่มีค่อยใช้ค่าตั้งต้นในโค้ด · ไม่มีทั้งคู่ = ป๊อปหน้าตาเดิม */
   const cp = Object.assign({}, PKGSET_COPY[set.key] || {}, set);
-  const bn = document.getElementById('pkgset-banner');
-  bn.textContent = '';
-  if(cp.banner){
-    const bx = document.createElement('div'); bx.className = 'pkgset-banner';
-    const b = document.createElement('b'); b.textContent = cp.banner; bx.appendChild(b);
-    if(cp.bannerSub){ const i = document.createElement('i'); i.textContent = cp.bannerSub; bx.appendChild(i); }
-    bn.appendChild(bx);
-  }
+  /* หัวเรื่องอยู่ทับบนรูป (ม็อคนัท) — ไม่มีรูปก็ยังอ่านออก พื้นเขียวทึบแทน
+     รูปโหลดไม่ขึ้น (เน็ตลูกค้าช้า/ไฟล์หาย) = ตกกลับไปพื้นเขียว ไม่ใช่กล่องขาวว่าง */
+  const head = document.getElementById('pkgset-head');
+  const img = document.getElementById('pkgset-img');
+  const shade = document.getElementById('pkgset-shade');
+  const chip = document.getElementById('pkgset-chip');
+  const noImg = () => { head.classList.add('noimg'); img.hidden = true; shade.hidden = true; };
+  if(cp.banner) document.getElementById('pkgset-title').textContent = cp.banner;
+  if(cp.bannerSub) document.getElementById('pkgset-sub').textContent = cp.bannerSub;
+  if(cp.image){
+    head.classList.remove('noimg');
+    img.onerror = noImg;   // รูปพัง = พื้นเขียว ไม่ใช่จอว่าง
+    img.style.objectPosition = cp.crop || 'center';
+    img.src = cp.image; img.hidden = false; shade.hidden = false;
+  } else noImg();
+  chip.textContent = cp.chip || '';
+  chip.hidden = !(cp.chip && cp.image);   // ป้ายลอยได้เฉพาะตอนมีรูปรอง
   const sell = document.getElementById('pkgset-sell');
   sell.textContent = '';
   if(cp.lead){
@@ -1486,9 +1567,10 @@ function showPkgSetSheet(set, list){
   if(Array.isArray(cp.bullets) && cp.bullets.length){
     const wr = document.createElement('div'); wr.className = 'pkgset-goods';
     const room = (window.innerHeight || 800) < 700 ? 2 : 3;
-    cp.bullets.slice(0, room).forEach(g => {
+    cp.bullets.slice(0, room).forEach((g, i) => {
       const row = document.createElement('div'); row.className = 'pkgset-good';
-      const ic = document.createElement('span'); ic.textContent = g[0] || '•'; row.appendChild(ic);
+      /* ม็อคนัทใช้ตัวเลขในกรอบเขียว ไม่ใช่อีโมจิ — ลำดับอ่านง่ายกว่า */
+      const ic = document.createElement('span'); ic.textContent = String(i + 1); row.appendChild(ic);
       const tx = document.createElement('div');
       const b = document.createElement('b'); b.textContent = g[1] || ''; tx.appendChild(b);
       if(g[2]) tx.appendChild(document.createTextNode(' ' + g[2]));
@@ -1496,6 +1578,10 @@ function showPkgSetSheet(set, list){
     });
     sell.appendChild(wr);
   }
+  /* หัวข้อคั่นก่อนรายการไซส์ — โผล่เฉพาะตอนมีคำขาย ไม่งั้นป๊อปเปล่าดูแปลก */
+  const pick = document.getElementById('pkgset-pick');
+  pick.textContent = cp.pickLabel || 'เลือกขนาดที่ใช่สำหรับคุณ';
+  pick.hidden = !cp.lead;
   const nt = document.getElementById('pkgset-note');
   nt.textContent = '';
   if(cp.note){
@@ -1509,9 +1595,11 @@ function showPkgSetSheet(set, list){
     if(!Array.isArray(cp.tags) || !cp.tags.length) return '';
     return cp.tags[byQty.indexOf(pk)] || '';
   };
+  /* บรรทัดรองมาจากคำขาย (bannerSub) ที่วาดไปแล้วข้างบน
+     ไม่มีทั้ง bannerSub และ subtitle ค่อยซ่อน — เดิมบรรทัดนี้เขียนทับของใหม่ทิ้ง */
   const sub = document.getElementById('pkgset-sub');
-  sub.textContent = set.subtitle || '';
-  sub.style.display = set.subtitle ? '' : 'none';
+  if(!cp.bannerSub) sub.textContent = set.subtitle || '';
+  sub.style.display = sub.textContent ? '' : 'none';
   /* สร้างปุ่มด้วย DOM ไม่ใช่ต่อสตริง — ชื่อแพคมาจากฐานข้อมูล ใส่ผ่าน textContent
      จะได้ไม่ต้องหนีอักขระเอง และไฟล์นี้ไม่มีตัว esc() ให้ใช้ */
   box.textContent = '';
@@ -1523,28 +1611,62 @@ function showPkgSetSheet(set, list){
     const full = String(pk.name || '');
     const cut = full.indexOf('—');
     const wrap = document.createElement('span'); wrap.className = 'pkgset-name';
-    const tg = tagOf(pk);
-    if(tg){ const t = document.createElement('em'); t.className = 'pkgset-tag';
-            t.style.fontStyle = 'normal'; t.textContent = tg; wrap.appendChild(t); }
+    const rank = byQty.indexOf(pk);
+    /* ป้าย "เริ่มต้นที่นี่" + กรอบเขียว บนใบเล็กสุดเท่านั้น (ใบที่คนส่วนใหญ่เลือก) */
+    if(rank === 0 && cp.bestTag){
+      b.classList.add('best');
+      const fl = document.createElement('em'); fl.className = 'pkgset-flag';
+      fl.style.fontStyle = 'normal'; fl.textContent = cp.bestTag; b.appendChild(fl);
+    }
+    /* รูปประจำไซส์ — ไล่ตามใบเล็กไปใหญ่ ไม่ผูกกับ id แพค */
+    const th = Array.isArray(cp.thumbs) ? cp.thumbs[rank] : null;
+    if(th){
+      const im = document.createElement('img'); im.className = 'pkgset-thumb';
+      im.loading = 'lazy'; im.alt = '';
+      im.onerror = () => { im.remove(); };   // รูปหาย = การ์ดยังใช้ได้ ไม่ค้างกรอบเปล่า
+      im.src = th; b.appendChild(im);
+    }
     const n = document.createElement('b');
     n.textContent = (cut > 0 ? full.slice(0, cut) : full).trim();
     wrap.appendChild(n);
-    if(cut > 0){
+    /* ป้ายบอกว่าใครควรเอาไซส์นี้ — อยู่ใต้ชื่อ ตามม็อคที่นัทเคาะ */
+    const tg = tagOf(pk);
+    if(tg){ const t = document.createElement('em'); t.className = 'pkgset-tag';
+            t.style.fontStyle = 'normal'; t.style.display = 'block';
+            t.textContent = tg; wrap.appendChild(t); }
+    /* คำอธิบายหลังขีดในชื่อแพคซ้ำกับป้ายบอกไซส์ (ม็อคโชว์แค่ชื่อสั้น)
+       → โชว์เฉพาะตอนไม่มีป้าย จะได้ไม่มีการ์ดไหนเหลือแค่ชื่อลอย ๆ */
+    if(cut > 0 && !tagOf(pk)){
       const d = document.createElement('i');
       d.textContent = full.slice(cut + 1).trim();
       wrap.appendChild(d);
     }
-    const m = document.createElement('span'); m.className = 'pkgset-meta';
-    /* "ตกแพคละ" คำนวณสดจากราคาในฐานข้อมูล ไม่ใช่ตัวเลขที่พิมพ์ไว้
-       ปัดขึ้นเสมอ — ตัวเลขที่ลูกค้าเห็นต้องไม่ถูกกว่าที่จ่ายจริง */
     const _q = Number(pk.qty || 0), _b = Number(pk.base_price || 0);
-    m.textContent = _q ? (_q + ' แพค') : '';
-    if(_q && _b) m.textContent += String.fromCharCode(10) + 'ตกแพคละ ฿' + Math.ceil(_b / _q).toLocaleString();
-    m.style.whiteSpace = 'pre-line'; m.style.textAlign = 'right'; m.style.lineHeight = '1.6';
+    /* บรรทัดล่างของชื่อ: จำนวนแพค · แบ่งรอบส่ง (ถ้าแอดมินตั้งไว้ใน DB)
+       ไม่ฮาร์ดโค้ดว่าใบไหนแบ่งได้ — เปลี่ยนที่หน้า DB แล้วหน้าลูกค้าเปลี่ยนตาม */
+    const m = document.createElement('span'); m.className = 'pkgset-meta';
+    const bits = [];
+    if(_q) bits.push(_q + ' แพค');
+    const _r = Number(pk.delivery_rounds || 0);
+    if(_r > 1) bits.push('แบ่งส่งได้ ' + _r + ' รอบ');
+    m.textContent = bits.join(' · ');
+    wrap.appendChild(m);
+    /* ช่องราคาขวาสุด — ราคาเต็มบน "ตกแพคละ" ล่าง อ่านคู่กันได้ในสายตาเดียว
+       🔴 ทั้งสองค่าคำนวณสดจากฐานข้อมูล ปัดขึ้นเสมอ
+          (ปัดลงแล้วลูกค้าเห็นถูกกว่าที่จ่ายจริง = โกหกเรื่องเงิน) */
+    const col = document.createElement('span');
     const pr = document.createElement('span'); pr.className = 'pkgset-price';
-    /* ราคามาจากฐานข้อมูลเสมอ ห้ามฮาร์ดโค้ด — แก้ราคาที่หน้า DB แล้วต้องเปลี่ยนตาม */
-    pr.textContent = '฿' + Number(pk.base_price || 0).toLocaleString();
-    b.appendChild(wrap); b.appendChild(m); b.appendChild(pr);
+    pr.style.display = 'block';
+    pr.textContent = '฿' + _b.toLocaleString();
+    col.appendChild(pr);
+    if(_q && _b){
+      const per = document.createElement('span'); per.className = 'pkgset-per';
+      per.style.display = 'block';
+      per.textContent = 'แพคละ ฿' + Math.ceil(_b / _q).toLocaleString();
+      col.appendChild(per);
+    }
+    col.style.flex = 'none';
+    b.appendChild(wrap); b.appendChild(col);
     box.appendChild(b);
   });
   document.getElementById('pkgset-sheet').classList.add('on');
@@ -3239,6 +3361,8 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
     const dbCats = (cfgMap.appConfig && Array.isArray(cfgMap.appConfig.categories)) ? cfgMap.appConfig.categories : [];
     dbCats.forEach(c => { if (c && c.key) customCatLabels[c.key] = c.label || c.name || c.key; });
+    /* คำอธิบายหมวดมาจากที่เดียวกับชื่อหมวด — แอดมินแก้คำได้เองโดยไม่ต้องรอห้อง u */
+    dbCats.forEach(c => { if (c && c.key && c.desc) customCatDesc[c.key] = String(c.desc); });
     localStorage.setItem('u360_cat_labels', JSON.stringify(customCatLabels));
     // ซ่อนหมวดที่ HE ตั้ง hide
     const hd = cfgMap.he_cat_hidden;
@@ -3503,6 +3627,13 @@ function renderCatTabs() {
     const active = el.querySelector('.ctab.on');
     if(active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
   }, 50);
+  /* คำอธิบายของหมวดที่เลือกอยู่ — ไม่มีก็ซ่อนทิ้ง ไม่เหลือช่องว่างค้าง */
+  const dsc = document.getElementById('catDesc');
+  if(dsc){
+    const txt = (activeCat && activeCat !== PROMO_CAT) ? getCatDesc(activeCat) : '';
+    dsc.textContent = txt;
+    dsc.classList.toggle('hide', !txt);
+  }
   setupCatDragScroll();
 }
 
@@ -6820,6 +6951,11 @@ function colCardClick(el) {
     openPackage(pkgId);
   } else if (cat === '__meal_plan__') {
     openMealPlanPicker();
+  } else if (cat.startsWith('__pkgset:')) {
+    /* การ์ดหน้าแรก → ป๊อปเลือกไซส์ตัวเดียวกับที่ลิงก์แอดเปิด (นัทสั่ง 14 ก.ย.)
+       กลุ่มหาย / แพคในกลุ่มปิดขายหมด = อยู่หน้าเมนูปกติ ไม่ค้างจอ (กฎเดิมของป๊อป) */
+    var setKey = cat.slice(9, -2);
+    openPkgSetByKey(setKey);
   } else if (cat.startsWith('__mpoffer:')) {
     var offerKey = cat.slice(10, -2);
     openMealPlanPicker(offerKey);

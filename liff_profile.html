@@ -354,7 +354,7 @@ async function bindOldAccount(){
   if(!_lnkFound || !_lineUid) return;
   const sb_=getSB(); if(!sb_) return;
   const ok=document.getElementById("lnkOkBtn"); if(ok){ ok.disabled=true; ok.textContent="⏳ กำลังผูก..."; }
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Date(Date.now()+7*3600e3).toISOString().slice(0,10);   // วันไทย (UTC ตรง ๆ จะเพี้ยนไป 1 วันช่วงเช้ามืด)
   try{
     /* กติกาเดียวกับ resolveCanonicalCustomer ในหน้าสั่งอาหาร — ปลด stub ที่ถือ uid นี้ก่อน กัน unique conflict */
     const { data:byUid } = await sb_.from("customers").select("id,admin_notes").eq("line_uid",_lineUid).limit(2);

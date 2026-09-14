@@ -141,7 +141,9 @@ async function loadData(){
   _capped=false; _orderCount=0; _mockMode=false;
   if(sb_){
     try{
-      var today=new Date().toISOString().split("T")[0];
+      /* 🕐 วันไทย ไม่ใช่วัน UTC — ไทย 00:00-06:59 วัน UTC ยังเป็นเมื่อวาน
+         ใช้ UTC ตรง ๆ แล้วเปิดรายงานตอนเช้ามืด จะได้ข้อมูลของเมื่อวานมาโชว์เป็นวันนี้ */
+      var today=new Date(Date.now()+7*3600e3).toISOString().slice(0,10);
       var from=new Date();
       if(currentRange==="week") from.setDate(from.getDate()-7);
       else if(currentRange==="month") from.setDate(from.getDate()-30);

@@ -243,7 +243,7 @@ async function doRegister(){
   const btn=document.getElementById("submitBtn");
   btn.disabled=true; btn.textContent="⏳ กำลังบันทึก...";
   const sb_=getSB(), uid=lineProfile.userId, lineName=lineProfile.displayName, norm=normPhone(phone);
-  const today=new Date().toISOString().slice(0,10);
+  const today=new Date(Date.now()+7*3600e3).toISOString().slice(0,10);   // วันไทย (UTC ตรง ๆ จะเพี้ยนไป 1 วันช่วงเช้ามืด)
   // display_name = ชื่อจริง · line_display_name = ชื่อไลน์ (เก็บทั้งคู่ · คอลัมน์ถูกต้องตาม schema จริง)
   const fields={ display_name:name, line_display_name:lineName, picture_url:lineProfile.pictureUrl||"", phone:norm, date_of_birth:getDob(), gender:_gender };
   try{
