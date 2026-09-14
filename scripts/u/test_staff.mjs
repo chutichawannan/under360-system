@@ -59,5 +59,17 @@ t('เอาคลาส load ออกตอนใส่เนื้อหา',
 /* นับด้วยการแยกข้อความ ไม่ใช้ regex — backslash หายทุกครั้งที่ส่งผ่าน shell (โดนมาหลายรอบ) */
 t('ทุกบล็อกใช้ put() ไม่ใช่ innerHTML ตรง ๆ', nut.split("put('b").length - 1, 5);
 
+console.log(NL+'⑧ หน้าให้นัทเลือกหน้าตาโถง (/staff/looks · ใบงาน 14 ก.ย.)');
+/* กฎภาพ 9 ก.ย.: สิ่งที่ Claude เลือกเอง ต้องผ่านตานัทก่อนใช้จริง
+   → หน้านี้ต้องเป็น "ที่ให้เลือก" เท่านั้น ห้ามเป็นการเปลี่ยนโถงจริงไปแล้ว */
+const looks=read('staff/looks.html');
+t('มีด่านรหัสเหมือนหน้าอื่น', looks.includes('src="/gate.js"'), true);
+t('กัน Google', looks.includes('noindex'), true);
+t('/staff/looks มีทางเข้า', vercel.rewrites.find(r=>r.source==='/staff/looks').destination, '/staff/looks.html');
+t('ลิงก์ครัวในหน้าเลือกยังเป็น /k ทางเดิม', looks.includes('href="/k"'), true);
+t('ไม่มีทางเข้าครัวเส้นใหม่โผล่มา', ['kitchen','krua','cook'].some(w=>looks.indexOf(w)>=0), false);
+/* โถงจริงต้องไม่ถูกแตะจนกว่านัทจะเลือก — เช็คว่าไม่มีใครแอบลิงก์หน้าเลือกไว้ในโถงแล้วนึกว่าเปลี่ยนแล้ว */
+t('โถงจริงยังไม่ถูกเปลี่ยนตามแบบใดแบบหนึ่ง', looks.includes('ยังไม่ถูกแตะเลย'), true);
+
 console.log(NL+(fail?'❌':'✅')+' ผ่าน '+ok+' · ตก '+fail);
 process.exitCode=fail?1:0;

@@ -23,6 +23,10 @@
       "destination": "/staff/nut.html"
     },
     {
+      "source": "/staff/looks",
+      "destination": "/staff/looks.html"
+    },
+    {
       "source": "/staff",
       "destination": "/staff/index.html"
     },

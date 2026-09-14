@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow, noarchive">
+<title>เลือกหน้าตาโถงพนักงาน</title>
+<script src="/gate.js"></script>
+<!--
+  ════════════════════════════════════════════════════════════
+  หน้าให้นัทเลือกหน้าตาโถงพนักงาน — ใบงาน docs/BRIEF_HALL_STAFF.md (14 ก.ย. 2569)
+
+  นัทฝากไว้เอง 10 ก.ย.: "อยากจะแต่งโถงหน้าบ้านให้สวย และ สะดวก"
+
+  🔴 กฎภาพของบ้านนี้ (9 ก.ย.): **สิ่งที่ Claude เลือกเอง ต้องผ่านตานัทก่อนใช้จริง**
+     → หน้านี้จึงเป็น "ที่ให้เลือก" ไม่ใช่ "ของที่เปลี่ยนไปแล้ว"
+     โถงจริงที่ /staff **ยังไม่ถูกแตะเลย** จนกว่านัทจะชี้ว่าเอาแบบไหน
+
+  ⛔ ทุกแบบในหน้านี้ **ลิงก์ไปที่เดิมทุกตัว ไม่มี URL ไหนเปลี่ยน**
+     โดยเฉพาะของครัว /k /kq /o — ห้ามแตะ (นัทสั่งเอง)
+
+  อ้างอิงรสนิยมที่บันทึกไว้: นัทชอบของจริงเต็มผืน ไม่ชอบแบ่งแถบยิบย่อย
+  ════════════════════════════════════════════════════════════
+-->
+<style>
+  :root{ --bg:#0E1A15; --card:#16261F; --line:#24382E; --fg:#E9F2EC; --dim:#8FA79A; --acc:#4ADE80; }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  body{margin:0;background:var(--bg);color:var(--fg);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Noto Sans Thai",sans-serif;
+    padding:20px 14px calc(50px + env(safe-area-inset-bottom));max-width:620px;margin:0 auto}
+  h1{font-size:19px;margin:0 0 5px;font-weight:800;letter-spacing:-.3px}
+  .lead{font-size:12.5px;color:var(--dim);line-height:1.75;margin-bottom:8px}
+  .note{background:#152A1F;border:1px solid #2F5C43;border-radius:12px;padding:11px 13px;
+    font-size:12px;color:#BFE3CE;line-height:1.75;margin:14px 0 24px}
+
+  .opt{border:1px solid var(--line);border-radius:18px;padding:15px 13px 13px;margin-bottom:22px;background:#111F19}
+  .opt-h{display:flex;align-items:center;gap:9px;margin-bottom:4px}
+  .opt-n{font-size:16px;font-weight:800}
+  .opt-why{font-size:12px;color:var(--dim);line-height:1.7;margin-bottom:13px}
+  .demo{background:var(--bg);border-radius:14px;padding:12px}
+
+  /* ── แบบ 1: การ์ดเรียงเหมือนเดิม แต่จัดกลุ่มและเว้นระยะใหม่ ── */
+  .a-room{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;
+    background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px;margin-bottom:8px}
+  .a-ic{font-size:21px;flex-shrink:0}
+  .a-nm{display:block;font-weight:700;font-size:15px;line-height:1.3}
+  .a-ds{display:block;font-size:11.5px;color:var(--dim);line-height:1.5;margin-top:2px}
+  .a-tag{margin-left:auto;font-size:10.5px;color:var(--dim);border:1px solid var(--line);
+    border-radius:20px;padding:3px 8px;white-space:nowrap}
+
+  /* ── แบบ 2: ช่องใหญ่ 2 คอลัมน์ แตะง่ายด้วยนิ้วโป้ง ── */
+  .b-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+  .b-cell{display:flex;flex-direction:column;justify-content:flex-end;min-height:104px;
+    background:var(--card);border:1px solid var(--line);border-radius:16px;padding:13px;
+    text-decoration:none;color:inherit;position:relative}
+  .b-cell .a-ic{font-size:25px;margin-bottom:auto}
+  .b-big{grid-column:1/-1;min-height:118px;background:#152A1F;border-color:#2F5C43}
+  .b-soon{opacity:.55}
+  .b-mark{position:absolute;top:11px;right:11px;font-size:10.5px;color:var(--dim)}
+
+  /* ── แบบ 3: รายการเรียบ ๆ ไม่มีกรอบ เน้นอ่านไว ── */
+  .c-line{display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit;
+    padding:14px 4px;border-bottom:1px solid #1C2C24}
+  .c-line:last-child{border-bottom:0}
+  .c-arrow{margin-left:auto;color:var(--dim);font-size:14px}
+  .c-head{font-size:11px;color:var(--dim);font-weight:700;margin:16px 4px 2px;letter-spacing:.04em}
+
+  .pick{margin-top:8px;font-size:12px;color:var(--dim);text-align:center;line-height:1.7}
+  footer{margin-top:10px;padding-top:14px;border-top:1px solid var(--line);
+    font-size:11.5px;color:var(--dim);line-height:1.8}
+</style>
+</head>
+<body>
+
+<h1>เลือกหน้าตาโถงพนักงาน</h1>
+<div class="lead">ทำมา 3 แบบให้เทียบในหน้าเดียว — ลิงก์ข้างในกดได้จริงทุกแบบ</div>
+
+<div class="note">
+  <b>โถงจริงที่ /staff ยังไม่ถูกแตะเลย</b> — หน้านี้เป็นแค่ที่ให้เลือก<br>
+  ทั้ง 3 แบบ <b>ลิงก์ไปที่เดิมทุกตัว ไม่มี URL ไหนเปลี่ยน</b> โดยเฉพาะของครัว<br>
+  บอกมาว่าเอาแบบไหน (หรือผสมกัน) แล้วผมค่อยเปลี่ยนของจริง
+</div>
+
+<!-- ══ แบบ 1 ══ -->
+<div class="opt">
+  <div class="opt-h"><span class="opt-n">แบบ 1 · เหมือนเดิมแต่จัดใหม่</span></div>
+  <div class="opt-why">เปลี่ยนน้อยที่สุด — คนที่ใช้อยู่แล้วไม่ต้องเรียนรู้ใหม่ · แค่เว้นระยะและจัดกลุ่มให้อ่านไวขึ้น</div>
+  <div class="demo">
+    <a class="a-room" href="/staff/nut" style="border-color:#2F5C43;background:#152A1F">
+      <span class="a-ic">👤</span>
+      <span><span class="a-nm">ห้องนัท</span><span class="a-ds">เรื่องรอเคาะ · ยอดขาย · ยามเฝ้า · แอด</span></span>
+    </a>
+    <a class="a-room" href="/oh">
+      <span class="a-ic">🗂️</span>
+      <span><span class="a-nm">แอดมิน</span><span class="a-ds">ออเดอร์ · ลูกค้า · โปรโมชั่น</span></span>
+      <span class="a-tag">ทางเดิม</span>
+    </a>
+    <a class="a-room" href="/db">
+      <span class="a-ic">🥗</span>
+      <span><span class="a-nm">เมนู</span><span class="a-ds">สูตร · วัตถุดิบ · แพคเกจ</span></span>
+      <span class="a-tag">ทางเดิม</span>
+    </a>
+    <a class="a-room" href="/k" style="opacity:.62">
+      <span class="a-ic">🍳</span>
+      <span><span class="a-nm">ครัว</span><span class="a-ds">ทางเข้าเดิมของครัว</span></span>
+      <span class="a-tag">ยังไม่จัดห้อง</span>
+    </a>
+  </div>
+</div>
+
+<!-- ══ แบบ 2 ══ -->
+<div class="opt">
+  <div class="opt-h"><span class="opt-n">แบบ 2 · ช่องใหญ่ กดด้วยนิ้วโป้ง</span></div>
+  <div class="opt-why">ห้องที่ใช้บ่อยเป็นช่องเต็มผืนอยู่บนสุด ที่เหลือเรียง 2 ช่องต่อแถว — เห็นทุกห้องโดยไม่ต้องเลื่อน</div>
+  <div class="demo">
+    <div class="b-grid">
+      <a class="b-cell b-big" href="/staff/nut">
+        <span class="a-ic">👤</span>
+        <span class="a-nm">ห้องนัท</span>
+        <span class="a-ds">เรื่องรอเคาะ · ยอดขาย · ยามเฝ้า · แอด</span>
+      </a>
+      <a class="b-cell" href="/oh">
+        <span class="a-ic">🗂️</span>
+        <span class="a-nm">แอดมิน</span><span class="a-ds">ออเดอร์ · ลูกค้า</span>
+      </a>
+      <a class="b-cell" href="/db">
+        <span class="a-ic">🥗</span>
+        <span class="a-nm">เมนู</span><span class="a-ds">สูตร · วัตถุดิบ</span>
+      </a>
+      <a class="b-cell" href="https://www.360foodbox.com/ads" target="_blank" rel="noopener">
+        <span class="a-ic">📊</span>
+        <span class="a-nm">แอด</span><span class="a-ds">ค่าโฆษณา · คลิก</span>
+      </a>
+      <a class="b-cell b-soon" href="/k">
+        <span class="b-mark">ยังไม่จัดห้อง</span>
+        <span class="a-ic">🍳</span>
+        <span class="a-nm">ครัว</span><span class="a-ds">ทางเข้าเดิม</span>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ══ แบบ 3 ══ -->
+<div class="opt">
+  <div class="opt-h"><span class="opt-n">แบบ 3 · เรียบ ไม่มีกรอบ</span></div>
+  <div class="opt-why">ตัดกรอบและสีพื้นออกหมด เหลือแค่ไอคอนกับชื่อ — โล่งที่สุด เลื่อนหาไว ถ้าวันหลังห้องเยอะขึ้นจะไม่รก</div>
+  <div class="demo">
+    <div class="c-head">เปิดแล้ว</div>
+    <a class="c-line" href="/staff/nut">
+      <span class="a-ic">👤</span>
+      <span><span class="a-nm">ห้องนัท</span><span class="a-ds">เรื่องรอเคาะ · ยอดขาย · ยามเฝ้า</span></span>
+      <span class="c-arrow">›</span>
+    </a>
+    <div class="c-head">เข้าทางเดิมได้เลย</div>
+    <a class="c-line" href="/oh">
+      <span class="a-ic">🗂️</span>
+      <span><span class="a-nm">แอดมิน</span><span class="a-ds">ออเดอร์ · ลูกค้า · โปรโมชั่น</span></span>
+      <span class="c-arrow">›</span>
+    </a>
+    <a class="c-line" href="/db">
+      <span class="a-ic">🥗</span>
+      <span><span class="a-nm">เมนู</span><span class="a-ds">สูตร · วัตถุดิบ · แพคเกจ</span></span>
+      <span class="c-arrow">›</span>
+    </a>
+    <a class="c-line" href="/k" style="opacity:.62">
+      <span class="a-ic">🍳</span>
+      <span><span class="a-nm">ครัว</span><span class="a-ds">ทางเข้าเดิม — ยังไม่จัดห้อง</span></span>
+      <span class="c-arrow">›</span>
+    </a>
+  </div>
+</div>
+
+<div class="pick">บอกมาแบบเดียว หรือจะเอาหัวแบบหนึ่ง ตัวรายการอีกแบบก็ได้</div>
+
+<footer>
+  ยังมีอีก 2 เรื่องที่ผมไม่ตัดสินใจเอง รอพี่เคาะพร้อมกันทีเดียว:<br>
+  · <b>ห้องไหนได้ช่องต่อไป</b> — ที่ยังไม่มีในโถง เช่น สมุดเงิน · ใบทวงเงิน · สถานะยามเฝ้า<br>
+  · <b>หน้า “รวมทุกหน้า” (/hq) เก็บไว้หรือยุบ</b> — ตอนนี้ซ้อนกับโถงอยู่ (สารบัญ 25 หน้า)
+</footer>
+
+</body>
+</html>
