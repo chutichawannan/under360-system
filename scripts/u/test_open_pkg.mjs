@@ -14,11 +14,18 @@ const t=(n,got,want)=>{ const g=JSON.stringify(got),w=JSON.stringify(want);
   if(g===w){ok++;console.log('  ✅',n);}else{fail++;console.log('  ❌',n,NL+'     ได้  '+g+NL+'     ควร  '+w);} };
 
 const EB='26347b55-d28a-4ee1-980c-b4266b89b3d2', FULL='b36dcfb3-63b4-4e51-948f-7b23d1675b56';
+/* u360qs = ตัวอ่าน query ตัวจริงจากไฟล์ (เก็บค่าข้ามหน้าล็อกอิน LINE)
+   ดึงของจริงมาใช้ ไม่เขียนใหม่ — ไม่งั้นเทสผ่านแต่ของจริงพัง */
+const mkQs = (location, store = {}) => new Function('location','sessionStorage','URLSearchParams',
+  grab('u360qs') + '; return u360qs;')(location,
+  { getItem: k => (k in store ? store[k] : null), setItem: (k,v)=>{store[k]=v;}, removeItem: k=>{delete store[k];} },
+  URLSearchParams);
 const run = (url, pkgs, resolve) => {
   const opened = [];
-  new Function('location','packages','pkgResolveId','openPackage','console',
+  const loc = { search: url };
+  new Function('location','u360qs','packages','pkgResolveId','openPackage','console',
     grab('openPkgFromUrl') + '; openPkgFromUrl();')(
-      { search: url }, pkgs, resolve || (x=>x), (id)=>opened.push(id),
+      loc, mkQs(loc), pkgs, resolve || (x=>x), (id)=>opened.push(id),
       { warn(){}, log(){} });
   return opened;
 };
@@ -46,7 +53,10 @@ console.log(NL+'③ โควตา Early Bird เต็ม — ลิงก์�
 
 console.log(NL+'④ ต่อเข้า init ถูกจังหวะ');
 t('รอ packages โหลดเสร็จก่อนค่อยเปิด (ทั้ง ?pkgset= และ ?pkg=)',
-  src.includes('loadPackagesIfNeeded().then(() => { if(!pkgSetFromUrl()) openPkgFromUrl(); })'), true);
+  src.includes('loadPackagesIfNeeded().then(() => {') &&
+  src.includes('if(!pkgSetFromUrl()) openPkgFromUrl();'), true);
+/* ค่าที่เก็บไว้ข้ามหน้าล็อกอินต้องถูกล้างหลังใช้ — ไม่งั้นเปิดแอปเฉย ๆ วันหลังป๊อปเด้งเอง */
+t('ใช้แล้วล้างทิ้ง กันป๊อปเด้งซ้ำรอบหน้า', src.includes('sessionStorage.removeItem(U360_QS_KEY)'), true);
 t('loadPackagesIfNeeded เป็น async (คืน promise ให้ .then ได้)', src.includes('async function loadPackagesIfNeeded()'), true);
 t('ห่อ try ทั้งก้อน — พังแล้วไม่ลากหน้าตาย', grab('openPkgFromUrl').includes('}catch(e){'), true);
 

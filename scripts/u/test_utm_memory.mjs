@@ -63,6 +63,10 @@ function openLiff({ search = '', uid = 'U1', db, stored = null }) {
   const store = { u360_utm: stored ? JSON.stringify(stored) : null };
   const ctx = {
     location: { search },
+    /* อ่าน query ผ่านตัวจริงจากไฟล์ — ตัวเดียวกับที่กู้ค่าคืนหลังล็อกอิน LINE */
+    u360qs: new Function('location','sessionStorage','URLSearchParams',
+      grab('u360qs') + '; return u360qs;')({ search },
+      { getItem: () => null, setItem(){}, removeItem(){} }, URLSearchParams),
     localStorage: { getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; } },
     URLSearchParams,
     lineProfile: uid ? { userId: uid } : null,

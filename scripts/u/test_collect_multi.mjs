@@ -5,7 +5,7 @@
 import fs from 'node:fs';
 const src = fs.readFileSync(new URL('../../liff_customer.html', import.meta.url), 'utf8')
   .split(String.fromCharCode(13)).join('');
-const start = src.indexOf("const raw = (new URLSearchParams(location.search).get('collect')");
+const start = src.indexOf("const raw = (u360qs().get('collect')");
 const endMark = "goWallet();\n      }";
 const scan = src.indexOf('// menu + สร้างลำดับหมวด', start);
 const end = src.lastIndexOf(endMark, scan);
@@ -38,8 +38,14 @@ async function run(query, live, already = []) {
 
   /* cwLastReason ในโค้ดจริงเป็นตัวแปรระดับไฟล์ — ผูกเข้ากับ st.reason ผ่าน getter */
   const code = 'return (async () => {' + block.split('cwLastReason').join('__st.reason') + '})();';
-  const fn = new Function('location', 'cwCollect', 'goWallet', 'toast', 'URLSearchParams', '__st', code);
-  await fn({ search: query }, cwCollect, () => { wallets++; }, m => toasts.push(m), URLSearchParams, st);
+  /* u360qs ตัวจริงจากไฟล์ — ไม่ได้เขียนตัวปลอมมาแทน */
+  const loc = { search: query };
+  const grabFn = (n) => { const i = src.indexOf('function ' + n + '('); let d = 0, st2 = false;
+    for (let j = i; j < src.length; j++) { if (src[j]==='{'){d++;st2=true;} else if (src[j]==='}'){d--; if(st2&&d===0) return src.slice(i,j+1);} } };
+  const qs = new Function('location','sessionStorage','URLSearchParams', grabFn('u360qs') + '; return u360qs;')(
+    loc, { getItem: () => null, setItem(){}, removeItem(){} }, URLSearchParams);
+  const fn = new Function('location', 'u360qs', 'cwCollect', 'goWallet', 'toast', 'URLSearchParams', '__st', code);
+  await fn(loc, qs, cwCollect, () => { wallets++; }, m => toasts.push(m), URLSearchParams, st);
   return { wallet, toasts, calls, wallets, sawParallel };
 }
 
