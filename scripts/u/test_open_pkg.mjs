@@ -45,7 +45,8 @@ console.log(NL+'③ โควตา Early Bird เต็ม — ลิงก์�
 }
 
 console.log(NL+'④ ต่อเข้า init ถูกจังหวะ');
-t('รอ packages โหลดเสร็จก่อนค่อยเปิด', src.includes('loadPackagesIfNeeded().then(openPkgFromUrl)'), true);
+t('รอ packages โหลดเสร็จก่อนค่อยเปิด (ทั้ง ?pkgset= และ ?pkg=)',
+  src.includes('loadPackagesIfNeeded().then(() => { if(!pkgSetFromUrl()) openPkgFromUrl(); })'), true);
 t('loadPackagesIfNeeded เป็น async (คืน promise ให้ .then ได้)', src.includes('async function loadPackagesIfNeeded()'), true);
 t('ห่อ try ทั้งก้อน — พังแล้วไม่ลากหน้าตาย', grab('openPkgFromUrl').includes('}catch(e){'), true);
 
