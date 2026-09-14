@@ -20,7 +20,11 @@ const rooms = (args.find(a => !a.startsWith('--')) || '').split(',').map(s => s.
 const me = ((args.find(a => a.startsWith('--me=')) || '--me=').slice(5)).split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
 if (!rooms.length) { console.error('ใช้: node scripts/room_watch.mjs <ห้อง> [--me=ชื่อตัวเอง]'); process.exit(1); }
 
-const EVERY_MS = Number(process.env.WATCH_EVERY_MS || 10000);
+// ⚡ 14 ก.ย. 2569 — ลดจาก 10 วิ เป็น 45 วิ เพราะ poller คือตัวกินโควตา Supabase ตัวจริง
+//    (ตรวจแล้ว: 95% ของ egress = อ่าน DB · 2 ใน 3 ของคำขอทั้งหมดมาจาก poller ทุกห้องรวมกัน)
+//    องค์กรใช้ไป 9.6/5 GB = 192% → โดนขู่จำกัดโปรเจค 1 ต.ค. 2569
+//    ห้ามลดเลขนี้กลับโดยไม่ดูหน้า usage ก่อน · ปรับชั่วคราวได้ด้วย env WATCH_EVERY_MS
+const EVERY_MS = Number(process.env.WATCH_EVERY_MS || 45000);
 const F = `.scratch/room_watch_${rooms[0]}_last.txt`;
 fs.mkdirSync('.scratch', { recursive: true });
 // เปิดครั้งแรก (ยังไม่มีไฟล์จำตำแหน่ง) → ย้อนดู 60 นาที กันจดหมายที่มาก่อน poller เกิดหล่นหาย
@@ -30,7 +34,7 @@ const isMe = s => me.some(m => (s || '').toLowerCase().includes(m));
 const roomFilter = rooms.length === 1 ? `room=eq.${encodeURIComponent(rooms[0])}` : `room=in.(${rooms.map(encodeURIComponent).join(',')})`;
 
 // เต้นหัวใจลง live_presence (sid=poller:<ห้อง>) ทุก 30 วิ → หน้า /pwa/pollers.html โชว์ว่าห้องไหนยังหายใจ
-const HB_MS = 30000;
+const HB_MS = Number(process.env.WATCH_HB_MS || 180000); // 3 นาที (เดิม 30 วิ) — หน้า /pwa/pollers.html ยังดูออกว่าห้องไหนหายใจ
 let lastHb = 0;
 async function heartbeat() {
   if (Date.now() - lastHb < HB_MS) return;
