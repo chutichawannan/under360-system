@@ -44,9 +44,14 @@ export function parseFile(file, card) {
   }
   const cycle = path.basename(file).match(/_(\d{6})\.pdf$/)?.[1] ?? '?';
   const rows = [];
+  // ⚠️ ใบแจ้งยอดกสิกร **พิมพ์รายการซ้ำ 2 ชุดในไฟล์เดียว** (ชุดไทย + ชุดอังกฤษ)
+  //    ไม่กรองซ้ำ = ทุกยอดคูณ 2 เงียบๆ (เคยทำให้สรุปผิดว่าค่าส่งแพงกว่าที่จดไว้ 2 เท่า)
+  const seen = new Set();
   for (const line of raw.split('\n')) {
-    const m = TXN.exec(line.trim());
-    if (!m) continue;
+    const key = line.trim();
+    const m = TXN.exec(key);
+    if (!m || seen.has(key)) continue;
+    seen.add(key);
     const [, tdate, , mid, amtRaw] = m;
     // ตัด "สถานที่" (คำท้าย) และ "เลขลำดับแถว" ที่ติดมากับชื่อร้านออก
     const desc = mid.replace(/\s+\S+$/, '').replace(/\d+$/, '').trim();
