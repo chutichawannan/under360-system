@@ -61,17 +61,26 @@ try {
   const leads = await count(`web_events?select=id&page=like.*jay*&event=eq.cta_click&utm_source=eq.fb&created_at=gte.${START}`);
   const orders = await count(`orders?select=id&source_campaign=like.*jay*&total=gt.0`);
 
-  // ── ชุด D (Lookalike คนใหม่) มีเกณฑ์ปิดของตัวเอง — ตกลงกับนัท 8 ก.ย.
-  const D_START = '2026-09-08';
-  const dAds = ads.filter(a => (a.ad_name || '').startsWith('d'));
-  const dSpend = dAds.reduce((t, a) => t + (+a.spend || 0), 0);
-  const dClicks = dAds.reduce((t, a) => t + (+a.clicks || 0), 0);
-  const dCpc = dClicks ? dSpend / dClicks : 0;
-  // ⚠️ web_events เก็บ utm_campaign เป็น 'jay2026' เฉยๆ แยกรายชิ้นงานไม่ได้ (เช็คแล้ว 9 ก.ย.)
-  // → ใช้ "คลิกไปเว็บ" ที่ Meta นับให้แทน ซึ่งแยกรายชิ้นงานได้จริง
-  const dVisits = dAds.reduce((t, a) => t + (+a.inline_link_clicks || 0), 0);
-  const dOrders = await count(`orders?select=id&source_campaign=like.*jay2026-d*&total=gt.0`);
-  const dDay = Math.floor((Date.parse(today) - Date.parse(D_START)) / 864e5) + 1;
+  // ── เฝ้าชุดที่ยังวิ่งจริง (14 ก.ย. 2569 — ยุบ A/B/D/E เหลือ N คนใหม่ + C คนเก่า)
+  //    ห้ามฮาร์ดโค้ดชื่อชุดอีก: โครงเปลี่ยนเมื่อไหร่ ยามจะรายงานชุดที่ตายไปแล้ว (เคยเกิด 13-14 ก.ย.)
+  const setUrl = `https://graph.facebook.com/v21.0/${ACC}/insights?level=adset`
+    + `&time_range=${encodeURIComponent(JSON.stringify({ since: START, until: today }))}`
+    + `&fields=campaign_name,adset_id,adset_name,spend,clicks,inline_link_clicks,actions`
+    + `&limit=50&access_token=${T}`;
+  const setRes = await fetch(setUrl).then(r => r.json());
+  const liveSets = [];
+  for (const st of (setRes.data || []).filter(a => NAME_MATCH.test(a.campaign_name || ''))) {
+    const info = await fetch(`https://graph.facebook.com/v21.0/${st.adset_id}?fields=status,daily_budget,learning_stage_info&access_token=${T}`).then(r => r.json());
+    if (info.status !== 'ACTIVE') continue;
+    const lead = +((st.actions || []).find(x => x.action_type === 'lead') || {}).value || 0;
+    liveSets.push({
+      name: st.adset_name, spend: +st.spend || 0, lead,
+      budget: (+info.daily_budget || 0) / 100,
+      cpl: lead ? (+st.spend || 0) / lead : null,
+      learned: info.learning_stage_info ? info.learning_stage_info.conversions : null,
+    });
+  }
+
   const d = { spend, clicks, cpc, visits, leads, orders, metaLinkClicks };
 
   // ── ตัดสิน
@@ -90,13 +99,14 @@ try {
     flags.push(`Meta บอกมีคนกดไปเว็บ ${metaLinkClicks} ครั้ง แต่ตัวนับเราได้ 0 → **ตัวนับหน้า /jay น่าจะพัง ไม่ใช่แอดไม่มีคน** (แจ้งห้อง M)`);
   else if (metaLinkClicks >= 20 && visits < metaLinkClicks * 0.3)
     flags.push(`คนกดไปเว็บ ${metaLinkClicks} แต่ตัวนับเราได้แค่ ${visits} — ห่างเกินปกติ เช็คว่าตัวนับครบไหม`);
-  // เกณฑ์ปิดชุด D — ตกลงกับนัทไว้ 8 ก.ย. (ห้ามปิดด้วยความรู้สึก ต้องชนเกณฑ์)
-  if (dDay >= 3 && dVisits < 30)
-    flags.push(`ชุด D ครบ ${dDay} วัน ใช้ ฿${dSpend.toFixed(0)} แต่คนกดไปเว็บแค่ ${dVisits} (เกณฑ์ ≥30) → **เสนอปิด D**`);
-  if (dDay >= 3 && dClicks >= 10 && dCpc > 15)
-    flags.push(`ชุด D ต่อคลิก ฿${dCpc.toFixed(2)} เกินเพดาน ฿15 → **เสนอปิด D**`);
-  if (dDay >= 7 && dOrders === 0)
-    flags.push(`ชุด D ครบ 7 วัน ใช้ ฿${dSpend.toFixed(0)} **ยังไม่มีออเดอร์เลย** → เสนอปิด D · แปลว่าคนแปลกหน้ายังไม่ซื้อ ให้ทุ่มไปทางลิสต์เก่า/LINE แทน`);
+  // ── ด่านหยุด (ตกลงกับนัท 13 ก.ย. · ห้ามปิดด้วยความรู้สึก ต้องชนเกณฑ์)
+  for (const st of liveSets) {
+    if (st.spend > 250 && st.lead === 0)
+      flags.push(`${st.name} ใช้ ฿${st.spend.toFixed(0)} แต่ **ยังไม่มีคนกดจองเลยสักคน** (เกณฑ์ ฿250) → ปิดชุดนี้`);
+    if (st.cpl && st.cpl > 80)
+      flags.push(`${st.name} ต่อคนกดจอง ฿${st.cpl.toFixed(0)} เกินเพดาน ฿80 → ถ้าเป็นวันที่ 2 ติดกัน ลดงบครึ่งหนึ่ง`);
+  }
+  if (spend > 5000) flags.push(`แคมเปญใช้ทะลุ ฿5,000 แล้ว (฿${spend.toFixed(0)}) → **ลดทุกชุดครึ่งหนึ่ง** ตามที่ตกลงกับนัท`);
   // 🔑 ปุ่มจองตายเงียบ — 9 ก.ย. M ใช้ line://app/{liffId} ซึ่ง LINE ประกาศเลิกใช้ตั้งแต่ 2020
   //    ยังทำงานอยู่ แต่ไม่มีวันปิดที่ประกาศไว้ → ถ้าวันไหน LINE ปิดเงียบ จะไม่มี error ให้เห็น
   //    อาการที่จะเห็นคือ "คนเข้าเว็บเยอะแต่ไม่มีใครกดปุ่มจองเลย"
@@ -110,10 +120,10 @@ try {
     `${flags.length ? '🔴' : '✅'} [ยามเฝ้าแอด · ${today}] แคมเปญเจ jay2026`,
     '',
     `ใช้เงินสะสม **฿${spend.toFixed(2)}** · คลิก ${clicks} · ต่อคลิก ฿${cpc.toFixed(2)}`,
-    `— ชุด D (วันที่ ${dDay}) ฿${dSpend.toFixed(0)} · กดไปเว็บ ${dVisits} · ออเดอร์ ${dOrders} · ต่อคลิก ฿${dCpc.toFixed(2)}`,
+    ...liveSets.map(st => `— ${st.name} · ฿${st.budget}/วัน · ใช้ไป ฿${st.spend.toFixed(0)} · กดจอง ${st.lead}${st.cpl ? ' (฿' + st.cpl.toFixed(0) + '/คน)' : ''} · เรียนรู้สะสม ${st.learned}/50`),
     `คนกดไปเว็บ (Meta นับ) **${metaLinkClicks}** · คนเข้า /jay (เรานับ) **${visits}** · กดไป LINE **${leads}** · **จองจริง ${orders}**`,
     ads.length ? '' : '_(ยังไม่มีชิ้นงานที่วิ่งอยู่ในแคมเปญนี้)_',
-    ...ads.map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
+    ...ads.filter(a => +a.spend > 0).sort((x, y) => y.spend - x.spend).slice(0, 15).map(a => `· ${a.ad_name} | ฿${a.spend} | เห็น ${a.reach} | ซ้ำ ${(+a.frequency).toFixed(2)} | คลิก ${a.clicks} | CTR ${(+a.ctr).toFixed(2)}%`),
     ...(flags.length ? ['', '## 🔴 ชนกฎ — ห้อง 06 ต้องตัดสินใจ', ...flags.map(f => `- ${f}`),
       '', '**กติกา:** ปิดแล้วหยุด รายงานนัท ขออนุญาตก่อนเปิดใหม่ (ads-close-then-stop)'] : []),
   ].filter(l => l !== '').join('\n');
