@@ -145,6 +145,8 @@ body.hascart{padding-bottom:72px}
 .pack .was+.pr{margin-top:0}
 .pack .promo{margin-top:8px;background:#FFF8E1;border:1px dashed #E6B800;border-radius:8px;padding:7px 10px;font-size:.9rem;color:#8A6D00}
 .pack .promo b{font-family:'Prompt';letter-spacing:.04em}
+/* u360-pack-size — ปุ่มสั่งประจำไซส์ ต้องเต็มความกว้างการ์ด จะได้กดง่ายบนมือถือ */
+.pack .packbtn{display:block;text-align:center;margin-top:12px}
 /* ── u360-nav-fix (27 ส.ค.) — แถบบนพังบนมือถือ: ตัวหนังสือตกบรรทัดจนปุ่มบวมเป็นวงกลม ── */
 header .nav,header nav{flex-wrap:nowrap}
 header .nav a,header nav a,header .logo{white-space:nowrap}
@@ -317,6 +319,21 @@ function orderNow(el){
   return false;
 }
 
+/* u360-pack-size — กดปุ่มไซส์ไหน = เปิดป๊อปแพคนั้นใน LIFF ทันที (`?pkg=<id>`)
+   แยก cta_click เป็น pack:size-S / -M / -L ให้รู้ว่าไซส์ไหนคนกดมากสุด (06 ขอ 14 ก.ย.)
+   ที่มาแอด (utm/fbclid) ต้องติดไปด้วยเสมอ → ต่อ pkg ทีหลัง u360Tracked ไม่ใช่ก่อน */
+function orderPack(el){
+  const pkg  = el.getAttribute('data-pkg') || '';
+  const size = (el.getAttribute('data-size') || '').toUpperCase();
+  try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'pack:' + (size || '?')}); }catch(e){}
+  track('cta_click', 'pack:size-' + (size || '?'));
+  try{ if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D'}); }catch(e){}
+  let url = u360Tracked(ORDER_URL);
+  if(pkg) url += (url.indexOf('?') >= 0 ? '&' : '?') + 'pkg=' + encodeURIComponent(pkg);
+  window.location.href = url;
+  return false;
+}
+
 /* ═══ แคตตาล็อก ═══ */
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const thumb = (u,w) => String(u||'').replace('/object/public/','/render/image/public/') + '?width=' + w + '&resize=contain&quality=72';
@@ -445,31 +462,36 @@ function goLine(){ remindCode(goLineNow); }
    ตอนนี้ทุกทางพาไปสั่งในไลน์ (LIFF) ที่มีด่านวันส่ง + ติดที่มาแอดครบ · เหลือชื่อฟังก์ชันไว้กันหน้าที่แคชเก่ากดแล้วพัง */
 function submitWeb(){ goLine(); }
 
-/* ═══ แพ็คใหญ่ ═══ */
+/* ═══ แพ็คใหญ่ 3 ไซส์ ═══
+   ราคามาจาก `packages.base_price` ใน DB เสมอ — ห้ามฮาร์ดโค้ดราคาในหน้านี้ (06 ย้ำ 14 ก.ย.)
+   ราคาตัวใหญ่ = ราคาจริง · ส่วนลดโค้ดโชว์เป็นบรรทัดรอง ไม่เอามาแทนราคาหลัก (ไม่งั้นแอดกับหน้าเว็บพูดคนละเลข)
+   ปุ่มของแต่ละไซส์พา `?pkg=<id>` ไปด้วย → LIFF เปิดป๊อปแพคนั้นให้ทันที ไม่ต้องหาเองในเมนูรวม */
 async function loadPacks(){
   const el = document.getElementById('packs');
   try{
     const { data } = await sb.from('packages')
-      .select('name,qty,base_price,free_shipping').eq('is_active',true).limit(40);
+      .select('id,name,qty,base_price,free_shipping').eq('is_active',true).limit(40);
     const packs = (data||[]).filter(p => /Protein Pack/i.test(p.name||''))
       .sort((a,b) => (a.qty||0)-(b.qty||0));
     if(!packs.length){ el.closest('section').style.display='none'; return; }
-    el.innerHTML = packs.map(p => `
-      ${(function(){
-        const promo = (PACK_PROMO && PACK_PROMO.match.test(p.name||'') && Number(p.base_price) >= PACK_PROMO.min) ? PACK_PROMO : null;
-        const now = promo ? Number(p.base_price) - promo.off : Number(p.base_price);
-        return `<div class="pack${promo?' hot':''}">
+    el.innerHTML = packs.map(p => {
+      const size = (String(p.name).match(/Protein Pack\s*([SML])/i) || [])[1] || '';
+      const base = Number(p.base_price) || 0;
+      const promo = (PACK_PROMO && PACK_PROMO.match.test(p.name||'') && base >= PACK_PROMO.min) ? PACK_PROMO : null;
+      return `<div class="pack${promo?' hot':''}">
         <div class="nm">${esc(String(p.name).replace(/—.*$/,'').trim())}</div>
-        ${promo ? `<div class="was">฿${Number(p.base_price).toLocaleString('th-TH')}</div>` : ''}
-        <div class="pr">฿${now.toLocaleString('th-TH')}</div>
-        <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(now/p.qty)}</div>
-        ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off}</div>` : ''}
+        <div class="pr">฿${base.toLocaleString('th-TH')}</div>
+        <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(base/p.qty)}</div>
+        ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off} เหลือ ฿${(base-promo.off).toLocaleString('th-TH')}</div>` : ''}
         ${p.free_shipping ? '<div class="ff">ส่งฟรี</div>' : ''}
-      </div>`;})()}`).join('') +
+        <a class="btn btn-line btn-sm packbtn" href="#" data-pkg="${esc(p.id)}" data-size="${esc(size)}"
+           onclick="return orderPack(this)">สั่งไซส์ ${esc(size || 'นี้')} ใน LINE</a>
+      </div>`;
+    }).join('') +
       `<div class="pack" style="display:flex;flex-direction:column;justify-content:center;background:var(--soft)">
-         <div class="nm">อยากได้แพ็คใหญ่?</div>
-         <p style="color:var(--muted);font-size:.9375rem;margin:6px 0 12px">แพ็คใหญ่เลือกเมนูเองได้เหมือนกัน สั่งในแอปสะดวกกว่า</p>
-         <a class="btn btn-line btn-sm" href="#" onclick="return orderNow(this)">สั่งแพ็คใหญ่ใน LINE</a>
+         <div class="nm">ไม่แน่ใจว่าไซส์ไหน?</div>
+         <p style="color:var(--muted);font-size:.9375rem;margin:6px 0 12px">ทักมาถามได้ เลือกเมนูเองได้ทุกไซส์</p>
+         <a class="btn btn-line btn-sm" href="#" onclick="return orderNow(this)">ทักไลน์ถามก่อน</a>
        </div>`;
   }catch(e){ el.closest('section').style.display='none'; }
 }
