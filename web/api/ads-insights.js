@@ -356,13 +356,23 @@ module.exports = async function handler(req, res) {
   /* ── ② ออเดอร์จริงในช่วงเดียวกัน — นับที่ server ไม่ส่งแถวลงเบราว์เซอร์ ──
      🏆 ตัวชี้ขาดที่ Meta บอกเองไม่ได้ เพราะเราปิดการขายในไลน์ · ตัวนี้เท่านั้นคือ "ยืนยันใน DB" */
   try {
-    const rows = await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,customer_name,line_display_name,source_campaign,source_content'
+    const rows = await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,customer_name,line_display_name,source,source_campaign,source_content'
       + '&created_at=gte.' + since + 'T00:00:00&total=gt.0&order=created_at.asc,id.asc', 10);
     const blank = () => ({ n: 0, rev: 0 });
     const byUtm = {}, adOrders = [];
     let matched = 0, revenue = 0;
+    /* ── u360-untracked — ยอดที่ตามรอยไม่ได้ (พี่ปืนเคาะ 15 ก.ย.: ไม่รู้ ให้เขียนว่าไม่รู้ ห้ามเดาสัดส่วน) ──
+       none  = ระบบรู้ว่าไม่มีที่มา (ลูกค้าเข้าเอง หรือมาจากลิงก์ที่ยังไม่ติดรหัส เช่นโพสต์ IG ของพลอย)
+       blank = ไม่มีข้อมูลที่มาเลย (ออเดอร์ก่อนระบบจำที่มาเริ่มใช้ 11 ก.ย.)
+       admin = แอดมินเปิดใบให้ลูกค้าเอง — ไม่เคยมีที่มาอยู่แล้ว */
+    const untracked = { none: { n: 0, rev: 0 }, blank: { n: 0, rev: 0 }, admin: { n: 0, rev: 0 } };
     for (const o of rows) {
       const c = (o.source_campaign || '').trim();
+      if (c.indexOf('fb/paid/') !== 0) {
+        const t = +o.total || 0;
+        const bucket = String(o.source || '') === 'admin_manual' ? 'admin' : (!c ? 'blank' : (c.indexOf('direct/none') === 0 ? 'none' : null));
+        if (bucket) { untracked[bucket].n++; untracked[bucket].rev += t; }
+      }
       /* 🔴 นับเฉพาะแอดที่เสียเงิน — ขึ้นต้น fb/paid/ เสมอ (ig/social, web, broadcast, direct/none ไม่นับ) */
       if (c.indexOf('fb/paid/') !== 0) continue;
       matched++; revenue += +o.total || 0;
@@ -421,6 +431,9 @@ module.exports = async function handler(req, res) {
       });
     }).sort((a, b) => b.spend - a.spend);
     if (meta.campaignNote) out.campaignNote = meta.campaignNote;
+
+    ['none', 'blank', 'admin'].forEach(k => { untracked[k].rev = +untracked[k].rev.toFixed(2); });
+    out.untracked = untracked;
 
     out.orders = { matched, revenue: +revenue.toFixed(2), byUtm, scanned: rows.length };
     out.buyers = { totals: totalsByType, newList };

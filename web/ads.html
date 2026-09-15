@@ -72,6 +72,11 @@ th.bth,td.btc{background:#F6FAF6}
 table.nb{min-width:900px}
 /* u360-campaign — ตารางสรุปรายแคมเปญ แถวน้อย ไม่ต้องกว้างเท่าตารางแอด */
 table.camp{min-width:760px}
+/* u360-untracked — กล่องเตือนยอดที่ยังแยกที่มาไม่ได้ */
+.untrk{background:var(--soft);border:1px dashed var(--hair);border-radius:12px;padding:12px 14px;margin-top:10px;font-size:.88rem}
+.untrk ul{margin:6px 0 0 18px;color:var(--muted)}
+.untrk li{margin-top:3px}
+.untrk em{display:block;font-style:normal;color:var(--muted);font-size:.82rem;margin-top:8px;line-height:1.6}
 table.camp td:first-child{min-width:190px}
 table.nb th:nth-child(3),table.nb td.items,table.nb th:nth-child(5),table.nb td.adsrc{text-align:left;white-space:normal;min-width:220px}
 .up{color:var(--red)} .down{color:var(--green)}
@@ -519,6 +524,7 @@ function campaignStrip(){
     + '<th>แคมเปญ</th><th>ลงทุน</th><th class="bth">✅ ยืนยันใน DB</th><th class="bth">🆕 ลูกค้าใหม่</th>'
     + '<th class="claimh">Meta: กดแอดแล้วซื้อ</th><th class="claimh">Meta: แค่เห็นแอด</th><th>กำไรโดยประมาณ</th>'
     + '</tr></thead><tbody>' + cs.map(row).join('') + '</tbody></table></div>'
+    + untrackedNote()
     + '<p class="fine">'
     + '<b>กำไรโดยประมาณ</b> = (ยอดที่ยืนยันใน DB × ' + pct + '%) − เงินที่ใช้จริง · '
     + '⚠️ <b>มาร์จิ้น ' + pct + '% เป็นตัวเลขที่นัทเคยประมาณเร็วๆ ยังไม่เคยยืนยันจากบัญชีจริง</b> — อ่านเป็นทิศทาง ไม่ใช่ตัวเลขปิดบัญชี<br>'
@@ -527,6 +533,22 @@ function campaignStrip(){
     + 'ลงทุน = เงินที่ใช้จริง ไม่ใช่งบที่ตั้งไว้ (ในบัญชีมีแคมเปญค้างจากปีก่อนที่ตั้งงบไว้แต่ไม่ได้ใช้เงินจริง)'
     + (LAST.campaignDbNote ? '<br>⚠️ ' + esc(LAST.campaignDbNote) : '')
     + '</p>';
+}
+
+/* ── u360-untracked — "ยอดที่ตามรอยไม่ได้ ยังแยกไม่ออกว่ามาจากไหน" (06 ขอ · พี่ปืนเคาะ 15 ก.ย.)
+   ⛔ ห้ามเดาสัดส่วน ห้ามหารครึ่ง — ไม่รู้ ให้เขียนว่าไม่รู้ · โชว์ได้แค่จำนวนใบกับยอดที่นับได้จริง */
+function untrackedNote(){
+  var u = LAST.untracked; if (!u) return '';
+  var tot = (u.none.n || 0) + (u.blank.n || 0) + (u.admin.n || 0);
+  if (!tot) return '';
+  var rev = (u.none.rev || 0) + (u.blank.rev || 0) + (u.admin.rev || 0);
+  var part = [];
+  if (u.none.n)  part.push('<b>' + u.none.n + ' ใบ ' + baht(u.none.rev) + '</b> ระบบรู้ว่าไม่มีที่มา — <b>อาจมาจากแอด Facebook หรือโพสต์ Instagram ของพลอย หรือลูกค้าหาเจอเอง ยังแยกไม่ออก</b>');
+  if (u.blank.n) part.push('<b>' + u.blank.n + ' ใบ ' + baht(u.blank.rev) + '</b> ไม่มีข้อมูลที่มาเลย (สั่งก่อนระบบจำที่มาเริ่มใช้ 11 ก.ย.)');
+  if (u.admin.n) part.push('<b>' + u.admin.n + ' ใบ ' + baht(u.admin.rev) + '</b> แอดมินเปิดใบให้ลูกค้าเอง');
+  return '<div class="untrk"><b>❔ ยอดที่ตามรอยไม่ได้ในช่วงนี้ ' + tot + ' ใบ ' + baht(rev) + '</b>'
+    + '<ul><li>' + part.join('</li><li>') + '</li></ul>'
+    + '<em>จะแยกออกก็ต่อเมื่อลิงก์ฝั่ง Instagram ติดรหัสที่มาแล้ว · ระหว่างนี้ห้ามอ่านว่าเป็นยอดจากแอด และห้ามอ่านว่าแอดไม่ได้ผล — ผิดทั้งสองทาง</em></div>';
 }
 
 function notStartedStrip(){
