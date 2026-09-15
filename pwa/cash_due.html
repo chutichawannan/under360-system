@@ -91,6 +91,15 @@ a{color:var(--blue)}
     กรอง <b>ยอด &gt; ฿0</b> · ตัดออเดอร์ทดสอบออกอัตโนมัติ · นับเฉพาะ <b>ยังไม่จ่าย + สลิปรอตรวจ</b><br>
     ⛔ <b>ไม่นับใบยุค Hato (ก่อน 8 ส.ค. 2026) เลย</b> — จบไปแล้วที่นั่น แอดมินเคลียร์เองเรียบร้อย (นัทยืนยัน 10 ส.ค.)
   </div>
+  <div id="jaybox" style="display:none;background:var(--panel);border:1px solid var(--line);border-left:4px solid var(--amber);border-radius:12px;padding:14px 16px;margin-bottom:16px">
+    <div style="font-size:13px;color:var(--soft);margin-bottom:4px">🥬 เงินที่ต้องกันไว้ — คอร์สเจ ครัวทำจริง 8–15 ต.ค.</div>
+    <div id="jaynum" style="font-size:26px;font-weight:800">—</div>
+    <div id="jaysub" style="font-size:13px;color:var(--soft);margin-top:4px"></div>
+    <div style="font-size:12px;color:var(--soft);margin-top:8px;border-top:1px dashed var(--line);padding-top:8px">
+      กันคอร์สละ <b>฿1,600</b> (ค่าอาหาร + ดำเนินการ + ค่าส่งสูงสุด ฿600 · นัทให้ตัวเลขเอง 15 ก.ย.)<br>
+      นับจาก<b>รหัสแพคเจใน order_items</b> — ไม่ได้นับจากยอดเงิน (฿4,140/฿4,190 ชนกับ Meal Plan HP)
+    </div>
+  </div>
   <div class="kpis" id="kpis"></div>
   <div id="list"></div>
 </main>
@@ -277,6 +286,33 @@ function toast(m){
   const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on');
   clearTimeout(tt); tt=setTimeout(()=>t.classList.remove('on'),1600);
 }
+/* ── เงินกันไว้คอร์สเจ (นัทเคาะ 15 ก.ย. · ห้อง 06 Ads ขอ) ───────────────────
+   ปัญหา: เก็บเงินวันนี้ แต่ครัวทำจริงอีก 3 สัปดาห์ · ร้านหมุนเงินวันต่อวัน
+          ไม่เคยกันเงิน → เสี่ยงใช้เงินค่าอาหารลูกค้าหมดก่อนถึงวันทำ
+   ⛔ ห้ามนับคอร์สจากยอดเงิน — ฿4,140/฿4,190 ตรงกับ Meal Plan HP รายสัปดาห์
+      (06 เคยนับผิดได้ 10 คนทั้งที่มีจริง 3)
+   1 คอร์ส = 3 ใบ (รอบ 1 ถือเงินเต็ม · รอบ 2-3 ยอด ฿0) → นับเฉพาะ course:1/N */
+const JAY_PKG = ['26347b55-d28a-4ee1-980c-b4266b89b3d2','b36dcfb3-63b4-4e51-948f-7b23d1675b56'];
+const JAY_RESERVE = 1600;
+async function loadJay(){
+  const { data:it } = await sb.from('order_items').select('order_id,notes').or('notes.ilike.%26347b55%,notes.ilike.%b36dcfb3%').limit(2000);
+  if(!it) return;
+  const first = it.filter(r => JAY_PKG.some(p => r.notes.includes(p)) && /course:1\//.test(r.notes));
+  const ids = [...new Set(first.map(r => r.order_id))];
+  if(!ids.length) return;
+  const { data:od } = await sb.from('orders').select('id,total,payment_status,status').in('id', ids);
+  if(!od) return;
+  const live = od.filter(o => o.status !== 'cancelled');
+  const n = live.length;
+  const paid = live.filter(o => o.payment_status === 'paid').length;
+  const money = live.reduce((a,o) => a + Number(o.total||0), 0);
+  document.getElementById('jaynum').textContent = 'ต้องกันไว้ ' + baht(n * JAY_RESERVE);
+  document.getElementById('jaysub').textContent =
+    n + ' คอร์ส (จ่ายครบแล้ว ' + paid + ') · รับเงินมาแล้ว ' + baht(money)
+    + ' · เหลือใช้ได้ ' + baht(money - n * JAY_RESERVE);
+  document.getElementById('jaybox').style.display = 'block';
+}
+loadJay();
 load();
 </script>
 </body>
