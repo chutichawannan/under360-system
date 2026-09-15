@@ -277,18 +277,24 @@ async function fetchMeta(T, ACC, since, until) {
      time_increment=7 แบ่งถังให้เองจากวันแรกของช่วงที่ขอ → ขอครั้งเดียวได้ทุกสัปดาห์ ไม่ต้องยิงทีละสัปดาห์
      06 ขึ้นงบเป็นขั้นบันไดรายสัปดาห์ → ต้องแบ่งให้ตรงกัน ถึงจะตอบได้ว่าเติมเงินแล้วดีขึ้นจริงไหม */
   const starts = await getStarts(T, ACC);
-  const weekFrom = campaignStartOf(starts, campaigns);
+  /* แคมเปญที่ "กำลังใช้เงินอยู่ตอนนี้" เท่านั้น — ในบัญชีมีแคมเปญค้างสถานะเปิดจากปีก่อนอีกหลายตัว
+     ถ้าเอาทุกตัวมาหาวันเริ่ม ช่วงจะลากย้อนไปหลายเดือน และขอบสัปดาห์จะเพี้ยน (เจอจริงบนเว็บ 15 ก.ย.: ลากไปถึง มี.ค.) */
+  const focus = await activeSpenders(T, ACC);
+  const weekFrom = focus.length ? focus[0].start : '';
   let weeks = [], weekNote = null;
-  if (weekFrom) {
+  /* ขอทีละแคมเปญที่โฟกัส เพราะขอบสัปดาห์ต้องเริ่มจากวันเริ่มของแคมเปญนั้นเอง (ไม่ใช่ของตัวที่เก่าที่สุด)
+     จำกัดไม่เกิน 2 ตัว กันยิง Meta เกินจำเป็น */
+  for (const f of focus.slice(0, 2)) {
     try {
       const wUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign&time_increment=7'
-        + '&time_range=' + encodeURIComponent(JSON.stringify({ since: weekFrom, until }))
+        + '&time_range=' + encodeURIComponent(JSON.stringify({ since: f.start, until }))
+        + '&filtering=' + encodeURIComponent(JSON.stringify([{ field: 'campaign.id', operator: 'IN', value: [f.id] }]))
         + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
         + '&fields=campaign_id,campaign_name,spend,clicks,actions,action_values'
         + '&limit=200' + tok;
-      weeks = (await graphAll(wUrl, 3)).map(w => ({
-        campId: w.campaign_id || '', name: w.campaign_name || '',
-        key: String(w.campaign_name || '').split(/[\s·]+/)[0].toLowerCase(),
+      (await graphAll(wUrl, 3)).forEach(w => weeks.push({
+        campId: w.campaign_id || f.id, name: w.campaign_name || f.name,
+        key: String(w.campaign_name || f.name).split(/[\s·]+/)[0].toLowerCase(),
         from: w.date_start, to: w.date_stop,
         spend: +(+w.spend || 0).toFixed(2), clicks: +w.clicks || 0,
         leads: pick(w.actions, T_LEAD),
@@ -299,7 +305,7 @@ async function fetchMeta(T, ACC, since, until) {
     } catch (e) { weekNote = 'ดึงตัวเลขรายสัปดาห์ไม่ได้ (' + (e.code || '?') + ')'; }
   }
 
-  return { ads, notStarted, campaigns, campaignNote, weeks, weekNote, weekFrom, starts, spendByDay, thumbNote, fetchedAt: Date.now() };
+  return { ads, notStarted, campaigns, campaignNote, weeks, weekNote, weekFrom, focus, starts, spendByDay, thumbNote, fetchedAt: Date.now() };
 }
 
 /* วันเริ่มแคมเปญ — ดึงจาก Meta เอง ไม่ฮาร์ดโค้ดวันที่ (06 ขอ) · เก็บแยกจากตัวเลข เพราะไม่ขึ้นกับช่วงที่เลือก */
@@ -320,16 +326,27 @@ async function getStarts(T, ACC) {
   } catch (e) { return (hit && hit.data) || {}; }
 }
 
-/* วันเริ่มของแคมเปญที่ "ยังวิ่งและใช้เงินอยู่จริง" — ใช้เป็นจุดตั้งต้นของทั้งแคมเปญและของสัปดาห์ที่ 1
-   ไม่เอาแคมเปญค้างจากปีก่อน (22 ตัวในบัญชี) มาลากให้ช่วงยาวเกินจริง */
-function campaignStartOf(starts, campaigns) {
-  const live = (campaigns || []).filter(c => c.spend > 0);
-  let best = '';
-  live.forEach(c => {
-    const s = (starts[c.id] && starts[c.id].start) || '';
-    if (s && (!best || s < best)) best = s;
-  });
-  return best;
+/* แคมเปญที่ "ยังเปิดอยู่ และเพิ่งใช้เงินจริงใน 30 วันหลัง" — หัวใจของปุ่ม "ทั้งแคมเปญ"
+   ⚠️ ห้ามใช้ "ทุกแคมเปญที่สถานะ ACTIVE" — ในบัญชีมีแคมเปญค้างจากหลายเดือนก่อนที่ยังขึ้น ACTIVE
+   แต่เลิกใช้เงินไปแล้ว เอามานับด้วยช่วงจะลากย้อนไปหลายเดือน (เจอจริงบนเว็บ 15 ก.ย.: ลากถึง มี.ค.) */
+async function activeSpenders(T, ACC) {
+  const key = 'spenders|' + ACC;
+  const hit = CACHE.get(key);
+  if (hit && Date.now() - hit.fetchedAt < TTL) return hit.data;
+  try {
+    const starts = await getStarts(T, ACC);
+    const url = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign'
+      + '&time_range=' + encodeURIComponent(JSON.stringify({ since: th(new Date(Date.now() - 29 * 864e5)), until: th(new Date()) }))
+      + '&fields=campaign_id,campaign_name,spend&limit=200&access_token=' + encodeURIComponent(T);
+    const data = (await graphAll(url, 3))
+      .map(r => ({ id: r.campaign_id, name: r.campaign_name || '', spend30: +r.spend || 0,
+                   start: (starts[r.campaign_id] && starts[r.campaign_id].start) || '',
+                   status: (starts[r.campaign_id] && starts[r.campaign_id].status) || '' }))
+      .filter(c => c.spend30 > 0 && c.start && c.status === 'ACTIVE')
+      .sort((x, y) => (x.start < y.start ? 1 : -1));   /* เริ่มล่าสุดก่อน */
+    CACHE.set(key, { data, fetchedAt: Date.now() });
+    return data;
+  } catch (e) { return (hit && hit.data) || []; }
 }
 
 async function getMeta(T, ACC, since, until) {
@@ -377,13 +394,11 @@ module.exports = async function handler(req, res) {
      นัทเจอเองว่า "เมื่อวานยังเห็น 15,000 วันนี้เหลือหมื่นเดียว" — เงินไม่ได้หาย แค่วันแรกตกออกจากกรอบ */
   if (req.query && req.query.range === 'campaign' && process.env.META_TOKEN && process.env.META_AD_ACCOUNT) {
     try {
-      const st = await getStarts(process.env.META_TOKEN, process.env.META_AD_ACCOUNT);
+      const sp = await activeSpenders(process.env.META_TOKEN, process.env.META_AD_ACCOUNT);
+      /* ถอยไปถึงวันเริ่มของแคมเปญที่เริ่มก่อนสุด "ในกลุ่มที่ยังใช้เงินอยู่จริง" เท่านั้น
+         (กันแคมเปญค้างจากหลายเดือนก่อนลากช่วงยาวเกิน) · เพดาน 180 วัน */
       let best = '';
-      Object.keys(st).forEach(id => {
-        const c = st[id];
-        if (c.status === 'ACTIVE' && c.start && (!best || c.start < best)) best = c.start;
-      });
-      /* กันช่วงยาวเกินไป — แคมเปญค้างจากปีก่อนจะลากยาวเป็นปี ดึงข้อมูลหนักโดยไม่ได้ใช้ */
+      sp.forEach(c => { if (c.start && (!best || c.start < best)) best = c.start; });
       const floor = th(new Date(Date.now() - 180 * 864e5));
       if (best) { since = best < floor ? floor : best; rangeMode = 'campaign'; }
     } catch (e) { /* หาไม่ได้ก็ใช้ช่วงวันปกติ */ }
@@ -524,7 +539,7 @@ module.exports = async function handler(req, res) {
        สัปดาห์ที่ยังไม่จบต้องติดป้าย ไม่งั้นอ่านเหมือนสัปดาห์นั้นแย่ลง */
     const seen = {};
     out.weeks = (meta.weeks || [])
-      .slice().sort((a, b) => (a.from < b.from ? -1 : 1))
+      .slice().sort((a, b) => (a.key === b.key ? (a.from < b.from ? -1 : 1) : (a.key < b.key ? -1 : 1)))
       .map(w => {
         const list = (byWeekKey[w.key] || []).filter(x => x.day >= w.from && x.day <= w.to);
         const rev = list.reduce((s, x) => s + x.total, 0);
