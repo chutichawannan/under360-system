@@ -44,6 +44,42 @@ const TTL = 15 * 60 * 1000;
 const CACHE = globalThis.__u360AdsCache || (globalThis.__u360AdsCache = new Map());
 const INFLIGHT = globalThis.__u360AdsInflight || (globalThis.__u360AdsInflight = new Map());
 
+/* ═══ ชั้นเก็บของที่รอดตอนเครื่องเย็น (u360-ads-shelf) ═══
+   แคชในหน่วยความจำข้างบนอยู่ได้เฉพาะตอน instance ยังอุ่น — Vercel ปลุกเครื่องใหม่เมื่อไหร่ก็หายหมด
+   นัทเลยเจอ "กำลังโหลด..." ค้าง 12 วินาทีบ่อยกว่าที่ TTL 15 นาทีควรจะเป็น (06 วัดมา 15 ก.ย.)
+
+   🔒 ทำไมต้องใช้กุญแจ service role ไม่ใช่กุญแจ anon ที่อยู่หัวไฟล์:
+      ตัวเลขค่าโฆษณาถูกใส่ด่านรหัสไว้ตั้งใจ — ถ้าเก็บลงตารางที่กุญแจ anon (ซึ่งฝังอยู่ในทุกหน้าเว็บ) อ่านได้
+      = เอาของหลังด่านไปวางหน้าด่านเอง · ตารางนี้จึงตั้ง RLS ปิดสนิท ไม่มี policy ให้ anon เลย
+   ไม่มีกุญแจ / ยังไม่ได้สร้างตาราง = ข้ามชั้นนี้เงียบๆ หน้าเว็บทำงานเหมือนเดิมทุกอย่าง (แค่เครื่องเย็นจะช้า) */
+const SHELF_KEY = process.env.SUPABASE_SERVICE_ROLE || process.env.SUPABASE_SERVICE_KEY || '';
+const shelfHead = () => ({ apikey: SHELF_KEY, Authorization: 'Bearer ' + SHELF_KEY, 'Content-Type': 'application/json' });
+
+async function shelfGet(key) {
+  if (!SHELF_KEY) return null;
+  try {
+    const r = await fetch(SB + '/rest/v1/ads_cache?select=payload,fetched_at&key=eq.' + encodeURIComponent(key) + '&limit=1',
+      { headers: shelfHead() });
+    if (!r.ok) return null;                       /* ยังไม่ได้สร้างตาราง = ไม่มีชั้นนี้ ไม่ใช่ข้อผิดพลาด */
+    const rows = await r.json();
+    const row = Array.isArray(rows) && rows[0];
+    if (!row || !row.payload) return null;
+    return { data: row.payload, fetchedAt: Date.parse(row.fetched_at) || 0 };
+  } catch (e) { return null; }
+}
+
+async function shelfSet(key, data) {
+  if (!SHELF_KEY) return;
+  try {
+    /* แถวเดียวต่อช่วงวัน เขียนทับ ไม่เก็บประวัติ — 06 เตือนเรื่องโควตา Supabase ไว้ */
+    await fetch(SB + '/rest/v1/ads_cache?on_conflict=key', {
+      method: 'POST',
+      headers: Object.assign(shelfHead(), { Prefer: 'resolution=merge-duplicates,return=minimal' }),
+      body: JSON.stringify({ key, payload: data, fetched_at: new Date().toISOString() })
+    });
+  } catch (e) { /* เก็บไม่ได้ก็แค่ช้าเท่าเดิม ห้ามทำให้คำขอพัง */ }
+}
+
 const th = d => new Date(d.getTime() + 7 * 3600000).toISOString().slice(0, 10);
 const pick = (arr, types) => {
   if (!Array.isArray(arr)) return 0;
@@ -190,24 +226,38 @@ async function fetchMeta(T, ACC, since, until) {
     + '&time_range=' + encodeURIComponent(JSON.stringify({ since, until }))
     + '&fields=campaign_name,adset_name,ad_name,ad_id,spend,impressions,reach,frequency,clicks,actions,action_values'
     + '&limit=500' + tok;
-  const ins = await graphAll(insUrl, 4);
+  const insP = graphAll(insUrl, 4);
 
   /* ② ยอดใช้รายวันระดับบัญชี แค่เมื่อวาน-วันนี้ (แถวเดียวต่อวัน เบามาก) */
   const yest = th(new Date(Date.now() - 864e5));
   const dayUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=account&time_increment=1'
     + '&time_range=' + encodeURIComponent(JSON.stringify({ since: yest, until }))
     + '&fields=spend&limit=10' + tok;
-  const days = await graphAll(dayUrl, 1);
-  const spendByDay = {};
-  for (const d of days) spendByDay[d.date_start] = +d.spend || 0;
+  const daysP = graphAll(dayUrl, 1);
 
   /* ③ รูปครีเอทีฟ + สถานะ — ขอทีเดียวทั้งบัญชี · ล้มก็ไม่เป็นไร ตัวเลขยังโชว์ได้ */
-  let adsInfo = null, thumbNote = null;
-  try {
-    const au = GRAPH + encodeURIComponent(ACC) + '/ads'
-      + '?fields=id,name,effective_status,creative{thumbnail_url}&limit=500' + tok;
-    adsInfo = await graphAll(au, 3);
-  } catch (e) { thumbNote = 'meta creative error ' + (e.code || '?'); }
+  const adsInfoP = graphAll(GRAPH + encodeURIComponent(ACC) + '/ads'
+    + '?fields=id,name,effective_status,creative{thumbnail_url}&limit=500' + tok, 3)
+    .then(rows => ({ rows }), err => ({ rows: null, err }));
+
+  /* ④ ระดับแคมเปญ — คำขอเตรียมไว้ตรงนี้ เพื่อให้ยิงพร้อมก้อนอื่น (ดูหมายเหตุที่จุดรวมพลด้านล่าง) */
+  const cUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign'
+    + '&time_range=' + encodeURIComponent(JSON.stringify({ since, until }))
+    + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
+    + '&fields=campaign_id,campaign_name,spend,impressions,clicks,actions,action_values'
+    + '&limit=200' + tok;
+  const campP = graphAll(cUrl, 2).then(rows => ({ rows }), err => ({ rows: null, err }));
+  const focusP = activeSpenders(T, ACC);
+
+  /* ── จุดรวมพล ── เดิมยิง 5 ก้อนนี้เรียงกันทีละตัว รอ Meta ตัวละ 1.5-3 วิ = 12 วิตอนเครื่องเย็น
+     (06 วัดมาเอง 15 ก.ย. หลังนัทบ่นว่า "มันช้าอะ") · ไม่มีก้อนไหนใช้ผลของอีกก้อน → รอพร้อมกันได้
+     ⚠️ จำนวนคำขอที่ยิงไป Meta "เท่าเดิม" ไม่ได้เพิ่ม — แค่ไม่ต่อคิวกัน (ลิมิตแอดจึงไม่กระทบ) */
+  const [ins, dayRows, adsRes, campRes, focus] = await Promise.all([insP, daysP, adsInfoP, campP, focusP]);
+
+  const spendByDay = {};
+  for (const d of dayRows) spendByDay[d.date_start] = +d.spend || 0;
+  const adsInfo = adsRes.rows;
+  const thumbNote = adsRes.err ? 'meta creative error ' + (adsRes.err.code || '?') : null;
 
   const byId = {};
   for (const x of adsInfo || []) byId[x.id] = x;
@@ -248,43 +298,34 @@ async function fetchMeta(T, ACC, since, until) {
      ขอ 2 หน้าต่าง attribution แยกกัน: 7d_click = กดแอดแล้วซื้อ · 1d_view = แค่เห็นแอดแล้วซื้อ
      🔴 ห้ามรวมเป็นตัวเลขเดียว — ก้อน "แค่เห็น" มีลูกค้าเก่าที่จะซื้ออยู่แล้วปนอยู่ พิสูจน์ไม่ได้ว่าแอดทำให้ซื้อ
      ⚠️ ใช้ spend เท่านั้น ห้ามใช้ daily_budget — บัญชีมีแคมเปญค้างจากปี 2565 อีก 22 ตัว งบรวม ฿9,620/วัน แต่ไม่ได้ใช้เงินจริง */
-  let campaigns = [], campaignNote = null;
-  try {
-    const cUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign'
-      + '&time_range=' + encodeURIComponent(JSON.stringify({ since, until }))
-      + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
-      + '&fields=campaign_id,campaign_name,spend,impressions,clicks,actions,action_values'
-      + '&limit=200' + tok;
-    campaigns = (await graphAll(cUrl, 2)).map(c => {
-      const name = c.campaign_name || '(ไม่มีชื่อ)';
-      return {
-        id: c.campaign_id || '', name,
-        /* ชื่อแคมเปญขึ้นต้นด้วยรหัสเดียวกับที่ติดไปกับลิงก์ เช่น "jay2026 · คอร์สเจ" → jay2026 */
-        key: String(name).split(/[\s·]+/)[0].toLowerCase(),
-        spend: +(+c.spend || 0).toFixed(2),
-        clicks: +c.clicks || 0,
-        impressions: +c.impressions || 0,
-        leads: pick(c.actions, T_LEAD),
-        buyClick: pickWin(c.actions, T_BUY, '7d_click'),
-        buyView:  pickWin(c.actions, T_BUY, '1d_view'),
-        valClick: +pickWin(c.action_values, T_BUY, '7d_click').toFixed(2),
-        valView:  +pickWin(c.action_values, T_BUY, '1d_view').toFixed(2)
-      };
-    }).filter(c => c.spend > 0 || c.impressions > 0);
-  } catch (e) { campaignNote = 'ดึงตัวเลขระดับแคมเปญไม่ได้ (' + (e.code || '?') + ')'; }
+  const campaignNote = campRes.err ? 'ดึงตัวเลขระดับแคมเปญไม่ได้ (' + (campRes.err.code || '?') + ')' : null;
+  const campaigns = (campRes.rows || []).map(c => {
+    const name = c.campaign_name || '(ไม่มีชื่อ)';
+    return {
+      id: c.campaign_id || '', name,
+      /* ชื่อแคมเปญขึ้นต้นด้วยรหัสเดียวกับที่ติดไปกับลิงก์ เช่น "jay2026 · คอร์สเจ" → jay2026 */
+      key: String(name).split(/[\s·]+/)[0].toLowerCase(),
+      spend: +(+c.spend || 0).toFixed(2),
+      clicks: +c.clicks || 0,
+      impressions: +c.impressions || 0,
+      leads: pick(c.actions, T_LEAD),
+      buyClick: pickWin(c.actions, T_BUY, '7d_click'),
+      buyView:  pickWin(c.actions, T_BUY, '1d_view'),
+      valClick: +pickWin(c.action_values, T_BUY, '7d_click').toFixed(2),
+      valView:  +pickWin(c.action_values, T_BUY, '1d_view').toFixed(2)
+    };
+  }).filter(c => c.spend > 0 || c.impressions > 0);
 
   /* ⑤ รายสัปดาห์ — นับจาก "วันเริ่มแคมเปญ" ไม่ใช่ย้อนหลัง 7 วัน (นัทเคาะเอง 15 ก.ย.)
      time_increment=7 แบ่งถังให้เองจากวันแรกของช่วงที่ขอ → ขอครั้งเดียวได้ทุกสัปดาห์ ไม่ต้องยิงทีละสัปดาห์
      06 ขึ้นงบเป็นขั้นบันไดรายสัปดาห์ → ต้องแบ่งให้ตรงกัน ถึงจะตอบได้ว่าเติมเงินแล้วดีขึ้นจริงไหม */
+  /* focus (แคมเปญที่ยังใช้เงินอยู่จริง) ได้มาจากจุดรวมพลด้านบนแล้ว · starts อยู่ในแคชรอบเดียวกัน ไม่ยิงซ้ำ */
   const starts = await getStarts(T, ACC);
-  /* แคมเปญที่ "กำลังใช้เงินอยู่ตอนนี้" เท่านั้น — ในบัญชีมีแคมเปญค้างสถานะเปิดจากปีก่อนอีกหลายตัว
-     ถ้าเอาทุกตัวมาหาวันเริ่ม ช่วงจะลากย้อนไปหลายเดือน และขอบสัปดาห์จะเพี้ยน (เจอจริงบนเว็บ 15 ก.ย.: ลากไปถึง มี.ค.) */
-  const focus = await activeSpenders(T, ACC);
   const weekFrom = focus.length ? focus[0].start : '';
   let weeks = [], weekNote = null;
   /* ขอทีละแคมเปญที่โฟกัส เพราะขอบสัปดาห์ต้องเริ่มจากวันเริ่มของแคมเปญนั้นเอง (ไม่ใช่ของตัวที่เก่าที่สุด)
-     จำกัดไม่เกิน 2 ตัว กันยิง Meta เกินจำเป็น */
-  for (const f of focus.slice(0, 2)) {
+     จำกัดไม่เกิน 2 ตัว กันยิง Meta เกินจำเป็น · 2 ตัวนี้ไม่เกี่ยวกัน → ยิงพร้อมกัน ไม่ต่อคิว */
+  const weekRes = await Promise.all(focus.slice(0, 2).map(async f => {
     try {
       const wUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign&time_increment=7'
         + '&time_range=' + encodeURIComponent(JSON.stringify({ since: f.start, until }))
@@ -292,7 +333,7 @@ async function fetchMeta(T, ACC, since, until) {
         + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
         + '&fields=campaign_id,campaign_name,spend,clicks,actions,action_values'
         + '&limit=200' + tok;
-      (await graphAll(wUrl, 3)).forEach(w => weeks.push({
+      return (await graphAll(wUrl, 3)).map(w => ({
         campId: w.campaign_id || f.id, name: w.campaign_name || f.name,
         key: String(w.campaign_name || f.name).split(/[\s·]+/)[0].toLowerCase(),
         from: w.date_start, to: w.date_stop,
@@ -302,8 +343,9 @@ async function fetchMeta(T, ACC, since, until) {
         valClick: +pickWin(w.action_values, T_BUY, '7d_click').toFixed(2),
         valView: +pickWin(w.action_values, T_BUY, '1d_view').toFixed(2)
       }));
-    } catch (e) { weekNote = 'ดึงตัวเลขรายสัปดาห์ไม่ได้ (' + (e.code || '?') + ')'; }
-  }
+    } catch (e) { weekNote = 'ดึงตัวเลขรายสัปดาห์ไม่ได้ (' + (e.code || '?') + ')'; return []; }
+  }));
+  weekRes.forEach(rows => { weeks = weeks.concat(rows); });
 
   return { ads, notStarted, campaigns, campaignNote, weeks, weekNote, weekFrom, focus, starts, spendByDay, thumbNote, fetchedAt: Date.now() };
 }
@@ -334,11 +376,12 @@ async function activeSpenders(T, ACC) {
   const hit = CACHE.get(key);
   if (hit && Date.now() - hit.fetchedAt < TTL) return hit.data;
   try {
-    const starts = await getStarts(T, ACC);
     const url = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign'
       + '&time_range=' + encodeURIComponent(JSON.stringify({ since: th(new Date(Date.now() - 29 * 864e5)), until: th(new Date()) }))
       + '&fields=campaign_id,campaign_name,spend&limit=200&access_token=' + encodeURIComponent(T);
-    const data = (await graphAll(url, 3))
+    /* 2 คำขอนี้ไม่ได้ใช้ผลของกันและกัน (วันเริ่มแคมเปญ กับ ยอดใช้ 30 วัน) → ถามพร้อมกัน */
+    const [starts, rows] = await Promise.all([getStarts(T, ACC), graphAll(url, 3)]);
+    const data = rows
       .map(r => ({ id: r.campaign_id, name: r.campaign_name || '', spend30: +r.spend || 0,
                    start: (starts[r.campaign_id] && starts[r.campaign_id].start) || '',
                    status: (starts[r.campaign_id] && starts[r.campaign_id].status) || '' }))
@@ -354,15 +397,20 @@ async function getMeta(T, ACC, since, until) {
   const hit = CACHE.get(key);
   if (hit && Date.now() - hit.fetchedAt < TTL) return { data: hit, cache: 'hit' };
   if (INFLIGHT.has(key)) return { data: await INFLIGHT.get(key), cache: 'shared' };
+  /* เครื่องเพิ่งตื่น = แรมว่าง แต่ของที่เครื่องก่อนหน้าดึงไว้ยังไม่หมดอายุ → ใช้ต่อได้เลย ไม่ต้องกวน Meta */
+  const shelf = await shelfGet(key);
+  if (shelf && Date.now() - shelf.fetchedAt < TTL) { CACHE.set(key, shelf.data); return { data: shelf.data, cache: 'shelf' }; }
   const p = fetchMeta(T, ACC, since, until);
   INFLIGHT.set(key, p);
   try {
     const data = await p;
     CACHE.set(key, data);
+    await shelfSet(key, data);
     return { data, cache: 'miss' };
   } catch (e) {
-    /* ติดลิมิต/ต่อไม่ได้ → ใช้ของเก่าที่เก็บไว้ ถ้ามี */
+    /* ติดลิมิต/ต่อไม่ได้ → ใช้ของเก่าที่เก็บไว้ ถ้ามี (แรมก่อน แล้วค่อยของบนชั้น แม้จะหมดอายุแล้ว) */
     if (hit) return { data: hit, cache: 'stale', errCode: e.code || '?' };
+    if (shelf) return { data: shelf.data, cache: 'stale-shelf', errCode: e.code || '?' };
     throw e;
   } finally { INFLIGHT.delete(key); }
 }
