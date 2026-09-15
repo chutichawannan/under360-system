@@ -369,7 +369,14 @@ function track(event, page){
     const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
     sb.from('web_events').insert({
       event, page,
-      utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+      utm_source:u.source||null, utm_medium:u.medium||null,
+      /* u360-track-content — ตาราง web_events ไม่มีคอลัมน์ utm_content
+         พับรหัสชิ้นงานเข้า campaign แทน (pack2026 → pack2026-bkk_c2_P112) จะได้แยกออกว่ามาจากรูปไหน
+         ตัวคั่นใช้ - ให้ตรงกับ jay.html และกับที่พับฝั่ง LIFF จะได้เทียบกันได้
+         🔴 ห้ามถอดออก — 06 ยิงแอกหลายรูปเพื่อวัดว่ารูปไหนขายได้ ถ้าไม่พับ ทุกคลิกจะกองรวมเป็น pack2026 เฉยๆ
+            (เจอจริง 15 ก.ย.: เก็บมา 33 แถว ไม่มีรหัสชิ้นงานสักตัว = วันนั้นตอบไม่ได้ว่ารูปไหนดี) */
+      utm_campaign:(function(){ var c=u.campaign||null, ct=(u.content||'').replace(/[^A-Za-z0-9._-]/g,'').slice(0,24);
+                                return c && ct ? c+'-'+ct : c; })(),
       referrer: document.referrer||null, ua: (navigator.userAgent||'').slice(0,200)
     }).then(()=>{},()=>{});
   }catch(e){}

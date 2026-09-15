@@ -664,7 +664,12 @@ function track(event, page){
     const u = JSON.parse(localStorage.getItem('u360_utm')||'{}');
     sb.from('web_events').insert({
       event, page,
-      utm_source:u.source||null, utm_medium:u.medium||null, utm_campaign:u.campaign||null,
+      utm_source:u.source||null, utm_medium:u.medium||null,
+      /* u360-track-content — ตาราง web_events ไม่มีคอลัมน์ utm_content
+         พับรหัสชิ้นงานเข้า campaign แทน (jay2026 → jay2026-a_p2_I096) จะได้แยกออกว่ามาจากรูปไหน
+         ตัวคั่นใช้ - ให้ตรงกับหน้าอื่นและกับที่พับฝั่ง LIFF จะได้เทียบกันได้ */
+      utm_campaign:(function(){ var c=u.campaign||null, ct=(u.content||'').replace(/[^A-Za-z0-9._-]/g,'').slice(0,24);
+                                return c && ct ? c+'-'+ct : c; })(),
       referrer: document.referrer||null, ua: (navigator.userAgent||'').slice(0,200)
     }).then(()=>{},()=>{});
   }catch(e){}
