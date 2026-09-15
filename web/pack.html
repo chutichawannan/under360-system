@@ -164,6 +164,24 @@ header .btn,header .btn-line,header a.btn-line{
   header nav a:not(.btn):not(.btn-line){display:none}
   header .btn,header .btn-line,header a.btn-line{padding:9px 14px!important;font-size:.86rem!important}
 }
+/* ── u360-pack-order (15 ก.ย. 2569) — แถบรูปหัวหน้า · ข้อดี 3 ข้อ · กล่องคูปอง ── */
+.heropics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
+.heropics img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--r);background:var(--soft)}
+@media(max-width:520px){.heropics{gap:7px}}
+.packs .sub2{color:var(--muted);margin:8px 0 0}
+.packs .ship{margin-top:18px;font-size:.9375rem;color:var(--muted)}
+.packs .ship b{color:var(--deep);font-family:'Prompt'}
+.why{padding:46px 0 10px}
+.whyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
+.why .w b{font-family:'Prompt';display:block;color:var(--deep);font-size:1.05rem;margin-bottom:4px}
+.why .w p{color:var(--muted);font-size:.9375rem}
+.claimsec{padding:30px 0 6px}
+.claim{display:flex;align-items:center;gap:18px;flex-wrap:wrap;background:#FFF8E1;border:1px dashed #E6B800;border-radius:var(--r);padding:20px 22px}
+.claim .ctext{flex:1;min-width:220px}
+.claim .ctext b{font-family:'Prompt';font-size:1.15rem;color:#8A6D00;display:block}
+.claim .ctext p{color:var(--muted);font-size:.9375rem;margin-top:3px}
+.claim .code{font-family:'Prompt';font-weight:700;font-size:1.6rem;color:#8A6D00;letter-spacing:.08em}
+.claim .got{font-size:.9375rem;color:var(--muted);margin-top:4px}
 /* ── u360-logo-fix (2 ก.ย. 2026) — โลโก้เป็นภาพแนวนอน 2.4:1 ที่มีชื่อร้านอยู่ในตัว
    ห้ามบังคับเป็นจัตุรัส/วงกลมอีก จะบีบจนอ่านไม่ออก ── */
 header .logo img,.nav .logo img{
@@ -189,23 +207,56 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h1>แพ็คกับข้าวฟรีซแพ็ค<br>เลือกเมนูเอง ส่งทั่วไทย</h1>
   <p class="lede">ปรุงเสร็จแช่แข็งทันทีจากครัวเรา เก็บได้นาน อุ่นแล้วกินได้เลย — มีข้าวอยู่แล้วที่บ้าน แค่เติมกับข้าวให้ครบมื้อ</p>
   <div class="facts">
-    <span class="fact">เริ่มเพียง <b>฿70</b> ต่อแพ็ค</span>
+    <span class="fact">แพ็คใหญ่เริ่ม <b id="fFrom">฿1,400</b></span>
     <span class="fact"><b id="fCount">20</b> เมนูให้เลือกเอง</span>
-    <span class="fact">แพ็คใหญ่ <b>ส่งฟรี</b></span>
+    <span class="fact">กรุงเทพฯ <b>ส่งฟรี</b> ทุกไซส์</span>
     <span class="fact">ส่ง<b>ทั่วไทย</b> รถควบคุมอุณหภูมิ</span>
+  </div>
+  <!-- u360-hero-pics — รูปอาหารจริงจากเมนูที่ขายอยู่ (ชุดเดียวกับที่โชว์ในแคตตาล็อกด้านล่าง ไม่ได้เลือกรูปใหม่เอง)
+       ⏳ รูปหน้าปกตัวจริงรอนัทเลือก — เปลี่ยนที่นี่ที่เดียวเมื่อได้รูปแล้ว -->
+  <div class="heropics" id="heroPics"></div>
+</div></section>
+
+<!-- ══ u360-pack-order (15 ก.ย. 2569) — ลำดับหน้าใหม่ตามที่นัทสั่งผ่าน 06 ══
+     เดิมแคตตาล็อก 31 ใบอยู่ก่อนแพ็ค → ต้องเลื่อน 17.7 จอถึงจะเจอของที่แอดโฆษณา (06 วัดเอง)
+     นัทสั่ง: "feed แค่จำเป็น · มีภาพอาหารดีๆ · บอกข้อดี · บอกว่ามีอะไรบ้าง เท่านั้น"
+     ⚠️ ที่แคตตาล็อกเคยอยู่บนสุดเพราะนัทเคยสั่งไว้เมื่อ 26 ส.ค. — คำสั่งใหม่ทับของเดิม อย่าสลับกลับเอง -->
+<section class="packs"><div class="wrap">
+  <h2>เลือกแพ็คที่ใช่ แล้วสั่งต่อในไลน์</h2>
+  <p class="sub2">เลือกเมนูเองได้ทุกไซส์ · ยิ่งแพ็คใหญ่ ยิ่งเฉลี่ยถูกลง</p>
+  <div class="packrow" id="packs"></div>
+  <p class="ship">🚚 <b>กรุงเทพฯ–ปริมณฑล ส่งฟรีทุกไซส์</b> · ต่างจังหวัด ไซส์ M และ L ส่งฟรี · ไซส์ S ค่าส่ง ฿100</p>
+</div></section>
+
+<!-- ══ ข้อดี 3 ข้อ — สั้นที่สุดเท่าที่พอให้ตัดสินใจ ห้ามยาวกว่านี้ ══ -->
+<section class="why"><div class="wrap">
+  <div class="whyrow">
+    <div class="w"><b>อุ่นแล้วกินได้เลย</b><p>ปรุงเสร็จแช่แข็งทันทีจากครัวเรา ไม่ต้องเตรียมอะไรเพิ่ม มีข้าวที่บ้านก็ครบมื้อ</p></div>
+    <div class="w"><b>เลือกเมนูเองทุกแพ็ค</b><p>ไม่ใช่เซ็ตตายตัว อยากได้อะไรเลือกเอง ไม่ถูกใจเมนูไหนก็ไม่ต้องเอา</p></div>
+    <div class="w"><b>เก็บได้นาน ส่งทั่วไทย</b><p>รถควบคุมอุณหภูมิ ตุนไว้ในช่องแข็ง หยิบกินวันไหนก็ได้</p></div>
+  </div>
+</div></section>
+
+<!-- ══ u360-claim — ปุ่มเก็บคูปอง (นัทคิดเอง 15 ก.ย. · 06 ขอ)
+     เดิมโค้ดแค่โชว์เฉยๆ ใครอ่านก็ได้ เราไม่ได้อะไรกลับมา
+     กดแล้ว: โชว์โค้ด + ก๊อปให้ + นับลง web_events + ยิงอีเวนต์เข้าพิกเซล (06 เอาไปทำกลุ่มยิงซ้ำได้)
+     ⛔ ไม่ขอเบอร์/ไม่ขออีเมล — นัทสั่ง "อย่าให้มีขั้นตอนเยอะจนคนถอย" ══ -->
+<section class="claimsec"><div class="wrap">
+  <div class="claim" id="claim">
+    <div class="ctext">
+      <b>คูปองส่วนลด ฿120</b>
+      <p>ใช้กับแพ็คตั้งแต่ ฿1,000 ขึ้นไป · กดเก็บไว้ก่อน ค่อยไปสั่งในไลน์ก็ได้</p>
+    </div>
+    <button class="btn btn-green" id="claimBtn" onclick="claimCoupon()">🎟️ เก็บคูปอง</button>
   </div>
 </div></section>
 
 <!-- ══ แคตตาล็อก — นัทสั่งให้อยู่ section แรกๆ ══ -->
 <section class="cat"><div class="wrap">
-  <h2>เลือกกับข้าวที่อยากกิน</h2>
-  <p class="sub">ทุกเมนูปรุงเสร็จแช่แข็งทันที · เลือกกี่แพ็คก็ได้ ไม่มีขั้นต่ำ</p>
+  <h2>มีกับข้าวอะไรให้เลือกบ้าง</h2>
+  <p class="sub">ทุกเมนูปรุงเสร็จแช่แข็งทันที · เลือกใส่แพ็คไหนก็ได้ · ซื้อแยกเป็นใบก็ได้ ไม่มีขั้นต่ำ</p>
   <div class="grid" id="grid"><p style="color:var(--muted)">กำลังโหลดเมนู…</p></div>
-</div></section>
-
-<section class="packs"><div class="wrap">
-  <h2>ซื้อเป็นแพ็คใหญ่ คุ้มกว่า + ส่งฟรี</h2>
-  <div class="packrow" id="packs"></div>
+  <div id="more" style="text-align:center;margin-top:22px"></div>
 </div></section>
 
 <section class="how"><div class="wrap">
@@ -334,6 +385,26 @@ function orderPack(el){
   return false;
 }
 
+/* ═══ u360-claim — ปุ่มเก็บคูปอง ═══
+   นัทสั่งเอง 15 ก.ย.: โค้ดเดิมแค่โชว์ ใครอ่านก็ได้ เราไม่ได้อะไรกลับ
+   กดแล้วได้ 3 อย่าง: ลูกค้าได้โค้ด (ก๊อปให้เลย) · เรานับได้ว่ากี่คนสนใจแม้ยังไม่ซื้อ · 06 ได้อีเวนต์ไว้ทำกลุ่มยิงซ้ำ
+   ⛔ ไม่ขอเบอร์/อีเมล = ไม่มีขั้นตอนให้ถอย · ⛔ นับคนละ 1 ครั้ง (กดซ้ำไม่ยิงซ้ำ กันตัวเลขเฟ้อ + กันเปลืองโควตา) */
+function claimCoupon(){
+  const box = document.getElementById('claim');
+  const first = !localStorage.getItem('u360_pack_claim');
+  if(first){
+    try{ localStorage.setItem('u360_pack_claim', new Date().toISOString()); }catch(e){}
+    track('coupon_claim', 'pack:' + LINE_PROMO_CODE);
+    try{ if(typeof fbq==='function') fbq('trackCustom','ClaimCoupon',{content_name:'pack', code:LINE_PROMO_CODE}); }catch(e){}
+  }
+  try{ navigator.clipboard && navigator.clipboard.writeText(LINE_PROMO_CODE); }catch(e){}
+  box.innerHTML = '<div class="ctext"><b>เก็บคูปองแล้ว 🎟️</b>'
+    + '<div class="code">' + esc(LINE_PROMO_CODE) + '</div>'
+    + '<div class="got">ก๊อปโค้ดให้แล้ว — แจ้งแอดมินตอนสั่งในไลน์ รับส่วนลด ฿120 (แพ็คตั้งแต่ ฿1,000)</div></div>'
+    + '<a class="btn btn-line" href="#" onclick="return orderNow(this)">ไปสั่งในไลน์ →</a>';
+  return false;
+}
+
 /* ═══ แคตตาล็อก ═══ */
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const thumb = (u,w) => String(u||'').replace('/object/public/','/render/image/public/') + '?width=' + w + '&resize=contain&quality=72';
@@ -352,7 +423,8 @@ async function loadCatalog(){
       .sort((a,b) => (parseInt(String(a.code).replace(/\D/g,''),10)||0) - (parseInt(String(b.code).replace(/\D/g,''),10)||0));
     if(!ITEMS.length){ g.innerHTML = '<p style="color:var(--muted)">ดูเมนูทั้งหมดได้ในแอป — กดปุ่มสั่งใน LINE ได้เลย</p>'; return; }
     document.getElementById('fCount').textContent = ITEMS.length;
-    g.innerHTML = ITEMS.map(i => `
+    const FIRST = 12;                       /* u360-pack-order — โชว์ก่อน 12 ใบ ที่เหลือกดดู (หน้าเดิมยาว 20 จอ) */
+    const cardOf = i => `
       <div class="card">
         <div class="ph"><span class="code">${esc(i.code)}</span>
           <img src="${thumb(i.image_urls[0],360)}" alt="${esc(i.name)} — แพ็คกับข้าว Under360" loading="lazy"></div>
@@ -360,7 +432,21 @@ async function loadCatalog(){
           <h3>${esc(i.name)}</h3>
           <div class="row"><span class="p">฿${i.price}</span><span id="c-${esc(i.code)}"></span></div>
         </div>
-      </div>`).join('');
+      </div>`;
+    g.innerHTML = ITEMS.slice(0, FIRST).map(cardOf).join('');
+    const more = document.getElementById('more');
+    if(more){
+      if(ITEMS.length > FIRST){
+        more.innerHTML = '<button class="add" style="padding:12px 24px" onclick="showAllItems()">ดูเมนูทั้งหมด '
+          + ITEMS.length + ' อย่าง ↓</button>';
+        window.showAllItems = function(){
+          g.innerHTML = ITEMS.map(cardOf).join('');
+          ITEMS.forEach(i => renderCell(i.code));
+          more.innerHTML = '';
+          track('cta_click','pack:see-all-menu');
+        };
+      } else more.innerHTML = '';
+    }
     ITEMS.forEach(i => renderCell(i.code));
   }catch(e){
     g.innerHTML = '<p style="color:var(--muted)">ตอนนี้ดูเมนูในแอปได้เลย — กดปุ่มสั่งใน LINE ด้านบน</p>';
@@ -474,6 +560,10 @@ async function loadPacks(){
     const packs = (data||[]).filter(p => /Protein Pack/i.test(p.name||''))
       .sort((a,b) => (a.qty||0)-(b.qty||0));
     if(!packs.length){ el.closest('section').style.display='none'; return; }
+    /* ป้ายบนหัวหน้า = ราคาไซส์ถูกสุดจาก DB จริง (ห้ามฮาร์ดโค้ด — แอดกับหน้าเว็บต้องพูดเลขเดียวกัน) */
+    const cheapest = Math.min(...packs.map(x => Number(x.base_price) || Infinity));
+    const fFrom = document.getElementById('fFrom');
+    if(fFrom && isFinite(cheapest)) fFrom.textContent = '฿' + cheapest.toLocaleString('th-TH');
     el.innerHTML = packs.map(p => {
       const size = (String(p.name).match(/Protein Pack\s*([SML])/i) || [])[1] || '';
       const base = Number(p.base_price) || 0;
@@ -483,7 +573,7 @@ async function loadPacks(){
         <div class="pr">฿${base.toLocaleString('th-TH')}</div>
         <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(base/p.qty)}</div>
         ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off} เหลือ ฿${(base-promo.off).toLocaleString('th-TH')}</div>` : ''}
-        ${p.free_shipping ? '<div class="ff">ส่งฟรี</div>' : ''}
+        ${p.free_shipping ? '<div class="ff">ส่งฟรี* <span style="color:var(--muted);font-weight:400">(ตจว. ไซส์ S ค่าส่ง ฿100)</span></div>' : ''}
         <a class="btn btn-line btn-sm packbtn" href="#" data-pkg="${esc(p.id)}" data-size="${esc(size)}"
            onclick="return orderPack(this)">สั่งไซส์ ${esc(size || 'นี้')} ใน LINE</a>
       </div>`;
@@ -496,7 +586,18 @@ async function loadPacks(){
   }catch(e){ el.closest('section').style.display='none'; }
 }
 
-loadCatalog();
+/* u360-hero-pics — หยิบ 3 ใบแรกจากลำดับเดิมของแคตตาล็อก ไม่ได้คัดรูปเอง
+   (รูปหน้าปกตัวจริงรอนัทเลือก — กฎบ้านนี้: ภาพที่คนนอกเห็นในนามร้านต้องผ่านตานัทก่อน) */
+function fillHeroPics(){
+  const box = document.getElementById('heroPics');
+  if(!box) return;
+  const pics = ITEMS.filter(i => Array.isArray(i.image_urls) && i.image_urls[0]).slice(0,3);
+  if(pics.length < 3){ box.style.display='none'; return; }
+  box.innerHTML = pics.map(i => '<img src="' + esc(thumb(i.image_urls[0], 420))
+    + '" alt="' + esc(i.name||'') + ' — แพ็คกับข้าว Under360" loading="lazy">').join('');
+}
+
+loadCatalog().then(fillHeroPics, fillHeroPics);
 loadPacks();
 if(!SHOW_CART){ document.getElementById('bar').style.display='none'; }
 </script>
