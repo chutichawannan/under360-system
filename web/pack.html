@@ -552,6 +552,8 @@ function submitWeb(){ goLine(); }
    ราคามาจาก `packages.base_price` ใน DB เสมอ — ห้ามฮาร์ดโค้ดราคาในหน้านี้ (06 ย้ำ 14 ก.ย.)
    ราคาตัวใหญ่ = ราคาจริง · ส่วนลดโค้ดโชว์เป็นบรรทัดรอง ไม่เอามาแทนราคาหลัก (ไม่งั้นแอดกับหน้าเว็บพูดคนละเลข)
    ปุ่มของแต่ละไซส์พา `?pkg=<id>` ไปด้วย → LIFF เปิดป๊อปแพคนั้นให้ทันที ไม่ต้องหาเองในเมนูรวม */
+const shipText = sz => sz === 'S' ? 'ส่งฟรีในกรุงเทพฯ · ต่างจังหวัด ฿100' : (sz ? 'ส่งฟรีทั่วไทย' : '');
+
 async function loadPacks(){
   const el = document.getElementById('packs');
   try{
@@ -573,7 +575,7 @@ async function loadPacks(){
         <div class="pr">฿${base.toLocaleString('th-TH')}</div>
         <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(base/p.qty)}</div>
         ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off} เหลือ ฿${(base-promo.off).toLocaleString('th-TH')}</div>` : ''}
-        ${p.free_shipping ? '<div class="ff">ส่งฟรี* <span style="color:var(--muted);font-weight:400">(ตจว. ไซส์ S ค่าส่ง ฿100)</span></div>' : ''}
+        ${shipText(size) ? `<div class="ff">${shipText(size)}</div>` : ``}
         <a class="btn btn-line btn-sm packbtn" href="#" data-pkg="${esc(p.id)}" data-size="${esc(size)}"
            onclick="return orderPack(this)">สั่งไซส์ ${esc(size || 'นี้')} ใน LINE</a>
       </div>`;
