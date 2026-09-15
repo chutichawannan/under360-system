@@ -273,7 +273,63 @@ async function fetchMeta(T, ACC, since, until) {
     }).filter(c => c.spend > 0 || c.impressions > 0);
   } catch (e) { campaignNote = 'ดึงตัวเลขระดับแคมเปญไม่ได้ (' + (e.code || '?') + ')'; }
 
-  return { ads, notStarted, campaigns, campaignNote, spendByDay, thumbNote, fetchedAt: Date.now() };
+  /* ⑤ รายสัปดาห์ — นับจาก "วันเริ่มแคมเปญ" ไม่ใช่ย้อนหลัง 7 วัน (นัทเคาะเอง 15 ก.ย.)
+     time_increment=7 แบ่งถังให้เองจากวันแรกของช่วงที่ขอ → ขอครั้งเดียวได้ทุกสัปดาห์ ไม่ต้องยิงทีละสัปดาห์
+     06 ขึ้นงบเป็นขั้นบันไดรายสัปดาห์ → ต้องแบ่งให้ตรงกัน ถึงจะตอบได้ว่าเติมเงินแล้วดีขึ้นจริงไหม */
+  const starts = await getStarts(T, ACC);
+  const weekFrom = campaignStartOf(starts, campaigns);
+  let weeks = [], weekNote = null;
+  if (weekFrom) {
+    try {
+      const wUrl = GRAPH + encodeURIComponent(ACC) + '/insights?level=campaign&time_increment=7'
+        + '&time_range=' + encodeURIComponent(JSON.stringify({ since: weekFrom, until }))
+        + '&action_attribution_windows=' + encodeURIComponent(JSON.stringify(['7d_click', '1d_view']))
+        + '&fields=campaign_id,campaign_name,spend,clicks,actions,action_values'
+        + '&limit=200' + tok;
+      weeks = (await graphAll(wUrl, 3)).map(w => ({
+        campId: w.campaign_id || '', name: w.campaign_name || '',
+        key: String(w.campaign_name || '').split(/[\s·]+/)[0].toLowerCase(),
+        from: w.date_start, to: w.date_stop,
+        spend: +(+w.spend || 0).toFixed(2), clicks: +w.clicks || 0,
+        leads: pick(w.actions, T_LEAD),
+        buyClick: pickWin(w.actions, T_BUY, '7d_click'), buyView: pickWin(w.actions, T_BUY, '1d_view'),
+        valClick: +pickWin(w.action_values, T_BUY, '7d_click').toFixed(2),
+        valView: +pickWin(w.action_values, T_BUY, '1d_view').toFixed(2)
+      }));
+    } catch (e) { weekNote = 'ดึงตัวเลขรายสัปดาห์ไม่ได้ (' + (e.code || '?') + ')'; }
+  }
+
+  return { ads, notStarted, campaigns, campaignNote, weeks, weekNote, weekFrom, starts, spendByDay, thumbNote, fetchedAt: Date.now() };
+}
+
+/* วันเริ่มแคมเปญ — ดึงจาก Meta เอง ไม่ฮาร์ดโค้ดวันที่ (06 ขอ) · เก็บแยกจากตัวเลข เพราะไม่ขึ้นกับช่วงที่เลือก */
+async function getStarts(T, ACC) {
+  const key = 'starts|' + ACC;
+  const hit = CACHE.get(key);
+  if (hit && Date.now() - hit.fetchedAt < TTL) return hit.data;
+  try {
+    const rows = await graphAll(GRAPH + encodeURIComponent(ACC) + '/campaigns'
+      + '?fields=id,name,start_time,stop_time,effective_status&limit=300&access_token=' + encodeURIComponent(T), 3);
+    const data = {};
+    rows.forEach(c => {
+      data[c.id] = { name: c.name || '', status: c.effective_status || '',
+                     start: String(c.start_time || '').slice(0, 10), stop: String(c.stop_time || '').slice(0, 10) };
+    });
+    CACHE.set(key, { data, fetchedAt: Date.now() });
+    return data;
+  } catch (e) { return (hit && hit.data) || {}; }
+}
+
+/* วันเริ่มของแคมเปญที่ "ยังวิ่งและใช้เงินอยู่จริง" — ใช้เป็นจุดตั้งต้นของทั้งแคมเปญและของสัปดาห์ที่ 1
+   ไม่เอาแคมเปญค้างจากปีก่อน (22 ตัวในบัญชี) มาลากให้ช่วงยาวเกินจริง */
+function campaignStartOf(starts, campaigns) {
+  const live = (campaigns || []).filter(c => c.spend > 0);
+  let best = '';
+  live.forEach(c => {
+    const s = (starts[c.id] && starts[c.id].start) || '';
+    if (s && (!best || s < best)) best = s;
+  });
+  return best;
 }
 
 async function getMeta(T, ACC, since, until) {
@@ -312,10 +368,27 @@ module.exports = async function handler(req, res) {
   const T   = process.env.META_TOKEN;
   const ACC = process.env.META_AD_ACCOUNT;
   const days = Math.min(90, Math.max(1, parseInt((req.query && req.query.days) || '7', 10) || 7));
-
   const until = th(new Date());
-  const since = th(new Date(Date.now() - (days - 1) * 864e5));
-  const out = { since, until, days, updatedAt: new Date().toISOString(), ads: [], totals: null, note: null };
+  let since = th(new Date(Date.now() - (days - 1) * 864e5));
+  let rangeMode = 'days';
+
+  /* ?range=campaign = "ทั้งแคมเปญ" — นับจากวันเริ่มแคมเปญถึงวันนี้ (นัทเคาะเอง 15 ก.ย.)
+     ทำไมต้องมี: ค่าเริ่มต้นเดิมคือ 7 วันย้อนหลัง ตัวเลขเลยลดลงเองทุกวันที่กรอบเลื่อน
+     นัทเจอเองว่า "เมื่อวานยังเห็น 15,000 วันนี้เหลือหมื่นเดียว" — เงินไม่ได้หาย แค่วันแรกตกออกจากกรอบ */
+  if (req.query && req.query.range === 'campaign' && process.env.META_TOKEN && process.env.META_AD_ACCOUNT) {
+    try {
+      const st = await getStarts(process.env.META_TOKEN, process.env.META_AD_ACCOUNT);
+      let best = '';
+      Object.keys(st).forEach(id => {
+        const c = st[id];
+        if (c.status === 'ACTIVE' && c.start && (!best || c.start < best)) best = c.start;
+      });
+      /* กันช่วงยาวเกินไป — แคมเปญค้างจากปีก่อนจะลากยาวเป็นปี ดึงข้อมูลหนักโดยไม่ได้ใช้ */
+      const floor = th(new Date(Date.now() - 180 * 864e5));
+      if (best) { since = best < floor ? floor : best; rangeMode = 'campaign'; }
+    } catch (e) { /* หาไม่ได้ก็ใช้ช่วงวันปกติ */ }
+  }
+  const out = { since, until, days, rangeMode, updatedAt: new Date().toISOString(), ads: [], totals: null, note: null };
 
   if (!T || !ACC) {
     out.setupNeeded = true;
@@ -356,8 +429,13 @@ module.exports = async function handler(req, res) {
   /* ── ② ออเดอร์จริงในช่วงเดียวกัน — นับที่ server ไม่ส่งแถวลงเบราว์เซอร์ ──
      🏆 ตัวชี้ขาดที่ Meta บอกเองไม่ได้ เพราะเราปิดการขายในไลน์ · ตัวนี้เท่านั้นคือ "ยืนยันใน DB" */
   try {
+    /* ดึงย้อนถึงวันเริ่มแคมเปญด้วย เพื่อให้ตารางรายสัปดาห์มีฝั่ง DB ครบ แม้ผู้ใช้เลือกช่วงสั้นกว่า
+       ตัวเลขของ "ช่วงที่เลือก" ยังนับเฉพาะใบที่อยู่ในช่วงนั้นเหมือนเดิม */
+    const qSince = (meta.weekFrom && meta.weekFrom < since) ? meta.weekFrom : since;
     const rows = await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,customer_name,line_display_name,source,source_campaign,source_content'
-      + '&created_at=gte.' + since + 'T00:00:00&total=gt.0&order=created_at.asc,id.asc', 10);
+      + '&created_at=gte.' + qSince + 'T00:00:00&total=gt.0&order=created_at.asc,id.asc', 10);
+    const dayOf = o => String(o.created_at || '').slice(0, 10);
+    const inRange = o => dayOf(o) >= since;
     const blank = () => ({ n: 0, rev: 0 });
     const byUtm = {}, adOrders = [];
     let matched = 0, revenue = 0;
@@ -368,22 +446,25 @@ module.exports = async function handler(req, res) {
     const untracked = { none: { n: 0, rev: 0 }, blank: { n: 0, rev: 0 }, admin: { n: 0, rev: 0 } };
     for (const o of rows) {
       const c = (o.source_campaign || '').trim();
-      if (c.indexOf('fb/paid/') !== 0) {
-        const t = +o.total || 0;
+      const t = +o.total || 0;
+      const isAd = c.indexOf('fb/paid/') === 0;
+      /* ยอดที่ตามรอยไม่ได้ นับเฉพาะใบในช่วงที่เลือก (ใบเก่ากว่านั้นดึงมาเพื่อทำตารางรายสัปดาห์เท่านั้น) */
+      if (!isAd && inRange(o)) {
         const bucket = String(o.source || '') === 'admin_manual' ? 'admin' : (!c ? 'blank' : (c.indexOf('direct/none') === 0 ? 'none' : null));
         if (bucket) { untracked[bucket].n++; untracked[bucket].rev += t; }
       }
       /* 🔴 นับเฉพาะแอดที่เสียเงิน — ขึ้นต้น fb/paid/ เสมอ (ig/social, web, broadcast, direct/none ไม่นับ) */
-      if (c.indexOf('fb/paid/') !== 0) continue;
-      matched++; revenue += +o.total || 0;
+      if (!isAd) continue;
       /* utm_content ของออเดอร์ — จาก source_content ถ้ามี ไม่มีก็ท้าย campaign (jay2026-a_n1_i034) */
       const k = ((o.source_content || '').trim() || (c.split('/').pop().split('-').pop() || '')).toLowerCase();
       /* รหัสแคมเปญ: fb/paid/jay2026-c2 → jay2026 (ตรงกับคำแรกของชื่อแคมเปญใน Meta) */
       const camp = c.slice('fb/paid/'.length).split('-')[0].toLowerCase();
-      adOrders.push({ o, k, camp });
+      adOrders.push({ o, k, camp, day: dayOf(o), inRange: inRange(o) });
+      if (!inRange(o)) continue;
+      matched++; revenue += t;
       if (!k) continue;
       byUtm[k] = byUtm[k] || { orders: 0, revenue: 0, new: blank(), old: blank(), jay: blank(), unknown: blank() };
-      byUtm[k].orders++; byUtm[k].revenue += +o.total || 0;
+      byUtm[k].orders++; byUtm[k].revenue += t;
     }
 
     /* แยกคนซื้อ 🆕/🔁/🥬 — พังก็ยังโชว์ยอดรวมได้ */
@@ -394,13 +475,19 @@ module.exports = async function handler(req, res) {
     catch (e) { cls = adOrders.map(x => ({ order: x.o, type: 'unknown', repeat: 0, items: [] })); out.buyerNote = 'แยกคนซื้อใหม่/เก่าไม่ได้ชั่วคราว'; }
     const adByUtm = {};
     for (const a of out.ads) if (a.utm && !adByUtm[a.utm]) adByUtm[a.utm] = a;
-    const byCamp = {};
+    const byCamp = {}, byWeekKey = {};
     cls.forEach((c, i) => {
       const o = c.order, k = adOrders[i].k, t = +o.total || 0;
+      const cm = adOrders[i].camp;
+      /* ฝั่ง DB ของตารางรายสัปดาห์ — เก็บทุกใบไม่ว่าจะอยู่ในช่วงที่เลือกหรือไม่ (แยกถังทีหลังตามวันที่) */
+      if (cm) {
+        const d = adOrders[i].day;
+        (byWeekKey[cm] = byWeekKey[cm] || []).push({ day: d, total: t, isNew: c.type === 'new' });
+      }
+      if (!adOrders[i].inRange) return;      /* สถิติของ "ช่วงที่เลือก" นับเฉพาะใบในช่วงนั้น */
       totalsByType[c.type].n++; totalsByType[c.type].rev += t;
       if (k && byUtm[k]) { byUtm[k][c.type].n++; byUtm[k][c.type].rev += t; }
       /* สะสมรายแคมเปญ — ยอดที่ "ยืนยันใน DB" ได้จริง + นับหัวลูกค้าใหม่ */
-      const cm = adOrders[i].camp;
       if (cm) {
         byCamp[cm] = byCamp[cm] || { orders: 0, revenue: 0, newBuyers: 0 };
         byCamp[cm].orders++; byCamp[cm].revenue += t;
@@ -432,6 +519,26 @@ module.exports = async function handler(req, res) {
     }).sort((a, b) => b.spend - a.spend);
     if (meta.campaignNote) out.campaignNote = meta.campaignNote;
 
+    /* ── u360-week — สัปดาห์ที่ 1/2/3 นับจากวันเริ่มแคมเปญ (นัทเคาะเอง 15 ก.ย.)
+       06 ขึ้นงบเป็นขั้นบันไดรายสัปดาห์ → แบ่งตรงกันถึงจะตอบได้ว่าเติมเงินแล้วดีขึ้นจริงไหม
+       สัปดาห์ที่ยังไม่จบต้องติดป้าย ไม่งั้นอ่านเหมือนสัปดาห์นั้นแย่ลง */
+    const seen = {};
+    out.weeks = (meta.weeks || [])
+      .slice().sort((a, b) => (a.from < b.from ? -1 : 1))
+      .map(w => {
+        const list = (byWeekKey[w.key] || []).filter(x => x.day >= w.from && x.day <= w.to);
+        const rev = list.reduce((s, x) => s + x.total, 0);
+        seen[w.key] = (seen[w.key] || 0) + 1;
+        return Object.assign({}, w, {
+          no: seen[w.key], dbOrders: list.length, dbRevenue: +rev.toFixed(2),
+          newBuyers: list.filter(x => x.isNew).length,
+          estProfit: +(rev * MARGIN - w.spend).toFixed(2), margin: MARGIN,
+          running: w.to >= until          /* สัปดาห์นี้ยังไม่จบ */
+        });
+      });
+    if (meta.weekNote) out.weekNote = meta.weekNote;
+    out.campaignStart = meta.weekFrom || null;
+
     ['none', 'blank', 'admin'].forEach(k => { untracked[k].rev = +untracked[k].rev.toFixed(2); });
     out.untracked = untracked;
 
@@ -452,6 +559,8 @@ module.exports = async function handler(req, res) {
     out.campaigns = (meta.campaigns || []).map(c => Object.assign({}, c,
       { dbOrders: 0, dbRevenue: 0, newBuyers: 0, estProfit: +(0 - c.spend).toFixed(2), margin: MARGIN }));
     if (meta.campaignNote) out.campaignNote = meta.campaignNote;
+    out.campaignStart = meta.weekFrom || null;
+    out.weeks = [];
     if (out.campaigns.length) out.campaignDbNote = 'อ่านออเดอร์จากฐานข้อมูลไม่ได้ตอนนี้ — ช่องยืนยันใน DB ยังไม่ใช่ของจริง';
   }
 

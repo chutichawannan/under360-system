@@ -77,6 +77,9 @@ table.camp{min-width:760px}
 .untrk ul{margin:6px 0 0 18px;color:var(--muted)}
 .untrk li{margin-top:3px}
 .untrk em{display:block;font-style:normal;color:var(--muted);font-size:.82rem;margin-top:8px;line-height:1.6}
+/* u360-week — ป้ายสัปดาห์ที่ยังไม่จบ */
+em.wip{font-style:normal;background:var(--amberbg);color:var(--amber);border-radius:6px;padding:1px 7px;font-size:.75rem;font-family:'Prompt';font-weight:600}
+em.dim2{display:block;font-style:normal;color:var(--muted);font-size:.75rem}
 table.camp td:first-child{min-width:190px}
 table.nb th:nth-child(3),table.nb td.items,table.nb th:nth-child(5),table.nb td.adsrc{text-align:left;white-space:normal;min-width:220px}
 .up{color:var(--red)} .down{color:var(--green)}
@@ -277,9 +280,16 @@ function u360pin(){ return U360PIN; }
 })();
 </script>
 <script>
-var DAYS = 7, AUDF = 'all', VIEW = 'concept', RUNF = 'all', LAST = null;
-try { AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept'; RUNF = localStorage.getItem('u360_ads_run') || 'all'; } catch(e){}
-var RANGES = [[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
+/* ค่าเริ่มต้น = ทั้งแคมเปญ (นัทเคาะเอง 15 ก.ย.)
+   เหตุผล: "7 วันย้อนหลัง" ทำให้ตัวเลขลดลงเองทุกวันที่กรอบเลื่อน ทั้งที่แคมเปญยังวิ่งและเงินไม่ได้หาย
+   นัทเจอเองว่า "เมื่อวานเห็น 15,000 วันนี้เหลือหมื่นเดียว" — วันแรกของแคมเปญตกออกจากกรอบไป */
+var DAYS = 'camp', AUDF = 'all', VIEW = 'concept', RUNF = 'all', LAST = null;
+try {
+  AUDF = localStorage.getItem('u360_ads_aud') || 'all'; VIEW = localStorage.getItem('u360_ads_view') || 'concept';
+  RUNF = localStorage.getItem('u360_ads_run') || 'all';
+  var _d = localStorage.getItem('u360_ads_days'); if (_d) DAYS = (_d === 'camp' ? 'camp' : (+_d || 7));
+} catch(e){}
+var RANGES = [['camp','ทั้งแคมเปญ'],[1,'วันนี้'],[7,'7 วัน'],[30,'30 วัน']];
 /* ความหมายชุด — ต้องตรงกับ AUD ใน web/api/ads-insights.js (06 แก้ 13 ก.ย.: เพิ่มชุด E เข้ากลุ่มคนใหม่) */
 var AUDS = [['all','ทั้งหมด'],['new','แอดที่ยิงคนใหม่ (A · D · E)'],['old','แอดที่ยิงคนเก่า (B · C)']];
 var VIEWS = [['concept','ตามคอนเซปต์'],['img','ตามรูป'],['ad','รายแอด']];
@@ -307,7 +317,7 @@ function segs(id, list, cur, onPick){
   });
 }
 function renderControls(){
-  segs('ranges', RANGES, DAYS, function(v){ DAYS = v; renderControls(); load(); });
+  segs('ranges', RANGES, DAYS, function(v){ DAYS = v; try{localStorage.setItem('u360_ads_days', String(v));}catch(e){} renderControls(); load(); });
   segs('auds', AUDS, AUDF, function(v){ AUDF = v; try{localStorage.setItem('u360_ads_aud', v);}catch(e){} renderControls(); if (LAST) draw(); });
   segs('views', VIEWS, VIEW, function(v){ VIEW = v; try{localStorage.setItem('u360_ads_view', v);}catch(e){} renderControls(); if (LAST) draw(); });
   segs('runs', RUNS, RUNF, function(v){ RUNF = v; try{localStorage.setItem('u360_ads_run', v);}catch(e){} renderControls(); if (LAST) draw(); });
@@ -315,7 +325,7 @@ function renderControls(){
 
 function load(){
   document.getElementById('foot').textContent = 'กำลังโหลด…';
-  fetch('/api/ads-insights?days=' + DAYS, { cache:'no-store', headers:{'x-ads-pin': u360pin()} })
+  fetch('/api/ads-insights?' + (DAYS === 'camp' ? 'range=campaign' : 'days=' + DAYS), { cache:'no-store', headers:{'x-ads-pin': u360pin()} })
     .then(function(r){ return r.json(); })
     .then(render)
     .catch(function(){ document.getElementById('body').innerHTML =
@@ -524,6 +534,7 @@ function campaignStrip(){
     + '<th>แคมเปญ</th><th>ลงทุน</th><th class="bth">✅ ยืนยันใน DB</th><th class="bth">🆕 ลูกค้าใหม่</th>'
     + '<th class="claimh">Meta: กดแอดแล้วซื้อ</th><th class="claimh">Meta: แค่เห็นแอด</th><th>กำไรโดยประมาณ</th>'
     + '</tr></thead><tbody>' + cs.map(row).join('') + '</tbody></table></div>'
+    + weekTable()
     + untrackedNote()
     + '<p class="fine">'
     + '<b>กำไรโดยประมาณ</b> = (ยอดที่ยืนยันใน DB × ' + pct + '%) − เงินที่ใช้จริง · '
@@ -533,6 +544,33 @@ function campaignStrip(){
     + 'ลงทุน = เงินที่ใช้จริง ไม่ใช่งบที่ตั้งไว้ (ในบัญชีมีแคมเปญค้างจากปีก่อนที่ตั้งงบไว้แต่ไม่ได้ใช้เงินจริง)'
     + (LAST.campaignDbNote ? '<br>⚠️ ' + esc(LAST.campaignDbNote) : '')
     + '</p>';
+}
+
+/* ── u360-week — ตารางรายสัปดาห์ นับจากวันเริ่มแคมเปญ (นัทเคาะเอง 15 ก.ย.)
+   06 ขึ้นงบเป็นขั้นบันไดรายสัปดาห์ → ตารางนี้ตอบว่า "เติมเงินแล้วดีขึ้นจริงไหม" */
+function weekTable(){
+  var ws = LAST.weeks || [];
+  if (!ws.length) return LAST.weekNote ? '<div class="nostart">⚠️ ' + esc(LAST.weekNote) + '</div>' : '';
+  var pct = Math.round((ws[0].margin || 0.33) * 100);
+  var d = function(s){ var p = String(s || '').split('-'); return p.length === 3 ? (+p[2]) + ' ' + ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'][(+p[1]) - 1] : s; };
+  return '<div class="h2row"><h2>ดูเป็นรายสัปดาห์</h2><span class="sub">นับจากวันเริ่มแคมเปญ ไม่ใช่ย้อนหลัง 7 วัน · เทียบได้ว่าเติมงบแล้วดีขึ้นไหม</span></div>'
+    + '<div class="tblwrap"><table class="camp"><thead><tr>'
+    + '<th>สัปดาห์</th><th>ลงทุน</th><th class="bth">✅ ยืนยันใน DB</th><th class="bth">🆕 ลูกค้าใหม่</th>'
+    + '<th class="claimh">Meta: กดแอดแล้วซื้อ</th><th class="claimh">Meta: แค่เห็นแอด</th><th>กำไรโดยประมาณ</th>'
+    + '</tr></thead><tbody>'
+    + ws.map(function(w){
+        return '<tr><td><b>สัปดาห์ ' + w.no + '</b> <span class="dim">' + d(w.from) + '–' + d(w.to) + '</span>'
+          + (w.running ? '<em class="wip"> ยังไม่ครบสัปดาห์</em>' : '')
+          + (ws.length > 1 ? '<em class="dim2">' + esc(w.name) + '</em>' : '') + '</td>'
+          + '<td>' + baht(w.spend) + '</td>'
+          + '<td class="btc">' + (w.dbOrders ? '<b>' + w.dbOrders + ' ใบ</b> · ' + baht(w.dbRevenue) : '<span class="dim">ยังไม่มี</span>') + '</td>'
+          + '<td class="btc">' + (w.newBuyers ? '<b>' + w.newBuyers + ' คน</b>' : '<span class="dim">0</span>') + '</td>'
+          + '<td class="claimc">' + (w.buyClick ? w.buyClick + ' ใบ · ' + baht(w.valClick) : '<span class="dim">0</span>') + '</td>'
+          + '<td class="claimc">' + (w.buyView ? w.buyView + ' ใบ · ' + baht(w.valView) : '<span class="dim">0</span>') + '</td>'
+          + '<td class="' + ((w.estProfit || 0) >= 0 ? 'win' : 'up') + '">' + ((w.estProfit || 0) >= 0 ? '+' : '−') + baht(Math.abs(w.estProfit || 0)) + '</td></tr>';
+      }).join('')
+    + '</tbody></table></div>'
+    + '<p class="fine">สัปดาห์ที่ติดป้าย <b>ยังไม่ครบสัปดาห์</b> ยังเก็บตัวเลขไม่ครบ อย่าเทียบกับสัปดาห์ที่จบแล้วตรงๆ · กำไรใช้มาร์จิ้นประมาณ ' + pct + '% เหมือนตารางบน</p>';
 }
 
 /* ── u360-untracked — "ยอดที่ตามรอยไม่ได้ ยังแยกไม่ออกว่ามาจากไหน" (06 ขอ · พี่ปืนเคาะ 15 ก.ย.)
