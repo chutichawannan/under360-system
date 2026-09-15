@@ -54,6 +54,9 @@ body{font-family:var(--sans);background:var(--bg);color:var(--ink);padding-botto
 .bt{flex:1;border:0;border-radius:9px;padding:7px 4px;font-family:var(--sans);font-size:12.5px;font-weight:700;cursor:pointer}
 .bt.pack{background:var(--g);color:#fff}
 .bt.part{background:var(--golds);color:#8A6220;border:1px solid #EFD9AE}
+/* ของที่ล็อก: เทาทั้งแถว แตะได้ (เพื่อให้เด้งข้อความบอกเหตุผล) แต่ไม่ติ๊ก */
+.row.lockrow{opacity:.45}
+.bt.lockbt{background:#E5E7EB;color:#6B7280;border-color:#E5E7EB}
 .bt.undo{background:#F3F4F6;color:var(--soft)}
 .code{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--g);width:52px;flex:0 0 52px;letter-spacing:.2px;line-height:1.3}
 .qty{font-family:var(--mono);font-size:15px;font-weight:700;color:var(--soft)}
@@ -244,6 +247,12 @@ function dLabel(ymd){
   return DOW[d.getUTCDay()]+' '+d.getUTCDate()+'/'+(d.getUTCMonth()+1);
 }
 function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+/* 🔒 จัดถุงได้เมื่อไหร่ (นัทเคาะ 15 ก.ย.)
+     วันที่เลยมาแล้ว / วันนี้ = จัดได้
+     วันข้างหน้า = ยังจัดไม่ได้ เพราะยอดยังไม่ปิด (ลูกค้ายังสั่งเพิ่มได้ถึง 6 โมงเย็นวันก่อนส่ง)
+   จัดก่อนยอดปิด = ใบที่มาทีหลังตกหล่น แล้วสต็อกเพี้ยนตามมา (เคสจริง 14 ก.ย.) */
+function canPack(ymd){ return String(ymd) <= thaiToday(); }
+function packLockMsg(){ return "ห้ามจัดล่วงหน้า · จัดได้เฉพาะวันส่งเท่านั้น"; }
 function toast(m){ const t=document.getElementById('toast'); t.textContent=m; t.classList.add('on'); clearTimeout(t._x); t._x=setTimeout(()=>t.classList.remove('on'),1900); }
 
 /* รหัสสั้นที่ครัวเรียกกันจริง (s1-s8 / d1-d5) — ไม่มีก็ใช้โค้ดเต็ม */
@@ -387,6 +396,11 @@ function isDone(o){ if(o.status==='ready'||o.status==='delivered') return true; 
    จะถูกอ่านเป็นของ "เมื่อวาน" แล้วป้ายด่วนหายทั้งที่เพิ่งสั่งจริง */
 function isUrgent(o){ return String(o.source||'')==='admin_manual' && thaiDateOf(o.created_at) >= dPlus(thaiToday(),-1); }
 
+/* แตะของที่ล็อกอยู่ — บอกเหตุผลเป็นประโยคเดียว ไม่ใช่เงียบ
+   ต้องบอกด้วยว่ารอถึงเมื่อไหร่ ไม่งั้นครัวไม่รู้ว่าต้องทำยังไงต่อ */
+function packLocked(){
+  toast(packLockMsg() + " · ใบวันนี้จัดได้ตามปกติ");
+}
 function go(v){ VIEW=v; ['pack','count','plan','admin'].forEach(x=>document.getElementById('nav-'+x).classList.toggle('on',x===v)); render(); }
 function pickDay(d){ DAY=d; render(); }
 
@@ -452,7 +466,15 @@ function viewPack(){
    +(mp.length?' <b>(สต็อก '+stock.length+' · ทำสด '+mp.length+')</b>':'')+'</div>'
    +'<div class="bar"><i style="width:'+(bills?Math.round(done/bills*100):0)+'%"></i></div>'
    +'<div class="bar-txt">จัดครบแล้ว '+done+'/'+bills+' ใบ</div>'
-   +'<a class="k2print" href="'+printUrl(DAY)+'" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:99px;background:#fff;color:#1F4D3A;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;width:auto;max-width:100%">🖨️ พิมพ์ใบจัดของ '+esc(dLabel(DAY))+'</a></div>';
+   + (canPack(DAY)?'':'<div class="bar-txt" style="color:#FDE68A;font-weight:800">🔒 ' + packLockMsg() + '</div>')
+   +'<a class="k2print" href="'+printUrl(DAY)+'" target="_blank" rel="noopener"'
+   + (canPack(DAY)?'':' onclick="toast(&quot;ใบนี้เป็นของวันข้างหน้า ยอดยังไม่ปิด · เอาไปจัดตอนนี้สต็อกจะไม่ตรง&quot;)"')+' style="display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:8px 16px;border-radius:99px;background:#fff;color:#1F4D3A;font-weight:700;font-size:14px;text-decoration:none;white-space:nowrap;width:auto;max-width:100%">🖨️ พิมพ์ใบจัดของ '+esc(dLabel(DAY))+'</a></div>';
+  /* วันที่เลยมาแล้วและยังมีใบค้าง = ของที่ออกจากตู้ไปแล้วแต่ระบบไม่รู้
+     ปล่อยค้างไว้ = เลขในตู้เกินจริงไปเรื่อย ๆ → ให้ปิดรวดเดียวได้ */
+  if(DAY < thaiToday() && done < bills){
+    h+='<div class="wrap"><button class="bt pack" style="width:100%" onclick="packAllDay()">✅ ติ๊กจัดครบทั้งวัน ('+(bills-done)+' ใบที่ยังค้าง)</button>'
+      +'<div class="hint">วันนี้เลยมาแล้ว — ติ๊กเพื่อปิดคิว ไม่กระทบเลขสต็อก</div></div>';
+  }
   const offs=mpRoundsOffOrder(DAY), mpAll=mpRoundsOn(DAY).length;
   if(offs.length){
     h+='<div class="wrap"><div class="sec">⚠️ Meal Plan ต้องส่ง'+esc(dLabel(DAY))+' แต่ใบลงวันอื่น ('+offs.length+' ราย) — ไม่อยู่ในรายการด้านล่าง</div>'
@@ -509,7 +531,8 @@ function cardHtml(o,urgent){
        เคสจริง 11 ก.ย.: S184 ปิดขายแล้ว ครัวบอกไม่มีของ แต่คุณ Golf ยังรออยู่ 2 กล่อง */
     const closed = !!(it.menu_item_id && m && m.is_available===false);
     const head = isMPHeadRow(it);
-    h+='<div class="row'+(on?' on':'')+(head?' mp':'')+'" onclick="tick(\''+o.id+'\',\''+it.id+'\','+q+')">'
+    /* ยังไม่ถึงวันส่ง = แตะแล้วไม่ติ๊ก แต่บอกเหตุผลทุกครั้ง ไม่ปล่อยให้งงว่าจอค้าง */
+    h+='<div class="row'+(on?' on':'')+(head?' mp':'')+(canPack(DAY)?'':' lockrow')+'" onclick="'+(canPack(DAY)?('tick(\''+o.id+'\',\''+it.id+'\','+q+')'):'packLocked()')+'">'
      +'<div class="code">'+esc(shortCode(m))+'</div>'
      +'<div class="nm">'+esc(String(m.name||it.menu_name||'').slice(0,34))
        +(closed?'<span class="flag">⚠️ ปิดขายแล้ว</span>':'')+'</div>'
@@ -521,7 +544,9 @@ function cardHtml(o,urgent){
   h+='<div class="acts">';
   if(!packed){
     if(dn>0&&dn<b) h+='<button class="bt part" onclick="markPartial(\''+o.id+'\')">📦 จัดเสร็จบางส่วน '+dn+'/'+b+'</button>';
-    h+='<button class="bt pack" onclick="markPacked(\''+o.id+'\')">✅ จัดกล่องเสร็จ</button>';
+    h+= canPack(DAY)
+      ? '<button class="bt pack" onclick="markPacked(\''+o.id+'\')">✅ จัดกล่องเสร็จ</button>'
+      : '<button class="bt pack lockbt" onclick="packLocked()">🔒 ยังจัดไม่ได้</button>';
   }else{
     h+='<button class="bt undo" onclick="markUnpack(\''+o.id+'\')">↩ ยังไม่จัด</button>';
   }
@@ -555,6 +580,18 @@ async function markUnpack(oid){
   toast('ย้อนกลับเป็นยังไม่จัดแล้ว');
 }
 /* บางส่วน = ยืนยันจำนวนที่ติ๊กไว้ตอนนี้ ให้มีร่องรอยว่าจัดไปแล้วกี่กล่อง ใบยังไม่ปิด */
+/* ติ๊กทั้งวันรวดเดียว — ใช้กับวันที่เลยมาแล้วเท่านั้น
+   ถามยืนยันก่อน เพราะถ้าจริง ๆ ยังไม่ได้จัด เลขในตู้จะเกินและต้องไปนับใหม่ */
+async function packAllDay(){
+  if(DAY >= thaiToday()){ toast("ใช้ได้เฉพาะวันที่เลยมาแล้ว"); return; }
+  if(!needUser()) return;
+  const list = ordersOn(DAY).filter(o=>!isDone(o));
+  if(!list.length){ toast("ไม่มีใบค้างแล้ว"); return; }
+  if(!confirm("ติ๊กจัดครบ " + list.length + " ใบของ" + dLabel(DAY) + "?" + String.fromCharCode(10) +
+     "ระบบจะถือว่าของออกจากตู้ไปแล้วทั้งหมด — ถ้าจริง ๆ ยังไม่ได้จัด เลขในตู้จะเกิน ต้องให้ครัวนับใหม่")) return;
+  for(const o of list){ await markPacked(o.id); }
+  toast("ติ๊กครบ " + list.length + " ใบแล้ว");
+}
 async function markPartial(oid){
   if(!needUser()) return;
   const o=ORDERS.find(x=>x.id===oid); if(!o) return;

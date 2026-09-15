@@ -2267,7 +2267,15 @@ function renderPkgSelectGrouped(){
     const repeat = g.allow_repeat !== false;
     /* เรียง/ติดป้ายแบบเดียวกับหน้าเมนูหลัก — ลูกค้าคอร์สเลือกเมนูตรงนี้ ถ้าไม่บอกว่าเมนูไหนรอบไหน
        จะเห็นของ 2 สัปดาห์ปนกันโดยไม่รู้ตัว (16 ส.ค. มีของรอบ 10-16 กับ 17-23 ขายพร้อมกันจริง) */
-    const eligible=sortWeeklyFirst(pkgGroupEligible(g).filter(mi=>!q || (mi.name||'').toLowerCase().includes(q) || (mi.code||'').toLowerCase().includes(q)));
+    /* 🙈 ของหมดวันนี้ไม่ต้องโชว์เลย (นัทสั่ง 15 ก.ย.) — เดิมโชว์เทา ๆ กดไม่ได้
+       ยกเว้นตัวที่ลูกค้าเลือกไว้แล้ว ต้องโชว์ต่อ ไม่งั้นของหายไปต่อหน้าโดยไม่บอก */
+    const eligible=sortWeeklyFirst(pkgGroupEligible(g)
+      .filter(mi=>!q || (mi.name||'').toLowerCase().includes(q) || (mi.code||'').toLowerCase().includes(q))
+      .filter(mi=>{
+        if((sel[mi.code]||0)>0) return true;
+        const _s=pkgStockLeft(mi.code);
+        return _s.unlimited || _s.stock>0;
+      }));
     /* เมนูในกลุ่มเท่ากับจำนวนกล่องพอดี (คอร์สเจ: รอบ 1 มี 9 เมนู 9 กล่อง) → มีปุ่มลัด
        ลูกค้าไม่ต้องกดทีละเมนู 30 ครั้ง กดชุดเดียวแล้วค่อยแก้เฉพาะตัวที่ไม่กิน */
     const _canAll = !_clr && (g.count||1) > 1 && eligible.length === (g.count||1) && selN < (g.count||1);
