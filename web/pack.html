@@ -593,8 +593,8 @@ function fillHeroPics(){
   if(!box) return;
   const pics = ITEMS.filter(i => Array.isArray(i.image_urls) && i.image_urls[0]).slice(0,3);
   if(pics.length < 3){ box.style.display='none'; return; }
-  box.innerHTML = pics.map(i => '<img src="' + esc(thumb(i.image_urls[0], 420))
-    + '" alt="' + esc(i.name||'') + ' — แพ็คกับข้าว Under360" loading="lazy">').join('');
+  box.innerHTML = pics.map(i => '<img src="' + esc(thumb(i.image_urls[0], 320))
+    + '" alt="' + esc(i.name||'') + ' — แพ็คกับข้าว Under360" fetchpriority="high" decoding="async">').join('');
 }
 
 loadCatalog().then(fillHeroPics, fillHeroPics);
