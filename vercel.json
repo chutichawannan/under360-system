@@ -85,6 +85,10 @@
       "destination": "/pwa/k2.html"
     },
     {
+      "source": "/db2",
+      "destination": "/db2.html"
+    },
+    {
       "source": "/db",
       "destination": "/main_database_v2.html"
     },
