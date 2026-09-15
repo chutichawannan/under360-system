@@ -166,12 +166,15 @@ header .btn,header .btn-line,header a.btn-line{
 }
 /* ── u360-pack-order (15 ก.ย. 2569) — แถบรูปหัวหน้า · ข้อดี 3 ข้อ · กล่องคูปอง ── */
 .heropics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:22px}
-.heropics img{width:100%;aspect-ratio:1/1;object-fit:cover;border-radius:var(--r);background:var(--soft)}
+.heropics img{width:100%;height:auto;aspect-ratio:1/1;object-fit:cover;border-radius:var(--r);background:var(--soft)}
 @media(max-width:520px){.heropics{gap:7px}}
 .packs .sub2{color:var(--muted);margin:8px 0 0}
 .packs .ship{margin-top:18px;font-size:.9375rem;color:var(--muted)}
 .packs .ship b{color:var(--deep);font-family:'Prompt'}
 .why{padding:46px 0 10px}
+.whygrid{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:26px;align-items:center}
+.whypic{border-radius:var(--r);width:100%;height:auto;object-fit:cover}
+@media(max-width:760px){.whygrid{grid-template-columns:1fr;gap:18px}.whypic{max-height:260px;object-position:center 42%}}
 .whyrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:20px}
 .why .w b{font-family:'Prompt';display:block;color:var(--deep);font-size:1.05rem;margin-bottom:4px}
 .why .w p{color:var(--muted);font-size:.9375rem}
@@ -209,12 +212,17 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <div class="facts">
     <span class="fact">แพ็คใหญ่เริ่ม <b id="fFrom">฿1,400</b></span>
     <span class="fact"><b id="fCount">20</b> เมนูให้เลือกเอง</span>
+    <span class="fact">เมนูใหม่ <b>5 อย่าง</b> ทุกสัปดาห์</span>
     <span class="fact">กรุงเทพฯ <b>ส่งฟรี</b> ทุกไซส์</span>
     <span class="fact">ส่ง<b>ทั่วไทย</b> รถควบคุมอุณหภูมิ</span>
   </div>
-  <!-- u360-hero-pics — รูปอาหารจริงจากเมนูที่ขายอยู่ (ชุดเดียวกับที่โชว์ในแคตตาล็อกด้านล่าง ไม่ได้เลือกรูปใหม่เอง)
-       ⏳ รูปหน้าปกตัวจริงรอนัทเลือก — เปลี่ยนที่นี่ที่เดียวเมื่อได้รูปแล้ว -->
-  <div class="heropics" id="heroPics"></div>
+  <!-- u360-hero-pics — รูปที่นัท polish มาเอง (ชุด regen 6 · 15 ก.ย. 2569) นัทสั่งให้เอามาใช้
+       ใส่เป็นไฟล์ในเว็บตรงๆ ไม่ดึงจาก DB → ขึ้นทันทีที่เปิดหน้า ไม่มีกล่องเทารอโหลด -->
+  <div class="heropics">
+    <img src="/img/pack/dish1.jpg" width="560" height="747" alt="ผัดพริกแกงไก่ — แพ็คกับข้าว Under360" fetchpriority="high" decoding="async">
+    <img src="/img/pack/dish2.jpg" width="560" height="747" alt="ไก่ผัดเปรี้ยวหวาน — แพ็คกับข้าว Under360" fetchpriority="high" decoding="async">
+    <img src="/img/pack/dish3.jpg" width="560" height="747" alt="แกงเขียวหวาน — แพ็คกับข้าว Under360" fetchpriority="high" decoding="async">
+  </div>
 </div></section>
 
 <!-- ══ u360-pack-order (15 ก.ย. 2569) — ลำดับหน้าใหม่ตามที่นัทสั่งผ่าน 06 ══
@@ -230,10 +238,15 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 
 <!-- ══ ข้อดี 3 ข้อ — สั้นที่สุดเท่าที่พอให้ตัดสินใจ ห้ามยาวกว่านี้ ══ -->
 <section class="why"><div class="wrap">
-  <div class="whyrow">
-    <div class="w"><b>อุ่นแล้วกินได้เลย</b><p>ปรุงเสร็จแช่แข็งทันทีจากครัวเรา ไม่ต้องเตรียมอะไรเพิ่ม มีข้าวที่บ้านก็ครบมื้อ</p></div>
-    <div class="w"><b>เลือกเมนูเองทุกแพ็ค</b><p>ไม่ใช่เซ็ตตายตัว อยากได้อะไรเลือกเอง ไม่ถูกใจเมนูไหนก็ไม่ต้องเอา</p></div>
-    <div class="w"><b>เก็บได้นาน ส่งทั่วไทย</b><p>รถควบคุมอุณหภูมิ ตุนไว้ในช่องแข็ง หยิบกินวันไหนก็ได้</p></div>
+  <div class="whygrid">
+    <img class="whypic" src="/img/pack/wide.jpg" width="1000" height="1333"
+         alt="กับข้าวพร้อมผักเคียง — แพ็คกับข้าว Under360" loading="lazy" decoding="async">
+    <div class="whyrow">
+      <div class="w"><b>อุ่นแล้วกินได้เลย</b><p>ปรุงเสร็จแช่แข็งทันทีจากครัวเรา ไม่ต้องเตรียมอะไรเพิ่ม มีข้าวที่บ้านก็ครบมื้อ</p></div>
+      <div class="w"><b>เมนูใหม่ 5 อย่างทุกสัปดาห์</b><p>ไม่ซ้ำของเดิม เปลี่ยนใหม่ทุกอาทิตย์ — สั่งประจำก็ไม่เบื่อ</p></div>
+      <div class="w"><b>เลือกเมนูเองทุกแพ็ค</b><p>ไม่ใช่เซ็ตตายตัว อยากได้อะไรเลือกเอง ไม่ถูกใจเมนูไหนก็ไม่ต้องเอา</p></div>
+      <div class="w"><b>เก็บได้นาน ส่งทั่วไทย</b><p>รถควบคุมอุณหภูมิ ตุนไว้ในช่องแข็ง หยิบกินวันไหนก็ได้</p></div>
+    </div>
   </div>
 </div></section>
 
@@ -254,7 +267,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
 <!-- ══ แคตตาล็อก — นัทสั่งให้อยู่ section แรกๆ ══ -->
 <section class="cat"><div class="wrap">
   <h2>มีกับข้าวอะไรให้เลือกบ้าง</h2>
-  <p class="sub">ทุกเมนูปรุงเสร็จแช่แข็งทันที · เลือกใส่แพ็คไหนก็ได้ · ซื้อแยกเป็นใบก็ได้ ไม่มีขั้นต่ำ</p>
+  <p class="sub">ทุกเมนูปรุงเสร็จแช่แข็งทันที · เลือกใส่แพ็คไหนก็ได้ · ซื้อแยกเป็นใบก็ได้ ไม่มีขั้นต่ำ<br>
+     <b>มีเมนูใหม่ 5 อย่างทุกสัปดาห์ ไม่ซ้ำของเดิม</b></p>
   <div class="grid" id="grid"><p style="color:var(--muted)">กำลังโหลดเมนู…</p></div>
   <div id="more" style="text-align:center;margin-top:22px"></div>
 </div></section>
@@ -588,18 +602,7 @@ async function loadPacks(){
   }catch(e){ el.closest('section').style.display='none'; }
 }
 
-/* u360-hero-pics — หยิบ 3 ใบแรกจากลำดับเดิมของแคตตาล็อก ไม่ได้คัดรูปเอง
-   (รูปหน้าปกตัวจริงรอนัทเลือก — กฎบ้านนี้: ภาพที่คนนอกเห็นในนามร้านต้องผ่านตานัทก่อน) */
-function fillHeroPics(){
-  const box = document.getElementById('heroPics');
-  if(!box) return;
-  const pics = ITEMS.filter(i => Array.isArray(i.image_urls) && i.image_urls[0]).slice(0,3);
-  if(pics.length < 3){ box.style.display='none'; return; }
-  box.innerHTML = pics.map(i => '<img src="' + esc(thumb(i.image_urls[0], 320))
-    + '" alt="' + esc(i.name||'') + ' — แพ็คกับข้าว Under360" fetchpriority="high" decoding="async">').join('');
-}
-
-loadCatalog().then(fillHeroPics, fillHeroPics);
+loadCatalog();
 loadPacks();
 if(!SHOW_CART){ document.getElementById('bar').style.display='none'; }
 </script>
