@@ -452,6 +452,7 @@ module.exports = async function handler(req, res) {
     } catch (e) { /* หาไม่ได้ก็ใช้ช่วงวันปกติ */ }
   }
   const out = { since, until, days, rangeMode, updatedAt: new Date().toISOString(), ads: [], totals: null, note: null };
+  const T0 = Date.now(); const lap = {};
 
   if (!T || !ACC) {
     out.setupNeeded = true;
@@ -461,8 +462,10 @@ module.exports = async function handler(req, res) {
 
   /* ── ① ตัวเลขจาก Meta (ผ่านที่เก็บ 15 นาที) ── */
   let meta;
+  const tMeta = Date.now();
   try {
     const g = await getMeta(T, ACC, since, until);
+    lap.meta = Date.now() - tMeta;
     meta = g.data;
     out.metaFetchedAt = new Date(meta.fetchedAt).toISOString();
     out.cache = g.cache;
@@ -495,6 +498,7 @@ module.exports = async function handler(req, res) {
     /* ดึงย้อนถึงวันเริ่มแคมเปญด้วย เพื่อให้ตารางรายสัปดาห์มีฝั่ง DB ครบ แม้ผู้ใช้เลือกช่วงสั้นกว่า
        ตัวเลขของ "ช่วงที่เลือก" ยังนับเฉพาะใบที่อยู่ในช่วงนั้นเหมือนเดิม */
     const qSince = (meta.weekFrom && meta.weekFrom < since) ? meta.weekFrom : since;
+    const tOrders = Date.now();
     const rows = await sbAll('orders?select=id,order_number,total,created_at,customer_id,customer_phone,customer_name,line_display_name,source,source_campaign,source_content'
       + '&created_at=gte.' + qSince + 'T00:00:00&total=gt.0&order=created_at.asc,id.asc', 10);
     const dayOf = o => String(o.created_at || '').slice(0, 10);
@@ -533,9 +537,12 @@ module.exports = async function handler(req, res) {
     /* แยกคนซื้อ 🆕/🔁/🥬 — พังก็ยังโชว์ยอดรวมได้ */
     const totalsByType = { new: blank(), old: blank(), jay: blank(), unknown: blank() };
     const newList = [];
+    lap.orders = Date.now() - tOrders;
+    const tCls = Date.now();
     let cls;
     try { cls = await classifyAdOrders(adOrders.map(x => x.o)); }
     catch (e) { cls = adOrders.map(x => ({ order: x.o, type: 'unknown', repeat: 0, items: [] })); out.buyerNote = 'แยกคนซื้อใหม่/เก่าไม่ได้ชั่วคราว'; }
+    lap.classify = Date.now() - tCls;
     const adByUtm = {};
     for (const a of out.ads) if (a.utm && !adByUtm[a.utm]) adByUtm[a.utm] = a;
     const byCamp = {}, byWeekKey = {};
@@ -674,6 +681,8 @@ module.exports = async function handler(req, res) {
     if (a.frequency > FLAG_FREQ && a.impressions >= FREQ_MIN_IMP) a.flags.push('เห็นซ้ำเกิน ' + FLAG_FREQ + ' — วนคนเดิม');
   }
 
+  lap.total = Date.now() - T0;
+  out.ms = lap;          /* จับเวลาแต่ละช่วง — ให้ 06 กับเราอ่านได้ว่าที่ช้าอยู่ตรงไหน ไม่ต้องเดา */
   res.end(JSON.stringify(out));
 };
 
