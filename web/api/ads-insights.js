@@ -181,6 +181,15 @@ async function classifyAdOrders(adOrders) {
                       "d · พ1 · เจที่ไม่ต้องฝืนกิน (คาร์รูเซล 4 ใบ)"   → d_p1_carousel
                       "a · นอกชุด · เจปีนี้มีครบทุกมื้อ ไม่ต้องหาเอง (I060)" → a_x_i060
    ชื่อเก่า (ก่อน 11 ก.ย.): "a5 · 30 เมนู" → รหัส a5 (ตรงกับ source_content ของออเดอร์เก่า เช่น c2) */
+/* ชุดโฆษณายุคใหม่ตั้งชื่อเป็นคำไทยตรงๆ ("N · คนใหม่ รวม 3 กลุ่ม") ไม่ใช่ตัวอักษร a-e แล้ว
+   ใช้คำในชื่อชุดตัดสินว่าเป็นคนใหม่หรือคนเก่า — ตรงกว่าเดาจากตัวอักษร */
+function audFromAdset(adset) {
+  const t = String(adset || '');
+  if (t.indexOf('คนใหม่') >= 0) return 'new';
+  if (t.indexOf('คนเก่า') >= 0) return 'old';
+  return AUD[t.trim().charAt(0).toLowerCase()] || '';
+}
+
 function parseName(name) {
   const raw = String(name || '');
   const parts = raw.split(' · ').map(s => s.trim());
@@ -200,6 +209,26 @@ function parseName(name) {
   const m = p0.match(/^([a-e])(\d+)$/);
   if (m) return { set: m[1], aud: AUD[m[1]] || '', code: p0, codeKey: p0,
                   concept: parts.slice(1).join(' · '), img: '', utm: p0, legacy: true };
+
+  /* ชื่อแอดที่ไม่มีตัวอักษรชุดนำหน้า: "<รหัสรูป> · <คอนเซปต์> (I080)"
+     06 ตั้งชื่อแบบนี้ตั้งแต่เปลี่ยนมาใช้ชุด "N · คนใหม่ รวม 3 กลุ่ม"
+     เจอจริง 15 ก.ย.: 10 จาก 55 แอดอ่านชื่อไม่ออกเลย → ไม่มี utm → ผูกออเดอร์รายแอดไม่ได้ทั้งกลุ่ม
+     อ่านเท่าที่มี (รหัสรูป + คอนเซปต์ + เลขรูป) · ตัวอักษรชุดไปเอาจากชื่อชุดแทน (audFromAdset)
+     utm ที่ได้ไม่มีตัวอักษรชุด เช่น p2_i096 — ตอนจับคู่ออเดอร์มีตัวถอดคำนำหน้าให้แล้ว */
+  if (parts.length >= 2) {
+    const rest2 = parts.slice(1).join(' · ');
+    const m2 = rest2.match(/\(([^()]*)\)\s*$/);
+    const tag2 = m2 ? m2[1].trim() : '';
+    const img2 = /^I\d+$/i.test(tag2) ? tag2.toUpperCase()
+               : (tag2.indexOf('คาร์รูเซล') === 0 || /carousel/i.test(tag2)) ? 'carousel' : '';
+    const code2 = parts[0];
+    const key2 = code2 === 'นอกชุด' ? 'x' : ((ROMAN[code2.charAt(0)] || '') + code2.slice(1)).toLowerCase();
+    if (img2 && key2) {
+      return { set: '', aud: '', code: code2, codeKey: key2,
+               concept: (m2 ? rest2.slice(0, m2.index) : rest2).trim(), img: img2,
+               utm: (key2 + '_' + img2).toLowerCase(), legacy: false, noSet: true };
+    }
+  }
   return { set: '', aud: '', code: '', codeKey: '', concept: raw, img: '', utm: '', legacy: true };
 }
 
@@ -272,6 +301,8 @@ async function fetchMeta(T, ACC, since, until) {
     return Object.assign({
       id: d.ad_id || '', ad: d.ad_name || '(ไม่มีชื่อ)', campaign: d.campaign_name || '', adset: d.adset_name || ''
     }, n, {
+      /* ชื่อแอดไม่ได้บอกชุด → เอากลุ่มเป้าหมายจากชื่อชุดโฆษณา (ไม่งั้นตัวกรอง คนใหม่/คนเก่า จะมองไม่เห็นแอดพวกนี้) */
+      aud: n.aud || audFromAdset(d.adset_name),
       spend: +spend.toFixed(2), impressions: imp, reach: +d.reach || 0, frequency: +(+d.frequency || 0).toFixed(2),
       clicks, cpc: clicks ? +(spend / clicks).toFixed(2) : 0, ctr: imp ? +((clicks / imp) * 100).toFixed(2) : 0,
       leads, costPerLead: leads ? +(spend / leads).toFixed(2) : null,
@@ -543,8 +574,21 @@ module.exports = async function handler(req, res) {
     try { cls = await classifyAdOrders(adOrders.map(x => x.o)); }
     catch (e) { cls = adOrders.map(x => ({ order: x.o, type: 'unknown', repeat: 0, items: [] })); out.buyerNote = 'แยกคนซื้อใหม่/เก่าไม่ได้ชั่วคราว'; }
     lap.classify = Date.now() - tCls;
+    /* ลิงก์แอดของ 06 ใส่ตัวอักษรชุดนำหน้า (a_p2_i096) แต่ชื่อแอดในเมต้าตัดออกแล้ว (p2_i096)
+       → ทำดัชนี 2 ชั้น: ตรงตัว และแบบถอดคำนำหน้า a-e ออก ไม่งั้นออเดอร์ของแอดกลุ่มใหม่หายหมด */
+    const stripSet = k => String(k || '').replace(/^[a-e]_/, '');
     const adByUtm = {};
-    for (const a of out.ads) if (a.utm && !adByUtm[a.utm]) adByUtm[a.utm] = a;
+    for (const a of out.ads) if (a.utm) {
+      if (!adByUtm[a.utm]) adByUtm[a.utm] = a;
+      const alt = stripSet(a.utm);
+      if (alt !== a.utm && !adByUtm[alt]) adByUtm[alt] = a;
+    }
+    /* ยอดของ utm ที่ออเดอร์ส่งมา ต้องไปรวมกับคีย์เดียวกับที่แอดใช้ */
+    Object.keys(byUtm).forEach(k => {
+      const alt = stripSet(k);
+      if (alt === k || !adByUtm[alt] || byUtm[alt]) return;
+      byUtm[alt] = byUtm[k];
+    });
     const byCamp = {}, byWeekKey = {};
     cls.forEach((c, i) => {
       const o = c.order, k = adOrders[i].k, t = +o.total || 0;
