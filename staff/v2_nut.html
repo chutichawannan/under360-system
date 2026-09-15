@@ -95,7 +95,7 @@
   </div>
 <script>'use strict';
 // Presentation only: query parameters select a mock role, never authorization.
-const role=new URLSearchParams(location.search).get('role')==='employee'?'employee':'owner';
+const role=(window.U360_ROLE==='employee')?'employee':'owner';
 const page=document.body.dataset.page;
 document.querySelector('#exit').addEventListener('click',()=>{location.href='/staff/v2';});
 document.querySelectorAll('[data-role]').forEach(button=>button.addEventListener('click',()=>{location.href='/staff/v2/home?role='+button.dataset.role;}));

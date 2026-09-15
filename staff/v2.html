@@ -8,7 +8,7 @@
   <title>Under360 • เข้าสู่ตัวอย่าง</title>
   <meta name="description" content="ต้นแบบหน้าแรก Under360 สำหรับรีวิวดีไซน์">
   <meta name="robots" content="noindex, nofollow, noarchive">
-  <script src="/staff/auth.js"></script>
+  
   <style>@font-face{font-family:"LINE Seed Sans TH";src:url('/staff/assets/fonts/LINESeedSansTH_W_Rg.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
 @font-face{font-family:"LINE Seed Sans TH";src:url('/staff/assets/fonts/LINESeedSansTH_W_Bd.woff2') format('woff2');font-style:normal;font-weight:700;font-display:swap}
 @font-face{font-family:"LINE Seed Sans TH";src:url('/staff/assets/fonts/LINESeedSansTH_W_XBd.woff2') format('woff2');font-style:normal;font-weight:800;font-display:swap}
@@ -57,14 +57,14 @@
   <div class="site-shell">
     <header class="site-header">
       <a class="brand" href="index.html" aria-label="Under360 กลับไปเลือกมุมมอง">UNDER<span>360<svg viewBox="0 0 45 13" aria-hidden="true"><path d="M5 3 Q22 20 40 3"/></svg></span></a>
-      <div class="header-actions"><span class="preview-tag">ตัวอย่างดีไซน์</span><button id="exit" class="text-button" hidden>เปลี่ยนมุมมอง <span aria-hidden="true">↗</span></button></div>
+      <div class="header-actions"><span class="preview-tag" id="who">โถงหลังบ้าน</span><button id="exit" class="text-button" hidden>เปลี่ยนมุมมอง <span aria-hidden="true">↗</span></button></div>
     </header>
     <main id="app">
     <section class="login-layout" aria-labelledby="page-title">
       <div class="welcome-art"><div class="welcome-copy"><span class="small-note">ยินดีต้อนรับกลับบ้าน</span><h2>อาหารดี<br>เริ่มที่ทีมเรา</h2></div><div class="scene scene-nut" role="img" aria-label="โต๊ะทำงานอบอุ่น พร้อมต้นไม้ สมุด และแก้วกาแฟ"></div></div>
       <div class="login-content"><span class="section-note">Under360 / พื้นที่ทำงานของทีม</span><h1 id="page-title" tabindex="-1">เริ่มวันดี ๆ <br>ไปด้วยกัน</h1><p class="intro">ทุกเรื่องของร้าน อยู่ใกล้แค่เอื้อม</p>
-        <div class="review-panel"><h2>เลือกมุมมองเพื่อดูตัวอย่าง</h2><p>ลองเปิดหน้าแรกในบทบาทของคุณ</p><button class="role-button employee" data-role="employee"><span><strong>ดูแบบพนักงาน</strong><small>5 ทางเข้า สำหรับงานของทีม</small></span><span class="round-arrow" aria-hidden="true">→</span></button><button class="role-button owner" data-role="owner"><span><strong>ดูแบบเจ้าของ</strong><small>6 ทางเข้า รวมถึงห้องนัท</small></span><span class="round-arrow" aria-hidden="true">→</span></button></div>
-        <p class="prototype-note">นี่คือหน้ารีวิวดีไซน์ ยังไม่ใช่การเข้าสู่ระบบจริง<br>ไม่ต้องใช้อีเมลหรือรหัสผ่าน</p>
+        <div class="review-panel"><h2>เข้าสู่พื้นที่ทำงาน</h2><p id="g-note">ใช้บัญชี Google ของร้าน</p><button class="role-button employee" id="g-login"><span><strong>เข้าสู่ระบบด้วย Google</strong><small id="g-sub">กดครั้งเดียว จำไว้ในเครื่องนี้</small></span><span class="round-arrow" aria-hidden="true">→</span></button><button class="role-button owner" id="g-out" hidden><span><strong>ออกจากระบบ</strong><small>เปลี่ยนไปใช้บัญชีอื่น</small></span><span class="round-arrow" aria-hidden="true">→</span></button></div>
+        <p class="prototype-note">เข้าได้เฉพาะบัญชีที่เจ้าของร้านอนุญาตไว้<br>ไม่ต้องจำรหัสผ่านอะไรทั้งนั้น</p>
       </div>
     </section>
   </main>
@@ -72,7 +72,7 @@
   </div>
 <script>'use strict';
 // Presentation only: query parameters select a mock role, never authorization.
-const role=new URLSearchParams(location.search).get('role')==='employee'?'employee':'owner';
+const role=(window.U360_ROLE==='employee')?'employee':'owner';
 const page=document.body.dataset.page;
 document.querySelector('#exit').addEventListener('click',()=>{location.href='/staff/v2';});
 document.querySelectorAll('[data-role]').forEach(button=>button.addEventListener('click',()=>{location.href='/staff/v2/home?role='+button.dataset.role;}));
@@ -92,5 +92,30 @@ document.querySelectorAll('[data-connect]').forEach(link=>link.addEventListener(
  dialog.querySelector('h2').textContent=labels[link.dataset.connect];dialog.showModal();
 }));
 </script>
+<script>
+(function(){
+ var SB='https://zdartbvhbvqlwzwyyiia.supabase.co';
+ var KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+ var STORE='u360_gauth', HOME='/staff/v2/home';
+ function saved(){ try{ var s=JSON.parse(localStorage.getItem(STORE)||'null'); if(s&&s.email&&s.exp&&Date.now()<s.exp) return s; }catch(e){} return null; }
+ var s=saved();
+ if(s){
+   document.getElementById('who').textContent=s.email;
+   document.getElementById('g-note').textContent='เข้าอยู่แล้วในชื่อ '+s.email;
+   document.querySelector('#g-login strong').textContent='เข้าพื้นที่ทำงาน';
+   document.getElementById('g-sub').textContent='ไปที่หน้าแรก';
+   document.getElementById('g-login').onclick=function(){ location.href=HOME; };
+   var out=document.getElementById('g-out'); out.hidden=false;
+   out.onclick=function(){ try{ localStorage.removeItem(STORE); }catch(e){} location.reload(); };
+ } else {
+   document.getElementById('g-login').onclick=function(){
+     location.href=SB+'/auth/v1/authorize?provider=google&redirect_to='+encodeURIComponent(location.origin+HOME);
+   };
+   /* สวิตช์ Google ปิดอยู่ = บอกตรงๆ ไม่ปล่อยให้กดแล้วเงียบ */
+   fetch(SB+'/auth/v1/settings',{headers:{apikey:KEY}}).then(function(r){return r.json();}).then(function(x){
+     if(!(x&&x.external&&x.external.google)) document.getElementById('g-sub').textContent='ยังเปิดใช้ไม่ได้ — ใช้รหัส 4 ตัวที่หน้าอื่นไปก่อน';
+   }).catch(function(){});
+ }
+})();</script>
 </body>
 </html>

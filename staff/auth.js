@@ -23,6 +23,14 @@
     'ploy.thunyathorn@gmail.com'
   ];
 
+  /* ใครเห็นห้องนัทได้บ้าง — ตัดสินจากอีเมลจริง ไม่ใช่ปุ่มที่ใครกดก็ได้ */
+  var OWNERS = ['chutichawannan@gmail.com', 'ploy.thunyathorn@gmail.com', 'under360food@gmail.com', 'flidty.c@gmail.com'];
+
+  function publish(email) {
+    window.U360_EMAIL = email || '';
+    window.U360_ROLE = OWNERS.indexOf(String(email || '').toLowerCase()) >= 0 ? 'owner' : 'employee';
+  }
+
   function saved() {
     try { var s = JSON.parse(localStorage.getItem(STORE) || 'null');
       if (s && s.email && s.exp && Date.now() < s.exp) return s; } catch (e) {}
@@ -51,6 +59,8 @@
 
   /* ยังไม่ได้เปิดสวิตช์ Google → ถอยไปใช้รหัส 4 ตัวเดิม ไม่ปล่อยให้หน้าเปิดโล่ง */
   function fallbackPin(why) {
+    publish('');
+    window.U360_ROLE = 'owner';
     try { localStorage.removeItem(STORE); } catch (e) {}
     var s = document.createElement('script');
     s.src = '/gate.js';
@@ -91,6 +101,7 @@
           return;
         }
         try { localStorage.setItem(STORE, JSON.stringify({ email: email, exp: exp || (Date.now() + 12 * 3600000) })); } catch (e) {}
+        publish(email);
         show();
       })
       .catch(function (e) { askLogin('เข้าไม่สำเร็จ — ' + e.message); });
@@ -98,7 +109,8 @@
   }
 
   if (fromHash()) return;
-  if (saved()) return;                       /* เคยเข้าแล้ว ผ่านเลย */
+  var s0 = saved();
+  if (s0) { publish(s0.email); return; }                       /* เคยเข้าแล้ว ผ่านเลย */
   if (location.hash.indexOf('error') >= 0) { askLogin('Google ปฏิเสธการเข้าสู่ระบบ'); return; }
 
   hide();
