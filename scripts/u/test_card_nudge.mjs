@@ -120,7 +120,7 @@ console.log(NL + '⑦ แถบชวนเติมโผล่ตอนไห�
 
 console.log(NL + '⑧ ตั้งค่าได้โดยไม่ต้องแก้โค้ด (พี่ปืนขอ)');
 t('อ่านจาก kitchen_data', src.includes("const CARDMIN_KEY = 'card_min_total';"), true);
-t('อยู่ใน batch โหลด config เดิม', src.includes('ORDERGIFT_KEY, CARDMIN_KEY]'), true);
+t('อยู่ใน batch โหลด config เดิม', src.includes('ORDERGIFT_KEY, CARDMIN_KEY'), true);
 t('ไม่มีตัวเลขเพดานฝังตายในโค้ด', /cardMinTotal\(\) *[><=]+ *[0-9]{3,}/.test(src), false);
 t('ยอดเปลี่ยน = คิดใหม่ทุกครั้ง', src.includes('renderCardNudge(); refreshPayMethods();'), true);
 

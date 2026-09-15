@@ -494,6 +494,21 @@ body{background:#fff!important}
 .col-scroll::-webkit-scrollbar{display:none;}
 #homeGrid .col-scroll{padding-right:0!important;} /* left padding set via inline style in JS */
 .sec-title-row{padding:16px 16px 8px!important;}
+/* ข้อเสนอท้ายตะกร้า — สะดุดตาพอให้เห็น แต่ไม่แย่งปุ่มยืนยัน
+   รูปซ้าย ข้อความกลาง ปุ่มขวา = แตะนิ้วโป้งได้ในคลิกเดียว */
+.offer{display:flex;align-items:center;gap:11px;background:#FFFBEB;border:1.5px solid #F5E4A8;
+  border-radius:14px;padding:11px;margin:0 0 12px}
+.offer img{width:56px;height:56px;border-radius:10px;object-fit:cover;flex-shrink:0}
+.offer-txt{flex:1;min-width:0}
+.offer-lbl{font-size:11px;font-weight:800;color:#B45309;letter-spacing:.02em}
+.offer-nm{font-size:13.5px;font-weight:700;color:#16211B;line-height:1.4;margin-top:1px}
+.offer-pr{font-size:12.5px;color:#6B7280;margin-top:2px}
+.offer-pr b{color:#B45309;font-size:15px;font-weight:800}
+.offer-pr s{color:#9CA3AF;margin-left:5px}
+.offer-btn{flex-shrink:0;background:#B45309;color:#fff;border:0;border-radius:10px;
+  padding:10px 14px;font-size:13px;font-weight:800;font-family:inherit;min-height:44px}
+.offer-got{background:#ECFDF5;border-color:#A7F3D0}
+.offer-got .offer-lbl{color:#047857}
 .col-card{border-radius:16px;overflow:hidden;position:relative;cursor:pointer;flex-shrink:0;}
 .col-card img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;}
 .col-card.fmt-square{width:230px;height:230px;}
@@ -1118,6 +1133,7 @@ body{background:#fff!important}
     </div>
   </div>
   <div class="fixbot nonav">
+    <div id="conf-offer"></div>
     <button class="btn-p" id="sub-btn-confirm" onclick="submitOrder()">ยืนยันและส่งออเดอร์</button>
   </div>
 </div>
@@ -2009,6 +2025,9 @@ const ORDERGIFT_KEY = 'order_gifts';
      หรือแบบละเอียด          { "min": 1500, "hint_within": 500 }
    ไม่มีคีย์นี้ = ปิด = เกณฑ์ชนิดของล้วนเหมือนเดิมทุกบรรทัด */
 const CARDMIN_KEY = 'card_min_total';
+/* ข้อเสนอท้ายตะกร้า — { code, price, label, note, max, active } · ไม่มี = ไม่มีข้อเสนอ */
+const OFFER_KEY = 'checkout_offer';
+let checkoutOffer = null;
 let cardMinCfg = null;
 const cardMinTotal  = () => { const v = cardMinCfg; if(!v) return 0;
   return Number(typeof v === 'object' ? v.min : v) || 0; };
@@ -3211,7 +3230,7 @@ async function init() {
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
   const PKGSET_KEY = 'pkg_sets';   // กลุ่มแพคสำหรับลิงก์แอด: { "<ชื่อกลุ่ม>": {title, subtitle, ids:[...]} }
 const MAKE_KEY = 'k2_make';   // ใบสั่งงานครัว: { menu_id: {n, from:'YYYY-MM-DD'} }
-const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, PKGSET_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY];
+const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, PKGSET_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY, OFFER_KEY];
   const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),
     sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
@@ -3347,6 +3366,8 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     pkgGifts     = (cfgMap[PKGGIFT_KEY] && typeof cfgMap[PKGGIFT_KEY]==='object') ? cfgMap[PKGGIFT_KEY] : {};
     pkgQuota     = (cfgMap[PKGQUOTA_KEY] && typeof cfgMap[PKGQUOTA_KEY]==='object') ? cfgMap[PKGQUOTA_KEY] : {};
     orderGifts   = (cfgMap[ORDERGIFT_KEY] && typeof cfgMap[ORDERGIFT_KEY]==='object') ? cfgMap[ORDERGIFT_KEY] : {};
+    /* อ่านพลาด/ไม่มีคีย์ = ไม่มีข้อเสนอ ลูกค้ายังสั่งได้ปกติทุกอย่าง */
+    checkoutOffer = (cfgMap[OFFER_KEY] && typeof cfgMap[OFFER_KEY]==='object') ? cfgMap[OFFER_KEY] : null;
     if (Object.keys(pkgQuota).length) loadPkgSold();   // ไม่ await — ไม่ให้ตัวนับถ่วงหน้าแรก
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
@@ -4634,6 +4655,60 @@ function pickSlot(key) {
 // ══════════════════════════════════════
 // 📋 CONFIRM RENDER
 // ══════════════════════════════════════
+/* 🎁 ข้อเสนอท้ายตะกร้า — โผล่ตอนจะจ่ายเงินเท่านั้น
+   เงื่อนไขที่ต้องผ่านครบถึงจะโชว์ (ไม่ผ่านข้อไหน = ไม่โชว์ ไม่ใช่โชว์แบบกดไม่ได้):
+     · เปิดใช้อยู่ · มีเมนูนี้จริงและยังเปิดขาย · ของยังไม่หมด · ตะกร้าไม่ว่าง
+   มีในตะกร้าแล้ว = เปลี่ยนเป็นป้ายบอกว่าได้ราคาพิเศษแล้ว ไม่ให้กดเพิ่มอีก
+   (ไม่จำกัด = ราคาพิเศษกลายเป็นราคาจริงทันที) */
+function offerItem(){
+  const o = checkoutOffer;
+  if(!o || o.active === false) return null;
+  const code = String(o.code || '').trim();
+  if(!code) return null;
+  const mi = menuItems.find(m => m.code === code);
+  if(!mi || mi.is_available === false) return null;
+  const st = effectiveStock(mi);
+  if(st != null && Number(st) <= 0) return null;   // ของหมดแล้วอย่าเพิ่งเชียร์
+  return { o: o, mi: mi };
+}
+function offerInCart(mi){ return cart.some(c => c.id === mi.id); }
+function renderOffer(){
+  const box = document.getElementById('conf-offer');
+  if(!box) return;
+  box.innerHTML = '';
+  const hit = offerItem();
+  if(!hit || !cart.length) return;
+  const { o, mi } = hit;
+  const price = Number(o.price || 0), full = Number(mi.price || 0);
+  const got = offerInCart(mi);
+  const img = (mi.image_urls && mi.image_urls[0]) ? `<img src="${thumbUrl(mi.image_urls[0],160)}" loading="lazy" onerror="imgFallback(this)">` : '';
+  box.innerHTML = got
+    ? `<div class="offer offer-got">${img}<div class="offer-txt">
+        <div class="offer-lbl">✓ ได้ราคาพิเศษแล้ว</div>
+        <div class="offer-nm">${h(mi.name)}</div>
+        <div class="offer-pr"><b>฿${price.toLocaleString()}</b>${full>price?`<s>฿${full.toLocaleString()}</s>`:''}</div>
+      </div></div>`
+    : `<div class="offer">${img}<div class="offer-txt">
+        <div class="offer-lbl">🎁 ${h(o.label || 'รับสิทธิพิเศษ')}</div>
+        <div class="offer-nm">${h(o.note || mi.name)}</div>
+        <div class="offer-pr"><b>฿${price.toLocaleString()}</b>${full>price?`<s>฿${full.toLocaleString()}</s>`:''}</div>
+      </div><button type="button" class="offer-btn" onclick="takeOffer()">เพิ่ม</button></div>`;
+}
+/* กดรับข้อเสนอ — เข้าตะกร้าด้วย "ราคาข้อเสนอ" ตรง ๆ
+   🔴 ต้องเป็นราคานี้ตั้งแต่ในตะกร้า เพราะตอนส่งออเดอร์ ระบบเอาราคาในตะกร้าไปลง order_items ตรง ๆ
+      ถ้าใส่ราคาเต็มแล้วไปลดทีหลัง บัญชีกับรายงานจะเพี้ยน */
+function takeOffer(){
+  const hit = offerItem();
+  if(!hit) return;
+  const { o, mi } = hit;
+  if(offerInCart(mi)){ toast('มีในตะกร้าแล้ว'); renderOffer(); return; }
+  const max = Number(o.max || 1);
+  cart.push({ id: mi.id, name: mi.name, price: Number(o.price || 0),
+              code: mi.code || '', qty: max > 0 ? 1 : 1, offer: true });
+  saveCart(); updateCartUI();
+  toast('เพิ่มแล้ว ฿' + Number(o.price||0).toLocaleString());
+  renderConfirm(document.getElementById('i-addr') ? document.getElementById('i-addr').value : '');
+}
 function renderConfirm(addr) {
   const slot = SLOTS.find(s => s.key===selSlot);
   // 🔴 เดิมใช้ cartTotal() = ยอดสินค้าล้วน ไม่รวมค่าส่ง ไม่หักส่วนลด แต่ติดป้ายว่า "รวมทั้งหมด"
@@ -4653,6 +4728,7 @@ function renderConfirm(addr) {
     }).join('');
 
   // ยอดแยกบรรทัด — ให้ตรงกับหน้าตะกร้าทุกตัว (ใช้กติกาเดียวกับ updateCartTotals)
+  renderOffer();   // ข้อเสนอท้ายตะกร้า (ไม่มี config = ไม่มีอะไรเปลี่ยน)
   document.getElementById('conf-sub').textContent = '฿' + o.sub.toLocaleString();
   const dRow = document.getElementById('conf-disc-row'), dEl = document.getElementById('conf-disc');
   if (dRow && dEl) {
