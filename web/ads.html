@@ -93,6 +93,15 @@ table.nb th:nth-child(3),table.nb td.items,table.nb th:nth-child(5),table.nb td.
   .card.claim .v{font-size:1.2rem}
 }
 
+/* u360-fold — ส่วนที่พับเก็บ (นัท: อินฟอเยอะไป) */
+.fold{margin-top:22px;border:1px solid var(--hair);border-radius:12px;background:var(--paper)}
+.fold>summary{cursor:pointer;padding:13px 16px;font-family:'Prompt';font-weight:600;font-size:.95rem;list-style:none}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:'▸ ';color:var(--muted)}
+.fold[open]>summary::before{content:'▾ '}
+.fold>summary .dim{font-weight:400;font-size:.85rem}
+.fold>*:not(summary){padding:0 16px 16px}
+.fold .h2row{margin-top:0}
 .h2row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;flex-wrap:wrap;margin:26px 0 0}
 .h2row h2{font-size:1.05rem}
 .h2row .sub{font-size:.82rem;color:var(--muted)}
@@ -316,6 +325,15 @@ function segs(id, list, cur, onPick){
     b.onclick = function(){ onPick(isNaN(+b.dataset.v) ? b.dataset.v : +b.dataset.v); };
   });
 }
+/* u360-fold — นัทบอกเอง 15 ก.ย.: "หลายๆ อย่างมัน too much ไปหน่อย อินฟอเยอะไป"
+   กติกาที่ใช้ตัด: สิ่งที่ตอบคำถาม "คุ้มไหม" ต้องเห็นทันที · ที่เหลือพับเก็บ กดดูได้
+   ⛔ ห้ามพับ 2 อย่างนี้ (06 ย้ำ): ตารางลงทุน-ได้กลับรายแคมเปญ · ช่อง Meta เคลม แยกจาก ยืนยันใน DB */
+function fold(title, html, hint){
+  if(!html) return '';
+  return '<details class="fold"><summary>' + title
+    + (hint ? ' <span class="dim">' + hint + '</span>' : '') + '</summary>' + html + '</details>';
+}
+
 function renderControls(){
   segs('ranges', RANGES, DAYS, function(v){ DAYS = v; try{localStorage.setItem('u360_ads_days', String(v));}catch(e){} renderControls(); load(); });
   segs('auds', AUDS, AUDF, function(v){ AUDF = v; try{localStorage.setItem('u360_ads_aud', v);}catch(e){} renderControls(); if (LAST) draw(); });
@@ -399,10 +417,10 @@ function draw(){
     /* ใบที่ไม่มีทั้ง customer_id และเบอร์ = บอกไม่ได้ว่าใคร → โชว์แยก ไม่งั้น 3 ป้ายรวมกันไม่เท่ายอดใบ */
     + ((bt.unknown && bt.unknown.n) ? ' · ❔ ระบุไม่ได้ ' + bt.unknown.n : '');
 
+  var todayLine = 'วันนี้ทั้งบัญชี ' + baht(t.today)
+    + (t.yesterday!=null ? ' · ' + (diff>=0 ? '<span class="up">▲ '+baht(Math.abs(diff))+'</span>' : '<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน' : '');
   document.getElementById('cards').innerHTML = ''
-    + card('ใช้ไปวันนี้ (ทั้งบัญชี)', baht(t.today),
-        (t.yesterday!=null ? (diff>=0?'<span class="up">▲ '+baht(Math.abs(diff))+'</span>':'<span class="down">▼ '+baht(Math.abs(diff))+'</span>') + ' เทียบเมื่อวาน ('+baht(t.yesterday)+')' : ''))
-    + card('ใช้ทั้งช่วง' + scope, baht(g.spend), d.since + ' → ' + d.until + ' · คลิก ' + num(g.clicks))
+    + card('ใช้ทั้งช่วง' + scope, baht(g.spend), d.since + ' → ' + d.until + ' · คลิก ' + num(g.clicks) + '<br>' + todayLine)
     + card('ต่อ 1 คนกดลิงก์เข้าไลน์' + scope, g.cpl!=null ? baht(g.cpl) : '—',
         g.leads ? num(g.leads) + ' คนกดลิงก์เข้าไลน์ · ตัวนี้สำคัญกว่าต่อคลิก' : 'ยังไม่มีคนกดลิงก์เข้าไลน์ในช่วงนี้', 'hero')
     + card('🆕 คนใหม่จากแอด' + scope, num((bt['new']||{}).n) + ' คน · ' + baht((bt['new']||{}).rev),
@@ -413,9 +431,13 @@ function draw(){
         '⚠️ ไม่ใช่ยอดจริง — Meta นับคนที่แค่เห็นแอดแล้วไปซื้อเองด้วย · ห้ามรวมกับช่อง DB', 'claim');
 
   var body = document.getElementById('body');
-  var head = campaignStrip() + notStartedStrip() + formatStrip(ads);
+  var head = campaignStrip()
+    + fold('แอดที่ยังไม่เริ่มแสดงผล', notStartedStrip())
+    + fold('เทียบรูปแบบครีเอทีฟ', formatStrip(ads));
   if (!ads.length) { body.innerHTML = head + '<div class="msg">ช่วงนี้ยังไม่มีแอดที่ใช้เงิน' + scope + (RUNF === 'live' ? ' (เฉพาะที่ยังวิ่ง)' : '') + '</div>'; }
-  else body.innerHTML = head + (VIEW === 'concept' ? conceptView(ads) : VIEW === 'img' ? imgView(ads) : adView(ads)) + newBuyersView(ads);
+  else body.innerHTML = head + (VIEW === 'concept' ? conceptView(ads) : VIEW === 'img' ? imgView(ads) : adView(ads))
+    + fold('🆕 ลูกค้าใหม่จากแอด รายคน', newBuyersView(ads),
+           ((LAST.buyers && LAST.buyers.newList && LAST.buyers.newList.length) || 0) + ' คน');
 
   /* u360-sort — กดหัวเดิม = สลับทิศ · กดหัวใหม่ = เริ่มทิศที่เหมาะกับคอลัมน์นั้น · จำไว้ในเครื่อง แยกตามมุมมอง */
   [].slice.call(body.querySelectorAll('th[data-sort]')).forEach(function(th){
@@ -534,16 +556,16 @@ function campaignStrip(){
     + '<th>แคมเปญ</th><th>ลงทุน</th><th class="bth">✅ ยืนยันใน DB</th><th class="bth">🆕 ลูกค้าใหม่</th>'
     + '<th class="claimh">Meta: กดแอดแล้วซื้อ</th><th class="claimh">Meta: แค่เห็นแอด</th><th>กำไรโดยประมาณ</th>'
     + '</tr></thead><tbody>' + cs.map(row).join('') + '</tbody></table></div>'
-    + weekTable()
-    + untrackedNote()
-    + '<p class="fine">'
+    + fold('ดูเป็นรายสัปดาห์', weekTable(), 'นับจากวันเริ่มแคมเปญ')
+    + fold('ยอดที่ตามรอยไม่ได้', untrackedNote(), untrackedHint())
+    + fold('วิธีคิดตัวเลข + ข้อควรระวัง', '<p class="fine">'
     + '<b>กำไรโดยประมาณ</b> = (ยอดที่ยืนยันใน DB × ' + pct + '%) − เงินที่ใช้จริง · '
     + '⚠️ <b>มาร์จิ้น ' + pct + '% เป็นตัวเลขที่นัทเคยประมาณเร็วๆ ยังไม่เคยยืนยันจากบัญชีจริง</b> — อ่านเป็นทิศทาง ไม่ใช่ตัวเลขปิดบัญชี<br>'
     + '<b>Meta: แค่เห็นแอด</b> = คนที่ไม่ได้กดแอด แต่ Meta นับว่าซื้อภายใน 1 วันหลังเห็น — <b>มีลูกค้าเก่าที่จะซื้ออยู่แล้วปนอยู่ พิสูจน์ไม่ได้ว่าแอดทำให้ซื้อ</b><br>'
     + '<b>ช่องยืนยันใน DB ของช่วงก่อน 14 ก.ย. ต่ำกว่าความจริง</b> — ตอนนั้นออเดอร์ส่วนใหญ่ไม่ติดรหัสแอด (บั๊กที่ห้อง u เพิ่งแก้) ไม่ได้แปลว่าแอดไม่ได้ผล<br>'
     + 'ลงทุน = เงินที่ใช้จริง ไม่ใช่งบที่ตั้งไว้ (ในบัญชีมีแคมเปญค้างจากปีก่อนที่ตั้งงบไว้แต่ไม่ได้ใช้เงินจริง)'
-    + (LAST.campaignDbNote ? '<br>⚠️ ' + esc(LAST.campaignDbNote) : '')
-    + '</p>';
+    + '</p>')
+    + (LAST.campaignDbNote ? '<p class="fine">⚠️ ' + esc(LAST.campaignDbNote) + '</p>' : '');
 }
 
 /* ── u360-week — ตารางรายสัปดาห์ นับจากวันเริ่มแคมเปญ (นัทเคาะเอง 15 ก.ย.)
@@ -575,6 +597,12 @@ function weekTable(){
 
 /* ── u360-untracked — "ยอดที่ตามรอยไม่ได้ ยังแยกไม่ออกว่ามาจากไหน" (06 ขอ · พี่ปืนเคาะ 15 ก.ย.)
    ⛔ ห้ามเดาสัดส่วน ห้ามหารครึ่ง — ไม่รู้ ให้เขียนว่าไม่รู้ · โชว์ได้แค่จำนวนใบกับยอดที่นับได้จริง */
+function untrackedHint(){
+  var u = LAST.untracked; if(!u) return '';
+  var n = (u.none.n||0) + (u.blank.n||0) + (u.admin.n||0);
+  return n ? n + ' ใบ' : '';
+}
+
 function untrackedNote(){
   var u = LAST.untracked; if (!u) return '';
   var tot = (u.none.n || 0) + (u.blank.n || 0) + (u.admin.n || 0);
