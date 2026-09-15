@@ -210,6 +210,15 @@ function parseName(name) {
   if (m) return { set: m[1], aud: AUD[m[1]] || '', code: p0, codeKey: p0,
                   concept: parts.slice(1).join(' · '), img: '', utm: p0, legacy: true };
 
+  const m3 = p0.match(/^([a-z]{2,4})_([a-z0-9]+)_([a-z0-9]+)$/i);
+  if (m3) {
+    const zone = m3[1].toLowerCase();
+    return { set: '', aud: '', code: p0, codeKey: p0,
+             concept: parts.slice(1).join(' · ') || raw, img: m3[3].toUpperCase(),
+             zone: zone === 'bkk' ? 'กรุงเทพฯ' : zone === 'upc' ? 'ต่างจังหวัด' : '',
+             utm: p0, legacy: false, noSet: true };
+  }
+
   /* ชื่อแอดที่ไม่มีตัวอักษรชุดนำหน้า: "<รหัสรูป> · <คอนเซปต์> (I080)"
      06 ตั้งชื่อแบบนี้ตั้งแต่เปลี่ยนมาใช้ชุด "N · คนใหม่ รวม 3 กลุ่ม"
      เจอจริง 15 ก.ย.: 10 จาก 55 แอดอ่านชื่อไม่ออกเลย → ไม่มี utm → ผูกออเดอร์รายแอดไม่ได้ทั้งกลุ่ม
