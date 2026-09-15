@@ -114,6 +114,11 @@
       "source": "/single-post/:rest*",
       "destination": "/blog.html?legacy=:rest*",
       "statusCode": 301
+    },
+    {
+      "source": "/j",
+      "destination": "/prayer",
+      "statusCode": 307
     }
   ],
   "rewrites": [
