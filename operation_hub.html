@@ -5691,6 +5691,23 @@ function updatePromoScopeCount(){
   if(el)el.textContent=_promoScopeSelected.length?("เลือกแล้ว "+_promoScopeSelected.length+" รายการ"):"ยังไม่ได้เลือก";
 }
 
+/* 📜 จดประวัติการแก้โปรโมชั่น (พี่ปืนตั้งข้อสังเกต 16 ก.ย.)
+   เดิม สต็อก/หมวด/หน้าแรก/ครัว มีประวัติครบ แต่ "โปรโมชั่น" ไม่มีเลยสักบรรทัด
+   ทั้งที่เป็นเรื่องเงินตรง ๆ — โค้ดโผล่มาเองหรือหายไป สืบไม่ได้ว่าใครทำ
+   ใช้ action_type kq_status เพราะแถบประวัติที่มีอยู่อ่านค่านี้ได้เลย ไม่ต้องรอใครไปแก้หน้าอื่น
+   พังก็เงียบ — การจดประวัติต้องไม่ทำให้บันทึกโปรฯ ไม่สำเร็จ */
+function logPromo(what, code, detail){
+  try{
+    var sb_=getSB(); if(!sb_) return;
+    var who=(typeof currentUser!=="undefined" && currentUser) ? currentUser
+            : (localStorage.getItem("lastNickname") || "ไม่ทราบชื่อ");
+    sb_.from("activity_log").insert({
+      action_type:"kq_status", actor:who, source:"oh",
+      summary:"🎟️ " + what + " " + code + " — " + detail,
+      detail:{page:"oh:promo", code:code}
+    }).then(function(){},function(){});
+  }catch(e){}
+}
 async function savePromo(){
   var sb_=getSB(); if(!sb_){alert("Offline");return;}
   var code=(document.getElementById("pc-code").value||"").trim().toUpperCase();
@@ -5719,11 +5736,33 @@ async function savePromo(){
     row.stackable=document.getElementById("pc-stackable").checked;
     row.scope_mode=(scopeType==="all"?"include":_promoScopeMode);
   }
+  /* 🧨 ด่านเตือน "โค้ดระเบิดเวลา" (เลขาเสนอ 16 ก.ย. หลังเจอ UNDER50 + DISCOUNT10 วันเดียวกัน)
+     อันตรายเมื่อครบทุกข้อ: ใช้ได้กับทุกอย่าง + ไม่มีวันหมดอายุ + ไม่จำกัดจำนวนครั้ง + ไม่มียอดขั้นต่ำ
+     = ส่วนลดถาวรที่ไม่มีใครเป็นเจ้าของ และไม่มีอะไรหยุดมันเอง
+     ⚠️ เตือน ไม่ใช่ห้าม — บางแคมเปญอาจตั้งใจจริง ห้ามเลยจะขวางงานแอดมิน */
+  var _wide = (row.scope_type||"all")==="all" && !row.expires_at && !row.usage_limit && !row.min_order;
+  if(_wide){
+    var _warn = "⚠️ โค้ดนี้เปิดกว้างทุกทาง:" +
+      "\n· ใช้ได้กับทุกอย่าง  · ไม่มีวันหมดอายุ  · ไม่จำกัดจำนวนครั้ง  · ไม่มียอดขั้นต่ำ" +
+      (row.show_suggested ? "\n· และโชว์ให้ลูกค้าทุกคนเห็นเองที่หน้าจ่ายเงิน" : "") +
+      "\n\nแบบนี้คือส่วนลดถาวรที่ไม่มีอะไรหยุดมันเอง (เคสจริง: UNDER50 จ่ายออกไป 45 ใบในเดือนเดียว)" +
+      "\nแนะนำให้ใส่อย่างน้อย 1 อย่าง: วันหมดอายุ / จำกัดจำนวนครั้ง / ยอดขั้นต่ำ / ผูกกับสินค้า" +
+      "\n\nยืนยันจะบันทึกแบบนี้เลยไหม?";
+    if(!confirm(_warn)) return;
+  }
   try{
     var res=editingPromoId
       ? await sb_.from("promo_codes").update(row).eq("id",editingPromoId)
       : await sb_.from("promo_codes").insert(row);
     if(res.error)throw res.error;
+    logPromo(editingPromoId ? "แก้ไขโค้ด" : "สร้างโค้ดใหม่", row.code,
+      row.discount_type + " " + row.discount_value +
+      " · ขั้นต่ำ " + (row.min_order||0) +
+      " · จำกัด " + (row.usage_limit ? (row.usage_limit + " ครั้ง") : "ไม่จำกัด") +
+      " · หมดอายุ " + (row.expires_at || "ไม่มี") +
+      " · ผูกกับ " + (row.scope_type||"all") +
+      (row.show_suggested ? " · โชว์ให้ลูกค้าเห็นเอง" : "") +
+      (row.stackable ? " · ซ้อนโค้ดอื่นได้" : ""));
     document.getElementById("promoForm").style.display="none";
     editingPromoId=null;
     loadPromos();
@@ -5860,14 +5899,22 @@ async function loadPromos(){
 
 async function togglePromo(id,active){
   var sb_=getSB(); if(!sb_)return;
-  try{ var res=await sb_.from("promo_codes").update({is_active:active}).eq("id",id); if(res.error)throw res.error; loadPromos(); }
+  /* หาโค้ดจากลิสต์ที่โหลดไว้แล้ว — จะได้จดชื่อโค้ด ไม่ใช่จด id ที่อ่านไม่รู้เรื่อง */
+  var _p=(typeof _loadedPromos!=="undefined"&&_loadedPromos||[]).find(function(x){return x.id===id;});
+  try{ var res=await sb_.from("promo_codes").update({is_active:active}).eq("id",id); if(res.error)throw res.error;
+    logPromo(active?"เปิดโค้ด":"ปิดโค้ด", (_p&&_p.code)||id, active?"กลับมาใช้ได้":"ลูกค้าใช้ไม่ได้แล้ว");
+    loadPromos(); }
   catch(e){alert("อัพเดทไม่ได้");}
 }
 
 async function delPromo(id,code){
   if(!confirm("ลบโค้ด "+code+" ?"))return;
   var sb_=getSB(); if(!sb_)return;
-  try{ var res=await sb_.from("promo_codes").delete().eq("id",id); if(res.error)throw res.error; loadPromos(); }
+  try{ var res=await sb_.from("promo_codes").delete().eq("id",id); if(res.error)throw res.error;
+    /* ลบแล้วแถวหายจากตาราง — ถ้าไม่จดไว้ตรงนี้ จะไม่มีร่องรอยเหลือเลยว่าเคยมีโค้ดนี้
+       (ใบเก่าที่ใช้โค้ดนี้ยังอ้างชื่อมันอยู่ แต่หาที่มาไม่ได้แล้ว) */
+    logPromo("ลบโค้ดทิ้ง", code, "ลบออกจากตารางถาวร");
+    loadPromos(); }
   catch(e){alert("ลบไม่ได้");}
 }
 
