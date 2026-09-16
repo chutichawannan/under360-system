@@ -185,8 +185,8 @@ async function classifyAdOrders(adOrders) {
    ใช้คำในชื่อชุดตัดสินว่าเป็นคนใหม่หรือคนเก่า — ตรงกว่าเดาจากตัวอักษร */
 function audFromAdset(adset) {
   const t = String(adset || '');
-  if (t.indexOf('คนใหม่') >= 0) return 'new';
-  if (t.indexOf('คนเก่า') >= 0) return 'old';
+  if (t.indexOf('คนเก่า') >= 0 || t.indexOf('ลูกค้าเก่า') >= 0) return 'old';
+  if (t.indexOf('คนใหม่') >= 0 || t.indexOf('ลูกค้าใหม่') >= 0) return 'new';
   return AUD[t.trim().charAt(0).toLowerCase()] || '';
 }
 
