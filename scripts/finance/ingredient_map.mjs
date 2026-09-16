@@ -25,10 +25,13 @@ const GO = fs.readFileSync('finance/out/go_items_summary.csv', 'utf8')
   .replace(/^﻿/, '').trim().split('\n').slice(1)
   .map((l) => { const c = splitCsv(l); return { bc: c[0], n: c[1], u: c[2], cnt: +c[3], p: +c[5], baht: +c[6] } });
 
-const rows = await fetchAll('kitchen_data?select=key,data&key=in.(f_freshket_catalog,stock_count_list)');
-const get = (k) => (rows.find((r) => r.key === k) || {}).data;
-const FK = get('f_freshket_catalog').items;   // {c,n,u,p}
-const SL = get('stock_count_list');
+// Freshket: ใช้รายการจริงจากใบสั่งซื้อ 46 ใบ (parse_freshket_orders.mjs)
+const FK = fs.readFileSync('finance/out/freshket_items_summary.csv', 'utf8')
+  .replace(/^﻿/, '').trim().split('\n').slice(1)
+  .map((l) => { const c = splitCsv(l); return { sku: c[0], n: c[1], u: c[2] || c[3], cnt: +c[4], p: +c[6], baht: +c[7] } });
+
+const rows = await fetchAll('kitchen_data?select=key,data&key=eq.stock_count_list');
+const SL = rows[0].data;
 
 // ── แปลงเป็น ฿/กก. เพื่อเทียบข้ามเจ้าได้จริง ─────────────────────────
 function perKg(pack, price) {
