@@ -1,6 +1,85 @@
 {
- "generated_at": "2026-09-17T10:10:33.916Z",
+ "generated_at": "2026-09-17T10:20:04.431Z",
  "rows": [
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S1",
+   "s_code": "S023",
+   "s_name": "ข้าวไก่ย่างตะไคร้น้ำจิ้มแจ่ว",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D1",
+   "d_code": "D023",
+   "d_name": "ไก่ย่างตะไคร้น้ำจิ้มแจ่ว"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S2",
+   "s_code": "S188",
+   "s_name": "อกไก่สะเต๊ะ+ขนมปัง",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D2",
+   "d_code": "D188",
+   "d_name": "อกไก่สะเต๊ะ"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S3",
+   "s_code": "S097",
+   "s_name": "ข้าวห่อไข่อกไก่สับทรงเครื่อง",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D3",
+   "d_code": "D097",
+   "d_name": "อกไก่สับทรงเครื่อง"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S4",
+   "s_code": "S178",
+   "s_name": "ข้าวปลากระพงห่อสาหร่ายนึ่ง",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D4",
+   "d_code": "D178",
+   "d_name": "กระพงห่อสาหร่ายนึ่ง"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S5",
+   "s_code": "S100",
+   "s_name": "เส้นหมี่ต้มยำไก่ฉีก",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D5",
+   "d_code": "D100",
+   "d_name": "เกาเหลาต้มยำอกไก่ฉีก"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S6",
+   "s_code": "S065",
+   "s_name": "สปาเก็ตตี้แซลมอนไวท์ซอสเห็ด",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S7",
+   "s_code": "S131",
+   "s_name": "คีนัวผัดแกงเขียวหวานอกไก่ย่างและไข่ออนเซ็น",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-09-21",
+   "week_label": "2026-09-21",
+   "slot": "S8",
+   "s_code": "S111",
+   "s_name": "เบนโตะสะโพกไก่ย่างซอสเทริยากิ+ซุปสาหร่าย",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
   {
    "week_start": "2026-09-14",
    "week_label": "2026-09-14",
