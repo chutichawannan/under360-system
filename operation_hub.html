@@ -4737,7 +4737,7 @@ function msgTableHtml(data){
         +"<td class='num'>"+n+"</td>"
         +"<td><div style='font-weight:700'>"+esc2(o.customer_name||"ลูกค้า")+"</div>"
           +"<div style='font-family:var(--mono);font-size:10.5px;color:#6B7280'>"+esc2(o.order_number||"—")
-          +(far?" <span style='color:#9A3412;font-weight:700'>· เกินเขต</span>":"")+"</div></td>"
+          +(far?" <span style='color:#9A3412;font-weight:700'>· เกินเขต</span>":"")+"</div>"+msgNoteHtml(o)+"</td>"
         +"<td>"+(o.customer_phone?"<a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a>":"—")+"</td>"
         +"<td><span style='font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px;background:"+kind.bg+";color:"+kind.fg+"'>"+esc2(kind.t)+"</span>"
           +(o._round?"<div style='font-size:10.5px;color:#6B7280;margin-top:2px'>รอบ "+esc2(o._round)+"</div>":"")+"</td>"
@@ -4752,6 +4752,21 @@ function msgTableHtml(data){
     out+="</tbody></table></div>";
   });
   return out;
+}
+/* 📝 โน้ตที่ลูกค้าเขียนเอง (เลขห้อง/จุดสังเกต/วางของที่ไหน) — กิ๊ฟขอ 18 ก.ย.
+   ช่อง orders.notes ปนข้อความที่ระบบกับแอดมินเติมเอง → ตัดออกให้เหลือแต่ของลูกค้า
+   ไม่งั้นแมสต้องอ่าน "[เลื่อนวันส่ง ... โดย ...]" ทุกใบจนเลิกอ่าน
+   ⚠️ ตัดเฉพาะแพทเทิร์นที่ระบบเขียนแน่ ๆ — ไม่แน่ใจ = โชว์ไว้ (โน้ตลูกค้าหาย = แมสหาบ้านไม่เจอ แย่กว่าอ่านเกิน) */
+function msgNote(o){
+  var t=String((o&&o.notes)||"");
+  t=t.replace(/\[[^\]]*\]/g," ");                                              // [เลื่อนวัน…] [เรียกแมสแล้ว…] [ยกเลิกโดย…] [🩺 …]
+  t=t.replace(/(คอร์ส .*?|Meal Plan \S+ )?รอบ \d+\/\d+ (— จ่ายรวมกับออเดอร์ \S+|ของคอร์ส · จ่ายรวมกับใบแรกแล้ว( · เปิดใบโดย [^·]+)?)/g," ");
+  t=t.replace(/สั่งแทนโดย .*?(\)|$)/g," ");
+  return t.replace(/\s+/g," ").trim();
+}
+function msgNoteHtml(o){
+  var n=msgNote(o); if(!n) return "";
+  return "<div style='margin-top:4px;background:#FFFBEB;border:1px solid #FCD34D;border-radius:8px;padding:5px 8px;font-size:12.5px;color:#78350F;font-weight:600'>📝 "+esc2(n)+"</div>";
 }
 function msgBindRowActions(){ /* select ผูก onchange ใน HTML แล้ว — เผื่ออนาคตมีปุ่มอื่น */ }
 function msgPayBadge(o){
@@ -4893,6 +4908,7 @@ async function loadMessenger(){
           + (o._round?" <span style='font-size:10.5px;font-weight:800;background:#EDE9FE;color:#5B21B6;border-radius:6px;padding:1px 7px'>"+esc2(o._mpType)+" รอบ "+esc2(o._round)+(o._mpBoxes?" · "+o._mpBoxes+" กล่อง":"")+"</span>":"")
           + msgPayBadge(o) + "</div>";
         h+="<div class='msg-addr'>📍 "+esc2(addr)+(maploc?" <a href='"+maploc+"' target='_blank' style='color:#1D4ED8;font-weight:600'>🗺️แผนที่</a>":"")+"</div>";
+        h+=msgNoteHtml(o);   // 📝 เลขห้อง/จุดสังเกตที่ลูกค้าเขียนเอง (กิ๊ฟขอ 18 ก.ย.)
         h+=(o.customer_phone?"<div style='font-size:12px;margin-top:2px'>📞 <a href='tel:"+esc2(o.customer_phone)+"' style='color:#1F4D3A;font-weight:600'>"+fmtPhone(o.customer_phone)+"</a></div>":"");
         // ⚠️ ไกลเกินเขตแมส — กันแมสรับงานไปแล้วขี่ไม่ถึง / กันกดจอง Lalamove แล้วโดนปฏิเสธ
         if(o._z&&o._z.key==="far"){
