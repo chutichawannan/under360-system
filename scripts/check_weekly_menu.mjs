@@ -107,10 +107,14 @@ async function main() {
     // ⚠️ ปิดหน้าต่างที่ "ศุกร์ก่อนสัปดาห์นั้น" ไม่ใช่วันจันทร์ — วงจรใหม่เปิดขายศุกร์ 18:00
     //    ถ้านับถึงวันจันทร์ ยอดขายล่วงหน้าของสัปดาห์ตัวเองจะทำให้ตกข้อ ① ทุกสัปดาห์ (นิวเจอจริง 12 ก.ย.)
     const SALE_OPEN = new Date(new Date(week + "T00:00:00Z").getTime() - 3 * 864e5).toISOString().slice(0, 10);
-    const orders = await all(`orders?select=id,total&created_at=gte.${since}&created_at=lt.${SALE_OPEN}`);
-    const oid = new Set(orders.filter(o => Number(o.total) > 0).map(o => o.id));
-    const items = await all(`order_items?select=menu_code,order_id&menu_code=in.(${codes.join(',')})`);
-    const sold = new Set(items.filter(x => oid.has(x.order_id)).map(x => x.menu_code));
+    // ⚠️ นับเฉพาะ "ขายเป็นเมนูประจำสัปดาห์จริง" — นิวเจอ 17 ก.ย.: S020 ติดเพราะออเดอร์เทส · S075 ติดเพราะขายอยู่ในเซ็ต
+    //    ตัดออกเทสแบบเดียวกับ scripts/finance/orders.mjs · ตัดใบยกเลิก · ตัดรายการในแพคเกจ (notes ขึ้นต้น pkg:)
+    const TEST_NAMES = ['nut', 'test user', 'ทดลอบ 1', 'ploy ♡', 'schematest'];
+    const isTestOrder = o => o.source === 'parallel_test' || o.created_by === '[TEST-P] Claude' || TEST_NAMES.includes(String(o.customer_name || '').trim().toLowerCase());
+    const orders = await all(`orders?select=id,total,status,source,created_by,customer_name&created_at=gte.${since}&created_at=lt.${SALE_OPEN}`);
+    const oid = new Set(orders.filter(o => Number(o.total) > 0 && o.status !== 'cancelled' && !isTestOrder(o)).map(o => o.id));
+    const items = await all(`order_items?select=menu_code,order_id,notes&menu_code=in.(${codes.join(',')})`);
+    const sold = new Set(items.filter(x => oid.has(x.order_id) && !String(x.notes || '').startsWith('pkg:')).map(x => x.menu_code));
     const hist = await getKey('weekly_slot_history');
     const shown = {};
     Object.entries(hist).forEach(([w, h]) => {
