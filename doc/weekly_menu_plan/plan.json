@@ -1,5 +1,5 @@
 {
- "generated_at": "2026-09-17T10:05:15.433Z",
+ "generated_at": "2026-09-17T10:10:33.916Z",
  "rows": [
   {
    "week_start": "2026-09-14",
@@ -236,6 +236,164 @@
    "slot": "S8",
    "s_code": "S040",
    "s_name": "โรลเต้าหู้อกไก่สับ",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S1",
+   "s_code": "S099",
+   "s_name": "ข้าวปลากระพงนึ่งมะนาว",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D1",
+   "d_code": "D099",
+   "d_name": "ปลากระพงนึ่งมะนาว"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S2",
+   "s_code": "S159",
+   "s_name": "ข้าวแกงจืดเห็ดหอมอกไก่สับวุ้นเส้น",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D2",
+   "d_code": "D159",
+   "d_name": "แกงจืดเห็ดหอมอกไก่สับวุ้นเส้น"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S3",
+   "s_code": "S149",
+   "s_name": "ข้าว+ต้มจับฉ่ายฟองเต้าหู้เห็ดหอม",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D3",
+   "d_code": "D149",
+   "d_name": "ต้มจับฉ่ายฟองเต้าหู้เห็ดหอม"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S4",
+   "s_code": "S071",
+   "s_name": "บะหมี่ผักอกไก่ปรุงรสหมูแดงเห็ดหอม",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D4",
+   "d_code": "D071",
+   "d_name": "หมูแดงอบซอส+เห็ดหอม"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S5",
+   "s_code": "S104",
+   "s_name": "เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู๊ด",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D5",
+   "d_code": "D104",
+   "d_name": "เกี๊ยวแห้งกุ้งเบิ้มอกไก่+น้ำจิ้มซีฟู๊ด"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S6",
+   "s_code": "S133",
+   "s_name": "ข้าวพะโล้ไข่ต้มหมูนุ่มขลุกขลิก",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S7",
+   "s_code": "S183",
+   "s_name": "ข้าวอบสไตล์บ๊ะจ่างหมู",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-24",
+   "week_label": "2026-08-24",
+   "slot": "S8",
+   "s_code": "S051",
+   "s_name": "ข้าวผัดเบญจรงค์สะโพกไก่ย่าง",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S1",
+   "s_code": "S172",
+   "s_name": "ข้าวแซลมอนย่างราดซอสแกงเขียวหวาน",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D1",
+   "d_code": "D154",
+   "d_name": "แซลมอนราดซอสแกงเขียวหวาน"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S2",
+   "s_code": "S075",
+   "s_name": "ข้าวปลากระพงผัดฉ่า",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D2",
+   "d_code": "D075",
+   "d_name": "ปลากระพงผัดฉ่า"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S3",
+   "s_code": "S030",
+   "s_name": "ข้าวอบโอยาโกะด้ง",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D3",
+   "d_code": "D030",
+   "d_name": "โอยาโกะด้งแบบกับข้าว"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S4",
+   "s_code": "S157",
+   "s_name": "ข้าวผักกาดห่ออกไก่ น้ำจิ้มสุกี้",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D4",
+   "d_code": "D131",
+   "d_name": ""
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S5",
+   "s_code": "S050",
+   "s_name": "เพนเน่ซอสโบโลเนส มีทบอลอกไก่",
+   "source": "ระบบเรา / weekly_subcode_plan",
+   "d_slot": "D5",
+   "d_code": "D029",
+   "d_name": ""
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S6",
+   "s_code": "S185",
+   "s_name": "ข้าวยำหมูหวาน",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S7",
+   "s_code": "S039",
+   "s_name": "เส้นหมี่ราดหน้าหมู",
+   "source": "ระบบเรา / weekly_subcode_plan"
+  },
+  {
+   "week_start": "2026-08-17",
+   "week_label": "2026-08-17",
+   "slot": "S8",
+   "s_code": "S032",
+   "s_name": "แฮมเบิร์กเบิ้มซอสบาบีคิว เห็ดผัดเนย ผักย่าง",
    "source": "ระบบเรา / weekly_subcode_plan"
   },
   {
