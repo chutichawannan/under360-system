@@ -383,11 +383,21 @@ function track(event, page){
 }
 track('pageview','pack');
 
+/* u360-carry-promo — พกโค้ดคูปองติดไปถึงหน้าสั่งใน LIFF (06 แจ้ง · นัทสั่ง 17 ก.ย. "ทำเลย ขอให้มันใช้งานได้ก็พอ")
+   เดิมปุ่มเก็บคูปองแค่โชว์โค้ดบนเว็บ LIFF ไม่รู้อะไรเลย → ลูกค้าต้องจำแล้วพิมพ์เอง
+   เจอจริง: ใบ U-0918-008 ซื้อ Pack S จากแอด ได้ WELCOME50 (฿50) แทน FBPACK (฿120) = จ่ายเกินที่แอดสัญญา ฿70
+   ⚠️ ส่งไปเฉพาะคนที่มาจากหน้านี้เท่านั้น — ห้ามเปิด show_suggested ใน DB แทน (จะโชว์ส่วนลดให้ลูกค้าทุกคน)
+   LIFF เป็นคนตัดสินว่าใช้ได้ไหม (ยอดถึง/สินค้าเข้าเงื่อนไข) — ฝั่งนี้แค่พกไป */
+function withPromo(url){
+  if(!LINE_PROMO_CODE) return url;
+  return url + (url.indexOf('?') >= 0 ? '&' : '?') + 'promo=' + encodeURIComponent(LINE_PROMO_CODE);
+}
+
 function orderNow(el){
   try{ if(typeof fbq==='function') fbq('track','Lead',{content_name:'pack'}); }catch(e){}
   track('cta_click','pack');
   try{ if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D'}); }catch(e){}
-  window.location.href = u360Tracked(ORDER_URL);
+  window.location.href = withPromo(u360Tracked(ORDER_URL));
   return false;
 }
 
@@ -402,7 +412,7 @@ function orderPack(el){
   try{ if(typeof gtag==='function') gtag('event','conversion',{'send_to':'AW-872118373/Qp5GCO_i_uQcEOXw7Z8D'}); }catch(e){}
   let url = u360Tracked(ORDER_URL);
   if(pkg) url += (url.indexOf('?') >= 0 ? '&' : '?') + 'pkg=' + encodeURIComponent(pkg);
-  window.location.href = url;
+  window.location.href = withPromo(url);
   return false;
 }
 
@@ -560,7 +570,7 @@ function goLineNow(){
   const items = cartLines().map(l => l.code + 'x' + l.qty).join(',');
   let url = u360Tracked(ORDER_URL);
   if(items) url += (url.indexOf('?')>=0?'&':'?') + 'pack=' + encodeURIComponent(items.slice(0,180));
-  window.location.href = url;
+  window.location.href = withPromo(url);
 }
 function goLine(){ remindCode(goLineNow); }
 
