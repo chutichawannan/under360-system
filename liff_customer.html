@@ -3417,6 +3417,9 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     });
     loadMpOfferSets(); // v0.4.10 — โหลดชุด Meal Plan จาก DB ถ้ามี (เผื่อแอดมินเพิ่มชุดโปรโมชั่นเอง)
   } catch(e) { console.warn('Render error', e); }
+  /* 🎟️ โค้ดที่พกมาจากหน้าแอด (?promo=) — จำไว้ทั้ง session แล้วรอตะกร้าเข้าเงื่อนไข */
+  try{ const _pp = (u360qs().get('promo')||'').trim().toUpperCase().replace(/[^A-Z0-9_-]/g,'').slice(0,30);
+       if(_pp) sessionStorage.setItem('u360_pending_promo', _pp); }catch(e){}
   const _screenParam = u360qs().get('screen');
   if (_screenParam === 'mp-manage') { showScr('s-mp-manage'); renderMpManage(); }
   // 21 ส.ค. — ปุ่ม "แนบสลิป" ในใบยืนยันที่ส่งเข้าแชท ลิงก์ตรงมาหน้าออเดอร์เลย
@@ -6338,6 +6341,39 @@ function promoLabel(p){
   return g ? ('รับฟรี ' + g) : '';
 }
 
+/* 🎟️ โค้ดที่พกมาจากลิงก์แอด — ใส่ให้เองเมื่อเข้าเงื่อนไข (06 ขอ · นัทสั่ง 17 ก.ย.)
+   ⛔ เงียบเสมอ: ยังไม่เข้าเงื่อนไข (ตะกร้าว่าง/ไม่ถึงขั้นต่ำ/ไม่มีแพคที่ผูก) = ไม่โชว์อะไร รอตะกร้าเปลี่ยนแล้วลองใหม่
+   ⛔ ด่านเดียวกับกรอกเอง (เปิดอยู่/หมดอายุ/ครบจำนวน/จำกัดต่อคน/ขั้นต่ำ/สินค้าที่ผูก) — ลิงก์ไม่ได้ข้ามกติกาอะไร
+   ลูกค้ากดลบโค้ดเอง = ไม่ใส่คืนให้อีก (เคารพการตัดสินใจ) */
+const PENDING_PROMO_KEY = 'u360_pending_promo';
+let _pendingPromoRow = null, _pendingBusy = false;
+async function tryPendingPromo(){
+  let code = '';
+  try{ code = sessionStorage.getItem(PENDING_PROMO_KEY) || ''; }catch(e){}
+  if(!code || _pendingBusy || !cart.length) return;
+  if(appliedPromos.some(x => String(x.code).toUpperCase() === code)) return;
+  _pendingBusy = true;
+  try{
+    if(!_pendingPromoRow || _pendingPromoRow.code !== code){
+      const { data } = await sb.from('promo_codes').select('*').eq('code', code).limit(1);
+      _pendingPromoRow = (data||[])[0] || null;
+      if(!_pendingPromoRow){ try{ sessionStorage.removeItem(PENDING_PROMO_KEY); }catch(e){} return; }
+    }
+    const p = _pendingPromoRow;
+    if(!p.is_active) return;
+    if(p.expires_at && p.expires_at < localYMD(new Date())) return;
+    if((p.usage_limit||0) > 0 && (p.used_count||0) >= p.usage_limit) return;
+    if(typeof cwLimitMsg==='function' && cwLimitMsg(p.code)) return;
+    if((p.min_order||0) > cartTotal()) return;
+    if(!cartMatchesPromoScope(p)) return;
+    if(appliedPromos.some(x => x.id === p.id)) return;
+    if(p.stackable && appliedPromos.length && appliedPromos.every(x => x.stackable)) appliedPromos.push(p);
+    else appliedPromos = [p];
+    refreshCouponUI();
+    updateCartTotals();
+  }catch(e){ /* เงียบ — ลูกค้ายังกรอกเองได้ตามปกติ */ }
+  finally{ _pendingBusy = false; }
+}
 async function applyPromo(codeOverride){
   const inp = document.getElementById('coupon-input');
   const msg = document.getElementById('coupon-msg');
@@ -6383,6 +6419,9 @@ async function applyPromo(codeOverride){
 
 // ไม่ระบุ id = ลบทั้งหมด, ระบุ id = ลบเฉพาะโค้ดนั้น (กรณีซ้อนหลายโค้ด)
 function removePromo(id){
+  /* ลูกค้าลบโค้ดที่ระบบใส่ให้เอง = ไม่ใส่คืนอีก */
+  try{ const pend = sessionStorage.getItem(PENDING_PROMO_KEY);
+       if(pend && appliedPromos.some(p => (!id || p.id === id) && String(p.code).toUpperCase() === pend)) sessionStorage.removeItem(PENDING_PROMO_KEY); }catch(e){}
   appliedPromos = id ? appliedPromos.filter(p => p.id !== id) : [];
   const inp = document.getElementById('coupon-input'); if(inp) inp.value='';
   refreshCouponUI();
@@ -6784,6 +6823,7 @@ function updateQRAmount(){
 }
 
 function updateCartTotals(){
+  tryPendingPromo();   // โค้ดจากลิงก์แอด — ตะกร้าเปลี่ยนทุกครั้งลองใส่ให้ใหม่ (ไม่รอ ไม่บล็อกการวาด)
   try{ renderCardNudge(); refreshPayMethods(); }catch(e){}   // 💳 ยอดเปลี่ยน = สิทธิ์รูดบัตรกับแถบเขย่งยอดเปลี่ยนตาม
   const o=computeOrder();
   const subEl=document.getElementById('cart-sub');
