@@ -34,11 +34,13 @@ const out = [...merged.values()].map((e, i) => ({ id: i, c: e.c, n: e.n, ours: e
   .sort((a, b) => a.c.localeCompare(b.c, 'th') || b.baht - a.baht);
 
 // ── คู่ที่น่าจะเป็นตัวเดียวกัน — ถามทีละคู่ ไม่ต้องให้นัทไล่ดูเองทั้ง 310 ──
+const BRAND = /ตราS*|เอ ?ชอยซ์|ซุปเปอร์เซฟ|โครงการหลวง|ถุงใหญ่|ยกกระสอบ|คัดสวย|นอก|ไทย|แพ็ค|กก.|กรัม|ก.|ล.|มล./g;
+/** คิดคะแนนคล้าย 2 ทาง: ชื่อเต็ม กับ ชื่อที่ตัดยี่ห้อ/ขนาดออก — เอาค่าที่สูงกว่า */
+const score = (a, b) => Math.max(similar(a, b), similar(a.replace(BRAND, ''), b.replace(BRAND, '')));
 const PAIRS = [];
 for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) {
-  if (out[i].c !== out[j].c) continue;
-  const s = similar(out[i].n, out[j].n);
-  if (s >= 55) PAIRS.push({ a: out[i].id, b: out[j].id, s });
+  const s = score(out[i].n, out[j].n);
+  if (s >= 45) PAIRS.push({ a: out[i].id, b: out[j].id, s });   // ข้ามหมวดก็เสนอ — นัทเป็นคนตัดสิน
 }
 PAIRS.sort((x, y) => y.s - x.s);
 
@@ -123,7 +125,7 @@ function drawPairs(){
   const p = live[0], A = byIdView(p.a), B = byIdView(p.b);
   const done = PAIRS.length - live.length;
   const card = (d)=>{ const c=el('div','it'); const b=el('div');
-    b.appendChild(el('div','nm',d.n)); b.appendChild(el('div','meta',d.names.length+' SKU · '+d.s+' · ฿'+d.baht.toLocaleString()));
+    b.appendChild(el('div','nm',d.n)); b.appendChild(el('div','meta',d.c+' · '+d.names.length+' SKU · '+d.s+' · ฿'+d.baht.toLocaleString()));
     for(const n of d.names){const i=n.indexOf(': ');b.appendChild(el('div','sku','<b>'+n.slice(0,i)+'</b> '+n.slice(i+2)))}
     c.appendChild(b); return c };
   list.innerHTML='';
