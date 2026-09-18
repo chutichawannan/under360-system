@@ -68,7 +68,7 @@ main{padding:12px 14px}
 .sku b{color:#7f8aa3;font-weight:500}
 .bar{position:fixed;left:0;right:0;bottom:0;padding:10px 14px;background:#0f1115f2;border-top:1px solid var(--line);display:flex;gap:9px;align-items:center}
 button{padding:11px 14px;border-radius:11px;border:0;background:#2b3140;color:var(--tx);font:inherit;font-size:14px;font-weight:600}
-button.go{background:var(--sel);flex:1}button:disabled{opacity:.35}
+button.go{background:var(--sel);flex:1}button.flag{background:#3a3320;color:#ffc043}button:disabled{opacity:.35}
 .cnt{color:var(--dim);font-size:12.5px;white-space:nowrap}
 .mid{text-align:center;color:var(--dim);font-size:13px;margin:-2px 0 7px}
 .btns2{display:flex;gap:9px;margin-top:14px}.btns2 button{flex:1;padding:14px}
@@ -93,7 +93,8 @@ const SB='https://zdartbvhbvqlwzwyyiia.supabase.co', KEY='eyJhbGciOiJIUzI1NiIsIn
 let MERGES = [], MOVES = {};
 try { MERGES = JSON.parse(localStorage.getItem('f_ing_merges')||'[]') } catch(e){}
 try { MOVES = JSON.parse(localStorage.getItem('f_ing_moves')||'{}') } catch(e){}
-let cur, sel = new Set(), view = [], MODE = 0, DONE = {};
+let cur, sel = new Set(), view = [], MODE = 0, DONE = {}, FLAG = {};
+try { FLAG = JSON.parse(localStorage.getItem('f_ing_flag')||'{}') } catch(e){}
 try { DONE = JSON.parse(localStorage.getItem('f_ing_done')||'{}') } catch(e){}
 function setMode(m){ MODE=m; m0.className='tab'+(m?'':' on'); m1.className='tab'+(m?' on':''); draw() }
 
@@ -131,25 +132,30 @@ function drawPairs(){
   list.appendChild(el('div','mid','↕ ตัวเดียวกันไหม'));
   list.appendChild(card(B));
   const bs=el('div','btns2');
-  const y=el('button','go','✔ ตัวเดียวกัน — รวมเลย'), n=el('button',null,'✕ คนละอย่าง');
+  const y=el('button','go','✔ ตัวเดียวกัน — รวมเลย'), n=el('button',null,'✕ คนละอย่าง'), fl=el('button','flag','🔖 ติดธงไว้รวมทีหลัง');
+  fl.onclick=()=>{ FLAG[p.a]=1; FLAG[p.b]=1; DONE[p.a+'-'+p.b]=1; persist(); build() };
   y.onclick=()=>{ MERGES.push([p.a,p.b]); DONE[p.a+'-'+p.b]=1; persist(); build() };
   n.onclick=()=>{ DONE[p.a+'-'+p.b]=1; persist(); build() };
   bs.append(y,n); list.appendChild(bs);
+  const bs2=el('div','btns2'); bs2.appendChild(fl); list.appendChild(bs2);
 }
 function idOf(id){ return (view.find(v=>v.ids.includes(id))||{}).id }
 function byIdView(id){ return view.find(v=>v.ids.includes(id)) || BASE.find(b=>b.id===id) }
 
 function drawList(){
   tabs.style.display='flex'; bar.style.display='flex';
+  const flagged = view.filter(v=>v.ids.some(i=>FLAG[i]));
   const cats=[...new Set(view.map(v=>v.c))];
   tabs.innerHTML='';
+  if(flagged.length){const t=el('div','tab'+(cur==='__flag'?' on':''),'🔖 ติดธงไว้ '+flagged.length);t.onclick=()=>{cur='__flag';draw()};tabs.appendChild(t)}
   for(const c of cats){const t=el('div','tab'+(c===cur?' on':''),c+' '+view.filter(v=>v.c===c).length);t.onclick=()=>{cur=c;draw()};tabs.appendChild(t)}
   list.innerHTML='';
-  for(const d of view.filter(v=>v.c===cur)){
+  const show = cur==='__flag' ? flagged : view.filter(v=>v.c===cur);
+  for(const d of show){
     const card=el('div','it'+(sel.has(d.id)?' sel':''));
     card.appendChild(el('div','box',sel.has(d.id)?'✓':''));
     const body=el('div');
-    body.appendChild(el('div','nm',d.n+(d.ours?'<span class="badge">✅ สารบัญ</span>':'')));
+    body.appendChild(el('div','nm',d.n+(d.ours?'<span class="badge">✅ สารบัญ</span>':'')+(d.ids.some(i=>FLAG[i])?' 🔖':'')));
     body.appendChild(el('div','meta',d.names.length+' SKU · '+d.s+' · ฿'+d.baht.toLocaleString()+(d.days?' · สั่งทุก '+d.days+' วัน':'')));
     for(const n of d.names){const i=n.indexOf(': ');body.appendChild(el('div','sku','<b>'+n.slice(0,i)+'</b> '+n.slice(i+2)))}
     card.appendChild(body);
@@ -167,15 +173,15 @@ function doMove(){
   for(const id of sel) MOVES[id]=c;
   sel=new Set(); persist(); build();
 }
-function doMerge(){ MERGES.push([...sel]); sel=new Set(); persist(); build(); }
+function doMerge(){ MERGES.push([...sel]); for(const id of sel) delete FLAG[id]; sel=new Set(); persist(); build(); }
 /** เก็บในเครื่อง + ส่งขึ้นระบบอัตโนมัติ (หน่วง 1 วิ กันยิงถี่) → เปิดคนละเครื่องก็ต่องานกันได้ */
 let t;
 function persist(){
-  try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES));localStorage.setItem('f_ing_done',JSON.stringify(DONE))}catch(e){}
+  try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES));localStorage.setItem('f_ing_done',JSON.stringify(DONE));localStorage.setItem('f_ing_flag',JSON.stringify(FLAG))}catch(e){}
   clearTimeout(t); t=setTimeout(()=>save(true),1000);
 }
 async function save(auto){
-  const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,done:DONE,
+  const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,done:DONE,flag:FLAG,
     kinds:view.map(v=>({ชื่อ:v.n,หมวด:v.c,จากสารบัญ:!!v.ours,sku:v.names}))};
   const r=await fetch(SB+'/rest/v1/kitchen_data?on_conflict=key',{method:'POST',
     headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
@@ -190,7 +196,7 @@ async function save(auto){
     if (d && (d.merges||d.moves)) {
       const localN = MERGES.length + Object.keys(MOVES).length;
       const remoteN = (d.merges||[]).length + Object.keys(d.moves||{}).length;
-      if (remoteN >= localN) { MERGES = d.merges||[]; MOVES = d.moves||{}; DONE = d.done||DONE; }
+      if (remoteN >= localN) { MERGES = d.merges||[]; MOVES = d.moves||{}; DONE = d.done||DONE; FLAG = d.flag||FLAG; }
       st.textContent = '☁️ ต่อจากที่ทำไว้ล่าสุด';
     }
   } catch(e) { st.textContent = 'ออฟไลน์ — ทำต่อได้ เดี๋ยวบันทึกให้เมื่อเน็ตมา'; }
