@@ -71,12 +71,15 @@ button.go{background:var(--sel);flex:1}button:disabled{opacity:.35}
 <div class="bar">
   <span class="cnt" id="cnt"></span>
   <button class="go" id="mg" disabled onclick="doMerge()">รวมเป็นชนิดเดียว</button>
+  <button id="mv" disabled onclick="doMove()">ย้ายหมวด</button>
   <button onclick="save()">บันทึก</button>
 </div>
 <script>
 const BASE = ${JSON.stringify(out)};
 const SB='https://zdartbvhbvqlwzwyyiia.supabase.co', KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
-let MERGES = []; try { MERGES = JSON.parse(localStorage.getItem('f_ing_merges')||'[]') } catch(e){}
+let MERGES = [], MOVES = {};
+try { MERGES = JSON.parse(localStorage.getItem('f_ing_merges')||'[]') } catch(e){}
+try { MOVES = JSON.parse(localStorage.getItem('f_ing_moves')||'{}') } catch(e){}
 let cur, sel = new Set(), view = [];
 
 function build(){
@@ -87,6 +90,7 @@ function build(){
     for (const i of live.slice(1)) { const o=byId.get(i); head.names.push(...o.names); head.baht+=o.baht;
       head.s=[...new Set((head.s+'+'+o.s).split('+'))].join('+'); head.ids.push(i); byId.delete(i); }
   }
+  for (const v of byId.values()) if (MOVES[v.id]) v.c = MOVES[v.id];
   view = [...byId.values()].sort((a,b)=>a.c.localeCompare(b.c,'th')||b.baht-a.baht);
   cur = cur || view[0].c;
   draw();
@@ -109,12 +113,20 @@ function draw(){
     list.appendChild(card);
   }
   cnt.textContent='เลือก '+sel.size+' · '+view.length+' ชนิด';
-  mg.disabled = sel.size<2;
+  mg.disabled = sel.size<2; mv.disabled = sel.size<1;
+}
+function doMove(){
+  const cats=[...new Set(BASE.map(b=>b.c).concat(Object.values(MOVES)))];
+  const menu=cats.map((c,i)=>(i+1)+') '+c).join('\\n');
+  const pick=prompt('ย้าย '+sel.size+' รายการไปหมวดไหน — พิมพ์เลข\\n'+menu);
+  const c=cats[+pick-1]; if(!c) return;
+  for(const id of sel) MOVES[id]=c;
+  sel=new Set(); persist(); build();
 }
 function doMerge(){ MERGES.push([...sel]); sel=new Set(); persist(); build(); }
-function persist(){ try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES))}catch(e){} }
+function persist(){ try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES))}catch(e){} }
 async function save(){
-  const data={when:new Date().toISOString(),merges:MERGES,
+  const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,
     kinds:view.map(v=>({ชื่อ:v.n,หมวด:v.c,จากสารบัญ:!!v.ours,sku:v.names}))};
   const r=await fetch(SB+'/rest/v1/kitchen_data?on_conflict=key',{method:'POST',
     headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
