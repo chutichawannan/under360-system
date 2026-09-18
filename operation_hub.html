@@ -6228,6 +6228,51 @@ function srcLabel(c){
   return base;
 }
 function crmRow(label,val){ return "<div class='crm-row'><span class='crm-k'>"+esc2(label)+"</span><span class='crm-v'>"+esc2(val)+"</span></div>"; }
+/* ═══ 🟠 เคยซื้อเจ (05 ขอ · นัทสั่ง 18 ก.ย. 2569) ═══
+   เมนูเจ 3 ยุครวมกัน: หมวด jay2026 (คอร์สปีนี้) · รหัส J0… (ยุค Hato) · MC1/MC2 (ซาลาเปาเจ)
+   ดึงรายชื่อรหัสจากฐานข้อมูลครั้งเดียวต่อการเปิดหน้า — เพิ่มเมนูเจใหม่ในหมวดเดิมแล้วนับต่อได้เอง ไม่ต้องแก้โค้ด */
+var _jayCodes = null;
+function isJayCode(code, cat){
+  var c = String(code||"").toUpperCase();
+  return String(cat||"") === "jay2026" || /^J0/.test(c) || c === "MC1" || c === "MC2";
+}
+async function jayCodeSet(){
+  if(_jayCodes) return _jayCodes;
+  _jayCodes = new Set();
+  try{
+    var sb_=getSB(); if(!sb_) return _jayCodes;
+    var r = await sb_.from("menu_items").select("code,category").limit(2000);
+    (r.data||[]).forEach(function(m){ if(isJayCode(m.code, m.category)) _jayCodes.add(String(m.code).toUpperCase()); });
+  }catch(e){}
+  return _jayCodes;
+}
+/* นับจากใบของลูกค้าคนนี้เท่านั้น (โหลดมาแล้วตอนเปิดหน้า) — ไม่ยิงตารางใหญ่ทั้งระบบ
+   ⛔ ใบยกเลิกไม่นับ · ป้ายขึ้นเฉพาะตอนเจอจริง (ไม่เจอ = เงียบ ไม่ใช่ขึ้นว่า "ไม่เคย" ให้รก) */
+async function paintJayBadge(id, c){
+  var box = document.getElementById("oh-jay-"+id); if(!box) return;
+  try{
+    var sb0=getSB(); if(!sb0) return;
+    /* 🔴 ต้องดึงใบเองทั้งหมด ห้ามใช้ 50 ใบล่าสุดที่หน้าโหลดไว้
+       เจอจริงตอนเทส: ลูกค้าที่ซื้อเจไว้นานแล้วแต่สั่งของอื่นถี่ → ใบเจหลุดออกนอก 50 ใบ = ป้ายไม่ขึ้น ทั้งที่มีสิทธิ์ */
+    var ro = await sb0.from("orders").select("id,status,delivery_date,created_at").eq("customer_id", c.id).limit(500);
+    var live = (ro.data||[]).filter(function(o){ return o.status !== "cancelled"; });
+    if(!live.length) return;
+    var codes = await jayCodeSet(); if(!codes.size) return;
+    var byId = {}; live.forEach(function(o){ byId[o.id] = o; });
+    var ids = Object.keys(byId), hitIds = {};
+    var sb_=getSB(); if(!sb_) return;
+    for(var i=0;i<ids.length;i+=60){
+      var r = await sb_.from("order_items").select("order_id,menu_code").in("order_id", ids.slice(i,i+60));
+      (r.data||[]).forEach(function(it){ if(codes.has(String(it.menu_code||"").toUpperCase())) hitIds[it.order_id]=1; });
+    }
+    var hits = Object.keys(hitIds); if(!hits.length) return;
+    var last = hits.map(function(x){ var o=byId[x]; return String(o.delivery_date||o.created_at||"").slice(0,10); })
+                   .filter(Boolean).sort().pop();
+    box.innerHTML = "<span class='tag' style='background:#FFEDD5;color:#9A3412'>🟠 เคยซื้อเจ "+hits.length+" ครั้ง"
+      + (last ? " · ล่าสุด "+fmtDateTh(last) : "") + "</span>";
+  }catch(e){ /* เงียบ — ป้ายนี้เป็นของช่วยตัดสินใจ ห้ามทำให้หน้าลูกค้าพัง */ }
+}
+
 // ── ประเภทลูกค้า (สี) — override ด้วย customer_type ถ้ามี ไม่งั้นอนุมานจาก source_first ──
 function custCategory(c){
   var t=c.customer_type||"";
@@ -6497,7 +6542,8 @@ async function selectCustomer(id){
     +(c.line_picture_url?"<div class='p-avatar'><img src='"+esc2(c.line_picture_url)+"' onerror=\"this.parentNode.innerHTML='👤'\"></div>":"<div class='p-avatar'>👤</div>")
     +"<div style='flex:1;min-width:0'>"
     +"<div class='p-name'>"+esc2(name)+"</div>"
-    +"<div style='display:flex;gap:4px;flex-wrap:wrap;margin:3px 0'>"+catBadge(c)+(isReactivated(c)?"<span class='tag' style='background:#FEE2E2;color:#B91C1C'>🔄 กลับมา</span>":"")+"</div>"
+    +"<div style='display:flex;gap:4px;flex-wrap:wrap;margin:3px 0'>"+catBadge(c)+(isReactivated(c)?"<span class='tag' style='background:#FEE2E2;color:#B91C1C'>🔄 กลับมา</span>":"")
+      +"<span id='oh-jay-"+id+"'></span>"+"</div>"   // 🟠 เคยซื้อเจ — เติมทีหลังเมื่อนับเสร็จ
     +((c.line_display_name && c.line_display_name!==name)?"<div style='font-size:11px;color:rgba(255,255,255,.6)'>LINE: "+esc2(c.line_display_name)+"</div>":"")
     +"<div class='member-badge-ph'>🆔 "+(c.member_id||"—")+"</div>"
     +(c.line_uid?"<div class='uid-chip'>"+esc2(c.line_uid)+"</div>":"")
@@ -6572,6 +6618,7 @@ async function selectCustomer(id){
     +"<div class='p-save-row'><button class='btn-psave' style='background:#1D4ED8' onclick='saveCustAIOH(\""+id+"\")'>💾 บันทึก AI</button></div></div>"
     +"</div>";
   ohLoadPrefs(id, c);
+  paintJayBadge(id, c);   // 🟠 เคยซื้อเจ — นับทีหลัง ไม่ให้หน้าลูกค้าช้าลง
 }
 
 async function adjustCustPoints(id){
