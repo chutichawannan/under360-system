@@ -67,3 +67,15 @@ export function exportCsv(cat) {
   fs.writeFileSync('docs/INGREDIENT_CATALOG.csv', '﻿' + [H.map(esc).join(',')].concat(rows).join('\n'), 'utf8');
   return rows.length;
 }
+
+/** ตารางกฎชื่อ — คำตอบที่นัทให้เพิ่มระหว่างจับคู่ (ชื่อเรียกต่าง / ตัวที่ไม่ใช่ / ขนาดไหนก็ได้) ใช้ต่อยอดหน้านับสต็อก */
+export function exportRules(cat) {
+  const esc = (v) => `"${String(v ?? '').replace(/"/g, '""')}"`;
+  const H = ['ชื่อที่เราใช้', 'ชื่อใน Freshket', 'ชื่อใน GO', 'ข้อควรรู้', 'ไม่ใช่ตัวนี้', 'ยืนยันโดย'];
+  const rows = Object.entries(cat.items)
+    .filter(([n, it]) => it.หมายเหตุ || cat.ไม่ใช่?.[n])
+    .map(([n, it]) => [n, (it.ร้าน.freshket[0] || {}).ชื่อ || '— ยังไม่มีในข้อมูล', (it.ร้าน.go[0] || {}).ชื่อ || '— ยังไม่มีในข้อมูล',
+      it.หมายเหตุ || '', (cat.ไม่ใช่?.[n] || []).join(' · '), it.ยืนยันโดย].map(esc).join(','));
+  fs.writeFileSync('docs/INGREDIENT_NAME_RULES.csv', '﻿' + [H.map(esc).join(',')].concat(rows).join('\n'), 'utf8');
+  return rows.length;
+}
