@@ -8,7 +8,7 @@
  *   ④ ต้องกดการ์ดถึงเห็นชื่อ SKU         → โชว์ทุกบรรทัดตั้งแต่แรก
  *   ⑤ ของที่มี SKU เดียวต้องติ๊กถูกทำไม   → ตัดปุ่ม "ถูก" ทิ้ง ไม่ต้องยืนยันอะไรที่ไม่ต้องตัดสินใจ
  */
-import { readCsv, load } from './catalog.mjs';
+import { readCsv, load, similar } from './catalog.mjs';
 import fs from 'node:fs';
 
 const rows = readCsv('docs/INGREDIENT_KINDS_REVIEW.csv').map((c) => ({
@@ -32,6 +32,15 @@ for (const r of rows) {
 }
 const out = [...merged.values()].map((e, i) => ({ id: i, c: e.c, n: e.n, ours: e.ours, baht: e.baht, s: [...e.s].join('+'), days: e.days, names: e.names }))
   .sort((a, b) => a.c.localeCompare(b.c, 'th') || b.baht - a.baht);
+
+// ── คู่ที่น่าจะเป็นตัวเดียวกัน — ถามทีละคู่ ไม่ต้องให้นัทไล่ดูเองทั้ง 310 ──
+const PAIRS = [];
+for (let i = 0; i < out.length; i++) for (let j = i + 1; j < out.length; j++) {
+  if (out[i].c !== out[j].c) continue;
+  const s = similar(out[i].n, out[j].n);
+  if (s >= 55) PAIRS.push({ a: out[i].id, b: out[j].id, s });
+}
+PAIRS.sort((x, y) => y.s - x.s);
 
 const html = `<!DOCTYPE html>
 <html lang="th"><head><meta charset="utf-8">
@@ -61,14 +70,17 @@ main{padding:12px 14px}
 button{padding:11px 14px;border-radius:11px;border:0;background:#2b3140;color:var(--tx);font:inherit;font-size:14px;font-weight:600}
 button.go{background:var(--sel);flex:1}button:disabled{opacity:.35}
 .cnt{color:var(--dim);font-size:12.5px;white-space:nowrap}
+.mid{text-align:center;color:var(--dim);font-size:13px;margin:-2px 0 7px}
+.btns2{display:flex;gap:9px;margin-top:14px}.btns2 button{flex:1;padding:14px}
 </style></head><body>
 <header>
   <h1>จัดลิสต์วัตถุดิบ</h1>
   <div class="sub">ของที่นัทเคาะชื่อไว้แล้ว = ป้าย <span style="color:var(--ok)">✅ สารบัญ</span> (รวมให้แล้ว) · ที่เหลือถ้าเห็นว่าอันไหน<b>เป็นของชนิดเดียวกัน</b> → ติ๊กทั้งคู่ แล้วกดปุ่มล่าง · <b>บันทึกให้อัตโนมัติ</b> เปิดคนละเครื่องก็ทำต่อกันได้</div>
+  <div class="tabs" id="modes"><div class="tab on" onclick="setMode(0)" id="m0">❓ คู่ที่ต้องเคาะ</div><div class="tab" onclick="setMode(1)" id="m1">📋 ดูทั้งลิสต์</div></div>
   <div class="tabs" id="tabs"></div>
 </header>
 <main id="list"></main>
-<div class="bar">
+<div class="bar" id="bar">
   <span class="cnt" id="cnt"></span><span class="cnt" id="st" style="color:#2ecc71"></span>
   <button class="go" id="mg" disabled onclick="doMerge()">รวมเป็นชนิดเดียว</button>
   <button id="mv" disabled onclick="doMove()">ย้ายหมวด</button>
@@ -76,11 +88,14 @@ button.go{background:var(--sel);flex:1}button:disabled{opacity:.35}
 </div>
 <script>
 const BASE = ${JSON.stringify(out)};
+const PAIRS = ${JSON.stringify(PAIRS)};
 const SB='https://zdartbvhbvqlwzwyyiia.supabase.co', KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 let MERGES = [], MOVES = {};
 try { MERGES = JSON.parse(localStorage.getItem('f_ing_merges')||'[]') } catch(e){}
 try { MOVES = JSON.parse(localStorage.getItem('f_ing_moves')||'{}') } catch(e){}
-let cur, sel = new Set(), view = [];
+let cur, sel = new Set(), view = [], MODE = 0, DONE = {};
+try { DONE = JSON.parse(localStorage.getItem('f_ing_done')||'{}') } catch(e){}
+function setMode(m){ MODE=m; m0.className='tab'+(m?'':' on'); m1.className='tab'+(m?' on':''); draw() }
 
 function build(){
   const byId = new Map(BASE.map(x=>[x.id,{...x,names:[...x.names],ids:[x.id]}]));
@@ -96,7 +111,36 @@ function build(){
   draw();
 }
 const el=(t,c,h)=>{const x=document.createElement(t);if(c)x.className=c;if(h!=null)x.innerHTML=h;return x};
-function draw(){
+function draw(){ MODE ? drawList() : drawPairs(); }
+
+/** โหมดถามทีละคู่ — จำเองว่าเคาะถึงไหน ไม่ต้องไล่ดู 310 การ์ด */
+function drawPairs(){
+  tabs.style.display='none';
+  const live = PAIRS.filter(p=>!DONE[p.a+'-'+p.b] && idOf(p.a)!==idOf(p.b));
+  bar.style.display='none';
+  if(!live.length){ list.innerHTML='<div class="it"><div><div class="nm">เคาะครบแล้ว ✅</div><div class="meta">ไม่เหลือคู่ที่ต้องตัดสินใจ · กดแท็บ "ดูทั้งลิสต์" เพื่อไล่ดูทั้งหมดได้</div></div></div>'; return }
+  const p = live[0], A = byIdView(p.a), B = byIdView(p.b);
+  const done = PAIRS.length - live.length;
+  const card = (d)=>{ const c=el('div','it'); const b=el('div');
+    b.appendChild(el('div','nm',d.n)); b.appendChild(el('div','meta',d.names.length+' SKU · '+d.s+' · ฿'+d.baht.toLocaleString()));
+    for(const n of d.names){const i=n.indexOf(': ');b.appendChild(el('div','sku','<b>'+n.slice(0,i)+'</b> '+n.slice(i+2)))}
+    c.appendChild(b); return c };
+  list.innerHTML='';
+  list.appendChild(el('div','meta','เคาะแล้ว '+done+' / '+PAIRS.length+' คู่ · เหลือ '+live.length));
+  list.appendChild(card(A));
+  list.appendChild(el('div','mid','↕ ตัวเดียวกันไหม'));
+  list.appendChild(card(B));
+  const bs=el('div','btns2');
+  const y=el('button','go','✔ ตัวเดียวกัน — รวมเลย'), n=el('button',null,'✕ คนละอย่าง');
+  y.onclick=()=>{ MERGES.push([p.a,p.b]); DONE[p.a+'-'+p.b]=1; persist(); build() };
+  n.onclick=()=>{ DONE[p.a+'-'+p.b]=1; persist(); build() };
+  bs.append(y,n); list.appendChild(bs);
+}
+function idOf(id){ return (view.find(v=>v.ids.includes(id))||{}).id }
+function byIdView(id){ return view.find(v=>v.ids.includes(id)) || BASE.find(b=>b.id===id) }
+
+function drawList(){
+  tabs.style.display='flex'; bar.style.display='flex';
   const cats=[...new Set(view.map(v=>v.c))];
   tabs.innerHTML='';
   for(const c of cats){const t=el('div','tab'+(c===cur?' on':''),c+' '+view.filter(v=>v.c===c).length);t.onclick=()=>{cur=c;draw()};tabs.appendChild(t)}
@@ -127,11 +171,11 @@ function doMerge(){ MERGES.push([...sel]); sel=new Set(); persist(); build(); }
 /** เก็บในเครื่อง + ส่งขึ้นระบบอัตโนมัติ (หน่วง 1 วิ กันยิงถี่) → เปิดคนละเครื่องก็ต่องานกันได้ */
 let t;
 function persist(){
-  try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES))}catch(e){}
+  try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES));localStorage.setItem('f_ing_done',JSON.stringify(DONE))}catch(e){}
   clearTimeout(t); t=setTimeout(()=>save(true),1000);
 }
 async function save(auto){
-  const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,
+  const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,done:DONE,
     kinds:view.map(v=>({ชื่อ:v.n,หมวด:v.c,จากสารบัญ:!!v.ours,sku:v.names}))};
   const r=await fetch(SB+'/rest/v1/kitchen_data?on_conflict=key',{method:'POST',
     headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
@@ -146,7 +190,7 @@ async function save(auto){
     if (d && (d.merges||d.moves)) {
       const localN = MERGES.length + Object.keys(MOVES).length;
       const remoteN = (d.merges||[]).length + Object.keys(d.moves||{}).length;
-      if (remoteN >= localN) { MERGES = d.merges||[]; MOVES = d.moves||{}; }
+      if (remoteN >= localN) { MERGES = d.merges||[]; MOVES = d.moves||{}; DONE = d.done||DONE; }
       st.textContent = '☁️ ต่อจากที่ทำไว้ล่าสุด';
     }
   } catch(e) { st.textContent = 'ออฟไลน์ — ทำต่อได้ เดี๋ยวบันทึกให้เมื่อเน็ตมา'; }
