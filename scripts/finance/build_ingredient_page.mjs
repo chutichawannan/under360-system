@@ -64,15 +64,15 @@ button.go{background:var(--sel);flex:1}button:disabled{opacity:.35}
 </style></head><body>
 <header>
   <h1>จัดลิสต์วัตถุดิบ</h1>
-  <div class="sub">ของที่นัทเคาะชื่อไว้แล้ว = ป้าย <span style="color:var(--ok)">✅ สารบัญ</span> (รวมให้แล้ว) · ที่เหลือถ้าเห็นว่าอันไหน<b>เป็นของชนิดเดียวกัน</b> → ติ๊กทั้งคู่ แล้วกดปุ่มล่าง</div>
+  <div class="sub">ของที่นัทเคาะชื่อไว้แล้ว = ป้าย <span style="color:var(--ok)">✅ สารบัญ</span> (รวมให้แล้ว) · ที่เหลือถ้าเห็นว่าอันไหน<b>เป็นของชนิดเดียวกัน</b> → ติ๊กทั้งคู่ แล้วกดปุ่มล่าง · <b>บันทึกให้อัตโนมัติ</b> เปิดคนละเครื่องก็ทำต่อกันได้</div>
   <div class="tabs" id="tabs"></div>
 </header>
 <main id="list"></main>
 <div class="bar">
-  <span class="cnt" id="cnt"></span>
+  <span class="cnt" id="cnt"></span><span class="cnt" id="st" style="color:#2ecc71"></span>
   <button class="go" id="mg" disabled onclick="doMerge()">รวมเป็นชนิดเดียว</button>
   <button id="mv" disabled onclick="doMove()">ย้ายหมวด</button>
-  <button onclick="save()">บันทึก</button>
+  
 </div>
 <script>
 const BASE = ${JSON.stringify(out)};
@@ -124,16 +124,34 @@ function doMove(){
   sel=new Set(); persist(); build();
 }
 function doMerge(){ MERGES.push([...sel]); sel=new Set(); persist(); build(); }
-function persist(){ try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES))}catch(e){} }
-async function save(){
+/** เก็บในเครื่อง + ส่งขึ้นระบบอัตโนมัติ (หน่วง 1 วิ กันยิงถี่) → เปิดคนละเครื่องก็ต่องานกันได้ */
+let t;
+function persist(){
+  try{localStorage.setItem('f_ing_merges',JSON.stringify(MERGES));localStorage.setItem('f_ing_moves',JSON.stringify(MOVES))}catch(e){}
+  clearTimeout(t); t=setTimeout(()=>save(true),1000);
+}
+async function save(auto){
   const data={when:new Date().toISOString(),merges:MERGES,moves:MOVES,
     kinds:view.map(v=>({ชื่อ:v.n,หมวด:v.c,จากสารบัญ:!!v.ours,sku:v.names}))};
   const r=await fetch(SB+'/rest/v1/kitchen_data?on_conflict=key',{method:'POST',
     headers:{apikey:KEY,Authorization:'Bearer '+KEY,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
     body:JSON.stringify({key:'f_ingredient_kinds_review',data})});
-  alert(r.ok?('บันทึกแล้ว ✅ '+view.length+' ชนิด'):'บันทึกไม่สำเร็จ ('+r.status+') — ที่ทำไว้ยังอยู่ในเครื่อง');
+  st.textContent = r.ok ? ('💾 บันทึกแล้ว ' + new Date().toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})) : '⚠️ บันทึกไม่ขึ้นระบบ (ยังอยู่ในเครื่อง)';
+  if(!auto&&!r.ok) alert('บันทึกไม่สำเร็จ '+r.status);
 }
-build();
+(async () => {
+  try {
+    const r = await fetch(SB+'/rest/v1/kitchen_data?select=data&key=eq.f_ingredient_kinds_review',{headers:{apikey:KEY,Authorization:'Bearer '+KEY}});
+    const j = await r.json(); const d = j[0] && j[0].data;
+    if (d && (d.merges||d.moves)) {
+      const localN = MERGES.length + Object.keys(MOVES).length;
+      const remoteN = (d.merges||[]).length + Object.keys(d.moves||{}).length;
+      if (remoteN >= localN) { MERGES = d.merges||[]; MOVES = d.moves||{}; }
+      st.textContent = '☁️ ต่อจากที่ทำไว้ล่าสุด';
+    }
+  } catch(e) { st.textContent = 'ออฟไลน์ — ทำต่อได้ เดี๋ยวบันทึกให้เมื่อเน็ตมา'; }
+  build();
+})();
 </script></body></html>`;
 
 fs.writeFileSync('pwa/ingredients_review.html', html, 'utf8');
