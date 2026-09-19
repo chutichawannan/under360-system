@@ -10,12 +10,13 @@
  *   "หากเมนูถูกทุกอย่าง ฉันไม่ต้องการการ approve เลยด้วยซ้ำ"
  * นัทเคาะเพิ่ม 11 ก.ย. (ผ่านนิว): รูปแพคกับข้าว "ติดข้าวมาบ้าง ... ไม่มีปัญหา" → D ใช้รูปของ S คู่ตัวเอง = ใช้ได้
  *
- * 5 ข้อ — ตก 1 ข้อ = ไม่ผ่านทั้งชุด
+ * 6 ข้อ — ตก 1 ข้อ = ไม่ผ่านทั้งชุด
  *   ① ไม่ซ้ำ ≥ 90 วัน — ทั้งที่ขายจริง และที่เคยขึ้นช่องใน weekly_slot_history
  *   ② รูป — ทุกตัวมีรูป · คู่ S/D วิธีทำต้องไม่ขัดกัน (เคส S145 ข้าวต้ม ↔ D145 ผัด 11 ก.ย.)
  *   ③ ชื่อเล่น — S 8 ตัว D 5 ตัว · subcode S1–S8 / D1–D5 ครบ ไม่ซ้ำ · Dn ต้องเลขรหัสตรงกับ Sn
  *   ④ โภชนาการ — kcal + protein + carb + fat ครบทุกตัว
  *   ⑤ ราคา — S ≥ 125 · D ≥ 80
+ *   ⑥ หมวด — S → no_special · D → pack_regular (หมวดผิด = ลูกค้าไม่เห็นเมนูบนหน้า LIFF)
  *
  * ⚠️ ธง (ไม่ตก แต่คนดูรูปต้องเช็คตามลิสต์ก่อนกด --visual-ok):
  *   · ไฟล์รูปชื่อเป็นรหัสอื่น — อาจแค่ชื่อไฟล์ค้างจากการโยกรหัส (รูปถูกจาน) หรือยืมรูปผิดจาน · เครื่องแยกไม่ออก
@@ -86,7 +87,7 @@ async function main() {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(week || '')) { console.error('ใช้: node scripts/check_weekly_menu.mjs 2026-09-21 [--no-save] [--visual-ok "ชื่อ"]'); return 1; }
   if (vi > 0 && !visualBy) { console.error('--visual-ok ต้องตามด้วยชื่อคนที่เปิดดูรูป'); return 1; }
 
-  const menus = await all(`menu_items?select=code,name,price,kcal,protein,carb,fat,image_urls,subcode&available_from=eq.${week}`);
+  const menus = await all(`menu_items?select=code,name,price,kcal,protein,carb,fat,image_urls,subcode,category&available_from=eq.${week}`);
   const fails = [], warns = [];
   const bad = (group, msg) => { fails.push(group + ' ' + msg); console.log('  🔴 ' + msg); };
   const flag = msg => { warns.push(msg); console.log('  ⚠️ ' + msg); };
@@ -200,6 +201,19 @@ async function main() {
   });
   if (fails.length === b5) console.log('  ✅ ผ่าน');
 
+  /* ⑥ หมวด — เพิ่ม 19 ก.ย. 2569 หลังของพังจริง
+     วันนั้นเปิดขายครบ 13/13 ใน DB แต่ 12 ตัวติดหมวด hato_import ซึ่งไม่มีแท็บบนหน้าลูกค้า
+     → ลูกค้าเห็นเมนูใหม่ตัวเดียว ตลอดช่วงที่บรอดแคสต์ ~4,400 คนวิ่งเข้ามา (ได้ยอดกลับมา 1 ใบ)
+     is_available=true อย่างเดียวไม่พอ หมวดต้องถูกด้วย ของถึงจะโผล่ */
+  console.log(String.fromCharCode(10)+'⑥ หมวด (S → no_special · D → pack_regular)');
+  const b6 = fails.length;
+  menus.forEach(m => {
+    const want = /^S/i.test(m.code) ? 'no_special' : 'pack_regular';
+    if (String(m.category || '') !== want)
+      bad('⑥', m.code + ' อยู่หมวด ' + (m.category || '(ว่าง)') + ' ต้องเป็น ' + want + ' — ลูกค้าจะไม่เห็นเมนูนี้บนหน้า LIFF');
+  });
+  if (fails.length === b6) console.log('  ✅ ผ่าน');
+
   const pass = fails.length === 0;
   const fp = fingerprint(menus);
   console.log('\n' + '─'.repeat(52));
@@ -222,7 +236,7 @@ async function main() {
     console.log('🔴 ไม่ผ่าน ' + fails.length + ' ข้อ — ห้ามเปิดขาย ห้ามยิงบรอดแคสต์ · แจ้งนัท + นิวทันที');
     console.log('   ⛔ ห้ามผ่อนกฎให้ทันเวลา · ไม่ทัน = ตกด่าน');
   } else {
-    console.log('✅ ผ่านด่านเครื่อง 5 ข้อ — ยังขาดคนเปิดดูรูปทุกตัว (--visual-ok) ก่อนเปิดขายได้');
+    console.log('✅ ผ่านด่านเครื่อง 6 ข้อ — ยังขาดคนเปิดดูรูปทุกตัว (--visual-ok) ก่อนเปิดขายได้');
   }
   if (warns.length) console.log('⚠️ ธง ' + warns.length + ' ข้อ — คนดูรูปต้องเช็คตามนี้ก่อนกด --visual-ok');
 
