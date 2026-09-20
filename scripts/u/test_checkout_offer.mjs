@@ -33,7 +33,7 @@ t('ตะกร้าว่าง = ไม่โชว์', has('if(!hit || !car
 
 console.log(NL + '④ แก้ได้จากฐานข้อมูล ไม่ต้องแตะโค้ด');
 t('อ่านจาก kitchen_data คีย์ checkout_offer', has("const OFFER_KEY = 'checkout_offer';"), true);
-t('อยู่ใน batch โหลด config เดิม ไม่ยิง query ใหม่', has('CARDMIN_KEY, OFFER_KEY]'), true);
+t('อยู่ใน batch โหลด config เดิม ไม่ยิง query ใหม่', L.split('CFG_KEYS')[1].split(']')[0].indexOf('OFFER_KEY') >= 0, true);
 t('ไม่มีรหัสสินค้า/ราคาฝังตายในโค้ด', !has("code: 'MC2'") && !has('price: 199'), true);
 t('ไม่มีคีย์ = ไม่มีข้อเสนอ หน้าเดิมทุกอย่าง', has('checkoutOffer = (cfgMap[OFFER_KEY]'), true);
 
