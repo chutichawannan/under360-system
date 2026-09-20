@@ -2027,6 +2027,9 @@ const ORDERGIFT_KEY = 'order_gifts';
 const CARDMIN_KEY = 'card_min_total';
 /* ข้อเสนอท้ายตะกร้า — { code, price, label, note, max, active } · ไม่มี = ไม่มีข้อเสนอ */
 const OFFER_KEY = 'checkout_offer';
+/* ค่าส่งต่างจังหวัดของแพค — { "<package_id>": 100 } · ไม่มี = ฟรีเหมือนเดิม */
+const PACKSHIP_KEY = 'pack_upcountry_fee';
+let packUpFee = {};
 let checkoutOffer = null;
 let cardMinCfg = null;
 const cardMinTotal  = () => { const v = cardMinCfg; if(!v) return 0;
@@ -3230,7 +3233,7 @@ async function init() {
   // allSettled = อันไหนพังไม่ล้มทั้ง batch (คงพฤติกรรม non-blocking เดิม)
   const PKGSET_KEY = 'pkg_sets';   // กลุ่มแพคสำหรับลิงก์แอด: { "<ชื่อกลุ่ม>": {title, subtitle, ids:[...]} }
 const MAKE_KEY = 'k2_make';   // ใบสั่งงานครัว: { menu_id: {n, from:'YYYY-MM-DD'} }
-const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, PKGSET_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY, OFFER_KEY];
+const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_menus', MAKE_KEY, PKGSET_KEY, WEEK_KEY, PKGPLAN_KEY, SALE_KEY, PKGCLR_KEY, PKGFIXED_KEY, PKGGIFT_KEY, CAMPAIGN_KEY, BETA_KEY, PKGQUOTA_KEY, ORDERGIFT_KEY, CARDMIN_KEY, OFFER_KEY, PACKSHIP_KEY];
   const [utR, scR, custR, menuR, cfgR, payR, ocR] = await Promise.allSettled([
     sb.from('orders').select('want_utensils').limit(1),
     sb.from('orders').select('source_content').limit(1),               // capability: มีคอลัมน์ source_content ไหม                                        // capability: มีคอลัมน์ want_utensils ไหม
@@ -3368,6 +3371,8 @@ const CFG_KEYS = ['appConfig','he_cat_hidden','home_section_title','mp_request_m
     orderGifts   = (cfgMap[ORDERGIFT_KEY] && typeof cfgMap[ORDERGIFT_KEY]==='object') ? cfgMap[ORDERGIFT_KEY] : {};
     /* อ่านพลาด/ไม่มีคีย์ = ไม่มีข้อเสนอ ลูกค้ายังสั่งได้ปกติทุกอย่าง */
     checkoutOffer = (cfgMap[OFFER_KEY] && typeof cfgMap[OFFER_KEY]==='object') ? cfgMap[OFFER_KEY] : null;
+    /* อ่านพลาด = ฟรีเหมือนเดิม — ห้ามเผลอไปคิดเงินลูกค้าเพราะอ่าน config ไม่ได้ */
+    packUpFee     = (cfgMap[PACKSHIP_KEY] && typeof cfgMap[PACKSHIP_KEY]==='object') ? cfgMap[PACKSHIP_KEY] : {};
     if (Object.keys(pkgQuota).length) loadPkgSold();   // ไม่ await — ไม่ให้ตัวนับถ่วงหน้าแรก
     try { syncCartSalePrices(); } catch(e) {}
     // ชื่อหมวดจาก DB จริง (appConfig.categories = [{key,label}])
@@ -6266,9 +6271,28 @@ function tapSuggestedPromo(id){
 function cartHasFreeShipping(){
   return cart.some(c => c.type === 'meal_plan' || (c.type === 'package' && c.free_shipping));
 }
+/* 🚚 แพคที่ "ส่งฟรี" ต้องรู้จักเขตด้วย (นัทสั่ง 20 ก.ย. 2569)
+   เดิมธง free_shipping ยกเว้นค่าส่งทุกเขต → Pack S ส่งนครสวรรค์ 243 กม. คิด ฿0 (ใบ U-0922-003)
+   ของจริงที่ประกาศไว้: กทม.–ปริมณฑล ฟรีทุกไซส์ · ต่างจังหวัด S ฿100 · M/L ฟรี
+
+   คืนค่า = "ลูกค้าต้องจ่ายค่าส่งเท่าไหร่" เมื่อในตะกร้ามีของที่ส่งฟรี
+     null = ไม่เข้าเงื่อนไขส่งฟรีเลย (คิดตามระยะปกติ)
+     0    = ฟรีจริง
+     100  = จ่ายเท่านี้คงที่ ไม่ว่าจะไกลแค่ไหน
+   หลายแพคในตะกร้า = เก็บตัวที่แพงสุดครั้งเดียว ไม่บวกกัน (ค่าส่งคือค่าส่ง ไม่ใช่ค่าสินค้า) */
+function packShipTarget(){
+  const rows = cart.filter(c => c.type === 'meal_plan' || (c.type === 'package' && c.free_shipping));
+  if(!rows.length) return null;
+  if(!isOutOfProvince) return 0;              // กทม.–ปริมณฑล = ฟรีเหมือนเดิมทุกไซส์
+  let need = 0;
+  rows.forEach(c => { const f = Number(packUpFee[c.package_id] || 0); if(f > need) need = f; });
+  return need;                                 // ต่างจังหวัด: 0 = ฟรี · >0 = เก็บเท่านี้คงที่
+}
 // ส่งฟรีสำหรับ "การแสดงผล" = ของในตะกร้า หรือ โค้ดส่งฟรี (โค้ดต้องรู้ค่าส่งก่อนถึงจะบอกว่าฟรีได้)
 function shipFreeDisplay(o){
-  if (cartHasFreeShipping()) return true;
+  const t = packShipTarget();
+  if (t === 0) return true;          // ฟรีจริงเท่านั้นถึงจะขึ้นคำว่า "ฟรี"
+  if (t > 0) return false;           // ต่างจังหวัดที่ยังต้องจ่าย — ห้ามขึ้นว่าฟรี
   return appliedPromos.some(p => p.discount_type === 'free_shipping') && o.feeKnown;
 }
 
@@ -6308,11 +6332,15 @@ function computeOrder(){
   autoList.forEach(a => { a.amount = (a.type==='fixed') ? a.value : Math.round(sub * a.value/100); autoDisc += a.amount; });
   const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
   // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB + Meal Plan ทุกแพ็ค → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
-  const pkgFreeShip = cartHasFreeShipping();
+  const packTarget = packShipTarget();   // null = ไม่มีของส่งฟรี · 0 = ฟรี · >0 = จ่ายคงที่เท่านี้
   /* ส่งฟรีมี 2 ระดับแล้ว: ระดับสินค้า (แพคที่ติ๊กไว้) และระดับลูกค้า (เพื่อนนัท)
      เขียนแยกบรรทัดตั้งใจ — คนทั่วไปไม่โดนอะไรเปลี่ยนเลย ตรรกะค่าส่งเดิมไม่ถูกแตะ */
   const vipFreeShip = isVipFriend();
-  if(pkgFreeShip || vipFreeShip) shipDisc = fee;
+  if(vipFreeShip) shipDisc = fee;
+  /* ของส่งฟรีในตะกร้า: ส่วนลดค่าส่ง = ค่าส่งตามระยะ − ยอดที่ต้องจ่ายจริง
+     ต่างจังหวัด Pack S: ค่าส่งตามระยะชน ฿200 (เพดาน) → ลด ฿100 → ลูกค้าจ่าย ฿100 พอดี
+     ถ้าระยะสั้นจนค่าส่งต่ำกว่า ฿100 อยู่แล้ว = ไม่บวกเพิ่ม ลูกค้าจ่ายตามจริง (Math.max กัน) */
+  else if(packTarget != null) shipDisc = Math.max(0, fee - packTarget);
   const feeAfter = Math.max(0, fee - shipDisc);
   const discount = itemDiscTotal + shipDisc;
   const total = Math.max(0, sub - itemDiscTotal + feeAfter);
@@ -6699,7 +6727,7 @@ function setCusPin(lat,lng,addr){
   const fee=calcDeliveryFee(distKm, selSlot);
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
-  const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent=cartHasFreeShipping()?'ฟรี':'฿'+fee;
+  const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent=packShipTarget()===0?'ฟรี':'฿'+(packShipTarget()>0?Math.min(fee,packShipTarget()):fee);
   if(addr){ _setAddrFields(addr); }
   else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → หาที่อยู่ให้เอง
     lookupPlaceAtPin(lat,lng);
@@ -6757,7 +6785,7 @@ function updateRoadDistance(lat, lng){
       distKm = el.distance.value/1000;                 // ระยะขับจริง (กม.)
       const fee = calcDeliveryFee(distKm, selSlot);
       const fD=document.getElementById('fee-dist'); if(fD) fD.textContent='🚗 '+distKm.toFixed(1)+' กม. (ระยะขับจริง)';
-      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent=cartHasFreeShipping()?'ฟรี':'฿'+fee;
+      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent=packShipTarget()===0?'ฟรี':'฿'+(packShipTarget()>0?Math.min(fee,packShipTarget()):fee);
       updateCartTotals();
     });
   }catch(e){ const fD=document.getElementById('fee-dist'); if(fD && distKm) fD.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว'; }
