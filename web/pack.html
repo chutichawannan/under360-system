@@ -170,6 +170,7 @@ header .btn,header .btn-line,header a.btn-line{
 @media(max-width:520px){.heropics{gap:7px}}
 .packs .sub2{color:var(--muted);margin:8px 0 0}
 .packs .ship{margin-top:18px;font-size:.9375rem;color:var(--muted)}
+.dim2{color:var(--muted);font-size:.9rem}
 .packs .ship b{color:var(--deep);font-family:'Prompt'}
 .why{padding:46px 0 10px}
 .whygrid{display:grid;grid-template-columns:minmax(0,340px) 1fr;gap:26px;align-items:center}
@@ -233,7 +234,8 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <h2>เลือกแพ็คที่ใช่ แล้วสั่งต่อในไลน์</h2>
   <p class="sub2">เลือกเมนูเองได้ทุกไซส์ · ยิ่งแพ็คใหญ่ ยิ่งเฉลี่ยถูกลง</p>
   <div class="packrow" id="packs"></div>
-  <p class="ship">🚚 <b>กรุงเทพฯ–ปริมณฑล ส่งฟรีทุกไซส์</b> · ต่างจังหวัด ไซส์ M และ L ส่งฟรี · ไซส์ S ค่าส่ง ฿100</p>
+  <p class="ship">🚚 <b>ค่าส่งเมื่อซื้อเป็นแพค:</b> กรุงเทพฯ–ปริมณฑล <b>ส่งฟรีทุกไซส์</b> · ต่างจังหวัด ไซส์ M และ L ส่งฟรี · ไซส์ S ค่าส่ง ฿100<br>
+     <span class="dim2">เลือกกับข้าวแยกเป็นใบ (ไม่ครบแพค) คิดค่าส่งคนละแบบ — ดูในตะกร้า</span></p>
 </div></section>
 
 <!-- ══ ข้อดี 3 ข้อ — สั้นที่สุดเท่าที่พอให้ตัดสินใจ ห้ามยาวกว่านี้ ══ -->
@@ -321,9 +323,14 @@ const OA_URL = 'https://line.me/R/ti/p/@under360';
 /* u360-pack-promo — โปรที่แอด Facebook โฆษณาอยู่ (ตรวจกับ promo_codes ในระบบแล้วว่ามีจริง)
    ⚠️ ถ้าโปรจบ: ตั้ง PACK_PROMO = null พอ — ราคาจะกลับเป็นปกติทั้งหน้าเอง ไม่ต้องไล่แก้หลายจุด */
 const PACK_PROMO = { match:/Protein Pack S/i, code:'FBPACK', off:120, min:1000 };
-const FEE_UPCOUNTRY = 200;          /* ตจว. — ตรงกับเพดานที่ร้านใช้จริง */
-const FREE_BKK_MIN  = 700;          /* กรุงเทพฯ ซื้อครบเท่านี้ส่งฟรี */
-const FEE_BKK       = 60;
+/* u360-ship-policy — ค่าส่ง 2 ชุดในหน้าเดียวกัน คนละเรื่องกัน (นโยบายเต็ม: docs/SHIPPING_POLICY_PACK.md)
+   ① ซื้อแยกเป็นใบ (ตะกร้าข้างล่าง): กทม. ฿60 ครบ ฿700 ฟรี · ตจว. ฿200
+   ② ซื้อเป็นแพค S/M/L: กทม. ฟรีทุกไซส์ · ตจว. S ฿100 · M/L ฟรี
+   🔴 เคยทำลูกค้าสับสนมาแล้ว (06 แจ้ง 20 ก.ย. นัทสั่งแก้ให้เป็นทิศทางเดียวกัน)
+      → ตัวเลขชุดไหนโผล่ที่ไหน ต้องมีคำกำกับเสมอว่าเป็นของ "แพค" หรือ "ซื้อแยกเป็นใบ" */
+const FEE_UPCOUNTRY = 200;          /* ซื้อแยกเป็นใบ · ตจว. — เพดานที่ร้านใช้จริง (ไม่ใช่ค่าส่งแพค) */
+const FREE_BKK_MIN  = 700;          /* ซื้อแยกเป็นใบ · กทม. ซื้อครบเท่านี้ส่งฟรี */
+const FEE_BKK       = 60;           /* ซื้อแยกเป็นใบ · กทม. */
 
 /* ═══ ที่มาของลูกค้า: เก็บให้ครบ + ส่งต่อไปปลายทาง (ยกชุดเดียวกับ index.html) ═══ */
 (function(){
@@ -537,7 +544,8 @@ function renderCart(){
         <option value="bkk"${zone==='bkk'?' selected':''}>กรุงเทพฯ และปริมณฑล</option>
         <option value="up"${zone==='up'?' selected':''}>ต่างจังหวัด (ส่งแช่แข็งทั่วไทย)</option>
       </select></div>
-    <div class="sum"><span>ค่าส่ง</span><span>${fee ? '฿'+fee : '<b style="color:var(--green)">ฟรี</b>'}</span></div>
+    <div class="sum"><span>ค่าส่ง <span class="dim2">(ซื้อแยกเป็นใบ)</span></span><span>${fee ? '฿'+fee : '<b style="color:var(--green)">ฟรี</b>'}</span></div>
+    ${zone==='up' ? '<p style="color:var(--muted);font-size:.9rem;margin:-6px 0 6px">ถ้าซื้อเป็น<b>แพค</b>แทน ค่าส่งต่างจังหวัดถูกกว่านี้ — ไซส์ S ฿100 · ไซส์ M และ L ส่งฟรี</p>' : ''}
     ${zone==='bkk' && sub<FREE_BKK_MIN ? `<p style="color:var(--muted);font-size:.9rem;margin:-6px 0 6px">ซื้อครบ ฿${FREE_BKK_MIN} ส่งฟรีในกรุงเทพฯ (อีก ฿${(FREE_BKK_MIN-sub).toLocaleString('th-TH')})</p>` : ''}
     <div class="sum tot"><span>รวมทั้งหมด</span><span>฿${(sub+fee).toLocaleString('th-TH')}</span></div>
 
