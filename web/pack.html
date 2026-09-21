@@ -141,6 +141,14 @@ footer a{color:var(--muted)}
 body{padding-bottom:0}
 body.hascart{padding-bottom:72px}
 .pack.hot{border-color:var(--green);box-shadow:0 0 0 1px var(--green) inset}
+/* u360-pack-hero — ไซส์ที่ชูอยู่ต้องเห็นก่อนเพื่อน ไม่ใช่แค่เรียงมาก่อน */
+.pack{position:relative}
+.pack .badge{position:absolute;top:-11px;left:16px;background:var(--soft);border:1px solid var(--hair);
+  border-radius:999px;padding:3px 12px;font-family:'Prompt';font-weight:600;font-size:.8rem;color:var(--muted)}
+.pack.hero{background:#F4FBF5;padding:26px 22px}
+.pack.hero .badge{background:var(--green);border-color:var(--green);color:#fff}
+.pack.hero .pr{font-size:2.1rem}
+.pack .save{margin-top:6px;color:var(--deep);font-size:.9rem;font-family:'Prompt'}
 .pack .was{color:var(--muted);text-decoration:line-through;font-family:'Prompt';font-size:1.05rem;margin-top:6px}
 .pack .was+.pr{margin-top:0}
 .pack .promo{margin-top:8px;background:#FFF8E1;border:1px dashed #E6B800;border-radius:8px;padding:7px 10px;font-size:.9rem;color:#8A6D00}
@@ -212,6 +220,7 @@ height="0" width="0" style="display:none;visibility:hidden"></iframe></noscript>
   <p class="lede">ปรุงเสร็จแช่แข็งทันทีจากครัวเรา เก็บได้นาน อุ่นแล้วกินได้เลย — มีข้าวอยู่แล้วที่บ้าน แค่เติมกับข้าวให้ครบมื้อ</p>
   <div class="facts">
     <span class="fact">แพ็คใหญ่เริ่ม <b id="fFrom">฿1,400</b></span>
+    <span class="fact" id="fScale" hidden></span>
     <span class="fact"><b id="fCount">20</b> เมนูให้เลือกเอง</span>
     <span class="fact">เมนูใหม่ <b>5 อย่าง</b> ทุกสัปดาห์</span>
     <span class="fact">กรุงเทพฯ <b>ส่งฟรี</b> ทุกไซส์</span>
@@ -322,7 +331,7 @@ const ORDER_URL = 'https://liff.line.me/2011148232-oul66cEs?lid=2011148232-oul66
 const OA_URL = 'https://line.me/R/ti/p/@under360';
 /* u360-pack-promo — โปรที่แอด Facebook โฆษณาอยู่ (ตรวจกับ promo_codes ในระบบแล้วว่ามีจริง)
    ⚠️ ถ้าโปรจบ: ตั้ง PACK_PROMO = null พอ — ราคาจะกลับเป็นปกติทั้งหน้าเอง ไม่ต้องไล่แก้หลายจุด */
-const PACK_PROMO = { match:/Protein Pack S/i, code:'FBPACK', off:120, min:1000 };
+const PACK_PROMO = { match:/Protein Pack/i, code:'FBPACK', off:120, min:1000 };
 /* u360-ship-policy — ค่าส่ง 2 ชุดในหน้าเดียวกัน คนละเรื่องกัน (นโยบายเต็ม: docs/SHIPPING_POLICY_PACK.md)
    ① ซื้อแยกเป็นใบ (ตะกร้าข้างล่าง): กทม. ฿60 ครบ ฿700 ฟรี · ตจว. ฿200
    ② ซื้อเป็นแพค S/M/L: กทม. ฟรีทุกไซส์ · ตจว. S ฿100 · M/L ฟรี
@@ -598,21 +607,47 @@ async function loadPacks(){
   try{
     const { data } = await sb.from('packages')
       .select('id,name,qty,base_price,free_shipping').eq('is_active',true).limit(40);
+    /* u360-pack-hero — 06 ขอ · นัทเคาะ 21 ก.ย. "เอาเลย"
+       เหตุผลเป็นเรื่องเงิน: ค่าแอดต่อการขาย 1 ใบ ~฿1,600 แต่กำไร Pack S (฿1,400) ~฿462 = ขายเท่าไหร่ก็ไม่คุ้ม
+       M ฿2,650 → ~฿875 · L ฿4,900 → ~฿1,617 → ให้ไซส์ใหญ่เป็นตัวชูโรงแทน
+       ⛔ ห้ามเอา S ออก — ยังต้องมีให้คนงบน้อย แค่ไม่ใช่พระเอก (06 ย้ำ)
+       ⚠️ ป้ายต้องเป็นความจริง: นับออเดอร์จริง 21 ก.ย. ได้ S 9 ใบ · M 3 · L 3
+          → S ยังนำอยู่ เลย **ห้าม**ติดป้าย "ยอดนิยม" ให้ M ใช้คำว่า "แนะนำ" แทน */
+    const ORDER = { M: 0, L: 1, S: 2 };
+    const sizeOf = x => (String(x.name).match(/Protein Pack\s*([SML])/i) || [])[1] || '';
+    const perPack = x => (x.qty ? Math.round((Number(x.base_price) || 0) / x.qty) : 0);
+    const BADGE = { M: '⭐ แนะนำ', L: 'เฉลี่ยถูกที่สุด', S: 'งบเริ่มต้น' };
     const packs = (data||[]).filter(p => /Protein Pack/i.test(p.name||''))
-      .sort((a,b) => (a.qty||0)-(b.qty||0));
+      .sort((a,b) => ((ORDER[sizeOf(a)] == null ? 9 : ORDER[sizeOf(a)]) - (ORDER[sizeOf(b)] == null ? 9 : ORDER[sizeOf(b)])));
+    const sPack = packs.filter(x => sizeOf(x) === 'S')[0];
+    const perS = sPack ? perPack(sPack) : 0;
     if(!packs.length){ el.closest('section').style.display='none'; return; }
     /* ป้ายบนหัวหน้า = ราคาไซส์ถูกสุดจาก DB จริง (ห้ามฮาร์ดโค้ด — แอดกับหน้าเว็บต้องพูดเลขเดียวกัน) */
     const cheapest = Math.min(...packs.map(x => Number(x.base_price) || Infinity));
     const fFrom = document.getElementById('fFrom');
     if(fFrom && isFinite(cheapest)) fFrom.textContent = '฿' + cheapest.toLocaleString('th-TH');
+    /* ป้าย "ยิ่งแพคใหญ่ยิ่งถูก" — คิดจากราคาจริงใน DB ไม่ฮาร์ดโค้ด (ราคาขยับเมื่อไหร่ป้ายขยับเอง) */
+    const pers = packs.map(perPack).filter(n => n > 0);
+    const fScale = document.getElementById('fScale');
+    if(fScale && pers.length > 1){
+      const hi = Math.max.apply(null, pers), lo = Math.min.apply(null, pers);
+      if(hi > lo){
+        fScale.innerHTML = 'ยิ่งแพ็คใหญ่ยิ่งถูก <b>฿' + hi + ' → ฿' + lo + '</b> ต่อแพ็ค';
+        fScale.hidden = false;
+      }
+    }
     el.innerHTML = packs.map(p => {
-      const size = (String(p.name).match(/Protein Pack\s*([SML])/i) || [])[1] || '';
+      const size = sizeOf(p);
       const base = Number(p.base_price) || 0;
+      const per  = perPack(p);
+      const save = (perS && per && per < perS) ? (perS - per) * (p.qty || 0) : 0;
       const promo = (PACK_PROMO && PACK_PROMO.match.test(p.name||'') && base >= PACK_PROMO.min) ? PACK_PROMO : null;
-      return `<div class="pack${promo?' hot':''}">
+      return `<div class="pack${size==='M'?' hot hero':''}">
+        ${BADGE[size] ? '<div class="badge">' + BADGE[size] + '</div>' : ''}
         <div class="nm">${esc(String(p.name).replace(/—.*$/,'').trim())}</div>
         <div class="pr">฿${base.toLocaleString('th-TH')}</div>
-        <div class="pe">${p.qty} แพ็ค · เฉลี่ยแพ็คละ ฿${Math.round(base/p.qty)}</div>
+        <div class="pe">${p.qty} แพ็ค · <b>เฉลี่ยแพ็คละ ฿${per}</b></div>
+        ${save ? '<div class="save">ถูกกว่าไซส์ S แพ็คละ ฿' + (perS - per) + ' — ทั้งแพ็คประหยัด ฿' + save.toLocaleString('th-TH') + '</div>' : ''}
         ${promo ? `<div class="promo">ใส่โค้ด <b>${promo.code}</b> ตอนสั่ง — ลด ฿${promo.off} เหลือ ฿${(base-promo.off).toLocaleString('th-TH')}</div>` : ''}
         ${shipText(size) ? `<div class="ff">${shipText(size)}</div>` : ``}
         <a class="btn btn-line btn-sm packbtn" href="#" data-pkg="${esc(p.id)}" data-size="${esc(size)}"
