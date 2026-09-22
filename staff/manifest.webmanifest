@@ -1,0 +1,17 @@
+{
+  "name": "Under360 หลังบ้าน",
+  "short_name": "Under360",
+  "description": "โถงหลังบ้าน Under360 — ทางเข้ารวมทุกหน้าของทีม",
+  "start_url": "/staff/v2",
+  "scope": "/staff/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#fcf8ef",
+  "theme_color": "#1757f5",
+  "lang": "th",
+  "icons": [
+    { "src": "/pwa/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

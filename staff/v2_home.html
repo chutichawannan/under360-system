@@ -3,10 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#fcf8ef">
+  <meta name="theme-color" content="#1757f5">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' https://zdartbvhbvqlwzwyyiia.supabase.co; form-action 'none'; base-uri 'none'; object-src 'none'">
   <title>Under360 • หน้าแรก (เจ้าของ)</title>
   <meta name="description" content="ต้นแบบหน้าแรก Under360 สำหรับรีวิวดีไซน์">
+  <link rel="manifest" href="/staff/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/pwa/icon-192.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Under360">
   <meta name="robots" content="noindex, nofollow, noarchive">
   <script src="/staff/auth.js"></script>
   <style>@font-face{font-family:"LINE Seed Sans TH";src:url('/staff/assets/fonts/LINESeedSansTH_W_Rg.woff2') format('woff2');font-style:normal;font-weight:400;font-display:swap}
@@ -83,6 +87,14 @@ document.querySelectorAll('[data-connect]').forEach(link=>link.addEventListener(
  if(!dialog){dialog=document.createElement('dialog');dialog.id='connect-dialog';dialog.className='handoff-dialog';dialog.innerHTML='<h2></h2><p>หน้านี้อยู่นอกชุดส่งต่อ 3 หน้า ยังไม่ได้เชื่อมปลายทาง</p><p>รายละเอียดสำหรับผู้พัฒนาอยู่ใน route-map.json</p><button type="button">กลับไปดูดีไซน์</button>';document.body.append(dialog);dialog.querySelector('button').addEventListener('click',()=>dialog.close());}
  dialog.querySelector('h2').textContent=labels[link.dataset.connect];dialog.showModal();
 }));
+</script>
+<script>
+/* ติดตั้งลงเครื่องได้ — ขอบเขตแค่ /staff/ ไม่ไปยุ่งหน้าลูกค้า (22 ก.ย. 2569) */
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function () {
+    navigator.serviceWorker.register('/staff/sw.js', { scope: '/staff/' }).catch(function () {});
+  });
+}
 </script>
 </body>
 </html>
