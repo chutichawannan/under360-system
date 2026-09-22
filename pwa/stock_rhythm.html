@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="th"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>จังหวะผลิต — Under360</title>
+<!--
+  📈 จังหวะผลิต (นัทสั่งเอง 22 ก.ย. 2569)
+  นัทพูดเอง: "เราจะได้เก็บประวัติได้ว่า Frequency ในแต่ละเมนูจะทำทุกๆ กี่วัน
+              แล้วเราจะได้วางแผนล่วงหน้าเป็นรายเดือนได้เลยว่า เมนูนี้ทำทุกๆ วันไหน"
+
+  หน้านี้เป็นของ "เจ้าของ/แอดมิน/AI" ไม่ใช่ของครัว — ครัวอ่านไทยออก 2 ใน 6 คน
+  ของที่ครัวต้องใช้ตัดสินใจอยู่ในหน้าวางแผนแล้ว (เหลือขายได้ · จ่อข้างหน้า)
+
+  ข้อมูลมาจากของที่มีอยู่แล้ว ไม่ต้องเก็บใหม่:
+    ① activity_log — ครัวกดนับทุกครั้งระบบจดไว้ (นับได้เท่าไหร่ · จองเท่าไหร่ · ขายได้เท่าไหร่)
+       เลขนับ "กระโดดขึ้น" จากครั้งก่อน = ครัวเพิ่งทำของเข้าตู้ = 1 รอบผลิต
+       (ระบบไม่มีปุ่ม "ทำเสร็จแล้ว" ให้ครัวกด จึงอ่านจากร่องรอยจริงที่ครัวทิ้งไว้ ไม่ใช่เดา)
+    ② orders + order_items — ของออกไปกี่กล่อง = อัตราการขายจริง
+
+  ⚠️ อ่านอย่างเดียวทั้งหน้า ไม่มีจุดไหนเขียนกลับฐานข้อมูลเลย
+  ⚠️ ประวัติการนับเพิ่งเริ่มเก็บ ก.ย. 2569 → เมนูที่ยังจับรอบผลิตไม่ได้ เขียนบอกตรง ๆ ว่า "ยังไม่มีประวัติ" ไม่เดาตัวเลขให้
+-->
+<style>
+:root{--ink:#16211B;--soft:#6B7280;--line:#E7EAE8;--bg:#F7F8F6;--forest:#1F4D3A;--red:#B91C1C;--amber:#B45309}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Sarabun',-apple-system,BlinkMacSystemFont,sans-serif;padding-bottom:40px}
+.wrap{max-width:1100px;margin:0 auto;padding:16px}
+h1{font-size:20px;margin:0 0 2px}
+.sub{font-size:13px;color:var(--soft);margin-bottom:14px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+input,select{font-family:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+input{flex:1;min-width:190px}
+.card{background:#fff;border:1px solid var(--line);border-radius:14px;overflow:hidden}
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{background:#F2F5F3;font-size:12px;color:var(--forest);font-weight:800;position:sticky;top:0;cursor:pointer;user-select:none}
+th.n,td.n{text-align:right;font-variant-numeric:tabular-nums}
+tr:last-child td{border-bottom:0}
+.nm{white-space:normal;min-width:170px}
+.code{font-weight:800;color:var(--forest)}
+.mini{font-size:11.5px;color:var(--soft)}
+.tag{font-size:11px;font-weight:800;border-radius:6px;padding:1px 7px;white-space:nowrap}
+.t-soon{background:#FEE2E2;color:var(--red)}
+.t-ok{background:#ECFDF5;color:#047857}
+.t-none{background:#F3F4F6;color:var(--soft)}
+.t-warn{background:#FFF7ED;color:var(--amber)}
+.note{font-size:12.5px;color:var(--soft);margin:10px 2px 0;line-height:1.7}
+.loading{padding:40px;text-align:center;color:var(--soft)}
+@media(max-width:760px){ .hide-sm{display:none} .wrap{padding:10px} }
+</style></head>
+<body>
+<div class="wrap">
+  <h1>จังหวะผลิต</h1>
+  <div class="sub">เมนูไหนทำทุกกี่วัน · รอบละกี่กล่อง · ของจะอยู่ได้อีกกี่วัน — อ่านอย่างเดียว ไม่แก้ข้อมูลอะไร</div>
+  <div class="tools">
+    <input id="q" placeholder="ค้นหารหัสหรือชื่อเมนู" oninput="paint()">
+    <select id="cat" onchange="paint()"><option value="">ทุกหมวด</option></select>
+    <select id="only" onchange="paint()">
+      <option value="all">ทุกเมนูที่เปิดขาย</option>
+      <option value="soon">เฉพาะที่ใกล้หมด (≤3 วัน)</option>
+      <option value="hist">เฉพาะที่มีประวัติผลิตแล้ว</option>
+    </select>
+  </div>
+  <div class="card"><div id="out" class="loading">กำลังอ่านประวัติ…</div></div>
+  <div class="note" id="foot"></div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const URL_='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const KEY_='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const sb=supabase.createClient(URL_,KEY_);
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* เวลาไทยเสมอ — เจ้าของอยู่คนละโซนเวลา ใช้นาฬิกาเครื่องจะได้คนละวัน */
+const thaiYMD=t=>new Date((t?new Date(t).getTime():Date.now())+7*3600e3).toISOString().slice(0,10);
+const dTh=ymd=>{const d=new Date(ymd+'T00:00:00+07:00');return isNaN(d)?ymd:d.toLocaleDateString('th-TH',{day:'numeric',month:'short'});};
+const gapDays=(a,b)=>Math.round((new Date(b+'T00:00:00Z')-new Date(a+'T00:00:00Z'))/86400000);
+/* ใช้ค่ากลาง ไม่ใช้ค่าเฉลี่ย — รอบผลิตมีตัวหลุด (เคยเจอ A2 สัปดาห์เดียว 28 ปกติ 2-8) ค่าเฉลี่ยจะเพี้ยนตามตัวหลุด */
+const median=a=>{if(!a.length)return null;const x=a.slice().sort((p,q)=>p-q);const m=x.length>>1;return x.length%2?x[m]:Math.round((x[m-1]+x[m])/2);};
+const SOLD_DAYS=60;
+let ROWS=[],SORT={key:'urgency',dir:1};
+
+async function all(table,sel,tweak){
+  let out=[],from=0;
+  for(;;){                                   // 🔑 PostgREST คืนทีละ 1000 แถว — ต้องไล่เก็บเอง ไม่งั้นข้อมูลหายเงียบ
+    let q=sb.from(table).select(sel).range(from,from+999);
+    if(tweak) q=tweak(q);
+    const {data,error}=await q;
+    if(error) throw error;
+    out=out.concat(data||[]);
+    if(!data||data.length<1000) break;
+    from+=1000;
+  }
+  return out;
+}
+
+async function load(){
+  const today=thaiYMD();
+  const since=thaiYMD(Date.now()-SOLD_DAYS*86400000);
+  const [menus,logs,orders]=await Promise.all([
+    all('menu_items','id,code,subcode,name,category,is_available,stock_total,actual_stock'),
+    all('activity_log','created_at,actor,detail',q=>q.eq('action_type','stock').eq('source','k2').order('created_at',{ascending:true})),
+    all('orders','id,delivery_date,status',q=>q.gte('delivery_date',since).lte('delivery_date',thaiYMD(Date.now()+30*86400000)))
+  ]);
+  const byOrder={}; orders.forEach(o=>byOrder[o.id]=o);
+  const oids=orders.map(o=>o.id);
+  let items=[];
+  for(let i=0;i<oids.length;i+=60){
+    const {data}=await sb.from('order_items').select('order_id,menu_item_id,quantity').in('order_id',oids.slice(i,i+60));
+    items=items.concat(data||[]);
+  }
+
+  /* ① ประวัติการนับต่อเมนู → จับ "รอบผลิต" จากตอนที่เลขนับกระโดดขึ้น */
+  const hist={};
+  logs.forEach(l=>{
+    const d=l.detail||{}; if(!d.menu_id||d.counted==null) return;
+    (hist[d.menu_id]=hist[d.menu_id]||[]).push({ymd:thaiYMD(l.created_at),n:Number(d.counted),by:l.actor||''});
+  });
+
+  /* ② ของออกไปกี่กล่อง (ไม่รวมใบยกเลิก) — ขายแล้ว = ใบที่ถึงวันส่งแล้ว · จ่อ = ใบวันข้างหน้า */
+  const sold={}, ahead={};
+  items.forEach(it=>{
+    const o=byOrder[it.order_id]; if(!o||o.status==='cancelled'||!it.menu_item_id) return;
+    const q=Number(it.quantity||0);
+    if(o.delivery_date<=today) sold[it.menu_item_id]=(sold[it.menu_item_id]||0)+q;
+    else (ahead[it.menu_item_id]=ahead[it.menu_item_id]||[]).push({ymd:o.delivery_date,n:q});
+  });
+
+  ROWS=menus.filter(m=>m.is_available!==false).map(m=>{
+    const h=hist[m.id]||[];
+    const runs=[];                                  // รอบผลิตที่จับได้ = วันที่ + จำนวนที่เพิ่มขึ้น
+    for(let i=1;i<h.length;i++){ const up=h[i].n-h[i-1].n; if(up>0) runs.push({ymd:h[i].ymd,n:up}); }
+    const gaps=[]; for(let i=1;i<runs.length;i++){ const g=gapDays(runs[i-1].ymd,runs[i].ymd); if(g>0) gaps.push(g); }
+    const perDay=(sold[m.id]||0)/SOLD_DAYS;
+    const left=(m.stock_total==null)?null:Number(m.stock_total);
+    return {m, h, runs,
+      every: median(gaps),                          // ทำทุกกี่วัน
+      batch: median(runs.map(r=>r.n)),              // รอบละกี่กล่อง
+      lastRun: runs.length?runs[runs.length-1]:null,
+      lastCount: h.length?h[h.length-1]:null,
+      perDay, left,
+      /* อยู่ได้อีกกี่วัน = เหลือขายได้ ÷ ขายเฉลี่ยต่อวัน · ขายน้อยมากจนหารไม่มีความหมาย = ไม่ตอบดีกว่าตอบมั่ว */
+      runOut: (left!=null && perDay>0.05) ? Math.floor(left/perDay) : null,
+      ahead: (ahead[m.id]||[]).sort((a,b)=>a.ymd<b.ymd?-1:1)
+    };
+  }).map(r=>({...r, urgency:(r.runOut==null?9999:r.runOut)}));
+
+  const cats=[...new Set(ROWS.map(r=>r.m.category||'—'))].sort();
+  document.getElementById('cat').innerHTML='<option value="">ทุกหมวด</option>'+cats.map(c=>'<option value="'+esc(c)+'">'+esc(c)+'</option>').join('');
+  paint();
+  const counted=ROWS.filter(r=>r.h.length).length, withRhythm=ROWS.filter(r=>r.every!=null).length;
+  document.getElementById('foot').innerHTML=
+    'อ่านประวัติการนับได้ <b>'+logs.length+'</b> ครั้ง · เมนูที่เคยถูกนับ <b>'+counted+'</b> จาก '+ROWS.length+' เมนูที่เปิดขาย · บอกจังหวะได้แล้ว <b>'+withRhythm+'</b> เมนู<br>'
+    +'<b>ทำทุกกี่วัน / รอบละกี่กล่อง</b> — อ่านจากตอนที่เลขนับกระโดดขึ้น ต้องมีอย่างน้อย 2 รอบถึงคำนวณได้ · ระบบเพิ่งเริ่มเก็บประวัติ ก.ย. 2569 ยิ่งครัวนับสม่ำเสมอ ตัวเลขยิ่งแม่น<br>'
+    +'<b>อยู่ได้อีก</b> — เหลือขายได้ ÷ ยอดขายเฉลี่ยต่อวัน ('+SOLD_DAYS+' วันล่าสุด) ไม่ใช่คำทำนาย แค่เลขปัจจุบันหารกัน · <b>เหลือขายได้</b> = ในตู้ − ของที่ขายแล้วรอจัด';
+}
+
+function paint(){
+  const q=(document.getElementById('q').value||'').trim().toLowerCase();
+  const cat=document.getElementById('cat').value, only=document.getElementById('only').value;
+  let rows=ROWS.filter(r=>{
+    if(cat && (r.m.category||'—')!==cat) return false;
+    if(only==='soon' && !(r.runOut!=null && r.runOut<=3)) return false;
+    if(only==='hist' && !r.runs.length) return false;
+    if(q){ const s=((r.m.subcode||'')+' '+(r.m.code||'')+' '+(r.m.name||'')).toLowerCase(); if(s.indexOf(q)<0) return false; }
+    return true;
+  });
+  const val=(r,k)=> k==='every'?(r.every==null?9999:r.every)
+                  : k==='left' ?(r.left==null?-1:r.left)
+                  : k==='perday'? r.perDay : r.urgency;
+  rows.sort((a,b)=>(val(a,SORT.key)-val(b,SORT.key))*SORT.dir
+    || String(a.m.code).localeCompare(String(b.m.code),'th',{numeric:true}));
+  const th=(key,label,cls)=>'<th class="'+(cls||'')+'" onclick="sortBy(\''+key+'\')">'+label+(SORT.key===key?(SORT.dir>0?' ▲':' ▼'):'')+'</th>';
+  let h='<div style="overflow:auto;max-height:78vh"><table><thead><tr>'
+    +'<th>เมนู</th>'
+    +th('left','เหลือขายได้','n')
+    +'<th class="n">ในตู้</th>'
+    +th('urgency','อยู่ได้อีก','n')
+    +th('perday','ขาย/วัน','n hide-sm')
+    +th('every','ทำทุกกี่วัน','n')
+    +'<th class="n hide-sm">รอบละ</th>'
+    +'<th class="hide-sm">ทำล่าสุด</th>'
+    +'<th class="hide-sm">จ่อข้างหน้า</th>'
+    +'</tr></thead><tbody>';
+  if(!rows.length) h+='<tr><td colspan="9" style="padding:30px;text-align:center;color:var(--soft)">ไม่มีเมนูตรงเงื่อนไข</td></tr>';
+  rows.forEach(r=>{
+    const runOut = r.runOut==null
+      ? '<span class="tag t-none">ยังบอกไม่ได้</span>'
+      : '<span class="tag '+(r.runOut<=2?'t-soon':(r.runOut<=5?'t-warn':'t-ok'))+'">'+r.runOut+' วัน</span>';
+    const every = r.every==null
+      ? '<span class="mini">'+(r.runs.length?'เพิ่งมี 1 รอบ':'ยังไม่มีประวัติ')+'</span>'
+      : '<b>'+r.every+'</b> วัน';
+    const last = r.lastRun ? (dTh(r.lastRun.ymd)+' <span class="mini">+'+r.lastRun.n+'</span>')
+               : (r.lastCount ? '<span class="mini">นับล่าสุด '+dTh(r.lastCount.ymd)+'</span>' : '<span class="mini">—</span>');
+    const nx = r.ahead.length ? r.ahead.slice(0,4).map(a=>dTh(a.ymd)+' <b>'+a.n+'</b>').join(' · ') : '<span class="mini">—</span>';
+    h+='<tr>'
+      +'<td class="nm"><span class="code">'+esc(r.m.subcode||r.m.code)+'</span> <span class="mini">'+esc(r.m.code)+'</span>'
+        +'<div class="mini">'+esc(String(r.m.name||'').slice(0,42))+'</div></td>'
+      +'<td class="n"><b>'+(r.left==null?'∞':r.left)+'</b></td>'
+      +'<td class="n">'+(r.m.actual_stock==null?'—':r.m.actual_stock)+'</td>'
+      +'<td class="n">'+runOut+'</td>'
+      +'<td class="n hide-sm">'+(r.perDay>0?r.perDay.toFixed(1):'<span class="mini">—</span>')+'</td>'
+      +'<td class="n">'+every+'</td>'
+      +'<td class="n hide-sm">'+(r.batch==null?'<span class="mini">—</span>':r.batch)+'</td>'
+      +'<td class="hide-sm">'+last+'</td>'
+      +'<td class="hide-sm">'+nx+'</td>'
+      +'</tr>';
+  });
+  document.getElementById('out').innerHTML=h+'</tbody></table></div>';
+}
+function sortBy(k){ if(SORT.key===k) SORT.dir*=-1; else { SORT.key=k; SORT.dir=1; } paint(); }
+load().catch(e=>{ document.getElementById('out').innerHTML='<div class="loading" style="color:#B91C1C">อ่านข้อมูลไม่ได้: '+esc(e.message||e)+'</div>'; });
+</script>
+</body></html>

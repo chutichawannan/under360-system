@@ -111,6 +111,16 @@ button,input,a{-webkit-tap-highlight-color:transparent}button,input{font-family:
 .sugg{font-size:12px;color:#7d8f83;align-self:center;white-space:nowrap}
 .hint-s{padding:9px 12px;font-size:11.5px;line-height:1.6;margin:6px 10px 10px}
 /* บีบอีกชั้นตามที่นัทสั่ง 13 ก.ย. — ยังแตะได้ด้วยนิ้วโป้ง (ช่องเลขสูง 40 ยังเกินเกณฑ์ 36) */
+/* เหลือขายได้ = ตัวเลขที่ต้องเห็นก่อนเพื่อน · เหลือน้อย = แดง */
+.kleft{color:#166534;font-weight:800}
+.kleft-low{color:#B91C1C}
+/* จ่อข้างหน้า: วัน+จำนวน เรียงเป็นชิป อ่านด้วยตาเปล่าได้ว่าวันไหนหนัก */
+.kahead{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin:4px 0 0 0}
+.kahead-lb{font-size:11px;color:#6B7280}
+.kd{font-size:11.5px;background:#F3F4F6;color:#374151;border-radius:6px;padding:1px 7px}
+.kd b{font-weight:800}
+.kd-bad{background:#FEE2E2;color:#B91C1C}
+.kshort{font-size:11.5px;font-weight:800;color:#B91C1C}
 .crow-plan{flex-wrap:nowrap;align-items:center;min-height:0;padding:9px 12px;gap:10px;border-radius:13px}
 .mk-add{background:transparent;border:1px dashed #cbd8ce;color:#93a79b;border-radius:11px;
   font-size:20px;font-family:inherit;height:44px;width:44px;flex-shrink:0;line-height:1}
@@ -238,6 +248,13 @@ function thaiDateOf(iso){ return thaiIso(iso).slice(0,10); }          // วั�
 function thaiClock(iso){ const t=thaiIso(iso); return t ? (t.slice(8,10)+'/'+t.slice(5,7)+' '+t.slice(11,16)+' น.') : ''; }
 function dPlus(ymd,n){ const d=new Date(ymd+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
 const DOW=['อา','จ','อ','พ','พฤ','ศ','ส'];
+/* วันแบบสั้น 'จ 22' — ครัวอ่านตัวเลขเป็นหลัก ตัวหนังสือน้อยที่สุด (อ่านไทยออก 2 ใน 6 คน) */
+function dShort(ymd){
+  const TH=['อา','จ','อ','พ','พฤ','ศ','ส'];
+  const d=new Date(String(ymd)+'T00:00:00+07:00');
+  if(isNaN(d)) return String(ymd).slice(5);
+  return TH[d.getDay()]+' '+d.getDate();
+}
 function dLabel(ymd){
   const t=thaiToday();
   if(ymd===t) return 'วันนี้';
@@ -362,6 +379,19 @@ function bookedMap(){
     (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id) m[it.menu_item_id]=(m[it.menu_item_id]||0)+(it.quantity||0); });
   });
   return m;
+}
+/* 🗓️ จ่อข้างหน้ารายวัน — ใบที่ยังไม่ได้จัด ตั้งแต่วันนี้เป็นต้นไป แยกตามวันส่ง
+   ครัวต้องเห็นว่า "ของที่เหลือจะไปตายวันไหน" ไม่ใช่แค่ยอดรวม
+   (นับเฉพาะใบที่ยังไม่จัด — ของที่จัดแล้วออกจากตู้ไปแล้ว ไม่ได้แย่งของที่เหลือ) */
+function aheadByDay(mid){
+  const t=thaiToday(), by={};
+  ORDERS.forEach(o=>{
+    if(o.status==='delivered') return;
+    if(!o.delivery_date || o.delivery_date < t) return;
+    if(packDoneOf(o)) return;
+    (ITEMS[o.id]||[]).forEach(it=>{ if(it.menu_item_id===mid) by[o.delivery_date]=(by[o.delivery_date]||0)+(it.quantity||0); });
+  });
+  return Object.keys(by).sort().map(d=>({ymd:d, n:by[d]}));
 }
 function bookedOn(ymd){
   const m={};
@@ -782,6 +812,35 @@ function makeRow(m){
     + (exp ? '<div class="mk-by">⚠️ เลยวันแล้ว</div>' : '')
     + '</div>';
 }
+/* 🔑 "เหลือขายได้จริง" = ในตู้ − ของที่ขายไปแล้วยังไม่ได้จัด (ระบบคิดไว้ใน stock_total อยู่แล้ว)
+   ตัวเลขนี้คือตัวที่ครัวต้องใช้ตัดสินใจว่าจะผลิตไหม — ของเดิมที่ครัวเห็นคือ "ในตู้" ซึ่งเยอะเกินจริงเสมอ
+   ไม่จำกัด (ไม่เคยตั้งสต็อก) = ไม่ต้องโชว์อะไร ไม่มีความหมายกับการตัดสินใจ */
+function leftLine(m){
+  if(m.stock_total==null) return 'ขายได้ ไม่จำกัด';
+  const left=Number(m.stock_total);
+  return '<b class="kleft'+(left<=3?' kleft-low':'')+'">เหลือขายได้ '+left+'</b>';
+}
+/* 🗓️ แถวจ่อข้างหน้า — "ของที่เหลือพอถึงวันไหน"
+   โชว์เฉพาะตอนมีใบจ่อจริง · ไม่พอเมื่อไหร่ขึ้นป้ายแดงบอกวันที่จะขาดเลย ไม่ให้ครัวต้องบวกเอง */
+function aheadLine(m){
+  const days=aheadByDay(m.id);
+  if(!days.length) return '';
+  /* ของที่ครัวกำลังทำอยู่ = ของที่จะมีในตู้ ต้องนับรวม ไม่งั้นเตือน 'ไม่พอ' ทั้งที่ลงมือทำไปแล้ว */
+  const inc=incOf(m.id), mk=makeOf(m.id);
+  const coming=(inc?Number(inc.n||0):0) + ((mk && !makeExpired(mk))?Number(mk.n||0):0);
+  const left=(m.stock_total==null)?null:(Number(m.stock_total)+coming);
+  let run=0, shortAt=null;
+  const cells=days.map(d=>{
+    run+=d.n;
+    const bad=(left!=null && run>left);
+    if(bad && !shortAt) shortAt=d;
+    return '<span class="kd'+(bad?' kd-bad':'')+'">'+dShort(d.ymd)+' <b>'+d.n+'</b></span>';
+  });
+  const total=days.reduce((a,d)=>a+d.n,0);
+  return '<div class="kahead">' + '<span class="kahead-lb">จ่อข้างหน้า</span>' + cells.join('')
+    + (shortAt ? '<span class="kshort">⚠️ ไม่พอถึง '+dShort(shortAt.ymd)+' — ขาด '+(total-(left||0))+'</span>' : '')
+    + '</div>';
+}
 function viewPlan(){
   const bk=bookedOnOpen(DAY), have={};
   MENUS.forEach(m=>have[m.id]=(m.actual_stock==null?0:Number(m.actual_stock)));
@@ -789,7 +848,8 @@ function viewPlan(){
     const b=bk[m.id]||0, sug=Math.max(0,b-(have[m.id]||0));
     const ov=planNum((PLAN[DAY]||{})[m.id]);
     return {m,b,have:have[m.id]||0,make:(ov==null?sug:Number(ov)),ov:ov!=null};
-  }).filter(r=>r.b>0||r.make>0||r.ov||incOf(r.m.id)||weekPlanOf(r.m,DAY)||makeOf(r.m.id));
+  }).filter(r=>r.b>0||r.make>0||r.ov||incOf(r.m.id)||weekPlanOf(r.m,DAY)||makeOf(r.m.id)||aheadByDay(r.m.id).length);
+  /* เมนูที่ยังไม่มีใบวันนี้ แต่มีใบจ่อวันข้างหน้า ต้องอยู่บนจอด้วย — ไม่งั้นครัวไม่มีทางรู้ว่าต้องทำก่อนวันนั้น */
   /* หัวจอต้องตอบ "วันนี้ครัวมีงานกี่กล่อง" — งานมาจาก 2 ทาง: ที่ระบบคิดจากยอดจอง + ที่คนใส่ว่าจะทำเพิ่ม
      ก่อนหน้านี้หัวจอขึ้น 0 ทั้งที่ต้องผลิต 75 เพราะนับแต่ทางแรก */
   /* ครัวเปิดมาต้องเจอ "งานที่ต้องทำ" ก่อน ไม่ใช่เมนูที่ไม่ต้องทำอะไร
@@ -802,7 +862,8 @@ function viewPlan(){
     const mk = makeOf(r.m.id);
     return s + r.make + ((mk && !makeExpired(mk)) ? mk.n : 0);
   },0);
-  let h='<div class="hint hint-s">🔴 ระบบยังไม่รู้ว่า <b>ของอยู่ได้กี่วัน</b> — เลขนี้พอสำหรับวันที่เลือกเท่านั้น ยังเกลี่ยข้ามวันให้ไม่ได้</div>'
+  /* 22 ก.ย. 2569: ตอนนี้แต่ละเมนูบอกได้แล้วว่า 'เหลือขายได้จริง' และ 'จ่อวันไหนบ้าง' → เตือนให้ดูตัวนั้น ไม่ใช่ตัวในตู้ */
+  let h='<div class="hint hint-s">ดู <b>เหลือขายได้</b> เวลาตัดสินใจว่าจะทำเพิ่มไหม — <b>ในตู้</b> รวมของที่ขายไปแล้วรอจัดด้วย ยังไม่ใช่ของเรา</div>'
   h+='<div class="sum"><div class="sum-big">'+total+'</div><div class="sum-lbl">กล่องที่ต้องทำสำหรับ '+dLabel(DAY)+'</div></div>';
 
   /* แถบหมวด — ใช้ตัวเลือกร่วมกับหน้านับของ/หน้าแอดมิน (COUNT_CAT)
@@ -824,7 +885,7 @@ function viewPlan(){
      +'<div class="pmain">'
        +'<div class="code">'+esc(shortCode(r.m))+'</div>'
        +'<div class="mini">'+esc(String(r.m.name||'').slice(0,26))+'</div>'
-       +'<div class="mini pfacts">จอง '+r.b+' · ในตู้ '+r.have
+       +'<div class="mini pfacts">'+leftLine(r.m)+' · จองวันนี้ '+r.b+' · ในตู้ '+r.have
          /* ป้ายสั้นแทนประโยคยาว — ความหมายเดิม: เลขในตู้ไม่มีร่องรอยการนับใน 7 วัน
             (เคสจริง 12 ก.ย. ระบบเก่าย้ายเลขแผน 75 กล่องมาเป็นของจริงเอง ตี 3:45) */
          +(notCounted?' <span class="tagx">🕳️ ยังไม่ได้นับ</span>':'')
@@ -832,6 +893,7 @@ function viewPlan(){
          +(incOf(r.m.id)?' · 🍳 กำลังผลิต '+incOf(r.m.id).n:'')
          +(r.make>0?' · ระบบคิด '+r.make:'')
        +'</div>'
+       + aheadLine(r.m)   /* 🗓️ ของจะพอถึงวันไหน — อยู่ในการ์ดเดียวกับเมนู */
      +'</div>'
      /* 🔑 หัวใจ: "จะทำเพิ่ม" อยู่คนละช่องกับ "ในตู้" และมีวันกำกับเสมอ
         อยู่ในการ์ดเดียวกันกับเมนู ไม่งั้นครัวอ่านไม่ออกว่าเลขเป็นของเมนูไหน */

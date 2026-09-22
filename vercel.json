@@ -81,6 +81,10 @@
       "destination": "/command_center.html"
     },
     {
+      "source": "/rhythm",
+      "destination": "/pwa/stock_rhythm.html"
+    },
+    {
       "source": "/kq",
       "destination": "/pwa/k2.html"
     },
