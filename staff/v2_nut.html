@@ -86,6 +86,29 @@
 .nut-drop{border:2px dashed #c9b28a;border-radius:18px;padding:16px 18px;cursor:pointer;transition:.15s}
 .nut-drop.over{border-color:var(--blue);background:#ffffff8c}
 .nut-drop select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:3px 6px;background:#fff}
+
+/* แอด: รูปถอยไปเป็นฉากหลังฝั่งขวา ตัวหนังสืออยู่บนพื้นทึบ (นัทติว่าจม 22 ก.ย.) */
+.nut-ad{background:#ffdab0}
+.nut-ad .nut-ad-art{inset:0 0 0 58%;opacity:.5;z-index:-1}
+.nut-ad .nut-ad-copy{position:relative;width:100%;z-index:2;background:#fff7ebe6;border-radius:18px;padding:18px 20px}
+.ad-table{width:100%;border-collapse:collapse;margin:10px 0 4px;font-size:14px}
+.ad-table th{text-align:left;font-size:12px;color:#6b5a3f;font-weight:700;padding:0 0 6px;border-bottom:1px solid #e2cfae}
+.ad-table td{padding:9px 0;border-bottom:1px solid #eadcc4;color:#2a2a2a}
+.ad-table td.num{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ad-table td.sub{font-size:12px;color:#6b5a3f;font-weight:600}
+.ad-table tr.total td{border-bottom:0;font-size:15px;padding-top:12px}
+.ad-wait{color:#9a7b4f;font-weight:600}
+/* เคาะ: กดที่บรรทัดแล้วตอบได้เลย */
+.ask-list{list-style:none;padding:0;margin:12px 0 4px}
+.ask-item{border-bottom:1px solid #bcd8f5;padding:10px 2px}
+.ask-item .ask-q{cursor:pointer;font-size:13.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
+.ask-item .ask-q:hover{color:var(--blue)}
+.ask-item .who{font-size:11px;color:#4b6484;background:#ffffffb3;border-radius:6px;padding:2px 6px;white-space:nowrap}
+.ask-box{display:none;margin:8px 0 2px}
+.ask-item.open .ask-box{display:block}
+.ask-box textarea{width:100%;min-height:64px;border:1px solid #9fc3ea;border-radius:10px;padding:8px 10px;font:inherit;font-size:13.5px;resize:vertical}
+.ask-send{margin-top:6px;border:0;border-radius:10px;background:var(--blue);color:#fff;font:inherit;font-weight:700;padding:8px 14px;cursor:pointer}
+.ask-done{opacity:.5;text-decoration:line-through}
 </style>
   
 </head>
@@ -103,7 +126,7 @@
       <section class="nut-block nut-decisions"><div class="nut-block-head"><h2>เคาะ</h2><span class="nut-symbol" aria-hidden="true">✓</span></div><p class="nut-subtitle">เรื่องที่รอนัทตัดสินใจ</p><div class="nut-empty"><span class="nut-paper" aria-hidden="true"><i></i><i></i><i></i></span><div><h3 id="d-head">กำลังอ่าน…</h3><p id="d-sub"></p></div></div><ul class="u-list" id="d-list"></ul><a class="nut-action" href="/pwa/nut.html">เปิดช่องนัท <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
       <section class="nut-block nut-sales"><div class="nut-block-head"><h2>ยอดขาย</h2><span class="nut-period">30 วันล่าสุด</span></div><div class="nut-total"><strong id="s-total">…</strong><span>ยอดขายรวม</span></div><dl class="nut-sales-details"><div><dt>จำนวนออเดอร์ที่มียอดขาย</dt><dd id="s-count">…</dd></div><div><dt>ค่าส่งที่เก็บได้</dt><dd id="s-fee">…</dd></div><div><dt>ออเดอร์ส่งพรุ่งนี้</dt><dd id="s-tmr">…</dd></div></dl><a class="nut-action" href="/o">ดูออเดอร์ล่วงหน้า <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
       <!-- ซ่อนการ์ดยามเฝ้าตามที่นัทสั่ง 22 ก.ย. 2569 ("ยังไม่เคยใช้งานมันเลย") · หน้า /watchdog ยังอยู่ -->
-      <section class="nut-block nut-ad nut-wide"><div class="nut-ad-copy"><h2>แอด</h2><dl class="nut-sales-details" id="ad-rows"><div><dt>กำลังอ่านยอดที่มาจากแอด…</dt><dd></dd></div></dl><a class="nut-action" href="https://www.360foodbox.com/ads">เปิดหน้าแอด <span class="nut-arrow" aria-hidden="true">↗</span></a></div><div class="nut-ad-art scene scene-ads" aria-hidden="true"></div><p class="nut-ad-note">เราปิดการขายใน LINE จึงไม่ใช้ตัวเลขจาก Meta มาแทนยอดจริง</p></section>
+      <section class="nut-block nut-ad nut-wide"><div class="nut-ad-copy"><h2>แอด</h2><table class="ad-table"><thead><tr><th>7 วันล่าสุด</th><th style="text-align:right">จำนวนเงิน</th></tr></thead><tbody id="ad-rows"><tr><td>กำลังอ่าน…</td><td class="num"></td></tr></tbody></table><a class="nut-action" href="https://www.360foodbox.com/ads">เปิดหน้าแอด <span class="nut-arrow" aria-hidden="true">↗</span></a></div><div class="nut-ad-art scene scene-ads" aria-hidden="true"></div><p class="nut-ad-note">เราปิดการขายใน LINE จึงไม่ใช้ตัวเลขจาก Meta มาแทนยอดจริง</p></section>
       <section class="nut-block nut-rooms"><div class="nut-block-head"><h2>ห้องไหนเปิดอยู่</h2><span class="nut-symbol" aria-hidden="true">◷</span></div><p class="nut-subtitle">ความเคลื่อนไหวใน 1 ชั่วโมงล่าสุด</p><div class="nut-room-status"><strong id="r-count">…</strong><p id="r-sub">กำลังอ่าน…</p></div><ul class="u-list" id="r-list"></ul><a class="nut-action" href="/pwa/pollers.html">ดูห้องทั้งหมด <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
       <section class="nut-block nut-inbox"><div><h2>ส่งรูป / ไฟล์เข้าห้อง</h2><p class="nut-subtitle">เลือกห้อง แล้วส่งงานให้ถึงคนทำ</p></div><input id="drop-file" type="file" multiple hidden><div id="drop" class="nut-inbox-bottom nut-drop"><div class="nut-file-stack" aria-hidden="true"><span></span><span><svg viewBox="0 0 80 90"><path d="M18 64h44M40 55V25m-12 12 12-12 12 12"/></svg></span></div><div><p id="drop-msg"><b>ลากไฟล์มาวางตรงนี้</b><br>หรือแตะเพื่อเลือกไฟล์</p><p class="nut-small-note">ส่งเข้าห้อง <select id="drop-room"><option value="pm">พี่ปืน</option><option value="u-maintainer">ห้อง u</option><option value="niw">นิว</option><option value="fah">ฟ้า</option><option value="k">ครัว</option><option value="f">การเงิน</option><option value="06">แอด</option><option value="05">LINE OA</option><option value="m">เว็บ</option><option value="kapan">กะปัน</option><option value="cc">เลขา</option></select></p><a class="nut-action" href="/pwa/inbox.html">เปิดหน้าส่งไฟล์ <span class="nut-arrow" aria-hidden="true">↗</span></a></div></div></section>
     </div></section></main>
@@ -147,9 +170,54 @@ async function q(p){const r=await fetch(U+p,{headers:H}); if(!r.ok) throw new Er
 const clean=s=>{s=String(s||'');let i=0;while(i<s.length&&!/[ก-๙a-zA-Z0-9]/.test(s[i]))i++;return s.slice(i).trim();};
 const fail=(id,e)=>set(id,'<span class="u-bad">อ่านไม่ได้ — '+esc(e.message||e)+'</span>');
 
+
+/* ตารางเรื่องรอเคาะ — กดที่บรรทัดแล้วพิมพ์ตอบได้เลย (นัทขอเอง 22 ก.ย.)
+   คำตอบจะถูกส่งกลับเข้าห้องที่ถามมา ไม่ต้องไปเปิดห้องนั้นเอง */
+function senderToRoom(s){
+  s=String(s||'').trim();
+  var m=s.match(/(([^)]+))/); if(m) return m[1].trim();
+  var map={'เลขา':'secretary','นิว':'niw','ฟ้า':'fah','กะปัน':'kapan','พี่ปืน':'pm','ครีเอทีฟ':'ครีเอทีฟ'};
+  if(map[s]) return map[s];
+  return s;
+}
+function renderAsks(items){
+  var box=document.getElementById('d-list'); if(!box) return;
+  var done={}; try{ done=JSON.parse(localStorage.getItem('u360_asks_done')||'{}'); }catch(e){}
+  box.className='ask-list';
+  box.innerHTML = items.slice(0,6).map(function(r,idx){
+    var head=clean(String(r.text||'').split(String.fromCharCode(10))[0]).slice(0,90);
+    var key=(r.created_at||'')+'';
+    var room=senderToRoom(r.sender);
+    return '<li class="ask-item'+(done[key]?' ask-done':'')+'" data-key="'+esc(key)+'" data-room="'+esc(room)+'">'
+      + '<div class="ask-q"><span class="who">'+esc(room)+'</span><span>'+esc(head)+'</span></div>'
+      + '<div class="ask-box"><textarea placeholder="พิมพ์คำตอบให้ห้อง '+esc(room)+'"></textarea>'
+      + '<button class="ask-send">ส่งคำตอบ</button></div></li>';
+  }).join('') + (items.length>6 ? '<li class="u-dim" style="padding:8px 2px">และอีก '+(items.length-6)+' เรื่อง</li>' : '');
+
+  box.querySelectorAll('.ask-item').forEach(function(li){
+    li.querySelector('.ask-q').addEventListener('click',function(){ li.classList.toggle('open'); });
+    li.querySelector('.ask-send').addEventListener('click',function(){
+      var ta=li.querySelector('textarea'), btn=li.querySelector('.ask-send');
+      var t=ta.value.trim(); if(!t){ ta.focus(); return; }
+      btn.disabled=true; btn.textContent='กำลังส่ง…';
+      var room=li.getAttribute('data-room')||'nut';
+      var body=[{room:room,sender:'นัท',role:'user',text:'💬 **นัทตอบจากห้องนัท**'+String.fromCharCode(10)+String.fromCharCode(10)+t}];
+      fetch(U+'/rest/v1/session_messages',{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify(body)})
+       .then(function(r){ if(!r.ok) throw new Error(r.status);
+         btn.textContent='ส่งแล้ว ✓'; li.classList.add('ask-done'); li.classList.remove('open');
+         try{ var d=JSON.parse(localStorage.getItem('u360_asks_done')||'{}'); d[li.getAttribute('data-key')]=1;
+              localStorage.setItem('u360_asks_done',JSON.stringify(d)); }catch(e){}
+       })
+       .catch(function(e){ btn.disabled=false; btn.textContent='ส่งไม่สำเร็จ ลองใหม่'; });
+    });
+  });
+}
+
 /* ① เรื่องรอเคาะ — ช่องนัท (🎯/🟡/🔴 = ยังไม่ปิด · ✅ = ปิดแล้ว) */
 (async()=>{ try{
-  const rows=await q('/session_messages?select=text,created_at&room=eq.nut&order=created_at.desc&limit=120');
+  const rows=await q('/session_messages?select=text,created_at,sender&room=eq.nut&order=created_at.desc&limit=120');
   const MARK=['🎯','🟡','🔴'];
   const open=rows.filter(r=>{const t=(r.text||'').trimStart(); return MARK.some(m=>t.startsWith(m));});
   const closed=new Set(rows.filter(r=>(r.text||'').trimStart().startsWith('✅'))
@@ -158,8 +226,7 @@ const fail=(id,e)=>set(id,'<span class="u-bad">อ่านไม่ได้ �
   if(!live.length){ set('d-head','ไม่มีเรื่องค้าง'); set('d-sub','ช่องนัทเคลียร์หมดแล้ว'); return; }
   set('d-head', live.length+' เรื่องรอเคาะ');
   set('d-sub','กดที่การ์ดเพื่อดูทั้งหมด');
-  set('d-list', live.slice(0,4).map(r=>'<li>'+esc(clean(String(r.text||'').split(String.fromCharCode(10))[0]).slice(0,70))+'</li>').join('')
-    +(live.length>4?'<li class="u-dim">และอีก '+(live.length-4)+' เรื่อง</li>':''));
+  renderAsks(live);
 }catch(e){ set('d-head','อ่านไม่ได้'); fail('d-sub',e); } })();
 
 /* ② ยอดขาย 30 วัน — นับเฉพาะใบที่มียอดเงินจริง (ใบยอด 0 = รอบแบ่งส่ง ไม่ใช่การขาย) */
@@ -242,10 +309,18 @@ if ('serviceWorker' in navigator) {
        var k=/^fb/.test(c)?'fb':/^ig/.test(c)?'ig':/^line/.test(c)?'line':'none';
        g[k].n++; g[k].b+=Number(o.total)||0;
      });
-     var row=function(label,v){ return '<div><dt>'+esc(label)+'</dt><dd>'+baht(v.b)+' <span class="nut-small-note">· '+v.n+' ใบ</span></dd></div>'; };
-     box.innerHTML = row('จากแอด Facebook',g.fb) + row('จาก Instagram',g.ig) + row('จาก LINE บรอดแคสต์',g.line) + row('ตามรอยไม่ได้',g.none);
+     var tracked=g.fb.b+g.ig.b+g.line.b;
+     var row=function(label,v){ return '<tr><td>'+label+'<div class="sub">'+v.n+' ใบ</div></td><td class="num">'+baht(v.b)+'</td></tr>'; };
+     box.innerHTML =
+        '<tr><td colspan="2" class="sub">💸 เงินที่จ่ายค่าโฆษณา</td></tr>'
+      + '<tr><td>ค่าโฆษณาที่จ่ายจริง</td><td class="num ad-wait">รอห้อง m เปิดช่อง</td></tr>'
+      + '<tr><td>รายได้ที่ Meta เคลม</td><td class="num ad-wait">รอห้อง m เปิดช่อง</td></tr>'
+      + '<tr><td colspan="2" class="sub">📥 ยอดขายจริงของเรา (นับจากออเดอร์เอง)</td></tr>'
+      + row('มาจากแอด Facebook',g.fb) + row('มาจาก Instagram',g.ig) + row('มาจาก LINE บรอดแคสต์',g.line)
+      + '<tr class="total"><td><b>รวมที่ตามรอยได้</b></td><td class="num">'+baht(tracked)+'</td></tr>'
+      + '<tr><td class="sub">ตามรอยไม่ได้ '+g.none.n+' ใบ</td><td class="num sub">'+baht(g.none.b)+'</td></tr>';
    })
-   .catch(function(e){ box.innerHTML='<div><dt class="u-bad">อ่านยอดจากแอดไม่ได้ ('+esc(e.message)+')</dt><dd></dd></div>'; });
+   .catch(function(e){ box.innerHTML='<tr><td class="u-bad">อ่านยอดไม่ได้ ('+esc(e.message)+')</td><td></td></tr>'; });
  })();
 
  /* ── ลากไฟล์มาวางในการ์ด แล้วส่งเข้าห้องเลย ── */
