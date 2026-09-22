@@ -509,14 +509,18 @@ export default async function handler(req, res) {
     // 🔴 นัทสั่งกะปันจากในกลุ่ม (แก้ 13 ส.ค. — เดิมตกหายเงียบทั้งหมด)
     //    เหตุ: push ทำเฉพาะ !isOwner + ข้างล่างต้องเป็นคำถามยอดเท่านั้น → คำสั่งนัทในกลุ่มไม่เคยถึงบอร์ดเลย
     //    เคสจริง: ห้องแอดมิน 20:20 "กะปัน ส่งเรื่องหา cc ให้หน่อย ออเดอร์ลูกค้าไม่ขึ้นหน้าแพลนเมนู" → หายทั้งข้อความ
-    if (isOwner && calledKapan && !wantsData) {
+    // 🎫 พลอยมีบัตรผ่าน (นัทสั่ง 22 ก.ย. 2569): พลอยเรียกกะปันในกลุ่มพลอย = คำสั่งตรง ไม่ต้องรอนัท
+    //    ห้องปลายทางไม่ติดกฎงดคุยข้ามห้อง · sender บนบอร์ดคงเดิมเพื่อให้ kapan_watch ตื่น — แยกคนสั่งด้วยป้ายในข้อความ
+    const ployPass = !isOwner && groupId === PLOY_GROUP && userId && userId !== 'bot';
+    if ((isOwner || ployPass) && calledKapan && !wantsData) {
       const body = t.replace(/(กะปัน|กระปัน|กะปั้น|กะบัน|kapan)/i, "").replace(/^[\s,:：]+/, "").trim();
       if (body) {
         // 📮 นัทสั่งให้ "ถาม" ในกลุ่ม = ตั้งโหมดรอคำตอบของกลุ่มนี้ไว้
         //    (คำว่า ถาม/สอบถาม/ขอ/เช็ค/ทวง = สั่งให้ไปเอาคำตอบมา ไม่ใช่แค่ส่งงานเข้าห้อง)
-        if (/ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
+        if (isOwner && /ถาม|สอบถาม|ทวง|ขอ|เช็ค|เช็ก|ราคา|ยืนยัน|confirm/i.test(body)) await setAwait(groupId, body);
         const _ploy = (groupId === PLOY_GROUP);
-        await toBoard(body, await srcTag(groupId, token),
+        const tag = ployPass ? '[กลุ่มพลอย · 🎫 พลอยสั่งเอง (บัตรผ่าน)]' : await srcTag(groupId, token);
+        await toBoard(body, tag,
           _ploy ? '↩ ตอบกลับ "เข้ากลุ่มนี้" เท่านั้น — POST /api/kapan-say  { group: "' + PLOY_GROUP + '" }  ⛔ ห้ามส่งเข้าแชทเดี่ยวนัท' : '');
         // กลุ่มพลอย = ห้องกะปันตอบเอง อย่าเด้งประโยคสำเร็จรูปตัดหน้า · กลุ่มอื่นคงเดิมทุกอย่าง
         if (!_ploy) await lineReply(ev.replyToken, "รับเรื่องแล้วค่ะ ส่งเข้าห้องให้เลยนะคะ", token);
