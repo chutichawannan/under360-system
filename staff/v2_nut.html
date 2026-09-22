@@ -100,7 +100,9 @@
 .ad-wait{color:#9a7b4f;font-weight:600}
 /* เคาะ: กดที่บรรทัดแล้วตอบได้เลย */
 .ask-list{list-style:none;padding:0;margin:12px 0 4px}
-.nut-grid{align-items:start}.nut-empty{margin:14px 0 16px}
+.nut-grid{align-items:start}.ask-more{display:none}.ask-list.expanded .ask-more{display:block}.ask-toggle{cursor:pointer;color:var(--blue);font-size:13px;font-weight:700;padding:9px 2px;list-style:none}.nut-decisions .nut-paper{display:none}.nut-decisions .nut-empty{margin:8px 0 6px}
+.ad-table{font-size:13px;margin:6px 0 0}.ad-table td{padding:5px 0}.ad-table tr.total td{padding-top:7px}.nut-ad{min-height:0}.nut-ad .nut-ad-copy{padding:14px 18px}.nut-ad .nut-action{padding-top:8px;min-height:40px}
+@media(max-width:580px){.nut-inbox-bottom{display:flex;flex-direction:column;align-items:stretch;gap:12px}.nut-inbox-bottom>div:last-child{display:block}.nut-file-stack{width:56px;height:66px}.nut-drop select{max-width:100%}}.nut-empty{margin:14px 0 16px}
 .ask-item{border-bottom:1px solid #bcd8f5;padding:10px 2px}
 .ask-item .ask-q{cursor:pointer;font-size:13.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
 .ask-item .ask-q:hover{color:var(--blue)}
@@ -185,15 +187,16 @@ function renderAsks(items){
   var box=document.getElementById('d-list'); if(!box) return;
   var done={}; try{ done=JSON.parse(localStorage.getItem('u360_asks_done')||'{}'); }catch(e){}
   box.className='ask-list';
-  box.innerHTML = items.slice(0,6).map(function(r,idx){
+  box.innerHTML = items.slice(0,12).map(function(r,idx){
     var head=clean(String(r.text||'').split(String.fromCharCode(10))[0]).slice(0,90);
     var key=(r.created_at||'')+'';
     var room=senderToRoom(r.sender);
-    return '<li class="ask-item'+(done[key]?' ask-done':'')+'" data-key="'+esc(key)+'" data-room="'+esc(room)+'">'
+    return '<li class="ask-item'+(idx>=3?' ask-more':'')+(done[key]?' ask-done':'')+'" data-key="'+esc(key)+'" data-room="'+esc(room)+'">'
       + '<div class="ask-q"><span class="who">'+esc(room)+'</span><span>'+esc(head)+'</span></div>'
       + '<div class="ask-box"><textarea placeholder="พิมพ์คำตอบให้ห้อง '+esc(room)+'"></textarea>'
       + '<button class="ask-send">ส่งคำตอบ</button></div></li>';
-  }).join('') + (items.length>6 ? '<li class="u-dim" style="padding:8px 2px">และอีก '+(items.length-6)+' เรื่อง</li>' : '');
+  }).join('') + (items.length>3 ? '<li class="ask-toggle">ดูเพิ่ม '+(Math.min(items.length,12)-3)+' เรื่อง ▾</li>' : '');
+  var tg=box.querySelector('.ask-toggle'); if(tg){ var n=Math.min(items.length,12)-3; tg.addEventListener('click',function(e){ e.stopPropagation(); var o=box.classList.toggle('expanded'); tg.textContent=o?'พับเก็บ ▴':'ดูเพิ่ม '+n+' เรื่อง ▾'; }); }
 
   if(!window.__askOutside){ window.__askOutside=1; document.addEventListener('click',function(){ document.querySelectorAll('.ask-item.open').forEach(function(x){x.classList.remove('open');}); }); }
   box.querySelectorAll('.ask-item').forEach(function(li){
@@ -313,7 +316,7 @@ if ('serviceWorker' in navigator) {
        g[k].n++; g[k].b+=Number(o.total)||0;
      });
      var tracked=g.fb.b+g.ig.b+g.line.b;
-     var row=function(label,v){ return '<tr><td>'+label+'<div class="sub">'+v.n+' ใบ</div></td><td class="num">'+baht(v.b)+'</td></tr>'; };
+     var row=function(label,v){ return '<tr><td>'+label+' <span class="sub">· '+v.n+' ใบ</span></td><td class="num">'+baht(v.b)+'</td></tr>'; };
      box.innerHTML =
         '<tr><td colspan="2" class="sub">💸 เงินที่จ่ายค่าโฆษณา</td></tr>'
       + '<tr><td>ค่าโฆษณาที่จ่ายจริง</td><td class="num ad-wait">รอห้อง m เปิดช่อง</td></tr>'
