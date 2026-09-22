@@ -67,7 +67,7 @@
 <div class="vbanner" id="vbanner"></div>
 
 <h1>📦 <span data-i="title">ใบจัดของ — พุธ 23 ก.ย.</span></h1>
-<div class="sub" data-i="sub">5 ใบ · 35 กล่อง — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
+<div class="sub" data-i="sub">8 ใบ · 56 กล่อง — Meal Plan ทำสด เท่านั้น — แตะติ๊กเมื่อจัดเสร็จ</div>
 <div class="tools">
   <button onclick="clearAll()" data-i="btnclear">ล้างติ๊กทั้งหมด</button>
   <button onclick="window.print()" data-i="btnprint">🖨 พิมพ์</button>
@@ -93,7 +93,7 @@
 <div id="app"></div>
 
 <div class="foot">
-  <b data-i="f1">รวม 35 กล่อง — Meal Plan ทำสด เท่านั้น (LC 21 · HP 14)</b><br>
+  <b data-i="f1">รวม 56 กล่อง — Meal Plan ทำสด เท่านั้น (LC 21 · HP 35)</b><br>
   <span data-i="f2">LC = เนื้อ 120g/กล่อง · HP = เนื้อ 170g/กล่อง</span><br>
   <span data-i="f3">Peachyz Sumota ได้ 2 ใบแยกกัน (HP + LC คนละรอบ)</span>
 </div>
@@ -121,7 +121,10 @@ var M = {
 };
 // ── ลูกค้าจริง 18 ใบ (ดึงสดจาก mp_deliveries+orders 31 ส.ค. — กรอง cancelled/skip_requested แล้ว — ตัวจริง v1 30 ส.ค.) ──
 var C = [
+ {g:'hp', n:"BRIGHT💫", line:"U-0923-016 · 0627355775", box:7, items:["25","25","27","40","47","72","76"]},
  {g:'hp', n:"Kao-poon", line:"U-0916-001 · ส่ง 09/23 · 0863075434", box:7, items:["25","45","27","47","76","72","40"]},
+ {g:'hp', n:"MAC", line:"U-0923-017 · 0956591496", box:7, items:["25","27","40","45","47","72","74"]},
+ {g:'hp', n:"Pᴀᴘᴏᴏ◡̈", line:"U-0923-018 · 0836544449", box:7, items:["25","27","40","45","47","72","74"]},
  {g:'hp', n:"อัญชลี (LINE : K.Anchalee )", line:"U-0923-002 · 0869882595", box:7, items:["25","45","40","47","72","74","27"]},
  {g:'lc', n:"Chananunt Chu.", line:"U-0923-011 · 0815845821", box:7, items:["25","27","40","45","47","74","76"]},
  {g:'lc', n:"kaegoodna365", line:"U-0923-012 · 0919646416", box:7, items:["25","27","40","45","74","76","72"]},
@@ -164,7 +167,7 @@ function clearAll(){ done={}; try{localStorage.removeItem(KEY);}catch(e){} rende
 const UI = {
   title:{th:'ใบจัดของ — พุธ 23 ก.ย.', shn:'ၽိုၼ်ၸတ်းၶွင် — ဝၼ်းၸၼ် 31', my:'ထုပ်ပိုးစာရွက် — တနင်္လာနေ့ ၃၁'},
   draftbox:{th:'✅ ตัวจริง v1 — ดึงสดจาก DB 30 ส.ค. — ครัวยึดใบนี้', shn:'✅ v1', my:'✅ v1'},
-  sub:{th:'5 ใบ · 35 กล่อง', shn:'18 ၽိုၼ် · 126 ႁိပ်ႇ', my:'၁၈ စောင် · ၁၂၆ ဘူး'},
+  sub:{th:'8 ใบ · 56 กล่อง', shn:'18 ၽိုၼ် · 126 ႁိပ်ႇ', my:'၁၈ စောင် · ၁၂၆ ဘူး'},
   btnclear:{th:'ล้างติ๊กทั้งหมด', shn:'လၢင်ႉမၢႆတင်းသဵင်ႈ', my:'အမှတ်အားလုံးရှင်း'},
   btnprint:{th:'🖨 พิมพ์', shn:'🖨 ပရိၼ်ႇ', my:'🖨 ပရင့်'},
   r_t:{th:'🔴 ข้อควรระวังวันนี้', shn:'🔴 ၶေႃႈႁၢမ်ႈဝၼ်းၼႆႉ', my:'🔴 ယနေ့ သတိပြုရန်'},
