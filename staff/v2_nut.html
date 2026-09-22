@@ -75,6 +75,17 @@
 .nut-decisions .u-list li{border-bottom:1px solid #bcd8f5}
 .nut-rooms .u-list li{border-bottom:1px solid #bcd8f5}
 .u-dim{color:#546079}
+
+/* การ์ดแอดเต็มผืนซ้ายจรดขวา (นัทสั่ง 22 ก.ย.) */
+.nut-grid .nut-wide{grid-column:1/-1}
+.nut-ad .nut-sales-details div{border-bottom:1px solid #00000014}
+.nut-ad .nut-ad-copy{width:100%}
+.nut-ad .nut-ad-art{inset:0 0 0 62%}
+@media(max-width:700px){.nut-ad .nut-ad-art{opacity:.35}}
+/* ลากไฟล์มาวางได้เลย ไม่ต้องกดเข้าหน้าอื่น */
+.nut-drop{border:2px dashed #c9b28a;border-radius:18px;padding:16px 18px;cursor:pointer;transition:.15s}
+.nut-drop.over{border-color:var(--blue);background:#ffffff8c}
+.nut-drop select{font:inherit;font-size:13px;border:1px solid var(--line);border-radius:10px;padding:3px 6px;background:#fff}
 </style>
   
 </head>
@@ -91,10 +102,10 @@
     <div class="nut-grid">
       <section class="nut-block nut-decisions"><div class="nut-block-head"><h2>เคาะ</h2><span class="nut-symbol" aria-hidden="true">✓</span></div><p class="nut-subtitle">เรื่องที่รอนัทตัดสินใจ</p><div class="nut-empty"><span class="nut-paper" aria-hidden="true"><i></i><i></i><i></i></span><div><h3 id="d-head">กำลังอ่าน…</h3><p id="d-sub"></p></div></div><ul class="u-list" id="d-list"></ul><a class="nut-action" href="/pwa/nut.html">เปิดช่องนัท <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
       <section class="nut-block nut-sales"><div class="nut-block-head"><h2>ยอดขาย</h2><span class="nut-period">30 วันล่าสุด</span></div><div class="nut-total"><strong id="s-total">…</strong><span>ยอดขายรวม</span></div><dl class="nut-sales-details"><div><dt>จำนวนออเดอร์ที่มียอดขาย</dt><dd id="s-count">…</dd></div><div><dt>ค่าส่งที่เก็บได้</dt><dd id="s-fee">…</dd></div><div><dt>ออเดอร์ส่งพรุ่งนี้</dt><dd id="s-tmr">…</dd></div></dl><a class="nut-action" href="/o">ดูออเดอร์ล่วงหน้า <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
-      <section class="nut-block nut-watch"><div class="nut-block-head"><h2>ยามเฝ้าเจออะไร</h2><span class="nut-symbol" aria-hidden="true">◎</span></div><p class="nut-subtitle">เช็กจุดที่อาจทำให้ส่งของคลาดเคลื่อน</p><ul class="nut-watch-list"><li><span>วันในใบกับวันของรอบไม่ตรงกัน</span><b id="w-mis">…</b></li><li><span>ลูกค้าคนเดียวได้ 2 รอบในวันเดียวกัน</span><b id="w-dup">…</b></li></ul><p class="nut-small-note" id="w-note">กำลังตรวจข้อมูลจริง…</p><a class="nut-action" href="/watchdog">เปิดตัวเฝ้า <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
-      <section class="nut-block nut-ad"><div class="nut-ad-copy"><h2>แอด</h2><p>ดูตัวเลขโฆษณา<br>ที่หน้าแอดของห้อง M</p><a class="nut-action" href="https://www.360foodbox.com/ads">เปิดหน้าแอด <span class="nut-arrow" aria-hidden="true">↗</span></a></div><div class="nut-ad-art scene scene-ads" aria-hidden="true"></div><p class="nut-ad-note">เราปิดการขายใน LINE จึงไม่ใช้ตัวเลขจาก Meta มาแทนยอดจริง</p></section>
+      <!-- ซ่อนการ์ดยามเฝ้าตามที่นัทสั่ง 22 ก.ย. 2569 ("ยังไม่เคยใช้งานมันเลย") · หน้า /watchdog ยังอยู่ -->
+      <section class="nut-block nut-ad nut-wide"><div class="nut-ad-copy"><h2>แอด</h2><dl class="nut-sales-details" id="ad-rows"><div><dt>กำลังอ่านยอดที่มาจากแอด…</dt><dd></dd></div></dl><a class="nut-action" href="https://www.360foodbox.com/ads">เปิดหน้าแอด <span class="nut-arrow" aria-hidden="true">↗</span></a></div><div class="nut-ad-art scene scene-ads" aria-hidden="true"></div><p class="nut-ad-note">เราปิดการขายใน LINE จึงไม่ใช้ตัวเลขจาก Meta มาแทนยอดจริง</p></section>
       <section class="nut-block nut-rooms"><div class="nut-block-head"><h2>ห้องไหนเปิดอยู่</h2><span class="nut-symbol" aria-hidden="true">◷</span></div><p class="nut-subtitle">ความเคลื่อนไหวใน 1 ชั่วโมงล่าสุด</p><div class="nut-room-status"><strong id="r-count">…</strong><p id="r-sub">กำลังอ่าน…</p></div><ul class="u-list" id="r-list"></ul><a class="nut-action" href="/pwa/pollers.html">ดูห้องทั้งหมด <span class="nut-arrow" aria-hidden="true">↗</span></a></section>
-      <section class="nut-block nut-inbox"><div><h2>ส่งรูป / ไฟล์เข้าห้อง</h2><p class="nut-subtitle">เลือกห้อง แล้วส่งงานให้ถึงคนทำ</p></div><div class="nut-inbox-bottom"><div class="nut-file-stack" aria-hidden="true"><span></span><span><svg viewBox="0 0 80 90"><path d="M18 64h44M40 55V25m-12 12 12-12 12 12"/></svg></span></div><div><p>รูปและไฟล์ของทีม<br>ส่งต่อได้จากที่เดียว</p><a class="nut-action" href="/pwa/inbox.html">เปิดหน้าส่งไฟล์ <span class="nut-arrow" aria-hidden="true">↗</span></a></div></div></section>
+      <section class="nut-block nut-inbox"><div><h2>ส่งรูป / ไฟล์เข้าห้อง</h2><p class="nut-subtitle">เลือกห้อง แล้วส่งงานให้ถึงคนทำ</p></div><input id="drop-file" type="file" multiple hidden><div id="drop" class="nut-inbox-bottom nut-drop"><div class="nut-file-stack" aria-hidden="true"><span></span><span><svg viewBox="0 0 80 90"><path d="M18 64h44M40 55V25m-12 12 12-12 12 12"/></svg></span></div><div><p id="drop-msg"><b>ลากไฟล์มาวางตรงนี้</b><br>หรือแตะเพื่อเลือกไฟล์</p><p class="nut-small-note">ส่งเข้าห้อง <select id="drop-room"><option value="pm">พี่ปืน</option><option value="u-maintainer">ห้อง u</option><option value="niw">นิว</option><option value="fah">ฟ้า</option><option value="k">ครัว</option><option value="f">การเงิน</option><option value="06">แอด</option><option value="05">LINE OA</option><option value="m">เว็บ</option><option value="kapan">กะปัน</option><option value="cc">เลขา</option></select></p><a class="nut-action" href="/pwa/inbox.html">เปิดหน้าส่งไฟล์ <span class="nut-arrow" aria-hidden="true">↗</span></a></div></div></section>
     </div></section></main>
     <footer><span class="footer-line"></span><span>อาหารดี ทีมดี ไปได้ไกลกว่า</span><span class="footer-line"></span></footer>
   </div>
@@ -207,6 +218,80 @@ if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('/staff/sw.js', { scope: '/staff/' }).catch(function () {});
   });
 }
+</script>
+
+<script>
+(function(){
+ var U='https://zdartbvhbvqlwzwyyiia.supabase.co';
+ var K='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+ var H={apikey:K,Authorization:'Bearer '+K};
+ var baht=function(n){return '฿'+Math.round(Number(n)||0).toLocaleString();};
+ var esc=function(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;');};
+
+ /* ── แอด: ยอดที่ตามรอยได้ 7 วัน (อ่านจากออเดอร์ของเราเอง ไม่ใช่ตัวเลขฝั่ง Meta) ── */
+ (function(){
+  var box=document.getElementById('ad-rows'); if(!box) return;
+  var since=new Date(Date.now()+7*3600000-7*86400000).toISOString().slice(0,10);
+  fetch(U+'/rest/v1/orders?select=total,status,source_campaign&created_at=gte.'+since+'&limit=1000',{headers:H})
+   .then(function(r){ if(!r.ok) throw new Error(r.status); return r.json(); })
+   .then(function(rows){
+     var live=rows.filter(function(o){return o.status!=='cancelled'&&Number(o.total)>0;});
+     var g={fb:{n:0,b:0},ig:{n:0,b:0},line:{n:0,b:0},none:{n:0,b:0}};
+     live.forEach(function(o){
+       var c=String(o.source_campaign||'');
+       var k=/^fb/.test(c)?'fb':/^ig/.test(c)?'ig':/^line/.test(c)?'line':'none';
+       g[k].n++; g[k].b+=Number(o.total)||0;
+     });
+     var row=function(label,v){ return '<div><dt>'+esc(label)+'</dt><dd>'+baht(v.b)+' <span class="nut-small-note">· '+v.n+' ใบ</span></dd></div>'; };
+     box.innerHTML = row('จากแอด Facebook',g.fb) + row('จาก Instagram',g.ig) + row('จาก LINE บรอดแคสต์',g.line) + row('ตามรอยไม่ได้',g.none);
+   })
+   .catch(function(e){ box.innerHTML='<div><dt class="u-bad">อ่านยอดจากแอดไม่ได้ ('+esc(e.message)+')</dt><dd></dd></div>'; });
+ })();
+
+ /* ── ลากไฟล์มาวางในการ์ด แล้วส่งเข้าห้องเลย ── */
+ (function(){
+  var drop=document.getElementById('drop'), inp=document.getElementById('drop-file'), msg=document.getElementById('drop-msg');
+  if(!drop||!inp) return;
+  var say=function(t,bad){ msg.innerHTML=(bad?'<b class="u-bad">':'<b>')+t+'</b>'; };
+  drop.addEventListener('click',function(e){ if(e.target.tagName!=='SELECT') inp.click(); });
+  ['dragenter','dragover'].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.add('over'); }); });
+  ['dragleave','drop'].forEach(function(ev){ drop.addEventListener(ev,function(e){ e.preventDefault(); drop.classList.remove('over'); }); });
+  drop.addEventListener('drop',function(e){ send(e.dataTransfer.files); });
+  inp.addEventListener('change',function(){ send(inp.files); });
+
+  function send(fileList){
+    var files=[].slice.call(fileList||[]); if(!files.length) return;
+    var room=(document.getElementById('drop-room')||{}).value||'pm';
+    var day=new Date(Date.now()+7*3600000).toISOString().slice(0,10);
+    say('กำลังส่ง '+files.length+' ไฟล์…');
+    var urls=[];
+    var one=function(i){
+      if(i>=files.length) return finish();
+      var f=files[i];
+      var name=f.name.replace(new RegExp('[^A-Za-z0-9._\u0E00-\u0E7F-]+','g'),'_');
+      var path='inbox/'+day+'/'+Date.now()+'_'+name;
+      return fetch(U+'/storage/v1/object/menu-images/'+path,{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':f.type||'application/octet-stream','x-upsert':'true'},body:f})
+       .then(function(r){ if(r.ok) urls.push({n:f.name,u:U+'/storage/v1/object/public/menu-images/'+path}); return one(i+1); })
+       .catch(function(){ return one(i+1); });
+    };
+    function finish(){
+      if(!urls.length){ say('ส่งไม่สำเร็จสักไฟล์ ลองใหม่',true); return; }
+      var NL=String.fromCharCode(10);
+      var tick=String.fromCharCode(96);
+      var text='📤 **นัทส่งไฟล์มาให้ห้องนี้** ('+urls.length+' ไฟล์ · '+day+')'+NL+NL
+        + urls.map(function(x,i){ return (i+1)+'. '+tick+x.n+tick+NL+'   '+x.u; }).join(NL)
+        + NL+NL+'_ลากวางจากห้องนัท (/staff/v2/nut) — ไฟล์อยู่ใน Storage menu-images/inbox/_';
+      fetch(U+'/rest/v1/session_messages',{method:'POST',
+        headers:{apikey:K,Authorization:'Bearer '+K,'Content-Type':'application/json',Prefer:'return=minimal'},
+        body:JSON.stringify([{room:room,sender:'นัท',role:'user',text:text}])})
+       .then(function(){ say('✅ ส่งเข้าห้อง '+room+' แล้ว '+urls.length+' ไฟล์'); })
+       .catch(function(){ say('อัปไฟล์ขึ้นแล้ว แต่แจ้งห้องไม่สำเร็จ',true); });
+    }
+    one(0);
+  }
+ })();
+})();
 </script>
 </body>
 </html>
