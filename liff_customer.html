@@ -6280,19 +6280,21 @@ function cartHasFreeShipping(){
      0    = ฟรีจริง
      100  = จ่ายเท่านี้คงที่ ไม่ว่าจะไกลแค่ไหน
    หลายแพคในตะกร้า = เก็บตัวที่แพงสุดครั้งเดียว ไม่บวกกัน (ค่าส่งคือค่าส่ง ไม่ใช่ค่าสินค้า) */
-function packShipTarget(){
+function packShipTarget(feeNow){
   const rows = cart.filter(c => c.type === 'meal_plan' || (c.type === 'package' && c.free_shipping));
-  if(!rows.length) return null;
-  if(!isOutOfProvince) return 0;              // กทม.–ปริมณฑล = ฟรีเหมือนเดิมทุกไซส์
-  let need = 0;
-  rows.forEach(c => { const f = Number(packUpFee[c.package_id] || 0); if(f > need) need = f; });
-  return need;                                 // ต่างจังหวัด: 0 = ฟรี · >0 = เก็บเท่านี้คงที่
+  if(!rows.length) return null;               // ไม่มีของส่งฟรีในตะกร้า = คิดตามระยะปกติ
+  /* เพดานของแพคใบที่ "แพงสุด" ในตะกร้า — ค่าส่งคือค่าส่ง เก็บครั้งเดียว ไม่บวกกันหลายใบ */
+  let cap = 0;
+  rows.forEach(c => { const f = Number(packUpFee[c.package_id] || 0); if(f > cap) cap = f; });
+  if(cap <= 0) return 0;                      // ไม่มีเพดาน (Pack M/L · Meal Plan) = ฟรีทั้งประเทศ
+  const fee = Number(feeNow != null ? feeNow : (deliveryFeeKnown() ? calcDeliveryFee(distKm||0, selSlot) : 0));
+  return fee > cap ? cap : 0;                 // ≤ เพดาน = ฟรี · เกิน = เก็บแค่เพดาน ร้านออกส่วนเกิน
 }
 // ส่งฟรีสำหรับ "การแสดงผล" = ของในตะกร้า หรือ โค้ดส่งฟรี (โค้ดต้องรู้ค่าส่งก่อนถึงจะบอกว่าฟรีได้)
 function shipFreeDisplay(o){
-  const t = packShipTarget();
+  const t = packShipTarget(o.feeKnown ? o.fee : null);
   if (t === 0) return true;          // ฟรีจริงเท่านั้นถึงจะขึ้นคำว่า "ฟรี"
-  if (t > 0) return false;           // ต่างจังหวัดที่ยังต้องจ่าย — ห้ามขึ้นว่าฟรี
+  if (t > 0) return false;           // ค่าส่งเกินเพดาน ลูกค้ายังต้องจ่าย — ห้ามขึ้นว่าฟรี
   return appliedPromos.some(p => p.discount_type === 'free_shipping') && o.feeKnown;
 }
 
@@ -6332,7 +6334,7 @@ function computeOrder(){
   autoList.forEach(a => { a.amount = (a.type==='fixed') ? a.value : Math.round(sub * a.value/100); autoDisc += a.amount; });
   const itemDiscTotal = Math.min(itemDisc + autoDisc, sub); // ส่วนลดสินค้ารวม (โค้ด + อัตโนมัติ) ห้ามเกินยอดสินค้า
   // แพคเกจที่ติ๊ก "ส่งฟรี" ใน DB + Meal Plan ทุกแพ็ค → ยกเว้นค่าส่งทั้งออเดอร์ (ไม่ต้องมีโค้ด)
-  const packTarget = packShipTarget();   // null = ไม่มีของส่งฟรี · 0 = ฟรี · >0 = จ่ายคงที่เท่านี้
+  const packTarget = packShipTarget(fee);   // null = คิดตามระยะปกติ · 0 = ฟรี · >0 = จ่ายแค่เพดานนี้
   /* ส่งฟรีมี 2 ระดับแล้ว: ระดับสินค้า (แพคที่ติ๊กไว้) และระดับลูกค้า (เพื่อนนัท)
      เขียนแยกบรรทัดตั้งใจ — คนทั่วไปไม่โดนอะไรเปลี่ยนเลย ตรรกะค่าส่งเดิมไม่ถูกแตะ */
   const vipFreeShip = isVipFriend();
@@ -6727,7 +6729,7 @@ function setCusPin(lat,lng,addr){
   const fee=calcDeliveryFee(distKm, selSlot);
   const fRow=document.getElementById('fee-row');if(fRow)fRow.style.display='flex';
   const fDist=document.getElementById('fee-dist');if(fDist)fDist.textContent='📍 ~'+distKm.toFixed(1)+' กม. (กำลังวัดระยะจริง...)';
-  const fAmt=document.getElementById('fee-amt');if(fAmt)fAmt.textContent=packShipTarget()===0?'ฟรี':'฿'+(packShipTarget()>0?Math.min(fee,packShipTarget()):fee);
+  const fAmt=document.getElementById('fee-amt');if(fAmt){const _t=packShipTarget(fee);fAmt.textContent=_t===0?'ฟรี':'฿'+(_t>0?_t:fee);}
   if(addr){ _setAddrFields(addr); }
   else if(typeof google!=='undefined' && google.maps.Geocoder){   // ลากหมุด/กดแผนที่ (ไม่มี addr) → หาที่อยู่ให้เอง
     lookupPlaceAtPin(lat,lng);
@@ -6785,7 +6787,7 @@ function updateRoadDistance(lat, lng){
       distKm = el.distance.value/1000;                 // ระยะขับจริง (กม.)
       const fee = calcDeliveryFee(distKm, selSlot);
       const fD=document.getElementById('fee-dist'); if(fD) fD.textContent='🚗 '+distKm.toFixed(1)+' กม. (ระยะขับจริง)';
-      const fA=document.getElementById('fee-amt');  if(fA) fA.textContent=packShipTarget()===0?'ฟรี':'฿'+(packShipTarget()>0?Math.min(fee,packShipTarget()):fee);
+      const fA=document.getElementById('fee-amt');  if(fA){const _t=packShipTarget(fee);fA.textContent=_t===0?'ฟรี':'฿'+(_t>0?_t:fee);}
       updateCartTotals();
     });
   }catch(e){ const fD=document.getElementById('fee-dist'); if(fD && distKm) fD.textContent='📍 '+distKm.toFixed(1)+' กม. จากครัว'; }
