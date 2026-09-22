@@ -100,6 +100,7 @@
 .ad-wait{color:#9a7b4f;font-weight:600}
 /* เคาะ: กดที่บรรทัดแล้วตอบได้เลย */
 .ask-list{list-style:none;padding:0;margin:12px 0 4px}
+.nut-grid{align-items:start}.nut-empty{margin:14px 0 16px}
 .ask-item{border-bottom:1px solid #bcd8f5;padding:10px 2px}
 .ask-item .ask-q{cursor:pointer;font-size:13.5px;line-height:1.6;display:flex;gap:8px;align-items:flex-start}
 .ask-item .ask-q:hover{color:var(--blue)}
@@ -194,8 +195,10 @@ function renderAsks(items){
       + '<button class="ask-send">ส่งคำตอบ</button></div></li>';
   }).join('') + (items.length>6 ? '<li class="u-dim" style="padding:8px 2px">และอีก '+(items.length-6)+' เรื่อง</li>' : '');
 
+  if(!window.__askOutside){ window.__askOutside=1; document.addEventListener('click',function(){ document.querySelectorAll('.ask-item.open').forEach(function(x){x.classList.remove('open');}); }); }
   box.querySelectorAll('.ask-item').forEach(function(li){
-    li.querySelector('.ask-q').addEventListener('click',function(){ li.classList.toggle('open'); });
+    li.querySelector('.ask-q').addEventListener('click',function(e){ e.stopPropagation(); var was=li.classList.contains('open'); box.querySelectorAll('.ask-item.open').forEach(function(x){x.classList.remove('open');}); if(!was){ li.classList.add('open'); li.querySelector('textarea').focus(); } });
+    li.querySelector('.ask-box').addEventListener('click',function(e){ e.stopPropagation(); });
     li.querySelector('.ask-send').addEventListener('click',function(){
       var ta=li.querySelector('textarea'), btn=li.querySelector('.ask-send');
       var t=ta.value.trim(); if(!t){ ta.focus(); return; }
