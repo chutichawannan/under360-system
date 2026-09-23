@@ -30,6 +30,9 @@ while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
   fi
 
   # ไล่ทีละ commit ที่กำลังจะขึ้น main — ข้าม merge commit (ไม่มีโค้ดของตัวเอง)
+  # ไฟล์ทั้งหมดที่กำลังจะขึ้น main รอบนี้ (ใช้ตัดสินว่าต้องรันเทสไหม)
+  TOUCHED="$TOUCHED$(git diff --name-only "$RANGE" 2>/dev/null)
+"
   for SHA in $(git rev-list --no-merges "$RANGE" 2>/dev/null); do
     # commit นี้เคยอยู่บน branch ไหนของ remote บ้าง (ไม่นับ main/master/HEAD)
     SEEN=$(git branch -r --contains "$SHA" 2>/dev/null \
@@ -43,6 +46,27 @@ while read -r LOCAL_REF LOCAL_SHA REMOTE_REF REMOTE_SHA; do
     fi
   done
 done
+
+# ── ด่านที่ 2: แตะไฟล์แกน = ต้องผ่านเทสก่อน (23 ก.ย. 2569) ─────────────
+# ไฟล์พวกนี้พัง = ลูกค้าสั่งไม่ได้ / ครัวทำงานไม่ได้ / แอดมินทำงานไม่ได้
+# เทสชุดนี้คือของที่เคยจับของพังมาแล้วหลายรอบ — ให้มันเฝ้าแทนความจำคน
+CORE=$(printf %s "$TOUCHED" | grep -E "^(liff_customer\.html|operation_hub\.html|main_database_v2\.html|db2\.html|kitchen_queue\.html|home_editor\.html|print_pickslip\.html|gate\.js|vercel\.json|pwa/k2\.html|api/|scripts/u/)" | head -20)
+if [ -n "$CORE" ] && [ -z "$SKIPTEST" ]; then
+  echo ""
+  echo "🧪 แตะไฟล์ที่ลูกค้า/ครัว/แอดมินใช้อยู่ — ขอรันเทสก่อน (ข้ามได้ด้วย SKIPTEST=1 ถ้ารันไปแล้ว)"
+  printf %s "$CORE" | sed "s/^/   · /"
+  echo ""
+  if ! node scripts/u/run_all.mjs; then
+    echo ""
+    echo "╔══════════════════════════════════════════════════════════════╗"
+    echo "║  ⛔ เทสไม่ผ่าน — ยังขึ้น main ไม่ได้                          ║"
+    echo "╚══════════════════════════════════════════════════════════════╝"
+    echo "แก้ให้ผ่านก่อน หรือถ้าเทสเองผิด ให้แก้เทสพร้อมกันในคอมมิตเดียวกัน"
+    echo "ด่วนจริงจนยอมเสี่ยง: HOTFIX=1 git push ... แล้วแจ้งบอร์ดทันที"
+    echo ""
+    exit 1
+  fi
+fi
 
 [ -z "$BAD" ] && exit 0
 
