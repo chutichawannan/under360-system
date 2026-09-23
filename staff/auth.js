@@ -31,9 +31,19 @@
     window.U360_ROLE = OWNERS.indexOf(String(email || '').toLowerCase()) >= 0 ? 'owner' : 'employee';
   }
 
+  /* อายุการจำผู้ใช้ — ของเราเอง ไม่ผูกกับอายุโทเคน (โทเคนหมดใน ~1 ชม. แต่เราใช้มันแค่ตอนถามอีเมลครั้งเดียว)
+     60 วัน + ต่ออายุทุกครั้งที่เปิดหน้า = คนที่ใช้งานอยู่เรื่อย ๆ จะไม่ถูกถามอีกเลย
+     (เทียบกับรหัส 4 ตัวที่ใช้กันมาตลอด ซึ่งไม่เคยหมดอายุเลย — อันนี้ยังเข้มกว่าด้วยซ้ำ) */
+  var STAY_MS = 60 * 24 * 3600 * 1000;
+  function remember(email) {
+    try { localStorage.setItem(STORE, JSON.stringify({ email: email, exp: Date.now() + STAY_MS })); } catch (e) {}
+  }
   function saved() {
     try { var s = JSON.parse(localStorage.getItem(STORE) || 'null');
-      if (s && s.email && s.exp && Date.now() < s.exp) return s; } catch (e) {}
+      if (s && s.email && s.exp && Date.now() < s.exp) {
+        remember(s.email);            // ยังใช้อยู่ = ต่ออายุให้ ไม่ต้องล็อกอินซ้ำ
+        return s;
+      } } catch (e) {}
     return null;
   }
   function ok(email) { return ALLOW.indexOf(String(email || '').toLowerCase()) >= 0; }
@@ -86,7 +96,6 @@
     if (location.hash.indexOf('access_token=') < 0) return false;
     var p = new URLSearchParams(location.hash.slice(1));
     var token = p.get('access_token');
-    var exp = (Number(p.get('expires_at')) || 0) * 1000;
     hide();
     fetch(SB + '/auth/v1/user', { headers: { apikey: KEY, Authorization: 'Bearer ' + token } })
       .then(function (r) { return r.ok ? r.json() : Promise.reject(new Error('ถามชื่อผู้ใช้ไม่ได้ (' + r.status + ')')); })
@@ -100,7 +109,7 @@
           document.getElementById('g').onclick = login;
           return;
         }
-        try { localStorage.setItem(STORE, JSON.stringify({ email: email, exp: exp || (Date.now() + 12 * 3600000) })); } catch (e) {}
+        remember(email);   // ❗ ไม่ใช้ exp ของโทเคน — นั่นคือต้นเหตุที่ต้องล็อกอินใหม่ทุกชั่วโมง
         publish(email);
         show();
       })
