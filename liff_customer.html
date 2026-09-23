@@ -5,6 +5,14 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
 <meta name="theme-color" content="#1F4D3A">
 <title>Under360 — สั่งอาหาร</title>
+<!-- 🔴 ข้อความพรีวิวเวลาลิงก์ถูกแชร์ในแชท — ห้ามลบ
+     ไม่มีบรรทัดพวกนี้ = LINE ไปดูดข้อความแรกในหน้ามาโชว์เอง
+     เจอจริง 23 ก.ย. 2569: การ์ดในแชทลูกค้าขึ้นว่า "ออกจากโหมด 🧪 โหมดทดสอบ…" ซึ่งเป็นของภายในเรา -->
+<meta name="description" content="สั่งอาหาร Under360 — ข้าวกล่อง แพคกับข้าว และ Meal Plan ส่งถึงบ้าน">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Under360 — สั่งอาหาร">
+<meta property="og:description" content="เลือกเมนู จัดการ Meal Plan และสั่งอาหารได้ในแอป">
+<meta property="og:image" content="https://under360-system.vercel.app/favicon.jpg">
 <link rel="icon" href="https://under360-system.vercel.app/favicon.jpg">
 <link rel="apple-touch-icon" href="https://under360-system.vercel.app/favicon.jpg">
 <!-- 📊 Meta Pixel — ตัวเดียวกับหน้าเว็บ (web/jay.html) เพื่อให้เป็นบัญชีเดียวกัน
@@ -7465,12 +7473,25 @@ async function renderMpManage() {
   renderMpManageFromCache();
 }
 
+/* 🚪 คนที่เปิดมาจากประตูเก่า — บอกตรง ๆ ว่าแผนไม่ได้หาย แค่เข้าคนละประตู แล้วพาไปที่ถูกให้เลย
+   ไม่เข้าเงื่อนไข = คืนค่าว่าง ให้หน้าใช้ข้อความเดิมทุกตัวอักษร */
+const LIFF_DOOR_NEW = '2011148232-oul66cEs';
+function oldDoorNotice(){
+  if(!openedLid || openedLid === LIFF_DOOR_NEW) return "";
+  const to = 'https://liff.line.me/' + LIFF_DOOR_NEW + '?screen=mp-manage';
+  return '<div class="empty"><div class="empty-ico">🔑</div><div class="empty-txt">'
+    + 'แผนของคุณยังอยู่ครบ<br><small>ลิงก์ที่กดมาเป็นลิงก์เวอร์ชันเก่า กดปุ่มข้างล่างเพื่อเข้าหน้าที่ถูกต้อง</small>'
+    + '</div><a href="' + to + '" style="display:inline-block;margin-top:14px;background:#1F4D3A;color:#fff;'
+    + 'text-decoration:none;font-weight:700;font-size:15px;padding:12px 22px;border-radius:12px">เปิดหน้า Meal Plan ของฉัน</a></div>';
+}
 // re-render จาก mpManageRows ที่ cache ไว้แล้ว — ใช้ตอน tick นับถอยหลังทุก 30s ไม่ต้อง fetch DB ซ้ำ
 function renderMpManageFromCache() {
   const el = document.getElementById('mp-manage-list');
   if (!el) return;
   if (!mpManageRows.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-ico">🥗</div><div class="empty-txt">ยังไม่มี Meal Plan ที่ใช้งานอยู่<br><small>กด 🥗 Meal Plan ในหน้าเมนูเพื่อสมัคร</small></div></div>';
+    /* 🚪 เข้าประตูเก่ามา = หาแผนไม่เจอแน่นอน (รหัสลูกค้าคนละชุด) — ห้ามปล่อยให้ลูกค้าคิดว่าแผนตัวเองหาย
+       ปุ่มพาไปประตูใหม่หน้าเดียวกัน กดครั้งเดียวจบ ไม่ต้องให้ลูกค้าไปทักแอดมิน */
+    el.innerHTML = oldDoorNotice() || ('<div class="empty"><div class="empty-ico">🥗</div><div class="empty-txt">ยังไม่มี Meal Plan ที่ใช้งานอยู่<br><small>กด 🥗 Meal Plan ในหน้าเมนูเพื่อสมัคร</small></div></div>');
     return;
   }
   // group by order_id

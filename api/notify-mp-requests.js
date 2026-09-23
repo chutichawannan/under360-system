@@ -1,7 +1,16 @@
 const getLineToken = require("./_line_token.js");
 const SUPABASE_URL = "https://zdartbvhbvqlwzwyyiia.supabase.co";
 const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8";
-const LIFF_URL = "https://liff.line.me/2010442513-NI3JGTkb?screen=mp-manage";
+/* 🔴 ต้องเป็นประตูใหม่เท่านั้น (provider เดียวกับช่องส่งข้อความ)
+   ประตูเก่า 2010442513 = รหัสลูกค้าคนละชุด → กดเข้าไปแล้วระบบมองไม่เห็นแผนของตัวเอง
+   เจอจริง 23 ก.ย. 2569: ลูกค้าแจ้งผ่านกิ๊ฟว่ากดลิงก์แล้วขึ้น "ยังไม่มี Meal Plan ที่ใช้งานอยู่" */
+const LIFF_URL = "https://liff.line.me/2011148232-oul66cEs?screen=mp-manage";
+
+/* 🔇 สวิตช์เดียวของการเตือน "เปิดรอบให้เลือกเมนู" (นัทเคาะ 23 ก.ย. 2569)
+   false = ไม่ส่ง · true = ส่งเหมือนเดิม — ไม่ลบโค้ดทิ้ง เปิดคืนได้ทันทีเมื่ออยากลองวัดผลใหม่
+   เหตุผลที่ปิด: ส่งไป 77 รอบ มีคนเลือกเมนูเอง 3 ราย แต่ลิงก์พังทั้งช่วง = ยังพิสูจน์อะไรไม่ได้
+   ปิดไว้ก่อนดีกว่าส่งข้อความที่พาไปหน้าที่ลูกค้าใช้ต่อไม่เป็น */
+const SEND_OPEN_WINDOW = false;
 
 function fetchMpDeliveries(query) {
   return fetch(`${SUPABASE_URL}/rest/v1/mp_deliveries?${query}&select=*`, {
@@ -41,6 +50,8 @@ function dayBeforeMsg(row) {
 
 async function runOpenRequestWindows(token, hasToken, today) {
   const out = { checked: 0, notified: 0, skipped_no_token: 0, errors: [] };
+  /* ปิดอยู่ = ไม่แตะแถวไหนเลย ไม่ mark ว่าแจ้งแล้ว → เปิดคืนเมื่อไหร่ ทุกคนได้รับครบเหมือนเดิม */
+  if (!SEND_OPEN_WINDOW) return { ...out, paused: true, note: 'ปิดการเตือนเปิดรอบไว้ชั่วคราว (นัทเคาะ 23 ก.ย. 2569)' };
   let rows = [];
   try {
     const resp = await fetchMpDeliveries(`status=eq.scheduled&notified_at=is.null&request_opens_at=lte.${today}`);

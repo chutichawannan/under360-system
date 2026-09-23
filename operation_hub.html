@@ -897,6 +897,8 @@ body.counts-folded .count-grid{display:none}
         <div class="csb-item"><div class="csb-num" id="cst-rev">—</div><div class="csb-lbl">รายได้รวม</div></div>
         <div class="csb-item"><div class="csb-num" id="cst-pts">—</div><div class="csb-lbl">แต้มรวม</div></div>
       </div>
+      <!-- 👻 คนที่แค่เปิดแอปดู (ไม่เคยสั่ง ไม่มีชื่อ/เบอร์) ถูกซ่อนไว้ — ติ๊กเพื่อดูรวม -->
+      <div id="cst-lurk" style="font-size:12px;color:var(--ink-soft);margin:-4px 2px 10px"></div>
       <div class="cust-layout">
         <div class="cust-list-panel">
           <input type="text" id="custSearch" class="p-ifield"
@@ -3460,9 +3462,16 @@ async function planAddMissing(orderId){
   if(["hyrox","hp","lc"].indexOf(t)<0) return alert("พิมพ์ได้แค่ hyrox / hp / lc");
   var b=parseInt(window.prompt("กี่กล่อง?", t==="hyrox"?"6":"7"),10);
   if(!b||b<1) return alert("จำนวนกล่องไม่ถูกต้อง");
+  /* 🔑 ใบสั่งที่แอดมินคีย์เองมักไม่มีรหัส LINE — ไปหยิบจากลูกค้าที่ผูกไว้ก่อน
+     ไม่มีรหัส = แจ้งเตือนรอบนี้ส่งไม่ได้ตลอดไป และไม่มีใครรู้ตัวจนลูกค้าโวย */
+  var _uid=o.line_uid||null;
+  if(!_uid && o.customer_id){
+    try{ var _c=await sb_.from("customers").select("line_uid").eq("id",o.customer_id).maybeSingle();
+         _uid=(_c&&_c.data&&_c.data.line_uid)||null; }catch(e){}
+  }
   try{
     var res=await sb_.from("mp_deliveries").insert([{
-      order_id:o.id, customer_id:o.customer_id||null, line_uid:o.line_uid||null,
+      order_id:o.id, customer_id:o.customer_id||null, line_uid:_uid,
       customer_name:o.customer_name||null, line_display_name:o.line_display_name||null,
       mp_type:t, mp_set:(t==="hyrox"?"SET-HYROX6":"weekly"), round_no:1, total_rounds:1,
       delivery_date:o.delivery_date, time_slot:o.time_slot||"afternoon",
@@ -6355,12 +6364,36 @@ async function loadCustomers(){
   }
 }
 
+/* 👻 แถวที่เกิดตอนใครสักคนเปิดแอป แล้วไม่เคยทำอะไรต่อ — ไม่มีชื่อ ไม่มีเบอร์ ไม่เคยสั่ง
+   ไม่ใช่ลูกค้า แต่ก็ไม่ใช่ขยะ (มีรหัส LINE = ยิงข้อความหาได้) → ซ่อนจากหน้าลูกค้า ไม่ลบ */
+function isLurker(c){
+  return (c._oc||0)===0 && !c.phone && !c.display_name && !c.line_display_name && !(c.loyalty_points>0);
+}
+var CUST_SHOW_LURKERS=false;
+function toggleLurkers(el){ CUST_SHOW_LURKERS=!!(el&&el.checked); filterCustomers(); updateCustStats(); }
 function updateCustStats(){
-  var totalRev=allCustomers.reduce(function(s,c){return s+c._ot;},0);
-  var active=allCustomers.filter(function(c){return c._oc>0;}).length;
-  var totalPts=allCustomers.reduce(function(s,c){return s+(c.loyalty_points||0);},0);
+  /* นับจาก "ลูกค้าจริง" เท่านั้น ไม่งั้นเลขรวมบวมด้วยคนที่แค่เปิดแอปดู */
+  var real=allCustomers.filter(function(c){return !isLurker(c);});
+  var lurk=allCustomers.length-real.length;
+  var totalRev=real.reduce(function(s,c){return s+c._ot;},0);
+  var active=real.filter(function(c){return c._oc>0;}).length;
+  var totalPts=real.reduce(function(s,c){return s+(c.loyalty_points||0);},0);
   var e=function(id,v){ var el=document.getElementById(id); if(el) el.textContent=v; };
-  e("cst-total",allCustomers.length);
+  e("cst-total",CUST_SHOW_LURKERS?allCustomers.length:real.length);
+  /* บอกตรง ๆ ว่าซ่อนไปกี่คน — ซ่อนเงียบ ๆ แล้ววันหลังจะงงว่าเลขหายไปไหน */
+  /* 🔑 วาดช่องติ๊กครั้งเดียว แล้วอัปเดตแค่ตัวเลข
+     เคยเขียนทับ innerHTML ทุกครั้งที่อัปเดตเลข → ช่องติ๊กถูกสร้างใหม่ คลิกครั้งที่ 2 ไม่ทำงาน (เจอตอนเทส 23 ก.ย.) */
+  var lz=document.getElementById("cst-lurk");
+  if(lz){
+    if(!lurk){ lz.innerHTML=""; }
+    else{
+      if(!document.getElementById("cst-lurk-cb")){
+        lz.innerHTML="<label style='cursor:pointer'><input id='cst-lurk-cb' type='checkbox' onchange='toggleLurkers(this)'> รวมคนที่เปิดแอปดูเฉย ๆ อีก <b id='cst-lurk-n'></b> คน (ไม่เคยสั่ง ไม่มีชื่อ/เบอร์)</label>";
+      }
+      var cb=document.getElementById("cst-lurk-cb"); if(cb) cb.checked=CUST_SHOW_LURKERS;
+      var ln=document.getElementById("cst-lurk-n"); if(ln) ln.textContent=lurk.toLocaleString();
+    }
+  }
   e("cst-active",active);
   e("cst-rev",fmtB2(Math.round(totalRev)));
   e("cst-pts",totalPts.toLocaleString());
@@ -6378,6 +6411,7 @@ function filterCustomers(){
       var n=(c.display_name||c._oname||c.line_display_name||"").toLowerCase();
       if(!n.includes(q)&&!(c.phone||"").includes(q)&&!(c.member_id||"").toLowerCase().includes(q)) return false;
     }
+    if(!CUST_SHOW_LURKERS && isLurker(c)) return false;   // 👻 คนเปิดแอปดูเฉย ๆ ไม่ปนในรายชื่อ
     if(tierSel && (c.tier||"")!==tierSel) return false;
     if(typeSel && custCategory(c).key!==typeSel) return false;
     return true;
@@ -7323,7 +7357,8 @@ async function obSubmit(){
       for(var i=1;i<=rounds;i++){
         var dd=chosen.length?chosen[i-1]:(i===1?date:ymd(d));
         planRows.push({ order_id:ord.data.id, customer_id:custId, customer_name:rname||null,
-          line_uid:(obCust&&obCust.line_uid)||null,
+          /* ใบที่แอดมินสั่งแทน — ลูกค้าอาจมี uid แม้ใบจะไม่มี (23 ก.ย. 2569) */
+          line_uid:(obCust&&obCust.line_uid)||ord.data.line_uid||null,
           mp_type:c.planType, mp_set:mpSet, round_no:i, total_rounds:rounds,
           menu_items: menuFor(dd),
           delivery_date: dd,
