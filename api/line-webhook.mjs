@@ -128,6 +128,20 @@ const PERSONAS = {
 const MODE_WORD = { 'เร่ง': 'fast', 'ปกติ': 'normal', 'เงียบ': 'quiet' };
 
 // เก็บโหมดกะปันไว้ในบอร์ด (room=kapan) — ตัวเฝ้าฝั่งเลขาอ่านค่านี้ไปปรับความถี่
+/* 🎫 รหัส LINE ของพลอย — เก็บใน kitchen_data key `ploy_line_uid` (data: {"uid":"U..."})
+   เก็บใน DB ไม่ใช่ env เพราะห้องกะปัน/เลขาตั้งค่าเองได้ตอนรู้รหัส โดยไม่ต้อง deploy ใหม่ */
+let _ployUid = null, _ployAt = 0;
+async function getPloyUid() {
+  if (_ployUid && Date.now() - _ployAt < 300000) return _ployUid;
+  try {
+    const r = await fetch(SB + '/kitchen_data?select=data&key=eq.ploy_line_uid', { headers: SBH });
+    const j = await r.json();
+    _ployUid = (Array.isArray(j) && j[0] && j[0].data && j[0].data.uid) || null;
+    _ployAt = Date.now();
+  } catch (e) { console.error('getPloyUid failed:', e); }
+  return _ployUid;
+}
+
 async function setMode(mode) {
   try {
     await fetch(SB + '/session_messages', {
@@ -433,6 +447,18 @@ export default async function handler(req, res) {
         continue;
       }
       if (!isOwner) {
+        /* 🎫 พลอยมีบัตรผ่าน (นัทสั่ง 24 ก.ย. 2569): *"ตอนคุยเดี่ยวกับกะปัน ไม่ต้องใช้คำว่าแจ้งคุณนัทให้เลย
+           ไม่ต้องผ่านฉันอีกต่อไป พลอยยิงตรงได้เลย พลอยมีตั๋ว"*
+           → ข้อความพลอยเข้าห้องกะปันตรง ไม่เด้งหานัท ไม่ตอบประโยคสำเร็จรูป (ห้องกะปันตอบเอง)
+           รหัสพลอยเก็บใน kitchen_data key `ploy_line_uid` — เปลี่ยนได้โดยไม่ต้อง deploy */
+        const ployUid = await getPloyUid();
+        if (ployUid && userId === ployUid) {
+          await toBoard(t, '[พลอย · แชทเดี่ยว · 🎫 บัตรผ่าน]',
+            '↩ ตอบกลับพลอย "แชทเดี่ยว" เท่านั้น — POST /api/kapan-say { "uid": "ploy" } · ขึ้นต้นว่า "ข้อความจาก 06" ถ้าเป็นคำตอบของห้อง 06');
+          continue;
+        }
+        // ยังไม่รู้จัก — จดรหัสลงบอร์ดให้ห้องกะปันเก็บได้ (ใช้ตั้งค่าพลอยรอบแรก) แล้วแจ้งนัทเหมือนเดิม
+        await toBoard('[คนนอกทักกะปันส่วนตัว] userId: ' + userId + '\n"' + t + '"', '[แชทเดี่ยว]');
         await lineReply(ev.replyToken, 'รับเรื่องแล้วค่ะ เดี๋ยวแจ้งคุณนัทให้นะคะ', token);
         await linePush(OWNER, 'มีคนทักกะปันส่วนตัวค่ะ\nuserId: ' + userId + '\n\n"' + t + '"', token);
         continue;

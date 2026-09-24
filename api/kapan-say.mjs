@@ -74,6 +74,19 @@ export default async function handler(req, res) {
     text: use.length > 1 ? t + "\n\n— (" + (n + 1) + "/" + use.length + ")" : t }));
 
   let target = OWNER;
+  /* 🎫 ส่งแชทเดี่ยวหาพลอยได้ (นัทสั่ง 24 ก.ย. 2569 — พลอยมีบัตรผ่าน คุยกับกะปันตรงไม่ผ่านนัท)
+     ใช้ { "uid": "ploy" } · รหัสจริงอยู่ใน kitchen_data key `ploy_line_uid` เปลี่ยนได้โดยไม่ต้อง deploy
+     ⛔ ยังห้ามส่งหา userId อื่นที่ไม่ได้อยู่ในรายชื่อนี้ (กันส่งผิดคนเหมือนเคส 20 ส.ค.) */
+  if (String(j.uid || "").trim() === "ploy") {
+    try {
+      const r = await fetch(SB + '/kitchen_data?select=data&key=eq.ploy_line_uid',
+        { headers: { apikey: SRV, Authorization: 'Bearer ' + SRV } });
+      const rows = await r.json();
+      const uid = Array.isArray(rows) && rows[0] && rows[0].data && rows[0].data.uid;
+      if (!uid) return res.status(400).json({ ok: false, why: "ยังไม่ได้ตั้งรหัสพลอย (kitchen_data.ploy_line_uid)" });
+      target = uid;
+    } catch (e) { return res.status(500).json({ ok: false, why: String(e) }); }
+  }
   if (toGroup) {
     if (!(await knownGroup(toGroup)))
       return res.status(400).json({ ok: false, why: "กะปันไม่ได้อยู่ในกลุ่มนี้ — ต้องเชิญเข้ากลุ่มก่อน" });
