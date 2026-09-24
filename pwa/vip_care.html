@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>ทำเนียบลูกค้าต้องดูแล — Under360</title>
+<meta name="theme-color" content="#10221A">
+<style>
+/* ═══ ทำเนียบลูกค้าที่ต้องดูแล (f-track · 24 ก.ย. 2569) ═══
+   พลอยถามว่า "AI คำนวณได้ไหมว่าลูกค้าเก่าจะกินหมดวันไหน" → ได้ และคำนวณจากรอบซื้อจริงของแต่ละคน
+   นัทสั่งต่อ: "ทำทำเนียบคนที่ต้องดูแล ให้แอดมินดูแลเป็นพิเศษ + ติดแท็ก"
+
+   🔴 หน้านี้อ่านอย่างเดียวจากตาราง orders — ไม่แก้ข้อมูลลูกค้า
+   บันทึกของแอดมิน (โน้ต + วันที่ทักล่าสุด) เก็บแยกที่ kitchen_data:f_vip_care
+   แท็กคำนวณสดทุกครั้งที่เปิด ไม่ได้ฝังไว้ → ลูกค้าเลื่อนกลุ่มเองตามพฤติกรรม */
+:root{--bg:#0f1115;--card:#181b22;--line:#262b36;--tx:#e8eaf0;--dim:#8c94a6;--gold:#e0b341;--hot:#ff7043;--due:#4fc3f7;--warn:#ffc043;--lost:#ef5350;--ok:#2ecc71}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 -apple-system,"Segoe UI",sans-serif;padding-bottom:40px}
+header{position:sticky;top:0;background:#0f1115f2;backdrop-filter:blur(8px);padding:10px 14px 0;border-bottom:1px solid var(--line);z-index:5}
+h1{font-size:16px;margin:0}
+.sub{color:var(--dim);font-size:12.5px;margin:3px 0 8px}
+.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;padding:7px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--dim);font-size:13.5px}
+.tab.on{background:#2b3140;color:var(--tx);border-color:#3b4354}
+main{padding:12px 14px}
+.c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:10px}
+.nm{font-weight:700;font-size:15.5px}
+.tags{margin:5px 0 7px;display:flex;gap:5px;flex-wrap:wrap}
+.t{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
+.t.vip{color:var(--gold);border-color:#6b5420;background:#2a2210}
+.t.hot{color:var(--hot);border-color:#6b3420;background:#2a1710}
+.t.due{color:var(--due);border-color:#1f4c6b;background:#10202a}
+.t.warn{color:var(--warn);border-color:#6b5420;background:#2a2210}
+.t.lost{color:var(--lost);border-color:#6b2020;background:#2a1010}
+.t.new{color:var(--ok);border-color:#1f6b40;background:#102a1c}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0}
+.g div{background:#12151c;border-radius:9px;padding:6px 8px}
+.g b{display:block;font-size:14px}
+.g span{color:var(--dim);font-size:10.5px}
+.act{display:flex;gap:7px;margin-top:9px}
+input,button{font:inherit}
+input{flex:1;background:#12151c;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 11px;font-size:13.5px}
+button{padding:9px 13px;border-radius:10px;border:0;background:#2b3140;color:var(--tx);font-size:13.5px;font-weight:600}
+button.p{background:#2563eb}
+.done{color:var(--ok);font-size:12px;margin-top:6px}
+.load{color:var(--dim);text-align:center;padding:40px 0}
+</style></head><body>
+<header>
+  <h1>ทำเนียบลูกค้าที่ต้องดูแล</h1>
+  <div class="sub">คำนวณสดจากประวัติสั่งซื้อจริง · <b>"ถึงรอบสั่ง"</b> = ครบรอบที่ลูกค้าคนนั้นเคยสั่งเอง ไม่ใช่การเดา</div>
+  <div class="tabs" id="tabs"></div>
+</header>
+<main id="list"><div class="load">กำลังคำนวณ…</div></main>
+<script>
+const SB='https://zdartbvhbvqlwzwyyiia.supabase.co';
+const KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
+const H={apikey:KEY,Authorization:'Bearer '+KEY};
+const D=864e5, today=new Date(new Date().toLocaleString('en-US',{timeZone:'Asia/Bangkok'}));
+let CARE={}, cur='ทั้งหมด', LIST=[];
+
+async function all(path){                       // Supabase คืนทีละ 1000 แถว → ต้องวนเก็บให้ครบ
+  const out=[];let from=0;
+  for(;;){const r=await fetch(SB+'/rest/v1/'+path+'&limit=1000&offset='+from,{headers:H});
+    const j=await r.json(); if(!Array.isArray(j)||!j.length) break; out.push(...j);
+    if(j.length<1000) break; from+=1000;}
+  return out;
+}
+const isTest=o=>/parallel_test/.test(o.source||'')||/TEST-P/.test(o.created_by||'')||/^\[PARALLEL\]/.test(o.notes||'')
+  ||/^(Nut|Test User|ทดลอบ 1|PLOY ♡|SchemaTest)$/i.test((o.customer_name||'').trim());
+
+function tagsOf(x){
+  const t=[];
+  if(x.spend>=50000) t.push(['vip','👑 VIP ตัวจริง']);
+  if(x.spend90>=8000) t.push(['hot','🔥 มาแรงช่วงนี้']);
+  if(x.n<=6 && x.spend90>=5000) t.push(['new','🌱 ลูกค้าใหม่มาแรง']);
+  if(x.due!=null && x.due<=3 && x.due>=-7) t.push(['due','⏰ ถึงรอบสั่งแล้ว']);
+  if(x.med && x.since>x.med*1.5 && x.since<=x.med*3) t.push(['warn','⚠️ เริ่มห่าง']);
+  if(x.med && x.since>x.med*3) t.push(['lost','💔 หายไปแล้ว']);
+  return t;
+}
+async function load(){
+  const since=new Date(Date.now()-500*D).toISOString().slice(0,10);
+  const os=(await all(`orders?select=customer_id,customer_name,line_display_name,total,created_at,delivery_date,source,created_by,notes&created_at=gte.${since}&order=created_at.asc`))
+    .filter(o=>o.customer_id && +o.total>0 && !isTest(o));
+  const C=new Map();
+  for(const o of os){const a=C.get(o.customer_id)||[];a.push(o);C.set(o.customer_id,a)}
+  LIST=[];
+  for(const [id,a] of C){
+    if(a.length<3) continue;                      // ต่ำกว่า 3 ครั้ง ยังบอกรอบไม่ได้
+    const ds=a.map(o=>new Date(o.delivery_date||o.created_at)).sort((x,y)=>x-y);
+    const gaps=[];for(let i=1;i<ds.length;i++)gaps.push((ds[i]-ds[i-1])/D);
+    gaps.sort((x,y)=>x-y);
+    const med=gaps.length?Math.round(gaps[Math.floor(gaps.length/2)]):null;
+    const last=ds[ds.length-1], since=Math.round((today-last)/D);
+    const spend=a.reduce((s,o)=>s+(+o.total||0),0);
+    const a90=a.filter(o=>(today-new Date(o.delivery_date||o.created_at))/D<=90);
+    LIST.push({id,name:a[a.length-1].line_display_name||a[a.length-1].customer_name||'(ไม่มีชื่อ)',
+      n:a.length,spend,spend90:a90.reduce((s,o)=>s+(+o.total||0),0),med,since,
+      due: med!=null? med-since : null, last:last.toISOString().slice(0,10)});
+  }
+  LIST.sort((a,b)=>b.spend90-a.spend90||b.spend-a.spend);
+  try{const r=await fetch(SB+'/rest/v1/kitchen_data?select=data&key=eq.f_vip_care',{headers:H});
+      const j=await r.json(); CARE=(j[0]&&j[0].data)||{};}catch(e){}
+  draw();
+}
+const TABS=['ทั้งหมด','⏰ ถึงรอบสั่งแล้ว','👑 VIP ตัวจริง','🔥 มาแรงช่วงนี้','⚠️ เริ่มห่าง','💔 หายไปแล้ว','🌱 ลูกค้าใหม่มาแรง'];
+const el=(t,c,h)=>{const x=document.createElement(t);if(c)x.className=c;if(h!=null)x.innerHTML=h;return x};
+const b=n=>Math.round(n).toLocaleString();
+function draw(){
+  const tabs=document.getElementById('tabs'); tabs.innerHTML='';
+  for(const t of TABS){
+    const n = t==='ทั้งหมด' ? LIST.length : LIST.filter(x=>tagsOf(x).some(g=>g[1]===t)).length;
+    const d=el('div','tab'+(t===cur?' on':''),t+' '+n); d.onclick=()=>{cur=t;draw()}; tabs.appendChild(d);
+  }
+  const list=document.getElementById('list'); list.innerHTML='';
+  const show=(cur==='ทั้งหมด'?LIST:LIST.filter(x=>tagsOf(x).some(g=>g[1]===cur))).slice(0,60);
+  if(!show.length){list.appendChild(el('div','load','ไม่มีลูกค้าในกลุ่มนี้'));return}
+  for(const x of show){
+    const c=el('div','c');
+    c.appendChild(el('div','nm',x.name));
+    const tg=el('div','tags'); for(const [k,lbl] of tagsOf(x)) tg.appendChild(el('span','t '+k,lbl)); c.appendChild(tg);
+    const g=el('div','g');
+    g.innerHTML='<div><b>฿'+b(x.spend90)+'</b><span>90 วันล่าสุด</span></div>'
+      +'<div><b>฿'+b(x.spend)+'</b><span>สะสมทั้งหมด</span></div>'
+      +'<div><b>'+x.n+' ครั้ง</b><span>ทุก '+(x.med??'-')+' วัน</span></div>'
+      +'<div><b>'+(x.due==null?'-':(x.due>0?'อีก '+x.due+' วัน':'เลย '+Math.abs(x.due)+' วัน'))+'</b><span>ถึงรอบสั่ง</span></div>';
+    c.appendChild(g);
+    c.appendChild(el('div','sub','สั่งล่าสุด '+x.last+' · ห่างมาแล้ว '+x.since+' วัน'));
+    const cc=CARE[x.id]||{};
+    const act=el('div','act');
+    const inp=el('input'); inp.placeholder='โน้ตของแอดมิน เช่น ชอบเมนูปลา · แพ้กุ้ง'; inp.value=cc.note||'';
+    const bt=el('button','p','✓ ทักแล้ววันนี้');
+    bt.onclick=()=>{save(x.id,{note:inp.value,lastTouch:new Date().toISOString().slice(0,10)})};
+    inp.onchange=()=>save(x.id,{note:inp.value,lastTouch:cc.lastTouch||null});
+    act.append(inp,bt); c.appendChild(act);
+    if(cc.lastTouch) c.appendChild(el('div','done','ทักล่าสุด '+cc.lastTouch));
+    list.appendChild(c);
+  }
+}
+async function save(id,v){
+  CARE[id]={...(CARE[id]||{}),...v};
+  await fetch(SB+'/rest/v1/kitchen_data?on_conflict=key',{method:'POST',
+    headers:{...H,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},
+    body:JSON.stringify({key:'f_vip_care',data:CARE})});
+  draw();
+}
+load();
+</script></body></html>
