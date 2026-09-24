@@ -17,7 +17,13 @@ const validValues=v=>v&&typeof v==='object'&&!Array.isArray(v)?Object.fromEntrie
 const draftKey=()=>selected==='legacy'?'draft':'staff-draft-v1-'+selected;
 function toast(s){$('toast').textContent=s;$('toast').hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>$('toast').hidden=true,6000);}
 function accrue(){const now=Date.now();if(running&&tick&&!document.hidden)activeMs+=Math.min(now-tick,2000);tick=now;}
-function saveDraft(){if(!selected)return true;accrue();return write(draftKey(),selected==='legacy'?values:{values,startedAt,activeMs});}
+function draftStatus(message,failed=false){document.querySelectorAll('[data-draft-status]').forEach(el=>{el.textContent=message;el.style.color=failed?'#b42318':'';});}
+function saveDraft(){
+ if(!selected)return true;accrue();const savedAt=new Date().toISOString();
+ const ok=write(draftKey(),selected==='legacy'?values:{values,startedAt,activeMs,savedAt});
+ draftStatus(ok?'✓ บันทึกร่างในเครื่องแล้ว '+new Date(savedAt).toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit',second:'2-digit'}):'บันทึกร่างไม่สำเร็จ — อย่าปิดหน้านี้',!ok);
+ return ok;
+}
 function timeLabel(){return Math.floor(activeMs/60000)+' นาที '+Math.floor(activeMs/1000)%60+' วิ';}
 function timerView(){$('timerToggle').disabled=!selected;$('timerToggle').textContent=(running?'พักเวลา':'เริ่มจับเวลา')+' · '+timeLabel();}
 function setRunning(v){accrue();running=v;tick=Date.now();if(v&&!startedAt)startedAt=new Date().toISOString();timerView();}
@@ -35,6 +41,7 @@ function selectStaff(id){
  $('note').value='';$('category').value='all';$('query').value='';$('showAll').checked=false;filter='all';page=0;
  document.querySelectorAll('[data-filter]').forEach(b=>b.classList.toggle('selected',b.dataset.filter===filter));
  fillCategories();render();timerView();
+ draftStatus(!selected?'เลือกชื่อเพื่อเริ่มนับ':Object.keys(values).length?'กู้ร่างในเครื่องแล้ว '+Object.keys(values).length+' รายการ':'กรอกแล้วบันทึกร่างในเครื่องอัตโนมัติ');
 }
 $('staffSelect').onchange=()=>selectStaff($('staffSelect').value);
 $('showAll').onchange=()=>{fillCategories();resetPage();};$('sortOrder').onchange=resetPage;
