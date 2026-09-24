@@ -1,0 +1,4594 @@
+{
+  "version": "phase2-239",
+  "groups": [
+    {
+      "name": "ผักสด",
+      "items": [
+        {
+          "key": "ing_75c6c1538f1e377c979a",
+          "name": "กวางตุ้งจีน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_75c6c1538f1e377c979a.a92fa0211299.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 1,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักกวางตุ้ง แพ็ค 300 ก.",
+              "sku_key": "sku_fa1723a18d2eac6a6096"
+            }
+          ]
+        },
+        {
+          "key": "ing_ebbb97f5d3addde218e9",
+          "name": "ผักกวางตุ้งไต้หวัน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_ebbb97f5d3addde218e9.ae6aad843382.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 2,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ผักกวางตุ้งไต้หวัน (ไทย)",
+              "sku_key": "sku_921cd362ebe39e925a05"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักกวางตุ้งไต้หวัน แพ็ค 300 ก.",
+              "sku_key": "sku_bf0721457cead06a23ab"
+            }
+          ]
+        },
+        {
+          "key": "ing_2941cd20209eb56b6712",
+          "name": "คะน้า",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2941cd20209eb56b6712.b7d4b704a5bf.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 3,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คะน้า แพ็ค 300 ก.",
+              "sku_key": "sku_a0c339c1b38179c70352"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ยอดคะน้า คัดสวย",
+              "sku_key": "sku_4b970b938e204274b76a"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "คะน้าขนาดกลาง",
+              "sku_key": "sku_a97035b2f091f40b0a2a"
+            }
+          ]
+        },
+        {
+          "key": "ing_3a57c01ce0d2caa6e5c8",
+          "name": "ยอดคะน้าฮ่องกง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_3a57c01ce0d2caa6e5c8.e1f03b45639b.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 4,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ยอดคะน้าฮ่องกง",
+              "sku_key": "sku_c289f602538ab57d96b1"
+            },
+            {
+              "supplier": "GO",
+              "name": "ยอดคะน้าฮ่องกง แพ็ค 500 ก.",
+              "sku_key": "sku_d79d77723af57982c77d"
+            }
+          ]
+        },
+        {
+          "key": "ing_b4ae6c81737d219938db",
+          "name": "ผักโขมจีน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b4ae6c81737d219938db.e170c95cb80d.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 5,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักโขมจีน แพ็ค 300 ก.",
+              "sku_key": "sku_0f58d1bfb69e997980cf"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักโขมจีน",
+              "sku_key": "sku_8a21a70447f9b56ec478"
+            }
+          ]
+        },
+        {
+          "key": "ing_08ceb0f4f3cfd4c15b07",
+          "name": "ผักโขมไทย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_08ceb0f4f3cfd4c15b07.fc027b003163.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 6,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ผักโขมไทย คัดสวย",
+              "sku_key": "sku_3a8f9017fb1164713981"
+            }
+          ]
+        },
+        {
+          "key": "ing_24057e66dcce14744664",
+          "name": "ปวยเล้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_24057e66dcce14744664.b968fe8d38ca.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 7,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ปวยเล้งนอก 200 ก.",
+              "sku_key": "sku_bb66e7186fee5e8e58fa"
+            }
+          ]
+        },
+        {
+          "key": "ing_a350dc9dfdc745d69f04",
+          "name": "ผักกาดขาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a350dc9dfdc745d69f04.d6047f08a74d.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 8,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักกาดขาวปลี ถุงใหญ่ 4.5-5.5 กก./แพ็ค",
+              "sku_key": "sku_1f9b5b672c1b5329ad33"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักกาดขาว",
+              "sku_key": "sku_c1e3fe874f9cd02dc818"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักกาดขาวปลี 1 กก.",
+              "sku_key": "sku_a54f5936ff69a11cfbd2"
+            }
+          ]
+        },
+        {
+          "key": "ing_87e7fc108f92f1125f23",
+          "name": "ผักกาดแก้ว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_87e7fc108f92f1125f23.8ee2d33b13dd.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 9,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "โครงการหลวง ผักสลัดแก้ว แพ็ค 300 ก.",
+              "sku_key": "sku_538a224b8829e8a4f2e2"
+            },
+            {
+              "supplier": "GO",
+              "name": "สลัดแก้วนอก 1 กก.",
+              "sku_key": "sku_82c55c502924fe1a29d8"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักสลัดแก้ว ออร์แกนิค แพ็ค 200 ก.",
+              "sku_key": "sku_6adf7aef2e40ba2a6804"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักกาดแก้ว คัดสวย (นําเข้า)",
+              "sku_key": "sku_16f4008a39307216e624"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักกาดแก้ว คัดสวย (นำเข้า)",
+              "sku_key": "sku_8a866da2fc1c4d147dbf",
+              "source": "INGREDIENT_CATALOG.json",
+              "provenance": "แคตตาล็อก",
+              "supplier_code": "",
+              "purchase_size": "1 กก./แพ็ค",
+              "verified_current_availability": false
+            }
+          ]
+        },
+        {
+          "key": "ing_2e0e22895096122dd29d",
+          "name": "ผักคอส",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2e0e22895096122dd29d.877e84983c72.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 10,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักคอสนอก แพ็ค 500 ก.",
+              "sku_key": "sku_c0d2e35cb1a4c5acc5ec"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักคอสนอก ถุงใหญ่ 2 กก.",
+              "sku_key": "sku_ed0227eb018fc4efb728"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "คอส (นําเข้า)",
+              "sku_key": "sku_56fee0ed00faf0fd51a5"
+            }
+          ]
+        },
+        {
+          "key": "ing_c1c7de2be8fac0de3bd4",
+          "name": "กะหล่ำปลี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c1c7de2be8fac0de3bd4.275f76a4934a.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 11,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "กะหล่ำปลี ถุงใหญ่ 4.5-5.5 กก./แพ็ค",
+              "sku_key": "sku_64de21edf046ee82327e"
+            },
+            {
+              "supplier": "GO",
+              "name": "กะหล่ำปลี 1 กก.",
+              "sku_key": "sku_52bdc072dff544cbe86e"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "กะหล่าปลี",
+              "sku_key": "sku_441ccae648724130b3ee"
+            }
+          ]
+        },
+        {
+          "key": "ing_842614dd7bba6c5a6305",
+          "name": "ผักบุ้งจีน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_842614dd7bba6c5a6305.fb1654823e45.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 12,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ผักบุ้งจีน คัดสวย",
+              "sku_key": "sku_c6b38c2b81c4e21c64c2"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักบุ้งจีน แพ็ค 500 ก.",
+              "sku_key": "sku_299c3bee72378e7e18fd"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักบุ้งจีน",
+              "sku_key": "sku_c8ab03328477773ae67f"
+            }
+          ]
+        },
+        {
+          "key": "ing_5835bb243722f68dcdb9",
+          "name": "ตำลึง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5835bb243722f68dcdb9.2b83556abdbd.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 13,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ตําลึง คัดสวย",
+              "sku_key": "sku_7b570cd03967bfa33f4c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ตําลึง",
+              "sku_key": "sku_0f48f110e2d973a79f7e"
+            },
+            {
+              "supplier": "GO",
+              "name": "ตำลึง แพ็ค 150 ก.",
+              "sku_key": "sku_c48913f7b0f153d9ddb3"
+            }
+          ]
+        },
+        {
+          "key": "ing_0c4bfcb4cc2687a883fe",
+          "name": "ชะอม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0c4bfcb4cc2687a883fe.6addf75e1bdd.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 14,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ชะอม แพ็ค 300 ก.",
+              "sku_key": "sku_3ddad9a5426aa8fdf9e2"
+            }
+          ]
+        },
+        {
+          "key": "ing_d1e9eb346357422fae1e",
+          "name": "กุยช่าย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d1e9eb346357422fae1e.15bc84b52b46.webp",
+          "subcategory": "ผักใบและผักสลัด",
+          "position": 15,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กุยช่าย",
+              "sku_key": "sku_429508da85b55564b9f5"
+            }
+          ]
+        },
+        {
+          "key": "ing_6f05b912248a560c4c7b",
+          "name": "มะเขือเทศท้อ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_6f05b912248a560c4c7b.d4cc56235e5f.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 16,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะเขือเทศท้อ ถุงใหญ่ 2.5-3.5 กก./แพ็ค",
+              "sku_key": "sku_cb0e63fc1662c773e2a9"
+            },
+            {
+              "supplier": "GO",
+              "name": "มะเขือเทศท้อ 1 กก.",
+              "sku_key": "sku_8efa083f39b6c2a09229"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะเขือเทศท้อ",
+              "sku_key": "sku_4e04c8f77990864ba6d0"
+            }
+          ]
+        },
+        {
+          "key": "ing_f7eff72090dbec373b3a",
+          "name": "มะเขือเทศราชินี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f7eff72090dbec373b3a.092efc0c86ab.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 17,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะเขือเทศราชินี 1 กก.",
+              "sku_key": "sku_c5800c5939652b6c8152"
+            },
+            {
+              "supplier": "GO",
+              "name": "มะเขือเทศราชินี ออร์แกนิค แพ็ค 300 ก.",
+              "sku_key": "sku_cf0ffb3544262fe87084"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะเขือเทศราชินีไทย",
+              "sku_key": "sku_e6fd4af322fff12fe5aa"
+            }
+          ]
+        },
+        {
+          "key": "ing_af47fd2668619fa9ac8b",
+          "name": "มะเขือเปราะ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_af47fd2668619fa9ac8b.92be98877eb0.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 18,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะเขือเปราะ แพ็ค 500 ก.",
+              "sku_key": "sku_dc6591b6506b864a3709"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะเขือเปราะ",
+              "sku_key": "sku_67b70b34fcc6df694af6"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะเขือเปราะ คัดสวย",
+              "sku_key": "sku_002bab07d41859a20705"
+            }
+          ]
+        },
+        {
+          "key": "ing_efd9d43abf397994f270",
+          "name": "มะเขือยาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_efd9d43abf397994f270.1db4ae1eae5d.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 19,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะเขือยาว 1 กก.",
+              "sku_key": "sku_592fb3222e1c87fe778a"
+            }
+          ]
+        },
+        {
+          "key": "ing_8e8912e2a01e7aec21e9",
+          "name": "แตงกวาไทย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8e8912e2a01e7aec21e9.acdc1e643bbc.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 20,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แตงกวา แพ็ค 500 ก.",
+              "sku_key": "sku_0ed3b5fadc13c7e1036c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แตงกวาไทย",
+              "sku_key": "sku_28437b40121b2e717e59"
+            }
+          ]
+        },
+        {
+          "key": "ing_548bcc9fd5d9e58e9b57",
+          "name": "แตงกวาญี่ปุ่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_548bcc9fd5d9e58e9b57.1ccd6c6bf5e7.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 21,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แตงกวาญี่ปุ่น 1 กก.",
+              "sku_key": "sku_3198f01df1b5a202cb43"
+            },
+            {
+              "supplier": "GO",
+              "name": "แตงกวาญี่ปุ่น ถุงใหญ่ 2.5-3.5 กก./แพ็ค",
+              "sku_key": "sku_5f4f7bce0fab28d8b839"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แตงกวาญี่ปุน",
+              "sku_key": "sku_af0b6c99cb54f44c99dc"
+            }
+          ]
+        },
+        {
+          "key": "ing_cc13c3d8c8c598ae7817",
+          "name": "ฟักทองไทย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cc13c3d8c8c598ae7817.9cded33388d5.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 22,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ฟักทองไทย 3.0-3.5 กก./ลูก",
+              "sku_key": "sku_2cb25313b225fb491975"
+            },
+            {
+              "supplier": "GO",
+              "name": "ฟักทอง 3.5-4.5 กก./ลูก",
+              "sku_key": "sku_2b6b98f732068643b556"
+            }
+          ]
+        },
+        {
+          "key": "ing_95a642a0bfb82cfe8a74",
+          "name": "ฟักทองญี่ปุ่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_95a642a0bfb82cfe8a74.c0757cef543b.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 23,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ฟักทองญี่ปุน คัดขนาด 700-800 กรัม/ลูก",
+              "sku_key": "sku_c19d8ad131a6061d76a5"
+            }
+          ]
+        },
+        {
+          "key": "ing_8b0cca7047768b5dfcdf",
+          "name": "ถั่วฝักยาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8b0cca7047768b5dfcdf.6740461b452a.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 24,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ถัวฝักยาวเส้นผอมเรียว",
+              "sku_key": "sku_62cc79e74c4f574a14f7"
+            },
+            {
+              "supplier": "GO",
+              "name": "ถั่วฝักยาว แพ็ค 500 ก.",
+              "sku_key": "sku_ad3266c6181f28bcdbfc"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ถัวฝักยาว",
+              "sku_key": "sku_d261ae713bb0d88665f7"
+            }
+          ]
+        },
+        {
+          "key": "ing_634c6cd47250be84124a",
+          "name": "ถั่วลันเตาฝักสด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_634c6cd47250be84124a.5cb3f4742706.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 25,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ถัวลันเตาหวาน",
+              "sku_key": "sku_2950ed85578daf236bd2"
+            },
+            {
+              "supplier": "GO",
+              "name": "ถั่วลันเตาหวานนอก แพ็ค 300 ก.",
+              "sku_key": "sku_4eff7543e04bf0f245ef"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ถัวลันเตาแบน",
+              "sku_key": "sku_06f63b63b8fb14019e7d"
+            }
+          ]
+        },
+        {
+          "key": "ing_c7dc2b48f710756337ad",
+          "name": "ถั่วงอก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c7dc2b48f710756337ad.75753211fdb8.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 26,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ถั่วงอกหัวโต 500 ก.",
+              "sku_key": "sku_b8e85bdf2d490cfb8eaa"
+            },
+            {
+              "supplier": "GO",
+              "name": "ถั่วงอก แพ็ค 1 กก.",
+              "sku_key": "sku_b67b6f0acc5068c544f2"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ถัวงอก ตราไผ่คู่",
+              "sku_key": "sku_1eefcd4577174a30e64b"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ถัวงอกเรียวยาว",
+              "sku_key": "sku_570e189e4742b6793232"
+            }
+          ]
+        },
+        {
+          "key": "ing_f8789829d77df83dde8c",
+          "name": "บล็อกโคลี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f8789829d77df83dde8c.c4923d269d74.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 27,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "บรอกโคลีนอก 1 ลัง",
+              "sku_key": "sku_1dac0d098b88bd70b964"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "บร็อคโคลี",
+              "sku_key": "sku_07388a521c6bf10beba9"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "บร็อคโคลี่ คัดสวย",
+              "sku_key": "sku_586d5a79e0b592330c79",
+              "source": "INGREDIENT_CATALOG.json",
+              "provenance": "แคตตาล็อก",
+              "supplier_code": "",
+              "purchase_size": "1 กก./แพ็ค",
+              "verified_current_availability": false
+            }
+          ]
+        },
+        {
+          "key": "ing_8148969dbed4f5a71634",
+          "name": "ดอกกะหล่ำ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8148969dbed4f5a71634.dfc24baf3575.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 28,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ดอกกะหล่ำขาวจีน 1 กก.",
+              "sku_key": "sku_d167404399be71275cb0"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ดอกกะหล่านอก",
+              "sku_key": "sku_e0d787db0b275ba4a71c"
+            }
+          ]
+        },
+        {
+          "key": "ing_e08845de5f2f2cafb3ea",
+          "name": "บวบเหลี่ยม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e08845de5f2f2cafb3ea.372d92553976.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 29,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "บวบเหลี่ยม 1 กก.",
+              "sku_key": "sku_9f29baacb9788dd804ff"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "บวบเหลียม หันท่อน",
+              "sku_key": "sku_58cc4b9da6455e7026af"
+            }
+          ]
+        },
+        {
+          "key": "ing_cb2aff4065517fc63a16",
+          "name": "มะระจีน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cb2aff4065517fc63a16.96452b0da906.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 30,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะระจีน 1 กก.",
+              "sku_key": "sku_832740861cf1a6a4dbaf"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะระจีน คัดสวย",
+              "sku_key": "sku_e4bbcb10e9f9452a9067"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะระจีน",
+              "sku_key": "sku_e76ebe5adfd25e4dd0c9"
+            }
+          ]
+        },
+        {
+          "key": "ing_b67cb9ac9a4b72637d58",
+          "name": "ซูกินี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b67cb9ac9a4b72637d58.9d3f49a6dbb0.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 31,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ซูกินีไทย",
+              "sku_key": "sku_4a2dfdd078449e707e69"
+            }
+          ]
+        },
+        {
+          "key": "ing_17fb3bc0074f3ea53c5c",
+          "name": "ข้าวโพดอ่อน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_17fb3bc0074f3ea53c5c.27bb0d9eb0e9.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 32,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ข้าวโพดอ่อนติดหมวก คัดสวย",
+              "sku_key": "sku_3153c2378c2121cf0284"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ข้าวโพดอ่อนติดหมวก",
+              "sku_key": "sku_72e70d59a379f22df6e3"
+            },
+            {
+              "supplier": "GO",
+              "name": "ข้าวโพดอ่อน แพ็ค 500 ก.",
+              "sku_key": "sku_b799ea4455be68c921b9"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ข้าวโพดอ่อนเปลือย",
+              "sku_key": "sku_30014ad3de92cf279356"
+            }
+          ]
+        },
+        {
+          "key": "ing_0ae613309590e6d1a3ee",
+          "name": "หน่อไม้ฝรั่ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0ae613309590e6d1a3ee.9b1a5d79df76.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 33,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "หน่อไม้ฝรั่งเขียว แพ็ค 300 ก.",
+              "sku_key": "sku_e13d8139f7054451cfd5"
+            },
+            {
+              "supplier": "GO",
+              "name": "หน่อไม้ฝรั่ง ออร์แกนิค แพ็ค 300 ก.",
+              "sku_key": "sku_6122d96b170babc331f3"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "หน่อไม้ฝรัง",
+              "sku_key": "sku_0d47d3eb0847fde071a3"
+            }
+          ]
+        },
+        {
+          "key": "ing_37daa5be6a6e78071596",
+          "name": "ยอดมะพร้าวอ่อน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_37daa5be6a6e78071596.f40e26e951bc.webp",
+          "subcategory": "ผักผล ดอก ฝัก และยอด",
+          "position": 34,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ยอดมะพร้าวอ่อน",
+              "sku_key": "sku_55cda4003cb41ed8004c"
+            }
+          ]
+        },
+        {
+          "key": "ing_a59cadba2625026f6ee8",
+          "name": "พริกขี้หนูแดง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a59cadba2625026f6ee8.f605c88d51b5.webp",
+          "subcategory": "พริกสด",
+          "position": 35,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูแดง แพ็ค 300 ก.",
+              "sku_key": "sku_f9d3c88d62bdca4afa09"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูแดง ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_4c163788dfe9c94133dc"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูแดง แพ็ค 100 ก.",
+              "sku_key": "sku_f13b4ef887c8df2b82fd"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกจินดาแดง",
+              "sku_key": "sku_4ffaf01a0869de8dab4c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกจินดาแดง คัดสวย (เด็ดก้าน)",
+              "sku_key": "sku_326ab670aaaa0475ac7a",
+              "source": "INGREDIENT_CATALOG.json",
+              "provenance": "แคตตาล็อก",
+              "supplier_code": "",
+              "purchase_size": "250 กรัม/แพ็ค",
+              "verified_current_availability": false
+            }
+          ]
+        },
+        {
+          "key": "ing_76cd5a7f613ff2eabbf9",
+          "name": "พริกขี้หนูสวน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_76cd5a7f613ff2eabbf9.91487f5d200a.webp",
+          "subcategory": "พริกสด",
+          "position": 36,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูสวน แพ็ค 300 ก.",
+              "sku_key": "sku_25c0e420224872dd2969"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูสวน ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_18a96ff7d109d8395e3e"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกขี้หนูสวนเด็ดก้าน แพ็ค 100 ก.",
+              "sku_key": "sku_4aca4259d4c01fd70457"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกขีหนูสวน",
+              "sku_key": "sku_ed1aa50558feb3a466fa"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกขีหนูสวนกลาง คัดสวย",
+              "sku_key": "sku_6bb733bf587d98477afc"
+            }
+          ]
+        },
+        {
+          "key": "ing_c9e15506cdc4cba98042",
+          "name": "พริกชี้ฟ้าเขียว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c9e15506cdc4cba98042.fd466defff89.webp",
+          "subcategory": "พริกสด",
+          "position": 37,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกชีฟ้าเขียว",
+              "sku_key": "sku_5e052b04f6c4664a4e44"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกชี้ฟ้าเขียว แพ็ค 300 ก.",
+              "sku_key": "sku_4aa9fc057960978f402c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกชีฟ้าเขียว คัดสวย",
+              "sku_key": "sku_6bee127a9122ef41448c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกชี้ฟ้าเขียว คัดสวย (เด็ดก้าน)",
+              "sku_key": "sku_482ad9b4642883458b56",
+              "source": "INGREDIENT_CATALOG.json",
+              "provenance": "แคตตาล็อก",
+              "supplier_code": "",
+              "purchase_size": "250 กรัม/แพ็ค",
+              "verified_current_availability": false
+            }
+          ]
+        },
+        {
+          "key": "ing_156f17b551ddb6332cfb",
+          "name": "พริกชี้ฟ้าแดง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_156f17b551ddb6332cfb.9c107f6a4ce1.webp",
+          "subcategory": "พริกสด",
+          "position": 38,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกชี้ฟ้าแดง แพ็ค 300 ก.",
+              "sku_key": "sku_f2f3cea6db792038afa6"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกชีฟ้าแดง",
+              "sku_key": "sku_058a90ebfdd1e1dd624e"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกชี้ฟ้าแดง แพ็ค 100 ก.",
+              "sku_key": "sku_ce6aa197b3f512b4d8ab"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกชี้ฟ้าแดง คัดสวย (เด็ดก้าน)",
+              "sku_key": "sku_75838f35357ff2f8340d",
+              "source": "INGREDIENT_CATALOG.json",
+              "provenance": "แคตตาล็อก",
+              "supplier_code": "",
+              "purchase_size": "250 กรัม/แพ็ค",
+              "verified_current_availability": false
+            }
+          ]
+        },
+        {
+          "key": "ing_af231b7c3e8c459b971a",
+          "name": "พริกชี้ฟ้าเหลือง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_af231b7c3e8c459b971a.c1d40b473225.webp",
+          "subcategory": "พริกสด",
+          "position": 39,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกชีฟ้าเหลือง (เด็ดก้าน)",
+              "sku_key": "sku_23560dcade347fa8b520"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกเหลือง แพ็ค 100 ก.",
+              "sku_key": "sku_e275da8a6962f6ff4838"
+            }
+          ]
+        },
+        {
+          "key": "ing_b83f1b5a463a001dd9be",
+          "name": "พริกหวานเขียว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b83f1b5a463a001dd9be.edd1dc4b14be.webp",
+          "subcategory": "พริกสด",
+          "position": 40,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกยักษ์เขียว เบอร์รอง",
+              "sku_key": "sku_ec2c18e969fb39cd986e"
+            }
+          ]
+        },
+        {
+          "key": "ing_65925de46970a3658257",
+          "name": "พริกหวานแดง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_65925de46970a3658257.e3336cf53ea9.webp",
+          "subcategory": "พริกสด",
+          "position": 41,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกยักษ์สีแดง 1 กก.",
+              "sku_key": "sku_87fcb12293db0f128c51"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกยักษ์แดง เบอร์รอง",
+              "sku_key": "sku_554d6b15ccce230d332b"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกยักษ์แดง",
+              "sku_key": "sku_632893c9d60a395996e2"
+            },
+            {
+              "supplier": "GO",
+              "name": "โครงการหลวง พริกยักษ์สีแดง แพ็ค 150 ก.",
+              "sku_key": "sku_19d0b1a3b26106a229a4"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_yellow_bell_pepper_20260922",
+          "name": "พริกหวานเหลือง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_yellow_bell_pepper_20260922.916016475a99.webp",
+          "subcategory": "พริกสด",
+          "position": 42,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_d7225f2ebb46c47edb6a",
+          "name": "พริกหนุ่ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d7225f2ebb46c47edb6a.26fa069bdcc6.webp",
+          "subcategory": "พริกสด",
+          "position": 43,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกหนุ่ม ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_a9e5c5c5b2d0aeae28a4"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกหนุ่ม",
+              "sku_key": "sku_5e9f443f8d475070bbee"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกหนุ่ม แพ็ค 300 ก.",
+              "sku_key": "sku_72729c18cf96cb00b756"
+            }
+          ]
+        },
+        {
+          "key": "ing_de1a56e402527407a4cb",
+          "name": "หอมใหญ่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_de1a56e402527407a4cb.0ebcfbeab5e8.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 44,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "หอมใหญ่นอก ยกกระสอบ 10 กก.",
+              "sku_key": "sku_7b3dbbc7215c892e929a"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมใหญ่นอก ยกกระสอบ 5 กก.",
+              "sku_key": "sku_629c669b0153631f177b"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "หอมหัวใหญ่",
+              "sku_key": "sku_844922bc9f4664d836fe"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมใหญ่ไทย 1 กระสอบ",
+              "sku_key": "sku_a7ed2ce3eae39c688d1e"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมใหญ่ไทย แพ็ค 1 กก.",
+              "sku_key": "sku_1e8d60730b1b77438b7c"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมใหญ่ไทย ยกกระสอบ 5 กก.",
+              "sku_key": "sku_1f674b4a3ad36a74c806"
+            }
+          ]
+        },
+        {
+          "key": "ing_083bdb1b28dc04d77769",
+          "name": "หอมแดง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_083bdb1b28dc04d77769.f2d081988daf.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 45,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "หอมแดง มัดจุก แพ็ค 1 กก.",
+              "sku_key": "sku_c2a1589cfbde419ade75"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "หอมแดง ตัดจุก ไม่ปอกเปลือก",
+              "sku_key": "sku_0db7701744da3b875578"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมแดง ตัดจุก แพ็ค 1 กก.",
+              "sku_key": "sku_0f425fac336f245430fc"
+            }
+          ]
+        },
+        {
+          "key": "ing_a22894812621c610c204",
+          "name": "หอมแขก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a22894812621c610c204.506b24d27854.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 46,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "หอมแขก",
+              "sku_key": "sku_4c6d5523e1b4c3ede023"
+            },
+            {
+              "supplier": "GO",
+              "name": "หอมแขกจีน แพ็ค 1 กก.",
+              "sku_key": "sku_dc1ce18be54c983a91d8"
+            }
+          ]
+        },
+        {
+          "key": "ing_c490c79aae9c7a9ef130",
+          "name": "กระเทียม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c490c79aae9c7a9ef130.18859e3641f1.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 47,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "กระเทียมจีน แกะกลีบคละไซส์ ยกกระสอบ 5 กก.",
+              "sku_key": "sku_78f4e22f1205151d3f2b"
+            },
+            {
+              "supplier": "GO",
+              "name": "กระเทียมจีน แกะกลีบคละไซส์ แพ็ค 1 กก.",
+              "sku_key": "sku_e16f1e4d2a7e7251321f"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "กระเทียมจีนปอกเปลือก",
+              "sku_key": "sku_a0266734830bc9ca5983"
+            },
+            {
+              "supplier": "GO",
+              "name": "กระเทียมจีน แกะกลีบใหญ่ ยกกระสอบ 5 กก.",
+              "sku_key": "sku_35faf67422daa74100f8"
+            }
+          ]
+        },
+        {
+          "key": "ing_5082a621c2351606a4ee",
+          "name": "มันฝรั่ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5082a621c2351606a4ee.c865dc1d667f.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 48,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มันฝรั่งนอก 1 ลัง",
+              "sku_key": "sku_fab7cc3ce7bafff0d633"
+            },
+            {
+              "supplier": "GO",
+              "name": "มันฝรั่งนอก 1 กก.",
+              "sku_key": "sku_a17fdd8615b3800d1b63"
+            },
+            {
+              "supplier": "GO",
+              "name": "มันฝรั่งนอก แพ็ค 1 กก.",
+              "sku_key": "sku_86c0470289f5ad83aee0"
+            }
+          ]
+        },
+        {
+          "key": "ing_cdccb899856bc4abe1c2",
+          "name": "มันหวาน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cdccb899856bc4abe1c2.21a3cdda32ab.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 49,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซิลค์สวีท มันหวาน ยกลัง 500 ก. x 8",
+              "sku_key": "sku_941b81ce0d2af59f55b0"
+            },
+            {
+              "supplier": "GO",
+              "name": "มันหวานสายพันธุ์ญี่ปุ่น สีเหลือง 1 กก.",
+              "sku_key": "sku_e262f1f24fa227596605"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มันเทศเนือเหลืองไทย",
+              "sku_key": "sku_74db6a12ce7bc1ec8442"
+            },
+            {
+              "supplier": "GO",
+              "name": "มันหวาน ซิลค์สวีท แพ็ค 500 ก.",
+              "sku_key": "sku_98401f5a1d9b696b90b6"
+            }
+          ]
+        },
+        {
+          "key": "ing_267654f0b714fd585746",
+          "name": "มันม่วง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_267654f0b714fd585746.962c57fee21f.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 50,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "มันเทศสีม่วง",
+              "sku_key": "sku_106bd815bfeb5b8f6b26"
+            },
+            {
+              "supplier": "GO",
+              "name": "มันหวานสายพันธุ์ญี่ปุ่นสีม่วง 1 กก.",
+              "sku_key": "sku_65e67bfe7a7cd0a91e99"
+            }
+          ]
+        },
+        {
+          "key": "ing_aaa4228baea8189adebd",
+          "name": "เผือก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_aaa4228baea8189adebd.f34cecfe2077.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 51,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เผือก ถุงใหญ่ 9.5-10.5 กก./แพ็ค",
+              "sku_key": "sku_d72a4c3179e9af704a38"
+            }
+          ]
+        },
+        {
+          "key": "ing_912a9780f2e46d013115",
+          "name": "หัวไชเท้า",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_912a9780f2e46d013115.86d343c427e4.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 52,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "หัวไชเท้า ถุงใหญ่ แพ็ค 3 กก.",
+              "sku_key": "sku_1a4a1469e615426eff3e"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "หัวไชเท้า",
+              "sku_key": "sku_992550e5d371ba5e2ed2"
+            },
+            {
+              "supplier": "GO",
+              "name": "หัวไชเท้า 1 กก.",
+              "sku_key": "sku_33fc2ae688850d40075b"
+            },
+            {
+              "supplier": "GO",
+              "name": "หัวไชเท้า ถุงใหญ่ 2.5-3.5 กก./แพ็ค",
+              "sku_key": "sku_608da4e3cb05c2537f2e"
+            }
+          ]
+        },
+        {
+          "key": "ing_9a34d8b2c869d60e2517",
+          "name": "แครอท",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9a34d8b2c869d60e2517.efa00384b4f4.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 53,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แครอทนอก 1 ลัง",
+              "sku_key": "sku_7c08e1c071db502ab48d"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แครอท",
+              "sku_key": "sku_8b34c933e87a0df58938"
+            }
+          ]
+        },
+        {
+          "key": "ing_5dfdb96fa97228a1126e",
+          "name": "บีทรูท",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5dfdb96fa97228a1126e.352ed2476c21.webp",
+          "subcategory": "หัว ราก และมัน",
+          "position": 54,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "บีทรูท",
+              "sku_key": "sku_61367837b08a432331be"
+            }
+          ]
+        },
+        {
+          "key": "ing_9fbd676876b087c8626d",
+          "name": "ผักชี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9fbd676876b087c8626d.0dc181740420.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 55,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักชี ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_71a7c3d19cbd2405eafb"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักชี แพ็ค 150 ก.",
+              "sku_key": "sku_1cbd913513a3e75d88d8"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักชีไทยพร้อมราก",
+              "sku_key": "sku_1ce1e87445b7c38ef24f"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักชีจีน",
+              "sku_key": "sku_c4b4b7be13de197863a4"
+            }
+          ]
+        },
+        {
+          "key": "ing_09363b93edfe1a812bad",
+          "name": "ผักชีฝรั่ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_09363b93edfe1a812bad.246745a5c912.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 56,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักชีฝรั่ง แพ็ค 150 ก.",
+              "sku_key": "sku_557e99dc90d5e4a42499"
+            },
+            {
+              "supplier": "GO",
+              "name": "ผักชีฝรั่ง ออร์แกนิค แพ็ค 150 ก.",
+              "sku_key": "sku_8bbee7c446f05e828987"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักชีใบเลือย",
+              "sku_key": "sku_3c2631ffd49fec6b094a"
+            }
+          ]
+        },
+        {
+          "key": "ing_e358b126280b463a0c7e",
+          "name": "ผักชีลาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e358b126280b463a0c7e.9263731bde1c.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 57,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักชีลาว แพ็ค 150 ก.",
+              "sku_key": "sku_6c2fa40da2a18f107dc9"
+            }
+          ]
+        },
+        {
+          "key": "ing_cfe0c6dac7349d757c59",
+          "name": "ต้นหอมไทย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cfe0c6dac7349d757c59.1d8178a7750e.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 58,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ต้นหอม แพ็ค 150 ก.",
+              "sku_key": "sku_ce4d1bc15f1fb32bb801"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ต้นหอมไทย คัดสวย",
+              "sku_key": "sku_8b6dc1e560630ccb0d6c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ต้นหอมไทย",
+              "sku_key": "sku_fb7b246265b1cb3cb002"
+            }
+          ]
+        },
+        {
+          "key": "ing_6a0e840eee23a2675450",
+          "name": "ต้นหอมญี่ปุ่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_6a0e840eee23a2675450.fb30d309bc42.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 59,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ต้นหอมญี่ปุ่น 1 กก.",
+              "sku_key": "sku_e55a38f5b9d09a33c333"
+            }
+          ]
+        },
+        {
+          "key": "ing_d361ff95770aaab0267b",
+          "name": "ขึ้นฉ่าย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d361ff95770aaab0267b.c7f89d04f19d.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 60,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ขึ้นฉ่าย ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_b192603e878722f68845"
+            },
+            {
+              "supplier": "GO",
+              "name": "ขึ้นฉ่าย แพ็ค 150 ก.",
+              "sku_key": "sku_b31e7891dbe8b5f984c6"
+            },
+            {
+              "supplier": "GO",
+              "name": "ขึ้นฉ่าย ออร์แกนิค แพ็ค 150 ก.",
+              "sku_key": "sku_96a35e1a71b8ac96de4b"
+            }
+          ]
+        },
+        {
+          "key": "ing_97122dba799fec2bd777",
+          "name": "เซเลอรี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_97122dba799fec2bd777.13e57c07cc26.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 61,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เซเลอรี่นอก 1 กก.",
+              "sku_key": "sku_15a08489a186b88a58bf"
+            }
+          ]
+        },
+        {
+          "key": "ing_4611acc2d011dac1a349",
+          "name": "ใบกะเพรา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4611acc2d011dac1a349.2af99f35ef89.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 62,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ใบกะเพรา แพ็ค 150 ก.",
+              "sku_key": "sku_1281715debe90354fbec"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "กะเพราบ้าน",
+              "sku_key": "sku_61d0ed233f1805c005ab"
+            }
+          ]
+        },
+        {
+          "key": "ing_fb9727eb14f0b247f797",
+          "name": "ใบโหระพา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_fb9727eb14f0b247f797.15e53c845bdd.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 63,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ใบโหระพา แพ็ค 150 ก.",
+              "sku_key": "sku_5c36b8aa0b5e579e9445"
+            },
+            {
+              "supplier": "GO",
+              "name": "ใบโหระพา ถุงใหญ่ 0.5-1.5 กก./แพ็ค",
+              "sku_key": "sku_8e7e63e019a3086ebefa"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "โหระพา",
+              "sku_key": "sku_bd05d153f3075f50c9c1"
+            }
+          ]
+        },
+        {
+          "key": "ing_e3dc735874e48c63a8ff",
+          "name": "สะระแหน่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e3dc735874e48c63a8ff.6b17635321da.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 64,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "สะระแหน่ คัดสวย",
+              "sku_key": "sku_d6b17d901aafef5cddd7"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "สะระแหน่",
+              "sku_key": "sku_c7b2c5a15cd8be181ca7"
+            }
+          ]
+        },
+        {
+          "key": "ing_8646618686592c2f57ff",
+          "name": "ผักแพว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8646618686592c2f57ff.8d0c067d91d5.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 65,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ผักแพว แพ็ค 200 ก.",
+              "sku_key": "sku_6cb9e1b93498023af7ef"
+            }
+          ]
+        },
+        {
+          "key": "ing_d9bb147a5241df47efa4",
+          "name": "พาร์สลีย์สด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d9bb147a5241df47efa4.530628a7c623.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 66,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พาร์สลีย์ แพ็ค 200 ก.",
+              "sku_key": "sku_13c2f25c024990512c76"
+            }
+          ]
+        },
+        {
+          "key": "ing_7a48ba8f473cf40e57b9",
+          "name": "ขิงแก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7a48ba8f473cf40e57b9.a3b0a5de0bd4.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 67,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ขิงแก่ 1 กก.",
+              "sku_key": "sku_69686ad9fb35dc2de6a6"
+            }
+          ]
+        },
+        {
+          "key": "ing_b24088aeb0385722e580",
+          "name": "ข่าแก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b24088aeb0385722e580.8a831741438d.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 68,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ข่าแก่ 1 กก.",
+              "sku_key": "sku_160b250f57c928410bf4"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ข่าแก่",
+              "sku_key": "sku_f8c17ff6427dcbb2785f"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ข่าแก่ คัดสวย",
+              "sku_key": "sku_72c1a140536eb1edfb1e"
+            }
+          ]
+        },
+        {
+          "key": "ing_f0061538cb40630127e4",
+          "name": "กระชาย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f0061538cb40630127e4.afffdf30be8b.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 69,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "กระชายฝอย แพ็ค 200 ก.",
+              "sku_key": "sku_5c29ecbcf2a128cbae5c"
+            }
+          ]
+        },
+        {
+          "key": "ing_f4bd43eccb6f42e8194f",
+          "name": "ตะไคร้",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f4bd43eccb6f42e8194f.92f92a635145.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 70,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ตะไคร้ แพ็ค 500 ก.",
+              "sku_key": "sku_b90edd1e357ec6de5b80"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ตะไคร้พันธุ์เกษตร (สีขาว)",
+              "sku_key": "sku_96421116f02dbfc1cd56"
+            }
+          ]
+        },
+        {
+          "key": "ing_f654109788c263dfa0ac",
+          "name": "ใบมะกรูด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f654109788c263dfa0ac.6b03278ff032.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 71,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ใบมะกรูดเด็ดก้าน แพ็ค 50 ก.",
+              "sku_key": "sku_c6c04c512f207e2dff6d"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ใบมะกรูด คัดสวย",
+              "sku_key": "sku_dc234f5bd2eaf2a0bd2f"
+            }
+          ]
+        },
+        {
+          "key": "ing_b46036f6741b2c61598c",
+          "name": "พริกไทยอ่อน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b46036f6741b2c61598c.d4497cdd51aa.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 72,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกไทยอ่อน แพ็ค 150 ก.",
+              "sku_key": "sku_074d29df1faf255ff03a"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "พริกไทยอ่อน คัดสวย (เป็นพวงเต็มก้าน)",
+              "sku_key": "sku_f1954dd41b4bd634f260"
+            }
+          ]
+        },
+        {
+          "key": "ing_05b5d3305505920566d3",
+          "name": "เห็ดออรินจิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_05b5d3305505920566d3.65a9680a2b9b.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 73,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เห็ดออรินจินอก เล็ก แพ็ค 1 กก.",
+              "sku_key": "sku_b7051730216132fbe695"
+            },
+            {
+              "supplier": "GO",
+              "name": "เห็ดออรินจินอก ใหญ่ แพ็ค 1 กก.",
+              "sku_key": "sku_7af3a2b9250248d40814"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เห็ดออรินจิ",
+              "sku_key": "sku_041d0aa8b79b187a0fd6"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เห็ดออรินจิ ขนาดเล็ก",
+              "sku_key": "sku_87937caf1b2de7f2a111"
+            }
+          ]
+        },
+        {
+          "key": "ing_546816f5cc7a86a6d089",
+          "name": "เห็ดฟาง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_546816f5cc7a86a6d089.34e6b97d7daf.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 74,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เห็ดฟาง ดอกใหญ่ 1 กก.",
+              "sku_key": "sku_d6a01655c94ff4632355"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เห็ดฟาง ขนาดใหญ่",
+              "sku_key": "sku_04f47aee43d31267cd74"
+            }
+          ]
+        },
+        {
+          "key": "ing_ad887462fba16708ed3a",
+          "name": "เห็ดชิเมจิดำ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_ad887462fba16708ed3a.ac1aea6f8c33.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 75,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เห็ดชิเมจิดำ แพ็ค 1 กก.",
+              "sku_key": "sku_e8a8771243e5b0f79dfe"
+            }
+          ]
+        },
+        {
+          "key": "ing_c5b86f291c5d47eef77e",
+          "name": "เห็ดชิเมจิขาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c5b86f291c5d47eef77e.ab75501905b0.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 76,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เห็ดชิเมจิขาว แพ็ค 1 กก.",
+              "sku_key": "sku_d33647911d4521bdb153"
+            }
+          ]
+        },
+        {
+          "key": "ing_1e279439b35305c86a36",
+          "name": "เห็ดเข็มทอง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_1e279439b35305c86a36.f7506882a308.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 77,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เห็ดเข็มทอง แพ็ค 1 กก.",
+              "sku_key": "sku_5489f16ec765d65578b7"
+            }
+          ]
+        },
+        {
+          "key": "ing_bef84e167ff8845b9c2b",
+          "name": "เห็ดแชมปิญองแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_bef84e167ff8845b9c2b.b2e1874ee17e.webp",
+          "subcategory": "เห็ด รวมสดและแช่แข็ง",
+          "position": 78,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เห็ดแชมปิญองสไลด์แช่แข็ง 1 กก. x 10",
+              "sku_key": "sku_7b6ff7caf4ab62ba55e8"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เห็ดแชมปิญองสไลด์แช่แข็ง 1 กก.",
+              "sku_key": "sku_0075b34dc95029cca45d"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เห็ดแชมปิญองหันบางแช่แข็ง ตราเอโร่",
+              "sku_key": "sku_9284a72e52477006463e"
+            }
+          ]
+        },
+        {
+          "key": "ing_cf93b6839fabfdcb629a",
+          "name": "มะนาวแป้นสด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cf93b6839fabfdcb629a.bdf9648859a9.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 79,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะนาวแป้น แพ็ค 10 ลูก",
+              "sku_key": "sku_9fe464068fad11acc889"
+            }
+          ]
+        },
+        {
+          "key": "ing_04d7e978fc29b52e6a62",
+          "name": "น้ำมะนาวแช่แข็ง พันธุ์แป้น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_04d7e978fc29b52e6a62.215f642f257e.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 80,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ น้ำมะนาวแช่แข็ง พันธุ์แป้น 1 กก.",
+              "sku_key": "sku_73b493cf50d84f22c3b0"
+            }
+          ]
+        },
+        {
+          "key": "ing_b4a33a44c68a544c2979",
+          "name": "เลมอน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b4a33a44c68a544c2979.92190c3ad982.webp",
+          "subcategory": "สมุนไพรและของสดปรุงรส",
+          "position": 81,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เลมอนนอก #88 1 ลูก",
+              "sku_key": "sku_f143e3b3796e5271bb7d"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะนาวเลมอนนอก 4 ลูก/แพ็ค",
+              "sku_key": "sku_80cf54c103da9cfca6a3"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะนาวเลมอนนอก 1 ลูก/แพ็ค",
+              "sku_key": "sku_fda430a10c5b5cdceaca"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ผลไม้",
+      "items": [
+        {
+          "key": "ing_1a84ba08f87cfecb44b1",
+          "name": "มะม่วงเปรี้ยว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_1a84ba08f87cfecb44b1.8be1cf6d2eb1.webp",
+          "subcategory": "",
+          "position": 82,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "มะม่วงเปรียว (ตามฤดูกาล)",
+              "sku_key": "sku_98bf735c53ce19fe4918"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "มะม่วงเปรียว (ตามฤดูกาล) คัดสวย",
+              "sku_key": "sku_5889cbccc45353776b39"
+            },
+            {
+              "supplier": "GO",
+              "name": "มะม่วงเขียวสามรส 1 กก.",
+              "sku_key": "sku_a28d461b65e8f890a374"
+            }
+          ]
+        },
+        {
+          "key": "ing_9fe1ae111d23812756d4",
+          "name": "มะม่วงน้ำดอกไม้หั่นเต๋าแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9fe1ae111d23812756d4.c278ccfa866e.webp",
+          "subcategory": "",
+          "position": 83,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ มะม่วงน้ำดอกไม้หั่นเต๋าแช่แข็ง 1 กก.",
+              "sku_key": "sku_b37ec6aaaf95234e6f10"
+            }
+          ]
+        },
+        {
+          "key": "ing_7734528768d4591d4d9c",
+          "name": "มะละกอดิบ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7734528768d4591d4d9c.5ef76760091a.webp",
+          "subcategory": "",
+          "position": 84,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มะละกอดิบ 1 กก.",
+              "sku_key": "sku_d99611dfe789f980e5c4"
+            }
+          ]
+        },
+        {
+          "key": "ing_90f746156a7e6b35db78",
+          "name": "มะละกอฮอลแลนด์สุก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_90f746156a7e6b35db78.e69144e0e3e5.webp",
+          "subcategory": "",
+          "position": 85,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "มะละกอฮอลแลนด์สุก 1 กก./ลูก 1 ลูก/แพ็ค",
+              "sku_key": "sku_c7f64f4c7e31a8756198"
+            }
+          ]
+        },
+        {
+          "key": "ing_5eb10877fece6eae0ef8",
+          "name": "สับปะรด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5eb10877fece6eae0ef8.3dc1f0e4af39.webp",
+          "subcategory": "",
+          "position": 86,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "สับปะรดตราดสีทอง 1 ลูก",
+              "sku_key": "sku_5316a874eb769b437b1c"
+            },
+            {
+              "supplier": "GO",
+              "name": "สับปะรดศรีราชา 1 ลูก",
+              "sku_key": "sku_69248f5e1db58555546c"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "สับปะรดปัตตาเวีย ขนาด 800-1,000 กรัม/ลูก 1 ลูก/แพ็ค",
+              "sku_key": "sku_1781f50c9614db69d609"
+            }
+          ]
+        },
+        {
+          "key": "ing_9b6777efe32c8e3222f2",
+          "name": "กล้วยหอม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9b6777efe32c8e3222f2.a21daaf0b2de.webp",
+          "subcategory": "",
+          "position": 87,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กล้วยหอมสุก เบอร์กลาง 5 ลูก/แพ็ค",
+              "sku_key": "sku_5a8769a5145e04baec83"
+            },
+            {
+              "supplier": "GO",
+              "name": "กล้วยหอม 1 แพ็ค",
+              "sku_key": "sku_7c643616d229d9af49c5"
+            }
+          ]
+        },
+        {
+          "key": "ing_bb85812bff0ca9ec57db",
+          "name": "แอปเปิลฟูจิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_bb85812bff0ca9ec57db.b16639025965.webp",
+          "subcategory": "",
+          "position": 88,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "แอปเปิลแดงฟูจิ 10 ลูก/แพ็ค",
+              "sku_key": "sku_b0899d315a1b571ab667"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แอปเปิลแดงฟูจิ เบอร์ 80 2 ลูก/แพ็ค",
+              "sku_key": "sku_4e9502ae7b897eacb74c"
+            },
+            {
+              "supplier": "GO",
+              "name": "แอปเปิ้ลฟูจิ #113 แพ็ค 8 ลูก",
+              "sku_key": "sku_2c5b73bf73e02a02116a"
+            }
+          ]
+        },
+        {
+          "key": "ing_7e302a66d6d30fe4b83a",
+          "name": "สาลี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7e302a66d6d30fe4b83a.05d2770fd2c0.webp",
+          "subcategory": "",
+          "position": 89,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "สาลี่ทอง 1 กก.",
+              "sku_key": "sku_fef215c298007c5fe05d"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "สาลีน้าผึง",
+              "sku_key": "sku_1212faea52793eeb1f17"
+            },
+            {
+              "supplier": "GO",
+              "name": "สาลี่น้ำผึ้ง 1 กก.",
+              "sku_key": "sku_4163f318b5dcdcbba0a9"
+            }
+          ]
+        },
+        {
+          "key": "ing_9b32acbf09058d5a3522",
+          "name": "องุ่นแดงไร้เมล็ด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9b32acbf09058d5a3522.d06e43899f10.webp",
+          "subcategory": "",
+          "position": 90,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "องุ่นแดงไร้เมล็ด จีน แพ็ค 800 ก.",
+              "sku_key": "sku_5c7fbdb2fbdba4b885e2"
+            }
+          ]
+        },
+        {
+          "key": "ing_722ca202b76724fba903",
+          "name": "อโวคาโด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_722ca202b76724fba903.9a4771a802e3.webp",
+          "subcategory": "",
+          "position": 91,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "อโวคาโดพันธุ์แฮชสุก (นําเข้า) 2 ลูก/แพ็ค",
+              "sku_key": "sku_2e5418d9dccf381900f9"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "อโวคาโดพันธุ์แฮชสุก (นําเข้า) 1 ลูก/แพ็ค",
+              "sku_key": "sku_62feb852ac1022586b3c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ของแช่แข็ง",
+      "items": [
+        {
+          "key": "ing_a8547b9c47a8eff3321f",
+          "name": "เมล็ดข้าวโพดหวานแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a8547b9c47a8eff3321f.a687766c43c1.webp",
+          "subcategory": "",
+          "position": 92,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เมล็ดข้าวโพดหวานแช่แข็ง 1 กก.",
+              "sku_key": "sku_5968be734ff04d77ff44"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เมล็ดข้าวโพดหวาน (แช่แข็ง)",
+              "sku_key": "sku_62c9a32adaf754a10108"
+            }
+          ]
+        },
+        {
+          "key": "ing_92059501c8c149cfbec2",
+          "name": "ถั่วลันเตาแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_92059501c8c149cfbec2.1755e8dc1743.webp",
+          "subcategory": "",
+          "position": 93,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทาลลีย์ ถั่วลันเตาแช่แข็ง 1 กก.",
+              "sku_key": "sku_70eef3c2a085c7c1001e"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ถั่วลันเตาแช่แข็ง 1 กก.",
+              "sku_key": "sku_cd1920219d84bddfd531"
+            }
+          ]
+        },
+        {
+          "key": "ing_e9c1774d323cef591e8f",
+          "name": "ผักโขมแบบก้อนแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e9c1774d323cef591e8f.bbffc8af7bf1.webp",
+          "subcategory": "",
+          "position": 94,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ใบผักโขมแบบก้อนแช่แข็ง 1 กก.",
+              "sku_key": "sku_39daf757f6eca55a5c48"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ผักโขมแบบบอล (แช่แข็ง)",
+              "sku_key": "sku_249d66457bd1b431ab21"
+            }
+          ]
+        },
+        {
+          "key": "ing_4693c51b905280253d78",
+          "name": "เกาลัดแกะเปลือกแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4693c51b905280253d78.4bbc9fe39436.webp",
+          "subcategory": "",
+          "position": 95,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เกาลัดแกะเปลือกแช่แข็ง 1 กก.",
+              "sku_key": "sku_cc9c2421e9290ebcf53c"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ข้าว ธัญพืช แป้ง และเส้น",
+      "items": [
+        {
+          "key": "ing_700224db1604037cfbf1",
+          "name": "ข้าวไรซ์เบอร์รี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_700224db1604037cfbf1.7a58996d701c.webp",
+          "subcategory": "",
+          "position": 96,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แสนดี ข้าวไรซ์เบอร์รี่ 100% 5 กก.",
+              "sku_key": "sku_43178c68911e500774a1"
+            }
+          ]
+        },
+        {
+          "key": "ing_a3dbdcb4c294604f020c",
+          "name": "ข้าว กข43",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a3dbdcb4c294604f020c.9197a063e742.webp",
+          "subcategory": "",
+          "position": 97,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ข้าว กข43 ตราฉัตรไลท์ 6 X",
+              "sku_key": "sku_90069e22cb62fa7b0575"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ข้าว กข43 ตราฉัตรไลท์",
+              "sku_key": "sku_bbe1f624a573f8150fe0"
+            }
+          ]
+        },
+        {
+          "key": "ing_8e9b200df1f0b9889b18",
+          "name": "ข้าวเหนียว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8e9b200df1f0b9889b18.bc3b21f10f68.webp",
+          "subcategory": "",
+          "position": 98,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ข้าวเหนียว 5 กก.",
+              "sku_key": "sku_551b8f84dab18fd1be25"
+            }
+          ]
+        },
+        {
+          "key": "ing_7a3806d237ec02035444",
+          "name": "ข้าวหอมมะลิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7a3806d237ec02035444.56513b077144.webp",
+          "subcategory": "",
+          "position": 99,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แสนดี ข้าวหอมมะลิ 100% 5 กก.",
+              "sku_key": "sku_40fdef3954c8f3716ea2"
+            }
+          ]
+        },
+        {
+          "key": "ing_d76794215662bd0d8efd",
+          "name": "ควินัว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d76794215662bd0d8efd.4e565efaf8c9.webp",
+          "subcategory": "",
+          "position": 100,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ควินัวขาว ออแกนิค ตรากรีนไล์ฟ 1 กิโลกรัม",
+              "sku_key": "sku_835f26df4ce434b25f0c"
+            },
+            {
+              "supplier": "GO",
+              "name": "บาบู ควีนัว 3 สี 450 ก.",
+              "sku_key": "sku_e6e43b858a12d833d37b"
+            }
+          ]
+        },
+        {
+          "key": "ing_e6693c363378e00c5d1a",
+          "name": "ข้าวโอ๊ตละเอียด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e6693c363378e00c5d1a.626eb1a5ca69.webp",
+          "subcategory": "",
+          "position": 101,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แม็กกาแรต ข้าวโอ๊ตละเอียด 1 กก.",
+              "sku_key": "sku_a5dd66c00bdd176ae93c"
+            }
+          ]
+        },
+        {
+          "key": "ing_a85e849545d53b3552bf",
+          "name": "ลูกเดือย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a85e849545d53b3552bf.c8526c734f0c.webp",
+          "subcategory": "",
+          "position": 102,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ลูกเดือย 500 ก.",
+              "sku_key": "sku_7598ec1da42f3e2b7b16"
+            }
+          ]
+        },
+        {
+          "key": "ing_8d29c17d6930d56aeec7",
+          "name": "งาดำ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8d29c17d6930d56aeec7.50ce130284d7.webp",
+          "subcategory": "",
+          "position": 103,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ งาดำ 500 ก.",
+              "sku_key": "sku_53fa5c433461368261be"
+            }
+          ]
+        },
+        {
+          "key": "ing_e58237ecf7fd473c265f",
+          "name": "งาขาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e58237ecf7fd473c265f.193dbbf3125b.webp",
+          "subcategory": "",
+          "position": 104,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ งาขาว 500 ก.",
+              "sku_key": "sku_a0b0cda501a39cc0f332"
+            }
+          ]
+        },
+        {
+          "key": "ing_758335fb0ce9d59a839c",
+          "name": "แป้งข้าวเหนียว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_758335fb0ce9d59a839c.a784899ba81e.webp",
+          "subcategory": "",
+          "position": 105,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ช้างสามเศียร แป้งข้าวเหนียว 1 กก.",
+              "sku_key": "sku_e142a049004cfc8b6a20"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แป้งข้าวเหนียว ตราใบหยก",
+              "sku_key": "sku_e38f1b5e1237b1bfaf88"
+            }
+          ]
+        },
+        {
+          "key": "ing_2ba29bf681e4f749d830",
+          "name": "แป้งข้าวเจ้า",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2ba29bf681e4f749d830.c2596b7f7040.webp",
+          "subcategory": "",
+          "position": 106,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "แป้งข้าวเจ้า ตราใบหยก",
+              "sku_key": "sku_30f3a7cd97630f8c1fc1"
+            },
+            {
+              "supplier": "GO",
+              "name": "ใบหยก แป้งข้าวจ้าว 1 กก.",
+              "sku_key": "sku_df2d8d645e2d8d0062d8"
+            }
+          ]
+        },
+        {
+          "key": "ing_bb239336e4fa1040b181",
+          "name": "แป้งมันสำปะหลัง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_bb239336e4fa1040b181.a5b3791afac1.webp",
+          "subcategory": "",
+          "position": 107,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ใบหยก แป้งมันสำปะหลัง 1 กก.",
+              "sku_key": "sku_8ab21f9556e89ff9e512"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "แป้งมันสําปะหลัง ตราใบหยก",
+              "sku_key": "sku_c47e88f58a63a4f2499b"
+            }
+          ]
+        },
+        {
+          "key": "ing_2e5a7ab7d8f5c62735b1",
+          "name": "แป้งสาลีอเนกประสงค์",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2e5a7ab7d8f5c62735b1.17b02eb9fc6e.webp",
+          "subcategory": "",
+          "position": 108,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "แป้งสาลีอเนกประสงค์ ตราว่าว",
+              "sku_key": "sku_2b7c56d84d3ef5a94168"
+            }
+          ]
+        },
+        {
+          "key": "ing_63882a7319cffd9f17f3",
+          "name": "แผ่นแป้งมิชชั่นรสดั้งเดิม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_63882a7319cffd9f17f3.3898eef54e73.webp",
+          "subcategory": "",
+          "position": 109,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "มิชชั่น แผ่นแป้งรสดั้งเดิม 360 ก.",
+              "sku_key": "sku_4a532aa4ea58925eaa2a"
+            }
+          ]
+        },
+        {
+          "key": "ing_31f0cbc55798019fae78",
+          "name": "แผ่นแป้งปอเปี๊ยะเวียดนาม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_31f0cbc55798019fae78.7179b96d0bc4.webp",
+          "subcategory": "",
+          "position": 110,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทรีเลดี้ แผ่นแป้งปอเปี๊ยะเวียดนามวงกลม 22 ซม. 340 ก.",
+              "sku_key": "sku_c89850f56124483060b5"
+            }
+          ]
+        },
+        {
+          "key": "ing_df6036a289968a3e854f",
+          "name": "แผ่นเกี๊ยว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_df6036a289968a3e854f.6ede69b9bb7a.webp",
+          "subcategory": "",
+          "position": 111,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "แผ่นเกียวจีน ตราเส้นเงิน",
+              "sku_key": "sku_9437da4be6184255ac62"
+            },
+            {
+              "supplier": "GO",
+              "name": "เส้นเงิน แผ่นเกี๊ยวจีน 500 ก.",
+              "sku_key": "sku_9b5e2ac3962030dad365"
+            },
+            {
+              "supplier": "GO",
+              "name": "เส้นเงิน แผ่นเกี๊ยวจีน เจ 500 ก.",
+              "sku_key": "sku_668d5c5db92109e1dbbc"
+            }
+          ]
+        },
+        {
+          "key": "ing_4ad3070348a1c15d0c7b",
+          "name": "สปาเก็ตตี้",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4ad3070348a1c15d0c7b.39cd5ca64d89.webp",
+          "subcategory": "",
+          "position": 112,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เบสท์ฟู้ดส์ สปาเก็ตตี้ 1 กก.",
+              "sku_key": "sku_a10d1fac2ee9c096b6b2"
+            },
+            {
+              "supplier": "GO",
+              "name": "แอคเนซี พาสต้า สปาเก็ตตี้ เบอร์ 3 500 ก.",
+              "sku_key": "sku_58f5550edd674cd25cb4"
+            }
+          ]
+        },
+        {
+          "key": "ing_9e999a6826dc1046221b",
+          "name": "คาเปลลินี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9e999a6826dc1046221b.5b4cd4835a37.webp",
+          "subcategory": "",
+          "position": 113,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แอคเนซี พาสต้า คาเปลลินี เบอร์ 1 500 ก.",
+              "sku_key": "sku_424783d7cd3a3f36817d"
+            },
+            {
+              "supplier": "GO",
+              "name": "ออตติมา เส้นคาเปลลินี 500 ก.",
+              "sku_key": "sku_cd882c066fd94ad90d9c"
+            }
+          ]
+        },
+        {
+          "key": "ing_b07ec18a271b178aadcd",
+          "name": "เพนเน่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b07ec18a271b178aadcd.f314ec526fa4.webp",
+          "subcategory": "",
+          "position": 114,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แอคเนซี พาสต้า เพนเน่ ริกาเต้ เบอร์ 19 500 ก.",
+              "sku_key": "sku_dc951e8fccb4fc3e88c7"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เพนเน่ พาสต้า/พาสต้ารูปหลอดปลายตัดเฉียง ตราซาน เรโม เบอร์ 18",
+              "sku_key": "sku_c54fe53a4cf94e90794e"
+            }
+          ]
+        },
+        {
+          "key": "ing_5400e01e4edaf52c28cc",
+          "name": "พาสต้าเอลิเก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5400e01e4edaf52c28cc.3d5b33a97126.webp",
+          "subcategory": "",
+          "position": 115,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แอคเนซี พาสต้า เอลิเก เบอร์ 56 500 ก.",
+              "sku_key": "sku_4d069e91a3d67a99a5b4"
+            }
+          ]
+        },
+        {
+          "key": "ing_98151f950a309f035b11",
+          "name": "พาสต้าเฟตตูชินี",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_98151f950a309f035b11.dd3b82587998.webp",
+          "subcategory": "",
+          "position": 116,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ออตติมา เฟตตูชินี่ พาสต้า 500 ก.",
+              "sku_key": "sku_8faab2234759c44974de"
+            }
+          ]
+        },
+        {
+          "key": "ing_b64ec664d6fe24704a6d",
+          "name": "เส้นหมี่อบแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b64ec664d6fe24704a6d.1730807c1872.webp",
+          "subcategory": "",
+          "position": 117,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ไวไว เส้นหมี่กึ่งสำเร็จรูปอบแห้ง 2,700 ก.",
+              "sku_key": "sku_7ea3607561bff65a14a4"
+            },
+            {
+              "supplier": "GO",
+              "name": "ไวไว เส้นหมี่กึ่งสำเร็จรูปอบแห้ง 500 ก. x 3",
+              "sku_key": "sku_e7f0a6456ed0fd29e3e3"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เส้นหมีอบแห้ง ตราไวไว",
+              "sku_key": "sku_bf6ee7ce9fd0ba259a51"
+            }
+          ]
+        },
+        {
+          "key": "ing_76924c3130f093a72619",
+          "name": "วุ้นเส้นแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_76924c3130f093a72619.0dc83823efd7.webp",
+          "subcategory": "",
+          "position": 118,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ต้นสน วุ้นเส้นแห้ง แบบม้วน 80 ก. x 10",
+              "sku_key": "sku_f7bd4c33fafc868927d5"
+            },
+            {
+              "supplier": "GO",
+              "name": "ต้นสน วุ้นเส้นแห้ง 500 ก.",
+              "sku_key": "sku_b05d7fac663f3cf6eabf"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "วุ้นเส้นแห้ง ตราต้นสน",
+              "sku_key": "sku_fcea8af579f3c0f13253"
+            }
+          ]
+        },
+        {
+          "key": "ing_798518ff9fef184fcbc3",
+          "name": "เส้นบุก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_798518ff9fef184fcbc3.bf9f0a5aac21.webp",
+          "subcategory": "",
+          "position": 119,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "โมคิ บุกเส้นกลม 2 กก.",
+              "sku_key": "sku_81913817679b2dab7450"
+            }
+          ]
+        },
+        {
+          "key": "ing_0fd59582474056608e3d",
+          "name": "เส้นแก้ว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0fd59582474056608e3d.fe01d5231f72.webp",
+          "subcategory": "",
+          "position": 120,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คาอิโซ เส้นแก้ว ชนิดเส้นเล็ก 1 กก.",
+              "sku_key": "sku_c5134970e94a0995051d"
+            },
+            {
+              "supplier": "GO",
+              "name": "คาอิโซ เส้นแก้ว ชนิดเส้นเล็ก 300 ก.",
+              "sku_key": "sku_8f1930e651da9c8e0659"
+            },
+            {
+              "supplier": "GO",
+              "name": "คาอิโซ เส้นแก้ว 300 ก.",
+              "sku_key": "sku_4fa906bc11e27e4381ff"
+            }
+          ]
+        },
+        {
+          "key": "ing_87bf7e69425a6765e5af",
+          "name": "บะหมี่ผักโมโรเฮยะ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_87bf7e69425a6765e5af.690374607bec.webp",
+          "subcategory": "",
+          "position": 121,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "บะหมีผักโมโรเฮยะ",
+              "sku_key": "sku_78e48e0ec66200828252"
+            }
+          ]
+        },
+        {
+          "key": "ing_4ea3a9a8cd8ffd84cacc",
+          "name": "ขนมปังซาวโดวจ์",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4ea3a9a8cd8ffd84cacc.c459d2b18ff7.webp",
+          "subcategory": "",
+          "position": 122,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ขนมปังอาทิซาน ซาวโดวจ์ 300 ก.",
+              "sku_key": "sku_d89185040d4e0e11b847"
+            }
+          ]
+        },
+        {
+          "key": "ing_90db8bdb940828d50314",
+          "name": "ขนมปังบาแกตต์แช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_90db8bdb940828d50314.df8561e54aef.webp",
+          "subcategory": "",
+          "position": 123,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ขนมปังฝรังเศส บาแกตต์ (แช่แข็ง) ตราดุสิต 4 ชิน/แพ็ค",
+              "sku_key": "sku_988371fff34391772717"
+            }
+          ]
+        },
+        {
+          "key": "ing_c4f43006e14d617329f7",
+          "name": "เกล็ดขนมปัง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c4f43006e14d617329f7.1b4af2678527.webp",
+          "subcategory": "",
+          "position": 124,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เกล็ดขนมปัง 1 กก.",
+              "sku_key": "sku_24f053ac6f823f402f5a"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "เนื้อสัตว์และไข่",
+      "items": [
+        {
+          "key": "ing_e77c65d25487f1ff825c",
+          "name": "สันในหมู",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e77c65d25487f1ff825c.7f1c3e2c5cc6.webp",
+          "subcategory": "",
+          "position": 125,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "สันในหมู",
+              "sku_key": "sku_bd24c6923386f0ec2eba"
+            },
+            {
+              "supplier": "GO",
+              "name": "สันในหมู 1 กก.",
+              "sku_key": "sku_95f96d42111d5e44b2a9"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "สันในหมู (แช่แข็ง)",
+              "sku_key": "sku_20f4a6051b2262a3f1d4"
+            }
+          ]
+        },
+        {
+          "key": "ing_4ac607e5369bd64729ef",
+          "name": "อกไก่ติดหนัง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4ac607e5369bd64729ef.c37cd58f1d4d.webp",
+          "subcategory": "",
+          "position": 126,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "อกไก่เนื้อล้วนติดหนัง 1 กก.",
+              "sku_key": "sku_6e2b592ae7983739f285"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "อกไก่ติดหนัง",
+              "sku_key": "sku_8741592004138d4bbfc7"
+            }
+          ]
+        },
+        {
+          "key": "ing_a8cc1e89a30669f76795",
+          "name": "สะโพกไก่ติดกระดูก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a8cc1e89a30669f76795.016504b19c72.webp",
+          "subcategory": "",
+          "position": 127,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "สะโพกไก่ติดกระดูก 1 กก.",
+              "sku_key": "sku_4503f2fae871929ea0e8"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "สะโพกไก่",
+              "sku_key": "sku_52090424391e33228360"
+            }
+          ]
+        },
+        {
+          "key": "ing_a2aac4d2658da865608a",
+          "name": "ซี่โครงหมู",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a2aac4d2658da865608a.3b5447d32b7c.webp",
+          "subcategory": "",
+          "position": 128,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ซีโครงหมูหันชิน",
+              "sku_key": "sku_3f8ed5423ac4dd6a2ece"
+            },
+            {
+              "supplier": "GO",
+              "name": "ซี่โครงหมูหั่นชิ้น 1 กก.",
+              "sku_key": "sku_1d90d34a3df250d65824"
+            }
+          ]
+        },
+        {
+          "key": "ing_e56ffe732458ac06cf89",
+          "name": "กระดูกหมู",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e56ffe732458ac06cf89.e18246ca4794.webp",
+          "subcategory": "",
+          "position": 129,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "กระดูกซุปหมู 1 กก.",
+              "sku_key": "sku_be4aaf93aa25e381bbc0"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_chicken_carcass_20260922",
+          "name": "โครงไก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_chicken_carcass_20260922.a1dc2e781eda.webp",
+          "subcategory": "",
+          "position": 130,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_bcaf587edf8762afbb06",
+          "name": "กระดูกข้อขาหมู",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_bcaf587edf8762afbb06.3b5cdd1a47f4.webp",
+          "subcategory": "",
+          "position": 131,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "กระดูกข้อขาหมู 1 กก.",
+              "sku_key": "sku_ec537d279c58ca88ecc2"
+            }
+          ]
+        },
+        {
+          "key": "ing_7e3417818bef3c25222b",
+          "name": "กุนเชียง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7e3417818bef3c25222b.0cb4f28e0682.webp",
+          "subcategory": "",
+          "position": 132,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กุนเชียงหมู ตราเจ๊หงษ์",
+              "sku_key": "sku_02c3d16d618e316b8707"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "กุนเชียงหมู ตราเจ๊เล็ก",
+              "sku_key": "sku_dc01379978bd641726cb"
+            },
+            {
+              "supplier": "GO",
+              "name": "บ้านไผ่ กุนเชียงเชือกฟ้า 125 ก. x 3",
+              "sku_key": "sku_a2b6256b96759d2a3b9c"
+            },
+            {
+              "supplier": "GO",
+              "name": "พรวิภา กุนเชียงหมู 8 นิ้ว ผูกเชือก 1 กก.",
+              "sku_key": "sku_29279c5b528834303ccf"
+            }
+          ]
+        },
+        {
+          "key": "ing_af66564415ec23b532d3",
+          "name": "ตับไก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_af66564415ec23b532d3.2adbe9c0324b.webp",
+          "subcategory": "",
+          "position": 133,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ตับไก่ 1 กก.",
+              "sku_key": "sku_1f92458539d396ceadd7"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ตับไก่ ตราเบทาโกร (แช่แข็ง)",
+              "sku_key": "sku_d21f7eeae3f3d58f8575"
+            }
+          ]
+        },
+        {
+          "key": "ing_355e50a60ed4722ae163",
+          "name": "เลือดหมู",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_355e50a60ed4722ae163.480998b8d66f.webp",
+          "subcategory": "",
+          "position": 134,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "เลือดหมูแบบหลอด ตราเบทาโกร 6x210 กรัม/แพ็ค",
+              "sku_key": "sku_635586d938079e5bb476"
+            }
+          ]
+        },
+        {
+          "key": "ing_84b038646cf0586adcd7",
+          "name": "เนื้อบด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_84b038646cf0586adcd7.f454a29a33d5.webp",
+          "subcategory": "",
+          "position": 135,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เนื้อแดงวัวบด 1 กก.",
+              "sku_key": "sku_f2312992c1898fe6d0fa"
+            },
+            {
+              "supplier": "GO",
+              "name": "เนื้อลูกมะพร้าววัวออสเตรเลียบด ขนาด 300-500 ก./แพ็ค",
+              "sku_key": "sku_86a6a6fb5cc352fd4a65"
+            }
+          ]
+        },
+        {
+          "key": "ing_7c98a0f6dc3872cd41af",
+          "name": "แซลมอน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7c98a0f6dc3872cd41af.ed76c7a679f8.webp",
+          "subcategory": "",
+          "position": 136,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แอตแลนติกแซลมอนแล่แช่แข็ง (TRIM-C) 1 กก.",
+              "sku_key": "sku_ba6722749e4770c6446e"
+            },
+            {
+              "supplier": "GO",
+              "name": "โคโฮแซลมอนแล่แช่แข็ง (Trim-C) 0.8-2.0 กก./แพ็ค",
+              "sku_key": "sku_b674c2b69591b229c313"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_market_shrimp_20260922",
+          "name": "กุ้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_market_shrimp_20260922.21bbc7228d23.webp",
+          "subcategory": "",
+          "position": 137,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_71064ef15a7d9fcc9418",
+          "name": "กุ้งแห้งจืด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_71064ef15a7d9fcc9418.0666f5d5be20.webp",
+          "subcategory": "",
+          "position": 138,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กุ้งแห้งจืด",
+              "sku_key": "sku_c4c110086201166ec359"
+            }
+          ]
+        },
+        {
+          "key": "ing_8d5074e15a537177ac69",
+          "name": "ปลาซาบะแล่แช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_8d5074e15a537177ac69.29df4fdccf43.webp",
+          "subcategory": "",
+          "position": 139,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ปลาซาบะแล่แช่แข็ง 1 กก. x 10",
+              "sku_key": "sku_8ede35ed25c826e97459"
+            },
+            {
+              "supplier": "GO",
+              "name": "ปลาซาบะแล่แช่แข็ง แพ็ค 1 กก.",
+              "sku_key": "sku_1dacbdaa2bfa056477cb"
+            }
+          ]
+        },
+        {
+          "key": "ing_7d5a15986d5e98dfaed4",
+          "name": "ปลาทูสด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7d5a15986d5e98dfaed4.b02db2f9b1be.webp",
+          "subcategory": "",
+          "position": 140,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ปลาทูอินเดียแช่แข็ง ขนาด 4-6 ตัว/กก. แพ็ค 1 กก. x 10",
+              "sku_key": "sku_fc4bcabace0e3f3ab178"
+            },
+            {
+              "supplier": "GO",
+              "name": "ปลาทูอินเดียแช่แข็ง ขนาด 6-8 ตัว/กก. แพ็ค 1 กก.",
+              "sku_key": "sku_2505413cffd861f0239c"
+            },
+            {
+              "supplier": "GO",
+              "name": "ปลาทูอินเดียแช่แข็ง ขนาด 4-6 ตัว/กก. แพ็ค 1 กก.",
+              "sku_key": "sku_297d2b9ba71d14ad8d24"
+            }
+          ]
+        },
+        {
+          "key": "ing_e5e4d8538e2e792bac57",
+          "name": "ปลาทูนึ่ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e5e4d8538e2e792bac57.deec8cf941ad.webp",
+          "subcategory": "",
+          "position": 141,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ปลาทูนึ่ง 2 ตัว",
+              "sku_key": "sku_81c4bfccd912d42265bb"
+            },
+            {
+              "supplier": "GO",
+              "name": "ปลาทูนึ่ง 4 ตัว ขนาด 8-10 ตัว/กก. 1 แพ็ค",
+              "sku_key": "sku_cf63b0ac26fdccb3448c"
+            }
+          ]
+        },
+        {
+          "key": "ing_3890f7d275d0e7187846",
+          "name": "เนื้อทูน่าซากุแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_3890f7d275d0e7187846.05e18a591c80.webp",
+          "subcategory": "",
+          "position": 142,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เนื้อทูน่าซากุ 1 กก.",
+              "sku_key": "sku_62f097924d8ae4fdba6c"
+            },
+            {
+              "supplier": "GO",
+              "name": "เนื้อทูน่าซากุแช่แข็ง ขนาด 500 ก.",
+              "sku_key": "sku_c7d2f1f097eff1a4129c"
+            }
+          ]
+        },
+        {
+          "key": "ing_c96ea6b17313bdeadaa6",
+          "name": "ทูน่ากระป๋อง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c96ea6b17313bdeadaa6.428d40502361.webp",
+          "subcategory": "",
+          "position": 143,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซีเล็ค ฟิตต์ ทูน่าสเต็กในน้ำเกลือ 1,885 ก.",
+              "sku_key": "sku_c53c638f90cfab760f78"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ทูน่าสเต็ก ในน้าเกลือ ตราซีเล็คฟิตต์",
+              "sku_key": "sku_5d7fa96c7aff350b9cc6"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ทูน่าแซนวิชในน้าเกลือ ตราซีเล็คฟิตต์ 4 x",
+              "sku_key": "sku_f97dd2e5c4195a6976ee"
+            }
+          ]
+        },
+        {
+          "key": "ing_e0f66f359d271b9c781e",
+          "name": "ปูอัด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e0f66f359d271b9c781e.4f7c813a888a.webp",
+          "subcategory": "",
+          "position": 144,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คานิแฟมิลี่ ปูอัดแท่ง 500 ก.",
+              "sku_key": "sku_f6837c551c6e12bcff4f"
+            }
+          ]
+        },
+        {
+          "key": "ing_e7c851f15a66cb658b79",
+          "name": "ไข่กุ้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e7c851f15a66cb658b79.d3d746d89aa1.webp",
+          "subcategory": "",
+          "position": 145,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คิงมารีนฟู้ดส์ ไข่ปลาเคปปลินเอบิโกะปรุงรสสีส้มแช่แข็ง 500 ก.",
+              "sku_key": "sku_2585470901f189fa99ca"
+            }
+          ]
+        },
+        {
+          "key": "ing_37e78fa0f6f6390fc962",
+          "name": "ไข่ไก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_37e78fa0f6f6390fc962.4e9b6fc6e787.webp",
+          "subcategory": "",
+          "position": 146,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ไข่ไก่คละ เบอร์ 3-4 มีฝา x 30",
+              "sku_key": "sku_a364907a921459d768e5"
+            },
+            {
+              "supplier": "GO",
+              "name": "ไข่ไก่ คละเบอร์ 3-4 ไม่มีฝา 30 ฟอง x 5",
+              "sku_key": "sku_2593511ce905516f1f7b"
+            },
+            {
+              "supplier": "GO",
+              "name": "ไข่ไก่ เบอร์ 3 ไม่มีฝา 30 ฟอง x 5",
+              "sku_key": "sku_c0d22e05697fc534c961"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ไข่ไก่ คละเบอร์ 3-4 ไม่มีฝา 3 x",
+              "sku_key": "sku_05c42e81f940931b45b6"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ไข่ไก่ เบอร์ 4 ไม่มีฝา 3 x",
+              "sku_key": "sku_743fd9714d8eaef76784"
+            }
+          ]
+        },
+        {
+          "key": "ing_cfd6ecc9cd956d71a8c3",
+          "name": "ไข่แดงเค็ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cfd6ecc9cd956d71a8c3.04c5943cd36f.webp",
+          "subcategory": "",
+          "position": 147,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เคซีเอฟ ไข่แดงเค็ม x 25",
+              "sku_key": "sku_cfdbda21c36ece40ffca"
+            }
+          ]
+        },
+        {
+          "key": "ing_00d11980f4dbe4cde1b7",
+          "name": "ไข่เค็มต้มทั้งฟอง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_00d11980f4dbe4cde1b7.b0be5d7a1508.webp",
+          "subcategory": "",
+          "position": 148,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เคซีเอฟ ไข่เค็มต้ม แพ็ค 4 ฟอง",
+              "sku_key": "sku_246899c7e39cf971cc28"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "นม ชีส และเต้าหู้",
+      "items": [
+        {
+          "key": "ing_5a467f891a702f5dddfc",
+          "name": "นมโคยูเอชทีรสจืด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5a467f891a702f5dddfc.4ccff1fdfa37.webp",
+          "subcategory": "",
+          "position": 149,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "นมยูเอชที รสจืด ตราโฟร์โมสต์ 12 x",
+              "sku_key": "sku_cdde9167e3dacca8876f"
+            },
+            {
+              "supplier": "GO",
+              "name": "โฟร์โมสต์ นมยูเอชที รสจืด 1,000 มล. x 12",
+              "sku_key": "sku_47b6512e15bafd8e20af"
+            },
+            {
+              "supplier": "GO",
+              "name": "ไทยเดนมาร์ค นมโคยูเอชที รสจืด 180 มล. x 36",
+              "sku_key": "sku_5f278d6dc6139bb9ca26"
+            }
+          ]
+        },
+        {
+          "key": "ing_b13db0dc625426207e18",
+          "name": "เนยจืด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b13db0dc625426207e18.cf9669cab1d1.webp",
+          "subcategory": "",
+          "position": 150,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ออร์คิด เนยเพียวบัตเตอร์จืด 2 กก.",
+              "sku_key": "sku_3c95d9cdd44659b1c1d1"
+            }
+          ]
+        },
+        {
+          "key": "ing_a56a7a9fb52397e44272",
+          "name": "วิปปิ้งครีม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a56a7a9fb52397e44272.25add5c9258f.webp",
+          "subcategory": "",
+          "position": 151,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แองเคอร์ แดรี่วิปปิ้งครีม 1 ล.",
+              "sku_key": "sku_c7b9cf3e0f65b858d8f4"
+            },
+            {
+              "supplier": "GO",
+              "name": "แมกโนเลีย แดรี่วิปปิ้งครีม 946 มล.",
+              "sku_key": "sku_a2dff22c7a491680b743"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอ็มบอร์ก วิปแอนด์คุก 1 กก.",
+              "sku_key": "sku_e33a307186faf5aadfcc"
+            }
+          ]
+        },
+        {
+          "key": "ing_5987125a328af62679bc",
+          "name": "โยเกิร์ต",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5987125a328af62679bc.a498bed6d379.webp",
+          "subcategory": "",
+          "position": 152,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เมจิ โยเกิร์ตไม่มีไขมันรสออริจินัล 135 ก. x 4",
+              "sku_key": "sku_b6780d184f8e6466313c"
+            },
+            {
+              "supplier": "GO",
+              "name": "เมจิ โยเกิร์ตไม่เติมน้ำตาล รสธรรมชาติ 135 ก. x 4",
+              "sku_key": "sku_a5cf6a9b3a2dec9eac48"
+            },
+            {
+              "supplier": "GO",
+              "name": "ดัชชี่ โพรไบโอติก โยเกิร์ต รสออริจินัล 125 ก. x 4",
+              "sku_key": "sku_1609ea506c8b5196a992"
+            }
+          ]
+        },
+        {
+          "key": "ing_b70293d79a5526d3edb7",
+          "name": "ชีสผสมมอสซาเรลล่าเชดด้าหั่นเต๋าแช่แข็ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_b70293d79a5526d3edb7.d0a3d66c2162.webp",
+          "subcategory": "",
+          "position": 153,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอบีซี มอสซาเรลล่าเชดด้าชีสหั่นเต๋าแช่แข็ง 900 ก.",
+              "sku_key": "sku_3678f94f9d7900b7ffc1"
+            }
+          ]
+        },
+        {
+          "key": "ing_979555d8f691e122f82f",
+          "name": "คอตเทจชีส",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_979555d8f691e122f82f.41fe7122d9b3.webp",
+          "subcategory": "",
+          "position": 154,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ค้อตเตจชีส ตราออลลี",
+              "sku_key": "sku_c36fdd914710d1954fa2"
+            }
+          ]
+        },
+        {
+          "key": "ing_05f682638e5274edf22b",
+          "name": "พาร์เมซานชีสขูด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_05f682638e5274edf22b.15d42fb95a46.webp",
+          "subcategory": "",
+          "position": 155,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ็มบอร์ก เกรทเต็ดพาเมซาน 100 ก.",
+              "sku_key": "sku_0a672b8207f81a463aec"
+            }
+          ]
+        },
+        {
+          "key": "ing_225b68f9a5ade2a4b49a",
+          "name": "เต้าหู้ขาว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_225b68f9a5ade2a4b49a.5a42cab040f9.webp",
+          "subcategory": "",
+          "position": 156,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "เต้าหู้ขาวก้อนแข็ง 220-250 กรัม/ก้อน",
+              "sku_key": "sku_22ab44ec590d9ab56a26"
+            },
+            {
+              "supplier": "GO",
+              "name": "คุณเฮง เต้าหู้ขาวแข็ง 150 ก.",
+              "sku_key": "sku_fec6c476ce230c27b0ec"
+            },
+            {
+              "supplier": "GO",
+              "name": "เจ้ควิก เต้าหู้ขาว 180 ก.",
+              "sku_key": "sku_0e97aecbaeacd94000d5"
+            },
+            {
+              "supplier": "GO",
+              "name": "ซีไอ เต้าหู้ขาว 200 ก.",
+              "sku_key": "sku_72027b3309eda779a5a1"
+            }
+          ]
+        },
+        {
+          "key": "ing_048245883724e1138352",
+          "name": "เต้าหู้ไข่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_048245883724e1138352.710af8c4e259.webp",
+          "subcategory": "",
+          "position": 157,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "เต้าหู้ไข่ ตราเกษตร 5x105 กรัม/แพ็ค",
+              "sku_key": "sku_af3afd8a862ff87ee33d"
+            },
+            {
+              "supplier": "GO",
+              "name": "ช้อนทอง เต้าหู้ไข่ไก่ 120 ก. x 5",
+              "sku_key": "sku_a8e39c35d1f66bb2467d"
+            }
+          ]
+        },
+        {
+          "key": "ing_2646e21d8019ec58337b",
+          "name": "ฟองเต้าหู้แท่ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2646e21d8019ec58337b.a87da8f2f9ab.webp",
+          "subcategory": "",
+          "position": 158,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ฟองฟอง ฟองเต้าหู้แท่ง 500 ก.",
+              "sku_key": "sku_22b2e4fb962521ef7418"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "เครื่องปรุง",
+      "items": [
+        {
+          "key": "ing_c8cf459af340db7907e0",
+          "name": "น้ำมันรำข้าว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c8cf459af340db7907e0.82432f53a63e.webp",
+          "subcategory": "",
+          "position": 159,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คิง น้ำมันรำข้าว 5 ล.",
+              "sku_key": "sku_284623d4231e69ac86a9"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้ามันรําข้าว ตราคิง",
+              "sku_key": "sku_ab48873b8e66aeebe851"
+            }
+          ]
+        },
+        {
+          "key": "ing_e51216d258b11ca9deae",
+          "name": "น้ำมันมะกอก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e51216d258b11ca9deae.3156cb174ddd.webp",
+          "subcategory": "",
+          "position": 160,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คาซา รินัลดิ น้ำมันมะกอกธรรมชาติ เอ็กซ์ตร้าเวอร์จิ้น 1 ล.",
+              "sku_key": "sku_ec2cf60eb66a71919378"
+            },
+            {
+              "supplier": "GO",
+              "name": "ลูยจลิโอ น้ำมันมะกอกบริสุทธิ์ 1 ล.",
+              "sku_key": "sku_3f0cb56230c72588c47e"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_sesame_oil_20260923",
+          "name": "น้ำมันงา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_sesame_oil_20260923.bc5332eed116.webp",
+          "subcategory": "น้ำมัน",
+          "position": 161,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_cf9b82f3e8112c41948b",
+          "name": "น้ำปลา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cf9b82f3e8112c41948b.53c83a2969f1.webp",
+          "subcategory": "",
+          "position": 162,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คนแบกกุ้ง น้ำปลา 4,500 มล.",
+              "sku_key": "sku_0f9b2ed53c2410550c96"
+            },
+            {
+              "supplier": "GO",
+              "name": "ทิพรส น้ำปลา 4,500 มล.",
+              "sku_key": "sku_357b35faba16931fb725"
+            }
+          ]
+        },
+        {
+          "key": "ing_52d4c5d035d3bfb7be1f",
+          "name": "ซีอิ๊วขาวสูตร 1",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_52d4c5d035d3bfb7be1f.152683bdb6ed.webp",
+          "subcategory": "",
+          "position": 163,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เด็กสมบูรณ์ ซีอิ๊วขาว สูตร 1 4,500 มล.",
+              "sku_key": "sku_cc189b1d24ee3711eba9"
+            }
+          ]
+        },
+        {
+          "key": "ing_a90a2fe79b9a8f6e3a65",
+          "name": "ซีอิ๊วขาวเห็ดหอม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a90a2fe79b9a8f6e3a65.7afffe3f7afd.webp",
+          "subcategory": "",
+          "position": 164,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เด็กสมบูรณ์ ซีอิ๊วขาวเห็ดหอม 2,000 มล.",
+              "sku_key": "sku_f3fbd6e0737d2ae0124e"
+            }
+          ]
+        },
+        {
+          "key": "ing_511f04fca8e09db44441",
+          "name": "ซีอิ๊วดำฉลากส้ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_511f04fca8e09db44441.a6e5277c41ed.webp",
+          "subcategory": "",
+          "position": 165,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ง่วนเชียง ซีอิ๊วดำฉลากส้ม 2,700 ก.",
+              "sku_key": "sku_2aa966c87546be8ba170"
+            }
+          ]
+        },
+        {
+          "key": "ing_2c6cb0694ff907672855",
+          "name": "โชยุ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2c6cb0694ff907672855.b27bd4281643.webp",
+          "subcategory": "",
+          "position": 166,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ซอส โชยุ 1 ล.",
+              "sku_key": "sku_80c94ee1c2c1eaccf447"
+            }
+          ]
+        },
+        {
+          "key": "ing_c8b5950be3422191a176",
+          "name": "ซอสหอยนางรม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_c8b5950be3422191a176.68714f019d64.webp",
+          "subcategory": "",
+          "position": 167,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ซอสหอยนางรม 5,000 ก.",
+              "sku_key": "sku_499ac28a31054b1b1bc1"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ซอสหอยนางรม 1,000 ก.",
+              "sku_key": "sku_20f540daf9e2858083a6"
+            }
+          ]
+        },
+        {
+          "key": "ing_7bfc918e2bcf43a40699",
+          "name": "ซอสมะเขือเทศ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7bfc918e2bcf43a40699.9b089ba8b2a8.webp",
+          "subcategory": "",
+          "position": 168,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ซอสมะเขือเทศ 5,000 ก.",
+              "sku_key": "sku_2c366d5b776a24e1a47c"
+            }
+          ]
+        },
+        {
+          "key": "ing_9f16a859e35685601270",
+          "name": "ซอสพริก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9f16a859e35685601270.9d2d4b11c61d.webp",
+          "subcategory": "",
+          "position": 169,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ซอสพริก 1,000 ก.",
+              "sku_key": "sku_a0f4d69188bea2498041"
+            }
+          ]
+        },
+        {
+          "key": "ing_e3e23fa1a364c46b99a6",
+          "name": "มายองเนสสูตรไม่มีน้ำตาล",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e3e23fa1a364c46b99a6.a57ba011071a.webp",
+          "subcategory": "",
+          "position": 170,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "คิวพี มายองเนส สูตรไม่มีน้ำตาล 1 กก.",
+              "sku_key": "sku_b60b9d61ab7628c48227"
+            }
+          ]
+        },
+        {
+          "key": "ing_d571974bd87f5a4bcc53",
+          "name": "ทาบาสโก้",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d571974bd87f5a4bcc53.e35bed25e1de.webp",
+          "subcategory": "",
+          "position": 171,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทาบาสโก ซอส เรดเปปเปอร์ 150 มล.",
+              "sku_key": "sku_79c412a1f7d6478fad87"
+            }
+          ]
+        },
+        {
+          "key": "ing_2dba78ff5fa44e90aaf2",
+          "name": "วูสเตอร์ซอส",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2dba78ff5fa44e90aaf2.7a7a14ccfe56.webp",
+          "subcategory": "",
+          "position": 172,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "สุบากิ วูสเตอร์ซอส 1 ล.",
+              "sku_key": "sku_b730987dcb8c96205b5e"
+            }
+          ]
+        },
+        {
+          "key": "ing_1334d6c5cc399103fc3d",
+          "name": "น้ำส้มสายชูหมักข้าว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_1334d6c5cc399103fc3d.cf82a1685f29.webp",
+          "subcategory": "",
+          "position": 173,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ น้ำส้มสายชูหมักข้าว 1 ล.",
+              "sku_key": "sku_20adc0d750290624fc13"
+            }
+          ]
+        },
+        {
+          "key": "ing_9b31f1f9ebd5b0df90fd",
+          "name": "น้ำส้มสายชูกลั่น 5%",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9b31f1f9ebd5b0df90fd.85b5d2afb20e.webp",
+          "subcategory": "",
+          "position": 174,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ น้ำส้มสายชูกลั่น 5% 4,500 มล.",
+              "sku_key": "sku_21862c7e5c7f8250d103"
+            }
+          ]
+        },
+        {
+          "key": "ing_7473f3e1468c60173047",
+          "name": "เกลือบริโภคเสริมไอโอดีน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7473f3e1468c60173047.820f7b9b889b.webp",
+          "subcategory": "",
+          "position": 175,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ปรุงทิพย์ เกลือ 5 กก.",
+              "sku_key": "sku_9428fb44dc6e765e8f90"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เกลือบริโภคเสริมไอโอดีน ตราปรุงทิพย์/เกลือปรุงทิพย์",
+              "sku_key": "sku_c285f3fad203f0df650c"
+            }
+          ]
+        },
+        {
+          "key": "ing_d144931c6e15085b76f9",
+          "name": "น้ำตาลมะพร้าว/น้ำตาลปี๊บ/น้ำตาลเหลว",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d144931c6e15085b76f9.af2a3ee16b79.webp",
+          "subcategory": "",
+          "position": 176,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แสงทอง น้ำตาลเหลว 1,000 ก.",
+              "sku_key": "sku_29d1cd0bc981687dc7e1"
+            },
+            {
+              "supplier": "GO",
+              "name": "แสงทอง น้ำตาลมะพร้าวก้นหอย 1,000 ก.",
+              "sku_key": "sku_6d9bbdb22b03e90848dc"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้าตาลปีบ",
+              "sku_key": "sku_d5f8ad7633165eeb9e7a"
+            }
+          ]
+        },
+        {
+          "key": "ing_9bbb7505f53e2b73287b",
+          "name": "น้ำผึ้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9bbb7505f53e2b73287b.ae2902941f56.webp",
+          "subcategory": "",
+          "position": 177,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ไทยฮันนี่ น้ำผึ้งดอกไม้ป่าขนาด 1,000 ก.",
+              "sku_key": "sku_c5d6a0a3eb2785719199"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้าผึงเกสรดอกลําไย ตราดอยคํา",
+              "sku_key": "sku_a1c05d72112929525b1e"
+            }
+          ]
+        },
+        {
+          "key": "ing_e783979b474f1c1489b1",
+          "name": "อีริทริทอลผสมหล่อฮังก้วย",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e783979b474f1c1489b1.93550d505e8b.webp",
+          "subcategory": "",
+          "position": 178,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ดีไลท์ พลัส อีริทริทอลผสมหล่อฮังก้วย ตราลิน",
+              "sku_key": "sku_c192785b0b0706dda1c7"
+            }
+          ]
+        },
+        {
+          "key": "ing_0e8a088e9da52e2f453f",
+          "name": "กะทิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0e8a088e9da52e2f453f.dc1ba5b288d6.webp",
+          "subcategory": "",
+          "position": 179,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กะทิขวด ตราเรียลไทย 6 x",
+              "sku_key": "sku_8a1ecabe1d3ce437ef46"
+            },
+            {
+              "supplier": "GO",
+              "name": "อัมพวา กะทิแท้ 100% 250 มล. x 6",
+              "sku_key": "sku_e7dff22bb8bb6c19a930"
+            },
+            {
+              "supplier": "GO",
+              "name": "อัมพวา กะทิแท้ 100% Prisma 1 ล.",
+              "sku_key": "sku_a4719a17c8376c684017"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "กะทิขวด ตราอัมพวา",
+              "sku_key": "sku_655f9f7c85e54a9fddc5"
+            }
+          ]
+        },
+        {
+          "key": "ing_cdce81e30423cab6937a",
+          "name": "น้ำพริกเผา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_cdce81e30423cab6937a.ef6471fbe41b.webp",
+          "subcategory": "",
+          "position": 180,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ฉั่วฮะเส็ง น้ำพริกเผา สูตร 1 900 ก.",
+              "sku_key": "sku_ae77db07b4521d6d69cd"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้าพริกเผา สูตร1 ตราฉัวฮะเส็ง",
+              "sku_key": "sku_5cbe7c51be314aa93e9b"
+            }
+          ]
+        },
+        {
+          "key": "ing_bd8dc1af0b900b4da540",
+          "name": "กะปิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_bd8dc1af0b900b4da540.aa10d234d9a4.webp",
+          "subcategory": "",
+          "position": 181,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ตราชั่ง กะปิ 185 ก. x 6",
+              "sku_key": "sku_a0380409badc73f445d1"
+            }
+          ]
+        },
+        {
+          "key": "ing_275bb10f227e75967859",
+          "name": "เหล้าจีนปรุงอาหาร",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_275bb10f227e75967859.7243719960b9.webp",
+          "subcategory": "",
+          "position": 182,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "สุราปรุงอาหารเสียวเฮงฮวยเตียว (เหล้าจีน) ตราเจดีย์",
+              "sku_key": "sku_5fcb0c0c74c4d182e04d"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "พริกแกง ผงปรุง และเครื่องเทศ",
+      "items": [
+        {
+          "key": "ing_4cc3ce88f5a5da22124e",
+          "name": "พริกแกงเขียวหวานเผ็ดกลางแบบละเอียด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4cc3ce88f5a5da22124e.0d7942524f6d.webp",
+          "subcategory": "",
+          "position": 183,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "น้าพริกแกงเขียวหวานเผ็ดกลางแบบละเอียด ตราร้านเจ้๊ปุ",
+              "sku_key": "sku_1d1783de5d8195d1e66a"
+            }
+          ]
+        },
+        {
+          "key": "ing_aa6faf05a4f5f1ba13c4",
+          "name": "พริกแกงส้ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_aa6faf05a4f5f1ba13c4.f53502667ef6.webp",
+          "subcategory": "",
+          "position": 184,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "น้าพริกแกงส้มแบบละเอียด ตราร้านเจ้๊ปุ",
+              "sku_key": "sku_b626040afa9b1aad2769"
+            }
+          ]
+        },
+        {
+          "key": "ing_7d999f86324b1568b125",
+          "name": "พริกแกงพะแนง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_7d999f86324b1568b125.016df77fc88a.webp",
+          "subcategory": "",
+          "position": 185,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "น้ำใจ พริกแกง พะแนง 500 ก.",
+              "sku_key": "sku_d325bc2f15873a23cc65"
+            }
+          ]
+        },
+        {
+          "key": "ing_93aa9b528dc58eb9084d",
+          "name": "พริกแกงคั่วกลิ้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_93aa9b528dc58eb9084d.238ea52a24e3.webp",
+          "subcategory": "",
+          "position": 186,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกแกงคัวกลิง",
+              "sku_key": "sku_b075f04c931a06532b9e"
+            }
+          ]
+        },
+        {
+          "key": "ing_629fdd4c9299abf21612",
+          "name": "เครื่องแกงกะหรี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_629fdd4c9299abf21612.b79846f92637.webp",
+          "subcategory": "",
+          "position": 187,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "เครืองแกงกะหรีสูตรเผ็ดกลาง ตราเอสแอนด์บี",
+              "sku_key": "sku_c502a428b447ee0a5f89"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอสแอนด์บี แกงกะหรี่ก้อนเผ็ด 200 ก.",
+              "sku_key": "sku_cdc9820c7c8647b0ec6a"
+            }
+          ]
+        },
+        {
+          "key": "ing_6c47f21dd4464bc13c63",
+          "name": "ผงทำหมูแดง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_6c47f21dd4464bc13c63.8390794db7dd.webp",
+          "subcategory": "",
+          "position": 188,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "โลโบ ผงทำหมูแดง 100 ก. x 6",
+              "sku_key": "sku_6d2854175848c7a3ab54"
+            }
+          ]
+        },
+        {
+          "key": "ing_00555c8409860b9f48c6",
+          "name": "ผงข้าวหมกไก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_00555c8409860b9f48c6.3d864ad0ead0.webp",
+          "subcategory": "",
+          "position": 189,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ผงทําข้าวหมกไก่ ตราโลโบ",
+              "sku_key": "sku_08c7812813d7ed195fc5"
+            }
+          ]
+        },
+        {
+          "key": "ing_286c0d69a4b3b5b8d94f",
+          "name": "พริกป่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_286c0d69a4b3b5b8d94f.80fb7892c416.webp",
+          "subcategory": "",
+          "position": 190,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ พริกป่น 800 ก.",
+              "sku_key": "sku_6d2c0844cd38c6b31923"
+            }
+          ]
+        },
+        {
+          "key": "ing_41594c08fe54e189291d",
+          "name": "พริกชี้ฟ้าแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_41594c08fe54e189291d.bfaa73798ba4.webp",
+          "subcategory": "",
+          "position": 191,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกชีฟ้าแห้ง (เด็ดก้าน)",
+              "sku_key": "sku_4ac818f17427d1535010"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกชี้ฟ้า แห้ง เด็ดก้าน 100 ก.",
+              "sku_key": "sku_9759c9cd9c7fc76d376c"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกชี้ฟ้า แห้ง 100 ก.",
+              "sku_key": "sku_abd690d655eafb307b93"
+            }
+          ]
+        },
+        {
+          "key": "ing_fedad17a42c51cb935e3",
+          "name": "พริกจินดาแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_fedad17a42c51cb935e3.a54a3b7ffd5b.webp",
+          "subcategory": "",
+          "position": 192,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "พริกจินดา แห้ง เด็ดก้าน 100 ก.",
+              "sku_key": "sku_435a3d1a8a48488dfd7a"
+            },
+            {
+              "supplier": "GO",
+              "name": "พริกจินดา แห้ง 100 ก.",
+              "sku_key": "sku_26cd9781a899e9b7fff4"
+            }
+          ]
+        },
+        {
+          "key": "ing_3a965d5bd11d48101bac",
+          "name": "พริกเกาหลีป่นหยาบ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_3a965d5bd11d48101bac.4300fd0373c2.webp",
+          "subcategory": "",
+          "position": 193,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "พริกเกาหลีแบบ่ปนหยาบสําหรับทํากิมจิ ตราชองจองวอน",
+              "sku_key": "sku_647b33ccc93da9d01df1"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_pepper_white_ground_20260922",
+          "name": "พริกไทยขาวป่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_pepper_white_ground_20260922.8884531dbca4.webp",
+          "subcategory": "",
+          "position": 194,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_pepper_white_whole_20260922",
+          "name": "พริกไทยขาวเม็ด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_pepper_white_whole_20260922.1f94ffb2b620.webp",
+          "subcategory": "",
+          "position": 195,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_d17e1c431b835522a6d1",
+          "name": "พริกไทยดำป่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_d17e1c431b835522a6d1.21341752354e.webp",
+          "subcategory": "",
+          "position": 196,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ตรามือที่ 1 พริกไทยดำ ป่น 500 ก.",
+              "sku_key": "sku_fe44ee099814dffb5712"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_pepper_black_whole_20260922",
+          "name": "พริกไทยดำเม็ด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_pepper_black_whole_20260922.c93d81d83329.webp",
+          "subcategory": "",
+          "position": 197,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_a14391b3b1ac434aa628",
+          "name": "ปาปริก้าป่น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_a14391b3b1ac434aa628.858a60cac996.webp",
+          "subcategory": "",
+          "position": 198,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ปาปริก้า่ปน ตรามือที1",
+              "sku_key": "sku_b00041c73b967c75fb3d"
+            }
+          ]
+        },
+        {
+          "key": "ing_f8bf1addef94f5f3ab7f",
+          "name": "ขมิ้นผง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f8bf1addef94f5f3ab7f.f591f3c73fdf.webp",
+          "subcategory": "",
+          "position": 199,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ขมิ้น ผง 200 ก.",
+              "sku_key": "sku_37933bb1aaebdee07dd8"
+            }
+          ]
+        },
+        {
+          "key": "ing_e7e0a580aad86bc64025",
+          "name": "โรสแมรี่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e7e0a580aad86bc64025.5b13de8a0757.webp",
+          "subcategory": "",
+          "position": 200,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอลเอวิออน โรสแมรี่ 200 ก.",
+              "sku_key": "sku_4ab44879f3bf388f2a5b"
+            },
+            {
+              "supplier": "GO",
+              "name": "ตรามือที่ 1 โรสแมรี่ 100 ก.",
+              "sku_key": "sku_078b3603e5cf0f925f2f"
+            }
+          ]
+        },
+        {
+          "key": "ing_fa4e3158bcaccae153a0",
+          "name": "สีผสมอาหาร สีแดงส้ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_fa4e3158bcaccae153a0.93c1230383d9.webp",
+          "subcategory": "",
+          "position": 201,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "สีผสมอาหาร (สีแดงส้ม) ตราวินเนอร์",
+              "sku_key": "sku_10100ab0e7ff80894f3a"
+            }
+          ]
+        },
+        {
+          "key": "ing_2851591deaec6f8b51a0",
+          "name": "สีผสมอาหาร สีเขียวแอปเปิล",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_2851591deaec6f8b51a0.cc60b537dff7.webp",
+          "subcategory": "",
+          "position": 202,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "สีผสมอาหาร (สีเขียวแอปเปิล) ตราวินเนอร์",
+              "sku_key": "sku_8079c11c0c56154c6ece"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ของแห้งเพิ่มเติม",
+      "items": [
+        {
+          "key": "ing_24aac7ea8d907bf6c8d7",
+          "name": "กระเทียมโทนดอง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_24aac7ea8d907bf6c8d7.e43bf35da2aa.webp",
+          "subcategory": "",
+          "position": 203,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ กระเทียมโทนดอง 850 ก.",
+              "sku_key": "sku_05563bbf9788098f169a"
+            }
+          ]
+        },
+        {
+          "key": "ing_74ad2bc7694c8bb0fe33",
+          "name": "เห็ดหอมแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_74ad2bc7694c8bb0fe33.ce31318e9df9.webp",
+          "subcategory": "",
+          "position": 204,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ เห็ดหอม แห้ง ดอกเล็ก 500 ก.",
+              "sku_key": "sku_aff26fbece7915a67f4b"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "เห็ดหอมแห้งเล็ก ตราต้นตะวัน",
+              "sku_key": "sku_db7e170aff13b834fec5"
+            }
+          ]
+        },
+        {
+          "key": "ing_0bc953aa3a8823f0dadd",
+          "name": "พาร์สลีย์แห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0bc953aa3a8823f0dadd.1a04bdc5ca00.webp",
+          "subcategory": "",
+          "position": 205,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ตรามือที่ 1 พาร์สลีย์ 50 ก.",
+              "sku_key": "sku_e3cd816872877352929d"
+            }
+          ]
+        },
+        {
+          "key": "ing_50ba51f540727c79d31c",
+          "name": "สาหร่ายฝอยโรยหน้า",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_50ba51f540727c79d31c.6df862eabaaa.webp",
+          "subcategory": "",
+          "position": 214,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทาเบรุ สาหร่ายแผ่นย่างตัดเส้น 100 ก.",
+              "sku_key": "sku_99069dc07c68e81973df"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_seaweed_roll_sheet_20260922",
+          "name": "สาหร่ายแผ่นห่อโรล",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_seaweed_roll_sheet_20260922.712db2ff2f81.webp",
+          "subcategory": "",
+          "position": 215,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_f072f6c59fc33347fc03",
+          "name": "สาหร่ายปรุงรสน้ำมันงา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_f072f6c59fc33347fc03.25d2f781a881.webp",
+          "subcategory": "",
+          "position": 216,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แฮเพียว เลเวอร์ ซีซามี ออยล์ สาหร่ายอบแห้งปรุงรส รสน้ำมันงา 4 ก. x 16",
+              "sku_key": "sku_821f3730f012114ce416"
+            }
+          ]
+        },
+        {
+          "key": "ing_9b3f8433fe052792b3d1",
+          "name": "สาหร่ายวากาเมะ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9b3f8433fe052792b3d1.96b1a689c2dd.webp",
+          "subcategory": "",
+          "position": 217,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทาเบรุ สาหร่ายทะเลวากาเมะอบแห้ง 100 ก.",
+              "sku_key": "sku_7c53563169d0c39eb4b5"
+            }
+          ]
+        },
+        {
+          "key": "ing_e090ee3bdeb214fb1ab2",
+          "name": "สาหร่ายคอมบุ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_e090ee3bdeb214fb1ab2.bdb1e436c26c.webp",
+          "subcategory": "",
+          "position": 218,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ทาเบรุ สาหร่ายทะเลคอมบุอบแห้ง 100 ก.",
+              "sku_key": "sku_c44539bd3f39878bf0f0"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ถั่ว ผลไม้อบแห้ง และของดอง",
+      "items": [
+        {
+          "key": "ing_29416b902ba6d27001b1",
+          "name": "เม็ดมะม่วงหิมพานต์ดิบหักท่อน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_29416b902ba6d27001b1.6130c0f45e57.webp",
+          "subcategory": "",
+          "position": 206,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "แวลู แพ็ค เม็ดมะม่วงหิมพานต์ดิบชนิดหักท่อน LP 1 กก.",
+              "sku_key": "sku_f5de0b5b1764203864d4"
+            }
+          ]
+        },
+        {
+          "key": "ing_596905865b6745f50a98",
+          "name": "ถั่วลิสงมีเยื่อหุ้ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_596905865b6745f50a98.e33590d44da9.webp",
+          "subcategory": "",
+          "position": 207,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ถั่วลิสง 500 ก. x 10",
+              "sku_key": "sku_8c7ab4e77a99b6e28e76"
+            },
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ถั่วลิสง 1,000 ก.",
+              "sku_key": "sku_9368ddcb4ab884dfe989"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "ถัวลิสงมีเยือหุ้ม ตราไร่ทิพย์ (ห่อสีน้าเงิน)",
+              "sku_key": "sku_35e08eea10443b85a42d"
+            }
+          ]
+        },
+        {
+          "key": "ing_0b10eeab9f2c251ce0d2",
+          "name": "เม็ดบัวแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0b10eeab9f2c251ce0d2.67159e11efac.webp",
+          "subcategory": "",
+          "position": 208,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เม็ดบัว แห้ง 500 ก.",
+              "sku_key": "sku_c37b56cd94e52668afce"
+            }
+          ]
+        },
+        {
+          "key": "ing_4634afd377065454fe7e",
+          "name": "แปะก๊วยต้มสุกในน้ำเชื่อม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4634afd377065454fe7e.f503fda85f7c.webp",
+          "subcategory": "",
+          "position": 209,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "จริงใจ แปะก๊วยต้มสุกในน้ำเชื่อม 500 ก.",
+              "sku_key": "sku_ca953a3133ad2306b43d"
+            }
+          ]
+        },
+        {
+          "key": "ing_0615031605774ccdf1a9",
+          "name": "ลูกพรุนอบแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0615031605774ccdf1a9.2e6dba08a3b6.webp",
+          "subcategory": "",
+          "position": 210,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "ลูกพรุนอบแห้งพรีเมียม ตราเฮอริเทจ",
+              "sku_key": "sku_b7d1b392a69dfbe66dae"
+            }
+          ]
+        },
+        {
+          "key": "ing_407fe4314fa909859d49",
+          "name": "แครนเบอร์รีอบแห้ง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_407fe4314fa909859d49.a2eab05642b0.webp",
+          "subcategory": "",
+          "position": 211,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "แครนเบอร์รีซอร์พต์มอยท์ ตราเฮอริเทจ",
+              "sku_key": "sku_86c45dfe7869e5600c32"
+            },
+            {
+              "supplier": "GO",
+              "name": "เฮอริเทจ แครนเบอร์รี่ ซอฟแอนด์มอยส์ 500 ก.",
+              "sku_key": "sku_fb63786e5305af01d0f1"
+            }
+          ]
+        },
+        {
+          "key": "ing_3098ac9ffac1febd419f",
+          "name": "มะกอกดำไม่มีเมล็ด",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_3098ac9ffac1febd419f.aeefd434d6f4.webp",
+          "subcategory": "",
+          "position": 212,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เครสโป มะกอกดำ ไม่มีเมล็ด 387 ก.",
+              "sku_key": "sku_a05ff3dab4532e3380d9"
+            }
+          ]
+        },
+        {
+          "key": "ing_50fc618e2557ecfaeb96",
+          "name": "กิมจิ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_50fc618e2557ecfaeb96.efc7e76dacb8.webp",
+          "subcategory": "",
+          "position": 213,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "จังกึม กิมจิ 1 กก.",
+              "sku_key": "sku_4bc2edca3b190f2de489"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ของใช้สิ้นเปลือง",
+      "items": [
+        {
+          "key": "ing_57eee0d7f076ba9b6847",
+          "name": "ฟิล์มยืดหุ้มอาหาร",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_57eee0d7f076ba9b6847.ec9477fc83d9.webp",
+          "subcategory": "",
+          "position": 219,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ฟิล์มยืดหุ้มห่ออาหาร 10 นิ้ว x 500 ม.",
+              "sku_key": "sku_98e403a564efcb737b20"
+            }
+          ]
+        },
+        {
+          "key": "ing_660d9256a90b6c50c8c8",
+          "name": "กระดาษไข",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_660d9256a90b6c50c8c8.ee981c8321d6.webp",
+          "subcategory": "",
+          "position": 220,
+          "supplier_names": [
+            {
+              "supplier": "Freshket",
+              "name": "กระดาษไขเคลือบพิเศษ 45 ซม. x 30 ม. 1 ชิน/กล่อง",
+              "sku_key": "sku_8089b592f85d952a8350"
+            }
+          ]
+        },
+        {
+          "key": "ing_60dfb9a01ca53a951c4b",
+          "name": "กระดาษอเนกประสงค์",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_60dfb9a01ca53a951c4b.495ed76dff8b.webp",
+          "subcategory": "",
+          "position": 221,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ กระดาษอเนกประสงค์ 2 ชั้น แพ็ค 6+2",
+              "sku_key": "sku_a7414187d71ee00da9c7"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_cold_bag_10x15_20260922",
+          "name": "ถุงใส่ไก่",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_cold_bag_10x15_20260922.35a553270402.webp",
+          "subcategory": "",
+          "position": 222,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถุงเย็น HDPE 12 x 18 นิ้ว บรรจุ 1 กก.",
+              "sku_key": "sku_2bc31101faf5c98c888f"
+            },
+            {
+              "supplier": "GO",
+              "name": "ถุงม้วนปรุไฮเดนใส ตราซุปเปอร์เซฟ ขนาด 10X15 นิ้ว",
+              "sku_key": "sku_e0f5b38725e107a3d3a1"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_cold_bag_5x9_20260922",
+          "name": "ถุงซาลาเปา",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_cold_bag_5x9_20260922.c2c7037fff02.webp",
+          "subcategory": "",
+          "position": 223,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถุงเย็น HDPE 6 x 9 นิ้ว บรรจุ 1 กก.",
+              "sku_key": "sku_a3906af3f62b09d40563"
+            }
+          ]
+        },
+        {
+          "key": "ing_298488e46cdddbe9aad0",
+          "name": "ถุงขยะ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_298488e46cdddbe9aad0.1fab84baed64.webp",
+          "subcategory": "",
+          "position": 224,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถุงขยะดำหนา 30 x 40 นิ้ว 1 กก.",
+              "sku_key": "sku_a455ed65ecf772a45884"
+            },
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถุงขยะดำหนา 36 x 45 นิ้ว 1 กก.",
+              "sku_key": "sku_b06f5f1ceb3767a87d4f"
+            }
+          ]
+        },
+        {
+          "key": "ing_9f7c54b281eab0d6d6ae",
+          "name": "ถุงมือพลาสติก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9f7c54b281eab0d6d6ae.a4a1000ff733.webp",
+          "subcategory": "",
+          "position": 225,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "เอ ชอยซ์ ถุงมือพลาสติกอเนกประสงค์ x 100",
+              "sku_key": "sku_5a4943cccfe555b2eced"
+            },
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถุงมือพลาสติกสีฟ้า พีอี พับทีละ 2 ชิ้น",
+              "sku_key": "sku_2c77ac2bf0d8ba4b9cbb"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_food_foil_20260922",
+          "name": "ฟอยล์ห่ออาหาร",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_food_foil_20260922.0bb1004373eb.webp",
+          "subcategory": "",
+          "position": 226,
+          "supplier_names": []
+        }
+      ]
+    },
+    {
+      "name": "บรรจุภัณฑ์",
+      "items": [
+        {
+          "key": "ing_56cb254c569a7c22d624",
+          "name": "ถาดฟอยล์",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_56cb254c569a7c22d624.53449fdc78e1.webp",
+          "subcategory": "",
+          "position": 227,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ซุปเปอร์เซฟ ถาดฟอยล์เหลี่ยม พร้อมฝาเบอร์ 4432-P 230 มล. x 10",
+              "sku_key": "sku_633d309cd68e58655b47"
+            }
+          ]
+        },
+        {
+          "key": "ing_user_round_box_3_20260922",
+          "name": "กล่อง 3 ช่อง กลม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_round_box_3_20260922.e934ab94a6bf.webp",
+          "subcategory": "",
+          "position": 228,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_square_box_3_20260922",
+          "name": "กล่อง 3 ช่อง เหลี่ยม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_square_box_3_20260922.dd7a8efae1f3.webp",
+          "subcategory": "",
+          "position": 229,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_box_2_20260922",
+          "name": "กล่อง 2 ช่อง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_box_2_20260922.6aa2d6d8ab76.webp",
+          "subcategory": "",
+          "position": 230,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_box_1_20260922",
+          "name": "กล่อง 1 ช่อง",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_box_1_20260922.be5ac7816878.webp",
+          "subcategory": "",
+          "position": 231,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_sauce_cup_20260922",
+          "name": "ถ้วยน้ำจิ้ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_sauce_cup_20260922.6d1323661fb7.webp",
+          "subcategory": "",
+          "position": 232,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_cup_6oz_20260923",
+          "name": "ถ้วย 6 oz (ถ้วยอาหารเด็ก)",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_cup_6oz_20260923.a332a5fb39e3.webp",
+          "subcategory": "ถ้วย",
+          "position": 233,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_user_plastic_cutlery_20260922",
+          "name": "ช้อนส้อมพลาสติก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_user_plastic_cutlery_20260922.a41e6840b949.webp",
+          "subcategory": "",
+          "position": 234,
+          "supplier_names": []
+        }
+      ]
+    },
+    {
+      "name": "น้ำยาและอุปกรณ์ทำความสะอาด",
+      "items": [
+        {
+          "key": "ing_483f011858df5f0e1033",
+          "name": "น้ำยาล้างจาน",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_483f011858df5f0e1033.763c988e508e.webp",
+          "subcategory": "",
+          "position": 235,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "โปรเซฟ ผลิตภัณฑ์ล้างจาน 10 ล.",
+              "sku_key": "sku_8039dab79a7b029d2dfd"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้ายาล้างจาน กลินมะนาว ตราเซพแพ็ค",
+              "sku_key": "sku_f4b783b737e8cbe99c4f"
+            }
+          ]
+        },
+        {
+          "key": "ing_0275cc84b6ad5721930c",
+          "name": "น้ำยาถูพื้น",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0275cc84b6ad5721930c.7e90c8b958bd.webp",
+          "subcategory": "",
+          "position": 236,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "วิซ ถูพื้น ทรีดี ชมพู 5,200 มล.",
+              "sku_key": "sku_bc20c3af16b7a4d0e62f"
+            },
+            {
+              "supplier": "Freshket",
+              "name": "น้ายาถูพืน กลินลิลลีบูเก้ ตรามาจิคลีน (สีชมพู)",
+              "sku_key": "sku_903fb72abb8f56235df1"
+            },
+            {
+              "supplier": "GO",
+              "name": "ซันไลต์ ผลิตภัณฑ์ทำความสะอาดพื้น 3.8 ล.",
+              "sku_key": "sku_d58d84b1d661ee274049"
+            }
+          ]
+        },
+        {
+          "key": "ing_61fc4a76fdd433acefb4",
+          "name": "น้ำยาทำความสะอาดห้องน้ำ",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_61fc4a76fdd433acefb4.d2b58acdfae0.webp",
+          "subcategory": "",
+          "position": 237,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "วิม ผลิตภัณฑ์ทำความสะอาดห้องน้ำ สีเขียว 3,500 มล.",
+              "sku_key": "sku_6e4e5080214c8a9a3ed2"
+            }
+          ]
+        },
+        {
+          "key": "ing_4ca8b290839c2773ce4d",
+          "name": "ผงซักฟอก",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_4ca8b290839c2773ce4d.23b8e8681722.webp",
+          "subcategory": "",
+          "position": 238,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "โปรเซฟ ผงซักฟอก 3,000 ก.",
+              "sku_key": "sku_8941f1a34e301ff90bb4"
+            }
+          ]
+        },
+        {
+          "key": "ing_0d4c7ab953eda58e8ced",
+          "name": "น้ำยาปรับผ้านุ่มสูตรตากในร่ม",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_0d4c7ab953eda58e8ced.2861ca107bd2.webp",
+          "subcategory": "",
+          "position": 239,
+          "supplier_names": [
+            {
+              "supplier": "GO",
+              "name": "ดาวน์นี่ น้ำยาปรับผ้านุ่มเข้มข้น ตากผ้าในร่ม 2,000 มล.",
+              "sku_key": "sku_51aa60cbc48f9349e190"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
