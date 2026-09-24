@@ -12,3 +12,12 @@
 
 .staff-tools select{width:100%;min-width:0;max-width:100%}.staff-tools label{min-width:0;flex:1 1 150px}
 @media(max-width:600px){.staff-tools label{flex-basis:100%}.staff-tools select{font-size:16px}}
+/* Current stock is separate from the new draft; color always has a text label. */
+[hidden]{display:none!important}
+#personalProgress{font-size:15px;color:#655f56}.list-count{font-size:13px;color:#655f56;padding:14px 0}
+.product.stock-positive{border-left:4px solid #39805c}.product.stock-zero{border-left:4px solid #c69b79;background:#f3eee8}.product.stock-unknown{border-left:4px solid #aaa}
+.stock-badge{display:inline-block;padding:1px 6px;border-radius:4px;background:#e2f0e7;color:#23583d;font-weight:600}.stock-zero .stock-badge{background:#ecdfd1;color:#79502e}.stock-unknown .stock-badge{background:#e8e8e8;color:#555}
+.table-view .product,.table-view .product:focus-within{grid-template-columns:minmax(0,1fr) 190px;gap:12px;min-height:64px;padding:8px 12px;margin-bottom:0;border-radius:0;border-bottom:0}
+.table-view .product:last-child{border-bottom:1px solid #dedbd5}.table-view .photo,.table-view .check{display:none!important}.table-view .product h3{font-size:15px;margin:0}.table-view .stock-last{font-size:11px}.table-view .product .entry,.table-view .product:focus-within .entry{padding:0;grid-column:2;grid-row:1}.table-view .counter input{height:44px;font-size:20px}.table-view .counter-meta{height:16px;visibility:visible}
+.filters{flex-wrap:wrap}.filters button{font-size:13px}
+@media(max-width:600px){.table-view .product,.table-view .product:focus-within{grid-template-columns:minmax(0,1fr) 112px;gap:8px;padding:7px}.table-view .product h3{font-size:13px}.table-view .product:focus-within .counter{grid-template-columns:0 minmax(0,1fr) 0;gap:0}.table-view .product:focus-within .counter button{visibility:hidden;width:0}.table-view .counter input::placeholder{font-size:11px}footer>div{display:block;white-space:normal;margin-bottom:6px}.filters button{font-size:12px}}
