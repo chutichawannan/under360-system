@@ -11,7 +11,13 @@ async function request(query,options={}){
 function clean(r){
  if(!r||typeof r.id!=='string'||!/^[a-f0-9-]{36}$/.test(r.id)||!Number.isFinite(Date.parse(r.at))||typeof r.by!=='string'||!Array.isArray(r.items)||!r.items.length)throw new Error('Invalid round');
  const items=r.items.map(i=>{if(typeof i.key!=='string'||typeof i.name!=='string'||typeof i.unit!=='string'||typeof i.qty!=='number'||!Number.isFinite(i.qty)||i.qty<0)throw new Error('Invalid count');return {key:i.key,name:i.name,unit:i.unit,qty:i.qty};});
- return {id:r.id,at:r.at,by:r.by,note:String(r.note||''),dataset:String(r.dataset||'phase2-239'),items};
+ const result={id:r.id,at:r.at,by:r.by,note:String(r.note||''),dataset:String(r.dataset||'phase2-239'),items};
+ if(r.counting){
+  const c=r.counting,strings=a=>Array.isArray(a)&&a.every(k=>typeof k==='string')&&new Set(a).size===a.length;
+  if(typeof c.staffId!=='string'||typeof c.assignmentVersion!=='string'||typeof c.complete!=='boolean'||!strings(c.scopeKeys)||!strings(c.enteredKeys)||!Number.isFinite(Date.parse(c.startedAt))||!Number.isInteger(c.activeSeconds)||c.activeSeconds<0||new Set(items.map(i=>i.key)).size!==items.length||items.some(i=>!c.scopeKeys.includes(i.key))||c.enteredKeys.some(k=>!items.some(i=>i.key===k))||c.complete&&items.length!==c.scopeKeys.length||!c.complete&&items.length!==c.enteredKeys.length||items.some(i=>!c.enteredKeys.includes(i.key)&&i.qty!==0))throw new Error('Invalid counting metadata');
+  result.counting={staffId:c.staffId,assignmentVersion:c.assignmentVersion,scopeKeys:c.scopeKeys,complete:c.complete,enteredKeys:c.enteredKeys,startedAt:c.startedAt,activeSeconds:c.activeSeconds};
+ }
+ return result;
 }
 export async function saveRound(round){
  const data=clean(round),rowKey=prefix+data.id;

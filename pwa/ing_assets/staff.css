@@ -1,0 +1,14 @@
+.staff-tools{display:flex;flex-wrap:wrap;gap:12px;align-items:end;background:#fff;padding:16px;border:1px solid #ddd9d0;border-radius:16px;margin-bottom:18px}
+.staff-tools label{display:grid;gap:6px;font-weight:600;flex:1;min-width:155px}
+.staff-tools select,.staff-tools button{font:inherit;padding:12px;border:1px solid #b6b2a9;border-radius:10px;background:white;min-height:46px}
+.staff-tools small{flex-basis:100%;color:#655f56}
+.stock-last{display:block;font-size:12px;color:#736a5e;margin-top:6px;line-height:1.6}
+.product.readonly{background:#f3f2ef}.product.readonly .entry{font-size:13px;color:#69645b}
+.complete-choice{display:block;background:#fff3dc;border:1px solid #dfc38d;border-radius:12px;padding:14px;line-height:1.7;margin:14px 0}
+.complete-choice input{width:20px;height:20px;vertical-align:middle;margin-right:8px}
+#blankNames{max-height:180px;overflow:auto;margin:12px 0}#staffHint{margin:0 0 12px;line-height:1.7;color:#655f56}
+#countSync{font-size:13px;color:#655f56;margin-bottom:12px}#timerToggle{white-space:nowrap}
+@media(max-width:600px){.staff-tools{gap:10px;padding:12px}.staff-tools label{min-width:125px}.stock-last{font-size:11px}}
+
+.staff-tools select{width:100%;min-width:0;max-width:100%}.staff-tools label{min-width:0;flex:1 1 150px}
+@media(max-width:600px){.staff-tools label{flex-basis:100%}.staff-tools select{font-size:16px}}

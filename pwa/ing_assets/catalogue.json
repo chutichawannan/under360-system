@@ -1,5 +1,5 @@
 {
-  "version": "phase2-242",
+  "version": "phase2-243",
   "groups": [
     {
       "name": "ผักสด",
@@ -3075,6 +3075,15 @@
               "sku_key": "sku_246899c7e39cf971cc28"
             }
           ]
+        },
+        {
+          "key": "ing_user_seabass_20260924",
+          "name": "ปลากะพง",
+          "unit": "g",
+          "img": "",
+          "subcategory": "ปลาและอาหารทะเล",
+          "position": 25,
+          "supplier_names": []
         }
       ]
     },
