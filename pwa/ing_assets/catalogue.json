@@ -2336,7 +2336,7 @@
         {
           "key": "ing_31f0cbc55798019fae78",
           "name": "แผ่นแป้งปอเปี๊ยะเวียดนาม",
-          "unit": "g",
+          "unit": "ห่อ",
           "img": "/pwa/ing_assets/photos/thumbs/ing_31f0cbc55798019fae78.7179b96d0bc4.webp",
           "subcategory": "",
           "position": 110,
@@ -2346,7 +2346,8 @@
               "name": "ทรีเลดี้ แผ่นแป้งปอเปี๊ยะเวียดนามวงกลม 22 ซม. 340 ก.",
               "sku_key": "sku_c89850f56124483060b5"
             }
-          ]
+          ],
+          "unit_revision": "2026-09-24-count-units"
         },
         {
           "key": "ing_df6036a289968a3e854f",
@@ -3014,7 +3015,7 @@
         {
           "key": "ing_37e78fa0f6f6390fc962",
           "name": "ไข่ไก่",
-          "unit": "g",
+          "unit": "ฟอง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_37e78fa0f6f6390fc962.4e9b6fc6e787.webp",
           "subcategory": "",
           "position": 146,
@@ -3044,7 +3045,8 @@
               "name": "ไข่ไก่ เบอร์ 4 ไม่มีฝา 3 x",
               "sku_key": "sku_743fd9714d8eaef76784"
             }
-          ]
+          ],
+          "unit_revision": "2026-09-24-count-units"
         },
         {
           "key": "ing_cfd6ecc9cd956d71a8c3",
@@ -4121,16 +4123,17 @@
         {
           "key": "ing_user_seaweed_roll_sheet_20260922",
           "name": "สาหร่ายแผ่นห่อโรล",
-          "unit": "g",
+          "unit": "ห่อ",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_seaweed_roll_sheet_20260922.712db2ff2f81.webp",
           "subcategory": "",
           "position": 215,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-24-count-units"
         },
         {
           "key": "ing_f072f6c59fc33347fc03",
           "name": "สาหร่ายปรุงรสน้ำมันงา",
-          "unit": "g",
+          "unit": "ห่อ",
           "img": "/pwa/ing_assets/photos/thumbs/ing_f072f6c59fc33347fc03.25d2f781a881.webp",
           "subcategory": "",
           "position": 216,
@@ -4140,7 +4143,8 @@
               "name": "แฮเพียว เลเวอร์ ซีซามี ออยล์ สาหร่ายอบแห้งปรุงรส รสน้ำมันงา 4 ก. x 16",
               "sku_key": "sku_821f3730f012114ce416"
             }
-          ]
+          ],
+          "unit_revision": "2026-09-24-count-units"
         },
         {
           "key": "ing_9b3f8433fe052792b3d1",
