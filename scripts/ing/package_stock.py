@@ -13,7 +13,7 @@ for g in cat['groups']:
   target=out/i['img'];target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source/i['img'],target)
   i['img']='/pwa/ing_assets/'+i['img']
 (out/'catalogue.json').write_text(json.dumps(cat,ensure_ascii=False,indent=2))
-html=(source/'index.html').read_text().replace('<title>','<meta name="robots" content="noindex,nofollow"><script src="/gate.js"></script><title>',1)
+html=(source/'index.html').read_text().replace('<title>','<meta name="robots" content="noindex,nofollow"><title>',1)
 for name in ['fresh.css','photo-list.css','fresh.js']:html=html.replace('"'+name+'"','"/pwa/ing_assets/'+name+'"')
 html=html.replace('href="./"','href="/staff/v2/home"').replace('ทดลองใช้งานในเครื่อง','วัตถุดิบคงเหลือ').replace('● พื้นที่ทดลอง','● นับวัตถุดิบ').replace('บันทึกรอบใหม่ในเครื่องนี้ ไม่แก้ฐานข้อมูลจริง','เมื่อยืนยัน ระบบจะส่งรอบนับเข้าฐานข้อมูลกลาง').replace('<div id="history"></div>','<p id="syncStatus" role="status"></p><button id="syncRetry" class="outline" type="button">โหลดประวัติ / ส่งซ้ำ</button><div id="history"></div>')
 (root/'pwa/ing_stock.html').write_text(html)
