@@ -7,9 +7,10 @@ out=root/'pwa/ing_assets';out.mkdir(parents=True,exist_ok=True)
 for name in ['fresh.css','photo-list.css','fresh.js']:shutil.copy2(source/name,out/name)
 shutil.copytree(source/'fonts',out/'fonts',dirs_exist_ok=True)
 cat=json.loads((source/'reference/phase2/catalogue.json').read_text())
-assert sum(len(g['items']) for g in cat['groups'])==239
+assert sum(len(g['items']) for g in cat['groups'])==242
 for g in cat['groups']:
  for i in g['items']:
+  if not i['img']: continue
   target=out/i['img'];target.parent.mkdir(parents=True,exist_ok=True);shutil.copy2(source/i['img'],target)
   i['img']='/pwa/ing_assets/'+i['img']
 (out/'catalogue.json').write_text(json.dumps(cat,ensure_ascii=False,indent=2))
@@ -52,4 +53,4 @@ window.addEventListener('online',syncRounds);
 syncRounds();
 '''
 f.write_text(js)
-print('Packaged 239 items with local images')
+print('Packaged 242 items with local images')
