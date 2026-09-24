@@ -1,5 +1,5 @@
 {
-  "version": "phase2-239",
+  "version": "phase2-242",
   "groups": [
     {
       "name": "ผักสด",
@@ -3699,6 +3699,33 @@
               "sku_key": "sku_5fcb0c0c74c4d182e04d"
             }
           ]
+        },
+        {
+          "key": "ing_9fa24cf41ddfaa1737c7",
+          "name": "ซีอิ๊วโรคไต (101 Plus)",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_9fa24cf41ddfaa1737c7.4f703bc88cfc.webp",
+          "subcategory": "เครื่องปรุงเพิ่มเติม",
+          "position": 25,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_5f5d0d99dc0d99b3efb8",
+          "name": "น้ำมันหอยโรคไต",
+          "unit": "g",
+          "img": "/pwa/ing_assets/photos/thumbs/ing_5f5d0d99dc0d99b3efb8.dc00b01fbd88.webp",
+          "subcategory": "เครื่องปรุงเพิ่มเติม",
+          "position": 26,
+          "supplier_names": []
+        },
+        {
+          "key": "ing_2ea70fdd5f0fa79a9d8f",
+          "name": "น้ำตาลหล่อฮังก๊วย",
+          "unit": "g",
+          "img": "",
+          "subcategory": "เครื่องปรุงเพิ่มเติม",
+          "position": 27,
+          "supplier_names": []
         }
       ]
     },
