@@ -17,6 +17,23 @@ export function countItems(scope,values,complete) {
   return {key:i.key,name:i.name,unit:i.unit,qty};
  });
 }
+export function bangkokDay(at) {
+ const parts=new Intl.DateTimeFormat('en-US',{timeZone:'Asia/Bangkok',year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date(at));
+ const get=type=>parts.find(p=>p.type===type)?.value;
+ return `${get('year')}-${get('month')}-${get('day')}`;
+}
+export function groupStatus(rounds,staffId,groupKeys,day) {
+ const keys=new Set(groupKeys);
+ if(!keys.size)return 'none';
+ let partial=false;
+ for(const r of rounds){
+  if(r.counting?.staffId!==staffId||bangkokDay(r.at)!==day)continue;
+  const scoped=new Set(r.counting.scopeKeys||[]);
+  if(r.counting.complete&&groupKeys.every(k=>scoped.has(k)))return 'complete';
+  if(r.items.some(i=>keys.has(i.key)))partial=true;
+ }
+ return partial?'partial':'none';
+}
 export function validateAssignments(staff,items) {
  const keys=staff.flatMap(s=>s.item_keys);
  if(new Set(staff.map(s=>s.id)).size!==staff.length||keys.length!==items.length||new Set(keys).size!==items.length||items.some(i=>!keys.includes(i.key)))throw Error('Incomplete assignment');

@@ -14,8 +14,10 @@ function clean(r){
  const result={id:r.id,at:r.at,by:r.by,note:String(r.note||''),dataset:String(r.dataset||'phase2-239'),items};
  if(r.counting){
   const c=r.counting,strings=a=>Array.isArray(a)&&a.every(k=>typeof k==='string')&&new Set(a).size===a.length;
-  if(typeof c.staffId!=='string'||typeof c.assignmentVersion!=='string'||typeof c.complete!=='boolean'||!strings(c.scopeKeys)||!strings(c.enteredKeys)||!Number.isFinite(Date.parse(c.startedAt))||!Number.isInteger(c.activeSeconds)||c.activeSeconds<0||new Set(items.map(i=>i.key)).size!==items.length||items.some(i=>!c.scopeKeys.includes(i.key))||c.enteredKeys.some(k=>!items.some(i=>i.key===k))||c.complete&&items.length!==c.scopeKeys.length||!c.complete&&items.length!==c.enteredKeys.length||items.some(i=>!c.enteredKeys.includes(i.key)&&i.qty!==0))throw new Error('Invalid counting metadata');
-  result.counting={staffId:c.staffId,assignmentVersion:c.assignmentVersion,scopeKeys:c.scopeKeys,complete:c.complete,enteredKeys:c.enteredKeys,startedAt:c.startedAt,activeSeconds:c.activeSeconds};
+  if(typeof c.staffId!=='string'||typeof c.assignmentVersion!=='string'||typeof c.complete!=='boolean'||!strings(c.scopeKeys)||!strings(c.enteredKeys)||!Number.isFinite(Date.parse(c.startedAt))||c.activeSeconds!==undefined&&(!Number.isInteger(c.activeSeconds)||c.activeSeconds<0)||c.group!==undefined&&(typeof c.group!=='string'||!c.group.trim())||new Set(items.map(i=>i.key)).size!==items.length||items.some(i=>!c.scopeKeys.includes(i.key))||c.enteredKeys.some(k=>!items.some(i=>i.key===k))||c.complete&&items.length!==c.scopeKeys.length||!c.complete&&items.length!==c.enteredKeys.length||items.some(i=>!c.enteredKeys.includes(i.key)&&i.qty!==0))throw new Error('Invalid counting metadata');
+  result.counting={staffId:c.staffId,assignmentVersion:c.assignmentVersion,scopeKeys:c.scopeKeys,complete:c.complete,enteredKeys:c.enteredKeys,startedAt:c.startedAt};
+  if(c.activeSeconds!==undefined)result.counting.activeSeconds=c.activeSeconds;
+  if(c.group!==undefined)result.counting.group=c.group;
  }
  return result;
 }
