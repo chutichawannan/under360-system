@@ -4458,7 +4458,7 @@
         {
           "key": "ing_56cb254c569a7c22d624",
           "name": "ถาดฟอยล์",
-          "unit": "g",
+          "unit": "ชิ้น",
           "img": "/pwa/ing_assets/photos/thumbs/ing_56cb254c569a7c22d624.53449fdc78e1.webp",
           "subcategory": "",
           "position": 227,
@@ -4468,70 +4468,78 @@
               "name": "ซุปเปอร์เซฟ ถาดฟอยล์เหลี่ยม พร้อมฝาเบอร์ 4432-P 230 มล. x 10",
               "sku_key": "sku_633d309cd68e58655b47"
             }
-          ]
+          ],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_round_box_3_20260922",
           "name": "กล่อง 3 ช่อง กลม",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_round_box_3_20260922.e934ab94a6bf.webp",
           "subcategory": "",
           "position": 228,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_square_box_3_20260922",
           "name": "กล่อง 3 ช่อง เหลี่ยม",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_square_box_3_20260922.dd7a8efae1f3.webp",
           "subcategory": "",
           "position": 229,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_box_2_20260922",
           "name": "กล่อง 2 ช่อง",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_box_2_20260922.6aa2d6d8ab76.webp",
           "subcategory": "",
           "position": 230,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_box_1_20260922",
           "name": "กล่อง 1 ช่อง",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_box_1_20260922.be5ac7816878.webp",
           "subcategory": "",
           "position": 231,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_sauce_cup_20260922",
           "name": "ถ้วยน้ำจิ้ม",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_sauce_cup_20260922.6d1323661fb7.webp",
           "subcategory": "",
           "position": 232,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_cup_6oz_20260923",
           "name": "ถ้วย 6 oz (ถ้วยอาหารเด็ก)",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_cup_6oz_20260923.a332a5fb39e3.webp",
           "subcategory": "ถ้วย",
           "position": 233,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         },
         {
           "key": "ing_user_plastic_cutlery_20260922",
           "name": "ช้อนส้อมพลาสติก",
-          "unit": "g",
+          "unit": "ลัง",
           "img": "/pwa/ing_assets/photos/thumbs/ing_user_plastic_cutlery_20260922.a41e6840b949.webp",
           "subcategory": "",
           "position": 234,
-          "supplier_names": []
+          "supplier_names": [],
+          "unit_revision": "2026-09-25-packaging-units"
         }
       ]
     },
