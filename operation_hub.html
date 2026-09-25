@@ -824,6 +824,7 @@ body.counts-folded .count-grid{display:none}
           <label style="font-size:11px;font-weight:700;color:var(--ink-soft);display:block;margin-bottom:4px">ใช้ได้กับ</label>
           <select id="pc-scope-type" style="width:100%;padding:9px 11px;border:1.5px solid var(--ink-xsoft);border-radius:8px;font-size:13px;font-family:inherit" onchange="updatePromoScopeUI()">
             <option value="all">ทั้งร้าน (ทุกออเดอร์)</option>
+            <option value="a_la_carte">อาหารรายเมนูเท่านั้น (ไม่รวมเซ็ต/Meal Plan · ไม่ซ้อนโปร · สูงสุด 15%)</option>
             <option value="sku">เมนูที่เลือก</option>
             <option value="package">แพคเกจที่เลือก</option>
             <option value="mp_offer">มีลแพลนที่เลือก</option>
@@ -5533,7 +5534,7 @@ function msgRenderPlan(box,r){
 // 🎁 PROMO / COUPON MANAGEMENT
 // ══════════════════════════════════════
 var PROMO_TYPE_LABEL={fixed:"ลดเงินสด",percent:"ลด %",free_shipping:"ส่งฟรี",flat_shipping:"ค่าส่งเหมา"};
-var PROMO_SCOPE_LABEL={all:"ทั้งร้าน",sku:"เมนูที่เลือก",package:"แพคเกจที่เลือก",mp_offer:"มีลแพลนที่เลือก"};
+var PROMO_SCOPE_LABEL={a_la_carte:"อาหารรายเมนู ไม่รวมเซ็ต/Meal Plan",all:"ทั้งร้าน",sku:"เมนูที่เลือก",package:"แพคเกจที่เลือก",mp_offer:"มีลแพลนที่เลือก"};
 
 var editingPromoId=null; // uuid ของโค้ดที่กำลังแก้ไข — null = โหมดสร้างใหม่
 var _loadedPromos=[];    // แคชโค้ดที่โหลดล่าสุดจาก loadPromos() ไว้ใช้เปิดฟอร์มแก้ไข
@@ -5671,7 +5672,13 @@ async function updatePromoScopeUI(){
   var modeBtns=document.getElementById("pc-scope-mode-btns");
   if(suggestedBox)suggestedBox.disabled=!hasPromoScopeColumns;
   if(stackableBox)stackableBox.disabled=!hasPromoStackColumns;
-  if(modeBtns)modeBtns.style.display=(hasPromoStackColumns && type!=="all")?"flex":"none";
+  if(modeBtns)modeBtns.style.display=(hasPromoStackColumns && type!=="all" && type!=="a_la_carte")?"flex":"none";
+  if(type==="a_la_carte"){
+    picker.style.display="none";
+    if(stackableBox){stackableBox.checked=false;stackableBox.disabled=true;}
+    setPromoScopeMode("include");
+    return;
+  }
   if(type==="all"){ picker.style.display="none"; return; }
   if(!hasPromoScopeColumns){
     picker.style.display="block";
@@ -5741,7 +5748,7 @@ async function savePromo(){
   var scopeType=document.getElementById("pc-scope-type").value;
   if(!code){alert("กรุณากรอกรหัสโค้ด");return;}
   if(type!=="free_shipping" && val<=0){alert("กรุณากรอกมูลค่าส่วนลด");return;}
-  if(hasPromoScopeColumns && scopeType!=="all" && !_promoScopeSelected.length){alert("กรุณาเลือกรายการที่โค้ดนี้ใช้ได้อย่างน้อย 1 รายการ");return;}
+  if(hasPromoScopeColumns && scopeType!=="all" && scopeType!=="a_la_carte" && !_promoScopeSelected.length){alert("กรุณาเลือกรายการที่โค้ดนี้ใช้ได้อย่างน้อย 1 รายการ");return;}
   var row={
     code:code,
     discount_type:type,
@@ -5751,15 +5758,23 @@ async function savePromo(){
     description:(document.getElementById("pc-desc").value||"").trim(),
     expires_at:document.getElementById("pc-exp").value||null
   };
+  if(scopeType==="a_la_carte"){
+    if(!hasPromoScopeColumns || !hasPromoStackColumns){alert("ระบบยังไม่รองรับเงื่อนไขอาหารรายเมนู กรุณาลองใหม่เมื่อเชื่อมต่อฐานข้อมูลได้");return;}
+    if(!row.expires_at || !Number.isFinite(val) ||
+      !((type==="fixed" && row.min_order>0 && val<=row.min_order*0.15) ||
+        (type==="percent" && val>0 && val<=15))){
+      alert("โปรอาหารรายเมนูต้องมีวันหมดอายุ และส่วนลดไม่เกิน 15% ของยอดขั้นต่ำ (หรือเปอร์เซ็นต์ไม่เกิน 15)");return;
+    }
+  }
   if(!editingPromoId){ row.used_count=0; row.is_active=true; } // ค่าเริ่มต้นเฉพาะตอนสร้างใหม่ — ตอนแก้ไขไม่แตะสถานะเปิด/ปิดหรือจำนวนที่ใช้ไปแล้ว
   if(hasPromoScopeColumns){
     row.scope_type=scopeType;
-    row.scope_value=(scopeType==="all"?[]:_promoScopeSelected.slice());
+    row.scope_value=(["all","a_la_carte"].includes(scopeType)?[]:_promoScopeSelected.slice());
     row.show_suggested=document.getElementById("pc-suggested").checked;
   }
   if(hasPromoStackColumns){
-    row.stackable=document.getElementById("pc-stackable").checked;
-    row.scope_mode=(scopeType==="all"?"include":_promoScopeMode);
+    row.stackable=scopeType==="a_la_carte"?false:document.getElementById("pc-stackable").checked;
+    row.scope_mode=(["all","a_la_carte"].includes(scopeType)?"include":_promoScopeMode);
   }
   /* 🧨 ด่านเตือน "โค้ดระเบิดเวลา" (เลขาเสนอ 16 ก.ย. หลังเจอ UNDER50 + DISCOUNT10 วันเดียวกัน)
      อันตรายเมื่อครบทุกข้อ: ใช้ได้กับทุกอย่าง + ไม่มีวันหมดอายุ + ไม่จำกัดจำนวนครั้ง + ไม่มียอดขั้นต่ำ
@@ -5902,7 +5917,7 @@ async function loadPromos(){
       h+="<div style='font-size:15px;font-weight:800;font-family:var(--mono);letter-spacing:.5px'>"+esc2(p.code)+" <span style='font-size:11px;font-weight:600;color:#1F9D55;background:#E8F5EE;padding:2px 7px;border-radius:6px;margin-left:4px'>"+(PROMO_TYPE_LABEL[p.discount_type]||p.discount_type)+" "+valTxt+"</span>"+(p.show_suggested?" <span style='font-size:11px;font-weight:600;color:#B45309;background:#FEF3C7;padding:2px 7px;border-radius:6px;margin-left:4px'>🌟 แนะนำ</span>":"")+(p.stackable?" <span style='font-size:11px;font-weight:600;color:#1D4ED8;background:#EFF6FF;padding:2px 7px;border-radius:6px;margin-left:4px'>🔗 ซ้อนได้</span>":"")+"</div>";
       if(scopeType!=="all"){
         var scopeModeTxt=(p.scope_mode==="exclude")?"🚫 ทุกอย่าง ยกเว้น":"🎯 เฉพาะ";
-        h+="<div style='font-size:11px;font-weight:600;color:#7C3AED;margin-top:4px'>"+scopeModeTxt+" "+(PROMO_SCOPE_LABEL[scopeType]||scopeType)+" ("+((p.scope_value||[]).length)+" รายการ)</div>";
+        h+="<div style='font-size:11px;font-weight:600;color:#7C3AED;margin-top:4px'>"+scopeModeTxt+" "+(PROMO_SCOPE_LABEL[scopeType]||scopeType)+(scopeType==="a_la_carte"?" · ไม่ร่วมโปรหรือของแถมอื่น":" ("+((p.scope_value||[]).length)+" รายการ)")+"</div>";
       }
       if(p.description)h+="<div style='font-size:12px;color:var(--ink-soft);margin-top:3px'>"+esc2(p.description)+"</div>";
       h+="<div style='font-size:11px;color:var(--ink-soft);margin-top:5px'>";

@@ -2109,6 +2109,8 @@ function giftCodeOn(rule){
    ⚠️ เคยแยกกันคิดแล้วเพี้ยน: ตะกร้าขึ้น "ได้ฟรีซาลาเปา" แต่ตอนสั่งจริงไม่ได้
       ลูกค้าเห็นของที่ไม่มีอยู่จริง แย่กว่าไม่มีฟีเจอร์นี้เลย */
 function giftRuleMet(r){
+  // This scope explicitly promises no concurrent promotions (including threshold gifts).
+  if(appliedPromos.some(p => p.scope_type==='a_la_carte' && cartMatchesPromoScope(p))) return false;
   const sub = cartTotal();
   if(sub < r.min) return false;
   return r.codes.length ? giftCodeOn(r) : true;
@@ -2123,6 +2125,7 @@ function orderGiftsEarned(){
 }
 /* โปรถัดไปที่ใกล้ได้ — ไว้บอกลูกค้าว่าอีกเท่าไหร่ถึงได้ของฟรี */
 function orderGiftNext(){
+  if(appliedPromos.some(p => p.scope_type==='a_la_carte' && cartMatchesPromoScope(p))) return null;
   const sub = cartTotal();
   if(sub <= 0) return null;
   /* ข้ามกติกาที่ต้องใช้โค้ด แต่ลูกค้ายังไม่ได้กรอกโค้ดนั้น
@@ -5953,6 +5956,19 @@ function mpScopeHit(scopeValue, c){
 }
 function cartMatchesPromoScope(p){
   const scopeType = p.scope_type || 'all';
+  if(scopeType === 'a_la_carte'){
+    // Owner-authorized agent offers: no sets, Meal Plan, unknown cart types or stacking.
+    // Mixed carts must be ordered separately; never use a set to reach the minimum.
+    if(!cart.length || cart.some(c => c.type || c.package_id || c.mp_set ||
+      !c.code || !Number.isFinite(Number(c.price)) || Number(c.price)<=0 ||
+      !Number.isFinite(Number(c.qty)) || Number(c.qty)<=0)) return false;
+    const sub = cartTotal(), value = Number(p.discount_value), min = Number(p.min_order||0);
+    if(p.stackable || !Number.isFinite(sub) || !Number.isFinite(min) || sub<min ||
+      !Number.isFinite(value) || value<=0) return false;
+    const discount = p.discount_type==='fixed' ? value :
+      p.discount_type==='percent' ? Math.round(sub*value/100) : NaN;
+    return Number.isFinite(discount) && discount<=sub*0.15;
+  }
   if(scopeType === 'all') return true;
   const scopeValue = Array.isArray(p.scope_value) ? p.scope_value : [];
   const matches = c => {
@@ -6176,7 +6192,8 @@ function cwCard(p, mode, blocked){
   const face = cwFace(p);
   const cond = [];
   if((p.min_order||0) > 0) cond.push('สั่งครบ ฿'+Number(p.min_order).toLocaleString());
-  if(p.scope_type && p.scope_type!=='all') cond.push(p.scope_mode==='exclude' ? 'ยกเว้นบางรายการ' : 'เฉพาะบางรายการ');
+  if(p.scope_type==='a_la_carte') cond.push('เฉพาะอาหารรายเมนู ไม่รวมเซ็ต/Meal Plan และไม่ร่วมโปรหรือของแถมอื่น');
+  else if(p.scope_type && p.scope_type!=='all') cond.push(p.scope_mode==='exclude' ? 'ยกเว้นบางรายการ' : 'เฉพาะบางรายการ');
   if(p.stackable) cond.push('ใช้ร่วมกับคูปองอื่นได้');
   if(p.description) cond.push(h(p.description));
   return '<div class="cw'+(blocked?' dim':'')+'">'
@@ -6434,7 +6451,7 @@ async function applyPromo(codeOverride){
     if(limMsg){ showMsg(limMsg, false); return; }
     const sub = cartTotal();
     if((p.min_order||0) > sub){ showMsg('ต้องมียอดสินค้าขั้นต่ำ ฿'+p.min_order, false); return; }
-    if(!cartMatchesPromoScope(p)){ showMsg('โค้ดนี้ใช้ได้เฉพาะกับสินค้าบางรายการเท่านั้น — ตะกร้าของคุณยังไม่มีสินค้านั้น', false); return; }
+    if(!cartMatchesPromoScope(p)){ showMsg(p.scope_type==='a_la_carte' ? 'โค้ดนี้ใช้กับอาหารรายเมนูเท่านั้น กรุณาแยกเซ็ตและ Meal Plan ออกจากตะกร้า และตรวจยอดขั้นต่ำ' : 'โค้ดนี้ใช้ได้เฉพาะกับสินค้าบางรายการเท่านั้น — ตะกร้าของคุณยังไม่มีสินค้านั้น', false); return; }
     if(appliedPromos.some(x => x.id === p.id)){ showMsg('ใช้โค้ดนี้อยู่แล้ว', false); return; }
     // กติกาซ้อนโค้ด: โค้ด "ซ้อนได้" รวมกับโค้ดซ้อนได้อื่นที่ใช้อยู่ได้ / โค้ดเดี่ยว (หรือถ้ามีโค้ดเดี่ยวค้างอยู่) จะแทนที่ทั้งหมด
     if(p.stackable && appliedPromos.length && appliedPromos.every(x => x.stackable)){
