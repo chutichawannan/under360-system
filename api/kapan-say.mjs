@@ -103,7 +103,7 @@ export default async function handler(req, res) {
       body: JSON.stringify({ to: target, messages: msgs }),
     });
     if (r.ok) await logBotSaid(toGroup, full);   // จดเฉพาะที่ส่งสำเร็จ ไม่งั้นประวัติจะมีของที่ไม่เคยถึงใคร
-    return res.status(200).json({ ok: r.ok, status: r.status, ชุด: msgs.length, ปลายทาง: toGroup ? 'กลุ่ม' : 'นัท' });
+    return res.status(200).json({ ok: r.ok, status: r.status, ชุด: msgs.length, ปลายทาง: toGroup ? 'กลุ่ม' : (target === OWNER ? 'นัท' : 'พลอย') });
   } catch (e) {
     return res.status(500).json({ ok: false, why: String(e) });
   }
