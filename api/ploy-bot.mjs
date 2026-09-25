@@ -10,7 +10,7 @@
 //   ② ห้องกะปันส่งกลับ  POST { "key": "...", "text": "..." } → push หาพลอยคนเดียวเท่านั้น
 //
 //  env (ห้ามใช้ชื่อซ้ำกับ LINE_* หรือ KAPAN_* — เคยทับกันจนบอทตายเงียบ 14 ส.ค.):
-//   PLOY_BOT_CHANNEL_ID · PLOY_BOT_CHANNEL_SECRET · (PLOY_BOT_CHANNEL_ACCESS_TOKEN ไม่ใส่ก็ได้)
+//   PLOY_BOT_CHANNEL_SECRET (จำเป็นตัวเดียว) · PLOY_BOT_CHANNEL_ID ไม่ใส่ก็ได้ (ค่าเริ่ม 2007309561 = Expense Bot · provider Nut Expense) · (PLOY_BOT_CHANNEL_ACCESS_TOKEN ไม่ใส่ก็ได้)
 //  รหัส LINE ของพลอย (คนละเลขกับในบัญชีกะปัน เพราะอยู่คนละ provider) → kitchen_data key `ploy_bot_uid`
 // ============================================================
 
@@ -41,7 +41,7 @@ function verifyLine(rawBody, sig, secret) {
 let cached = null, until = 0;
 async function getToken() {
   if (process.env.PLOY_BOT_CHANNEL_ACCESS_TOKEN) return process.env.PLOY_BOT_CHANNEL_ACCESS_TOKEN;
-  const id = process.env.PLOY_BOT_CHANNEL_ID, secret = process.env.PLOY_BOT_CHANNEL_SECRET;
+  const id = process.env.PLOY_BOT_CHANNEL_ID || '2007309561', secret = process.env.PLOY_BOT_CHANNEL_SECRET;
   if (!id || !secret) return null;
   if (cached && Date.now() < until) return cached;
   try {
