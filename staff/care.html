@@ -6,7 +6,7 @@
 <title>ห้องดูแลลูกค้า — Under360</title>
 <meta name="robots" content="noindex, nofollow, noarchive">
 <script src="/gate.js"></script>
-<meta name="theme-color" content="#10221A">
+<meta name="theme-color" content="#1757f5">
 <style>
 /* ═══ ห้องดูแลลูกค้า (f-track · 24 ก.ย. 2569) ═══
    นัทสั่ง: "สร้างห้องแชทรวมสำหรับลูกค้ากลุ่มนี้ · ดูได้ว่าสั่งอะไรล่าสุด · ให้ AI แนะนำว่าทักอะไรดี"
@@ -15,48 +15,54 @@
       หน้านี้จึงรวม "ทุกอย่างที่เรามี" = ประวัติสั่งซื้อ + เมนูที่สั่งจริง + ร่างข้อความ + โน้ตแอดมิน
       ช่องแชทจริงจะต่อได้เมื่อเปิด webhook เก็บข้อความขาเข้า (ดู docs/BRIEF_CHAT_INGEST.md)
    ร่างข้อความ = เทมเพลตตามสถานการณ์ + เมนูที่ลูกค้าเคยสั่งจริง — แอดมินแก้ได้ก่อนส่งเสมอ */
-:root{--bg:#0f1115;--card:#181b22;--line:#262b36;--tx:#e8eaf0;--dim:#8c94a6;--gold:#e0b341;--hot:#ff7043;--due:#4fc3f7;--warn:#ffc043;--lost:#ef5350;--ok:#2ecc71}
+:root{--cream:#fcf8ef;--ink:#07183e;--muted:#53627b;--blue:#1757f5;--sky:#d9eaff;--apricot:#ffdfac;--line:#dfded8;
+  --gold:#8a6410;--hot:#b1430f;--due:#0f5fa8;--warn:#8a6410;--lost:#a32020;--ok:#1a7a43}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.55 -apple-system,"Segoe UI",sans-serif}
-header{position:sticky;top:0;background:#0f1115f2;backdrop-filter:blur(8px);padding:10px 14px 0;border-bottom:1px solid var(--line);z-index:5}
-h1{font-size:16px;margin:0}
-.sub{color:var(--dim);font-size:12.5px;margin:3px 0 8px}
-.tabs{display:flex;gap:6px;overflow-x:auto;padding-bottom:10px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
-.tab{white-space:nowrap;padding:7px 11px;border-radius:999px;background:var(--card);border:1px solid var(--line);color:var(--dim);font-size:13.5px}
-.tab.on{background:#2b3140;color:var(--tx);border-color:#3b4354}
-.wrap{display:flex;gap:12px;padding:12px 14px;align-items:flex-start}
-.side{width:230px;flex:0 0 auto;max-height:78vh;overflow:auto}
-.row{padding:9px 10px;border-radius:11px;border:1px solid var(--line);background:var(--card);margin-bottom:7px}
-.row.on{border-color:#2563eb;background:#182136}
-.row b{font-size:13.5px;display:block}
-.row span{color:var(--dim);font-size:11.5px}
+body{margin:0;background:var(--cream);color:var(--ink);
+  font-family:"LINE Seed Sans TH","Leelawadee UI",-apple-system,"Segoe UI",Tahoma,sans-serif;font-size:16px;line-height:1.55}
+header{position:sticky;top:0;background:#fcf8efeb;backdrop-filter:blur(8px);padding:14px 18px 0;border-bottom:1px solid var(--line);z-index:5}
+h1{font-size:23px;margin:0;font-weight:800;letter-spacing:-.4px}
+.sub{color:var(--muted);font-size:13px;margin:4px 0 10px}
+.tabs{display:flex;gap:7px;overflow-x:auto;padding-bottom:12px;scrollbar-width:none}.tabs::-webkit-scrollbar{display:none}
+.tab{white-space:nowrap;padding:9px 14px;border-radius:999px;background:#fff;border:1px solid #c4cddd;color:var(--muted);font-size:14px;font-weight:700}
+.tab.on{background:var(--blue);color:#fff;border-color:var(--blue)}
+.wrap{display:flex;gap:16px;padding:16px 18px 40px;align-items:flex-start;max-width:1160px;margin:0 auto}
+.side{width:250px;flex:0 0 auto;max-height:76vh;overflow:auto}
+.row{padding:12px 13px;border-radius:14px;border:1px solid var(--line);background:#fff;margin-bottom:9px;cursor:pointer}
+.row.on{border-color:var(--blue);background:var(--sky);box-shadow:0 3px 0 #dce6ff}
+.row b{font-size:14.5px;display:block}
+.row span{color:var(--muted);font-size:12px}
 .main{flex:1;min-width:0}
-.c{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:13px;margin-bottom:11px}
-.nm{font-weight:700;font-size:17px}
-.tags{margin:6px 0;display:flex;gap:5px;flex-wrap:wrap}
-.t{font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
-.t.vip{color:var(--gold);border-color:#6b5420;background:#2a2210}
-.t.hot{color:var(--hot);border-color:#6b3420;background:#2a1710}
-.t.due{color:var(--due);border-color:#1f4c6b;background:#10202a}
-.t.warn{color:var(--warn);border-color:#6b5420;background:#2a2210}
-.t.lost{color:var(--lost);border-color:#6b2020;background:#2a1010}
-.t.new{color:var(--ok);border-color:#1f6b40;background:#102a1c}
-.g{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:9px 0}
-.g div{background:#12151c;border-radius:9px;padding:6px 8px}
-.g b{display:block;font-size:14px}.g span{color:var(--dim);font-size:10.5px}
-h3{font-size:13px;color:var(--dim);margin:14px 0 6px;font-weight:600}
-.ord{border-left:2px solid var(--line);padding:4px 0 4px 10px;margin-bottom:8px;font-size:13.5px}
-.ord .d{color:var(--dim);font-size:11.5px}
-.ord .it{color:#b9c0d0;font-size:12.5px}
-textarea{width:100%;background:#12151c;border:1px solid var(--line);color:var(--tx);border-radius:11px;padding:11px;font:inherit;font-size:13.5px;min-height:96px;resize:vertical}
-.act{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
-button{padding:10px 14px;border-radius:10px;border:0;background:#2b3140;color:var(--tx);font:inherit;font-size:13.5px;font-weight:600}
-button.p{background:#2563eb}button.g2{background:#17482e}
-input{width:100%;background:#12151c;border:1px solid var(--line);color:var(--tx);border-radius:10px;padding:9px 11px;font:inherit;font-size:13.5px}
-.done{color:var(--ok);font-size:12px;margin-top:7px}
-.note{color:var(--dim);font-size:12px;background:#12151c;border:1px dashed var(--line);border-radius:10px;padding:9px 11px;margin-top:10px}
-.load{color:var(--dim);text-align:center;padding:40px 0}
-@media(max-width:760px){.wrap{flex-direction:column}.side{width:100%;max-height:none;display:flex;gap:7px;overflow-x:auto}.side .row{min-width:180px}}
+.c{background:#fff;border:1px solid var(--line);border-radius:22px;padding:22px 24px;margin-bottom:14px}
+.nm{font-weight:800;font-size:26px;letter-spacing:-.3px}
+.tags{margin:9px 0;display:flex;gap:6px;flex-wrap:wrap}
+.t{font-size:12px;padding:4px 11px;border-radius:999px;font-weight:700}
+.t.vip{color:#6b4b06;background:var(--apricot)}
+.t.hot{color:#8c3608;background:#ffddcb}
+.t.due{color:#0c4b86;background:var(--sky)}
+.t.warn{color:#6b4b06;background:#ffeec2}
+.t.lost{color:#8f1b1b;background:#ffdada}
+.t.new{color:#14663a;background:#d4f5e2}
+.g{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:14px 0}
+.g div{background:var(--sky);border-radius:16px;padding:13px 15px}
+.g b{display:block;font-size:21px;font-weight:800;letter-spacing:-.4px}
+.g span{color:#344969;font-size:12px}
+h3{font-size:14px;color:var(--muted);margin:20px 0 9px;font-weight:700}
+.ord{border-left:3px solid var(--sky);padding:5px 0 5px 12px;margin-bottom:11px;font-size:14px}
+.ord .d{color:var(--muted);font-size:12.5px}
+.ord .it{color:var(--ink);font-size:13.5px}
+textarea{width:100%;background:#fffdf8;border:1px solid #bbc8d9;color:var(--ink);border-radius:14px;padding:14px;font:inherit;font-size:15px;min-height:120px;resize:vertical;line-height:1.7}
+textarea:focus-visible,input:focus-visible{outline:3px solid var(--blue);outline-offset:2px}
+.act{display:flex;gap:10px;margin-top:12px;flex-wrap:wrap}
+button{padding:13px 18px;border-radius:13px;border:1px solid transparent;background:#e5eeff;color:var(--ink);font:inherit;font-size:14.5px;font-weight:700;cursor:pointer;min-height:48px}
+button.p{background:var(--blue);color:#fff;box-shadow:0 4px 0 #dce6ff}
+button.g2{background:#d4f5e2;color:#14663a}
+input{width:100%;background:#fffdf8;border:1px solid #bbc8d9;color:var(--ink);border-radius:12px;padding:12px 14px;font:inherit;font-size:14.5px;min-height:48px}
+.done{color:#14663a;font-size:13px;margin-top:9px;font-weight:700}
+.note{color:var(--muted);font-size:13px;background:#fff8ec;border:1px solid var(--apricot);border-radius:14px;padding:12px 14px;margin-top:14px;line-height:1.7}
+.load{color:var(--muted);text-align:center;padding:40px 0}
+@media(max-width:760px){.wrap{flex-direction:column;padding:14px 16px 40px}.side{width:100%;max-height:none;display:flex;gap:8px;overflow-x:auto}.side .row{min-width:190px}
+  h1{font-size:20px}.nm{font-size:22px}.c{padding:18px;border-radius:18px}.g{grid-template-columns:1fr 1fr}}
 </style></head><body>
 <header>
   <h1>ห้องดูแลลูกค้า</h1>
