@@ -8,7 +8,7 @@ function write(k,v){try{localStorage.setItem(prefix+k,JSON.stringify(v));return 
 const unit=v=>({g:'กรัม',kg:'กก.'}[v]||v),fmt=v=>Number(v).toLocaleString('th-TH',{maximumFractionDigits:3});
 const stamp=at=>new Date(at).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 let items=[],staff=[],rounds=read('rounds',[]),values={},selected='',filter='all',page=0,latest=new Map(),startedAt=null,activeMs=0,running=false,tick=0,ready=false,reviewScope=[];
-const dataset='phase2-243',unitRevision='2026-09-24-count-units';
+const dataset='phase2-243',unitRevision='2026-09-25-packaging-units';
 if(!Array.isArray(rounds))rounds=[];
 const person=()=>staff.find(s=>s.id===selected);
 const scope=()=>selected==='legacy'?items:items.filter(i=>person()?.item_keys.includes(i.key));
@@ -34,7 +34,7 @@ function selectStaff(id){
  setRunning(false);selected=id;const d=read(draftKey(),{});
  values=validValues(selected==='legacy'?d:d.values);
  const oldUnits=selected==='legacy'?read('legacy-unit-revision',''):d.unitRevision;
- const changed=items.filter(i=>i.unit_revision&&oldUnits!==unitRevision&&Object.hasOwn(values,i.key));
+ const changed=items.filter(i=>i.unit_revision&&(!oldUnits||oldUnits<i.unit_revision)&&Object.hasOwn(values,i.key));
  if(changed.length){
   if(!write('unit-migration-backup-'+selected+'-'+Date.now(),d)){values={};selected='';$('staffSelect').value='';render();return;}
   changed.forEach(i=>delete values[i.key]);
