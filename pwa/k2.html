@@ -281,7 +281,7 @@ function shortCode(m){ return (m.subcode&&String(m.subcode).trim()) ? String(m.s
 let VIEW='pack', DAY=thaiToday(), USER='';
 let MENUS=[], ORDERS=[], ITEMS={}, PACK={}, PLAN={}, HIST=[];
 /* 11 ก.ย. 2569 (นัท "เติมเลยด่วน"): กำลังผลิต (stock_incoming) · แผนป้าย+ยอดวางขายของนิว · รอบ Meal Plan */
-let INC={}, SUBPLAN={}, STOCKPLAN={}, MPD=[];
+let INC={}, SUBPLAN={}, STOCKPLAN={}, MPD=[], MENU_WEEKS={};
 /* MAKE = "จะทำเพิ่ม" ต่อเมนู: { menu_id: {n, from:'YYYY-MM-DD', by, at} }
    เก็บแยกจาก actual_stock โดยตั้งใจ — ห้ามเอาไปรวมกันไม่ว่ากรณีใด */
 let MAKE={};
@@ -309,7 +309,7 @@ async function loadAll(){
     s.from('menu_items').select('id,code,subcode,name,stock_total,actual_stock,is_available,category').limit(1000),
     s.from('orders').select('id,order_number,customer_name,line_display_name,want_utensils,status,delivery_date,created_at,source,total,customer_id,line_uid')
       .gte('delivery_date',from).lte('delivery_date',to).limit(1000),
-    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig','stock_incoming','weekly_subcode_plan','weekly_stock_plan','k2_make']).limit(10),
+    s.from('kitchen_data').select('key,data').in('key',['k2_pack','k2_plan','appConfig','stock_incoming','weekly_subcode_plan','weekly_stock_plan','k2_make','menu_special_weeks']).limit(10),
     /* รอบ Meal Plan — หน้าครัวเดิมมีคิวนี้ · k2 เดิมอ่านจากใบอย่างเดียว รอบที่ใบลงวันอื่นจึงหายจากจอ */
     s.from('mp_deliveries').select('id,order_id,customer_name,delivery_date,round_no,total_rounds,mp_type,box_count,status').gte('delivery_date',from).lte('delivery_date',to).limit(1000)
   ]);
@@ -329,7 +329,7 @@ async function loadAll(){
     }
   }catch(e){ PREFS={}; }   /* อ่านไม่ได้ = ไม่โชว์ ดีกว่าทำให้ทั้งหน้าพัง — แต่ครัวจะไม่เห็นคำเตือน */
   MPD=((mpr&&mpr.data)||[]).filter(r=>r.status!=='cancelled');
-  (kd.data||[]).forEach(r=>{ if(r.key==='stock_incoming')INC=r.data||{}; if(r.key==='weekly_subcode_plan')SUBPLAN=r.data||{}; if(r.key==='weekly_stock_plan')STOCKPLAN=r.data||{}; });
+  (kd.data||[]).forEach(r=>{ if(r.key==='menu_special_weeks')MENU_WEEKS=r.data||{}; if(r.key==='stock_incoming')INC=r.data||{}; if(r.key==='weekly_subcode_plan')SUBPLAN=r.data||{}; if(r.key==='weekly_stock_plan')STOCKPLAN=r.data||{}; });
   (kd.data||[]).forEach(r=>{ if(r.key==='k2_pack')PACK=r.data||{}; if(r.key==='k2_plan')PLAN=r.data||{}; if(r.key==='k2_make')MAKE=r.data||{};
     if(r.key==='appConfig'){ CAT_LABEL={}; ((r.data&&r.data.categories)||[]).forEach(c=>{ if(c&&c.key) CAT_LABEL[c.key]=c.label||c.key; }); } });
 
@@ -343,7 +343,7 @@ async function loadAll(){
 }
 async function loadHist(){
   const s=getSB(); if(!s) return;
-  const r=await s.from('activity_log').select('actor,summary,created_at,source')
+  const r=await s.from('activity_log').select('actor,summary,created_at,source,detail')
     .eq('action_type','stock').gte('created_at',dPlus(thaiToday(),-7))
     .order('created_at',{ascending:false}).limit(120);
   HIST=r.data||[]; if(VIEW==='count') render();
@@ -683,11 +683,24 @@ function countGroups(list){
   list.forEach(m => { const k = catKey(m); (g[k] = g[k] || []).push(m); });
   return Object.keys(g).sort((a,b) => g[b].length - g[a].length || catLabel(a).localeCompare(catLabel(b), "th")).map(k => ({ key:k, items:g[k] }));
 }
+function countedMenu(m){
+  return HIST.some(r => r.detail && (r.detail.menu_id === m.id || (!r.detail.menu_id && r.detail.code === m.code)));
+}
+function countMenuLabel(m){
+  const nick=shortCode(m), code=String(m.code||'');
+  return nick===code ? code : nick+' · '+code;
+}
+function countWeekLabel(m){
+  const start=MENU_WEEKS[m.code];
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(start||'')) return '';
+  const end=new Date(start+'T00:00:00Z'); end.setUTCDate(end.getUTCDate()+6);
+  return 'รอบ '+start+' – '+end.toISOString().slice(0,10);
+}
 function viewCount(){
   const bk=bookedOpen();
   let h='<div class="hint">นับ <b>เฉพาะของที่ยังไม่ได้จัด</b> — ถุงที่จัดใส่ไว้แล้วไม่ต้องนับ<br>พิมพ์เลขที่นับได้ลงไปตรง ๆ ระบบไม่แก้เลขของคุณ และไม่เด้งกลับ</div><div class="wrap">';
   const openMenus = MENUS.filter(m=>m.is_available!==false);
-  const isCounted = m => HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
+  const isCounted = countedMenu;
   /* จองวันนี้ + พรุ่งนี้ — ของที่กำลังจะออกจากตู้ */
   const bkToday=bookedOn(DAY), bkNext=bookedOn(dPlus(DAY,1)), bookedSoon={};
   MENUS.forEach(m=>{ const n=(bkToday[m.id]||0)+(bkNext[m.id]||0); if(n) bookedSoon[m.id]=n; });
@@ -726,11 +739,12 @@ function viewCount(){
        ความจริงคือ **ไม่มีใครเคยกรอกสักครั้ง** (activity_log พูดถึง MC1 = 0 แถว)
        และ stock_total = null แปลว่าขายได้ไม่จำกัดอยู่แล้ว — อันตรายกว่า 0 เสียอีก
        → ถ้า 7 วันนี้ไม่มีร่องรอยการนับ ต้องบอกตรง ๆ ว่า "ยังไม่เคยนับ" ห้ามปล่อยให้เลข 0 พูดแทน */
-    const counted = HIST.some(r => String(r.summary||'').indexOf(shortCode(m)+' ') === 0);
+    const counted = countedMenu(m);
     const unlimited = (m.stock_total == null);
-    h+='<div class="crow">'
-     +'<div style="flex:1"><div class="code">'+esc(shortCode(m))+'</div>'
-     +'<div class="mini">'+esc(String(m.name||'').slice(0,26))+'</div>'
+    h+='<div class="crow" data-menu-id="'+esc(m.id)+'">'
+     +'<div style="flex:1"><div class="code">'+esc(countMenuLabel(m))+'</div>'
+     +'<div class="mini">'+esc(m.name||'')+'</div>'
+     +(countWeekLabel(m)?'<div class="mini">'+esc(countWeekLabel(m))+'</div>':'')
      +(free!=null&&free<0?'<div class="diff">⚠️ จองไว้ '+booked+' มากกว่าที่นับได้</div>':'')
      +(!counted?'<div class="mini warn2">🕳️ ยังไม่เคยนับใน 7 วัน — เลขนี้ไม่ได้มาจากการนับ</div>':'')
      +(unlimited?'<div class="mini warn2">♾️ ตอนนี้ขายได้ไม่จำกัด — ลูกค้าสั่งเกินของได้</div>':'')
@@ -1092,7 +1106,7 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadAll(
     view.querySelectorAll('.card').forEach(el=>{const handler=el.querySelector('.row')?.getAttribute('onclick');const id=handler?.match(/'([^']+)'/)?.[1];const order=ORDERS.find(o=>o.id===id);el.dataset.complete=String(order?isDone(order):false);});
     view.querySelectorAll('.cnt').forEach(input=>{const code=input.closest('.crow').querySelector('.code').textContent;input.setAttribute('aria-label',(VIEW==='count'?'จำนวนที่นับได้ ':'จำนวนที่จะผลิต ')+code);input.min='0';input.step='1';});
     // Add full names to the existing short labels; retain alerts and all original handlers.
-    view.querySelectorAll('.crow').forEach(el=>{const code=el.querySelector('.code')?.textContent;const menu=MENUS.find(m=>shortCode(m)===code);if(!menu)return;const mini=el.querySelector('.mini');if(VIEW==='plan'){/* แถวมีชื่อเมนูอยู่แล้วตั้งแต่ตอนวาด — เติมซ้ำจะได้ชื่อ 2 บรรทัด */}else if(mini)mini.textContent=menu.name;});
+    // Names are rendered from each row's menu object; never resolve by a reused weekly nickname.
     applyFilter();
   }
   const originalRender=render;render=function(){originalRender();enhance();};
