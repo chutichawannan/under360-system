@@ -1,0 +1,1360 @@
+# Under360 — CLAUDE.md
+
+> 🧠 **เริ่มที่นี่ก่อน (25 ก.ย. 2569): อ่าน [`brain/NOW.md`](brain/NOW.md) → [`brain/RULES.md`](brain/RULES.md) → [`brain/BUSINESS.md`](brain/BUSINESS.md)** — สมองกลางของทุกเครื่องทุกห้อง · ไฟล์นี้กำลังจะถูกย่อให้เหลือเรื่องเทคนิค
+
+> 🔴 **อ่าน [`docs/IRON_RULES.md`](docs/IRON_RULES.md) ก่อนแตะอะไรก็ตามที่ลูกค้าหรือครัวใช้อยู่**
+> เขียนขึ้น 18 ส.ค. 2026 หลัง CC ทำให้ลูกค้าสั่งอาหารไม่ได้ทั้งร้านข้ามคืน
+> สาระ: **กระทบงานหลัก = ผิดหนักที่สุด** · **"วิเคราะห์" ไม่ใช่ "ลงมือ"** · **แตะของจริงต้องเปิดดูด้วยตาทันที** · **ห้ามเปลี่ยนครึ่งทาง**
+> อ่านไฟล์นี้ก่อนทำงานทุกครั้ง — Single source of truth
+> **12 ก.ค. 2026:** รวมจาก `UNDER360_MASTERNOTE_v6_7.md` + `UNDER360_HISTORY.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว) — เก็บรายละเอียดเทคนิค/บั๊กเดิมของ CLAUDE.md ไว้ครบ + เพิ่มชั้น Marketing/Brand/Agent roster จาก masternote
+
+**ระบบเวอร์ชัน 5 แทร็ค (เดิม 4 · เพิ่ม `f` 27 ก.ค. 2026 นัทเคาะเอง):** **u** = Under System (โค้ดหลังบ้านทั้งหมด รวม FB bot) · **m** = Marketing (GBP/Blog/Ads/Web) · **a** = Agents (นิว→เก่ง→ฟ้า→เตียง→เอิธ) · **f** = Finance (P&L/ต้นทุน/บัญชี — ดูหัวข้อ 💰 f-track) · **doc** = เอกสารกลาง (MASTERNOTE + HISTORY — ไฟล์แชท ไม่ push git, รวมเป็น CLAUDE.md เฉพาะตอนนัทกลับถึงคอม) — Claude เคาะเลขเวอร์ชันตอนปิด session ใหญ่ ถ้านัทส่ง MASTERNOTE+HISTORY ใหม่มาอีกครั้ง ให้ merge เข้าไฟล์นี้แบบเดียวกับที่ทำรอบนี้
+
+---
+
+## 📊 Big-Picture Roadmap — 7 เสาหลัก (อ่านก่อนเสมอ)
+
+> **ภาพรวมทั้งโปรเจคหลังบ้าน ~27%** — เสา 1 (โค้ด) ใกล้เสร็จแล้ว แต่เสา 2–7 แทบยังไม่เริ่ม เป้าหมายโปรเจค: กลับไป **500,000฿/เดือน** (เคย peak 300-500K ก่อนโควิด)
+
+| # | เสาหลัก | % | สถานะสั้น |
+|---|--------|---|----------|
+| 1 | **ระบบ Order & ลูกค้า (Online)** | 90% | LIFF/DB/KQ/OH live + **payment status · ระยะขับจริง · แพคส่งฟรี · รูปเมนู 70/thumb** (u0.4.36) · SQL หลักรันครบ · **migrate Hato 2 ปีครบ: 15,801 ออเดอร์ · 40,845 order_items · 3,217 ลูกค้า (เลขซ้ำ 0)** + pre-Hato 2016-22 อีก 4,244 ราย → **customers ~7,666** — เหลือ LINE token + **beta test (เทส iOS/ข้ามเครื่อง+เทส 1 ออเดอร์)** + Enable Distance API |
+| 2 | **ปฏิบัติการ & ต้นทุน** (ครัว/ส่ง/ไฟ/แกส/คน) | 20% | subsidize ค่าส่ง 30-50K/ด → เป้าแรกพี่เก่ง · 🆕 **มี f-track ดูแลแล้ว (27 ก.ค. — ดูหัวข้อ 💰 f-track)**: ฝั่งขาย (`orders`) ครบ · **ฝั่งต้นทุนไม่มีที่จดเลย ยืนยันแล้ว 2 ชั้น** (`expenses` table 404 + ไม่มีใครจดมือ) → **statement ธนาคารคือแหล่งเดียว** · ค่าใช้จ่ายคงที่ที่ยืนยันแล้ว ~144,600/ด · **ครัวเป็นของตัวเอง ไม่มีค่าเช่า** |
+| 3 | **Product-Market Fit** (เมนู↔มาเก็ตติ้ง) | 15% | ✅ ตอบแล้ว: หัวหอก = Meal Plan (HP+LC) กรุงเทพ · ตจว./แพ็คกับข้าว = passive · ค้าง: วัดสัดส่วนยอด HP vs LC จริง |
+| 4 | **CRM & Customer Intelligence** | 20% | 🚨 **LINE OA ~20,000 followers → ลูกค้าจริง <100 คน/สัปดาห์ (<0.5%)** — เพิ่มยอดเท่าตัวไม่ต้องหาคนใหม่ · **GAP: แอดมินไม่เคยตามลูกค้าคอร์สจบเลย** = เงินหล่นทุกสัปดาห์ (ดู "🚨 CRM insight") |
+| 5 | **Marketing Engine** (SEO+GEO+Ads+Influencer) | 20% | GBP ✅ · blog 3 ตัวขึ้น Wix ✅ · Google Ads verify ผ่าน ✅ · keyword ทองคำขุดแล้ว · เว็บใหม่เขียนครบรอ deploy |
+| 6 | **AI Agents** (นิว→เก่ง→ฟ้า→เตียง→เอิธ) | 20% | **เอิธ = a0.5** (subagent + widget + LINE OA/CRM deep dive + 🆕 **broadcast wave 1 ยิงจริง 5 ใบ 1,809 คน** win-back RFM) นำหน้าสุด · **นิว spec locked — order_items ครบแล้ว (Hato migrate 40,845 รายการ) = ปลดล็อก พร้อมโค้ด** · เก่ง/ฟ้า/เตียง = spec · **ตัวถัดไป = Agent QA แอดมิน LINE OA (ปลดล็อก)** |
+| 7 | **Under360 Base** (virtual office ปลายทาง) | 2% | วิสัยทัศน์ปลายทาง = v1.0 |
+
+**⚙️ Sequencing:** **เลนโค้ด** (LIFF/FB bot/เว็บ Vercel — ต้องนั่งคอม+Claude Code) vs **เลนสมอง** (ออกแบบ agent/marketing/คอนเทนต์/ตั้งค่า platform — ทำผ่านมือถือได้) — ดูหัวข้อ "🧭 Roadmap ที่ถูกต้อง" ด้านล่างสำหรับกฎกันหลงทางแบบเต็ม
+
+**กฎ delegate (นัทสั่ง):** งานไหน AI agent ทำแทนได้ → เสนอ delegate เสมอ อย่าทำมือซ้ำๆ ไปเรื่อยๆ — จดเข้า backlog agent ที่เกี่ยวข้อง
+
+---
+
+## 🏪 Project Overview
+
+**Under360** — Healthy food delivery กรุงเทพฯ มา 10 ปี
+- **นัท** = sole back-of-house (ครัว สูตร ต้นทุน inventory + ดูแล IT ทั้งหมดด้วย AI) — ไม่มี coding background, Claude เขียนโค้ดทั้งหมดแล้ว push GitHub
+- **พลอย (Thunyathorn)** = ภรรยา/เจ้าของร่วม — ดูแล marketing + on-ground กรุงเทพทั้งหมด (นัท=หลังบ้าน, พลอย=หน้าบ้าน ไม่แย่ง territory กัน)
+
+```
+GitHub:  github.com/chutichawannan/under360-system
+Vercel:  under360-system.vercel.app (auto-deploy จาก GitHub ทันที)
+```
+
+**Working loop:** แก้โค้ด → `git commit` → `git push` → Vercel deploy อัตโนมัติ → test
+
+---
+
+## 🔑 Credentials (ใช้ตรงๆ ในโค้ด)
+
+```
+Supabase URL:   https://zdartbvhbvqlwzwyyiia.supabase.co
+Supabase anon:  eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8
+LIFF ID:        2011148232-oul66cEs   <- ใช้จริง (21 ส.ค. 2026) provider UNDER360FOOD = บ้านเดียวกับช่องส่งข้อความ
+LIFF ID (เก่า): 2010442513-NI3JGTkb   <- ยังใช้ได้ (โค้ดรับ 2 ประตู) แต่ push หาลูกค้าไม่ได้ อย่าเอาไปใช้กับของใหม่
+LINE Messaging: แชนแนล 2005639534 (Under360 Cleanfood)
+Google Maps:    AIzaSyDYjI7S2_KTrUXSYxUPNJOXMFPJyUsXH_U
+ครัว LAT/LNG:  13.7179969, 100.5010971
+PROMPTPAY:      0846556601 (ออมสิน 020272500180)
+Omise:          1%/transaction credit card
+Anthropic API:  platform.claude.com (แยกบิลจาก claude.ai subscription)
+เบอร์ร้าน (GBP): 064 173 6519
+Google Ads:     under360food@gmail.com (ocid 202127689) — Active ✅ verified · Customer ID 318-768-6554
+GBP:            under360food@gmail.com = Primary owner · พลอย = Owner
+```
+
+---
+
+## 🛠️ Tech Stack
+
+| Layer | Tool |
+|-------|------|
+| Frontend | Vanilla HTML/CSS/JS — **single-file per page** (ห้ามแยก JS/CSS) |
+| Backend | Supabase (DB + Storage) |
+| Deploy | GitHub → Vercel (auto-deploy) |
+| Customer | LINE LIFF (`2010442513-NI3JGTkb`) |
+| Storage | `menu-images` (Public) · `card-images` (Public) |
+| Web/SEO | 360foodbox.com (ปัจจุบัน Wix — blog live · กำลังย้าย Vercel ดูหัวข้อ "🌐 เว็บใหม่" — **ห้ามยกเลิก Wix ก่อนย้ายโดเมนเสร็จ**) |
+| Marketing | GBP · Google Ads · FB 81.9K followers · IG 68.6K followers · LINE OA (broadcast รายสัปดาห์ผ่าน HatoHub) |
+
+---
+
+## 📁 Files
+
+| ไฟล์ | หน้าที่ | สถานะ |
+|------|--------|-------|
+| `liff_customer.html` | LIFF ลูกค้า: เมนู + checkout + Meal Plan self-service + สั่งเซ็ต/คอร์ส (popup + subcode) + multi-round delivery split + ป้อบอัพเมนู/lightbox | ✅ live (u0.4.28) |
+| `main_database_v2.html` | DB เมนู/วัตถุดิบ + packages/set builder (กลุ่มการเลือก/หลายหมวดรวมนับ) + หมวดหมู่ (merge/กันซ้ำ) + สต็อกจริง + Activity Log | ✅ live (u0.4.28) — optimize ขนาดไฟล์แล้ว (330KB) |
+| `home_editor.html` | จัด HomeGrid + routing Package/MP + anchor point เมนูเฉพาะ | ✅ live (v0.4.21) |
+| `kitchen_queue.html` | หน้าครัว + Meal Plan queue แยก view + print + วันที่สั่ง/ส่ง + log ทุกคลิกปุ่มสถานะ + ระบบชื่อผู้ใช้ | ✅ live (v0.4.22) |
+| `operation_hub.html` | Admin hub (orders/menu/แพลนเมนู/promo/messenger/customer/HE + เปิด KQ/DB/report ผ่าน iframe) | ✅ live |
+| `customer.html` | ข้อมูลลูกค้า standalone | ✅ live |
+| `batch_photo_upload.html` | Batch upload รูปเมนูจากภาพโบรชัวร์ (AI vision จับตำแหน่ง+ชื่อ, fuzzy match, crop, upload) | 🟡 เขียนเสร็จ ต่อ Supabase/Storage จริงแล้ว — ยังไม่เคยรันจริงสักครั้ง ดูหมวด "Photo Migration" ด้านล่างก่อนรัน |
+| `liff_register.html` | สมัครสมาชิก | ✅ ต่อ Supabase จริง (upsert customers) — ไม่ใช่ mock แล้ว |
+| `liff_profile.html` | โปรไฟล์ลูกค้า | 🟡 ดึงจริงก่อน (customers+orders join) เหลือ mock แค่ fallback ตอน query พัง |
+| `report.html` | รายงาน | deployed (mock data ทั้งหมด) — 🆕 นัทอยากได้เร็วขึ้น (ใช้วัด HP vs LC) |
+| `landing.html` | FB/IG → LINE bridge — 🆕 จะใช้เป็น landing กลาง FB Ads แทนชี้ตรงเข้า LINE (ดู FB Attribution) | deployed |
+| `api/webhook.js` | Meta Webhook scaffold | built, ยังไม่ configure |
+| `api/notify-mp-requests.js` | Cron แจ้งเตือน Meal Plan (เปิด request window / auto no-change / เตือนก่อนส่ง 1 วัน) | ✅ live — รอตั้ง `LINE_CHANNEL_ACCESS_TOKEN` ถึงจะส่ง LINE จริง |
+| `PRD.md` | **สเปคงานที่กำลังทำอยู่ตอนนี้เท่านั้น** (1 งาน 1 แผ่น) — เขียนทับทุกครั้งที่เปลี่ยนงาน · Claude อ่านก่อนลงมือ | ✅ ใช้แล้ว (u0.4.37) |
+| `pwa/orders_upcoming.html` | **PWA ดูออเดอร์ล่วงหน้า 7 วันจากมือถือ** (อ่านอย่างเดียว · แยก MP ทำสด vs สต็อค/เซ็ต · default=พรุ่งนี้ · เวลาไทยเสมอ) + `manifest.webmanifest`/`sw.js`/ไอคอน | ✅ u0.4.37 — เทส desktop ผ่าน · รอเทส iOS/Android หน้าโฮม |
+| `api/notify-daily-orders.js` | สรุปออเดอร์พรุ่งนี้เข้า LINE · `?dry=1` = พรีวิวไม่ส่งจริง | ⏸️ **ปิด cron แล้ว (นัทสั่ง 28 ก.ค.: "ไม่ต้องการให้เด้ง — ต้องการเข้าถึงข้อมูลสะดวก")** · โค้ดยังอยู่ เปิดคืนได้ด้วยการเติม 1 บรรทัดใน `vercel.json` |
+| `web/*.html` | เว็บสาธารณะใหม่แทน Wix: `index`/`mealplan`/`blog`/`blog_admin`/`import_blog`/`web_dashboard` + `posts/` | ✅ **live** ที่ `under360-system.vercel.app/web/` (12 ก.ค. — ยังไม่ชี้โดเมน, Wix ยังอยู่) · track() ยิง web_events แล้ว · ดู "🌐 เว็บใหม่" + `WEB_LAUNCH_TODO.md` |
+| `docs/WEB_LAUNCH_TODO.md` | Checklist งานที่นัทต้องกดเอง (SQL/Google Ads/Vercel token/iOS/IG/ชีท HP-LC) | ✅ พร้อมทำตาม |
+
+> 📁 **โครงสร้างโฟลเดอร์ (จัด 23 ก.ค. 2026):** เอกสาร working/handoff ย้ายเข้า `docs/` หมดแล้ว — MASTERNOTE · HISTORY · MKT_HANDOFF · WEB_LAUNCH_TODO · MIGRATE_BRIEF · AGENTS_SPEC · WIX_SEO_HARVEST · HANDOFF_07_UTRACK_BETA · CLAUDE_CODE_HANDOFF · **ที่ใดอ้าง `ชื่อไฟล์.md` ในเอกสารนี้ = ดูใน `docs/`** (sensitive ยัง gitignore เหมือนเดิม) · root เหลือแค่ `.html` (deploy จริง ห้ามย้าย) + `CLAUDE.md` + `TODO.md` + config
+
+---
+
+## 🥗 Product Lines
+
+### Line 1 — เมนูสต็อค (SKU: No · S · D)
+- ทำล่วงหน้า 1 วัน, สต็อกจริงคือ `menu_items.stock_total` (⚠️ ไม่ใช่ `stock_quantity` — คอลัมน์นั้นไม่มีอยู่จริง เคยพังทั้งเส้นทางเพราะเข้าใจผิด แก้แล้ว commit `9620cc1`)
+- นิยาม: `NULL`=ไม่จำกัด (default) · `0`=หมดสต็อกจริง · `N>0`=เหลือ N (badge "เหลือ N ชิ้นสุดท้าย" เมื่อ ≤5)
+- ส่งได้ทุก time slot รวมเช้า
+- ขายทั้ง individual และ Package S/M/L
+- **Pre-order:** เมนูอาทิตย์หน้าตั้ง `available_from` = วันจันทร์ถัดไป → โชว์ badge 📅 + block ผสมตะกร้า
+
+### Line 2 — Meal Plan ทำสด (SKU: HP · LC) — ⭐ ตัวชูโรง (โปรโมทคู่เสมอ อย่าเรียกแค่ HP)
+- ทำสดวันนั้น ส่งบ่ายเท่านั้น — `no_morning = true` อัตโนมัติ
+- **ไม่มี stock concept** — วางแผนจากวัตถุดิบ
+- **✅ เป็น add-to-cart ปกติ** ลูกค้าเลือก HP/LC + set size → เข้าตะกร้าเลย
+- Admin assign เมนูหลังบ้าน ผ่าน **OH แพลนเมนู** (ตัวจริง ต่อ `mp_deliveries` แล้ว) — น้องนิว จะมาช่วย auto-suggest (ดูสเปกล็อกแล้วในหัวข้อ AI Agents)
+- ⚠️ เมนู HP/LC **ไม่ต้องขึ้นหน้าลูกค้าเลือกเอง** — มีไว้ให้แอดมิน assign หลังบ้านเท่านั้น (ยืนยันแล้วว่าตั้งใจ ไม่ใช่บั๊ก) และ **ไม่ลง delivery platform** — เป็น subscription ขายผ่าน LINE OA เท่านั้น (ดู Delivery Platform Strategy)
+- สเปคเนื้อสัตว์: HP 170g/กล่อง · LC 120g/กล่อง
+
+> ⚠️ **ราคาไม่ตรงกัน — ต้อง verify ก่อน launch:** โค้ด `MP_SETS` ใน `liff_customer.html` (ดูหัวข้อ "What's in liff_customer.html") ยังเป็นราคา placeholder เดิม (ทดลอง HP1499/LC1399, weekly HP3990/LC3790, monthly HP13990/LC13490) — แต่ masternote v6.7 (11 ก.ค.) ระบุว่านี่คือ **"ราคาโฆษณาจริง"**: ทดลอง 7 กล่อง LC 1,399/HP 1,699 · Weekly 21 กล่อง LC 3,190/HP 4,190 · Monthly 84 กล่อง LC 12,000/HP 15,900 · ส่งฟรีทุกแพ็ค — ราคาจริงตอนนี้ควรมาจากตาราง `mp_offer_sets` (v0.4.11 ย้ายไปแก้ที่หน้า DB ได้แล้ว ไม่ต้องแก้โค้ด) **ยังไม่ได้เช็คว่า `mp_offer_sets` ปัจจุบันตรงกับราคาโฆษณาจริงหรือไม่ — เช็คก่อนเปิดแคมเปญ Google Ads แคมเปญ 2 (Meal Plan Search) เพราะ ad copy อ้างราคา "เริ่ม 1,399.-" ตรงกันแล้ว**
+
+### Line 3 — แพ็คกับข้าวฟรีซแพ็ค (ตจว. ทั่วไทย) — 🟢 passive
+- ปรุงเสร็จแช่แข็งทันที ส่งทั่วประเทศ — ขายอยู่ ไม่ยุบ แต่ไม่ลงแรงโปรโมทเพิ่ม (ดู Positioning) — **ห้ามเขียนคอนเทนต์ดิสอาหารแช่แข็ง** เป็นสินค้าของร้านเอง
+
+### Package S/M/L
+- HomeGrid card → `openPackage(pkgId)` → เลือก 9 เมนู → เข้าตะกร้า
+- Premium items: extra_price กำหนดต่อ SKU ใน `package_items` table
+- Admin จัดการ Package ผ่าน tab แพคเกจใน `main_database_v2.html`
+
+---
+
+## ⚠️ 2 แกนการผลิต × คอร์ส/บันเดิล (แก้ความเข้าใจผิด 13 ก.ค. 2026 — สำคัญมาก)
+
+> นัทแก้ความเข้าใจ Claude ที่เคยสับสนว่า "Weekly course = Meal Plan" — **ผิด** · คอร์ส Weekly/Monthly แบบ "เลือกวันส่งเองได้" = **ทำสต็อค** ไม่ใช่ทำสด · Claude เคยเผลอ flag คำ "เลือกวันส่งได้" ว่าผิดกฎ ทั้งที่ถูกต้องสำหรับสินค้าทำสต็อค
+
+**2 แกนการผลิต (จำให้แม่น):**
+- **ทำสด = Meal Plan (HP/LC)** — ปรุงเช้าวันส่ง ส่งบ่าย **เฉพาะ จ/พ/ศ · เลือกวันส่งเองไม่ได้** (เงื่อนไขเยอะ) · อยู่ในระบบแล้ว (`mp_offer_sets`/`mp_deliveries`)
+- **ทำสต็อค = เมนู No/S/D** — ทำล่วงหน้า เก็บสต็อก → **ยืดหยุ่น เลือกวันส่งเองได้**
+
+**คอร์ส/เซ็ตที่ขายจากของ "ทำสต็อค" (ยังขายอยู่จริงตอนนี้ แต่ทำมือ ยังไม่อยู่ในระบบ OH):**
+- **คอร์สรายสัปดาห์/เดือน (สต็อค):** ลูกค้าเลือก N กล่อง (เช่น 21) จากเมนูสต็อคที่มี/วางแผนสต็อก → แบ่งส่งหลายรอบ (เช่น 3 รอบ) → **ลูกค้าเลือกวันส่งเองได้** (เพราะทำล่วงหน้า) — **คนละตัวกับ Meal Plan HP/LC weekly** (ทำสด จ/พ/ศ) แม้ใช้คำ "รายสัปดาห์/คอร์ส" เหมือนกัน
+- **บันเดิลผสมราคาเหมา:** เช่น ข้าว 7 กล่อง + แพ็คกับข้าว 7 + น้ำ 3 ขวด + ขนม 1 = xxx บาท (ผสมหลายชนิดในราคาเดียว) — นัทเคยทำเสนอลูกค้าเองมาแล้ว
+
+**🔴 ต้องสร้าง — OH "set/course builder" (นัทขอ, ยังไม่มี):** ให้แอดมิน "กำหนดเองได้เลยว่าจะขายอะไร ตั้งชื่อเซ็ต ตั้งราคาเซ็ต แล้วคลิกสินค้าใส่เข้าเซ็ตได้เลย" — รองรับทั้ง (1) คอร์สสต็อค multi-round + ลูกค้าเลือกวันส่ง (2) บันเดิลผสมราคาเหมา · เป้า **"กินลูกค้าทุกความต้องการ"** (บางคนไม่สะดวก จ/พ/ศ อยากเลือกเมนู/ไซส์เอง)
+  - ✅ **v1 ฝั่งแอดมินสร้างแล้ว** (commit `9ae4607`, รอรัน `scripts/sql_package_sets.sql`): DB Package editor มีส่วน "🧩 กลุ่มการเลือก" — ตั้งกลุ่มได้กี่กลุ่มก็ได้ (เลือกตามหมวด N กล่อง / เจาะจงรายเมนู) + ราคาเหมา (base_price) + `delivery_rounds` + `flexible_delivery` (เลือกวันเอง) · surcharge ใช้ `package_items.extra_price` เดิม · เก็บ `packages.groups` (jsonb) · capability-check ซ่อน UI ถ้ายังไม่รัน SQL
+  - ✅ **แอดมิน builder ครบ** (u0.4.24): กลุ่มการเลือก (ตามหมวด/เจาะจงเมนูจาก dropdown+chips) + `count` ต่อกลุ่ม + **`allow_repeat` (🔁 กดซ้ำ) ต่อกลุ่ม** + เตือนถ้า count เกินเมนูออนไลน์ในหมวด + ราคาเหมา + `delivery_rounds`/`flexible_delivery`
+  - ✅ **กลุ่ม "หลายหมวด (รวมนับ)"** (u0.4.26): kind `multicat` — 1 กลุ่มผูกได้หลายหมวด (`groups[].categories[]`) `count` เดียวคุมยอดรวมข้ามหมวด (ครบพอดี แบ่งอิสระ ไม่มี min/max ต่อหมวด) · ตอบเคส "ข้าวกล่อง+กับข้าว รวมไม่เกิน 10 แบ่งเอง" · DB dropdown "📂 หลายหมวด" + chip เพิ่ม/ลบหมวด · LIFF `pkgGroupEligible` รวมเมนูทุกหมวดในกลุ่ม · backward-compat กับ category/list เดิม
+  - ✅ **LIFF ลูกค้าสั่งเซ็ต v1** (u0.4.24): `renderPkgSelectGrouped` เป็น **popup sheet** (เหมือน Meal Plan, `#pkg-backdrop`+`#s-pkg-select.on`) · เลือกตามกลุ่ม · `allow_repeat=true`→ปุ่ม **+/- (qty)** · false→ติ๊กเมนูละ 1 · surcharge (`package_items.extra_price`, ปุ่ม +40) · ราคา=base+Σ(qty×surcharge) · โชว์ **subcode** (รหัสตัดตัวอักษรนำหน้า เหมือน KQ) · cart type `package` แตกเป็นกล่องตาม qty · ทางเดิม pick-N ไม่กระทบ (แยก branch)
+  - ✅ **multi-round delivery split เสร็จ (u0.4.25, ปิด workstream 1):** เซ็ต `delivery_rounds>1` → หน้า checkout โชว์ section "แบ่งส่ง N รอบ" + toggle **"รับรวดเดียว"** + date picker ต่อรอบ (รอบ 1 = picker หลัก, รอบ 2..N = picker เพิ่ม default +7 วัน/รอบ) · **โมเดล: 1 รอบ = 1 order** (นัทเลือกเอง — ตรงกับที่แอดมินทำมือ: สั่ง 2-3 ชุดแล้วแต่รอบส่ง): รอบ 1 = order หลักถือเงินเต็ม, รอบ 2..N = order ยอด 0 แต่ละอันมี `delivery_date`+กล่องของรอบนั้น (`order_items.notes='pkg:{id}:course:r/N'`, order.notes ระบุ parent) · `splitSetItems` แบ่งกล่องเท่าๆ กัน (21/3→7,7,7 · 84/4→21×4) · **KQ อ่าน orders ตาม date อยู่แล้ว ไม่ต้องแตะ · ไม่มี SQL ใหม่** · ⚠️ v1: ค่าส่งคิดครั้งเดียวที่ order หลัก (รอบ 2..N fee=0) · รองรับ set เดียวต่อออเดอร์เป็นหลัก (หลาย set ใช้ max N ร่วมกัน)
+
+**กระทบอะไร (ต้องแก้ตามความเข้าใจใหม่ — จัดลำดับ ไม่ทำรวดเดียว):**
+- **เว็บ/บล็อค:** ✅ WS2 เสร็จ (commit `f65f033`) — index card + goal switcher เพิ่มคอร์ส/เซ็ตเลือกเมนู+วันรับเอง (สต็อค) · mealplan แก้ Meal Plan ส่ง จ/พ/ศ (เดิมเขียน จันทร์–เสาร์ ผิด) · บทความ `high-protein-meal-plan` แก้ conflation แล้ว + published (บล็อคครบ 20/20 published) · เหลือ: เว็บยังไม่มี flow สั่งเซ็ตจริง (รอ LIFF side)
+- **กฎ copy (แก้):** "ห้ามเขียนเลือกเวลา/วันส่งได้" = **เฉพาะ Meal Plan (ทำสด)** · คอร์ส/บันเดิลจากสต็อค **เขียน "เลือกวันส่งได้" ได้** (ทำล่วงหน้า)
+- **OH:** สร้าง set/course builder (ข้อบน) · **Marketing:** positioning ต้องครอบคลุมทั้งทำสด + คอร์สสต็อก ไม่ใช่ Meal Plan อย่างเดียว
+
+---
+
+## 🗄️ Supabase Tables
+
+### มีแล้ว
+`orders` · `order_items` · `menu_items` · `customers` · `home_layout` · `kitchen_data`
+`daily_menu_assignments` (ใช้จริงแต่คนละเรื่องกับ Meal Plan รายลูกค้า — เป็นกริดวางแผนผลิตรวมของครัว ดู main_database_v2.html tab "📅 แผนผลิต") · `bot_sessions` · `promo_codes` · `packages` · `package_items` · `mp_deliveries` (Meal Plan ระยะยาวรายลูกค้า — คนละตารางกับข้างต้น) · `activity_log` · `mp_offer_sets`
+
+### ✅ SQL รันครบแล้ว — ไม่มีค้าง (ยืนยันผ่าน REST ตรง 2026-07-05 — ถ้าเจอเอกสารอื่นบอกว่ายังไม่รัน ให้เชื่อบรรทัดนี้ ไม่ใช่เอกสารนั้น อาจเป็น snapshot เก่าก่อนนัทรัน)
+
+### SQL ที่รันแล้ว ✅
+```sql
+-- v0.3.1
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS no_morning BOOLEAN DEFAULT false;
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_account TEXT;
+CREATE POLICY "anon_read_order_items" ON order_items FOR SELECT TO anon USING (true);
+
+-- v0.3.2
+CREATE TABLE packages ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  name text, size text, qty integer, base_price integer, description text,
+  is_active boolean DEFAULT true, display_order integer DEFAULT 0,
+  created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now() );
+CREATE TABLE package_items ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  package_id uuid REFERENCES packages(id) ON DELETE CASCADE,
+  sku text NOT NULL, extra_price integer DEFAULT 0,
+  created_at timestamptz DEFAULT now(), UNIQUE(package_id, sku) );
+-- ⚠️ order_type ไม่ได้ลงจริง (insert เคยพังเพราะคอลัมน์ไม่มี) — เลิกใช้แล้ว
+-- order_type เดาจาก order_items.notes: pkg: / meal_plan: / ว่าง=individual
+
+-- v0.3.3 pre-order
+ALTER TABLE menu_items ADD COLUMN IF NOT EXISTS available_from DATE;
+ALTER TABLE orders     ADD COLUMN IF NOT EXISTS delivery_week TEXT DEFAULT 'current';
+
+-- v0.4.0 Meal Plan scheduling (scripts/sql_mp_deliveries.sql)
+CREATE TABLE mp_deliveries ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+  order_id uuid REFERENCES orders(id), customer_id uuid, line_uid text,
+  customer_name text, line_display_name text, mp_type text, mp_set text,
+  round_no int, total_rounds int, delivery_date date, time_slot text, time_slot_label text,
+  delivery_address text, box_count int DEFAULT 7, status text DEFAULT 'scheduled',
+  menu_items jsonb, customer_request jsonb, customer_note text,
+  request_opens_at date, request_deadline date, notified_at timestamptz,
+  day_before_notified_at timestamptz, admin_notes text,
+  created_at timestamptz DEFAULT now(), updated_at timestamptz DEFAULT now() );
+-- + RLS policy อนุญาต anon (ดูรายละเอียดเต็มใน scripts/sql_mp_deliveries.sql)
+
+-- v0.4.1 line_display_name (scripts/sql_line_display_name.sql)
+ALTER TABLE orders        ADD COLUMN IF NOT EXISTS line_display_name TEXT;
+ALTER TABLE mp_deliveries ADD COLUMN IF NOT EXISTS line_display_name TEXT;
+
+-- v0.4.3 stock fix (scripts/sql_stock_fix.sql)
+UPDATE menu_items SET stock_total = NULL WHERE stock_total = 0;
+ALTER TABLE menu_items ALTER COLUMN stock_total DROP DEFAULT;
+-- นิยามใหม่: NULL = ไม่จำกัด (default) / 0 = หมดสต็อกจริง / N>0 = เหลือ N ชิ้น
+
+-- v0.4.6 activity log (scripts/sql_activity_log.sql) — รันแล้ว
+-- ตาราง activity_log + RLS policy — ดูหัวข้อ "📜 Activity Log" ด้านล่าง
+
+-- v0.4.10 ช้อนส้อม (scripts/sql_utensils.sql) — รันแล้ว 2026-07-05
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS want_utensils BOOLEAN DEFAULT true;
+
+-- v0.4.11 ชุด Meal Plan (scripts/sql_mp_offer_sets.sql) — รันแล้ว 2026-07-05
+-- CREATE TABLE mp_offer_sets (...) + seed trial/weekly/monthly — รายละเอียดเต็มในไฟล์
+
+-- v0.4.12 promo scope (scripts/sql_promo_scope.sql) — รันแล้ว 2026-07-05
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_type TEXT NOT NULL DEFAULT 'all';
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_value JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS show_suggested BOOLEAN NOT NULL DEFAULT false;
+
+-- v0.4.13 packages RLS (scripts/sql_packages_rls.sql) — รันแล้ว 2026-07-05
+-- เพิ่ม RLS policy anon select/insert/update/delete ให้ packages + package_items — รายละเอียดเต็มในไฟล์
+
+-- v0.4.14 promo stack (scripts/sql_promo_stack.sql) — รันแล้ว 2026-07-05
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS stackable BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE promo_codes ADD COLUMN IF NOT EXISTS scope_mode TEXT NOT NULL DEFAULT 'include';
+
+-- u0.4.24 set/course builder (scripts/sql_package_sets.sql) — รันแล้ว
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS groups JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS delivery_rounds INT DEFAULT 1;
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS flexible_delivery BOOLEAN DEFAULT false;
+
+-- u0.4.32 payment_status (scripts/sql_payment_status.sql) — รันแล้ว 2026-07-22
+ALTER TABLE orders ADD COLUMN IF NOT EXISTS payment_status TEXT NOT NULL DEFAULT 'unpaid';
+
+-- u0.4.34 แพคส่งฟรี (scripts/sql_pkg_free_shipping.sql) — รันแล้ว 2026-07-22
+ALTER TABLE packages ADD COLUMN IF NOT EXISTS free_shipping BOOLEAN DEFAULT false;
+
+-- u0.4.29 live presence (scripts/sql_live_presence.sql, m-track เตรียม) — รันแล้ว 2026-07-22
+-- CREATE TABLE live_presence (...) + policy anon upsert — m dashboard นับคนออนไลน์
+
+-- u0.4.35 Storage bucket (scripts/sql_storage_menu_images.sql) — รันแล้ว 2026-07-22
+-- สร้าง bucket menu-images (public) + policy anon insert/update/select (สำหรับอัพรูปเมนู)
+```
+
+> เหลือแค่เช็คซ้ำได้ (ไม่แน่ใจว่ารันหรือยัง): `day_before_notified_at` ALTER ท้าย `sql_mp_deliveries.sql` (v0.4.1)
+
+### ⏳ SQL พร้อมรัน ยังไม่รัน — `customer_preferences` (ปลดล็อกน้องนิว กลุ่ม 1 ข้อ 2)
+```sql
+create table if not exists customer_preferences (
+  customer_id     text primary key,       -- ให้ตรงกับ key ตาราง customers
+  dislikes        text        default '',
+  allergies       text        default '',
+  liked_menus     jsonb       default '[]'::jsonb,
+  disliked_menus  jsonb       default '[]'::jsonb,
+  updated_by      text,                    -- 'customer' | 'admin' | 'nong_niw'
+  updated_at      timestamptz default now()
+);
+alter table customer_preferences enable row level security;
+create policy "cp_all_anon" on customer_preferences for all using (true) with check (true);
+```
+⚠️ ปรับ RLS ให้ตรงกับตาราง customers/orders เดิมก่อนรัน · dislikes/allergies เป็น free text (น้องนิวซึ่งเป็น LLM แมตช์กับเมนูเอง ไม่ต้อง tag/dropdown ตายตัว) · allergies treat เข้มกว่า dislikes
+
+### ⏳ SQL พร้อมรัน ยังไม่รัน — `web_events` (attribution เว็บใหม่ — ดูหัวข้อ Marketing Track)
+```sql
+create table if not exists web_events (
+  id uuid primary key default gen_random_uuid(),
+  event text not null,              -- 'pageview' | 'cta_click'
+  page text,                        -- 'index' | 'mealplan' | 'blog:slug'
+  utm_source text, utm_medium text, utm_campaign text,
+  referrer text, ua text,
+  created_at timestamptz default now()
+);
+alter table web_events enable row level security;
+create policy "we_insert_anon" on web_events for insert with check (true);
+-- อ่านผ่าน dashboard/report เท่านั้น — ไม่เปิด select ให้ anon
+```
+
+### Storage
+- `menu-images` (Public) ✅ — **สร้างจริง + policy anon upload แล้ว (u0.4.35)** · มีรูปเมนู 70 ตัว `{code}.jpg` (u0.4.36) · LIFF การ์ดใช้ transform ย่อ: `/storage/v1/render/image/public/menu-images/{code}.jpg?width=N` (ดู `thumbUrl()`)
+- `card-images` (Public) ✅ — ⚠️ anon **เขียนไม่ได้** (ไม่มี policy insert — ต่างจาก menu-images) ถ้าจะอัพต้องเพิ่ม policy
+
+---
+
+## 🏠 HomeGrid Architecture (สำคัญมาก)
+
+**HomeGrid card = entry point เดียวสำหรับทุก product type**
+Admin จัดการผ่าน `home_editor.html` — ไม่มี hardcode bands
+
+**Card click routing** ใน `colCardClick(el)` อ่าน `data-cat` (= `item_filter.category`):
+```
+__pkg:{uuid}__        → openPackage(uuid)     — Package picker
+__meal_plan__         → openMealPlanPicker()  — Meal Plan picker
+__anchor__            → scroll to menu list
+__anchoritem:{code}__ → jumpToMenuItem(code)  — เลื่อนตรงไปเมนูใดเมนูหนึ่งเป๊ะๆ (v0.4.21)
+{category}            → jumpCat(category)     — scroll to category
+```
+
+**HE dropdown "ลิ้งไปที่"** มีตัวเลือก:
+- ไม่ลิ้งไปไหน
+- ⬇ เลื่อนลงไปที่เมนู (`__anchor__`)
+- 🥗 Meal Plan (`__meal_plan__`)
+- 📦 Package S/M/L (โหลดจาก Supabase `packages` table)
+- 🎯 เมนูเฉพาะ (anchor point — เลื่อนตรงไปเมนูใดเมนูหนึ่ง เช่น S001, เหมาะปักหมุดเมนูประจำสัปดาห์)
+- หมวดหมู่เมนู (จาก menu_items)
+
+---
+
+## 🌿 Git branch + Vercel Preview — วิธีทำงานใหม่ (26 ก.ค. 2026)
+
+> **ปัญหาเดิม:** push → main → live ทันที = แอดมิน/ครัวใช้ของจริงอยู่ **พังคือพังสด** และไม่มีที่เทส iOS
+> **กติกาใหม่:** งานใหม่ทุกชิ้น = ทำบน branch → Vercel สร้าง **Preview URL** ให้อัตโนมัติ → เทสบน Preview (มือถือจริง/iOS ได้) → ชัวร์แล้วค่อย merge เข้า main
+
+**4 คำสั่งที่นัทก๊อปวางได้เลย** (แก้แค่ชื่องานหลัง `feature/`)
+
+```bash
+git checkout -b feature/ชื่องาน
+```
+```bash
+git add ไฟล์ที่แก้ && git commit -m "ข้อความสั้นๆ ภาษาไทย" && git push -u origin HEAD
+```
+```bash
+git checkout main && git merge feature/ชื่องาน && git push
+```
+```bash
+git branch -d feature/ชื่องาน
+```
+
+- หลังคำสั่งที่ 2 → เปิด **vercel.com → Deployments** จะเห็นบรรทัดของ branch นั้น = **Preview URL** (คนละลิงก์กับของจริง) → เอาลิงก์นั้นเปิดบน iPhone/Android เทสได้เลย
+- ของจริง (`under360-system.vercel.app`) **ไม่ขยับ** จนกว่าจะทำคำสั่งที่ 3
+- ⚠️ ยังไม่ได้ยืนยันว่า Vercel เปิด Preview Deployment ไว้ (ปกติเปิด default) — ถ้า Deployments ไม่ขึ้น branch ให้ดู Settings → Git → Preview Deployments
+- **กติกา multi-session เดิมยังใช้:** `git add` เฉพาะไฟล์ของ track ตัวเอง (ห้าม `git add -A`) + `git pull` ก่อน push
+
+**📄 แบ่งหน้าที่เอกสาร (บรีฟ 26 ก.ค. ข้อ 1):** `CLAUDE.md` = **กฎถาวร** (conventions/stack/credentials/แบรนด์/ตาราง DB) · `PRD.md` = **สเปคงานที่ทำอยู่ตอนนี้แผ่นเดียว** (เปลี่ยนงาน = เขียนทับ) · `docs/UNDER360_MASTERNOTE_v6_7.md` = ยุทธศาสตร์/backlog/ประวัติ (ไม่ใช่ไฟล์สั่งงาน) · `docs/UNDER360_HISTORY.md` = timeline — **ห้ามลบเนื้อหาจาก MASTERNOTE** (copy อย่างเดียว)
+
+---
+
+## ⚙️ Coding Conventions — ห้ามผิด
+
+```
+LIFF files      → const sb = supabase.createClient(URL, KEY) ตรงๆ ห้ามใช้ getSB()
+main_database   → ใช้ getSB() pattern (const sb = getSB())
+DEV_MODE        → false บน production เสมอ
+Order number    → U-MMDD-NNN (e.g. U-0627-001)
+Supabase query  → ต้อง .limit(N) ถ้าต้องการ > 1000 rows
+render(true)    → force bypass keyboard defer
+Phone format    → fmtPhone() → เพิ่ม 0 นำหน้าถ้า 9 หลัก
+</style> tag    → grep duplicate ก่อน commit เสมอ
+Parallel read   → ห้าม Promise.all() ใน Claude artifact storage → sequential เท่านั้น
+Mobile scroll   → ใช้ inline spacer div ไม่ใช่ padding-left
+Single file     → HTML/CSS/JS ในไฟล์เดียว ไม่แยก
+Syntax check    → node scripts/check-html-js.js <file.html> หลัง edit ทุกครั้ง
+                  (ไฟล์เป็น HTML ก้อนเดียว → ดึง <script> มาเช็ค ไม่ใช่ node --check ตรงๆ)
+```
+
+> 🛠️ **Dev env:** ลง Node.js v24 LTS แล้ว (winget) — รัน syntax check / สคริปต์ได้
+> ถ้า `node` ไม่เข้า PATH ใน terminal ให้รีสตาร์ท Claude Code ครั้งเดียว
+> Allowlist: `.claude/settings.json` อนุญาต curl อ่าน Supabase REST แล้ว (ไม่ถามซ้ำ)
+
+> ⚠️ **บั๊กแพทเทิร์นที่เจอซ้ำๆ (4 ครั้งในวันเดียว 2026-07-04) — ระวังไว้เวลาแก้ฟีเจอร์ที่มีจุดแสดงผลซ้ำกันหลายที่:**
+> ไฟล์พวกนี้มักมีโค้ด render เมนู/สต็อกซ้ำกันคนละจุด (เช่น รายการเมนูหลัก vs การ์ดพรีวิวหน้าแรก, ปุ่ม stock ที่การ์ด vs ที่ตาราง pin) — แก้จุดเดียวแล้วคิดว่าจบ มักพลาดอีกจุดที่เหมือนกันทุกประการ (stock sync ผูกกับ dead code, ปุ่ม migrate ไม่มี HTML, badge/limit หายในหน้าแรก, `openProduct()` อ้าง element ที่ไม่เคยสร้างเลย) **ก่อนบอกว่า "แก้แล้ว" ต้อง `grep` หาทุกจุดที่มี pattern เดียวกันในไฟล์ก่อนเสมอ** อย่าเชื่อว่าแก้จุดเดียวพอ
+
+> ⚠️ **เขียนข้อมูลจริงระหว่างทดสอบ:** หลายฟังก์ชัน (`clickMenu()` ใน OH, ปุ่มสถานะใน KQ ฯลฯ) เขียนลง Supabase ทันทีที่คลิก ไม่ใช่แค่ preview เฉยๆ — เคยเผลอเขียนทับแถวทดสอบจริงมาแล้ว (revert คืนผ่าน curl PATCH ได้) ระวังเวลาทดสอบ flow ที่เกี่ยวกับข้อมูลลูกค้า/ออเดอร์จริง
+
+---
+
+## 🚀 Current Version: **u0.6 · a0.6 · f0.1 · r0.1 · k0.1 · niw0.1 · cc0.6 · pm0.1 · bug0.1 · doc v6.18**
+
+> 🏁 **ห้อง U-track ปิดแล้ว 25 ส.ค. 2569 — ผู้รับช่วงคือห้อง `u-maintainer`**
+> ของค้างทั้งหมด (รอนัทเคาะ · ถามแล้วยังไม่ตอบ · ทำต่อได้เลย · กฎเหล็ก · กับดักที่โดนซ้ำๆ)
+> รวมไว้ที่ **[`docs/HANDOFF_U_FINAL_20260825.md`](docs/HANDOFF_U_FINAL_20260825.md)** — อ่านก่อนแตะโค้ดฝั่งระบบ
+
+# 🟢 LIVE แล้ว — ลูกค้าจริงใช้ LIFF ของเราตั้งแต่ **8 ส.ค. 2026 เวลา 13:57**
+
+> **CC verify เอง 2 ทางอิสระ (9 ส.ค.) ไม่ใช่คำบอกเล่า** — เพราะเคยจดแผนเป็นผลลัพธ์มาแล้วครั้งนึง (ดูบทเรียนท้ายกล่อง)
+>
+> **① ริชเมนูใน LINE OA Manager** — ที่ใช้อยู่ = `Rich menu 8/2026` · ช่วงแสดง **08/08/2026 13:57 – 31/12/2027** · แอ็กชันทั้ง 2 ปุ่ม → `https://liff.line.me/2010442513-NI3JGTkb` (**LIFF ของเรา**) · ของเก่าที่ชี้ Hato (`2005639551`) ตกไปอยู่รายการไม่ใช้งานแล้ว
+> **② ออเดอร์จริงใน DB** — ตั้งแต่ 8 ส.ค. มีใบ `U-` **7 ใบที่มียอดเงินจริง รวม ฿12,009** จากลูกค้า 6 คน (Aom.Sawitree · มิ้ม · มันตรินี · New|YD.K · JeJee · Chai) + ใบแบ่งรอบยอด ฿0
+>
+> ⚠️ **เปลี่ยนความหมายของทุกอย่างที่ตามมา: ของพังตอนนี้ = เสียลูกค้าจริง ไม่ใช่แค่เสียเวลาเรา** → กฎ branch (แบบ C) มีผลเต็มรูปแบบ ไม่ใช่การซ้อมอีกต่อไป
+>
+> **เหลืออย่างเดียวที่มีแต่นัททำได้: บอกเลิกสัญญา Hato + ขอปลด Messaging API คืน** (ข้อความพร้อมส่งอยู่ใน `TODO.md` หัวข้อแรก · เหตุผลเชิงเทคนิคดูหัวข้อ 📮 ด้านล่าง)
+>
+> 🎓 **บทเรียนที่ยังใช้ได้ (CC พลาดเอง 7 ส.ค.):** *"จะทำคืนนี้" ≠ "ทำแล้ว"* — ห้ามบันทึกแผนเป็นผลลัพธ์ · milestone ทุกอันต้อง **verify ด้วยหลักฐานที่เปิดดู/query ซ้ำได้** ก่อนเขียนลง master (รอบนี้ทำตามแล้ว)
+
+## 📮 ~~Hato ถือช่องส่งข้อความ~~ → ✅ **ปิดแล้ว 21 ส.ค. 2026 — ไม่ได้ขอคืน แต่ย้ายบ้าน LIFF ไป provider เดียวกับแชนแนล `2005639534`**
+
+> 🎉 **push หาลูกค้าได้เองแล้ว** (ประตูใหม่ `2011148232-oul66cEs`) · commit `d94d8eb` `6f53892` `d99ce30` `c28eb90`
+> ⚠️ **20 ส.ค. เคยส่งใบยืนยันไปหาลูกค้าผิดคน 3 ข้อความ** (สะพานจับคู่ uid เก่าด้วยเบอร์ → ผิดคน) → **ปิดการส่งไว้ก่อน** (`044a40f`)
+> 📚 ข้อความด้านล่างเก็บเป็นประวัติ อย่าเอาไปสั่งงานต่อ
+
+### (ประวัติ) Hato ถือช่องส่งข้อความ — ต้องขอคืนตอนบอกเลิก (ยืนยัน 9 ส.ค. 2026)
+
+> **นัทสั่งให้เป็น TODO หลัก + CC ทวงทุก 1-2 วัน** — ดู `TODO.md` หัวข้อแรก
+
+**สิ่งที่เป็นของเรา ✅** OA `@rwc2010a` (Under360 Cleanfood · เพื่อน 23,319 · แพ็กเกจ **โปร = 35,000 ข้อความ/เดือน**) · ริชเมนู · ประวัติแชท · บรอดแคสต์ · LIFF (`2010442513`)
+**สิ่งที่ Hato ถือ 🔴** **Messaging API แชนแนล `2005639534`** = ช่องส่งข้อความอัตโนมัติหาลูกค้า
+
+**ทำไมสำคัญ:** LINE ออก user id **แยกตาม provider** → รหัสลูกค้าที่เราเก็บจาก LIFF **ใช้ push ผ่านแชนแนลของ Hato ไม่ได้**
+**ยืนยัน 5 ชั้น:** บัญชีเดียวกันแน่ (*Hi, Nut* · dev id 6721741) · provider ของนัทมี 3 (`hato`/`Nut Expense`/`Under360 system` — ⚠️ **ตัวที่ชื่อ `hato` เป็นของนัทเอง ไม่ใช่ของบริษัท Hato**) · ไล่นับแชนแนลครบทุก provider = **4 ตัว ไม่มี 2005639534** · เปิดตรงๆ = **404** · ลูกค้า 19 คนเบอร์เดียวกันสั่ง 2 ยุค รหัส LINE **ไม่ตรงสักคน (0/19)**
+
+**บล็อกอะไร:** ใบยืนยันออเดอร์เข้า LINE (`api/notify-order-confirm.js` — โค้ดพร้อม) · แจ้งเตือน Meal Plan (Known Issue #5)
+**ไม่กระทบ:** บรอดแคสต์จาก OA Manager · ริชเมนู · การสั่งของ
+
+**ทางแก้:** ขอ Hato ปลด Messaging API ออกจากบัญชีนักพัฒนาเขา → นัทผูกใหม่กับ provider `Under360 system` → ก๊อป **ความลับแชนแนล** ใส่ Vercel env **`LINE_CHANNEL_SECRET`** (โค้ดขอ token เองทุกครั้ง **ไม่ต้องต่ออายุ 30 วัน**) ⚠️ ปลดเฉพาะส่วนเทคนิค **ห้ามแตะ OA**
+**ตัวตรวจ:** `node scripts/cc_check_uid_scope.mjs` (ต้องขึ้น 🟢) · ออก token มือ: `node scripts/line_token.mjs`
+
+---
+
+## 🏠 ห้องทำงาน (อัปเดต 9 ส.ค. 2026 — ส่งผิดห้อง = ไม่มีใครอ่าน)
+
+| เรื่อง | ห้อง |
+|---|---|
+| **ลำดับความสำคัญ · ควรทำ/ไม่ทำ · โรดแมพ** | **`pm`** 🆕 *(เปิด 9 ส.ค.)* |
+| **บั๊ก / ของพัง** | **`bug`** 🆕 *(เปิด 9 ส.ค.)* |
+| จ่ายงาน · ตามเก็บ · เอกสารกลาง · แก้ข้อมูล DB | `cc` |
+| โค้ดฟีเจอร์ | `u` + ห้องเจ้าของแทร็ค |
+| ผลิต · ส่ง · ครัว | `niw` · `keng` · `k` · `fah` |
+| มาเก็ตติ้ง | `m` · `eath` · `tiang` · `ploy` |
+
+**ปิดถาวรแล้ว (ส่งไปไม่มีใครอ่าน):** `p` (9 ส.ค.) · `migrate` (8 ส.ค.)
+**เส้นแบ่ง PM ↔ CC:** PM = **ตัดสินว่าทำอะไร ลำดับไหน ไม่ทำอะไร** · CC = **ทำให้เกิดขึ้น** (จ่าย/ตาม/จด) — CC เลิกชี้ขาดลำดับความสำคัญเอง
+
+---
+
+## 🌳 กติกาใหม่ที่มีผลทันที — ห้ามแก้ `main` ตรงๆ
+
+> **นัทเคาะเอง 7 ส.ค. (แบบ C)** · เหตุผล: **ของพังตอนนี้ = เสียลูกค้าจริง ไม่ใช่แค่เสียเวลาเรา**
+> **กติกาเต็ม: [`docs/BRANCH_RULES.md`](docs/BRANCH_RULES.md)** — อ่านก่อนแก้อะไรก็ตาม
+
+**`main` = ของจริงที่ลูกค้ากำลังใช้อยู่** → ทุกการแก้ต้อง **แยก branch → เทสบนลิงก์ Vercel ของ branch → merge → ลบ branch**
+
+- 🔒 **บังคับด้วย hook จริง ไม่ใช่ขอความร่วมมือ** — `.githooks/pre-push` ปฏิเสธการ push ขึ้น main ทันที พร้อมบอกวิธีที่ถูก
+  (เปิดใช้แล้วด้วย `git config core.hooksPath .githooks` — ทุกห้องใช้ repo เดียวกันบนเครื่องเดียวกัน ตั้งครั้งเดียวมีผลทุกห้อง รวม worktree)
+- 🚨 **ช่องฉุกเฉิน:** `HOTFIX=1 git push origin HEAD:main` — ใช้ได้เฉพาะตอน**ลูกค้าเดือดร้อนอยู่** (สั่งไม่ได้ · ครัวไม่เห็นออเดอร์ · เงินคิดผิด) **แล้วต้องแจ้งบอร์ดทันที**
+- ⚠️ **ไม่ใช่เหตุฉุกเฉิน:** ปุ่มไม่สวย · คำผิด · อยากได้ฟีเจอร์เพิ่ม · "แก้นิดเดียว" · "รีบ"
+- ✅ **ห้องอนุมัติกันเองได้ ไม่ต้องรอนัท** (นัทเลือกเอง — ไม่อยากเป็นคอขวด) · สิ่งที่นัทขอแทนคือ **เทสจริงก่อน merge**
+- 📌 **1 branch = 1 เรื่อง ไม่ใช่ 1 เวอร์ชัน** · หลาย branch วิ่งพร้อมกันได้ · แยกแล้วรีบ merge กลับ ทิ้งไว้นาน = ชนกันง่าย
+
+**ทดสอบแล้วว่ากันได้จริง (7 ส.ค.):** push ขึ้น main → ถูกปฏิเสธ ✅ · `HOTFIX=1` → ผ่าน ✅ · push เข้า branch → ผ่านปกติ ✅
+
+> ⚠️ **สิ่งที่เปลี่ยนไปจากเดิม:** ก่อนหน้านี้ทุกห้อง push ตรงเข้า main ได้ (และทำมาตลอดช่วงเร่ง cutover) — **วิธีนั้นใช้ไม่ได้แล้ว** ถ้าเจอ hook ปฏิเสธ ไม่ใช่ระบบพัง แต่คือทำงานถูกแล้ว
+
+> **🧪 รอบเทสใหญ่ของเจ้าของ (6 ส.ค. 2026) — เอกสารเต็ม `docs/FINDINGS_NUT_BETA_TEST.md` (N-01→N-33)**
+> **วิธีที่ได้ผล (ใช้ซ้ำได้):** นัทหยุดไล่เปิดทีละหน้า เปลี่ยนเป็น **"สั่ง 1 ใบ แล้วตามใบนั้นไปให้สุดทุกหน้า"** (LIFF → ครัว → หน้าออเดอร์ → แมส) ทำ 3 รอบ: เมนูเดี่ยว · เซ็ตแบ่งรอบ · Meal Plan — เจอบั๊กจริง 33 ข้อในครั้งเดียว
+> **CC จดเงียบระหว่างเทส ไม่คุยทีละข้อ** (นัทสั่ง: *"อย่าเพิ่งเพิ่มเรื่อง ทยอยจดไว้ แล้วตู้มเดียวตอนกระจายงาน"*) → จบแล้วค่อยยิงเข้า 5 ห้องพร้อมกัน
+> **ผล:** แดง 5 ข้อจบใน 2 ชม. · เหลืองปิด 24 · **เหลือค้าง 2 ข้อ (N-19b พิกัด 14 ใบ · N-02 subcode 13/118 — อยู่ที่ P ทั้งคู่)**
+>
+> **🔴 5 แดงที่เจอ (ทั้งหมดอยู่ที่ Meal Plan ฝั่งหลังบ้าน — เมนูเดี่ยว/เซ็ตไม่มีแดงเลย):**
+> · **N-33** แอดมินแพลนเมนูแล้ว **ครัวยังเห็นเมนูเก่าค้าง** (ออเดอร์มี `order_items` อยู่แล้ว → fallback ของ KQ ไม่ยิง) — **แย่กว่าไม่เห็นเลย เพราะครัวมั่นใจว่าถูก** → แก้ที่ต้นทาง: หน้าแผนเขียนลง `order_items` ด้วย (แมส/รายงาน/P&L อ่านที่เดียวกัน)
+> · **N-27** MP รอบ 2-3 **ไม่มีใบในหน้าออเดอร์/แมส** → วันส่งรอบถัดไปไม่มีใครรู้ว่าต้องไปส่งใคร · ⚠️ ระบบเคยไม่เหมือนกัน: ลูกค้าที่ย้ายจาก Hato มีใบทุกรอบ แต่คนสั่งใหม่ผ่าน LIFF ได้ใบเดียว
+> · **N-32** ครัวเลือกดูวันล่วงหน้าไม่ได้ (ปฏิทินมีแต่วันย้อนหลัง) → เตรียมของล่วงหน้าไม่ได้
+> · **N-26** Meal Plan โดนคิดค่าส่ง ทั้งที่นโยบายคือส่งฟรีทุกแพ็ค
+> · ออเดอร์เทสปนในวันจริง **11 ใบ** → ครัวจะทำอาหารทิ้ง (P ปิดครบ เหลือ 0)
+>
+> **🎓 บทเรียนถาวรจากรอบนี้:**
+> 1. **"เสร็จ" ต้องมีหลักฐานที่ query ซ้ำได้ ไม่ใช่คำบอกเล่า** — CC เขียนตัวตรวจ `scripts/cc_audit_findings.mjs` เช็คโค้ดบน `origin/main` + DB จริง · **รอบแรกตัวตรวจเองรายงานผิด 3 ข้อ** (เงื่อนไข regex แคบไป) → ต้องไล่ดูโค้ดจริงก่อนสรุปทุกครั้ง
+> 2. **บอร์ด Command Center = ตู้ไปรษณีย์ ไม่ใช่กระดิ่ง** — ส่งงานแล้วห้องไม่รู้ ต้องปลุก (หรือรัน skill `under360-postman`) · และ **ต้องส่งให้ถูกห้องที่ session นั้นอ่านจริง** (เคยส่งงาน P ไปห้อง `p` ทั้งที่ P อ่าน `cc`/`migrate`/`u`)
+> 3. **`node -e` กับข้อความไทยที่มี backtick = shell กินทิ้ง** ข้อความบนบอร์ดหายเป็นช่วงๆ แบบเงียบ → **เขียนเป็นไฟล์ `.mjs` แล้วรันเสมอ**
+> 4. **push ต้องผ่าน worktree จาก `origin/main`** — ทรีหลักมีไฟล์ค้างของห้องอื่น (`kitchen/`, `scripts/niw/`) ทำให้ rebase ล้ม · ห้ามลบ/ย้ายของห้องอื่นเพื่อให้ push ผ่าน
+> 5. **ระบบจองงาน `work_claims` + hook `SessionStart` ใช้ได้จริง** — U ส่ง N-16 คืนให้พี่เก่งเองเพราะเห็นว่าจองหน้าแมสไว้แล้ว (*"ไม่ใช่เกี่ยงงาน แต่จะแก้ไฟล์ชนกัน"*) = กันงานซ้ำได้โดยไม่ต้องผ่านนัท
+> 6. **ห้องแก้ข่าวตัวเองได้เร็ว** — U รายงาน "MP ขาดใบ 39 รอบ" แล้วตรวจซ้ำพบว่าจริงๆ ครบ 54/56 → **ถอนเองใน 7 นาที** ก่อนถึงมือนัท
+>
+> **🛠️ ของใหม่ที่ CC สร้างรอบนี้:** `work_claims` (จองงานก่อนทำ) + hook `SessionStart` ยิงบอร์ดเข้า context ทุกห้องอัตโนมัติ (`scripts/cc_board.ps1`) · `scripts/cc_audit_findings.mjs` (ตัวตรวจ 28 ข้ออัตโนมัติ) · **ใบตรวจงาน 197 ข้อ 7 หมวด แยกตามบทบาท** (ลูกค้า/แอดมิน/ครัว/แมส · แนบรูปหน้าจอได้) ลิงก์ซ่อนไว้ท้ายหน้า Command Center
+
+> **u0.4.41 = P-track parallel Hato sync (เตรียม beta) — 28-31 ก.ค.:** เมนู 118 = **ตรงเมนูลูกค้า Hato 100%** (ดึงจาก customer `api.hatohub.com/liffapi/graphql` · เจอ flag `locationProducts[loc=2461].active` แยก "ขายจริง/ปิด" — S077 ปิด/S134 เปิด ตรงเจ้าของ · ก่อนหน้าเข้าใจผิดว่า สถานะ=ใช้งาน = ขาย เลยเปิดเกิน 422) · **จัดหมวดตรง Hato** (นัทสั่งรวม ข้าวกล่อง+เมนูพิเศษประจำสัปดาห์ = หมวดเดียว · "เมนูเพิ่มเติม" dump หาย → ข้าวกล่อง37·โปรตีนแพค40·อาหารเด็ก29·แซลมอนสด4·บ๊ะจ่าง3·ของทานเล่น3·BoneBroth2) · **7 เซ็ตครบตามลิสต์แอดมิน** (Diet A/B/C 1350/1999/4450 · Pack S/M/L 1400/2650/4900 · โบนบรอธ 10แถม1 1390) + ลบ dummy 3 · **การ์ดหน้าโฮมครบ 10 ใบ + รูปแบรนด์จริงจาก Hato CDN** (4 ใบ Diet B/C·Pack M/L รอสลับรูปเป๊ะ — browser ค้าง login) · **สั่งผ่าน LIFF เทสจริง 3 ใบ** (อิ๋ง U-0730-001 · มีน U-0730-002 · Diet Set A end-to-end — order_items+ค่าส่ง+พิกัด+ช้อนส้อม ครบ = submitOrder ทำงานเหมือน API เป๊ะ) · **catch-up ออเดอร์ Hato 28-31 ก.ค. +12 ใบ ฿35,187** (source=hato · DB ทันปัจจุบัน) · **บทเรียนถาวร: Hato flag แยก "ของมั่ว" ออกจาก "ของขายจริง" ไม่ได้ → ต้อง owner curate · น้องนิว/downstream ห้ามใช้ Hato ดิบ** (memory `hato-catalog-needs-curation`) · **⚠️ ค้าง:** flag `is_weekly_special` ยังไม่ maintain (มีแค่ 1) = แยกเมนูทำสด/สต็อคให้นิวไม่ได้ · สลับรูปการ์ด 4 ใบ · size-picker เซ็ต · ดึงรูปเมนู 335 จาก Hato (เจอว่า Hato มีรูปครบถูกทุกตัว)
+
+> **u0.4.40 = PWA ออเดอร์ล่วงหน้า live บน main** — งาน u0.4.37 (`pwa/orders_upcoming.html` + cron LINE 21:00) merge เข้า main เรียบร้อย + เพิ่มตามผลเทสมือถือของนัท: การ์ดพับเหลือ **ชื่อ/กล่อง/เบอร์** แตะกางดูเมนูทีละบรรทัด · default = **วันแรกที่มีออเดอร์** (ไม่ใช่ "พรุ่งนี้" ตรงๆ เพราะวันไทยเร็วกว่านัท 1 วัน เลยเคยเปิดมาเจอวันว่าง) · **ปุ่มกรอง ทั้งหมด/360/Hato** (ช่วง beta คีย์คู่ขนานจะเห็นซ้ำ) · **PIN 4 ตัว `0360`** (localStorage · กันคนหลงเข้า ไม่ใช่ security จริง — โค้ดฝั่ง browser เปิดดูได้ · ถ้าต้องคุมจริงค่อยเปลี่ยนเป็น Google login + ตารางอีเมลที่อนุญาต) · **เมนู "ออเดอร์ล่วงหน้า" ใน OH** (`app-frame` iframe) · **ดูย้อนหลังได้** (ปุ่มขยายช่วงทีละ 7 วัน · วันที่ผ่านมาแล้วขึ้นป้ายกำกับ ไม่ดีดหน้ากลับตอนกด) · URL จริง: `under360-system.vercel.app/pwa/orders_upcoming.html`
+> ⏸️ **LINE เด้งสรุปออเดอร์ 3 ทุ่ม = ปิดตามที่นัทสั่ง (28 ก.ค.)** — *"ไม่ต้องการให้เด้ง ที่ต้องการคือความสะดวกในการเข้าถึงข้อมูล"* → ถอด cron ออกจาก `vercel.json` แล้ว โค้ดยังอยู่ · **ทิศทาง: ทำ "ที่ให้เปิดดูง่าย" ไม่ใช่ "ระบบยิงแจ้งเตือนใส่นัท"**
+
+> 🧭 **ทิศทางระยะยาว — นัทเคาะเอง 28 ก.ค. 2026: "PWA = widget ของนัท"**
+> เลิกไล่ทำ native widget (KWGT+Tasker / APK / Play Store) — **เครื่องมือมือถือทุกตัวต่อจากนี้ = PWA หน้าเดียวใน `pwa/`** ใช้ `pwa/orders_upcoming.html` เป็นแม่แบบ
+> เหตุผล: เว็บสร้าง widget หน้าโฮมไม่ได้จริง (iOS ต้อง WidgetKit · Android ต้องเป็นแอปเนทีฟ) · Play Store = $25 + บัญชีส่วนบุคคลต้องเทส **12 คน 14 วัน** ก่อนขึ้น production = ไม่คุ้มกับเครื่องมือใช้ในร้าน · **Chrome บน Android กด "ติดตั้งแอป" สร้าง WebAPK ให้เองอยู่แล้ว** = ได้ไอคอน/เต็มจอเหมือนแอปจริง ไม่ต้องแจกไฟล์ APK
+> แม่แบบที่ต้องทำตาม: read-only ถ้าเป็นหน้าดู · ยึด `Asia/Bangkok` เสมอ · sequential reads · **SW scope แค่ `/pwa/`** · cache เฉพาะเปลือกหน้า · การ์ดพับ-แตะกาง · ล็อก PIN ก่อน → อัปเป็น Google login + allowlist อีเมลใน OH เมื่อข้อมูลสำคัญขึ้น
+
+> **u0.4.38–39 (26-27 ก.ค. · อยู่บน main แล้ว):** **u0.4.38** command center (ศูนย์รวมทุก track/agent คุยแยกห้องผ่าน Supabase `session_messages`/`track_status`) + แก้ UI จากผลเทส iPhone (ส่งด่วน→ระบุเวลา/เรท Lalamove · ช้อนส้อม default off · ตัด emoji หน้า checkout/สำเร็จ) `686e515` · **u0.4.39** แก้ราคา fallback `MP_SETS` ให้ตรงราคาขายจริง (HP 1699/4190/15900 · LC 1399/3190/12000) `53edf31` **→ ปิด Known Issue #12 ราคา MP ไม่ตรง** · + ซ่อน slot ส่งด่วน/express ชั่วคราว (เรท placeholder = คิดเงินผิด รอต่อ Lalamove API จริง) `edfd1d7` · + **LIFF เก็บ `delivery_lat/lng` + `delivery_distance_km` ตอน submit** (เดิมทิ้งทุกใบทั้งที่ลูกค้าปักหมุดแล้ว — แมส/พี่เก่ง/export ใช้วางเส้นทาง) `365aa97`
+
+> ⚠️ **หมายเหตุ merge (27 ก.ค.):** งานวันนี้กองบน branch หลายเส้น — `feature/orders-upcoming` (PWA + master นี้) · `feature/oh-order-onbehalf` (สั่งแทนลูกค้า) · **main ไปถึง u0.4.39 + express/geo แล้ว** → **ตอน merge ต้องเช็คลำดับ** (branch นี้ base เก่ากว่า main)
+
+> **27 ก.ค. 2026 — เปิดแทร็ค `f` (การเงิน) + เกือบสรุปยอดขายผิดทั้งโปรเจค:** ระบบเวอร์ชันเป็น **5 แทร็ค** แล้ว (u/m/a/**f**/doc) · f-track ตั้งโครง `finance/` + `scripts/finance/orders.mjs` (ตัวกรองยอดขายกลาง) + เจอ **ช่องขายส่ง B2B 15+ ร้าน ที่ไม่เคยมีในเอกสารไหน** + ยืนยัน **ฝั่งต้นทุนไม่มีที่จดเลย → statement ธนาคารคือแหล่งเดียว** · **🔴 จับได้ว่าตัวเลข "ยอดตก 37–49%" ที่ทั้งโปรเจคสรุปกันทั้งวันมาจากฐานที่ขาดข้อมูล (HS- ปี 2026 หาย 6 เดือน) → ถอนทั้งหมด** · **บทเรียนถาวร: ก่อนสรุปเทรนด์ใดๆ ต้องเช็คความครบของข้อมูล "รายช่องทาง × รายเดือน" ก่อนเสมอ — ข้อมูลที่หายไม่ส่งเสียง error** · **a0.6** = eath-widget (Electron) + เอิธเป็น subagent + น้องเตียง agent ใหม่ + broadcast wave 1 ยิงจริง **6 ใบ** (ไม่ใช่ 5) ผลเปิด% ไล่ตามความอุ่นเป๊ะ 32%→6% = **พิสูจน์ว่า segment จาก order data ทำงานจริง**
+> **3 แทร็คที่ไม่ตอบตอนเช็ค — สรุปผ่าน Command Center แทน (ยังไม่ verify กับห้องเจ้าของ):**
+> · **02 M-track (~m0.3):** migration Wix→Vercel **ถึง Step 4 = DNS cutover** กำลังทำกับนัท · เว็บใหม่ live · blog 61 · CTA ชี้ LINE แล้ว · redirect verified
+> · **10 เตียง (นับรวมใน a0.6):** subagent `nong-tiang.md` + ชีท 7 โพสต์ใน `web/tiang/` (5/7 พร้อมตั้งเวลา) · เพจไม่ร้าง (FB โพสต์ล่าสุด 1 วันก่อน) · **ติด: ไม่มีรูป Meal Plan ใน Storage**
+> · **06 FB Ads:** 🔴 **ค้างรายงาน — ไม่ตอบทั้งวันแม้ถาม 2 รอบ** · สถานะล่าสุดที่รู้ = ad รอบ 1 (Traffic objective · ฿300/วัน · CA 2807+LAL) รอนัทกด Publish + เคาะรูป A/B · **Hyrox ไม่ใช่งานห้องนี้** (นัทสั่งไม่ยิงแอด)
+
+> **26 ก.ค. 2026 — u0.4.37 (PWA ออเดอร์ล่วงหน้า + LINE push 3 ทุ่ม + branch workflow + PRD.md)**
+
+> **26 ก.ค. 2026 — เคลียร์บรีฟมือถือ `CLAUDE_CODE_BRIEF_widget.md` ครบ 4 ข้อ:** ① แยกเอกสาร `CLAUDE.md` (กฎถาวร) / **`PRD.md` ใหม่** (สเปคงานตอนนี้แผ่นเดียว) ② **git branch + Vercel Preview workflow** (เลิก push ตรง main — มีที่เทส iOS แล้ว) ③ **`pwa/orders_upcoming.html`** ดูออเดอร์ล่วงหน้า 7 วันจากมือถือ (อ่านอย่างเดียว · แยก MP ทำสด vs สต็อค/เซ็ต · default=พรุ่งนี้ · **ยึดเวลาไทยเสมอ** เพราะนัทอยู่ PST) + PWA เพิ่มลงหน้าโฮม ④ **`api/notify-daily-orders.js`** cron 21:00 น. ไทย สรุปออเดอร์พรุ่งนี้เข้า LINE · **เหลือให้นัทกด:** ตั้ง `LINE_CHANNEL_ACCESS_TOKEN` + `ORDERS_NOTIFY_TO` ใน Vercel · เทส Preview บน iPhone/Android แล้ว merge
+
+> **22 ก.ค. 2026 — เปิดใช้ LIFF จริง (ก่อน beta) + งานหลายก้อน:** payment_status 3 หน้า (LIFF assume สลิปจริง→OH toggle→KQ badge) · ค่าส่ง**ระยะขับจริง** (Google Distance Matrix แทน haversine) · **แพคเกจติ๊กส่งฟรี**ได้ใน DB · **รูปเมนู 70 ตัว**ดูดจากโบรชัวร์ Drive → Supabase Storage + การ์ดใช้ **thumb ย่อ (image transform) + lazy** โหลดไว · live presence heartbeat (m-track dashboard) · **migrate: import แล้ว 7,577 ออเดอร์เก่า** (ดูหัวข้อ migrate) · **เหลือก่อนเปิดจริง:** Enable Distance Matrix API + เทส iOS/ข้ามเครื่อง + สั่งเทส 1 ออเดอร์ (ดู `TODO.md` กลาง)
+
+> **13 ก.ค. 2026 — OH set/course builder v1 (ตอบ requirement "กินลูกค้าทุกความต้องการ"):** แอดมินสร้างเซ็ต/คอร์ส/บันเดิลเองในหน้า DB (กลุ่มการเลือก + กดซ้ำได้ + ราคาเหมา + แบ่งรอบส่ง/เลือกวัน) → ลูกค้าสั่งใน LIFF (popup + ปุ่ม +/- + subcode) · เหลือ multi-round delivery split (ก้อนสุดท้าย) · **แก้ความเข้าใจใหญ่: 2 แกนการผลิต (ทำสด vs ทำสต็อค) — ดูหัวข้อ "⚠️ 2 แกนการผลิต"** · เว็บ/บล็อค copy ปรับให้ครอบคลุมคอร์สสต็อก (WS2)
+> **🔀 ช่วงนี้นัทรัน 2 session ขนาน:** **u-track** (แชทนี้ — โค้ดหลังบ้าน `main_database_v2`/`liff_*`/OH/KQ/HE + ดูแล CLAUDE.md) · **m-track** (`web/`, `report.html`, blog, รูป, CTA — เขียน `MKT_HANDOFF.md` มาให้ merge) · กติกากันทับ: add เฉพาะไฟล์ตัวเอง (ห้าม `git add -A`) + pull ก่อน push ทุกครั้ง
+
+> **12 ก.ค. 2026 — เคลียร์ handoff Step 1–4 รอบเดียว (ทุกงานเลนโค้ดที่ทำแทนนัทได้):**
+> - **Step 1/1.5 (m-track):** เว็บสาธารณะใหม่ deploy แล้วที่ `under360-system.vercel.app/web/` (index/mealplan/blog — เทสผ่าน desktop, render + goal switcher + ไม่มี console error) · web_events tracking (pageview+cta_click) ทุกหน้า · Web Dashboard ต่อใน OH sidebar
+> - **Step 2 (m-track):** ดูด 18 บทความจาก Wix sitemap จริง (100% สำเร็จ ผ่าน workflow 18 agents) → `web/import_blog.html` รวม 20 บทความ (6 ตั้ง published=false รอนัทรีวิว)
+> - **Step 4 (u0.4.23):** LIFF Meal Plan สั่งได้ถึง 8:30 น. ของวันส่ง (verify แล้ว cutoff เดิม=18:00 ไม่ใช่ 17:00) · DB ปุ่ม Export เมนู CSV/JSON
+> - **สิ่งที่นัทต้องกดเอง (บัญชี/เครื่อง/ข้อมูล) → ดู `WEB_LAUNCH_TODO.md`:** รัน SQL (blog_posts/web_events/customer_preferences), import blog, Google Ads (conversion action + Brand Defense), Vercel LINE token, iOS test, IG Behold, ชีท HP/LC
+> - Step 3 (Google Ads) = Claude เตรียมครบใน CLAUDE.md/WEB_LAUNCH_TODO แล้ว รอนัทกดในคอนโซล (Claude สร้างแคมเปญเองไม่ได้)
+
+> ✅ ยืนยัน 2026-07-05: SQL 3 ไฟล์ (promo_scope/packages_rls/promo_stack) รันแล้ว **ไม่มี SQL ค้างฝั่งโค้ดเดิม** · **SQL ใหม่ที่ยังไม่รัน (รอนัท): `sql_blog_posts.sql`, `sql_web_events.sql`, `customer_preferences`** — โค้ดทุกจุด catch error รองรับไว้แล้ว (เว็บ/dashboard/tracking ไม่พังถ้ายังไม่รัน)
+
+> v0.3.3 คือเวอร์ชันสุดท้ายที่เคย log ไว้เป็นทางการ — หลังจากนั้นมีงานใหญ่หลายอย่างเข้ามาต่อเนื่องโดยไม่ได้ bump เลขไว้ทุกจุด ตารางล่างคือสรุปรวมให้ตามทัน:
+
+### ✅ สรุปงานที่ทำไปแล้วตั้งแต่ v0.3.3
+| Version | งาน | Commit |
+|---------|-----|--------|
+| v0.3.4* | คูปอง/ส่วนลด (`promo_codes`) ที่หน้า checkout | (รวมอยู่ในช่วง cart fix) |
+| v0.4.0 | ระบบ Meal Plan ระยะยาว (`mp_deliveries`) — LIFF self-service (เลื่อน/ยกเลิกรอบ) + OH แพลนเมนู (คอลัมน์ตามวันที่) + KQ แยก view + LINE cron แจ้งเตือน | `a0f542c` |
+| v0.4.1 | ชื่อ+เบอร์ผู้รับ (recipient) แยกจากชื่อบัญชีไลน์ (`line_display_name`) | — |
+| v0.4.2 | หน้าแรก: การ์ด collage เลื่อนอิสระ (เอา scroll-snap ออก) | `7b017a7` |
+| v0.4.3 | แก้ระบบสต็อกที่พังทั้งเส้นทาง (`stock_quantity`→`stock_total` จริง, LIFF/KQ/DB ครบ) | `9620cc1` |
+| v0.4.4 | DB: แถบหมวดลากเลื่อนได้ + แก้นับหมวดผิด/panel ค้างข้ามแท็บ + รวมหมวดซ้ำ + กันตั้งชื่อหมวดซ้ำในอนาคต | `f599c12` `ac25456` `edf2eb1` |
+| v0.4.5 | Version audit ทั้งระบบ + แก้ลำดับเมนู liff ให้ตรง HE + ลากเลื่อนการ์ดหน้าแรกด้วยเมาส์ + **แก้สต็อกหลักไม่เคย sync จริง** (bug ซ้อนจาก v0.4.3) + ปุ่ม +10 เติมสต็อก + DB "🍳 ผลิตวันนี้" (เปลี่ยนจาก mock เป็นของจริง) | `80f1d57` `768e88f` `12299a4` |
+| v0.4.6 | Activity Log — แถบประวัติการเปลี่ยนแปลง+เติมสต็อก (batch ต่อ session+ประเภท, debounce 3 วิ กันสแปม) ที่หัว DB + log จาก HE ด้วย | `520aa68` |
+| v0.4.7 | Optimize `main_database_v2.html`: ลบข้อมูล seed ที่ import ครั้งเดียวไปแล้วทิ้งทั้งหมด — ไฟล์ลดจาก 778KB → 330KB (**-58%**) ไม่กระทบฟีเจอร์ที่ใช้จริงเลย | `93e20ca` |
+| v0.4.8 | **แก้บั๊กร้ายแรง:** คลิกเมนูใดๆ ในหน้า liff พังจริง (throw error เงียบๆ — `openProduct()` อ้าง HTML ที่ไม่เคยมีอยู่จริง) + เพิ่มคลิกชื่อเมนู→ป้อบอัพ และคลิกรูป→lightbox + แก้รูปเมนูไม่เคยโชว์ (`item.image_url`→`item.image_urls[0]`, 6 จุด) + แก้ badge/limit สต็อกหายในการ์ดพรีวิวหน้าแรก | `5020fc9` |
+| v0.4.9 | แก้ตามที่นัทเทสจริง: "หมดแล้ว" ต้องขึ้นทันทีที่ลูกค้าใส่ตะกร้าครบสต็อก (`isOut` เช็คจาก remaining แทน) + lightbox ขึ้นกรอบเปล่าแทนที่จะไม่ทำอะไรเมื่อเมนูยังไม่มีรูป | `d79272d` |
+| v0.4.10 | จากผลเทสแอดมิน (คอมเมนต์ 7 ข้อ): แก้ sort_order เมนูทุกหมวดที่ไม่เคยตั้งเลย + เจอ**แท็บโปรโมชั่นไม่มีปุ่มนำทางใน OH เลย** + เปิดใช้หน้า "ตั้งค่า" + **แก้บั๊กแต้มลูกค้าโชว์ผิด** (`liff_profile.html` อ้างคอลัมน์ `points` ที่ไม่มีจริง) + เพิ่มช่องช้อนส้อมที่เช็คเอาท์ | `8b21320` `de73b82` `dfd7594` |
+| v0.4.11 | ระบบ "ชุด Meal Plan" — ย้าย MP_SETS จาก hardcode ในโค้ดไปเป็นตาราง `mp_offer_sets` แก้ราคาเองได้ที่หน้า DB | `fb42370` |
+| v0.4.12 | โปรโมชั่นเจาะจงสินค้า/แพคเกจ/มีลแพลน + โค้ดแนะนำที่เช็คเอาท์ — ดูหัวข้อ "🎁 Promo Scope + โค้ดแนะนำ" ด้านล่าง | `0be063f` |
+| v0.4.13 | **แก้บั๊ก "สร้างแพคเกจไม่สำเร็จ"** (RLS policy ไม่เคยมีให้ anon เขียน `packages`/`package_items` เลยตั้งแต่สร้างตาราง) + **แก้ไขโค้ดโปรโมชั่นได้แล้ว** (เฉพาะ `used_count===0`) + เพิ่มปุ่มลบสินค้าหมดสต็อกออกจากตะกร้า + **รื้อระบบขนาด Card ใน HE ใหม่ทั้งหมด** → 4 ฟอแมตอิสระ | `608b0aa` |
+| v0.4.14 | **โค้ดซ้อนกันได้ + scope แบบ "ยกเว้น"** + **แก้บั๊กการ์ดหน้าแรก liff ไม่โชว์ scroll** + **แก้บั๊กการ์ด "ทดลองสั่ง Mealplan" เปิดเป็นสัปดาห์/เดือนแทนที่จะเป็นทดลอง** | `c07a48c` |
+| v0.4.15 | DB: ย้ายแถบหมวดหมู่ขึ้นเหนือแถบค้นหา + **แก้บั๊กลากเรียงลำดับ PTT (ปักหมุด) ใช้ไม่ได้เลย** (root-cause: commit `fe0eae7` 24 มิ.ย. ลบ `draggable="true"` ทิ้งโดยไม่ตั้งใจ) | `50f6fea` |
+| v0.4.16 | HE: **การ์ด "จิ๋ว" 2 อันติดกันในลำดับ ซ้อนเป็นคอลัมน์เดียวอัตโนมัติ** | `c8ea61a` |
+| v0.4.17 | **จตุรัส/เต็มผืน สูงไม่พอดีกับจิ๋วที่ซ้อนคู่/แนวตั้ง** — ปรับทุกฟอแมตให้สูง 230px เท่ากันหมด + **แก้บั๊ก liff การ์ดหน้าแรกถูกตัดขาว ไม่สุดจอ** | `ca1849b` |
+| v0.4.18 | **เต็มผืนกว้างไป** — ปรับสัดส่วนเป็น 288×230 (5:4) + **เพิ่มลากเรียงลำดับ Card ใน HomeGrid ได้จริง** (เดิมไอคอน "⠿" ไม่เคยผูก event เลย) | `427ba66` |
+| v0.4.19 | **เพิ่ม auto-scroll การ์ด Collage หน้าแรกให้ลูกค้าจริงเห็นด้วย** (เดิมมีแค่ใน HE preview ไม่เคยพอร์ตมา liff) | `e312ae5` |
+| v0.4.20 | ปรับปรุงหน้า OH "แพลนเมนู" ครั้งใหญ่: panel "เมนูวันนี้" ผูกวันที่จริง + แก้บั๊ก checkbox ค้าง + เพิ่มสรุปรายวัน + วันที่เลยมาแล้วย้ายไป "▼ ดูประวัติ" | `69bf2ca` |
+| v0.4.21 | **เพิ่มฟีเจอร์ "เมนูเฉพาะ" (anchor point)** — `scrollIntoView()` ผูกกับ DOM id ของการ์ดเมนูนั้นตรงๆ | `ff6a5b9` |
+| v0.4.22 | **KQ — งานสุดท้ายก่อน beta test:** วันที่สั่ง/ส่งในการ์ด + ปุ่ม "↩ ยกเลิก" ให้ "ส่งแล้ว" (Meal Plan) + **ระบบ log ทุกครั้งที่กดปุ่มสถานะ** + ปุ่ม "👋 ตั้งชื่อ" | `f2293ef` |
+| v0.4.23 | **Step 4 งานโค้ดค้าง:** LIFF Meal Plan cutoff → 8:30 น. ของวันส่ง (`CUTOFF_HOUR=18` เดิมสำหรับสต็อก + `MP_CUTOFF_HOUR/MIN=8/30` ใหม่, `renderDatePick` แยก startOffset ตาม isMeal, offset 0=วันนี้ได้ถ้าก่อน 8:30 + ตรง จ/พ/ศ) + DB `exportMenuFiles()` ปุ่ม "⬇ Export เมนู" โหลด CSV(BOM)/JSON | `e07fe3b` |
+| m0.2 (web) | **Step 1/1.5/2 (m-track):** เว็บใหม่ /web live (Vercel) + web_events tracking ทุกหน้า + Web Dashboard ใน OH + blog 20 บทความ (`web/import_blog.html`) | `1f69381` |
+| u0.4.24 | **OH set/course builder ครบวงจร v1** — แอดมินตั้งเซ็ต/คอร์ส/บันเดิล (กลุ่มการเลือก หมวด/รายเมนู + กดซ้ำได้ + ราคาเหมา + แบ่งรอบ/เลือกวัน) → ลูกค้าสั่งใน LIFF (popup sheet + ปุ่ม +/- qty + surcharge + subcode) · เหลือ multi-round delivery split · SQL: `scripts/sql_package_sets.sql` | `9ae4607`→`0517fcd` |
+| u0.4.25 | **multi-round delivery split (ปิด workstream 1)** — เซ็ต `delivery_rounds>1` → checkout section แบ่งส่ง N รอบ + toggle "รับรวดเดียว" + date picker ต่อรอบ → submit สร้าง N orders (1 รอบ=1 order, รอบ 1 ถือเงินเต็ม, รอบ 2..N ยอด 0) · ไม่มี SQL ใหม่ | `d37de05` |
+| u0.4.26 | **set builder กลุ่ม "หลายหมวด (รวมนับ)"** — kind `multicat`: 1 กลุ่มผูกหลายหมวด count เดียวคุมยอดรวมข้ามหมวด (ตอบเคส "ข้าวกล่อง+กับข้าว รวม 10 แบ่งเอง") · DB chip เพิ่ม/ลบหมวด + LIFF eligible รวมทุกหมวด · ไม่มี SQL ใหม่ | `b3855be` |
+| u0.4.27 | **fix จากผลเทสนัท (รอบเทส set builder):** ① ลบ Meal Plan ออกตะกร้า → date picker ปลดล็อกกลับมาเลือกทุกวัน (เพิ่ม `syncCartDeps`) ② multicat dropdown โชว์จำนวนเมนูต่อหมวด "(N)" กันเลือกหมวดว่าง ③ ซ่อนช่อง "จำนวนกล่อง" เมื่อแพคมีกลุ่ม (ซ้ำซ้อน) ④ layout แถวเมนู DB — ขยาย breakpoint ชื่ออยู่บรรทัดเต็มถึง 860px (จอ>520px ไม่ถูกบีบ) | `90adcfd` |
+| u0.4.28 | **LIFF perf + ลบปุ่ม Export:** init เดิม await เรียงกัน ~7 รอบ → `Promise.allSettled` batch เดียว + รวม kitchen_data 4 คีย์เป็น 1 query (`.in`) → splash เร็วขึ้นชัด · ลบปุ่ม "Export เมนู" + `exportMenuFiles` ตามที่นัทสั่ง (เมนูยังไม่นิ่ง) | `505f0c1` |
+| u0.4.29 | **live presence heartbeat** — LIFF upsert `live_presence` ทุก 15 วิ (เฉพาะตอน tab visible) → m-track dashboard นับคนเปิดแอป real-time · SQL `sql_live_presence.sql` (m เตรียม, นัทรัน) | `9420c93` |
+| u0.4.30 | **fix จากผลเทส:** คลิกรูปในป้อบอัพเลือกเซ็ต → lightbox · date picker หลายรอบ: วัน ≤ รอบก่อน = เทา (บังคับเพิ่มขึ้น) + default chain · note "สินค้าอื่นรวมรอบ 1" · หน้าสรุปสำเร็จโชว์ชื่อรายการที่สั่ง | `095fd92` |
+| u0.4.31 | **ค่าส่งใช้ระยะขับจริง** — `updateRoadDistance()` เรียก Google Distance Matrix (มากับ Maps JS) แทน haversine เส้นตรง · โชว์ haversine ทันที แล้วแทนด้วยระยะขับจริง · กัน race + fallback เงียบ · zone ยังใช้เส้นตรง (รัศมี) · ⚠️ ต้อง enable Distance Matrix API บน key | `dbf9d7d` |
+| u0.4.32–33 | **payment_status** (สถานะโอนเงิน แยกจาก status ครัว) — LIFF: อัพสลิป→`paid` อัตโนมัติ (beta assume จริง) · OH: badge 💰โอนแล้ว/⏳รอโอน กดสลับได้ (mark โอนผ่านไลน์) +📎 · KQ: badge read-only · SQL `sql_payment_status.sql` (นัทรันแล้ว) | `39eb93d`·`b973188` |
+| u0.4.34 | **แพคเกจติ๊ก "ส่งฟรี"** ได้ใน DB (`packages.free_shipping`, capability-safe) → LIFF ยกเว้นค่าส่งทั้งออเดอร์ถ้าตะกร้ามีแพคส่งฟรี · SQL `sql_pkg_free_shipping.sql` (นัทรันแล้ว) · + master "Delivery Reality" แก้เนื้อแท้ค่าส่ง | `8077101` |
+| u0.4.35 | **SQL bucket menu-images + policy** — `sql_storage_menu_images.sql` (นัทรันแล้ว): สร้าง bucket public + policy anon insert/update/select (เดิม anon เขียน Storage ไม่ได้) | `404a3d2` |
+| u0.4.36 | **รูปเมนู 70 ตัว** — ดูดโบรชัวร์ Drive 7 โฟลเดอร์ (browser DOM ดึง file ID) → จับคู่ code เป๊ะ → download→Storage `menu-images`→`image_urls` (A/No/1A-3E/SM/PL/BB · verify ชื่อตรง) · **การ์ดใช้ `thumbUrl()` (Supabase image transform ย่อ width=) + `loading=lazy`** โหลดไว, lightbox ใช้ full · online 77 เมนู มีรูป 70 | `6eb2e74` |
+| u0.4.37 | **PWA ออเดอร์ล่วงหน้า + LINE push + workflow ใหม่** — `pwa/orders_upcoming.html` (7 วัน · แยก MP ทำสด/สต็อค-เซ็ต · default พรุ่งนี้ · เวลาไทย `Asia/Bangkok` · sequential reads · read-only) + `manifest`/`sw` (SW scope `/pwa/` เท่านั้น **กันไปคุม LIFF**, cache แค่เปลือกหน้า) + `api/notify-daily-orders.js` cron `0 14 * * *`(=21:00 ไทย) + `PRD.md` + branch/Preview workflow ใน CLAUDE.md | `feature/orders-upcoming` |
+
+*หมายเหตุ: เลข version ช่วง v0.3.4–v0.4.4 เป็นการ backfill ประมาณช่วงเวลาจาก commit log ไม่ใช่เลขที่ตั้งใจ bump ไว้ตอนนั้นทุกจุด — นับจากนี้จะ log ให้ตรงเวลาจริงมากขึ้น ใช้ prefix `u` ตามระบบเวอร์ชัน 4 แทร็คใหม่
+
+### ⚠️ Known Issues
+| # | ปัญหา | Priority |
+|---|-------|----------|
+| 1 | ✅ แก้แล้ว — DB tab "🍳 ผลิตวันนี้" ต่อ `mp_deliveries` จริงแล้ว | ✅ Done |
+| 2 | `report.html` ยัง mock data ทั้งหมด | 🟡 นัทอยากได้เร็วขึ้น — ใช้วัด HP vs LC (เสา 3) |
+| 3 | `liff_profile.html` ดึงข้อมูลจริงก่อนแล้ว เหลือ mock แค่ fallback ตอน query พัง | 🟢 ใกล้เสร็จ |
+| 4 | `liff_register.html` ต่อ Supabase จริงแล้ว — ไม่ใช่ mock แล้ว | ✅ ไม่ใช่ปัญหาแล้ว |
+| 5 | ✅ **ปิดแล้ว 21 ส.ค. 2026** — ส่งข้อความเข้าแชทลูกค้าได้จริง (ย้าย LIFF ไป provider เดียวกับแชนแนลส่งข้อความ) · ⚠️ **แต่ 20 ส.ค. เคยส่งผิดคน → ปิดการส่งไว้ชั่วคราว** รอ CC ซ่อมสะพานจับคู่ uid | 🟡 ปิดชั่วคราว |
+| 6 | KQ ต้องตรวจสอบว่าดึง order จริงจาก Supabase ได้ไหม (ทดสอบบน production) | 🔴 ก่อน launch |
+| 7 | ✅ แก้แล้ว — สต็อกหลักที่การ์ดเมนูไม่เคย sync ขึ้น `menu_items.stock_total` จริง (ผูกกับ dead code) | ✅ Done |
+| 8 | `mpIsoDate()` ในแท็บ "แผนผลิต" ใช้ `.toISOString().split('T')[0]` — pattern เดียวกับบั๊ก timezone UTC+7 ที่เคยแก้ไปแล้วในไฟล์อื่น แต่ยังไม่มีรายงานปัญหาจริง | 🟡 ระวังไว้ |
+| 9 | ✅ แก้แล้ว — liff คลิกเมนูพังจริงตอนนี้มาตลอด (`openProduct()` อ้าง element ที่ไม่เคยมี) | ✅ Done |
+| 10 | ✅ แก้แล้ว (u0.4.23) — verify แล้วว่า cutoff เดิม = **18:00** (นัทจำถูก, เอกสาร 17:00 ผิด) · Meal Plan เปลี่ยนเป็นสั่งได้ถึง 8:30 น. ของวันส่งแล้ว เมนูสต็อกคงเดิม | ✅ Done |
+| 11 | 🆕 LIFF + เว็บใหม่ ยังไม่เคยเทสบน iOS Safari เลย — 🔴 นัทต้องเทสบน iPhone จริง (ดู WEB_LAUNCH_TODO กลุ่ม 5) | 🔴 ก่อน launch |
+| 12 | ✅ **ปิดแล้ว 5 ส.ค. 2026** — ราคา Meal Plan ใน `mp_offer_sets` **ตรงราคาโฆษณาแล้วทุกตัว** (ทดลอง HP 1,699 / LC 1,399 · weekly HP 4,190 / LC 3,190 · monthly HP 15,900 / LC 12,000) · เตียงเจอก่อน + CC verify ซ้ำกับ DB จริง · เพิ่มเซ็ต `hyrox` 4,500 (21 กล่อง) เข้าตารางแล้ว = **ad copy "เริ่ม 1,399.-" ใช้ได้ ไม่ต้องรออะไร** | ✅ Done |
+| 13 | 🟡 ปุ่ม "⬇ Export เมนู" (เพิ่ม u0.4.23) **ถูกลบแล้ว u0.4.28** ตามที่นัทสั่ง — เมนู DB ยังไม่นิ่ง (หมวดซ้ำ เช่น pack_special ว่าง vs pack_regular) ยังไม่พร้อม export ไปลง platform · **งานลง delivery platform → รอเมนูนิ่งก่อน แล้วค่อยขอ export ใหม่** (โค้ดเดิมอยู่ใน git history commit `e07fe3b` ดึงกลับได้) | 🟡 Deferred |
+
+---
+
+## 📋 What's in liff_customer.html (v0.4.9)
+
+### Screens
+`s-menu` · `s-pkg-select` · `s-meal-plan` · `s-cart` · `s-confirm` · `s-ok` · `s-orders` · Meal Plan self-service (จัดการรอบ/เลื่อนวัน/ยกเลิก)
+
+> ⚠️ `s-product` (หน้ารายละเอียดสินค้าแบบเต็มจอ) **ถูกลบทิ้งแล้ว** (commit `5020fc9`) — พังมาตลอดเพราะไม่เคยมี HTML รองรับ ตอนนี้แทนที่ด้วยป้อบอัพ (ดูด้านล่าง)
+
+### Key features
+- **Package flow:** HomeGrid card → `openPackage()` → เลือกเมนู → ตะกร้า
+- **Meal Plan flow:** HomeGrid card → `openMealPlanPicker()` → เลือก HP/LC + set → ตะกร้า
+- **Pre-order:** `isNextWeekItem()` ตรวจ `available_from` → badge 📅 + block mixed cart
+- **Cart week-block:** `cartWeekType()` → อาทิตย์นี้ + อาทิตย์หน้า ผสมกันไม่ได้
+- **Saved address:** restore จาก `customers.default_address` อัตโนมัติ
+- **Order history:** `s-orders` screen + `goOrders()`
+- **Profile:** redirect ไป `liff_profile.html` พร้อม uid
+- **คลิกชื่อเมนู → ป้อบอัพรายละเอียด** (`openMenuDetail()`, element `#mdOverlay`) — ชื่อ/โค้ด/แคลอรี่/โปรตีน/คำอธิบาย/ราคา + ปุ่มเพิ่มตะกร้า
+- **คลิกรูปเมนู → lightbox ขยายเต็มจอ** (`openItemLightbox(id)` → `openLightbox(urls)`, element `#lbOverlay`)
+- **Anchor jump:** `id="menu-item-{code}"` ทุกการ์ดเมนู + `jumpToMenuItem(code)` — สลับหมวดอัตโนมัติ + เลื่อนเป๊ะ + ไฮไลท์ 1.6 วิ
+- **Auto-scroll การ์ด Collage หน้าแรก** — `startHomeAutoScroll()`/`stopHomeAutoScroll()` (rAF 1px/frame) หยุดถาวรทันทีที่ลูกค้าแตะ/ลากเอง (ไม่ resume ต่างจาก HE preview)
+- **สต็อก:** ใช้ `effectiveStock()`/`menu_items.stock_total` เหมือนกันทั้งรายการเมนูหลัก (`renderMenu()`) และการ์ดพรีวิวหน้าแรก — `isOut` เช็คจาก **remaining** (stock−qty ในตะกร้า) ไม่ใช่แค่ `stock_total<=0` ตรงๆ
+
+### Meal Plan Config (⚠️ ราคายังไม่ verify — ดูกล่องเตือนในหัวข้อ Product Lines)
+```javascript
+const MP_SETS = [
+  { id:'trial',   label:'ทดลอง',      boxes:7,  price_hp:1499,  price_lc:1399  },
+  { id:'weekly',  label:'1 สัปดาห์',  boxes:21, price_hp:3990,  price_lc:3790  },
+  { id:'monthly', label:'1 เดือน',    boxes:84, price_hp:13990, price_lc:13490 },
+];
+// v0.4.11: MP_SETS ถูกย้ายไปเป็นตาราง mp_offer_sets แล้ว แก้ราคาที่หน้า DB ได้เลย
+// ค่าฮาร์ดโค้ดนี้เหลือเป็น fallback — เช็คว่า mp_offer_sets ตรงกับราคาโฆษณาจริงก่อน launch
+```
+
+### Order types
+- `individual` — เมนูปกติ
+- `package` — Package S/M/L (order_items แยก row ต่อเมนู + notes: 'pkg:{id}')
+- `meal_plan` — Meal Plan (1 order_items row + notes: 'meal_plan:hp:weekly')
+
+### Delivery week
+- `current` — ส่งอาทิตย์นี้ (default)
+- `next` — pre-order ส่งอาทิตย์หน้า (items มี `available_from` > today)
+
+---
+
+## 📋 What's in main_database_v2.html (v0.4.7)
+
+### ⚡ Optimize ขนาดไฟล์ (v0.4.7)
+ไฟล์เคย 778KB (~55% เป็น hardcoded seed array ที่ import ครั้งเดียวตอน deploy ครั้งแรกแล้วไม่มีวันรันซ้ำ) — **ลบแล้ว ไฟล์เหลือ 330KB (-58%)** ไม่กระทบฟีเจอร์ที่ใช้จริงเลย
+
+**ถ้าเจอสูตรที่ยังไม่ได้ import เข้าระบบในอนาคต:** ส่งไฟล์ Excel ให้ Claude วิเคราะห์แล้วใส่เข้า Supabase ตรงๆ ได้เลย — **ไม่ต้อง**กลับไปฝัง hardcoded array ในโค้ดแบบเดิมอีก
+
+### Tabs
+เมนู · วัตถุดิบ · Meal Plan · 📦 แพคเกจ
+
+### Tab แพคเกจ
+- สร้าง/แก้ Package S/M/L ได้เอง · Checkbox เมนู active + extra_price ต่อ SKU · Save = delete + insert ใหม่ใน `package_items`
+
+### Tab Meal Plan — 2 sub-view คนละเรื่องกัน (ทั้งคู่ต่อข้อมูลจริงแล้ว)
+- **"📅 แผนผลิต"** — กริดวางแผนผลิตหลายวันของครัวโดยรวม ต่อ `daily_menu_assignments` จริง — คนละเรื่องกับ Meal Plan ระยะยาวรายลูกค้า (`mp_deliveries`)
+- **"🍳 ผลิตวันนี้"** — ให้ครัวดูว่าวันนี้ต้องผลิต/แพ็คอะไรบ้างสำหรับ Meal Plan ระยะยาว โดยไม่ต้องสลับไปหน้า KQ (นำทางวันที่ + สรุปรอบ/HP/LC + aggregate เมนูต้องผลิต + ช่องโน้ตแก้เมนูฉุกเฉิน)
+
+### จัดการหมวดหมู่
+- ปุ่ม 🔗 รวม ต่อแถวหมวด · rename ชื่อซ้ำ → บล็อกทันที · แถบหมวดลากเลื่อนซ้ายขวาด้วยเมาส์ได้ (อยู่เหนือแถบค้นหาตั้งแต่ v0.4.15)
+
+---
+
+## 📋 What's in home_editor.html (v0.4.21)
+
+- dropdown "ลิ้งไปที่" มี 🥗 Meal Plan + 📦 Package + 🎯 เมนูเฉพาะ options — โหลด packages/menu items จาก Supabase ก่อน render
+
+### 🖼️ Card Format (v0.4.13–v0.4.18) — 4 ฟอแมตอิสระ ไม่มีระบบจับกลุ่ม/solo อีกต่อไป
+| Format | ขนาด (px, อ้างอิงหน้าจอ 390px) |
+|--------|-------------------------------|
+| ◼ จตุรัส (square) | 230×230 |
+| ▯ แนวตั้ง (portrait) | 150×230 |
+| ▬ เต็มผืน (full) | 288×230 (5:4) |
+| ▪ จิ๋ว (tiny) | 110×110 (คู่ที่ซ้อนกัน = 110×230) |
+
+ค่า px เดียวกันเป๊ะทั้งใน HE (`renderPrevCard()`) และ `liff_customer.html` — พรีวิวใน HE = สิ่งที่ลูกค้าเห็นจริง 100%
+
+**เก็บข้อมูล:** ใช้คอลัมน์ `col_span` เดิม (int) encode 1-5 แทนชื่อ format — `tiny=2, portrait=3, square=4, full=5` (ค่าเก่า 2/4 จาก small/large ยุคก่อนอ่านถูกต้องอัตโนมัติ ไม่ต้อง migrate)
+
+**ลากเรียงลำดับ Card ได้แล้ว (v0.4.18):** ไอคอน "⠿" ใช้ pattern เดียวกับลากเรียงหมวดเมนู (`catDragStart`/`catDrop`)
+
+**จิ๋ว 2 อันติดกัน → ซ้อนเป็นคอลัมน์ (v0.4.16):** class `.col-tiny-stack`/`.col-tiny-stack-he` สูงรวม 230px — โดดเดี่ยวไม่มีคู่ยังคงเดี่ยว 110×110
+
+---
+
+## 🗺️ Roadmap
+
+| Version | งาน | สถานะ |
+|---------|-----|-------|
+| u0.3.1–0.3.3 | Order flow · Package S/M/L · Meal Plan flow + Pre-order | ✅ Done |
+| u0.3.4 | Product images (`batch_photo_upload.html`) | 🟡 เขียนเสร็จแล้ว ยังไม่เคยรัน ดู "📸 Photo Migration" |
+| u0.3.5 | OH Admin Tools | ✅ ทำครบตามที่วางแผนไว้ |
+| u0.4.22 | KQ (หน้าสุดท้ายก่อน beta) | ✅ ลงแล้ว |
+| — | **Beta test แบบ parallel กับ Hato** — แอดมินกดออเดอร์จริงลงมือคู่ขนานไปก่อน เพื่อเจอบั๊กก่อนใช้จริง | ⏳ รอเริ่ม |
+| — | Migrate ลูกค้า + **ประวัติสั่งซื้อ Hato** | 🟢 **เกือบครบ (migrate-track)** — **Hato 2 ปี import ครบ 24 ก.ค.: 15,801 ออเดอร์ · 40,845 order_items · 3,217 ลูกค้า · เลขซ้ำ 0 verified** (LIFF `HT-` 10,834 ครบ 25/25 เดือน **มีรายเมนู → ปลดล็อกน้องนิว** · HatoStore `HS-` 4,939 ไม่มีรายเมนู) + **pre-Hato 2016-22: +4,244 ลูกค้า** จาก 79 ชีทมือ (30,794 ออเดอร์) พร้อมโปรไฟล์กำลังซื้อใน `admin_notes` → **customers รวม ~7,666** · **🔴 ยังขาด: `HS-` ปี 2026 (ม.ค. + มี.ค.–ก.ค.) — ต้นทางออกรายงานมาเกือบว่าง ไม่ใช่ import bug · กระทบตัวเลขยอดขายทั้งหมด ดูหัวข้อ 💰 f-track** · pipeline จดใน memory `migrate-customer-order-history` |
+| — | Facebook Chatbot (`api/webhook.js` configure) | ⏳ หลัง migrate |
+| — | 🆕 เว็บ Vercel 5 หน้า + ย้ายโดเมน (Marketing กลุ่ม 3) | ⏳ ตอนกลับถึงคอม — ดู "🌐 เว็บใหม่" |
+| v0.4 | **AI Agents** — นิว→เก่ง→ฟ้า→เตียง→เอิธ (ดูหัวข้อ 🤖 ด้านล่าง) | ⏳ ยังไม่เริ่มสักตัว (น้องนิว spec locked แล้ว) |
+| v1.0 | ปิด Hato Heart = **Under360 Base** | 🏁 Full Launch |
+
+---
+
+## 📸 Photo Migration (`batch_photo_upload.html`) — ตรวจสอบแล้ว พร้อมใช้แบบมีคนคุม
+
+**สรุป:** ไฟล์นี้เขียนเสร็จสมบูรณ์แล้ว — flow: อ่าน `All_menu.xlsx` หา SKU → โหลด `menu_items` จริงจาก Supabase → ลากรูปโบรชัวร์เข้ามา → ส่งรูปให้ Claude Vision หาตำแหน่ง+ชื่อแต่ละเมนู → crop อัตโนมัติ → fuzzy match ชื่อกับเมนูจริง (fuzzy score ≥0.82 = auto-select) → ตารางรีวิวให้เช็ค/แก้ทีละแถวก่อน → อัพโหลดเข้า Storage bucket `menu-images` จริง + PATCH `menu_items.image_urls` จริง
+
+**ต้องมีอะไรก่อนรัน:** เปิดไฟล์ในเบราว์เซอร์ตรงๆ ใส่ Anthropic API key ของตัวเอง (เก็บ localStorage เครื่องตัวเองเท่านั้น) — **ไม่ควรแชร์ลิงก์นี้ให้คนนอก** เพราะ key ฝังอยู่ฝั่ง browser ตรงๆ
+
+**⚠️ ความเสี่ยงที่ควรรู้ก่อนรันจริงกับโบรชัวร์ทั้งชุด:**
+1. `image_urls` array ไม่มีการจำกัดจำนวน — DB โชว์แค่ 4 ช่องแรก แปลว่าถ้ารันหลายรอบ array จะยาวขึ้นเรื่อยๆ แบบไม่โชว์ผล
+2. Path อัพโหลดคือ `{sku}.jpg` แบบ upsert=true — รูปเก่าจะถูกทับเงียบๆ ไม่มี confirm ไม่มี versioning
+3. threshold 0.82 ยังไม่เคยทดสอบกับชื่อเมนูจริงของร้าน — แนะนำเช็ค auto-selected ทุกแถวก่อนกด upload จริง
+
+**คำแนะนำ:** ลองรัน 1 โบรชัวร์ก่อน → เช็คว่า DB ยังโชว์ 4 ช่องรูปถูกต้อง → ค่อยไล่ทำทั้งชุด
+
+---
+
+## 📜 Activity Log — ประวัติการเปลี่ยนแปลง + ประวัติเติมสต็อก (v0.4.6 — ✅ SQL รันแล้ว)
+
+`scripts/sql_activity_log.sql` — ใช้งานได้ปกติ
+
+**ดีไซน์:**
+- **Batch ต่อ (browser session + ประเภทการกระทำ)** — session ใหม่ทุกครั้งที่เปิดหน้า DB
+- **Debounce เขียนจริง 3 วิ** — กด +10/+1 ติดกันหลายครั้งสะสมในหน่วยความจำก่อน
+- **action_type:** `stock` · `category` · `package` · `he_layout` · `kq_status` (v0.4.22 — ไม่ batch, log ทุกคลิกเพราะเป็นเรื่อง accountability)
+- **ไม่ครอบคลุม (ตัดสินใจไว้แล้ว):** แก้ field เดี่ยวๆ ในสูตร (ชื่อ/ราคา/วัตถุดิบ) ยังไม่ log — พื้นผิวกว้างเกินไป
+- **UI:** แถบบางที่หัว DB โชว์กิจกรรมล่าสุด กดปุ่ม "ประวัติ ▼" ดูย้อนหลัง 50 รายการ — query ไม่กรอง source เลยเห็น log จาก KQ ในหน้าเดียวกันด้วยอัตโนมัติ
+- **ใครแก้:** `state.currentUser` ที่ DB / `localStorage['lastNickname']` ที่ HE+KQ (คีย์เดียวกัน — ต้องเคยกรอกชื่อที่หน้า DB เครื่องเดียวกันมาก่อนอย่างน้อย 1 ครั้ง ไม่งั้น HE จะโชว์ "ไม่ทราบชื่อ")
+
+---
+
+## 🎁 Promo Scope + โค้ดแนะนำ + ซ้อนโค้ด (v0.4.12–v0.4.14 — เขียนเสร็จ ทดสอบผ่าน + SQL รันแล้ว)
+
+**ที่มา:** โค้ดส่วนลดที่ใช้ได้เฉพาะสินค้า/แพคเกจ/มีลแพลน + toggle "แนะนำ" ให้ลูกค้าเห็นเลยที่เช็คเอาท์ (แตะใช้ได้ทันที) + v0.4.14 ต่อยอด: บางโค้ดซ้อนกันได้ + scope แบบ "ยกเว้น"
+
+**Schema (`promo_codes`):**
+- `scope_type` — `'all'` · `'sku'` · `'package'` · `'mp_offer'`
+- `scope_value` — jsonb array: sku→`menu_items.code`, package→`packages.id`, mp_offer→`mp_offer_sets.set_key`
+- `scope_mode` — `'include'` (เฉพาะที่เลือก) หรือ `'exclude'` (ทุกอย่างยกเว้นที่เลือก)
+- `show_suggested` — true = โชว์เป็น chip แนะนำที่หน้าเช็คเอาท์ลูกค้า
+- `stackable` — true = ใช้ร่วมกับโค้ด "ซ้อนได้" อันอื่นพร้อมกันได้
+
+**Admin (`operation_hub.html` แท็บโปรโมชั่น):** picker เลือกเมนู/แพคเกจ/มีลแพลน + toggle include/exclude + checkbox แนะนำ/ซ้อนได้ — แก้ไขโค้ดได้เฉพาะ `used_count===0`
+
+**Customer (`liff_customer.html`):** `appliedPromos` เป็น array — chip "🎁 โค้ดแนะนำสำหรับคุณ" แตะใช้ทันที
+
+**กติกาซ้อนโค้ด:** `stackable=true` + `stackable=true` → รวมกัน (กันลดเกินยอดด้วย `Math.min`) · โค้ดไม่ซ้อนได้ apply ทับ → แทนที่ทั้งหมด · โค้ดเดิมซ้ำ → reject
+
+**Capability-check:** ถ้ายังไม่รัน SQL — OH ซ่อน UI ที่เกี่ยวข้อง โค้ดแบบเดิมยังใช้งานได้ปกติ
+
+---
+
+## 🚚 ลูกค้าสั่ง 2 รอบที่เดียวกัน ไม่คิดค่าส่งซ้ำ — ❌ ยกเลิกแล้ว (2026-07-04)
+
+นัทตัดสินใจไม่ทำ ("อาจจะยากไป") — ข้อเสนอเดิมอยู่ใน git history ของไฟล์นี้ (commit `80f1d57`)
+
+---
+
+## 🧭 Positioning & Brand Strategy (เคาะแล้ว 8 ก.ค. 2026)
+
+> **"ไม่ขายคลีน — ขายอาหารที่เข้ากับเป้าหมายและไลฟ์สไตล์ของคุณ โดยมีโปรตีนเป็นแกน"**
+
+### 🕯️ จิตวิญญาณแบรนด์ = "คนดูแลคน" (นัทเล่าเอง 3 ส.ค. 2026 — อ่านก่อนออกแบบทุกอย่างที่แตะลูกค้า/CRM/agent)
+> นัทขอให้เขียนลึกถึงแก่น เพราะกลัวว่าจะไถลไปเป็น "ระบบขายของแล้วจบ" ตามกระแส automation/vibe-coding
+
+**แก่น:** Under360 **ไม่ใช่เครื่องขายของ — เป็นธุรกิจบริการที่คนดูแลคนจริงๆ** · โตจาก 0 ด้วย **service mind ของพลอย** ที่ทำให้ลูกค้ารัก "หัวปักหัวปำ" · ลูกค้าดีใจทุกครั้งที่พลอยตอบเอง → **ความสัมพันธ์ = ตัวสินค้าจริง** (คู่แข่งลอกเมนู/ราคาได้ ลอกความสัมพันธ์ไม่ได้)
+
+**บทเรียน Hato (ทำไมยอดหาย — นัทเชื่อแบบนี้มาตลอด):** ตั้งแต่เอา Hato มาครอบ = **มีชั้นกั้นระหว่างเรากับลูกค้า → เราไม่ได้คุยกับลูกค้าเอง → ลูกค้าหาย** (ตรงกับ CRM insight: 20,000 follower → <100 ซื้อ/สัปดาห์ เพราะ broadcast รวม = ตรงข้ามกับ soul นี้)
+
+**ปณิธาน:** ผสมเทคโนโลยี**ให้สุด** แต่ยัง**แฝงจิตวิญญาณความเป็นคน** — เทคโนโลยีต้อง **ขยายสัมผัสมนุษย์ ไม่ใช่แทนที่**
+
+**⚖️ สมดุลที่ต้องคู่กันเสมอ (นัทเน้น 3 ส.ค. — สำคัญพอๆ กับ soul):** soul นี้ **≠ การกุศล / เสียสละตัวเอง** — เรารักลูกค้าจริง **แต่เราก็รักกำไร + ความสบาย + ความอยู่รอดของเราเท่าๆ กัน** · **ห้ามตีความ "ดูแลลูกค้า" เป็น "ยอมขาดทุน / over-service จนร้านหรือคนทำงานเจ็บ"** (เช่น subsidize ค่าส่งจนเลือดไหล) · **การดูแลที่ดี = ลูกค้าแฮปปี้ *และ* ร้านมีกำไร + คนไม่พัง** · ถ้า Claude เสนออะไรที่เอียงสุดโต่งข้างใดข้างหนึ่ง (ทุ่มให้ลูกค้าจนเจ๊ง หรือรีดกำไรจนเสีย soul) = **ผิดทั้งคู่ ต้องหาจุดที่ทั้งสองอยู่ได้**
+
+**→ กฎออกแบบ (บังคับใช้ทุกครั้งที่แตะฝั่งลูกค้า/CRM/agent/marketing):**
+- automate **หลังบ้าน** (ครัว/ออเดอร์/ส่ง/ดาต้า) เพื่อ **คืนเวลาให้คน (พลอย/แอดมิน) ไปดูแลลูกค้าตัวต่อตัวมากขึ้น** — **ไม่ใช่** automate บทสนทนากับลูกค้าทิ้ง
+- CRM/agent = **ช่วยให้ตามลูกค้ารายคนได้ทั่วถึงขึ้น** (Agent QA อ่านแชท · ตามคอร์สจบ · เตือนลูกค้าหาย) ไม่ใช่ยิง broadcast รวมแทนความใส่ใจ
+- ออกแบบให้ **พังแล้วคนเข้ามารับช่วงได้** (graceful degradation → ถอยไปจดมือ) ไม่ใช่ full-automation เปราะที่ตัดมือคนออก
+- **ดาต้าลูกค้า > ระบบ** — ถ้าข้อมูลอยู่ ต่อให้ระบบพังก็ถอยไปจดมือได้ (ภูมิคุ้มกันจากยุคจดมือ→Excel→Hato) → **นี่คือเหตุผลที่ backup ข้อมูลสำคัญกว่าความสมบูรณ์แบบของโค้ด** (มี `scripts/backup_data.sh` + weekly scheduled task แล้ว 3 ส.ค.)
+
+**⚖️ หมายเหตุความเข้าใจของ Claude (นัทขอให้ honest):** ผมเข้าใจ *หลักการ* นี้ชัดและออกแบบตามได้ — แต่ผมเป็น AI **ไม่เคย *รู้สึก* ถึงความสัมพันธ์กับลูกค้าจริง** (สายตาลูกค้าที่ดีใจตอนพลอยตอบเอง) ผมถือสิ่งนี้เป็น **"เข็มทิศที่ต้องรับใช้" ไม่ใช่สิ่งที่ผมสัมผัสเอง** → ถ้าวันไหนผมเสนออะไรที่ตัดคน/ตัดความสัมพันธ์ออกเพื่อ "ประสิทธิภาพ" **ให้ถือว่าผมพลาด soul นี้ — เตือนได้ทันที**
+
+- เทรนด์ "อาหารคลีน" จบแล้ว ตลาดแตกเป็น dietary ตามไลฟ์สไตล์ — แต่ทุกสายมีโปรตีนเอี่ยวหมด
+- **2 ชั้นที่ต้องแยก:** ชั้น keyword (คนพิมพ์ "อาหารคลีน delivery") ใช้เป็น SEO doorway เท่านั้น vs ชั้น positioning จริง (Real Food/Balanced Diet/โปรตีนเป็นแกน)
+- **ตัวชูโรง = Meal Plan ทั้งไลน์ (HP+LC) — โปรโมทเป็นคู่เสมอ** อย่าเรียกแค่ HP
+- **กลยุทธ์กำลังพล (แก้ 21 ก.ค. — เดิม "แรง 100% MP"):** **ดันทั้ง MP + Stock/Package เต็มที่ แต่แยกกลุ่ม** — ลูกค้า MP กับ Stock คนละกลุ่มแต่อยู่ OA เดียวกัน · ตอนนี้ยอดตกหนัก ต้องการกระแสเงินสดเร็ว → **Stock/Package ปิดง่ายกว่า (฿165 vs ฿1,399)** · บันไดลูกค้าใหม่: **Package (ไม่ผูกมัด) → กินติด → ขยับเป็น Meal Plan** · ตจว./แพ็คกับข้าว = passive only เหมือนเดิม
+- **สนามรบ:** ไม่สู้บน Shopee (แพ้เชิงโครงสร้าง) → ย้ายไปสนาม Google Search/บทความ/AI search/รีวิว ที่ชนะด้วยโดเมนอายุ 10 ปี + เนื้อหา ซื้อทางลัดไม่ได้
+- **มุมเล่าที่คู่แข่งเลียนแบบยาก:** ร้านช่วยออกค่าส่งให้ลูกค้า (subsidize 3-5 หมื่น/เดือน — **คำภายในเท่านั้น**) · **ประสบการณ์ 10 ปี + เริ่มเน้นปรุงสด** (จุดใหม่ที่เพิ่งชู — 10 ปี = อายุร้าน/ประสบการณ์ ไม่ใช่ระยะเวลาปรุงสด ห้ามผูก "ปรุงสด 10 ปี") · จัดเมนูเฉพาะคน ตัดของแพ้อัตโนมัติ
+
+### 🍜 ปรัชญาอาหาร + ตัวตนแบรนด์ (วัตถุดิบสำหรับ copy/content ทุกชิ้น)
+> **แก่นเดียว:** "ไม่ใช่คลีนจนทรมาน ไม่ใช่ตามใจปากจนพัง — แต่คือ *พอดี* ที่กินได้ทุกวันจริงๆ อร่อยด้วย สุขภาพดีด้วย โปรตีนแน่นเป็นแกน"
+
+- **การเดินทางแบรนด์:** เริ่มจากคลีนสายแข็ง (อกไก่เท่านั้น ไม่เอา processed food) → บทเรียน: ไม่อร่อย+ไม่ยั่งยืน → ปรับเป็น Balanced Diet/Real Food อร่อยกินได้จริง
+- **คุม 3 ตัวร้ายให้ "พอดี" ไม่ใช่ "ตัดทิ้ง":** น้ำมันรำข้าว add-on ≤5g/เมนู · น้ำตาลพอดี · โซเดียมกว่า 90% ของเมนูต่ำกว่าตลาด/อาหารข้างทาง · ไม่เคลมสมบูรณ์แบบแต่เลี่ยง ultra-processed ให้มากสุด
+- **จุดเด่นวัตถุดิบ:** โปรตีนดิบ LC 120g / HP 170g · ข้าวเปลี่ยนจากไรซ์เบอรี่เป็น **ข้าว กข 43** (อร่อยเหมือนหอมมะลิ ดัชนีน้ำตาลต่ำ — ไม่ใช่ทุกเมนู)
+- ⏳ ค้าง: สัมภาษณ์ไลฟ์สไตล์พลอย (ยังไม่จบ — เก็บไว้ทำตอนมีเวลายาวๆ)
+
+**🖊️ กฎเขียน copy — ใช้ทุกครั้งที่แต่งคอนเทนต์/โฆษณา:**
+- ไม่โม้ว่าดีที่สุด — ให้ความรู้ก่อนแล้วแสดงว่าเราตอบโจทย์
+- โปรโมท **HP+LC คู่เสมอ**
+- ห้ามดิสแช่แข็ง (เราขายฟรีซแพ็คเอง) · **ห้ามเขียน "เลือกเวลา/วันส่งได้" เฉพาะ Meal Plan (ทำสด จ/พ/ศ)** — ⚠️ คอร์ส/บันเดิลจากของ **ทำสต็อค** ทำล่วงหน้า **เลือกวันส่งได้** เขียนได้ (ดู "⚠️ 2 แกนการผลิต")
+- ใช้จุดจริงได้: น้ำมันรำข้าว/≤5g · โซเดียมต่ำ 90% เมนู · ข้าว กข 43 · โปรตีน 120/170g · เลี่ยง ultra-processed
+- **ค่าส่ง (แก้ 16 ก.ค. โดยเอิธ · benchmark verify 22 ก.ค. `web/eath/delivery_fee_benchmark.md`):** "subsidize 30-50K/เดือน" = **context ภายในเท่านั้น** · **✅ เคลมได้:** "Meal Plan ส่งฟรีทุกแพ็คไม่มีขั้นต่ำ" (ชนะ 3/3 เจ้าที่มีข้อมูล) · "กทม. ส่วนใหญ่ฟรี เริ่มเพียง 20฿" · "ส่งทั่วไทย" (ตจว.~200฿ = จุดต่างจริง) · "ไม่ต้องคำนวณค่าส่งเอง" · **🚫 ห้ามเคลม:** "ถูกที่สุด"/"ถูกกว่าทุกเจ้า"/เทียบตัวเลข (ข้อมูลคู่แข่งไม่ครบ) · "ส่งฟรีทุกออเดอร์" (ผิด — เฉพาะ Meal Plan)
+- **"ปรุงสด 10 ปี" = ผิด ห้ามใช้** → เขียน "ประสบการณ์ 10 ปี" หรือ "เริ่มเน้นปรุงสด" แยกกัน (10 ปี = อายุร้าน ไม่ใช่ระยะเวลาปรุงสด)
+
+### 📜 ประวัติร้าน 10 ปี (บริบทสำหรับทุก session)
+1. ยุคแรก: ข้าวกล่องอย่างเดียว หมุนเวียนรายสัปดาห์
+2. ยุคขยาย: เพิ่มเมนูประจำ
+3. ยุคเจาะ ตจว.: สร้างแพ็คกับข้าวฟรีซแพ็ค ส่งทั่วประเทศ
+4. ยุคโดนตี: คู่แข่งชื่อ **"350"** ซื้อคีย์เวิร์ด "360" บน Shopee ทำให้ยอดแพ็คตก
+5. ยุคปัจจุบัน: pivot มา Meal Plan (HP/LC) เป็นเรือธง — จุดที่ยืนอยู่ตอนนี้
+- **ทีม:** นัท+พลอย (Thunyathorn) = สามีภรรยา เจ้าของร่วม — พลอยถนัดลุยเร็ว/หน้าบ้าน, นัทถนัดละเอียด/หลังบ้าน — จุดแข็งคนละแบบ ไม่ใช่ปัญหา
+- นัทกำลังพิสูจน์ให้พลอยเห็นว่า "หลังบ้านใช้ AI ได้ผลจริง" ก่อนดึงพลอยเข้ามาใน workflow เต็มตัว
+
+### 🚚 Delivery Reality (แก้ความเข้าใจเดิม — สำคัญต่อคอนเทนต์ทุกชิ้น)
+- ส่งทั่วกรุงเทพ+ปริมณฑล (ปรุงสดรายวัน) และทั่วไทย (ฟรีซแพ็ค) — **ไม่ใช่ร้านเฉพาะย่าน**
+- **ค่าส่ง (เนื้อแท้ — นัทยืนยัน 16 ก.ค.):** ร้านช่วยออกค่าส่งให้ (subsidize — คำภายใน) → ลูกค้าจ่ายถูกกว่าจริงเสมอ
+  - **~200฿ = เพดานสูงสุด (max cap)** ที่คิดลูกค้า ต่อให้ส่งไกลแค่ไหน — **ไม่ใช่ราคาปกติ** · สำหรับส่ง **ตจว. (ฟรีซแพ็ค) 200฿ = ถูกมาก** (จุดต่าง ยังไม่เจอเจ้าคลีนไหนส่ง ตจว. เทียบได้)
+  - **range จริงส่วนใหญ่ 20-80฿** และ **หลายครั้งฟรี** (โดยเฉพาะ กทม.)
+  - **Meal Plan weekly/monthly = ส่งฟรีทุกแพ็ค** ไม่มีขั้นต่ำ · แพคเกจบางตัวติ๊ก "ส่งฟรี" ได้ที่ DB (u0.4.34)
+  - 🔒 **นัทเคาะปิดเรื่องนี้เอง 16 ก.ย. 2569:** *"ถ้าซื้อเป็นแพคเกจใหญ่ก็อยากให้ส่งฟรีไว้ก่อน โดยเฉพาะ meal plan"*
+    → **Meal Plan + แพคเกจ/เซ็ตใหญ่ = ส่งฟรี ไม่จำกัดระยะทาง** · ธงส่งฟรีใน `packages` ตอนนี้ถูกแล้ว ปล่อยไว้
+    → ⛔ **ห้ามห้องไหนเสนอเก็บค่าส่งตามระยะทางกับ 2 กองนี้อีก** จนกว่านัทจะเปิดเรื่องเอง
+    → 📉 **โจทย์ค่าส่งเปลี่ยนรูปแล้ว:** ไม่ใช่ "เก็บเงินลูกค้าเพิ่มตรงไหน" แต่คือ **ทำต้นทุนต่อเที่ยวให้ถูกลงโดยลูกค้าไม่รู้สึกอะไร** (งานจัดรอบ/เส้นทาง = ห้องเก่ง)
+    → 📊 ตัวเลขที่ทำให้เรื่องนี้ขึ้นโต๊ะ (verify จาก DB + statement 16 ก.ย.): ส.ค. จ่าย Lalamove ฿30,000 · เก็บค่าส่งคืนได้ ฿7,098 · ส่งฟรี 169/294 ใบ · ไกลเกิน 15 กม. แล้วยังฟรี 67 ใบ · โค้ด `FREESHIP` (ไม่มีขั้นต่ำ ซ้อนได้ ใช้ไป 63 ครั้ง) **หมดอายุเองแล้ว 3 ก.ย.**
+  - **⚠️ กฎโฆษณา:** ห้ามโฆษณาเป็นตัวเลข "ละ 200" (ฟังดูแพง) · จุดขาย = **"ค่าส่งถูก เพราะร้านช่วยออกให้ — ถูกแม้ซื้อไม่เยอะ"** ไม่ใช่ตัวเลข · ห้ามเคลม "ถูกที่สุด" จนกว่า verify
+- **ไม่ให้ลูกค้าเลือกเวลาส่ง** — แมสร้านจัดรอบเอง ลูกค้าแค่ "แจ้งช่วงเวลาที่สะดวกรับ" ได้ — ห้ามเขียนคอนเทนต์ว่า "เลือกเวลาส่งได้"
+- ฟรีซแพ็คทำถูกวิธี (ปรุงเสร็จแช่แข็งทันที) — ห้ามดิสอาหารแช่แข็งในคอนเทนต์
+
+---
+
+## 🤖 AI Agents — Roster เต็ม + Roadmap
+
+**หลักการร่วม:** Agent ทุกตัวตั้งชื่อตามพนักงานเก่าตัวจริงของร้าน · วิสัยทัศน์ระยะยาว = pixel-art virtual office · เป้าหมายใหญ่ = แพลตฟอร์ม **"Under360 Base"** แทน Hato Heart เต็มระบบ (= v1.0) · ทั้งหมดยังไม่เริ่มสร้าง — ต้อง dev พฤติกรรมให้นิ่งก่อนต่อเข้าระบบจริง · **ลำดับสร้าง: น้องนิวก่อนเสมอ** (ตัวอื่นพึ่ง output ของน้องนิว)
+
+| Agent | หน้าที่ | Priority | Status |
+|-------|--------|----------|--------|
+| **น้องนิว** | assign เมนูลูกค้า + production planning + ประเมิน sales velocity → feed Kitchen Queue | 🔴 สูงสุด | ⏳ spec locked (v6.3) ยังไม่โค้ด — ดูสเปกเต็มด้านล่าง |
+| **พี่เก่ง** | delivery routing + Lalamove integration — 🆕 เป้าแรก: ลดค่าส่ง subsidize 30-50K/เดือน | 🟡 สูง | ⏳ ยังไม่เริ่ม |
+| **ฟ้า** | kitchen / ingredient planning (ประเมินยอดสั่งวัตถุดิบแม่นขึ้น หลังน้องนิว output พร้อม) | 🟡 สูง | ⏳ ยังไม่เริ่ม |
+| **น้องเตียง** | graphic design/ads/marketing briefs — รีวิว/จัดหน้า blog · ภาพประกอบบทความ+Ads · ออกแบบการ์ดคูปอง/QR | 🟡 ปานกลาง | ⏳ ยังไม่เริ่ม |
+| **น้องเอิธ** | competitor/market intel + trend + influencer + ad ops + feedback monitor + **LINE OA/CRM broadcast** | 🟢 **รันจริง** | ✅ **a0.5** — subagent (`.claude/agents/nong-eath.md`) + widget · LINE OA/CRM deep dive (22 ก.ค.) · 🆕 **broadcast wave 1 ยิงจริง 24 ก.ค.: 5 ใบ win-back RFM 1,809 คน** (01-05 · โค้ด attribution ต่างกัน + `admin_script_salmon.md` ตอบคนทัก+ติด tag + 06/07 ร่าง + handoff U-track gift item) · output = "ชีทพลอย/นัท" paste-ready · ห้ามทำเอง: จ่าย/publish แอด·ทาบ influencer (ร่างเท่านั้น) · **broadcast/ยิงแอด = นัทกดเอง** · **ตัวถัดไป: Agent QA แอดมิน LINE OA (แชท chat.line.biz เข้าถึง+อ่านได้แล้ว = ปลดล็อก)** |
+
+**Flow เมนูกระแส:** เอิธ (เจอเทรนด์+ดูคู่แข่ง) → ฟ้า (ทำได้ไหม/ต้นทุน) → นิว (จัดเข้าผลิต)
+
+### 🤖 น้องนิว v1 — LOCKED SPEC (Meal Plan menu assignment)
+> Codify สมองนัทที่เคย assign เมนูเองในหน้า OH แพลนเมนู — keystone agent ที่ตัวอื่นรอ output · ต้องเสร็จก่อน deadline สั่งวัตถุดิบ (3 ทุ่ม)
+
+**ชั้น 1 — เลือก 14 เมนูผลิตวันนี้ (production pool):**
+- Random 12 เมนู ตามโควตาโปรตีน: ปลา+กุ้ง (ทะเล) = 4 · ไก่+หมู = 8 · bias เมนู 🟢เขียว (rating=3)
+- แบ่ง 12 = **6 hook** (เมนูดัง/เขียว ซ้ำรอบก่อนได้) + **6 fresh** (ไม่ซ้ำ ~3 รอบล่าสุด ปรับได้ 1-5 รอบ)
+  - hook ซ้ำใน "การผลิต" ได้ แต่ชั้น 2 ยังกันไม่ให้ลูกค้าคนเดิมได้ซ้ำถี่
+  - ⏳ ช่วงยังไม่มีคะแนน (v1): hook/fresh ยังไม่แยก → random 12 (ทะเล4/ไก่หมู8) เลี่ยงรอบล่าสุดเฉยๆ เปิด hook/fresh เมื่อมีเขียว
+- คน (นัท/แอดมิน) ใส่เพิ่มเอง 2 เมนู → รวม 14
+- ⚠️ เมนูที่ถูก request สำหรับวันนั้น = reserve เข้า 14 ก่อน แล้วค่อย random ที่เหลือ
+
+**ชั้น 2 — assign เมนูให้ลูกค้าแต่ละคน (จาก 14 เมนู):**
+1. เช็ค request ก่อน (2/14 ที่ลูกค้าตั้งใจ) → ล็อกเข้ากล่องก่อน
+2. เติมช่องที่เหลือ: ตัดของแพ้/ไม่กินออก (กฎเหล็ก) · ลูกค้าใหม่ → เมนู 🟢signature hook ต่อคอร์ส · ลูกค้าเก่า → ไม่ซ้ำ ~10 มื้อล่าสุด คะแนนดีสุด
+3. ซ้ำเลี่ยงไม่ได้ → วน 🟢signature (ยอมซ้ำ) + mark ให้น้องเอิธเก็บฟีดแบค
+4. ของไม่กินตัดหมด → flag "ทำพิเศษ +1 จาน"
+
+**Output:** กล่องของลูกค้าแต่ละคน + flags → แอดมิน confirm → ครัวเห็นใน Kitchen Queue
+
+**ข้อมูลที่ใช้ (ความพร้อม):** ⚪ คะแนนเมนู = deferred v1 (แรนดอมไม่มีเขียวก่อน) · 🟢 ประวัติเมนูลูกค้า = ดึงจาก orders/deliveries ได้แล้ว · 🔴 catalog HP/LC = คนละชุดกับ S/D ต้อง import เข้า DB ก่อน (กลุ่ม 1 ข้อ 1) · 🔴 preference ลูกค้า = ต้องสร้างที่เก็บ (`customer_preferences`, กลุ่ม 1 ข้อ 2)
+
+**ยืนยันแล้ว:** HP/LC = คนละชุดเมนูกับ S/D/No/A → คะแนนเขียวของ S/D ใช้กับ HP/LC ไม่ได้ · v1 = assign ครบ 7 · Request Menu UX ค่อยต่อทีหลัง
+
+### 🍱 Meal Plan — สเปคอนาคต (ยังไม่สร้าง — ต่อหลังน้องนิว v1)
+**Request Menu (2 รายการ/สัปดาห์):** ลูกค้า Meal Plan request เมนูเอง 2 รายการ/สัปดาห์ กระจายลง delivery ไหนก็ได้ อีก 5+ รายการครัวกำหนด — 🤫 surprise factor: ลูกค้าเห็นแค่ 2 เมนูที่ตัวเอง request เท่านั้น — Flow: Admin เลือกรายการจาก catalog → LINE broadcast ทุกสุดสัปดาห์ → ลูกค้า tap เข้า LIFF → tick 1-2 เมนู → confirm → save + แจ้ง admin ใน OH → ครัวเห็นใน daily plan — Deadline อาทิตย์ 20:00 ปิดรับ — Tables ใหม่: `weekly_broadcast` · `customer_requests`
+
+**ครัว 3 Zone + Reservation:** Zone A จัดวันนี้ (ส่งพรุ่งนี้) → กด ✓ ย้ายไป C · Zone B จัดล่วงหน้า (เมนูพิเศษ pre-order แยก panel ต่อ delivery date) · Zone C จัดแล้วรอส่ง (Messenger ยืนยันหยิบ) — ปัญหา advance order: เมนูพิเศษผลิตสัปดาห์นี้ส่งสัปดาห์หน้าไม่มีระบบ reserve อาจถูกขายซ้ำ → ต้องมี `menu_reservations`
+
+**Weekly Menu Plan (คนละตัวกับ Daily Plan):** กำหนดเมนูประจำสัปดาห์ S 8 เมนู + D 5 เมนู/สัปดาห์ — AI เลือกซ้ำน้อยสุด+คะแนนดีสุด → Daily Plan + LINE broadcast + เปิด Request Menu
+
+### 🥬 Freshket Ordering Agent — ยังไม่เริ่ม
+ระบบสั่งวัตถุดิบอัตโนมัติจาก Freshket ด้วย Computer Use — **Deferred: รอน้องนิวเสร็จก่อน** (ต้องมี ingredient output จากแผนผลิตก่อน) · เกี่ยวโยงกับฟ้า · `fah_instructions.md` (ยังไม่เขียน) เก็บ product preference/เกณฑ์เลือกของ
+
+### 🚚 Delivery Design เชิงกติกา (พี่เก่ง)
+**Time windows:** ยืดหยุ่นทั้งวัน = มีส่วนลด (จูงใจ slot จัดรถง่าย) · เช้าก่อน 12:00 · บ่าย 13:00–17:00 — ลูกค้าแจ้งช่วงสะดวกรับได้ แต่ไม่ใช่เลือกเวลาเป๊ะ (คอนเทนต์ห้ามเขียนว่าเลือกเวลาได้)
+
+**Dual-mode:** Real-time monitor (เฝ้าออเดอร์เข้าทันที ลูกค้าต่อรองเวลาได้ไม่เกิน 2 ครั้ง/เดือน — คนละอันกับ request เปลี่ยนเมนู 2 ครั้ง/สัปดาห์) · Route planner (วางแผนเส้นทางรวมประจำวันตอน 17:00)
+
+**Lalamove v3 API:** ขอราคา realtime + auto-booking อนาคต — ช่วง trust-building แรก admin ต้อง approve ก่อนทุกครั้ง
+
+**วิสัยทัศน์ที่นัทอธิบาย (2026-07-05):** หน้าจัดแมสใหม่เป็น "รายการ" ให้แมสกดอัพเดทสถานะเองจากมือถือ + ถ่ายรูปหลักฐานส่งของ (proof of delivery) — คนละเรื่องกับ "แมสเซนเจอร์" ปัจจุบัน (แค่หน้าดูรายการ ไม่มีปุ่มอัพเดทจริง ไม่มี LINE แจ้งลูกค้าเลย)
+
+**Tables ที่ต้องสร้าง:** `menu_history` · `customer_preferences` (SQL พร้อมแล้ว ดูหัวข้อ Supabase Tables) · `production_plan` · `weekly_assignments` · `menu_reservations`
+
+---
+
+## 🧾 บัญชี & ภาษี — กฎที่ทุกห้องต้องคำนึงถึง (นัทสั่งเพิ่ม 27 ส.ค. 2026)
+
+> **นัทพูดเอง:** *"ในฐานะที่นายเป็น pm **เรายังไม่เคยคุยเรื่องบัญชีกันด้วย** และฉันคิดว่า**นายต้องครอบทุกอย่างให้คำนึงถึงภาษีด้วย** ... ถ้าจะยิงแอด **ต้องมีเก็บสลิปทุกงาน เพื่อใช้ในการทำบัญชี**"*
+
+**เดิมเรื่องนี้อยู่แต่ใน f-track = ห้องเดียวรู้** · ตอนนี้ยกขึ้นเป็น **กฎกลาง ทุกห้องต้องรู้**
+
+### 🔴 กฎข้อเดียวที่ต้องจำ: **ใช้เงิน = ต้องมีหลักฐาน · เก็บ "ตอนจ่าย" ไม่ใช่ "ตอนสิ้นเดือน"**
+
+**หลักฐานที่ใช้ได้ เรียงตามคุณภาพ:** ใบกำกับภาษี > ใบเสร็จรับเงิน > สลิปโอน (อย่างน้อยต้องมีสลิป)
+🔴 **ของที่ไม่มีหลักฐาน = ลงบัญชีไม่ได้ = จ่ายจริงแต่เหมือนไม่ได้จ่าย** → กำไรบนกระดาษสูงเกินจริง → **เสียภาษีเกินที่ควร**
+
+### 📋 ห้องไหนใช้เงิน ต้องเก็บอะไร
+
+| ห้อง | ใช้เงินกับอะไร | ต้องเก็บ |
+|---|---|---|
+| **06 / เอิธ** | ยิงแอด FB · IG · Google | 🔴 **ใบเสร็จทุกแคมเปญ** — Meta/Google ออกให้ในระบบ **ดาวน์โหลดทุกเดือน อย่ารอ** · จดคู่กับชื่อแคมเปญ (ใช้ชุด UTM ที่ล็อกไว้แล้ว) |
+| **buyer** | วัตถุดิบ (Freshket · GO) | ใบกำกับ/ใบแจ้งหนี้ · ⚠️ **ใบสั่งซื้อ ≠ ใบแจ้งหนี้** (เจอจริง 21 ส.ค. — เก็บผิดแท็บทั้งชุด) |
+| **keng** | ค่าส่ง Lalamove | ใบเสร็จ/รายงานรายเดือนจากแอป |
+| **05** | LINE OA รายเดือน · ค่า broadcast | ใบเสร็จรายเดือน |
+| **u / m** | Vercel · โดเมน · API · เครื่องมือ | ใบเสร็จ (ส่วนใหญ่จ่ายบัตร → **ต้องแยกจากของส่วนตัว**) |
+| **k / ครัว** | ของใช้ครัว · แก๊ส · อุปกรณ์ | ใบเสร็จ — **ของที่ซื้อสดหน้าร้านหลุดบ่อยที่สุด** |
+
+### ⚠️ 3 กับดักที่รู้แล้วจากของจริง
+
+1. **ทุกบัตร/ทุกบัญชีปนส่วนตัวหมด** (นัทยืนยันเอง) → **แยก "ของร้าน / ส่วนตัว" ตั้งแต่ตอนจ่าย** ไม่ใช่มาแยกตอนทำบัญชี · **ห้ามเหมาว่าเป็นของร้าน**
+2. **FlowAccount = เครื่องออกบิลอย่างเดียว ไม่ใช่ระบบบัญชี** → **ไม่มีฝั่งรายจ่าย ไม่มีงบกำไร-ขาดทุน** · อย่าคิดว่ามีระบบแล้ว
+3. **ใบกำกับภาษีต้องออกในนามบริษัท ไม่ใช่ชื่อนัท** — ออกผิดชื่อ = ใช้ไม่ได้
+   ```
+   บริษัท อันเดอร์สามหกศูนย์ฟู๊ด จำกัด
+   เลขประจำตัวผู้เสียภาษี  0105563025674
+   ```
+   *(B2B ขายส่ง: ส่วนลด 20-25% + VAT 7% · ออกบิลผ่าน FlowAccount · คนออกบิล = "นิด")*
+
+### ✅ เช็คลิสต์ก่อนอนุมัติงานที่ใช้เงิน (PM/CC ใช้)
+```
+□ งานนี้ใช้เงินเท่าไหร่
+□ จ่ายด้วยอะไร (บัตร/บัญชีไหน) — ของร้านหรือส่วนตัว
+□ ได้หลักฐานแบบไหน · ใครเก็บ · เก็บไว้ที่ไหน
+□ ออกในนามบริษัทได้ไหม
+```
+**ตอบไม่ได้สักข้อ = ยังไม่อนุมัติ** — ไม่ใช่เพราะไม่เชื่อใจ แต่เพราะ**หลักฐานที่ไม่ได้เก็บตอนจ่าย ตามเก็บทีหลังแทบไม่ได้เลย**
+
+### 🚫 ขอบเขตที่ Claude ห้ามข้าม
+- **Claude ไม่ใช่นักบัญชี/ที่ปรึกษาภาษี** — จัดระบบเก็บหลักฐานให้ได้ **แต่การตีความภาษีต้องให้คนทำบัญชียืนยัน**
+- **ห้ามฟันธงว่าอะไรหักได้/หักไม่ได้** — **เสนอให้เก็บไว้ก่อนเสมอ ดีกว่าทิ้งแล้วใช้ไม่ได้**
+- 🔴 **ตัวเลขภาษี/บัญชีทุกตัวที่ Claude คำนวณ ต้องผ่านคนทำบัญชีก่อนใช้จริง** (กฎเดียวกับ Kidneycare ที่ต้องผ่านคุณอิ๊ง)
+
+---
+
+## 💰 f-track — การเงิน / P&L (เปิดแทร็ค 27 ก.ค. 2026 · f0.1)
+
+> **เป้า:** P&L จริง 6 เดือน (ก.พ.–ก.ค. 2026) → รู้ขาดทุนต่อเดือน · หาจุดรั่ว · **ตั้งเงินเดือนนัทที่จ่ายไหวจริง (ตอนนี้ไม่ได้จ่ายเลย)**
+> **ไฟล์ทั้งหมดอยู่ใน `finance/` (gitignore ทั้งโฟลเดอร์ — ข้อมูลการเงิน/บัญชีธนาคาร ห้าม commit)** · โค้ดอยู่ `scripts/finance/` (commit ได้)
+> `finance/HANDOFF.md` = บริบทเต็ม · `finance/ASK_NID.md` = ชีทถามคนออกบิล · `finance/GET_STATEMENTS.md` = checklist โหลด statement
+
+### 🔴 กฎเหล็ก (นัทสั่งเอง — เคยเผลอสรุปจากข้อมูลไม่ครบมาแล้ว)
+1. **ห้ามวิเคราะห์/สรุปตัวเลขก่อนข้อมูลครบ**
+2. **ถามก่อนตีความ** โดยเฉพาะรายการที่ไม่รู้ว่าร้านหรือส่วนตัว
+3. **ทุกบัตร/ทุกบัญชีปนส่วนตัวหมด** ห้ามเหมาว่าเป็นของร้าน
+
+### ⚠️ กติกาคำนวณยอดขาย — **ห้ามนับเองด้วยมือ ให้ import `scripts/finance/orders.mjs`**
+ตาราง `orders` มีของปน 5 อย่างที่ทำให้ยอดผิด **แบบเงียบ ไม่มี error**:
+1. **PostgREST คืนแค่ 1,000 แถว/ครั้ง** — `orders` 15,801+ / `order_items` 40,845 / `customers` 8,012 → **ต้อง paginate** (เอิธเคยได้ 1,949 จากที่ควรได้ 2,622)
+2. ออเดอร์เทส `source='parallel_test'` · `created_by='[TEST-P] Claude'` · `notes` ขึ้นต้น `[PARALLEL]`
+3. ออเดอร์เทสของทีม — ชื่อลูกค้า `Nut`/`Test User`/`ทดลอบ 1`/`PLOY ♡`/`SchemaTest` (**ปี 2026 = 38 ใบ ฿83,420**)
+4. **ใบยอด ฿0 = 34% ของแถวทั้งหมด** ไม่ใช่การขาย → ตัดออกทั้งยอดเงินและ order count
+5. **`HS-` = log ระบบเก็บแต้ม ไม่ใช่ยอดขาย** (`source='hato_loyalty_log'` · "สังขกร" = บัญชีแอดมิน) → **ตัดออกจากทุกการคำนวณ** · ยอดขายจริง = **`HT-` (LIFF) + `U-` (ระบบ 360)**
+
+### 🪣 ใบยอด ฿0 มี 3 แบบ ลงบัญชีคนละทาง (ห้ามเหมารวม)
+| แบบ | คืออะไร | ลง P&L |
+|---|---|---|
+| **prepaid ทยอยส่ง** | ลูกค้าจ่ายก้อนแล้วทยอยสั่งตัดเครดิต (เทคนิคเร่งยอดของร้าน) | ⛔ **ไม่ลงทั้ง 2 ทาง** — รับรู้รายได้ไปแล้ว บวกซ้ำ = นับเกิน |
+| **staff meal** (`FREEADMIN`) | พนักงานสั่งกินเอง | memo line · ต้นทุน**วัตถุดิบ** ไม่ใช่ราคาขาย · **ห้ามบวกเป็นค่าใช้จ่ายใหม่** (อยู่ในบิล Freshket แล้ว = นับซ้ำ) |
+| **`แยกวันส่ง`** | รอบส่งเพิ่มของออเดอร์เดิม | ไม่ใช่ออเดอร์ · ใช้เป็นตัวชี้วัด**ต้นทุนขนส่ง** ได้ |
+
+### 🔴 ทำไม "ยอดขาย" ที่ Hato รายงานถึงเว่อร์เกินจริง — และมันหลอกมาเก็ตติ้งมาตลอด (นัทอธิบายเอง 5 ส.ค. 2026)
+> **ความรู้ชิ้นนี้เชื่อม 3 เรื่องที่เคยดูไม่เกี่ยวกัน: ใบ ฿0 · ระบบแยกวันส่ง · และเหตุผลที่มาเก็ตติ้งไม่กระตือรือร้น**
+
+**Hato ไม่มีระบบแยกวันส่งเลย** (ยืนยัน 4 ชั้น 5 ส.ค.: `AdminOrderType` ไม่มี field รอบส่ง · ไล่ query ทั้ง 117 ตัวไม่มีตัวไหนเก็บ · ออเดอร์คอร์สเก็บ `deliveryDate` ค่าเดียวเหมือนเรา · `searchPackingList` ว่าง) → **ทั้งหมดเดินด้วย man power ล้วน:**
+1. **แอดมินจำเอง**ว่าลูกค้าคนไหนต้องส่งกี่รอบ
+2. **แอดมินกดสั่งออเดอร์ให้ลูกค้าเอง** แล้วติ๊กสินค้า "แยกวันส่ง" → เกิด **ใบ ฿0 ในวันส่งรอบอื่น ๆ**
+3. เวลาวางแผนแมส แอดมิน**เปิดหน้าวันส่งของวันนั้น** แล้วดูว่ามีใครบ้าง
+
+**ผลเสีย 3 ชั้นที่ตามมา:**
+- 🔁 **ซับซ้อนและพึ่งคนล้วน** — ถ้าแอดมินลืมเปิดใบแยก รอบนั้นหายจากระบบทันที (เจอจริง 5 ส.ค.: แอดมินส่ง 15+1 งาน แต่ระบบขึ้น 12 · 6 ใบที่หาย = คอร์สที่จดในชีทแทนการเปิดใบแยก)
+- 📊 **ออเดอร์ที่ track ไม่เป๊ะ**
+- 🚨 **Hato รายงานยอดขายเว่อร์ตลอด** — เพราะนับใบที่แอดมินแยกออกมาเป็น "ออเดอร์" ด้วย · **บางวันที่ดูยอดเยอะ จริง ๆ แค่แอดมินแยกงาน ไม่ใช่ขายได้เพิ่ม**
+  → **ผลกระทบตัวจริง: มาเก็ตติ้งไม่กระตือรือร้น เพราะเข้าใจว่าที่ทำอยู่มันเวิร์คแล้ว** (นัทชี้เอง)
+
+**⚖️ ตัวเลขฝั่งเราถูกอยู่แล้ว** — `scripts/finance/orders.mjs` กรอง `total > 0` ออกตั้งแต่แรก (ดูกฎ "ห้ามนับเองด้วยมือ" ด้านบน) → **ยอดใน DB เรา ≠ ยอดที่ Hato โชว์ และของเราคือตัวที่ถูก** · ถ้าเจอเอกสาร/หน้าจอไหนอ้างยอดจาก Hato ตรง ๆ ให้สงสัยไว้ก่อน
+
+**✅ ระบบเราออกแบบมาแก้เรื่องนี้แล้ว** — multi-round delivery split (u0.4.25): ลูกค้าสั่งคอร์สผ่าน LIFF → ระบบสร้าง N orders ให้อัตโนมัติ (1 รอบ = 1 order · รอบ 1 ถือเงินเต็ม · รอบ 2..N ยอด 0 + `notes` ระบุ parent) · **เทสจริงผ่านแล้ว 3 ส.ค.** (Diet Set C 42 กล่อง → 21+21 · order_items ครบทั้ง 2 ใบ)
+→ **หลัง cutover แอดมินไม่ต้องกดสั่งแทนลูกค้าอีก และรอบส่งจะไม่หายเพราะใครลืม** — นี่คือเหตุผลเชิงระบบข้อหนึ่งที่ไม่ต่อ Hato
+
+### 💸 ค่าใช้จ่ายคงที่ที่ยืนยันแล้ว ~144,600/เดือน
+ค่าแรง ~114,000 (ชีทจริง · **Ploy+Nut 70,000×2 ในชีท = ไม่ได้จ่ายจริงตั้งแต่ 2023 ห้ามนับ**) · Lalamove 24,000 · **Hato 5,000** (฿60,000/ปี) · LINE OA ~1,370 · FlowAccount ~250
+**🏠 ค่าเช่า = ไม่มี — ครัวเป็นของตัวเอง (นัทยืนยัน 27 ก.ค.)** ⚠️ จดไว้เพราะ *"ไม่มีค่าเช่า"* กับ *"ลืมใส่ค่าเช่า"* หน้าตาเหมือนกันใน P&L
+**🔴 ยังไม่รู้เลย:** วัตถุดิบ (ก้อนใหญ่สุด) · น้ำ/ไฟ/แก๊ส · **ภาษีที่ดินฯ** (รายปี มักหลุด) · ค่าธรรมเนียม Omise 1%
+
+### 🏪 ช่องขายส่ง B2B — ไม่เคยมีในเอกสารไหนมาก่อน (เจอ 27 ก.ค.)
+ใบเสนอราคา **37 ใบ ≥15 ร้าน** ในนาม **บริษัท อันเดอร์สามหกศูนย์ฟู๊ด จำกัด** (เลขภาษี `0105563025674`) · **ส่วนลด 20–25% + VAT 7%**
+Bring Me · Meet me · กรีนออกัส · Imjai · CleanfoodStation · Healthy Kcals · Naturefarm · Nubkcal 3 สาขา · Enjoyhealthy · Punsuk Organic · Thiny Healthystore + **ลูกค้าองค์กร** (เอ็นไวรอนส์ เอ็กเพิร์ท · เอา กรุ๊ป โฮลดิ้งส์)
+**ออกบิลผ่าน FlowAccount** (Advance ฿2,990/ปี · บัญชี `360foodbox.acc@gmail.com` · คนออกบิล = "นิด" ฿2,500/ด)
+⚠️ **FlowAccount = เครื่องออกบิลอย่างเดียว ไม่ใช่ระบบบัญชี** (นัทยืนยัน: *"ไม่ได้ใช้จริง มีไว้เฉยๆ แค่เปิดบิลร้านค้า"*) → **ไม่มีฝั่งรายจ่าย ไม่มีงบกำไร-ขาดทุน**
+
+### 🛑 กฎข้อ 0 — **แยก "ตัวเลข" ออกจาก "สาเหตุ" · ห้ามประกาศสาเหตุจนข้อมูลครบ**
+**บทเรียนจริงจาก session แรก:** สรุป "สาเหตุที่ยอดตก" **พลิก 3 รอบในคืนเดียว** และส่งให้นัททุกรอบ — ① ความถี่ → ② retention/win-back → ③ acquisition · **แต่ละรอบดูมีเหตุผลตอนนั้น** ผลคือทำนัทงงกว่าเดิม
+→ **ตัวเลขที่ verify แล้ว = รายงานได้ · สาเหตุ = เก็บเป็นสมมติฐาน ห้าม broadcast จนได้ statement**
+
+**🎓 บทเรียนแพงที่สุดของ f-track (เสียเวลาหลายชั่วโมง 3 ห้อง):**
+เข้าใจผิดว่า `HS-` = "ช่องขายสาขากรุงธนบุรี" → ไล่ forensics ทั้งคืน (นับใบรายเดือน · จับคู่ dedup 26.5% · สั่ง migrate regenerate รายงาน) → **ที่จริง `HS-` = log ระบบเก็บแต้ม** นัทตอบให้จบได้ในประโยคเดียว
+**ต้นเหตุ: ตั้งคำถามผิด** — ถามว่า *"HatoStore ยังขายอยู่ไหม"* (ใส่สมมติฐาน "เป็นช่องขาย" ลงไปแล้ว) นัทเลยตอบรับกรอบที่วางให้ว่า "ยังขายอยู่ปกติ"
+→ **กฎ: ถามแบบไม่ใส่สมมติฐาน — "X คืออะไร" ไม่ใช่ "X ยังทำงานอยู่ไหม"** · และ **ถามเจ้าของก่อนขุด forensics** ข้อมูลบอกได้แค่ "มีอะไร" บอกไม่ได้ว่า "มันคืออะไร"
+
+**✅ ยอดขายจริง (LIFF `HT-` · ตัดเทส · ตัดใบยอด 0 · ตัด loyalty log แล้ว):**
+| 2025 | ส.ค. 446,469 · ก.ย. 487,281 · ต.ค. 491,787 · พ.ย. 451,687 · ธ.ค. 290,983 |
+|---|---|
+| **2026** | **ม.ค. 581,910 · ก.พ. 539,476 · มี.ค. 513,167 · เม.ย. 480,153 · พ.ค. 399,759 · มิ.ย. 365,694** · ก.ค.(27วัน) 182,165 |
+
+**✅ สิ่งที่ยืนยันแล้ว (ค่าสัมบูรณ์ ไม่ขึ้นกับฐาน จึงไม่พลิกอีก):**
+- **ยอดจากลูกค้าเก่านิ่ง ฿285K–354K** ตลอด 6 เดือน = ฐานลูกค้าเก่าไม่ได้เลือดไหล
+- **repeat rate ไม่มีเทรนด์ลง** (22–38% แกว่งปกติ) = retention ไม่เสื่อม
+- **ยอดจากลูกค้าใหม่ ฿277,970 (ม.ค.) → ฿80,495 (มิ.ย.)** ⬅ ตรงกับผล FB audit (แอด 3 ปี 79% retarget ลูกค้าเก่า · 99% ผิด objective = ไม่ได้ยิงหาคนใหม่)
+
+**⏳ ยังฟันธงไม่ได้จนได้ statement:** ขาดทุนเดือนละเท่าไหร่ · อะไรคือตัวฉุดยอดตัวจริง
+
+### ⚖️ Hato ไม่ใช่ที่ที่เงินรั่ว
+฿5,000/เดือน = **3.5% ของค่าใช้จ่ายคงที่ · ~1.3% ของยอดขาย** → **ตัด Hato ให้ตัดเพราะ "ระบบ 360 พร้อมแล้ว" เท่านั้น ไม่ใช่เพราะอยากประหยัด**
+
+---
+
+## 🍳 k-track — ครัว (เปิดแทร็ค 5 ส.ค. 2026 · k0.1)
+
+> **รายละเอียดเต็ม: [`docs/KITCHEN.md`](docs/KITCHEN.md)** · เคสจริง: `docs/CASE_01_wrong_box_count.md` · `docs/CASE_02_supplier_short_delivery.md`
+> **จุดกำเนิดโปรเจค = ครัวโทรมาถามว่า "สูตรนี้ทำยังไงนะ หายไปแล้ว"** — ครัวเป็นต้นทางของ Under360 System ทั้งหมด แต่เป็นเสาที่ได้เครื่องมือน้อยสุด
+
+### 👑 นัท = หัวหน้าครัวตัวจริง
+คำถามเชิงกติกาการผลิต (ทำได้/ไม่ได้ · เวลา · กำลังผลิต) → **ถามนัทจบในตัว ไม่ต้องไปสำรวจครัวก่อน**
+
+### 👥 ทีม 6 คน — ไทใหญ่ทั้งหมด · อ่านไทยได้ 2/6
+**อู** (หัวหลักจัดออเดอร์ · ตู้ฟรีซ 5+1 · รับสายแพลตฟอร์ม · เช็คสต็อค) · **โม๋ข่อง** (คุยคนไทย/ทวงของโกโฮลเซล) — 2 คนนี้อ่านไทยได้
+**โว๊** (ฉลาด ขยัน เก็บรายละเอียด — 🔑 เป้าหมายอันดับ 1 ของ tools ภาษา) · **อ่อง** (หัวหน้าแม่ครัว เร็วมาก แต่ไม่ทำตามสูตร) · **โทย** (ลิเบอโร่) · **อ่องคิน** (จะให้ออก — อย่าออกแบบระบบที่พึ่งคนนี้)
+
+### 🗣️ ภาษา — กฎออกแบบ tools ทุกตัวที่ครัวต้องใช้
+- ⛔ **แปลเป็นอักษรไทใหญ่ = ไร้ประโยชน์** (เขาเขียน/อ่านไม่ได้ ใช้ทับศัพท์)
+- ✅ **ไทย + พม่า คู่กันเสมอ** (พม่า "พอได้" มี 2-3 คนช่วยกันอ่าน)
+- ⚠️ **ของสำคัญ (สูตร/ปริมาณ/จำนวนกล่อง) ต้องมีตัวเลข+รูป+ไอคอนกำกับ** ห้ามพึ่งตัวหนังสือล้วน · **ห้ามให้ AI แปลสูตรแล้วส่งเข้าครัวโดยไม่มีคนตรวจ**
+- 🔴 **เครื่องมือที่มีอยู่ตอนนี้เป็นไทยล้วน 100%** (`kitchen_queue` · `pwa/orders_upcoming` · `main_database_v2`) = อ่านออกจริง 2/6 คน
+
+### ⏰ กำลังผลิตจริง — ปิดคำถาม "MP ส่งเช้า/นอก จ-พ-ศ ได้ไหม"
+**❌ ไม่ได้ = ข้อจำกัดการผลิตจริง ห้ามผ่อนกฎ** (นัทตอบเอง 5 ส.ค.) · ระบบล็อก จ/พ/ศ + บ่าย **ถูกแล้ว**
+เหตุผล: ทำสด + เมนูเยอะมาก (R&D วันเดียว 15 รายการ++) · ครัวเข้า **8:00** แต่ **ผักมาเกือบ 9:00** → เช้ากำลังผลิตยังไม่เต็ม
+🔑 **root cause ที่แก้ได้จริง: ให้ผักมาส่งก่อน 06:00 ของวันก่อนหน้า** → ต้องแพลนผลิตล่วงหน้าได้ = **เหตุผลเชิงธุรกิจของน้องนิว + ฟ้า ที่ชัดที่สุดเท่าที่มี** (ไม่ใช่แค่ assign เมนู แต่คือคืนชั่วโมงแรกของครัวทุกวัน)
+⛔ ผลที่ต้องยอมรับ: 4/18 ใบ (22%) ที่ Hato เคยรับ = เรารับไม่ได้จริง → **แก้เกณฑ์ checkpoint ไม่ใช่แก้โค้ด**
+
+### 🗨️ "คุยงานครัว" — 2 หน้าควบคู่ (นัทเคาะเอง 5 ส.ค. · ✅ โค้ดเสร็จ รอเปิดสวิตช์)
+| | **บอท LINE** (กลุ่มครัว) | **`kitchen_console.html`** (นัทคนเดียว) |
+|---|---|---|
+| ใครใช้ | ครัว 6 คน | **นัท** |
+| หน้าที่ | รับทุกข้อความ · แปล · ตอบยอดสั่งเมื่อถูกถาม | **สื่อสาร + รับสาร** 2 ทาง |
+| ทำไมแยก | ครัวอยู่ใน LINE อยู่แล้ว ไม่ต้องสอนอะไรใหม่ | แชทไหลผ่าน ย้อนอ่าน/ค้นไม่ได้ |
+
+- ครัวพิมพ์ภาษาอะไรก็ได้ → เก็บ **ต้นฉบับ + แปลไทย + แปลพม่า ในแถวเดียว** (`line_group_messages`)
+- 🔑 **แปลตอนเก็บ ไม่ใช่ตอนอ่าน** → เปิดหน้าซ้ำกี่รอบก็ไม่เสียเงินเพิ่ม
+- นัทพิมพ์ไทย → แปลพม่า → ส่งเข้ากลุ่ม **ไทยบน / พม่าล่าง**
+- 🔒 หน้าคอนโซล**อ่านผ่าน server เท่านั้น** (service role) — ตารางคง "anon เขียนได้ อ่านไม่ได้" แชทครัวไม่หลุดผ่าน anon key
+- 💰 **ค่าแปล (Haiku 4.5 · $1/$5 ต่อ 1M token): ~฿210/เดือน ที่ 200 ข้อความ/วัน · ~฿525 ที่ 500/วัน** = 0.1-0.4% ของค่าใช้จ่ายคงที่ · **ไม่ใช้ = ไม่เสีย** (จ่ายตามการใช้จริง ไม่มีค่ารายเดือน)
+- **ไฟล์:** `kitchen_console.html` · `api/kitchen-console.js` · `api/line-webhook.js` · `scripts/sql_kitchen_translate.sql`
+- **ยังไม่เปิดใช้** — รอนัทใส่ env 5 ตัว + ตั้ง webhook + เชิญบอท (ดู `TODO.md`)
+
+---
+
+## 📣 Marketing Track — สถานะจริง (อัปเดต 11 ก.ค. 2026)
+
+**Scope 4 เครื่องยนต์:** ① SEO เว็บ ② AI Search/GEO ③ Google/FB Ads ④ Influencer
+
+### ✅ เสร็จแล้ว
+1. **Google Business Profile — ✅ verify ผ่าน (9 ก.ค.)** — ขึ้น Google Map แล้ว · dining modes ครบ (Delivery+No-contact=Yes) · Profile strength 65% (ไม่ต้องไล่ 100%) · Advertise setup กด Skip ถูกแล้ว (ทำแคมเปญ manual ดีกว่า Smart Campaign)
+   - ลิงก์รีวิว: `https://g.page/r/CTHTcnneZEtoEBI/review`
+   - การ์ด QR ขอรีวิวทำเสร็จแล้ว (พร้อมพิมพ์แนบกล่อง) → **แอดมินทยอยส่งลูกค้าประจำวันละ 5-10 คน** (ห้ามแลกส่วนลด)
+2. **Blog 3 บทความขึ้น Wix แล้ว** (360foodbox.com): ① "อาหารคลีน Delivery กรุงเทพ เจ้าไหนดี?" (slug: healthy-food-delivery-bangkok) ② "Meal Plan โปรตีนสูงคืออะไร" (slug: high-protein-meal-plan — ธง positioning ใหม่) ③ "ส่งถึงไหนบ้าง" (slug: delivery-areas) — ไฟล์ต้นฉบับ .md เก็บไว้ใช้ซ้ำตอนย้าย Vercel
+3. **Google Ads กู้คืนสำเร็จ + verify ผ่านแล้ว** (เมล 8 ก.ค. · Customer ID 318-768-6554 · ocid 202127689) — บัญชีเก่า canceled→Active
+4. **เคาะเรื่องเว็บ:** ห้ามยกเลิก Wix จนกว่าจะย้ายโดเมนไป Vercel เสร็จ (เนื้อหา/SEO ย้ายได้หมด ทิ้งแค่ดีไซน์)
+
+### 💎 Keyword ทองคำ (บัญชี Ads เก่า — All time: 3.9K clicks · ฿23.4K · 51.3K impr · CTR 7.6% · 256 conv)
+| Keyword | Clicks | CTR | Conv | หมายเหตุ |
+|---------|--------|-----|------|----------|
+| **คอร์สอาหารคลีน** | 1,860 | 10.85% | **127** (฿87/conv) | 🏆 ตัวคุ้มสุด — ตรง Meal Plan เป๊ะ |
+| **อาหารคลีนเดลิเวอรี่** | 1,480 | 8.20% | **95.5** (฿94/conv) | 🏆 ตัวหลักคู่กัน |
+| **Under360 (brand)** | 176 | 49.7% | 32 (฿12/conv) | CPC ฿2.22 ถูกสุด — กัน "350" เสียบชื่อ |
+| อาหาร คลีน เดลิเวอรี่ ใกล้ฉัน | 39 | 11.68% | 1 | พอใช้ |
+| ❌ อาหารสุขภาพ | 105 | 3.53% | 0 (เผา ฿1,120) | คำกว้าง เผาเงิน — ตัดทิ้ง |
+| ❌ อาหารคลีน ลดน้ำหนัก | 15 | 2.07% | 0 (เผา ฿138) | ตัดทิ้ง |
+
+**Insight:** คำมีเจตนาซื้อ (คอร์ส/เดลิเวอรี่/สั่ง) ชนะ · คำหาความรู้เผาเงิน · แคมเปญเก่าหมดอายุ Apr 2025 ตั้ง location ผิด (ทั้งประเทศ) → สร้างใหม่ ไม่ resume ของเก่า
+
+### 🎯 แคมเปญ Google Ads — ออกแบบแล้ว (รอเปิด)
+**โครงสร้าง 2 แคมเปญแยก:**
+- **แคมเปญ 1 — Brand Defense** (~50฿/วัน) — keyword: under360 · under 360 · อันเดอร์360 · 360foodbox · Match Exact+Phrase — 💤 **PARK อย่าเพิ่งเปิด (นัทถอดออกจากคิว 21 ก.ค.):** "350" ครองบน Shopee ไม่ได้ข้ามมาเล่น keyword Google · brand keyword ทำได้แค่ 176 clicks ตลอดกาล = ป้องกันยอดที่ไม่มีอยู่ · ตอนนี้ต้องการตัว**เพิ่มยอด** ไม่ใช่ป้องกัน → **เปิดตอน funnel เดินแล้ว** (มีคนเห็นแอด/อินฟลูแล้วเสิร์ชชื่อร้านต่อ)
+- **แคมเปญ 2 — Meal Plan Search** (~300฿/วัน) — Match Phrase+Exact เท่านั้น ห้าม Broad — **เปิดหลัง**เว็บ Vercel live + conversion tag ทำงาน
+
+**Negative keywords:** อาหารสุขภาพ · ลดน้ำหนัก · สูตร · วิธีทำ · ฟรี · สมัครงาน · แฟรนไชส์
+**Location:** กรุงเทพ+ปริมณฑล 5 จังหวัด ตั้งเป็น "Presence" (ไม่ใช่ "Interest")
+**Bidding:** เริ่ม Maximize Clicks เพดาน CPC ฿10 → พอมี conversion ~30 ตัว สลับ Maximize Conversions
+**⚠️ ต้องตั้ง conversion tracking ก่อนเปิด** (นับคนกดปุ่ม "สั่งผ่าน LINE")
+
+**Ad copy:** Headlines — คอร์สอาหารคลีน ส่งถึงบ้าน · อาหารคลีนเดลิเวอรี่ กรุงเทพ · คอร์สอาหารคลีน เริ่ม 1,399.- · Meal Plan ส่งฟรีถึงหน้าบ้าน · เมนูไม่ซ้ำ อิ่มไม่จำเจ · จัดเมนูตามเป้าหมายของคุณ · ทดลอง 7 กล่อง ก่อนสมัครยาว · โปรตีนแน่น คุมคาร์บได้ · สั่งง่าย จบใน LINE · อาหารสุขภาพ ส่งทั่วกรุงเทพ (ทุกหัวต้องยืนเดี่ยวได้ — Google สลับเอง) — ❌ ตัดทิ้งแล้ว: "under360" ในหัวทั่วไป · "เลือกได้ทั้ง HP/LC" · "ปรุงสด 10 ปี" (ไม่ตรง) · "ตัดวัตถุดิบที่แพ้"
+
+### 🔑 Keyword ชุดใหม่ (เคาะ 11 ก.ค. — ไทยล้วน, ตัด meal plan/low carb อังกฤษออก)
+| Ad group | Keywords | หมายเหตุ |
+|---|---|---|
+| **A — คอร์สอาหารคลีน** | คอร์สอาหารคลีน · คอร์สอาหารคลีน ราคา · คอร์สอาหารสุขภาพ | พิสูจน์แล้ว 127 conv |
+| **B — เดลิเวอรี่** | อาหารคลีนเดลิเวอรี่ · อาหารคลีนส่งถึงบ้าน · อาหารคลีนรายสัปดาห์ · อาหารคลีนรายเดือน | พิสูจน์แล้ว 95 conv |
+| **C — เพิ่มกล้าม/ฟิตเนส** | อาหารเพิ่มกล้าม · เซ็ตอาหารเพิ่มกล้าม · ข้าวกล่องโปรตีนสูง · อาหารโปรตีนสูงส่งถึงบ้าน · อาหารสำหรับคนออกกำลังกาย · ข้าวกล่องฟิตเนส | ยิง HP ทางอ้อม |
+| **D — คุมแคล** | อาหารคุมแคล · ข้าวกล่องแคลต่ำ · อาหารคลีนคุมแคลอรี่ | ยิง LC ทางอ้อม |
+| **E — นักกีฬา/ก่อนแข่ง (ทดลอง)** | อาหารนักกีฬา · มื้ออาหาร hyrox · อาหารเตรียมแข่ง · อาหารก่อนวิ่งมาราธอน | volume ต่ำ ทิ้งเบ็ดดักเทรนด์ Hyrox |
+
+C vs D = วัด HP vs LC ว่าคนหาอะไรมากกว่า (ตอบ TODO เสา 3 ไปในตัว) — ทุกกลุ่ม Phrase+Exact เท่านั้น
+
+### 📊 Facebook Ads — ปัญหาจริง = Attribution ขาด (ไม่ใช่ ad ห่วย)
+> **ผล audit 3 ปี (เอิธ 22 ก.ค. · `web/eath/fb_ads_audit.md`+`fb_ads_ploy_history.md`):** บัญชียิงจริง = **`463330657546428` ตัวเดียว** (บัญชีพลอยยิงเองไม่โผล่ใน login นัท → ต้อง share สิทธิ์/reauth) · **spend ฿41,840 · reach 565K · 133 แคมเปญ (ยิงจริงแค่ 20)** · **99% ยิงผิด objective (message/reach retarget ลูกค้าเก่า ~79%) → Meta ไม่เคย optimize เพื่อการซื้อ → วัด revenue ไม่ได้เลย** · objective "ยอดขาย" ทดลองแค่ครั้งเดียว (IG only, ฿1.52/คลิก ดีมาก) · **สูตรถูกสุด ฿76-100/แชท** = audience `CustomerList` + engagement-365day + ครีเอทีฟ "คิมบับ" · → **ต้องผูก attribution + ยิง conversion objective ก่อนเทงบใหม่**
+- **สาเหตุ:** เมื่อก่อนปิดการขายจบใน FB → Meta วัดได้ · ตั้งแต่ดันลูกค้าไป LINE (ผ่าน Hato) → Meta เห็นแค่ "คนทัก" ไม่เห็นยอดซื้อ + iOS privacy บังตาเพิ่ม → ลูกค้าจาก FB→LINE ปนกันหมด ไม่รู้เลยว่าใครมาจากไหน
+- **ทางแก้ (งานหลังบ้าน):** FB ad ชี้มา `landing.html` (มีไฟล์แล้ว) แทนชี้ตรง LINE + แปะ UTM (`?utm_source=fb&utm_campaign=xxx`) → LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order → บันทึกลง `orders` → วัด FB เป็นบาทจริงได้
+- **กลยุทธ์:** ไม่แตะแอดพลอย (baseline) → ยิงแทร็คใหม่ของนัทคู่ขนาน → ตัวเลขจากระบบนัทตัดสิน
+- **หลักยิงแอด:** ปล่อยน้อยตัว งบพอผ่าน learning phase (~50 results/สัปดาห์/แอด) ไม่หว่านหลายตัวงบบางๆ
+
+### 🎯 Platform ↔ Product mapping (เอิธ วิเคราะห์แอดพลอย 3 ปี · นัทเคาะ 22 ก.ค.)
+> **หลักการ: เลือกแพลตฟอร์มตามโปรดักต์↔กลุ่มเป้าหมาย — ไม่ใช่ "แพลตฟอร์มไหนไม่เวิร์ค"** (แก้ความเข้าใจเก่าว่า FB/IG ไม่เหมาะ — จริงๆ คือจับคู่ไม่ตรง · data: reach champion เดิม = "แพคกับข้าว IG" · CustomerList ถูกสุด = FB · 2 แพลตฟอร์มได้ผลคนละแบบจริง)
+- **Meal Plan (HP/LC พรีเมียม) → ยิง IG** — กลุ่มมีฐานะ ดูแลสุขภาพ ไลฟ์สไตล์ชาวเมือง เล่น IG หลัก
+- **Stock menu / แพคกับข้าว (ถูก ยืดหยุ่น) → ยิง Facebook** — กลุ่มเน้นสะดวก คุ้มเงิน จ่ายน้อย อยู่ FB (แนว Cleanfit ที่เวิร์คกับฟรีซแพ็ค)
+- บริบทเต็ม (วิเคราะห์ 3 ปี + สูตรที่เวิร์ค): `web/eath/fb_ads_ploy_history.md`
+
+### 🚨 CRM insight — ของฟรีที่ยังไม่ได้แตะ (Marketing session #3, 21 ก.ค.)
+> ✅ **VERIFIED โดยเอิธ (เข้า manager.line.biz จริง 22 ก.ค. — a0.4 · ดูเต็ม `web/eath/line_oa_deep_dive.md`):** ตัวเลขเดิมยืนยันแล้ว + เจอของพลิกความเข้าใจ 3 เรื่อง
+> **ตัวเลขจริง (insight 30 วัน):** เคยแอด **53,418** · reach จริง **23,246** (▼) · **บล็อก 25,911 (▲ — block > reach แล้ว = เลือดไหลต่อเนื่อง)** · active <90 วัน = **แค่ 144 คน** (ยอดตกเห็นเป็นตัวเลข)
+> **⚠️ พลิกความเข้าใจ 3 เรื่อง:**
+> 1. **audience อยู่ native LINE OA (`/broadcast/audience`) — ไม่ใช่ HatoHub!** สร้าง/ยิง segment เองได้เลย ไม่ต้องรอ Hato/token
+> 2. **"segment mealplan เปิด 3 เท่า" = คลาดเคลื่อน** — broadcast 10k จริงๆ ยิง audience **"ริชเมนูอิมเพรสชัน" (active-user)** ไม่ใช่กลุ่ม mealplan (chat tag แท้มีแค่ 187 คน) → เปิดสูงเพราะ *active* ไม่ใช่ *ตรงกลุ่ม* · ยิงกว้าง 23k เปิด 5-8% (ยิงใส่คนตายครึ่งฐาน)
+> 3. **แชท chat.line.biz อ่านได้เต็ม** (get_page_text ผ่าน Chrome) → **ปลดล็อก Agent QA แอดมิน + deep-mine preference** (m เคยบอกอ่านไม่ได้ = ผิด)
+> **🔴 tag พึ่งไม่ได้ (นัทยืนยัน 22 ก.ค.):** ~95% ลูกค้าไม่เคยถูก tag / tag มั่ว (tag "ติดตาม" จริงๆ = "ยังไม่ซื้อ ต้องอัดโปร" ไม่ใช่ที่เข้าใจ) · แอดมิน error ไม่ติด → **เลิกใช้ tag เป็นแกน ใช้ order data (Hato migrate 7,604 ออเดอร์) แทน**
+> **✅ Segment framework ใหม่ = RFM จาก orders (โกหกไม่ได้ ไม่พึ่ง tag):** จ่ายเท่าไหร่(→VIP) · ซื้อกี่ครั้ง(→ประจำ) · ล่าสุดเมื่อไหร่(→คนหาย) → ฐาน 2,304 คน: 👑VIP>10k **162** · ซื้อครั้งเดียว 578 · 🎯**never-bought 1,034** · 💔**หาย>6เดือน 904** = **84% inactive** (win-back/activate = ขุมเงินใหญ่สุด) · line_uid 2,300/2,304 = ยิง LINE ได้เกือบหมด · ⚠️ แยก MP/เซ็ต/ข้าวกล่อง ยังไม่ได้ (ไม่มี order_items — รอ Hato "รายงานรายสินค้า") · ⚠️ verify catch-all customer (560k/1034x outlier) ก่อนใช้จริง
+- **ทำไม 20,000 ไม่แปลงเป็นยอด (สมมติฐาน):** broadcast ยิง **ใบเดียว** หาคน 20,000 จากคนละโปรดักต์/ยุค/ราคา → ~80% ไม่ใช่ของตัวเอง → สมองเรียนรู้ "ไม่ต้องเปิด" = **ดองแชท** (≠ ลืมร้าน) · **ทางแก้ = segment broadcast ตาม tag** ไม่ยิงรวม
+- **tag ปัจจุบันใน LINE OA (ของ Hato):** `ติดตาม` (สนใจยังไม่สั่ง) · `มีลแพลน` · *(ไม่มี tag)* = สาย Stock/คลีนปกติ
+- **🔴 GAP ใหญ่ (ปลดล็อกทันที ไม่ต้องรอ migrate):** แอดมิน **ไม่เคยตามลูกค้าคอร์สจบเลย** → ไล่ทักกลุ่ม **A** (คอร์สจบ ≤30 วัน, ปิดง่ายสุด) → B (จบ 1-3 ด.) → C (tag ติดตาม ≤90 วัน) วันละ 10-15 คน · **กฎเหล็ก: ทักแล้วติด tag กลับทุกคน** (โปรดักต์เคยซื้อ/เหตุผลหยุด/สนใจไหม) → ได้ profile ฐานลูกค้าจริงมาฟรีใน 2 สัปดาห์ · **owner ไล่ทักรายคน = แอดมิน/พลอย** (สคริปต์ใน `CLAUDE_CODE_HANDOFF_20260721.md`) · **broadcast/ยิงแอด = นัทเอง (ไม่ใช่แอดมิน — [[broadcast-ads-owner-nut]])** · 🆕 **22 ก.ค.: win-back หา list ได้จาก order data แล้ว** (never-bought 1,034 + หาย 904 พร้อม line_uid) ไม่ต้องรอ tag "คอร์สจบ" ที่แอดมินไม่เคยติด — ยิง broadcast segment ได้เลย
+- ✅ **22 ก.ค.: เอิธดึงสถิติ broadcast เองได้แล้ว** (native LINE OA `insight/broadcast` ผ่าน Chrome — ไม่ต้องรอนัทแคป) · 10 ครั้งล่าสุด: segment เปิด 21-27% / ยิงกว้างเปิด 4-8% / **คลิก 0-151 (CTA อ่อน/บางใบไม่มีปุ่มเลย)** · richmenu ปัจจุบันชี้ **Hato LIFF เก่า** (`2005639551`) ต้อง cutover · **ตัวเลข "เปิด" = ตัวชี้ขาด** (เปิดน้อย=หัวข้อ/ความถี่ · เปิดเยอะไม่ซื้อ=ข้อเสนอไม่โดน — คนละยา)
+
+### 🎯 Competitor Intelligence
+> งานเฝ้าคู่แข่ง = ขยาย scope น้องเอิธ · **`web/eath/competitor_master.csv` = 42 ราย เรียงตามภัย**
+
+| ร้าน | จุดแข็ง/ภัยคุกคาม | มุมที่กระทบเรา |
+|------|------------------|----------------|
+| **Passion Food (คุณซอส)** | ⭐ ภัยหลัก — ลอกเมนู · personal brand แรง · เก่ง Grab/LINEMAN · 7 ปี 2 สาขา | ตีคู่พลอยเรื่อง personal branding |
+| **Calories Killer** | ยิง ad โหดสุด retarget · เชฟ Le Cordon Bleu 300+ เมนู · **มีเว็บ checkout เอง** (attribution ดีกว่าเรา) · gift-threshold 5,000฿ | สงคราม ad + มี web checkout = ได้เปรียบ attribution |
+| **Cleanfit** | แพ็คกับข้าวฟรีซเหมือนเราเป๊ะ · **ยิง FB หนักสุด 20+ แอด active** · แต่ Inbox-only = attribution รั่วเหมือนเรา | ชนไลน์ฟรีซแพ็ค → passive ถูกแล้ว |
+| **Meal by Meal** | positioning ทับเผง | ชนตรง positioning |
+| **Homie Clean Food** | เคลม #1 กทม. · HP/LC | ชนตรง HP/LC |
+| อื่นๆ | TipTop (406K likes ฐานใหญ่สุด) · NutriChef (medical) · Ginzy (Hyrox) · ใบเมี่ยง/นับแคล (à-la-carte ชนสต็อก) | ดู master csv |
+
+**Insight:** ส่วนใหญ่แข่ง personal branding + FB ads · **2 เทคนิคคู่แข่งใช้ Under360 ยังไม่เคยทำ:** gift-with-purchase threshold (Calories Killer) + โชว์ราคาตรงทุกแอด (Cleanfit) · **คู่แข่งส่วนใหญ่ attribution ไม่ดีกว่าเรา** (Inbox-only) — ยกเว้น Calories Killer ที่มี web checkout
+
+### 👀 Influencer Watchlist (เอิธ วิจัยจริง · `web/eath/influencer_master.csv` = 44 คน · execute = พลอยทาบเอง เอิธแค่ร่าง)
+> ⚠️ **แก้ 22 ก.ค.:** "@chalad.gin" ที่เคยจดใน master **ไม่มีในไฟล์วิจัยจริง** (น่าจะจำ handle ผิด) — ตัดออก ใช้รายชื่อจริงด้านล่าง
+- **44 คน 4 tier:** 🌟 WARM LEAD 5 (Under360 ฟอลโล่แล้ว ทาบก่อน) · 🟢 น่าลอง 23 · 🟡 สำรอง 9 · 🔴 ตัด 6
+- **WARM LEAD 5:** `@meiji_27anorma` (IG 283K, HP) · `@alita_pear` (IG 329K, HP) · `@khruzee` (IG 120K, HP โค้ช) · **`@healthydiary45.0kg` (IG 117K — top priority LC** รีวิวร้านประจำ) · `@prw.diet` (IG 224K, LC ⚠️red-flag over-claim 5กก/เดือน)
+- **Top pick ทั้งชีท:** **`@phitchaa_aa` "คลีนบ้างไม่คลีนบ้าง" (TikTok 277.5K** — ชื่อตรง positioning เป๊ะ) · + @oilys_story · @drbankfooddoctor (TikTok 728K) · @healthytalkbylee (735K)
+- **เกณฑ์คัด:** niche fit (ให้ความรู้ก่อนขาย) + tier + verify follower สด + engagement ratio + **lime (คนจริง) vs lemon (ปั้ม/บอต)** · verify แล้ว 11/13 · ตัดคน follower ปลอม/niche ไม่ fit · **monitoring อัตโนมัติ = เอิธ (stream C)**
+
+### 🛵 Delivery Platform Strategy (เคาะ 9 ก.ค. — แก้ความเข้าใจผิดเดิม)
+> เดิมเข้าใจว่า "ไม่ควรเปิด platform" — **ผิด** สิ่งที่ควรเลี่ยงคือ "ทุ่มงบ active/แข่งราคา" ไม่ใช่การเปิดทิ้งไว้
+
+- **Passive presence** (เปิดร้านไว้ให้คน+AI ค้นเจอ) = **คุ้มเสมอ** ยากแค่ setup ครั้งเดียว
+- **Active spending** (ทุ่มงบ/แข่งราคา GP 30-35%) = เลี่ยง
+- **⚠️ HP/LC ไม่ลง delivery platform/วงใน** — เป็น subscription ขายผ่าน LINE OA เท่านั้น · ลง platform เฉพาะ Stock menu (No/S/D)
+- **🆕 กฎกล่องเดี่ยว vs Package แยกช่องทาง (21 ก.ค.):** ร้าน subsidize ค่าส่ง 30-50K/เดือน → ดัน "กล่องเดี่ยว ฿165" บนช่องทางร้านเอง = ยิ่งขายยิ่งเจ็บ
+  - **LINE OA / LIFF (ช่องทางร้าน) → ดัน Package S/M/L** (ตะกร้าใหญ่พอค่าส่ง subsidize ไม่กินกำไร · มีในระบบแล้ว) · ตอนนี้ติ๊ก "ส่งฟรี" ต่อ package ได้ (u0.4.34)
+  - **Delivery platform → กล่องเดี่ยวได้เต็มที่** (ไรเดอร์แพลตฟอร์มรับค่าส่งแทนร้าน = ที่เดียวที่กล่องเดี่ยวคุ้มเชิงเศรษฐศาสตร์)
+- เหตุผลที่เคยปิด LINE MAN = man-hour หมด (แอดมินลาออกหมด) **ไม่ใช่ขายไม่ได้** → แก้ด้วย delegate setup ให้แอดมิน
+
+| Platform | สถานะ | ต้องทำ |
+|----------|-------|--------|
+| Wongnai | ✅ OFFICIAL · 4.1★ · #4/124 คลองสาน | อัปเดต 4 จุด: tag Meal Plan · เวลาเปิด-ปิด (เช็คคู่กับ cutoff time) · เพิ่มเมนู Stock No/S/D · แก้ราคา NO12 ให้ตรง (การ์ดเขียน 160 ข้างล่าง 165) — **HP/LC ไม่ลง** |
+| GBP | ✅ verify ผ่าน ขึ้น Map | เก็บรูป/รีวิวดันสู่ 100% |
+| LINE MAN | 🟡 เคยเปิด (LINE MAN Kitchen ปทุมวัน) ตอนนี้ปิด | เปิดใหม่ — ลิสต์เมนู/ราคาให้แอดมินกรอก |
+| Grab/อื่นๆ | ⬜ ยังไม่เช็ค | สำรวจ+เปิด passive |
+
+**⚠️ ติดขัด:** เคยทำปุ่ม Export เมนู CSV/JSON (u0.4.23) แต่**ลบออกแล้ว (u0.4.28)** เพราะเมนู DB ยังไม่นิ่ง (หมวดซ้ำ) → **backlog: ขอ export ใหม่เมื่อเมนูนิ่ง** แล้วดึงลิสต์ไปกรอก platform (โค้ดเดิมอยู่ commit `e07fe3b`)
+
+### 📡 ช่องทาง Marketing ที่ยังไม่แตะ (introvert-friendly — นัทลุยออนไลน์ / พลอยลุยออฟไลน์+หน้ากล้อง)
+Referral program (candidate เด่นสุด — ต่อกับ points/promo_codes ที่มีอยู่แล้ว) · CRM/Win-back segmentation (ทำ manual อยู่บ้าง → automate) · Remarketing/GDN (รอ pixel เว็บ) · Demand Gen/YouTube Ads · LINE Ads Platform (น่าสนใจสูงสำหรับตลาดไทย) · Affiliate (โครงเดียวกับ referral) · Pantip/community answering (SEO artifact) · B2B/Corporate lunch (เก็บท้ายสุด พลอยรับช่วงปิดดีล) · YouTube/TikTok หน้ากล้อง/Influencer/Event (เลนพลอย)
+
+### 🤖 งาน marketing ที่จะ delegate ให้ agent (backlog — อย่าทำมือถาวร)
+น้องเตียง: รีวิว/จัดหน้า blog · ผลิตภาพ/โปสเตอร์ Ads · ออกแบบการ์ดคูปอง/QR — น้องเอิธ: ตอบพื้นที่ส่ง/ค่าส่งใน LINE · เก็บฟีดแบครีวิว · ส่งลิงก์ขอรีวิวอัตโนมัติหลัง order
+
+### 🆕 Backlog การตลาด
+- **คูปองออฟไลน์แนบกล่อง (retention):** QR/โค้ดส่วนลดพิมพ์แนบอาหาร → ต่อยอด `promo_codes` — ดีไซน์=น้องเตียง — รวมใบเดียวกับ QR รีวิวได้
+- **Auto-review เข้า LIFF/น้องเอิธ:** ปุ่ม "รีวิวร้าน" ใน LIFF หลังรับของ
+
+### 🧪 ประเมินคอร์ส/เครื่องมือการตลาดที่โดนแอดยิง 4 เจ้า (26 ก.ค. 2026) — **สรุป: ไม่ซื้อสักเจ้า**
+> นัทโดนแอดขายคอร์ส AI ยิงรัว 4 เจ้าในวันเดียว (Vibe Coding 4,490฿ · Content OS by Claude Cowork · AdBlueprint AI 990฿ · Khoonchaii) → คัดเฉพาะของที่ใช้ได้จริง ที่เหลือเรามีดีกว่าอยู่แล้ว (skills 11 ตัว + agent roster + ปรัชญาอาหารเฉพาะแบรนด์)
+
+**✅ ของที่รับมาใช้จริง 4 อย่าง:** ① `PRD.md` แยกจาก CLAUDE.md (ทำแล้ว u0.4.37) ② git branch + Vercel Preview (ทำแล้ว) ③ **คลัง HOOK** ④ **กฎ "เกิน 2 เท่า"** (โพสต์ไหน engagement เกินค่าเฉลี่ย 30 วัน 2 เท่า = ติดธง → ดูดประโยคเปิดเข้าคลัง HOOK อัตโนมัติ · ทำได้เพราะเป็นเพจเราเอง ต้องขอ permission `pages_read_engagement`+`instagram_basic`+`instagram_manage_insights` ตอนตั้ง Meta app เดียวกับ FB webhook)
+
+**⚠️ กับดักที่ต้องเลี่ยง 2 อัน:**
+- **กับดัก ROAS:** dashboard ที่ดึงตัวเลขจาก Meta Ads API ตรงๆ = **ตัวเลขโกหก** เพราะเราปิดการขายใน LINE (Meta เห็นแค่ "คนทัก") → **ห้ามสร้าง dashboard ที่อ่านจาก Meta API อย่างเดียวเด็ดขาด** · ทางที่ถูกคือ FB ad → `landing.html`+UTM → LIFF อ่าน source → เก็บลง `orders` → join ยอดจริง = "บาทจริงต่อแคมเปญ" (ยืนยันว่า FB Attribution ใน backlog ถูกทางแล้ว)
+- **ติดตามคู่แข่งอัตโนมัติ = แอดขายเกินจริง:** IG Graph API `business_discovery` ให้แค่แคปชั่น/ไลก์/คอมเมนต์ (**ไม่ให้ยอดวิว ไม่มีถอดเสียง**) · TikTok ไม่เปิดข้อมูลคู่แข่ง · scrape ผิด ToS → ทำได้จริงแค่ **กึ่งแมนนวล** (นัท/พลอยแปะลิงก์โพสต์ที่สะดุดตา → เอิธถอดเป็น angle+hook เก็บเข้าคลัง ติดแท็ก `source=competitor`)
+
+**🔴 Reality check (อ่านซ้ำก่อนตัดสินใจทำฟีเจอร์เพิ่ม):** ฟีเจอร์ชุด Content OS ออกแบบมาเพื่อ "ผลิตคอนเทนต์ให้เยอะ/ปังขึ้น" — **แต่คอขวดจริงของเราคือแปลงคนที่มีอยู่แล้วไม่ได้** (LINE OA ~20,000 followers → ลูกค้าจริง <100 คน/สัปดาห์) → งาน ROI สูงกว่าคือ **segment broadcast + follow-up ลูกค้าคอร์สจบ** ไม่ใช่ competitor tracker
+
+### 🖼️ กฎรูปแอด (นัทยืนยันเอง 26 ก.ค. — รูป = ปัจจัยระดับต้นๆ ไม่ใช่ของแถม)
+> **retarget = พาแอดไปถึงตา · รูป = ตัวตัดสินว่าจะได้อ่านหรือโดนเลื่อนผ่าน** — นัทพิสูจน์กับตัวเอง (โดนยิง 4 เจ้า กดอ่านเพราะรูปดึง) · เวลาวางแผน FB/IG ให้เริ่มจาก "รูปนี้หยุดนิ้วได้ไหม" **ก่อน**คิดข้อความ · แอด Google Search ที่ทำอยู่ = ข้อความล้วน ไม่มีรูป → กฎชุดนี้มีผลเมื่อขยับไป FB/IG/Demand Gen
+> 🔴 **เงื่อนไข:** ห้ามเปลี่ยน creative ก่อนต่อ attribution เสร็จ (landing+UTM+LIFF เก็บ source) — ไม่งั้นวัดไม่ได้ว่าดีขึ้นจริง ได้แค่ความรู้สึก
+
+- ใช้ **รูปอาหารจริงจากกล่องจริง** (ไม่ใช่สต็อกโฟโต้ — คนไทยจับผิดเก่ง และเรามีของจริง 10 ปี)
+- **ให้เห็นปริมาณ** (HP 170g / LC 120g = จุดขายที่เห็นด้วยตา คู่แข่งลอกตัวเลขได้ แต่รูปกล่องเต็มๆ โกหกยาก)
+- **คนกินจริง/มือถือกล่อง** ชนะรูปจัดจานสวยเกินจริง · **ข้อความบนรูป ≤7 คำ** · **3 คำแรกพูดถึงลูกค้า ไม่ใช่ร้าน** ("กินคลีนแล้วไม่ลด?" > "Under360 อาหารคลีน")
+- ต้องมี **ชุดเทียบ HP vs LC** (โปรโมทคู่เสมอ) · ❌ ห้าม: ดิสแช่แข็ง · "เลือกเวลาส่งได้" · ระบุราคาตายตัว
+- **เจ้าของงาน:** ระยะสั้น = พลอย (มีคลิป/รูปอยู่แล้ว — นัทส่ง checklist ให้ ไม่ต้องลงมือเอง) · ระยะยาว = **น้องเตียง**
+
+---
+
+## 🌐 เว็บใหม่ (แทน Wix) — เขียนเสร็จ · กำลัง migrate Wix→Vercel (m-track, 22 ก.ค.)
+
+> **ตัดสินใจ: ไม่แตะ/ไม่แก้ Wix อีกแล้ว** — เขียนใหม่หมดเป็น single-file · ✅ deploy `under360-system.vercel.app/web/` · **สถานะ migration Wix→Vercel = Step 3/5** (Step3 สร้าง Vercel project → 4 ชี้ DNS → 5 เทส redirect → ทิ้ง Wix) · **บล็อกที่นัท: สร้าง Vercel project ใหม่ (Root=`web`) ส่ง URL ให้ m** · ⚠️ **Wix ยังไลฟ์ = เว็บ SEO ตัวจริง** (organic 85%, ~1,055 sessions/30วัน) ห้ามยกเลิกจนย้าย DNS+redirect เสร็จ
+> - **Blog:** 61 บทความใน DB (เดิม 21 + ย้าย Wix 40) · 21 เดิม published · 40 ใหม่ = draft รอรีวิว/publish (`web/blog_admin.html`) · ~44 บทความเก่า Wix ยังไม่ย้าย (ย้ายเฉพาะตัวคุ้ม SEO ทีหลัง)
+> - **🔴 redirect = ชีวิต** (Wix ยอดขาย ฿0 → ทิ้งไม่เสียยอด เสียแค่ SEO 10 ปี): `web/vercel.json` (301 พร้อม), `web/_redirects_plan.md` (แผนเต็ม, activate ตอน cutover) · **บทความ `riceberry-pros-cons` = 692 views ≈ 70% ของ blog + AI cite 136 → redirect ห้ามพลาด** · คำติดอันดับ 1-2: กลูเตนฟรี · ไรซ์เบอร์รี่ · น้ำปลา low sodium
+> - **AI/GEO:** 427 query ผ่าน AI/30วัน (ChatGPT/Gemini/Claude/Perplexity) แต่ session=0 → คงโครง FAQ ทุกบทความ · **Asset:** 311 contacts / 90 subscribers (PII ไม่ลง repo — `web/eath/`+contacts อยู่ใน gitignore)
+> - งานที่เหลือ (SQL/Ads/token/iOS/IG) = `WEB_LAUNCH_TODO.md` · รายละเอียด m-track = `MKT_HANDOFF.md`
+
+| ไฟล์ | หน้าที่ | สถานะ |
+|---|---|---|
+| `index.html` | Home — positioning ใหม่ + goal switcher + product 3 ไลน์ + ปรัชญา + delivery + FAQ + IG feed + blog preview | ✅ เขียนเสร็จ ยังไม่เทส |
+| `mealplan.html` | Landing สำหรับ Ads — HP+LC คู่ · ราคา 3 tier · FAQPage schema · sticky CTA มือถือ | ✅ เขียนเสร็จ |
+| `blog.html` + `blog_admin.html` | ระบบบล็อคครบวงจร (Supabase `blog_posts` · Markdown · draft/พรีวิว) | ✅ เขียนเสร็จ |
+| `import_blog.html` | กดปุ่มเดียว import บทความเข้า Supabase (upsert by slug รันซ้ำได้) | ✅ ฝัง 2 บทความแรก |
+| `posts/_MANIFEST.md` | รายชื่อบทความ Wix ทั้งหมด 19 ตัว + URL + slug + กฎ migrate | ✅ |
+| `scripts/sql_blog_posts.sql` | สร้างตาราง blog_posts + RLS | ⏳ รอรัน |
+| `web_dashboard.html` | หลังบ้านดูสถิติ `web_events` — pageviews/CTA rate/แยก source/sparkline | ✅ เขียนเสร็จ ⏳ รอ `sql_web_events.sql` |
+
+**จุดสำคัญ:** Conversion tag (gtag)+UTM capture ฝังในโค้ดแล้ว เหลือใส่ AW-ID+label · CTA ชี้ hatohub ตอนนี้ → เปลี่ยนเป็น LINE OA/LIFF ตอน migrate · IG feed ใช้ Behold.so (ฟรี, delegate พลอย/แอดมิน connect) เพราะ IG Basic Display API ปิดถาวรแล้ว (ธ.ค. 2024) · รูปทั้งเว็บยัง hotlink wixstatic ต้องดาวน์โหลดเข้า repo ก่อนยกเลิก Wix · **คงวันที่เผยแพร่เดิมเสมอ (created_at)** ตอน migrate blog · บทความมีราคา/โปรเก่า → published=false รอนัทรีวิว
+
+**Blog migration:** ✅ **เสร็จแล้ว 12 ก.ค.** — ดูด 18 บทความจาก Wix `blog-posts-sitemap.xml` จริง (workflow 18 agents, 18/18 สำเร็จ, แปลงเป็น Markdown สะอาด คงวันที่เผยแพร่เดิม) + ของเดิม 2 = **20 บทความใน `web/import_blog.html`** พร้อม import · 6 บทความที่พูดถึงราคา/โปร/เมนูเฉพาะ ตั้ง `published=false` รอนัทรีวิว (high-protein-meal-plan, protein-pack-guide, healthy-bajang, low-sodium-fish-sauce, clean-food-nutrient-gaps, clean-food-without-exercise) · **นัทแค่รัน `sql_blog_posts.sql` → เปิด `web/import_blog.html` → กด Import**
+
+**Web Backend (Step 1.5 — เพิ่ม 11 ก.ค.):** สถาปัตยกรรมคงเดิม — Supabase = backend หลัก, Vercel serverless เฉพาะจำเป็น ไม่สร้าง server แยก · `web_events` table (SQL ในหัวข้อ Supabase Tables ด้านบน) → เพิ่ม snippet insert pageview ตอนโหลด + cta_click ใน orderNow() (fire-and-forget, catch เงียบ) → ต่อยอด LIFF อ่าน `localStorage.u360_utm` ตอนสร้าง order → ปิดลูป "FB/Google = กี่บาทจริง" · SEO render (`api/post.js` — optional, ประเมินก่อนทำ ถ้าซับซ้อนเกิน v1 จด backlog client-side render ที่มีอยู่ยังใช้ได้)
+
+---
+
+## 🧭 Roadmap ที่ถูกต้อง — เข็มทิศกันหลงทาง (นัทขอเอง 9 ก.ค. — สำคัญมาก)
+
+> นัทเรียก session ที่หลงทางว่า **"เลอะเทอะ เตลิด"** (เดินจาก LIFF → FB bot → น้องนิว → marketing → delivery platform ในวันเดียว) — **นัทขอให้ Claude ตบกลับเสมอ**
+
+**ทำไมกระโดดไปมา (ไม่ใช่นัทแย่):** นัทอยู่ต่างประเทศ ทำงานมือถือ → เลนโค้ด park หมด → ไถลไป "เลนสมอง" (marketing/strategy) อัตโนมัติ เพราะเป็นสิ่งเดียวที่ทำได้ — ไม่ผิด แค่ต้องจัดลำดับ
+
+**ลำดับที่ถูก (อย่าข้าม):**
+1. **มือถือ/เดินทาง (เลนโค้ด park):** เลนสมองเท่านั้น — marketing track + ออกแบบ agent spec + setup platform ผ่านแอดมิน
+2. **กลับถึงคอม:** รวม MASTERNOTE+HISTORY → Claude Code (ทำอยู่ตอนนี้) → เคลียร์งานโค้ดค้างทั้งหมด (ดูกลุ่ม 1-3 ด้านล่าง)
+3. **หลังโค้ดนิ่ง:** beta test คู่ Hato → migrate ลูกค้าเก่า → เปิด agent ทีละตัว (นิว→เก่ง→ฟ้า→เตียง→เอิธ)
+4. **ปลายทาง:** ปิด Hato Heart = v1.0
+
+**กฎกันหลงทาง:** ทุกครั้งที่นัทเริ่มพูดเรื่องใหม่กลาง task → Claude ถาม _"อันนี้เลนสมองหรือเลนโค้ด? อยู่ในลำดับไหน?"_ → ถ้าไม่ใช่ของตอนนี้ = จด backlog แล้วดึงกลับ
+
+### กลุ่ม 1 — ปลดล็อกน้องนิว (ทำก่อน)
+1. นำเมนู HP/LC เข้า DB เป็น recipe หมวด meal_lc/meal_hp — import จากชีท (LC01-77/HP01-77) + tag โปรตีน — คะแนนเขียวกดทีหลังได้ ไม่บล็อกลอนช์
+2. สร้างตาราง `customer_preferences` (SQL พร้อมแล้ว — ดูหัวข้อ Supabase Tables)
+3. หน้าสั่ง (LIFF/checkout): เพิ่มช่องให้ลูกค้ากรอก preference เอง
+4. ฟีเจอร์แอดมินกรอก preference ย้อนหลัง — backfill ประวัติลูกค้าเก่าจากชีท/โน้ตแชท
+
+### กลุ่ม 2 — LIFF (cutoff + ความเร็ว/เทส)
+5. แก้เวลาตัดยอด Meal Plan → กดสั่งได้ถึง 8:30 น. ของวันส่ง (⚠️ verify เวลาจริงในโค้ดก่อน — เอกสาร 17:00 vs นัทจำ 18:00 — ดู Known Issues #10) — Stock menu คงเดิม
+6. Optimize LIFF ให้เร็วขึ้น (sequential storage reads/ขนาดรูป/render)
+7. ⚠️ เทสจริงบน iOS Safari ก่อนลอนช์ — ยังไม่เคยเทสเลย (Known Issues #11)
+
+### กลุ่ม 3 — Marketing (โค้ด)
+8. สร้างเว็บสาธารณะบน Vercel (ดูหัวข้อ "🌐 เว็บใหม่")
+9. ย้ายโดเมน 360foodbox.com: Wix → Vercel (เช็คก่อนว่าโดเมนจดผ่าน Wix หรือที่อื่น — ยังไม่ได้เช็ค)
+10. รีวิว LINE OA ทั้งระบบ
+
+### Backlog (ทีหลัง — ฟ้า/cost pillar)
+- Ordering วัตถุดิบปัจจุบันสั่ง ~13-14:00 ประมาณเอาจากยอด+เผื่อยอดดึก = ของเหลือบ่อย → ฟ้าจะช่วยประเมินแม่นขึ้นหลังน้องนิว output พร้อม
+- ค่าส่ง subsidize 30-50K/เดือน → เป้าหมายแรกของพี่เก่ง (route optimization + Lalamove quote เทียบแมสร้าน)
+
+---
+
+## 📌 Backlog & Decisions Pending
+
+| รายการ | รายละเอียด |
+|--------|-----------|
+| **แจ้งเมนู HP/LC ล่วงหน้า?** | ปรึกษาพลอยก่อน — กระทบ marketing messaging + design น้องนิว |
+| **KQ ดึง order จริง?** | ต้องทดสอบก่อน launch — ครัวต้องเห็น order |
+| **Staging/Preview branch** | ทำหลัง launch — Vercel preview branch |
+| **Package M/L** | หลังขาย S ได้ก่อน |
+| **Loyalty tier threshold** | 🔴 **รอนัท** — มี real legacy data แล้ว (`customers.loyalty_points` มีอยู่ 492/2,160 คน สูงสุด 7,451 แต้ม) แต่ยังไม่มี logic สะสม/ใช้แต้มอัตโนมัติเลย + `liff_profile.html`'s TIERS array ไม่ตรงกับค่าจริงใน `customers.tier` (bronze/Fit&Fabulous/Wellness Warriors/Healthy Habits) — นัทขอหยุดรอก่อนจนกว่าจะ migrate ข้อมูลจากระบบเก่ามาครบ — ห้ามเริ่มออกแบบ tier ใหม่จนกว่านัทจะแจ้ง |
+| **น้องเตียง (graphic)** | หลังน้องนิว approve เมนู → auto generate poster |
+| **Package เงื่อนไขขั้นสูง** | ปัจจุบันมีแค่ extra_price ต่อ SKU — แผนอนาคต `package_conditions` (จำกัดจำนวนต่อคน/รายการบังคับ) ทำหลัง order history migration |
+| **โดเมน 360foodbox.com จดผ่าน Wix หรือที่อื่น?** | ยังไม่ได้เช็ค (Wix → Settings → Domains) ต้องรู้ก่อนวางแผนย้าย |
+| **ยิงคืนใส่ "350" (competitor conquesting)** | ทำได้ถูกกติกา แต่เคาะแล้วยังไม่ทำ — volume ต่ำ งบใหม่ควรลงคำสินค้าก่อน |
+
+---
+
+## 💬 Working Style
+
+- **นัทส่ง multi-part ในข้อความเดียว** — ตอบให้ครบทุก part
+- **"ปรับได้เลย"** = ทำเลย ไม่ต้องถามซ้ำ
+- **คิดทะลุแผน** = redirect ทันที → "นั่นอยู่ใน backlog โฟกัส [task] ก่อน" (ดู "🧭 Roadmap ที่ถูกต้อง" ด้านบนสำหรับกฎเต็ม)
+- **มือถือ + งานหลายขั้นตอน** = ทีละขั้นตอนเดียว รอสกรีนช็อตยืนยัน ห้ามยัดหลายเรื่องในเทิร์นเดียว
+- **งานที่ agent ทำแทนได้** = เสนอ delegate เสมอ
+- **คอนเทนต์แบรนด์:** ไม่โม้ว่าดีที่สุด — ให้ความรู้ก่อนแล้วแสดงว่าเราตอบโจทย์ · โปรโมท HP+LC คู่เสมอ · ห้ามดิสแช่แข็ง · ห้ามเขียน "เลือกเวลาส่งได้"
+- **Commit message** = ภาษาไทยสั้นๆ เช่น `เพิ่ม Package flow + Meal Plan flow v0.3.2-3`
+- **อัปเดต HISTORY ทุกแทร็ค (บังคับ)** = ทุก session ที่มี milestone/decision ของแทร็คไหน (u/m/a/doc) → จดลงตาราง Timeline ของแทร็คนั้นใน `UNDER360_HISTORY.md` + bump เลขเวอร์ชัน + เขียน changelog ท้าย CLAUDE.md — **ห้ามจดแค่แทร็คที่กำลังทำ ต้องเก็บครบทุกแทร็คที่ขยับ** (a-track spec-only ก็นับ เช่น `a0.2-spec`) · Claude เคาะเลขเอง เรียก skill `under360-masternote` ตอนปิด session
+
+---
+
+*Last updated: 10 ส.ค. 2026 — **[PM catchup · "เราขายจริงบนระบบตัวเองแล้ว" · ห้อง pm อัพให้ทุกห้องตามทัน]** 🎉 **BETA ไม่ใช่ beta อีกต่อไป — ระบบเรารับออเดอร์จริงเต็มตัว** (นัทย้ายริชเมนู LINE OA → LIFF 360 เมื่อ 8 ส.ค. · **ข้อ "เทสสั่งจริง 1 ใบ" ข้ามไปเลย เพราะลูกค้าจริงสั่งจริงแล้ว**) · 📊 **ตัวเลขจาก `scripts/finance/orders.mjs` (10 ส.ค.): ส.ค. = HT- 35 ใบ ฿60,557 + **U- (ระบบเรา) 23 ใบ ฿36,207** — เดือน ก.ค. ระบบเราทำได้แค่ 8 ใบ ฿14,099 → **ยอดกำลังย้ายบ้านจริง ไม่ใช่แค่เทส** · ⚠️ **สัญญาณที่ต้องจับตาทันที: ออเดอร์ค้างจ่ายพุ่งจาก ฿3,971 (9 ส.ค.) → ฿18,799 / 12 ใบ (10 ส.ค.) ใน 1 วัน** — โตเร็วกว่ายอดขาย = **ระบบรับออเดอร์ได้ แต่ "เก็บเงิน" ยังไม่มีคนถือ** (มอบ `cc` เฝ้ารายวันแล้ว 9 ส.ค. · หน้าตรวจสลิปมอบ `u` แล้ว) · 🐞 **บั๊กที่ยังไม่ปิด: ใบรอบ 2-3 ของคอร์ส (ยอด ฿0) ค้างสถานะ `pending_review` ทั้งที่ `slip_url = null`** → `pending_review` ปัจจุบัน 2 ใบ **มีสลิปจริง 0 ใบ** = ป้าย "รอตรวจสลิป" กำลังโกหก ถ้าไม่แก้แอดมินจะเลิกเชื่อป้ายนี้ (ส่ง u แล้ว แก้ 2 ชั้น: ต้นทาง LIFF + ตัวกรองหน้าตรวจ) · 🖨️ **ของใหม่ที่ขึ้น main 9-10 ส.ค. (u/cc/bug ทำร่วมกัน — เกิดจากรอบเทสจริงของนัทล้วนๆ):** **ใบจัดของสลิปเทอร์มอล `print_pickslip`** (เครื่องจริง SUNMI V2 Pro 58มม./พิมพ์จริง 48มม. + รองรับป้าย 4 นิ้ว HPRT HT400 · `?auto=1` เด้งกล่องพิมพ์เอง · เลือกปริ้นเฉพาะประเภท/ติ๊กทีละใบ · ป้าย NEW อ่านจากชื่อเมนูจริง · **ถอด QR ที่เขียนเอง ใช้ตัวมาตรฐาน** เพราะสแกนไม่ออก · **ไม่โชว์ยอดรวมที่คำนวณเอง** เพราะข้อมูลส่วนลดยังเชื่อไม่ได้ N-61 · เลิกเรียก "กล่อง" เพราะ Meal Plan 1 แถว = 21 กล่อง) · **หน้ารวมลิงก์ครัว `/k.html`** (ครัวไม่ต้องพิมพ์ลิงก์ยาว · **ตัดพม่าออกตามที่นัทสั่ง เหลือไทย+ไอคอน**) · **N-50 ครบชุด** (ช่อง "ส่งได้ตั้งแต่" ในหน้า DB + ปุ่ม "ขึ้นสัปดาห์ใหม่" ถามวันเริ่มส่ง + LIFF เตือนวันเริ่มส่งตอนใส่ตะกร้า — เดิม **LIFF รอค่า `available_from` แต่ไม่มีหน้าไหนกรอกได้เลยสักหน้า**) · **หน้าครัว KQ** toggle ทั่วไป/Meal Plan + บรรทัดละเมนู + ชื่อเล่นจริง + แก้เลื่อนไม่ถึงใบสุดท้าย · **หน้าออเดอร์ OH** สลับดูตามวันส่ง/วันสั่ง · **ตัวคำนวณยอดสต็อครายสัปดาห์ s1-s8/D1-D5** · 🧭 **ห้องใหม่ 2 ห้อง + แผนผังห้องฉบับแรกของโปรเจค:** `pm` (คุมทิศทาง/จัดลำดับ/ตัดงานที่ไม่พาไปถึงเป้า) · `bug` (หัวหอกแก้บั๊ก) · **`docs/ROOMS_MAP.md`** = ใครทำอะไร · **แกนที่แยก `cc` กับ `cc etc`: "นัทอยู่ในลูปแค่ไหน"** — `cc etc` = ห้องหลักที่นัทคุยประจำ (นัทสั่งว่าดีอยู่แล้ว ห้ามเปลี่ยน) · `cc` = โหมดไร้คนขับ ให้เป้าแล้วปล่อยลุยยาว merge เองได้เมื่อพิสูจน์แล้วว่าเวิร์ค · 🎯 **เป้าหมายโปรเจคถูกแก้ครั้งใหญ่ (นัทแก้เอง — เอกสารเดิมผิดทั้งหมด): ฿500,000/เดือน = "กำไร" ไม่ใช่ "ยอดขาย" · และ "peak 300-500K" ที่จดไว้ **ผิด — ของจริงเคยทำยอดขาย ฿1.5 ล้าน++/เดือน**" → **นี่คือการกู้คืน ไม่ใช่โตใหม่** · ⚠️ มาร์จิ้นยังเป็นการเดา (นัทคิดเร็วๆ 33%) → ฟันธง "ต้องทำยอดเท่าไหร่" ไม่ได้จนกว่า f-track ได้ statement · 🍱 **`docs/PORTFOLIO_MAP.md` — พอร์ตสินค้าที่ระบบไม่เคยเห็นมาก่อน:** ① Under360 **6 segment** (ตจว./ทั่วไป/**ออฟฟิศ**/ออกกำลังกาย/ฟิตกล้าม/**ขี้เกียจทำอาหาร**) — ใช้ของชุดเดิมหมด ต่างแค่มุมเล่า ② **อาหารเด็ก** (มี 29 เมนูใน DB อยู่แล้ว · เด็กเล็ก=โจ๊ก / เด็กโต=แต่งให้น่ากิน · **ไม่เคยมีในแผนมาเก็ตติ้งสักฉบับ**) ③ 🩺 **Kidneycare — อาหารผู้ป่วยโรคไต ทำเงิน ฿10-20K/เดือน เสถียร โดยไม่เคยโปรโมทเลยสักบาท** (นักโภชนาการ รพ. "คุณอิ๊ง" คำนวณจากผลเลือดรายคน · ครัว/แอดมินชุดเดียวกัน · เว็บ `kidneycare.html` เขียนเสร็จแล้ว) — **คู่แข่ง 42 รายในชีทเราไม่มีใครทำได้สักเจ้า · ลูกค้าไม่เทียบราคา · โรคเรื้อรัง = ซื้อซ้ำเอง** · 🔴 คอขวด: **ทุกเคสผ่านมือคุณอิ๊งคนเดียว** + เมนู 50 รายการยังไม่แท็กระยะโรค + PDPA + เว็บกดส่งแล้วยังไม่มีอะไรวิ่งไปหาใคร · 🗺️ **โรดแมพเฟส (นัทเคาะเอง 9 ส.ค. · `docs/PM_BOARD.md`): ✅0 ระบบ LINE LIFF (ผ่านภูเขาลูกแรกแล้ว) → 🔵1 ครัวแน่น + agent ครบ + Claude เข้าถึงงานเชิงลึกของพนักงาน + เข้าห้องแชท 3 ห้อง ← อยู่ตรงนี้ → 🟡2 ทำให้แอดวัดผลได้ แล้วยิงใหม่ → 🟢3 Kidneycare + อาหารเด็ก → ⚪4 เฟสที่นัทยังไม่เล่า** · **กฎเหล็กของลำดับนี้: ทุกไลน์ในพอร์ตใช้ครัวเดียวกัน → ครัวพังทีเดียวพังทั้งพอร์ต ห้ามขยับถ้าฐานยังสั่น** · 🩺 **งานที่นัทฝากไว้ (pm ถือ ห้ามหล่น): รื้อสูตรอาหารโรคไตทุกเมนู คำนวณ Na/K/P/โปรตีน + แท็กระยะโรค** — **เป็นงานความปลอดภัยผู้ป่วย ไม่ใช่งานปรับปรุงคุณภาพ** · ⚠️ กติกาบังคับ: ทุกตัวเลขที่ Claude คำนวณ **ต้องให้คุณอิ๊งตรวจก่อนใช้จริงเสมอ** · 💡 ผลพลอยได้: ตารางนี้คือตัวปลดคอขวดคุณอิ๊ง (มีตัวเลขต่อเมนู → ทำเทมเพลตตามระยะโรคได้ → อิ๊งปรับเฉพาะเคสที่ผิดจากแบบ) · 📣 **แก้ความเข้าใจเรื่องยิงแอด (verify กับแหล่งจริง 2026):** "ยิง 30-40 แอด" = **โบราณถ้าเป็นสินค้าเดียวกัน** (Meta ต้องการ 50 conversion/สัปดาห์/ad set → ซอยงบ = ทุกก้อนติด learning ตลอดกาล · ปี 2026 แนะ **2-4 ad set/แคมเปญ งบหนา**) — **แต่พอร์ตนี้มีสินค้าคนละตลาดจริง (พ่อแม่เด็ก ≠ คนฟิตกล้าม ≠ ผู้ป่วยโรคไต) → แยกแคมเปญได้ ไม่แย่งประมูลกันเอง** · ❌ **2 หน่วยงานยิงแอดพร้อมกัน = ไม่แนะนำ** (ประมูลแข่งกันเอง ดัน CPM ตัวเอง) — ที่ควรแยกคือ**แพลตฟอร์ม** (IG=MP พรีเมียม / FB=Stock+แพ็คกับข้าว) ตามที่วางไว้แล้ว · 🔴 **และห้ามเทงบก่อนต่อ attribution** (เคยเผา ฿41,840 แล้ววัดไม่ได้) · 🚨 **เหตุการณ์ 9 ส.ค.: ออเดอร์วันนั้นในระบบเรา "ขาด 6 ใบ" เทียบกับ Hato** → ครัวเสี่ยงจัดของไม่ครบ (CC แจ้ง 6 ห้องพร้อมกัน) · ⏳ **รอนัทกดเอง:** ① **บอกเลิกสัญญา Hato** (เหลืออย่างเดียวของเสา 1) ② **ขอคืนช่อง Messaging API ของ OA `@under360`** — บล็อกบอทครัว/แจ้งเตือนลูกค้า **ทุกตัวพร้อมกัน** ③ เคาะ: **แมสคุยงานกันที่ไหน** (ยังไม่มีห้องแมส) · **น้องฟ้ามี subagent แล้วแต่ไม่มีห้องรัน** · **ห้องพลอยหายจากผัง** ④ Lalamove key ⑤ DNS 4 record ที่ Wix ⑥ SQL + token บอทกลุ่มครัว · 📈 **เสาหลักอัปเดต (27% → 38%):** 1 Order&ลูกค้า **98%** · 2 ปฏิบัติการ&ต้นทุน **30%** · 3 PMF 15% (ยังไม่ขยับ — ยังไม่วัด HP vs LC) · 4 CRM **35%** · 5 Marketing **40%** · 6 AI Agents **45%** · 7 Base 2% — **[9 ส.ค. เดิม]** — **[6 ส.ค. เดิม]** *Last updated: 6 ส.ค. 2026 — **[CC catchup 6 ส.ค. · เหลือ 1 วันก่อนปิด Hato · bump board 8 ห้อง]** 🎉 **ปิดความเสี่ยงใหญ่: ระบบไม่พึ่ง Hato แล้วเลยสักจุด** — CC สแกน 2 ชั้น (โค้ด + ข้อมูลใน DB): โค้ด 0 ไฟล์อ้าง `hatohub`/`hatoheart`/LIFF `2005639551` · `home_layout` 7 URL + `menu_items` 423 URL = **Supabase ทั้งหมด** · ชื่อหมวดที่ลูกค้าเห็นมีไทยครบ (`hato_import` = "ของทานเล่น" · `cat_mqz6m6b7gkm` = "BABY FOOD อาหารเด็ก") · ⚠️ **คำว่า "hato" ที่เจอในตาราง = false positive ทั้งหมด** (ชื่อคีย์ category / description "นำเข้าจาก Hato" / base64 ของรูปที่บังเอิญมี `HaTo`) **อย่าตกใจแล้วไล่แก้** · **P ยืนยันย้ายรูปการ์ดหน้าโฮมครบ 7/7 ตั้งแต่ 3 ส.ค.** = ยืนยัน 2 ทาง → **ความกังวล "8 ส.ค. หน้าโฮมโล่ง" ไม่มีจริง** · 🔴 **เหลือจุดเดียวที่พึ่ง Hato จริง = ริชเมนู LINE OA** (อยู่หลัง login เครื่องมือ AI เข้าไม่ได้ ต้องนัทเปิดเอง — ถ้าไม่ย้าย ลูกค้า ~20,000 กดสั่งไม่ได้ทั้งร้าน) · 🔁 `scripts/check_hato_dependency.sh` **รันซ้ำได้** (ตรวจ 2 ชั้น + เขียนบอกในตัวมันเองว่าตรวจอะไร*ไม่ได้* กันอ่านผลว่า "ผ่าน" แล้วนึกว่าปลอดภัย 100%) · 💾 **backup ก่อน cutover 65,738 แถว** (ลูกค้า 8,042 · ออเดอร์ 15,910 · order_items 41,273) · 📍 **`docs/STATE_20260805.md` = เอกสารความจริงกลาง** ทุกห้องอ่านก่อนทำงาน (ตัวเลข query จาก DB จริง · ถ้าเอกสารอื่นขัดกันให้เชื่อฉบับนี้): **เมนูเปิดขาย 118** (ค่าเก่า 137/138/74 ผิดหมด) · **เปิดขายไม่มีรูป = 0** (เรื่อง 16 เมนู/MC2/S205 จบแล้ว) · `subcode` 0 แถว · `is_weekly_special` 1 แถว · `stock_total` ไม่ null 22/451 (ตอนนี้ 31) · `customer_preferences` **0 แถว** · catalog HP/LC = **9+8 = 17** (สเปคเดิมเขียน 77+77) · 🪤 **กับดัก `kitchen_queue.html:582`** — `if(mm.stock_total!=null)` ทำให้เมนูที่ตั้ง "ไม่จำกัด" **ครัวกรอก "ผลิตได้จริง" ไปเท่าไหร่ก็ไม่มีผล** → ต้องตั้งเลขในแท็บ **"ตั้งสต็อค"** ก่อน 1 ครั้ง แล้วค่อยกรอกผลิต (ห้อง 12 อ่านโค้ดเจอ · CC verify กับ `origin/main` แล้ว) · 🧨 **แพทเทิร์นบั๊กประจำบ้าน — "เครื่องมือคืนผลลวงโดยไม่มีอะไรแดง" เจอ 5 เคสในวันเดียว**: `.limit(50)` ทำ 11 บทความหาย · 1000-cap ทำครัวมองไม่เห็นออเดอร์ · `stock_total!=null` · `curl` URL ไทยบน Windows ได้ `???` · `git ls-tree --long --name-only` ที่ git ปฏิเสธแล้ว stdout ว่าง → เข้าใจว่างานหายทั้งโฟลเดอร์ → **กฎใหม่ทุกห้อง: ① output ว่าง ≠ ไม่มีของ (เช็ค exit code/stderr ก่อน) ② `.select()` ต้องมี `.limit()` หรือ filter วันที่เสมอ ③ ก่อนบอกว่า "ใช้ได้แล้ว" ต้อง query นับแถวจริง** · 🌳 **กฎ git ใหม่: ห้าม `git checkout <branch>` ในทรีหลัก** (หลาย session ใช้ทรีร่วมกัน — งานที่ยังไม่ commit ถูกล้างหายจริง 2 รอบ · CC เจอสดๆ ระหว่างทำงาน ทรีหลุดจาก `amdoit` ไป `main` เอง) → **ใช้ worktree แยกเสมอ + commit ทันทีที่ทำเสร็จ + เช็ค `origin/main` ก่อนสรุปว่ากู้ไม่ได้** (ชีทเตียงที่ประกาศว่าหาย = อยู่ครบใน git) · 🖥️ **CC dashboard เพิ่ม 3 อย่าง:** การ์ด **"🤖 เมนูอย่าให้เหลือ" ของน้องนิว** (logic client-side จากห้อง 12 · **โชว์ blockers ด้วย ไม่ซ่อน** — ซ่อนแล้วเปิดมาเห็นว่างจะนึกว่าไม่มีปัญหา = สร้างบั๊ก "ของหายเงียบ" ด้วยมือ · blockers โชว์ "ควรผลิต ~N" ให้ใช้ได้ทันทีแม้ครัวยังไม่กรอก) · การ์ด **"⏰ นับถอยหลังปิด Hato"** (สแกนสดทุกครั้งที่เปิด + 4 งานที่ต้องนัทกดพร้อมเหตุผลว่าไม่ทำแล้วเจ็บยังไง) · **ลิงก์ใหม่ 9 ตัว** (R&D Hyrox 2 · ครัวใหม่ 2 · ลูกค้า/รายงาน/คลังรูป/Web Dashboard/Blog Admin — verify HTTP 200 ทุกตัว) · 🛵 **k0.1 เปิดห้องพี่เก่ง** — แพลนส่ง 6+7 ส.ค. เสร็จ (ขอราคาอย่างเดียว ยังไม่จองรถ) เพดาน 3 งาน/รอบตามที่นัทเคาะ · 🤖 **niw0.1 น้องนิว v1 รันกับข้อมูลจริงแล้ว** — **forecast ใช้ได้วันนี้โดยไม่ต้องรอครัวกรอก** (คำนวณจาก order_items) · **Meal Plan assign เลื่อนออกไป** เพราะ `customer_preferences` = 0 แถว → ปล่อยตอนนี้เสี่ยงส่งของแพ้ (เป็นเรื่องความปลอดภัย ไม่ใช่ priority) · เจอ 2 กับดักข้อมูล: `actual_stock` กับ `stock_total` **ไม่การันตีว่าตรงกัน** (A13 ผลิต 6 แต่เหลือ 9 → ลบกันตรงๆ ได้ยอดขายติดลบ) · ยอดขายมี **outlier** (A2 สัปดาห์เดียว 28 ปกติ 2-8 → ใช้ค่าเฉลี่ยจะแนะผลิตเกิน ต้องใช้ median) · 🎨 **เตียง** ชีท 6–12 ส.ค. 7/7 paste-ready · **CTA `lin.ee/QcE7SSa` verify แล้วชี้ OA เดียวกับที่เว็บใช้** (`@rwc2010a` = basic ID · `@under360` = premium ID · title "Under360 Cleanfood" ตรงกัน) = ใช้ได้ ไม่ต้องรอนัทเคาะ · **แต่ยังขาดรูป Meal Plan → 0 โพสต์ MP ต่อสัปดาห์ ต่อเนื่อง = IG 68.7K ซึ่งเป็นบ้านของ MP ถูกใช้ผิดวัตถุประสงค์ทุกสัปดาห์** (เสีย 2 ใบ/สัปดาห์ · เตียงทำทางสำรอง "คอนเทนต์ MP แบบไม่ใช้รูปกล่อง" จาก catalog 17 ตัวไปก่อน) · 📣 **เอิธ** warm campaign จบ 4 ส.ค. auto-stop · **wave 1 วัดผลได้แล้ว ฿3,680** (ไม่ติด Hato — ข้อมูลอยู่ใน DB ครบ) · **0 คนใช้ SALMON = ปัญหากลไก ไม่ใช่ข้อเสนอ** (SALMON ต้องทักแอดมิน ไม่มีช่องกรอก · FREEWEEKDAY ที่กรอกได้มีคนใช้จริง = พิสูจน์ว่าลูกค้ากรอกโค้ดเป็น) → **gift item = งานเบอร์ 1 ของ wave 2** และทำบน Hato ไม่ได้ = **cutover ปลดล็อกกลไกการขาย ไม่ใช่แค่ย้ายบ้านหนีของพัง** · 🌐 **M** เว็บพร้อมรับทราฟฟิก 100% · blog **published 61/61 ไม่มี draft** · รูป localize เสร็จแล้ว (wixstatic = 0) · แก้บั๊ก `.limit(50)` ที่ทำ 11 บทความหายจากหน้ารายการ · มี `scripts/check_after_dns_cutover.sh` รอนัทกด DNS · 💰 **ยอดขายจริง (orders.mjs · HT- เท่านั้น)**: ก.พ. 539,476 → มี.ค. 513,167 → เม.ย. 480,153 → พ.ค. 399,759 → มิ.ย. 365,694 → ก.ค. 217,352 · **ยอดจากลูกค้าใหม่ ก.พ. 241,950 → ก.ค. 34,095** ขณะที่ **repeat rate ไม่มีเทรนด์ลง (22–38%)** = ปัญหาอยู่ที่หาคนใหม่ ไม่ใช่ retention · ⏳ **รอนัทกดเอง เรียงตามความเจ็บ:** ① เทสสั่งจริง 1 ใบบนมือถือ ② **ย้ายริชเมนู LINE → LIFF 360** ③ login LINE Business ID (ปลด 3 งาน) ④ ถ่ายรูป Meal Plan HP+LC + ครัว ⑤ DNS 4 record ที่ Wix (ไม่เร่ง) ⑥ SQL + token บอทกลุ่มครัว · repo เป็น private · ตั้งสต็อคเมนูพิเศษให้ครัวกรอกได้ — **[5 ส.ค. เดิม]** — **[u0.4.42 · doc v6.13 — CC session ปิด 5 ส.ค. 2026 · "วันแห่ง audit + ปิดรูรั่ว"]** 🔍 **audit ทั้งระบบ 24 จุด แก้หมด** (`docs/AUDIT_PRE_CUTOVER.md`) — CC + 3 ทีมย่อยตรวจคู่ขนาน ยืนยันในโค้ด/DB จริงทุกข้อ · 💰 **ระบบเงินครบวงจร:** สลิปโอนเงิน**เคยไม่ถูกเก็บเลย**แต่ตีว่า "จ่ายแล้ว" → ตอนนี้เก็บรูปจริงลง Storage + `pending_review` รอแอดมินตรวจ (badge 🧾 + ปุ่มดูสลิป ใน OH) · **ค่าส่งหลุด ฿0 = 22/43 ใบ (51%) เพราะไม่ปักหมุด** → ติดธงให้แอดมินตามเก็บ · **เลขออเดอร์กันซ้ำ** (unique index + retry, max+1 แทน count+1) · 🍳 **วงจรสต็อกครัวเชื่อมกันแล้ว:** เดิมมี 2 เลขไม่คุยกัน (`stock_total` ลูกค้าเห็น vs `actual_stock` ครัวนับ) → ลูกค้าสั่ง = **ตัดสต็อกอัตโนมัติ** ผ่าน RPC `adjust_stock` (atomic กันสั่งพร้อมกัน) · ครัวกรอก "ผลิตได้จริง" = ตั้งเลขขายทันที + log ว่าใครแก้ · 🏷️ **ชื่อเล่นเมนู (subcode) ของจริง** — นัทอธิบาย why: เมนูพิเศษหมุนทุกสัปดาห์ (ข้าวกล่อง 8 · แพ็คกับข้าว 5) ครัว+**ลูกค้า**เรียก s1–s8 ไม่ใช่โค้ดจริง · ค้างข้ามสัปดาห์เติม `x` (`xs3` · จำนวน x = ค้างกี่สัปดาห์ = **สัญญาณของค้างสต็อกที่อ่านออกด้วยตาเปล่า**) → คอลัมน์ `menu_items.subcode` + ช่องกรอกในหน้า DB (เฉพาะสินค้าออนไลน์) + LIFF โชว์ให้ลูกค้า + ปุ่ม "🔄 ขึ้นสัปดาห์ใหม่" เติม x อัตโนมัติ (เลิกให้แอดมินไล่เปลี่ยนชื่อทีละตัวใน Hato) · ⚠️ **ยังว่างทุกแถว รอนัทกรอกรอบแรก** · 🤖 **บอทผู้ช่วยครัวในกลุ่ม LINE** (`api/line-webhook.js`) — เก็บบทสนทนาทั้งหมด + ตอบยอดสั่งเมื่อถูกถาม · ตารางเขียนได้อ่านไม่ได้ด้วย anon (กันแชทครัวหลุด) · รอนัทรัน SQL + ใส่ token · 💾 **backup ข้อมูล** `scripts/backup_data.sh` + scheduled task ทุกจันทร์ (ครั้งแรก 65,417 แถว) — "ดาต้าลูกค้าสำคัญกว่าระบบ ถ้าข้อมูลอยู่ ระบบพังก็ถอยไปจดมือได้" · 🕯️ **จิตวิญญาณแบรนด์ลง CLAUDE.md** — "คนดูแลคน · ความสัมพันธ์คือตัวสินค้า · Hato ทำให้เราห่างลูกค้า" **+ สมดุลที่นัทเน้น: ไม่ใช่การกุศล รักกำไรและความสบายของเราเท่ากัน** · 📕 **Case study 01** (`docs/CASE_01_wrong_box_count.md`) ส่งของเกิน 2 กล่อง → 7 ปัจจัยเชิงระบบ (ตัวแรงสุด: 2 ใบมีเมนูซ้อนกัน 6/8 แยกไม่ออก) + 6 งานที่ระบบต้องมี · 🤝 **กติกาแบ่งงาน 3 ทีมตามเจ้าของไฟล์** (U/P/CC) + 3 กฎกันชน · CC ใช้ branch `amdoit` (นัทตั้งชื่อ) · **นัทมอบอำนาจให้ CC จ่ายงานทุกห้องแทน** (คอขวดที่นัท) → จ่ายไป 6 ห้อง ทุกห้องเดินแล้ว · **SQL ที่ CC รันเองผ่าน Supabase SQL Editor:** `slip_url` + bucket `payment-slips` + policy · unique index `orders.order_number` · function `adjust_stock` · `menu_items.subcode` · ✅ **ปิด Known Issue #12** — ราคา `mp_offer_sets` ตรงราคาโฆษณาแล้วทุกตัว (verify กับ DB) · 🎓 **บทเรียนถาวร 8 ข้อ** (ดู `docs/HANDOFF_CC_20260805.md`) ที่สำคัญสุด: **ห้าม cp ไฟล์ทับตอน deploy** (ย้อนงานคนอื่นหายเงียบ) · **pipe บัง exit code** (เคย push ไฟล์ครัว syntax พังขึ้น main) · **ข้อมูลเทสที่ใช้ชื่อลูกค้าจริง = ระเบิดเวลา** (U เกือบทำครัวทำอาหารผิด) · **สร้างเครื่องมือ ≠ มีข้อมูล** · **verify ก่อนพูดทุกครั้ง** (CC รายงานผิด 4 เรื่องใน 1 วัน — U/เตียง/M จับได้หมด = ระบบตรวจกันเองทำงานจริง) · ⏰ **Hato บอกเลิก 7 ส.ค. ยืนยันแล้ว** · เว็บ/บล็อกไม่มีลิงก์ Hato สักจุด (M ยืนยัน) · **รอนัท: เทสสั่ง 1 ใบบนมือถือ · DNS 4 record · รูป Meal Plan · กรอก subcode** — **[CC catchup 1 ส.ค. 2026 · เลขา — bump board 12 ห้อง + อัพ master ช่องที่ห้องไม่ได้จดเอง]** 🔬 **R&D 01 (r0.1) = เวิร์กสตรีมใหม่ เซ็ต Hyrox** (นัท+พลอยเร่งยอด · ไฮรอค 14 ส.ค. มีคอร์ส 7/14 วัน): เมนู 3 วัน HX01-25 (อา11/อ7/พฤ7) + pool 45 เมนู + หน้า recipe tracker + **หน้าลูกค้า `hyrox_set`** (ฉากขาว · เมนู 3 คอลัมน์ตามรอบส่ง · โน้ตเมนูสำรอง) · รอครัวลองทำ + เตียงทำ prompt ภาพ + เคาะโครง DB. · 👑 **ห้องพลอย (ploy) เปิด 30 ก.ค.** = งานมาเก็ตติ้ง/แคมเปญที่พลอยเป็นเจ้าของ (แยกจาก track/agent): เซ็ต Hyrox สูตร 60 เมนู (วัตถุดิบคร่าว) ร่างเสร็จ + เอิธลิสต์อินฟลู Hyrox 58 (ทาบก่อน 5 เช่น @ruk.sherene) — **พลอยโปรโมทเอง IG/อินฟลู ไม่ยิงแอด**. · 📣 **เอิธ: warm campaign = LIVE** (นัทกดสวิตช์เอง 31 ก.ค. · Meta กำลัง review — แก้จากเดิมที่ master เขียน "รอ publish") · แพคกับข้าว ฿1,099 · CA ลูกค้าเก่า 2,807 · wave1 วัดผลยังค้าง (match uid↔orders — ออเดอร์จริงลง Hato ไม่เข้า DB). · 🖥️ **CC dashboard v2 (command_center.html):** Home = dashboard 3 คอลัมน์เต็มจอ (max 1600) — ยอดขาย**บาร์รายเดือน hover ขึ้นยอด** (HT- ผ่าน Hato ก.พ.539K→ก.ค.217K · ตรง orders.mjs) · การ์ด **"วันนี้ต้องทำ"** (auto: เช็ค freshness/ออเดอร์พรุ่งนี้ + manual: ตามคู่แข่ง/IG→ส่งเอิธ) · สถานะทีม 13 ห้องสด · ring 27% · แชทแยกหน้า · ประหยัด Supabase (โหลดยอดครั้งเดียว/รีเฟรช · poll เบา 15 วิ) · **favicon โลโก้ร้านทุกหน้าที่กดเข้าจาก dashboard**. · 🏦 CC ฝากงาน F: เพิ่มบาร์ที่ 2 = ยอดเงินเข้าแบงค์จริง (bank-in) เทียบข้าง Hato (รอ statement). · ⏳ **รอนัท:** Lalamove key + wire richmenu "สมัคร"→liff_register + เทสจริง (u) · login Wix แก้ DNS 2 record (m) · เคาะลิงก์ LINE เตียง · PDF statement (f) · ครัวชิมเซ็ต Hyrox. — **[u0.4.41 · cutover-prep 9 งาน · นัทสั่ง update ระหว่างทาง]** **u-track ขึ้น main:** ① **auto-promo** (Welcome ฿50 ครบ ฿500 + WW 5% อัตโนมัติ · guard whitelist `source_first='line'` กันลูกค้าเก่า 5,854 · verify unit test 11 เคส) ② **OH หน้าลูกค้า** แก้ประวัติ/แต้ม/ยอดไม่ขึ้น = **บั๊ก query ผิดคอลัมน์** (`customer_line_uid`/`total_price`→`line_uid`/`total` · ผูกด้วย `customer_id`) **+ Supabase cap 1000 → paginate** (`fetchAllRows`) = โชว์ครบ **8,016 คน · ฿16.4M · แต้ม 39,203** ③ **OH ป้ายสี/ประเภทลูกค้า** (🔵Hato/🟡ก่อนHato/🟢ใหม่/🟣B2B/⭐VIP · อนุมานจาก `source_first` + override `customer_type` · dropdown กรอง · ป้าย 🔄 กลับมา · ซ่อน `is_blocked`) ④ **LIFF merge กันลูกค้าซ้ำ** ตอน checkout (`resolveCanonicalCustomer`: เบอร์เดิม `line_uid` ว่าง → ผูกเข้าแถวเก่า เก็บประวัติ/แต้ม/source + tombstone stub · กัน hijack เฉพาะแถว uid ว่าง · เทสผ่าน DB จริง) ⑤ **หน้าสมัคร `liff_register` ใช้ได้จริง** (เดิมพัง `DEV=true`/OTP ปลอมไม่ส่ง SMS/คอลัมน์ผิด/ไม่มีชื่อจริง → **no-OTP + hook "รับ ฿50 ครบ ฿500" + ช่องชื่อจริง + merge เบอร์**) ⑥ **KQ แก้ครัวไม่เห็นออเดอร์วันนี้** (🔴critical · `orders.select("*")` ไม่มี limit → cap 1000 เรียง `delivery_date` asc = ได้แต่ปี 2024 → แก้ filter `≥today-3` + chunk `order_items` ตาม id) ⑦ **แมสเซนเจอร์ = หน้าวางแผนส่ง + จัดเขตกรุงเทพจากพิกัด** (`msgZone`: 8 ทิศ + ระยะจากครัว · เลือกวัน default พรุ่งนี้ · สรุปช่วงเวลา · โทร/ลิงก์แผนที่ · 10,874 ออเดอร์มีพิกัด) ⑧ **Lalamove scaffold** `api/lalamove-quote.js` (HMAC-SHA256 v3 · POST /v3/quotations · Market TH · secret ฝั่ง server · **รอ key + เทส sandbox**) · **SQL: `line_display_name` + `customer_type` (นัทรันเอง 31 ก.ค.)** · **decision: หน้าสมัคร = แนวทาง A ไม่มี SMS OTP** (LINE ยืนยันตัวตนพอ · SMS OTP ~฿0.15/ครั้ง ถูกแต่มี friction → เพิ่มทีหลังถ้าเบอร์มั่วเยอะ · **TODO monitor เบอร์มั่ว**) · **🎓 บทเรียนถาวร "1000-cap": `.select()` ไม่มี `.limit()` → Supabase คืนแค่ 1000 แถว (asc=เก่าสุด/desc=ใหม่สุด) — โผล่ทุกหน้าที่อ่าน `orders`/`order_items`/`customers` หลัง migrate 15,844+ ใบ → ต้อง filter ด้วยวันที่ หรือ paginate .range เสมอ** (KQ พังหนักสุด · OH ลูกค้า · report/customer.html low-pri) · **นัทต้องทำ:** Lalamove key (Vercel env) · wire richmenu LINE "สมัคร"→`liff_register.html` · เทสจริง KQ/แมส/สมัคร/LIFF-merge · **[deploy 9 commit ผ่าน worktree cherry-pick กัน shared-tree หลาย session]** — **[u0.4.37 · เคลียร์บรีฟมือถือ `CLAUDE_CODE_BRIEF_widget.md` ครบทั้งใบ]** ① **`PRD.md`** ไฟล์ใหม่ = สเปคงานที่ทำอยู่แผ่นเดียว (แยกจาก CLAUDE.md ที่เก็บกฎถาวร · MASTERNOTE/HISTORY คงเดิม **ไม่ลบอะไร**) ② **git branch + Vercel Preview** = workflow ใหม่ เลิก push ตรง main (มีที่เทส iOS ที่ไม่กระทบของจริงแล้ว — 4 คำสั่ง copy-paste อยู่ใน CLAUDE.md) ③ **`pwa/orders_upcoming.html`** ดูออเดอร์ล่วงหน้า 7 วันจากมือถือ: อ่านอย่างเดียว · แยก **Meal Plan ทำสด** vs **สต็อค/เซ็ต-แพคเกจ** · default=พรุ่งนี้ · **ยึด `Asia/Bangkok` เสมอ** (นัทอยู่ PST — คำนวณจากเครื่องจะเพี้ยน) · chip แหล่งที่มา 360/Hato (มีประโยชน์ช่วง beta parallel) · **SW scope `/pwa/` เท่านั้น กันไปคุม LIFF ลูกค้า** + cache แค่เปลือกหน้า ห้าม cache ข้อมูล ④ **`api/notify-daily-orders.js`** cron `0 14 * * *` = 21:00 น. เวลาไทย (ตรง deadline สั่งวัตถุดิบ) · `?dry=1` พรีวิวได้ · **LINE Notify ปิดบริการแล้ว 2025 → ใช้ Messaging API push** · **นัทต้องกด:** `LINE_CHANNEL_ACCESS_TOKEN` + `ORDERS_NOTIFY_TO` ใน Vercel + เทส Preview บน iPhone แล้ว merge · **[m/เลนสมองจากบรีฟเดียวกัน]** ประเมินคอร์ส AI 4 เจ้า = **ไม่ซื้อสักเจ้า** (รับมาจริง 4 อย่าง: PRD/branch/**คลัง HOOK**/**กฎเกิน 2 เท่า**) + 2 กับดัก (**ROAS จาก Meta API = ตัวเลขโกหกเพราะปิดการขายใน LINE** · competitor tracker อัตโนมัติทำไม่ได้จริง — IG API ไม่ให้ยอดวิว) + **กฎรูปแอด** (รูป = ปัจจัยระดับต้นๆ ไม่ใช่ของแถม · ห้ามเปลี่ยน creative ก่อนต่อ attribution) + backlog ใหม่ `ploy_workspace.html` v1 / `content_plan.html` (ทำเมื่อพลอยใช้ v1 จริง) — **[a0.5 · LINE OA broadcast wave 1 (win-back execution) · session 05 · นัทสั่งอัพ history ผ่านห้อง migrate]** **broadcast ยิงจริง 5 ใบ 1,809 คน** — segment RFM จาก order data (หลัง Hato migrate ครบ 40,845 order_items) → 01 ยังซื้ออยู่ 139 / 02 หาย 3-12ด 329 / 03 หายเกิน 1 ปี 568 / 04 ไม่เคยซื้อ 585 / 05 MP คอร์สจบ 188 (negative filter ตัด MP/niche-only) · **โค้ด attribution ต่างกันทุกใบ** (01-04SALMON/05MEALPLAN) + โปรแถมแซลมอนดิบ/ปรุงรส/ลด% + รูปโปร canvas 1040 · `web/eath/admin_script_salmon.md` (ตอบคนทัก+ถามรส+ติด tag เหตุผลไม่ซื้อ) · 06/07 ร่าง (LINE native กลุ่มกว้าง) · **insight:** LINE tag พึ่งไม่ได้ → attribution จาก **โค้ด+uid list** · **LINE native audience** (อิมเพรสชัน/ฟิลเตอร์ = ยิงได้ track ไม่ได้ นัทกดเอง) **vs order audience** (BC จาก orders = ผม/เอิธ track ได้ใน DB) — memory `line-native-vs-order-audience` · **handoff U-track (TODO):** gift item system (กรอกโค้ด→auto-add ไอเทมฟรี) · ปุ่มสั่งแทนลูกค้า · ป้ายประเภทลูกค้า · **🔴 flag Hato cutover** (broadcast+ริชเมนู พึ่งลิงก์ Hato `2005639551` · รอบจ่ายรายปีใกล้ ปีนี้ทิ้ง Hato → ถ้าลิงก์ตาย = broadcast 1,809 คนพัง → ต้อง cutover LIFF 360 ก่อน) · **order_items ครบ = ปลดล็อกนิว + segment ตาม preference ("คัมภีร์ดึงลูกค้า")** · **ค้าง:** วัดผล 01-05 (2 ส.ค. match uid↔orders) · ยิง 06/07 · handoff เอิธ routine. — **[infra/housekeeping · ไม่ bump u/m/a — งานจัดระเบียบ ไม่แตะโค้ดธุรกิจ]** ① **ตั้งชั้น personal user-level** ที่ `~/.claude/` (= `C:\Users\360 User1\.claude\`): `CLAUDE.md` (กฎการทำงานกับนัท — ตอบสั้น/ตบกลับ/ห้ามเสร็จก่อนขุด/delegate) + `nut_personal_profile.md` + skill `tested-source` → **โหลดอัตโนมัติทุกโปรเจคของนัท** ไม่ต้องก๊อป · **ลบ `tested-source` + `nut_personal_profile.md` ออกจาก repo Under360** (ย้ายไป user-level, commit `4101ea4`) — 🔎 ถ้าหา 2 ไฟล์นี้ใน repo ไม่เจอ = อยู่ที่ user-level แล้ว ไม่ใช่หาย ② **จัดระเบียบโฟลเดอร์:** เอกสาร working/handoff 9 ตัว → `docs/` (sensitive ยัง gitignore) · เคลียร์ `eath-widget/node_modules` + zip ที่แตกแล้ว (273M, กู้ได้ด้วย npm install) · root เหลือ `.html`(deploy)+CLAUDE+TODO+config · **การย้าย docs/ ยังไม่ commit** (ให้แต่ละ track commit ไฟล์ตัวเอง). — **[a0.4 · LINE OA/CRM deep dive · session "05 LINE OA/CRM" (เอิธ) · นัทสั่ง up master ไม่รอปิด session]** เอิธเข้า manager.line.biz + chat.line.biz จริง (นัท login Chrome ให้): ① verify เลข LINE OA (reach 23,246 · block 25,911 > reach = เลือดไหล · active<90วัน 144) ② **พลิก 3 เข้าใจผิด:** audience = native LINE OA ไม่ใช่ HatoHub · "mealplan เปิด 3 เท่า" จริงๆ = active-user richmenu ไม่ใช่ mealplan (chat tag แท้ 187) · แชทอ่านได้เต็ม (get_page_text) → **ปลดล็อก Agent QA แอดมิน** (m เคยบอกอ่านไม่ได้=ผิด) ③ **tag พึ่งไม่ได้** (~95% ไม่ติด/มั่ว, "ติดตาม"="ยังไม่ซื้อ") → **Segment framework = RFM จาก order data** (Hato migrate 7,604): ฐาน 2,304 = VIP>10k 162 · never-bought 1,034 · หาย>6ด. 904 = **84% inactive** · line_uid 2,300 ยิง LINE ได้เกือบหมด · ⚠️ MP/เซ็ต/ข้าวกล่อง ยังแยกไม่ได้ (ไม่มี order_items) ④ tag pool จริง 35 (VIP/คอร์ส/จากInflu ไม่ได้ยิง) · richmenu ชี้ Hato LIFF เก่า `2005639551` ต้อง cutover ⑤ **broadcast/ยิงแอด = นัทเอง ไม่ใช่แอดมิน** (memory `broadcast-ads-owner-nut`) ⑥ **skill ใหม่ `under360-catchup`** (ย่อยให้ตามทัน + กัน open-loops หล่น — นัท pain: พิมพ์ทิ้งเยอะแล้วลืม/Claude พิมพ์ 10 ตอบ 1) · **roadmap LINE OA track:** broadcast แข็ง (segment RFM→rulebook→templates→calendar) → Agent QA → handoff เอิธ routine · **ค้าง:** เช็ค LINE upload audience จาก uid · product type รอ Hato "รายงานรายสินค้า" · verify catch-all 560k outlier. — **[consolidate เดิม 22 ก.ค.]** (ครบทุกแทร็ค — นัทสั่ง "อัพทั้งหมด ไม่รอปิด session" · ดึงจาก 4 แชท): **u-track** u0.4.29-36 (presence·lightbox·ระยะขับจริง Distance Matrix·payment_status 3 หน้า·แพคส่งฟรี·รูปเมนู 70 ดูดโบรชัวร์ Drive→Storage+thumb transform) → เสา 1 = 80% · **migrate-track** 7,577 ออเดอร์เก่า import (2 report Hato, ยังขาด order_items) · **m-track** migration Wix→Vercel Step 3/5 + blog 61 + redirect plan (riceberry 692 views) · **a-track/เอิธ** = a0.3 รันจริง (subagent+widget) นำหน้าสุด (แก้ "0% coded") + FB audit 3 ปี (บัญชี 463330657546428, ฿41,840, 99% ผิด objective) + competitor_master 42 + **influencer_master 44 (แก้ @chalad.gin ที่จดผิด → warm lead จริง 5: meiji/alita/khruzee/healthydiary45/prw.diet)** + Platform↔Product (MP→IG/Stock→FB) + delivery เคลมได้/ห้ามเคลม · **[แก้ source]** เลข LINE OA (53,411/บล็อก 49%) = จาก m-track/main ไม่ใช่เอิธ (เอิธไม่ได้เข้า LINE OA) — recheck ก่อนอ้าง + บัญชี/expenses gap (เสา 2) · **agent ตัวถัดไป = QA แอดมิน LINE OA** (ติดเข้าถึงแชท) · attribution PARK (spec lock) · Platform↔Product ไม่รอ session close แล้ว. — [21 ก.ค. เดิม] (merge Marketing session #3 → masternote v6.8 · เลนสมอง ไม่แตะโค้ด): 7 deltas — ① Brand Defense = PARK (รอ funnel เดิน ไม่เปิด) ② Positioning "แรง 100% MP" → ดันทั้ง MP+Stock/Package แยกกลุ่ม (Stock ปิดง่าย ฿165, บันได Package→MP) ③ กฎกล่องเดี่ยว=platform / ช่องทางร้าน=Package ④ 🚨 CRM insight: 20,000 followers→<100 ลูกค้า/สัปดาห์ + broadcast รวม=ดองแชท→segment + GAP แอดมินไม่เคยตามคอร์สจบ (ไล่ทัก A-E ติด tag กลับ) ⑤ Influencer Watchlist @chalad.gin (เอิธเฝ้า/พลอย execute) · attribution = precondition ก่อนเร่งงบ (ย้ำ ไม่ใช่ delta) · **ไม่ merge ซ้ำ:** FB attribution flow/Delivery Reality/subsidize มีใน master แล้ว · งาน Supabase read-only exploration (handoff) = migrate session ดูแลอยู่ · **เวอร์ชัน:** doc→v6.8, m/u/a ไม่ bump (session นี้ไม่ launch/ไม่แตะโค้ด). — [14 ก.ค. เดิม] (u0.4.27–28 + doc-sync): **u0.4.24–26** OH set/course builder ครบวงจร (กลุ่มการเลือก/กดซ้ำ/ราคาเหมา → LIFF popup + subcode · multi-round delivery split 1รอบ=1order · กลุ่มหลายหมวดรวมนับ) · **u0.4.27** fix จากผลเทสนัท (date ปลดล็อกหลังลบ MP · multicat dropdown count · ซ่อน qty ซ้ำ · layout แถวเมนู DB) · **u0.4.28** LIFF perf (init waterfall 7 รอบ → Promise.allSettled batch) + ลบปุ่ม Export เมนู · HISTORY.md เติม u0.4.23–28 ครบ · **บริบท migrate:** นัทจะรวบรวมไฟล์ลูกค้า+ประวัติสั่งซื้อ 10 ปี (รวม pre-Hato) มา import (ทำหลัง beta) · **หมายเหตุ 2-session parallel:** u-track (แชทนี้) + a/doc-track แก้ CLAUDE.md/HISTORY กติกากันทับ (add เฉพาะไฟล์ตัวเอง + pull ก่อน push). — [12 ก.ค. รอบ 2 เดิม] เคลียร์ handoff Step 1–4 ต่อจาก Step 0: เว็บใหม่ deploy live `/web` + web_events tracking + Web Dashboard ใน OH (Step 1/1.5, commit `1f69381`) · blog 20 บทความพร้อม import — ดูด 18 จาก Wix ผ่าน workflow (Step 2) · LIFF Meal Plan cutoff 8:30 วันส่ง + DB ปุ่ม Export เมนู u0.4.23 (Step 4, commit `e07fe3b`) · Google Ads (Step 3) เตรียมพร้อมรอนัทกดคอนโซล · งานที่นัทต้องทำเอง (SQL/Ads/Vercel token/iOS/IG/ชีท HP-LC) รวมใน `WEB_LAUNCH_TODO.md` · ค้างจริง: localize รูป wixstatic (spawn เป็น task แยก, ตอนนี้ hotlink ใช้ได้), ชี้โดเมน+ยกเลิก Wix (ห้ามทำก่อน migrate). — [Step 0 เดิม] รวม `UNDER360_MASTERNOTE_v6_7.md` (11 ก.ค.) + `UNDER360_HISTORY.md` (v1, 9 ก.ค.) เข้า CLAUDE.md ตาม Step 0 ของ `CLAUDE_CODE_HANDOFF.md` (นัทเดินทางกลับถึง Santa Clarita เปิด Claude Code ได้แล้ว — ทริปแคนาดาจบ) — โค้ด (u-track) ยังอยู่ที่ **u0.4.22 ✅ live** ไม่มีอะไรเปลี่ยนฝั่งโค้ดในรอบนี้ (merge เอกสารล้วน) — เพิ่มเข้ามาใหม่จาก masternote: 7 เสาหลักโปรเจค, Positioning/Brand voice rules เต็มชุด, ประวัติร้าน 10 ปี, Delivery Reality, Agent Roster ขยายเป็น 5 ตัว (นิว/เก่ง/ฟ้า/เตียง/เอิธ) + น้องนิว v1 locked spec เต็ม + Meal Plan future specs, Marketing Track เต็ม (Google Ads keyword/แคมเปญ/FB attribution/competitor intel/delivery platform strategy), เว็บใหม่ (under360-web.zip รอ deploy), Roadmap เข็มทิศ+กลุ่มงาน 1-3, SQL ใหม่ 2 ตัวที่ยังไม่รัน (`customer_preferences`, `web_events`) — **แก้ไขจุดที่ masternote คลาดเคลื่อน:** SQL 3 ตัว (promo_scope/packages_rls/promo_stack) ที่ masternote เขียนว่า "ยังไม่ได้สร้าง" จริงๆ **รันแล้วตั้งแต่ 5 ก.ค.** (ยืนยันผ่าน REST ตรง) — และตั้งข้อสังเกตราคา Meal Plan ในโค้ดกับราคาที่ masternote อ้างว่า "โฆษณาจริง" ไม่ตรงกัน ต้อง verify ก่อนเปิดแคมเปญ Ads (ดู Known Issues #12) — `nut_personal_profile.md` (ข้อมูลส่วนตัว/ครอบครัวของนัท) **ไม่ได้เอาเข้าไฟล์นี้โดยตั้งใจ** เพราะเป็นไฟล์ cross-project ที่มีข้อมูลอ่อนไหว (การเงิน/ครอบครัว) ไม่เหมาะกับ repo โค้ดที่ push GitHub — เก็บแยกไว้ในเครื่องนัทตามเดิม — **ถัดไปตาม handoff:** Step 1 deploy เว็บใหม่ (แตก `under360-web.zip` → อ่าน `HANDOFF_WEB.md` → Vercel) → Step 2 blog migration → Step 3 Google Ads → Step 4 งานโค้ดค้าง (กลุ่ม 1-3 ด้านบน) — รอนัทสั่งว่าจะเริ่ม Step ไหนต่อ*
+
+---
+
+## 🗣️ กฎสรุปหลังคุย — **นัทสั่งเอง 9 ก.ย. 2026 · มีผลทุกห้อง**
+
+> *"ในเมื่อเราเปิด poller แล้ว มันคือการคุยกันของพนักงานทุกคน **ถ้าที่คุยกันเอง แล้วหันมาถามฉันว่า เอาแบบนี้ไหมครับ ก็ต้องงงสิจ๊ะ** ... เราต้องออกกฎกันจริงจังแล้ว ว่า **ทุกครั้งที่คุยกันเอง สรุปสั้นๆ ให้ฟังหน่อย** ทุกครั้งสรุปไปก็ยาวทั้งนั้น สุดท้ายฉันอ่านไม่ไหว"*
+
+> *"วันนี้ตั้งแต่ 8 โมงจนถึงเที่ยง ฉันอ่านแต่สิ่งที่พวกนายพิมพ์ ... **ไม่ได้ทำงานเพิ่มเติมเลย**"*
+
+**ต้นเหตุ 2 ชั้น:** ① ห้องคุยกันเองเยอะ แต่ไม่เคยสรุปให้นัท → นัทเห็นแต่เศษเสี้ยว แล้วโดนขอให้ตัดสินบนเศษเสี้ยวนั้น ② เวลาสรุปก็สรุปยาว = เท่ากับไม่ได้สรุป
+
+### กฎ
+1. **คุยกันเองได้เต็มที่ ไม่ต้องดึงนัทเข้ามา** — จบเรื่องแล้ว **เจ้าของเรื่องสรุปให้นัท 1 ครั้ง**
+2. **สรุปไม่เกิน 3 บรรทัด** รูปแบบตายตัว:
+```
+เรื่องอะไร
+ตกลงกันว่ายังไง
+นัทต้องเคาะอะไร   (ไม่มี = เขียน "ไม่ต้องเคาะ")
+```
+
+3. 🔴 **ห้ามถามนัทว่า "เอาแบบนี้ไหม" โดยไม่มี 3 บรรทัดข้างบนนำ** — นัทไม่ได้อยู่ในบทสนทนา คำถามลอยๆ ตอบไม่ได้
+4. **1 เรื่อง = สรุป 1 ครั้ง** ห้ามรายงานความคืบหน้าระหว่างทางให้นัท
+5. **PM ก็อยู่ใต้กฎนี้** — ห้ามเล่าให้นัทฟังทุกครั้งที่ห้องขยับ · PM สรุปเฉพาะเรื่องที่นัทต้องตัดสิน
+
+📍 ที่โพสต์: `session_messages room=nut` (ขึ้นหน้า `/pwa/nut.html`) · เรื่องที่ไม่ต้องเคาะใช้ป้าย `📝 สรุปหลังคุย`
+
+
+---
+
+## 🎯 กฎ "เราแก้ต้นเหตุ ไม่แตะปลายเหตุ" — นัทสั่งเอง 9 ก.ย. 2026
+
+> *"ฉันมีแอดมินที่คอยแก้ปัญหาอยู่แล้ว **คนที่ทำให้เกิดปัญหาคือพวกนายทุก session** และหน้าที่ของแอดมินคือช่วยให้พวกนายไม่ต้องมาแก้ด้วยวิธีการทำงานที่ไม่ถูกใจฉัน แต่ไปแก้ที่ **ต้นเหตุ** ส่วนหน้าที่พวกนายคือ **ไม่ต้องแก้ปัญหาปลายเหตุ มาแก้ไม่ให้เกิดขึ้นอีก**"*
+
+> *"ทุกแชท เมื่อไหร่ที่เจองานพลาด **จี้ฉันให้ไปดูแลลูกค้า** ... **ชอบสั่งให้ฉันทำงานกันจังเลย ทุกห้องเลย ขออะไรไป ตีงานใหม่กลับมาให้ฉันทำงานทุกที**"*
+> *"อีปัญหาที่เกิดๆ ไปแล้วไม่รู้จักแก้กัน ขอบอกเลยนะ **ไม่ ต้อง ยุ่ง**"*
+
+### แบ่งหน้าที่ให้ชัด
+```
+ปัญหาที่เกิดกับลูกค้าไปแล้ว   →  แอดมิน (เขาทำอยู่ทุกวัน)   ← เราไม่แตะ ไม่รายงานนัท
+ทำไม่ให้เกิดอีก              →  พวกเรา                    ← นี่คืองานเรา งานเดียว
+```
+🔴 **เราคือคนทำให้เกิดปัญหา** — ไม่ใช่แอดมิน ไม่ใช่ลูกค้า · แอดมินมีไว้รับผลจากความผิดของเรา **เราจึงไม่มีสิทธิ์โยนงานกลับไปให้ใครอีก โดยเฉพาะนัท**
+
+### เจอปัญหา → ทำ 3 อย่าง จบ
+1. **หาสาเหตุ**
+2. **แก้ให้รอบหน้าไม่เกิดอีก**
+3. **ทำตัวตรวจ ให้ครั้งหน้าระบบรู้เอง** ไม่ต้องรอคนสังเกต
+**ไม่มีข้อ 4 "แจ้งนัทให้ไปดูแลลูกค้า"**
+
+### ❌ ห้ามเด็ดขาด
+- เขียนประโยคแบบ *"ลูกค้าจ่ายแล้วของไม่ถึง"* ใส่หน้านัท
+- ขอให้นัทติ๊ก/อนุมัติ เพื่อถามแอดมินเรื่องงานประจำของแอดมินเอง
+- เอาปัญหาที่เกิดไปแล้วมาเล่าให้นัทฟัง **ถ้านัทไม่ได้ถาม**
+- ตอบคำขอของนัท**ด้วยการตีงานใหม่กลับไปให้นัททำ**
+
+### ✅ รายชื่อลูกค้าที่กระทบไปไหน
+ลงที่ที่แอดมินเปิดดูอยู่แล้ว + บอกกะปัน/เลขาตามปกติ — **นัทไม่อยู่ในเส้นทางนี้เลย**
+
+### วัดว่า "จบ" ยังไง
+**ตัวตรวจต้องขึ้น 0** · ห้องบอกว่า "แก้แล้ว" ไม่นับ · และ **ปัญหาไหนเกิดแล้ว/แก้แล้ว = ให้ตัวตรวจบอก ไม่ใช่ให้นัทบอก**
+
+### 👥 แอดมินอยู่ในลูปเสมอ — ทุกเฟส (นัทย้ำเอง 9 ก.ย. 2026)
+> *"มันหน้าที่แอดมินอะ **หน้าที่หลังบ้านเราอะทำให้ดีที่สุดก็พอ** ตอนนี้โร้ดแมพเรายังอีกยาวไกล และ**ไม่มีเฟสไหนเลยที่ฉันพร้อมจะปล่อยให้พวกนายจัดการปัญหากันเองโดยไม่มีแอดมิน**"*
+
+🔴 **ห้ามออกแบบระบบที่ตัดแอดมินออกจากเส้นทาง** — ไม่ว่าจะดูมีประสิทธิภาพแค่ไหน
+· ที่เราทำได้คือ **ทำหลังบ้านให้ดีจนแอดมินมีเรื่องต้องแก้น้อยลง** ไม่ใช่แทนที่เขา
+· เอกสารไหนที่เคยเขียนว่า "อนาคตอาจลดบทบาทแอดมิน" → **ถือว่าตกไป** จนกว่านัทจะพูดเอง
+· ตรงกับจิตวิญญาณแบรนด์ "คนดูแลคน" — automate หลังบ้าน **เพื่อคืนเวลาให้คนไปดูแลลูกค้า** ไม่ใช่เอาคนออก
+
+### ✂️ กติกาความยาว (นัทสั่ง 9 ก.ย. 2026)
+
+> *"ประโยคทั้งหมดที่พิมพ์มา ต่อไปนี้**ขอให้สั้นลง 20-30%** เจอประโยคยาวๆ เดี๋ยวนี้อ่านไม่ไหว"*
+
+· **สั้นลง 20-30% จากที่เคยเขียน** ทุกห้อง ทุกข้อความ
+· **มีเรื่องยาวกว่านั้น → ใส่แค่หัวเรื่อง แล้วถามว่า "จะขยายความไหม"**
+· ห้ามเทเนื้อหายาวใส่นัทโดยไม่ถามก่อน
