@@ -1,5 +1,5 @@
-import {saveRound,loadRounds} from './sync.js';
-import {latestCounts,ordered,countItems,validateAssignments} from './counting.js';
+import {saveRound,loadRounds} from './sync.js?v=20260925-group-count1';
+import {latestCounts,ordered,countItems,validateAssignments,bangkokDay,groupStatus} from './counting.js?v=20260925-group-count1';
 const $=id=>document.getElementById(id),esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // Keep the existing storage namespace and old rounds/draft for compatibility.
 const prefix='under360-phase2-239-v1-';
@@ -7,7 +7,10 @@ const read=(k,f)=>{try{return JSON.parse(localStorage.getItem(prefix+k))??f;}cat
 function write(k,v){try{localStorage.setItem(prefix+k,JSON.stringify(v));return true;}catch{toast('เก็บข้อมูลในเครื่องไม่สำเร็จ กรุณาอย่าปิดหน้านี้');return false;}}
 const unit=v=>({g:'กรัม',kg:'กก.'}[v]||v),fmt=v=>Number(v).toLocaleString('th-TH',{maximumFractionDigits:3});
 const stamp=at=>new Date(at).toLocaleString('th-TH',{timeZone:'Asia/Bangkok',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
+const dailyGroups=new Set(['ผักสด','เนื้อสัตว์และไข่']);
+const today=()=>bangkokDay(new Date().toISOString());
 let items=[],staff=[],rounds=read('rounds',[]),values={},selected='',filter='all',page=0,latest=new Map(),startedAt=null,activeMs=0,running=false,tick=0,ready=false,reviewScope=[];
+let displayedDay=today();
 const dataset='phase2-243',unitRevision='2026-09-25-packaging-units';
 if(!Array.isArray(rounds))rounds=[];
 const person=()=>staff.find(s=>s.id===selected);
@@ -49,6 +52,22 @@ function selectStaff(id){
 $('staffSelect').onchange=()=>selectStaff($('staffSelect').value);
 $('showAll').onchange=()=>{fillCategories();resetPage();};$('sortOrder').onchange=resetPage;
 function visibleItems(){return !selected||$('showAll').checked?items:scope();}
+function renderTodayStatus(){
+ const day=today(),rows=staff.flatMap(s=>[...new Set(items.filter(i=>s.item_keys.includes(i.key)).map(i=>i.group))].map(group=>{
+  const keys=items.filter(i=>i.group===group&&s.item_keys.includes(i.key)).map(i=>i.key);
+  return {staff:s.name,group,frequency:dailyGroups.has(group)?'ตรวจทุกวัน':'ตรวจตามรอบ',status:groupStatus(rounds,s.id,keys,day)};
+ }));
+ const daily=rows.filter(r=>r.frequency==='ตรวจทุกวัน');
+ $('todaySummary').textContent='สถานะตรวจวันนี้ · กลุ่มรายวันครบ '+daily.filter(r=>r.status==='complete').length+'/'+daily.length;
+ $('todayStatusRows').innerHTML=rows.map(r=>`<div class="today-row"><span><b>${esc(r.staff)}</b> · ${esc(r.group)} <small>${r.frequency}</small></span><strong class="today-${r.status}">${r.status==='complete'?'ตรวจครบแล้ว':r.status==='partial'?'นับบางส่วน':r.frequency==='ตรวจทุกวัน'?'รอตรวจวันนี้':'ตรวจตามรอบ'}</strong></div>`).join('');
+}
+function refreshDay(){
+ if(!ready||today()===displayedDay)return;
+ displayedDay=today();renderTodayStatus();
+ if(!document.querySelector('.counter input:focus')&&!$('review').open)render();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)refreshDay();});
+setInterval(refreshDay,60000);
 function update(){
  const assigned=scope(),done=assigned.filter(counted),zero=done.filter(i=>values[i.key]===0).length;
  $('personalProgress').hidden=!selected;$('personalProgress').textContent='รอบที่กำลังกรอก: '+done.length+' จาก '+assigned.length+' รายการที่รับผิดชอบ';
@@ -58,7 +77,7 @@ function update(){
  $('countN').innerHTML=done.length+' <small>รายการ</small>';$('remain').textContent='รับผิดชอบทั้งหมด '+assigned.length+' รายการ';$('progress').max=assigned.length||1;$('progress').value=done.length;
  $('hasN').textContent=done.length-zero;$('zeroN').textContent=zero;
  $('mobileN').textContent=selected?(person()?.name||'ร่างเดิม')+' · '+done.length+'/'+assigned.length:'เลือกชื่อก่อนเริ่มนับ';
- $('staffHint').textContent=selected==='legacy'?'ร่างจากเวอร์ชันเดิมยังอยู่ บันทึกเฉพาะรายการที่กรอกได้':person()?person().name+' รับผิดชอบ '+assigned.length+' รายการ · กรอกเฉพาะของที่พบ แล้วตรวจรายการว่างก่อนยืนยันครบ':'เลือกชื่อของคุณเพื่อเปิดงานที่ได้รับมอบหมาย (ไม่ต้องล็อกอิน)';
+ $('staffHint').textContent=selected==='legacy'?'ร่างจากเวอร์ชันเดิมยังอยู่ บันทึกเฉพาะรายการที่กรอกได้':person()?person().name+' รับผิดชอบ '+assigned.length+' รายการ · เลือกหมวดเพื่อตรวจและจบรอบเฉพาะหมวดนั้น':'เลือกชื่อของคุณเพื่อเปิดงานที่ได้รับมอบหมาย (ไม่ต้องล็อกอิน)';
  document.querySelectorAll('.finish').forEach(b=>{b.disabled=!ready||!selected||selected==='legacy'&&!done.length||!!document.querySelector('.counter input:invalid');b.innerHTML='ตรวจและจบรอบ →';});
 }
 function row(i){
@@ -66,7 +85,8 @@ function row(i){
  const previous=last?'นับล่าสุด '+fmt(last.qty)+' '+unit(last.unit)+' · '+stamp(last.at)+' · '+last.by:'';
  const state=last?(last.qty>0?'positive':'zero'):'unknown';
  const badge=last?(last.qty>0?'มีของเหลือ':'หมด · 0'):'ยังไม่มีผลนับ';
- return `<article class="product stock-${state} ${done?'done':''} ${editable?'':'readonly'}" data-key="${esc(i.key)}"><div class="photo">${$('viewMode').value!=='table'&&i.img?`<img src="${esc(i.img)}" alt="${esc(i.name)}" loading="lazy" decoding="async" width="160" height="160">`:'<span class="no-photo">ยังไม่มีรูป</span>'}</div><div class="product-info"><h3>${esc(i.name)}</h3><div class="meta">${esc(unit(i.unit))}</div><small class="stock-last"><span class="stock-badge">${badge}</span> ${esc(previous)}${last&&last.unit!==i.unit?' · หน่วยเดิม; รอบใหม่ใช้ '+esc(unit(i.unit)):''}</small></div><div class="entry">${editable?`<div class="counter"><button data-step="-1" aria-label="ลดจำนวน ${esc(i.name)}">−</button><input aria-label="จำนวน ${esc(i.name)}" type="number" min="0" step="any" inputmode="decimal" placeholder="แตะเพื่อกรอก" value="${done?values[i.key]:''}"><button data-step="1" aria-label="เพิ่มจำนวน ${esc(i.name)}">+</button></div><div class="counter-meta"><button class="clear" data-clear aria-label="ล้างจำนวน ${esc(i.name)}">ล้าง</button></div>`:'ผู้รับผิดชอบ: '+esc(owner?.name||'ยังไม่ระบุ')}</div><span class="check" aria-label="นับแล้ว">✓</span></article>`;
+ const stale=last&&dailyGroups.has(i.group)&&bangkokDay(last.at)!==today();
+ return `<article class="product stock-${state} ${done?'done':''} ${editable?'':'readonly'}" data-key="${esc(i.key)}"><div class="photo">${$('viewMode').value!=='table'&&i.img?`<img src="${esc(i.img)}" alt="${esc(i.name)}" loading="lazy" decoding="async" width="160" height="160">`:'<span class="no-photo">ยังไม่มีรูป</span>'}</div><div class="product-info"><h3>${esc(i.name)}</h3><div class="meta">${esc(unit(i.unit))}</div><small class="stock-last"><span class="stock-badge">${badge}</span> ${esc(previous)}${last&&last.unit!==i.unit?' · หน่วยเดิม; รอบใหม่ใช้ '+esc(unit(i.unit)):''}${stale?' <span class="stock-stale">ยอดก่อนวันนี้ · รอตรวจวันนี้</span>':''}</small></div><div class="entry">${editable?`<div class="counter"><button data-step="-1" aria-label="ลดจำนวน ${esc(i.name)}">−</button><input aria-label="จำนวน ${esc(i.name)}" type="number" min="0" step="any" inputmode="decimal" placeholder="แตะเพื่อกรอก" value="${done?values[i.key]:''}"><button data-step="1" aria-label="เพิ่มจำนวน ${esc(i.name)}">+</button></div><div class="counter-meta"><button class="clear" data-clear aria-label="ล้างจำนวน ${esc(i.name)}">ล้าง</button></div>`:'ผู้รับผิดชอบ: '+esc(owner?.name||'ยังไม่ระบุ')}</div><span class="check" aria-label="นับแล้ว">✓</span></article>`;
 }
 function render(){
  if(invalidEntry())return;
@@ -75,7 +95,7 @@ function render(){
  $('products').classList.toggle('table-view',$('viewMode').value==='table');
  $('products').innerHTML=list.map(row).join('')||'<p class="empty">ไม่พบรายการ ลองเปลี่ยนคำค้นหรือหมวด</p>';
  $('products').querySelectorAll('img').forEach(img=>img.onerror=()=>{img.parentElement.innerHTML='<span class="no-photo">ยังไม่มีรูป</span>';});
- $('listCount').textContent='แสดง '+list.length+' รายการ · เลื่อนดูได้ต่อเนื่อง';update();
+ $('listCount').textContent='แสดง '+list.length+' รายการ · เลื่อนดูได้ต่อเนื่อง';update();renderTodayStatus();
 }
 function persist(k){if(!startedAt)startedAt=new Date().toISOString();saveDraft();const el=[...$('products').children].find(a=>a.dataset.key===k);el?.classList.toggle('done',counted({key:k}));update();}
 $('products').addEventListener('input',e=>{if(!e.target.matches('input'))return;const input=e.target,k=input.closest('.product').dataset.key;if(!scope().some(i=>i.key===k))return;if(input.validity.badInput||input.value!==''&&(!Number.isFinite(Number(input.value))||Number(input.value)<0)){input.setCustomValidity('กรอกจำนวนตั้งแต่ 0 ขึ้นไป');update();return;}input.setCustomValidity('');if(input.value==='')delete values[k];else values[k]=Number(input.value);persist(k);});
@@ -90,35 +110,50 @@ $('categoryTabs').onclick=e=>{const b=e.target.closest('[data-category]');if(!b)
 function show(view){if(invalidEntry())return;if(view==='history'){setRunning(false);saveDraft();}$('countView').hidden=view!=='count';$('historyView').hidden=view!=='history';$('footer').hidden=view!=='count';$('countNav').classList.toggle('active',view==='count');$('historyNav').classList.toggle('active',view==='history');$('crumb').textContent=view==='count'?'นับสต็อก':'รอบที่ผ่านมา';if(view==='history'){renderHistory();syncRounds();}}
 $('countNav').onclick=()=>show('count');$('historyNav').onclick=()=>show('history');
 const reviewRow=i=>`<div class="review-row"><span>${esc(i.name)}</span><b>${fmt(i.qty)} ${esc(unit(i.unit))}</b></div>`;
+function updateReview(){
+ const group=$('reviewGroup').value;
+ reviewScope=selected==='legacy'?scope():scope().filter(i=>i.group===group);
+ const done=reviewScope.filter(counted),missing=reviewScope.filter(i=>!counted(i));
+ $('reviewTotal').textContent=selected==='legacy'?'ร่างเดิม · กรอกแล้ว '+done.length+' รายการ':group?'หมวด '+group+' · กรอกแล้ว '+done.length+' · เว้นว่าง '+missing.length+' · รวม '+reviewScope.length+' รายการ':'เลือกหมวดงานที่จะจบรอบก่อน';
+ $('reviewRows').innerHTML=done.map(i=>reviewRow({...i,qty:values[i.key]})).join('');
+ $('blankNames').innerHTML=missing.length?'<summary>ตรวจรายการว่าง '+missing.length+' รายการ</summary>'+missing.map(i=>'<div>'+esc(i.name)+'</div>').join(''):'';
+ $('completeText').textContent='ตรวจหมวด'+group+'ครบแล้ว รายการที่เว้นว่าง '+missing.length+' รายการไม่มีของ (บันทึกเป็น 0 เฉพาะหมวดนี้)';
+ $('completeChoice').hidden=selected==='legacy'||!group;
+ reviewButton();
+}
 document.querySelectorAll('.finish').forEach(b=>b.onclick=()=>{
  if(!selected)return;const invalid=document.querySelector('.counter input:invalid');if(invalid){invalid.reportValidity();return;}
- setRunning(false);saveDraft();reviewScope=scope();const done=reviewScope.filter(counted),missing=reviewScope.filter(i=>!counted(i));
- $('reviewTotal').textContent='กรอกแล้ว '+done.length+' · เว้นว่าง '+missing.length+' · รวมงานทั้งหมด '+reviewScope.length+' รายการ';
- $('reviewRows').innerHTML=done.map(i=>reviewRow({...i,qty:values[i.key]})).join('');$('blankNames').innerHTML=missing.length?'<summary>ตรวจรายการว่าง '+missing.length+' รายการ</summary>'+missing.map(i=>'<div>'+esc(i.name)+'</div>').join(''):'';
- $('completeAll').checked=false;$('completeChoice').hidden=selected==='legacy';$('completeText').textContent='ตรวจของที่รับผิดชอบครบแล้ว รายการที่เว้นว่าง '+missing.length+' รายการไม่มีของ (บันทึกเป็น 0)';
+ setRunning(false);saveDraft();
+ const groups=[...new Set(scope().map(i=>i.group))];
+ $('reviewGroupField').hidden=selected==='legacy';
+ $('reviewGroup').innerHTML='<option value="">เลือกหมวดงาน</option>'+groups.map(g=>`<option value="${esc(g)}">${esc(g)} (${scope().filter(i=>i.group===g).length} รายการ)</option>`).join('');
+ $('reviewGroup').value=selected==='legacy'?'':groups.includes($('category').value)?$('category').value:groups.length===1?groups[0]:'';
+ $('completeAll').checked=false;updateReview();
  $('who').value=person()?.name||read('who','');$('who').readOnly=selected!=='legacy';reviewButton();$('review').showModal();
 });
-function reviewButton(){const done=reviewScope.filter(counted);$('submitRound').disabled=!done.length&&!$('completeAll').checked;$('submitRound').textContent=$('completeAll').checked?'ยืนยันตรวจครบ '+reviewScope.length+' รายการ':'บันทึกเฉพาะ '+done.length+' รายการที่กรอก';}
+function reviewButton(){const done=reviewScope.filter(counted),hasGroup=selected==='legacy'||!!$('reviewGroup').value;$('submitRound').disabled=!hasGroup||!done.length&&!$('completeAll').checked;$('submitRound').textContent=$('completeAll').checked?'ยืนยันตรวจครบ '+reviewScope.length+' รายการ':'บันทึกเฉพาะ '+done.length+' รายการที่กรอก';}
+$('reviewGroup').onchange=()=>{$('completeAll').checked=false;updateReview();};
 $('completeAll').onchange=reviewButton;
 document.querySelectorAll('[data-close]').forEach(b=>b.onclick=()=>$(b.dataset.close).close());
 $('finishForm').onsubmit=e=>{
- e.preventDefault();if(!selected)return;const who=$('who').value.trim();if(!who)return;
+ e.preventDefault();if(!selected||selected!=='legacy'&&!$('reviewGroup').value)return;const who=$('who').value.trim();if(!who)return;
+ if(selected!=='legacy')reviewScope=scope().filter(i=>i.group===$('reviewGroup').value);
  const complete=selected!=='legacy'&&$('completeAll').checked,rows=countItems(reviewScope,values,complete);if(!rows.length)return;
  const r={id:crypto.randomUUID(),at:new Date().toISOString(),by:who,note:$('note').value.trim(),dataset,items:rows,sync:'pending'};
- if(selected!=='legacy')r.counting={staffId:selected,assignmentVersion:'v1',scopeKeys:reviewScope.map(i=>i.key),complete,enteredKeys:reviewScope.filter(counted).map(i=>i.key),startedAt:startedAt||r.at};
- // Save the completed round before clearing its draft. Never erase another person's draft.
- if(!write('rounds',[r,...rounds]))return;rounds.unshift(r);write('who',who);values={};startedAt=null;activeMs=0;saveDraft();$('note').value='';$('review').close();render();show('history');toast('เก็บรอบในเครื่องแล้ว กำลังส่งเข้าระบบ');
+ if(selected!=='legacy')r.counting={staffId:selected,assignmentVersion:'v1',group:$('reviewGroup').value,scopeKeys:reviewScope.map(i=>i.key),complete,enteredKeys:reviewScope.filter(counted).map(i=>i.key),startedAt:startedAt||r.at};
+ // Preserve entries from other groups in this person's draft.
+ if(!write('rounds',[r,...rounds]))return;rounds.unshift(r);write('who',who);for(const i of reviewScope)delete values[i.key];if(!Object.keys(values).length){startedAt=null;activeMs=0;}saveDraft();$('note').value='';$('review').close();render();show('history');toast('เก็บรอบในเครื่องแล้ว กำลังส่งเข้าระบบ');
 };
 function renderHistory(){let old=[];try{old=JSON.parse(localStorage.getItem('kruaprom-fresh-v1-rounds'))||[];}catch{}if(!Array.isArray(old))old=[];
  const historyRounds=[...rounds,...old.map(r=>({...r,legacy:true}))];
- $('history').innerHTML=historyRounds.length?historyRounds.map((r,n)=>`<details class="history-round" ${n===0?'open':''}><summary><div><h2>${esc(stamp(r.at))}</h2><p>ตรวจนับโดย ${esc(r.by)} · ${r.sync==='synced'?'บันทึกส่วนกลางแล้ว':r.sync==='pending'?'รอส่งเข้าระบบ':'เก็บในเครื่อง'}</p>${r.counting?`<p>${r.counting.complete?'ตรวจครบ':'นับบางส่วน'} · กรอกเอง ${r.counting.enteredKeys.length} · ยืนยันศูนย์จากช่องว่าง ${r.counting.complete?r.items.length-r.counting.enteredKeys.length:0}</p>`:''}</div><b>${r.items.length} รายการ　⌄</b></summary><div class="history-content">${r.note?`<p>${esc(r.note)}</p>`:''}${r.items.map(reviewRow).join('')}</div></details>`).join(''):'<div class="history-round empty">ยังไม่มีรอบที่เสร็จแล้ว</div>';
+ $('history').innerHTML=historyRounds.length?historyRounds.map((r,n)=>`<details class="history-round" ${n===0?'open':''}><summary><div><h2>${esc(stamp(r.at))}</h2><p>ตรวจนับโดย ${esc(r.by)} · ${r.sync==='synced'?'บันทึกส่วนกลางแล้ว':r.sync==='pending'?'รอส่งเข้าระบบ':'เก็บในเครื่อง'}</p>${r.counting?`<p>${r.counting.group?'หมวด '+esc(r.counting.group)+' · ':''}${r.counting.complete?'ตรวจครบ':'นับบางส่วน'} · กรอกเอง ${r.counting.enteredKeys.length} · ยืนยันศูนย์จากช่องว่าง ${r.counting.complete?r.items.length-r.counting.enteredKeys.length:0}</p>`:''}</div><b>${r.items.length} รายการ　⌄</b></summary><div class="history-content">${r.note?`<p>${esc(r.note)}</p>`:''}${r.items.map(reviewRow).join('')}</div></details>`).join(''):'<div class="history-round empty">ยังไม่มีรอบที่เสร็จแล้ว</div>';
 }
 let syncing=false,syncAgain=false;
 async function syncRounds(){if(syncing){syncAgain=true;return;}syncing=true;$('syncRetry').disabled=true;
  const status=s=>{$('syncStatus').textContent=s;$('countSync').textContent=s;};status('กำลังอัปเดตผลนับจากส่วนกลาง…');
  try{for(const r of rounds.filter(r=>r.sync==='pending')){await saveRound(r);r.sync='synced';write('rounds',rounds);}const remote=await loadRounds();const merged=new Map(rounds.map(r=>[r.id,r]));for(const r of remote)merged.set(r.id,{...r,sync:'synced'});rounds=[...merged.values()].sort((a,b)=>b.at.localeCompare(a.at));write('rounds',rounds);renderHistory();latest=latestCounts(rounds);
  // Do not move rows or replace a field while someone is entering a count.
- if(ready&&!document.querySelector('.counter input:focus')&&!$('review').open)render();
+ if(ready&&!document.querySelector('.counter input:focus')&&!$('review').open)render();else renderTodayStatus();
  status('อัปเดตผลนับล่าสุดแล้ว · ยอดที่บันทึกแสดงพร้อมเวลาและผู้ตรวจนับ');
  }catch{status('เชื่อมต่อส่วนกลางไม่สำเร็จ · ใช้ข้อมูลที่มีในเครื่อง · รอบที่รอส่งยังเก็บไว้');renderHistory();}finally{syncing=false;$('syncRetry').disabled=false;if(syncAgain){syncAgain=false;queueMicrotask(syncRounds);}}}
 $('syncRetry').onclick=syncRounds;window.addEventListener('online',syncRounds);
