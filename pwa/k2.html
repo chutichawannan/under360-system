@@ -1023,7 +1023,7 @@ function viewAdmin(){
 function adminRow(r){
   return '<div class="crow">'
    +'<div style="flex:1"><div class="code">'+esc(shortCode(r.m))+'</div>'
-   +'<div class="mini">'+esc(String(r.m.name||'').slice(0,24))+'</div>'
+   +'<div class="mini">'+esc(r.m.name||'')+'</div>'
    +'<div class="mini">ในตู้ '+(r.have==null?'—':r.have)+' · จองแล้ว '+r.b+'</div></div>'
    +'<div class="big '+(r.free<0?'neg':'ok')+'">'+(r.free==null?'—':r.free)+'</div></div>';
 }
@@ -1105,7 +1105,6 @@ document.addEventListener('visibilitychange',()=>{ if(!document.hidden) loadAll(
       el.querySelector('.tick')?.setAttribute('aria-hidden','true');el.addEventListener('keydown',e=>{if(e.key===' '||e.key==='Enter'){e.preventDefault();const handler=el.getAttribute('onclick');el.click();const next=Array.from(view.querySelectorAll('.row')).find(r=>r.getAttribute('onclick')===handler);next?.focus({preventScroll:true});}});});
     view.querySelectorAll('.card').forEach(el=>{const handler=el.querySelector('.row')?.getAttribute('onclick');const id=handler?.match(/'([^']+)'/)?.[1];const order=ORDERS.find(o=>o.id===id);el.dataset.complete=String(order?isDone(order):false);});
     view.querySelectorAll('.cnt').forEach(input=>{const code=input.closest('.crow').querySelector('.code').textContent;input.setAttribute('aria-label',(VIEW==='count'?'จำนวนที่นับได้ ':'จำนวนที่จะผลิต ')+code);input.min='0';input.step='1';});
-    // Add full names to the existing short labels; retain alerts and all original handlers.
     // Names are rendered from each row's menu object; never resolve by a reused weekly nickname.
     applyFilter();
   }
