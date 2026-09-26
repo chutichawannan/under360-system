@@ -3,11 +3,11 @@
 //  ------------------------------------------------------------
 //  ทำไมต้องแยก: บัญชีกะปัน (@293lwrvn) เป็นแพ็กฟรี 300 ข้อความ/เดือน หมดเกลี้ยง 24 ก.ย.
 //  เพราะส่งเข้ากลุ่มนับตามจำนวนคน → นัทเอาบัญชีเก่า "Expense Bot" ที่ไม่ได้ใช้แล้วมาเป็นช่องของพลอย
-//  แชทเดี่ยวนับ 1 ข้อความ/ครั้ง · สมองยังเป็นห้องกะปันตัวเดิม (ข้อความเข้าบอร์ด room=kapan)
+//  แชทเดี่ยวนับ 1 ข้อความ/ครั้ง · สมอง = ห้องการุน แยกจากกะปัน (ข้อความเข้าบอร์ด room=karoon · 26 ก.ย.)
 //
 //  endpoint เดียว 2 หน้าที่:
 //   ① LINE ยิงเข้ามา (มี x-line-signature) → ข้อความพลอยเข้าห้องกะปัน · คนอื่นจดรหัสไว้ ไม่ตอบ
-//   ② ห้องกะปันส่งกลับ  POST { "key": "...", "text": "..." } → push หาพลอยคนเดียวเท่านั้น
+//   ② ห้องการุนส่งกลับ  POST { "key": "...", "text": "..." } → push หาพลอยคนเดียวเท่านั้น
 //
 //  env (ห้ามใช้ชื่อซ้ำกับ LINE_* หรือ KAPAN_* — เคยทับกันจนบอทตายเงียบ 14 ส.ค.):
 //   PLOY_BOT_CHANNEL_SECRET (จำเป็นตัวเดียว) · PLOY_BOT_CHANNEL_ID ไม่ใส่ก็ได้ (ค่าเริ่ม 2007309561 = Expense Bot · provider Nut Expense) · (PLOY_BOT_CHANNEL_ACCESS_TOKEN ไม่ใส่ก็ได้)
@@ -22,8 +22,8 @@ const SB   = 'https://zdartbvhbvqlwzwyyiia.supabase.co/rest/v1';
 const ANON = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkYXJ0YnZoYnZxbHd6d3l5aWlhIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODE4MTY3OTksImV4cCI6MjA5NzM5Mjc5OX0.D41YGH-CuWrVFqcAgXEuhfVTxJ7WY26Xu-PeXBF6LB8';
 const WKEY = process.env.SUPABASE_SERVICE_ROLE_KEY || ANON;
 const SBH  = { apikey: WKEY, Authorization: 'Bearer ' + WKEY, 'Content-Type': 'application/json' };
-const SAY_KEY = process.env.KAPAN_SAY_KEY || 'kapan-pm-2026';
-const HOME_ROOM = 'kapan';
+const SAY_KEY = process.env.KAROON_SAY_KEY || 'karoon-ploy-2026';
+const HOME_ROOM = 'karoon';   // ห้องการุน แยกจากกะปัน (นัทสั่ง 26 ก.ย.) · ต้องตรงกับ scripts/karoon_watch.mjs
 
 function readRaw(req) {
   return new Promise((resolve, reject) => {
@@ -65,12 +65,12 @@ async function getPloyUid() {
   } catch { return null; }
 }
 
-// sender ต้องเป็น "นัท (สั่งผ่านไลน์)" เพื่อให้ตัวเฝ้าของกะปัน (kapan_watch) ตื่น — แยกคนพิมพ์ด้วยป้ายในข้อความ
+// sender = "พลอย (สั่งผ่านไลน์)" · ตัวเฝ้า scripts/karoon_watch.mjs ปลุกห้องการุน
 async function toBoard(text) {
   try {
     await fetch(SB + '/session_messages', {
       method: 'POST', headers: { ...SBH, Prefer: 'return=minimal' },
-      body: JSON.stringify({ room: HOME_ROOM, sender: 'นัท (สั่งผ่านไลน์)', role: 'user', text }),
+      body: JSON.stringify({ room: HOME_ROOM, sender: 'พลอย (สั่งผ่านไลน์)', role: 'user', text }),
     });
   } catch (e) { console.error('บอทพลอย: เขียนบอร์ดไม่ได้', e); }
 }
@@ -80,7 +80,7 @@ export default async function handler(req, res) {
   const raw = await readRaw(req);
   const sig = req.headers['x-line-signature'];
 
-  // ② ห้องกะปันตอบกลับพลอย
+  // ② ห้องการุนตอบกลับพลอย
   if (!sig) {
     let j; try { j = JSON.parse(raw || '{}'); } catch { return res.status(400).json({ ok: false }); }
     if (j.key !== SAY_KEY) return res.status(401).json({ ok: false });
